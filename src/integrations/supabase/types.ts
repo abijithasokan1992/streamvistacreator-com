@@ -17,6 +17,7 @@ export type Database = {
       onboarding_requests: {
         Row: {
           access_code: string | null
+          amount_paid_paise: number | null
           base_price: number
           client_name: string
           contact_phone: string
@@ -24,12 +25,16 @@ export type Database = {
           final_price: number
           id: string
           onboarding_status: string
+          payment_status: string
           professional_role: string
           promo_code: string | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
           selected_cycle: string
         }
         Insert: {
           access_code?: string | null
+          amount_paid_paise?: number | null
           base_price: number
           client_name: string
           contact_phone: string
@@ -37,12 +42,16 @@ export type Database = {
           final_price: number
           id?: string
           onboarding_status?: string
+          payment_status?: string
           professional_role: string
           promo_code?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
           selected_cycle: string
         }
         Update: {
           access_code?: string | null
+          amount_paid_paise?: number | null
           base_price?: number
           client_name?: string
           contact_phone?: string
@@ -50,8 +59,11 @@ export type Database = {
           final_price?: number
           id?: string
           onboarding_status?: string
+          payment_status?: string
           professional_role?: string
           promo_code?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
           selected_cycle?: string
         }
         Relationships: []

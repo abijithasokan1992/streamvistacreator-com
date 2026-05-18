@@ -14,7 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      onboarding_requests: {
+        Row: {
+          access_code: string | null
+          base_price: number
+          client_name: string
+          contact_phone: string
+          created_at: string
+          final_price: number
+          id: string
+          onboarding_status: string
+          professional_role: string
+          promo_code: string | null
+          selected_cycle: string
+        }
+        Insert: {
+          access_code?: string | null
+          base_price: number
+          client_name: string
+          contact_phone: string
+          created_at?: string
+          final_price: number
+          id?: string
+          onboarding_status?: string
+          professional_role: string
+          promo_code?: string | null
+          selected_cycle: string
+        }
+        Update: {
+          access_code?: string | null
+          base_price?: number
+          client_name?: string
+          contact_phone?: string
+          created_at?: string
+          final_price?: number
+          id?: string
+          onboarding_status?: string
+          professional_role?: string
+          promo_code?: string | null
+          selected_cycle?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

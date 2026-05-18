@@ -1,16 +1,24 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import { Navbar } from "@/components/streamvista/Navbar";
+import { Hero } from "@/components/streamvista/Hero";
+import { PlanFeature } from "@/components/streamvista/PlanFeature";
+import { Pricing } from "@/components/streamvista/Pricing";
+import { OnboardingForm } from "@/components/streamvista/OnboardingForm";
+import { Footer } from "@/components/streamvista/Footer";
+import type { Cycle } from "@/components/streamvista/plans";
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+const Index = () => {
+  const [selected, setSelected] = useState<Cycle>("yearly");
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
-    </div>
+    <main className="min-h-screen">
+      <Navbar />
+      <Hero />
+      <PlanFeature />
+      <Pricing selected={selected} onSelect={setSelected} />
+      <OnboardingForm selected={selected} />
+      <Footer />
+    </main>
   );
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;

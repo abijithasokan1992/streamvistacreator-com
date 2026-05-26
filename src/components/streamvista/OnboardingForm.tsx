@@ -25,11 +25,17 @@ const ROLES = [
 const VALID_PROMO = "INDUSTRY100";
 const PROMO_DISCOUNT = 0.1;
 
+const GST_RATE = 0.18;
+
 const Schema = z.object({
   accessCode: z.string().trim().max(50).optional(),
   clientName: z.string().trim().min(2, "Name required").max(200),
   professionalRole: z.string().min(1, "Select a role"),
-  contactPhone: z.string().trim().min(7, "Valid phone required").max(20),
+  businessEmail: z.string().trim().email("Valid business email required").max(255).or(z.literal("")),
+  contactPhone: z.string().trim().max(30).or(z.literal("")),
+}).refine(d => d.businessEmail !== "" || d.contactPhone.length >= 7, {
+  message: "Provide business email or WhatsApp number",
+  path: ["businessEmail"],
 });
 
 interface Props {
@@ -43,6 +49,7 @@ export const OnboardingForm = ({ selected }: Props) => {
   const [accessCode, setAccessCode] = useState("");
   const [clientName, setClientName] = useState("");
   const [professionalRole, setProfessionalRole] = useState("");
+  const [businessEmail, setBusinessEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [promoInput, setPromoInput] = useState("");
   const [promoApplied, setPromoApplied] = useState<string | null>(null);
@@ -50,11 +57,13 @@ export const OnboardingForm = ({ selected }: Props) => {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
 
-  const finalPrice = useMemo(
+  const subtotal = useMemo(
     () => (promoApplied ? Math.round(plan.price * (1 - PROMO_DISCOUNT)) : plan.price),
     [plan.price, promoApplied]
   );
-  const savings = plan.price - finalPrice;
+  const savings = plan.price - subtotal;
+  const gstAmount = Math.round(subtotal * GST_RATE);
+  const finalPrice = subtotal + gstAmount;
 
   const handleApplyPromo = () => {
     const code = promoInput.trim().toUpperCase();
@@ -88,7 +97,7 @@ export const OnboardingForm = ({ selected }: Props) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = Schema.safeParse({ accessCode, clientName, professionalRole, contactPhone });
+    const parsed = Schema.safeParse({ accessCode, clientName, professionalRole, businessEmail, contactPhone });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
       return;
@@ -100,7 +109,8 @@ export const OnboardingForm = ({ selected }: Props) => {
       .insert({
         client_name: parsed.data.clientName,
         professional_role: parsed.data.professionalRole,
-        contact_phone: parsed.data.contactPhone,
+        contact_phone: parsed.data.contactPhone || null,
+        business_email: parsed.data.businessEmail || null,
         access_code: parsed.data.accessCode || null,
         selected_cycle: selected,
         base_price: plan.price,
@@ -144,7 +154,7 @@ export const OnboardingForm = ({ selected }: Props) => {
       order_id: orderData.orderId,
       name: "StreamVista Cloud X",
       description: `${plan.label} · Crayons Creator Cloud`,
-      prefill: { name: parsed.data.clientName, contact: parsed.data.contactPhone },
+      prefill: { name: parsed.data.clientName, email: parsed.data.businessEmail || undefined, contact: parsed.data.contactPhone || undefined },
       theme: { color: "#6366f1" },
       handler: async (resp: any) => {
         const { data: vData } = await supabase.functions.invoke("verify-razorpay-payment", {
@@ -233,9 +243,14 @@ export const OnboardingForm = ({ selected }: Props) => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-xs uppercase tracking-wider text-muted-foreground">WhatsApp Contact</Label>
-                <Input id="phone" type="tel" value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="+91 98xxxxxx" className="bg-input/60 border-border h-12" required />
+                <Label htmlFor="email" className="text-xs uppercase tracking-wider text-muted-foreground">Business Email</Label>
+                <Input id="email" type="email" value={businessEmail} onChange={e => setBusinessEmail(e.target.value)} placeholder="ops@yourstudio.com" className="bg-input/60 border-border h-12" />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone" className="text-xs uppercase tracking-wider text-muted-foreground">WhatsApp Contact <span className="opacity-50">(optional if email provided)</span></Label>
+              <Input id="phone" type="tel" value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="+91 98xxxxxx" className="bg-input/60 border-border h-12" />
             </div>
 
             {/* PROMO */}
@@ -294,14 +309,15 @@ export const OnboardingForm = ({ selected }: Props) => {
               {promoApplied && (
                 <Row label={`Promo (${promoApplied})`} value={`−₹${savings.toLocaleString("en-IN")}`} accent />
               )}
-              <Row label="GST" value="As applicable" muted />
+              <Row label="Subtotal" value={`₹${subtotal.toLocaleString("en-IN")}`} />
+              <Row label="GST (18%)" value={`₹${gstAmount.toLocaleString("en-IN")}`} muted />
             </div>
 
             <div className="flex items-baseline justify-between pt-5">
-              <span className="text-sm text-muted-foreground uppercase tracking-wider">Total</span>
+              <span className="text-sm text-muted-foreground uppercase tracking-wider">Total due</span>
               <div className="text-right">
                 <div className="font-display font-bold text-3xl gradient-text">₹{finalPrice.toLocaleString("en-IN")}</div>
-                <div className="text-[11px] text-muted-foreground">+ GST · {plan.cadence.replace("+ GST", "").trim()}</div>
+                <div className="text-[11px] text-muted-foreground">incl. GST · {plan.cadence.replace("+ GST", "").trim()}</div>
               </div>
             </div>
 

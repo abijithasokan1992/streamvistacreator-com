@@ -1,0 +1,161 @@
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { Loader2, LogOut, ShieldCheck, Crown, RefreshCw, Mail, Phone, Tag } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+interface Row {
+  id: string;
+  client_name: string;
+  professional_role: string;
+  contact_phone: string | null;
+  business_email: string | null;
+  selected_cycle: string;
+  base_price: number;
+  final_price: number;
+  promo_code: string | null;
+  onboarding_status: string;
+  payment_status: string;
+  razorpay_payment_id: string | null;
+  created_at: string;
+}
+
+const STATUSES = ["pending", "contacted", "activated", "rejected"];
+
+export default function Admin() {
+  const { user, isAdmin, loading, signOut, refreshRole } = useAuth();
+  const navigate = useNavigate();
+  const [rows, setRows] = useState<Row[]>([]);
+  const [fetching, setFetching] = useState(false);
+  const [claiming, setClaiming] = useState(false);
+
+  useEffect(() => {
+    if (!loading && !user) navigate("/auth", { replace: true });
+  }, [user, loading, navigate]);
+
+  const load = async () => {
+    setFetching(true);
+    const { data, error } = await supabase
+      .from("onboarding_requests")
+      .select("*")
+      .order("created_at", { ascending: false });
+    setFetching(false);
+    if (error) { toast.error("Could not load requests"); return; }
+    setRows((data as Row[]) ?? []);
+  };
+
+  useEffect(() => { if (isAdmin) load(); }, [isAdmin]);
+
+  const claimAdmin = async () => {
+    setClaiming(true);
+    const { data, error } = await supabase.rpc("claim_admin_if_none");
+    setClaiming(false);
+    if (error) return toast.error(error.message);
+    if (data) { toast.success("You are now admin"); await refreshRole(); }
+    else toast.error("An admin already exists. Ask them to grant you access.");
+  };
+
+  const setStatus = async (id: string, status: string) => {
+    const { error } = await supabase.from("onboarding_requests").update({ onboarding_status: status }).eq("id", id);
+    if (error) return toast.error(error.message);
+    setRows(r => r.map(x => x.id === id ? { ...x, onboarding_status: status } : x));
+    toast.success("Status updated");
+  };
+
+  if (loading) return <div className="min-h-screen grid place-items-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
+
+  if (!isAdmin) {
+    return (
+      <main className="min-h-screen grid place-items-center px-4">
+        <div className="glass-strong rounded-3xl p-10 max-w-md text-center animate-fade-in">
+          <Crown className="w-12 h-12 mx-auto text-accent mb-4" />
+          <h1 className="font-display text-2xl font-bold mb-2">No Admin Access</h1>
+          <p className="text-sm text-muted-foreground mb-6">
+            Signed in as <span className="text-foreground">{user?.email}</span>. If you're the first user, claim admin to bootstrap the control panel.
+          </p>
+          <button onClick={claimAdmin} disabled={claiming} className="w-full h-12 rounded-xl bg-gradient-primary text-primary-foreground font-semibold glow-primary disabled:opacity-60 flex items-center justify-center gap-2">
+            {claiming ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+            Claim Admin Role
+          </button>
+          <button onClick={signOut} className="mt-3 w-full h-10 rounded-xl border border-border text-sm font-medium hover:bg-secondary">Sign out</button>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen">
+      <header className="border-b border-border/50 glass sticky top-0 z-40">
+        <div className="container flex items-center justify-between h-16">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-primary grid place-items-center glow-primary">
+              <ShieldCheck className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <div>
+              <div className="font-display font-bold text-sm">Crayons Control · Admin</div>
+              <div className="text-[11px] text-muted-foreground">{user?.email}</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link to="/" className="px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground">Site</Link>
+            <button onClick={load} disabled={fetching} className="px-3 py-2 text-sm rounded-md border border-border hover:bg-secondary flex items-center gap-2">
+              <RefreshCw className={`w-4 h-4 ${fetching ? "animate-spin" : ""}`} /> Refresh
+            </button>
+            <button onClick={signOut} className="px-3 py-2 text-sm rounded-md border border-border hover:bg-secondary flex items-center gap-2">
+              <LogOut className="w-4 h-4" /> Sign out
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <section className="container py-10">
+        <div className="flex items-baseline justify-between mb-6">
+          <div>
+            <h1 className="font-display text-3xl font-bold">Onboarding Requests</h1>
+            <p className="text-sm text-muted-foreground mt-1">{rows.length} total · live from the database</p>
+          </div>
+        </div>
+
+        <div className="grid gap-4">
+          {rows.map(r => (
+            <div key={r.id} className="glass rounded-2xl p-6 grid md:grid-cols-[1.4fr_1fr_auto] gap-6 items-start animate-fade-in">
+              <div>
+                <div className="font-display font-bold text-lg">{r.client_name}</div>
+                <div className="text-xs text-muted-foreground mb-3">{r.professional_role} · {new Date(r.created_at).toLocaleString()}</div>
+                <div className="flex flex-wrap gap-3 text-xs">
+                  {r.business_email && <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-secondary/60"><Mail className="w-3 h-3" /> {r.business_email}</span>}
+                  {r.contact_phone && <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-secondary/60"><Phone className="w-3 h-3" /> {r.contact_phone}</span>}
+                  {r.promo_code && <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-accent/10 text-accent"><Tag className="w-3 h-3" /> {r.promo_code}</span>}
+                </div>
+              </div>
+
+              <div className="text-sm space-y-1">
+                <div className="text-muted-foreground text-xs uppercase tracking-wider">Plan</div>
+                <div className="font-semibold capitalize">{r.selected_cycle}</div>
+                <div className="text-muted-foreground">₹{Number(r.final_price).toLocaleString("en-IN")} <span className="text-xs">(base ₹{Number(r.base_price).toLocaleString("en-IN")})</span></div>
+                <div className="mt-2">
+                  <span className={`inline-block px-2 py-0.5 rounded text-[11px] font-semibold ${r.payment_status === "paid" ? "bg-green-500/15 text-green-400" : r.payment_status === "failed" ? "bg-destructive/15 text-destructive" : "bg-muted/50 text-muted-foreground"}`}>
+                    Payment: {r.payment_status}
+                  </span>
+                </div>
+              </div>
+
+              <div className="md:w-44">
+                <div className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Onboarding</div>
+                <Select value={r.onboarding_status} onValueChange={v => setStatus(r.id, v)}>
+                  <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                  <SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+          ))}
+          {rows.length === 0 && !fetching && (
+            <div className="text-center py-20 text-muted-foreground">No onboarding requests yet.</div>
+          )}
+        </div>
+      </section>
+    </main>
+  );
+}

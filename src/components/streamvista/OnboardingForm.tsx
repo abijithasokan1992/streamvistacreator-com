@@ -97,7 +97,7 @@ export const OnboardingForm = ({ selected }: Props) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = Schema.safeParse({ accessCode, clientName, professionalRole, contactPhone });
+    const parsed = Schema.safeParse({ accessCode, clientName, professionalRole, businessEmail, contactPhone });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
       return;
@@ -109,7 +109,8 @@ export const OnboardingForm = ({ selected }: Props) => {
       .insert({
         client_name: parsed.data.clientName,
         professional_role: parsed.data.professionalRole,
-        contact_phone: parsed.data.contactPhone,
+        contact_phone: parsed.data.contactPhone || null,
+        business_email: parsed.data.businessEmail || null,
         access_code: parsed.data.accessCode || null,
         selected_cycle: selected,
         base_price: plan.price,

@@ -309,14 +309,15 @@ export const OnboardingForm = ({ selected }: Props) => {
               {promoApplied && (
                 <Row label={`Promo (${promoApplied})`} value={`−₹${savings.toLocaleString("en-IN")}`} accent />
               )}
-              <Row label="GST" value="As applicable" muted />
+              <Row label="Subtotal" value={`₹${subtotal.toLocaleString("en-IN")}`} />
+              <Row label="GST (18%)" value={`₹${gstAmount.toLocaleString("en-IN")}`} muted />
             </div>
 
             <div className="flex items-baseline justify-between pt-5">
-              <span className="text-sm text-muted-foreground uppercase tracking-wider">Total</span>
+              <span className="text-sm text-muted-foreground uppercase tracking-wider">Total due</span>
               <div className="text-right">
                 <div className="font-display font-bold text-3xl gradient-text">₹{finalPrice.toLocaleString("en-IN")}</div>
-                <div className="text-[11px] text-muted-foreground">+ GST · {plan.cadence.replace("+ GST", "").trim()}</div>
+                <div className="text-[11px] text-muted-foreground">incl. GST · {plan.cadence.replace("+ GST", "").trim()}</div>
               </div>
             </div>
 

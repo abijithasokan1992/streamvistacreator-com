@@ -76,6 +76,16 @@ export const OnboardingForm = ({ selected }: Props) => {
     setPromoInput("");
   };
 
+  const loadRazorpay = () =>
+    new Promise<boolean>((resolve) => {
+      if ((window as any).Razorpay) return resolve(true);
+      const s = document.createElement("script");
+      s.src = "https://checkout.razorpay.com/v1/checkout.js";
+      s.onload = () => resolve(true);
+      s.onerror = () => resolve(false);
+      document.body.appendChild(s);
+    });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const parsed = Schema.safeParse({ accessCode, clientName, professionalRole, contactPhone });
@@ -84,24 +94,87 @@ export const OnboardingForm = ({ selected }: Props) => {
       return;
     }
     setSubmitting(true);
-    const { error } = await supabase.from("onboarding_requests").insert({
-      client_name: parsed.data.clientName,
-      professional_role: parsed.data.professionalRole,
-      contact_phone: parsed.data.contactPhone,
-      access_code: parsed.data.accessCode || null,
-      selected_cycle: selected,
-      base_price: plan.price,
-      final_price: finalPrice,
-      promo_code: promoApplied,
-      onboarding_status: "pending",
-    });
-    setSubmitting(false);
-    if (error) {
+
+    const { data: inserted, error } = await supabase
+      .from("onboarding_requests")
+      .insert({
+        client_name: parsed.data.clientName,
+        professional_role: parsed.data.professionalRole,
+        contact_phone: parsed.data.contactPhone,
+        access_code: parsed.data.accessCode || null,
+        selected_cycle: selected,
+        base_price: plan.price,
+        final_price: finalPrice,
+        promo_code: promoApplied,
+        onboarding_status: "pending",
+      })
+      .select("id")
+      .single();
+
+    if (error || !inserted) {
+      setSubmitting(false);
       toast.error("Submission failed. Please try again.");
       return;
     }
-    setDone(true);
-    toast.success("Onboarding request submitted");
+
+    const onboardingId = inserted.id;
+    const amountPaise = Math.round(finalPrice * 100);
+
+    const ok = await loadRazorpay();
+    if (!ok) {
+      setSubmitting(false);
+      toast.error("Couldn't load payment gateway. Check your connection.");
+      return;
+    }
+
+    const { data: orderData, error: orderErr } = await supabase.functions.invoke(
+      "create-razorpay-order",
+      { body: { onboardingId, amount: amountPaise } }
+    );
+    if (orderErr || !orderData?.orderId) {
+      setSubmitting(false);
+      toast.error("Could not initiate payment. Please retry.");
+      return;
+    }
+
+    const rzp = new (window as any).Razorpay({
+      key: orderData.keyId,
+      amount: orderData.amount,
+      currency: orderData.currency,
+      order_id: orderData.orderId,
+      name: "StreamVista Cloud X",
+      description: `${plan.label} · Crayons Creator Cloud`,
+      prefill: { name: parsed.data.clientName, contact: parsed.data.contactPhone },
+      theme: { color: "#6366f1" },
+      handler: async (resp: any) => {
+        const { data: vData } = await supabase.functions.invoke("verify-razorpay-payment", {
+          body: {
+            onboardingId,
+            razorpay_order_id: resp.razorpay_order_id,
+            razorpay_payment_id: resp.razorpay_payment_id,
+            razorpay_signature: resp.razorpay_signature,
+          },
+        });
+        setSubmitting(false);
+        if (vData?.verified) {
+          setDone(true);
+          toast.success("Payment confirmed — welcome aboard!");
+        } else {
+          toast.error("Payment could not be verified. Contact support.");
+        }
+      },
+      modal: {
+        ondismiss: () => {
+          setSubmitting(false);
+          toast.info("Payment cancelled. Your details are saved — resume anytime.");
+        },
+      },
+    });
+    rzp.on("payment.failed", () => {
+      setSubmitting(false);
+      toast.error("Payment failed. Please try again.");
+    });
+    rzp.open();
   };
 
   if (done) {
@@ -205,7 +278,7 @@ export const OnboardingForm = ({ selected }: Props) => {
                 "hover:scale-[1.01] transition-transform disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               )}
             >
-              {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</> : <>Complete Onboarding →</>}
+              {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : <>Pay ₹{finalPrice.toLocaleString("en-IN")} & Activate →</>}
             </button>
             <p className="text-xs text-muted-foreground text-center">By submitting you agree to be contacted by the Crayons team to activate your workspace.</p>
           </form>

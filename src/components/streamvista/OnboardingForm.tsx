@@ -57,11 +57,13 @@ export const OnboardingForm = ({ selected }: Props) => {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
 
-  const finalPrice = useMemo(
+  const subtotal = useMemo(
     () => (promoApplied ? Math.round(plan.price * (1 - PROMO_DISCOUNT)) : plan.price),
     [plan.price, promoApplied]
   );
-  const savings = plan.price - finalPrice;
+  const savings = plan.price - subtotal;
+  const gstAmount = Math.round(subtotal * GST_RATE);
+  const finalPrice = subtotal + gstAmount;
 
   const handleApplyPromo = () => {
     const code = promoInput.trim().toUpperCase();

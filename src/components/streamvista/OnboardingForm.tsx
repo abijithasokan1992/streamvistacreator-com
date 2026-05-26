@@ -49,6 +49,7 @@ export const OnboardingForm = ({ selected }: Props) => {
   const [accessCode, setAccessCode] = useState("");
   const [clientName, setClientName] = useState("");
   const [professionalRole, setProfessionalRole] = useState("");
+  const [businessEmail, setBusinessEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [promoInput, setPromoInput] = useState("");
   const [promoApplied, setPromoApplied] = useState<string | null>(null);

@@ -25,11 +25,17 @@ const ROLES = [
 const VALID_PROMO = "INDUSTRY100";
 const PROMO_DISCOUNT = 0.1;
 
+const GST_RATE = 0.18;
+
 const Schema = z.object({
   accessCode: z.string().trim().max(50).optional(),
   clientName: z.string().trim().min(2, "Name required").max(200),
   professionalRole: z.string().min(1, "Select a role"),
-  contactPhone: z.string().trim().min(7, "Valid phone required").max(20),
+  businessEmail: z.string().trim().email("Valid business email required").max(255).or(z.literal("")),
+  contactPhone: z.string().trim().max(30).or(z.literal("")),
+}).refine(d => d.businessEmail !== "" || d.contactPhone.length >= 7, {
+  message: "Provide business email or WhatsApp number",
+  path: ["businessEmail"],
 });
 
 interface Props {

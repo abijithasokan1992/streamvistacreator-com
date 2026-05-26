@@ -154,7 +154,7 @@ export const OnboardingForm = ({ selected }: Props) => {
       order_id: orderData.orderId,
       name: "StreamVista Cloud X",
       description: `${plan.label} · Crayons Creator Cloud`,
-      prefill: { name: parsed.data.clientName, contact: parsed.data.contactPhone },
+      prefill: { name: parsed.data.clientName, email: parsed.data.businessEmail || undefined, contact: parsed.data.contactPhone || undefined },
       theme: { color: "#6366f1" },
       handler: async (resp: any) => {
         const { data: vData } = await supabase.functions.invoke("verify-razorpay-payment", {

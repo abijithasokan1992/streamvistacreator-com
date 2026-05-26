@@ -278,7 +278,7 @@ export const OnboardingForm = ({ selected }: Props) => {
                 "hover:scale-[1.01] transition-transform disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               )}
             >
-              {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</> : <>Complete Onboarding →</>}
+              {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : <>Pay ₹{finalPrice.toLocaleString("en-IN")} & Activate →</>}
             </button>
             <p className="text-xs text-muted-foreground text-center">By submitting you agree to be contacted by the Crayons team to activate your workspace.</p>
           </form>

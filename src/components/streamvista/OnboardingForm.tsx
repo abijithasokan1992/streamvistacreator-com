@@ -243,9 +243,14 @@ export const OnboardingForm = ({ selected }: Props) => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-xs uppercase tracking-wider text-muted-foreground">WhatsApp Contact</Label>
-                <Input id="phone" type="tel" value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="+91 98xxxxxx" className="bg-input/60 border-border h-12" required />
+                <Label htmlFor="email" className="text-xs uppercase tracking-wider text-muted-foreground">Business Email</Label>
+                <Input id="email" type="email" value={businessEmail} onChange={e => setBusinessEmail(e.target.value)} placeholder="ops@yourstudio.com" className="bg-input/60 border-border h-12" />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone" className="text-xs uppercase tracking-wider text-muted-foreground">WhatsApp Contact <span className="opacity-50">(optional if email provided)</span></Label>
+              <Input id="phone" type="tel" value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="+91 98xxxxxx" className="bg-input/60 border-border h-12" />
             </div>
 
             {/* PROMO */}

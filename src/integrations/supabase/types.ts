@@ -14,6 +14,96 @@ export type Database = {
   }
   public: {
     Tables: {
+      dmca_requests: {
+        Row: {
+          accuracy_statement: boolean
+          admin_notes: string | null
+          copyright_work: string
+          created_at: string
+          description: string
+          evidence_path: string | null
+          good_faith_statement: boolean
+          id: string
+          infringing_url: string
+          reporter_address: string | null
+          reporter_email: string
+          reporter_name: string
+          reporter_phone: string | null
+          signature: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          accuracy_statement?: boolean
+          admin_notes?: string | null
+          copyright_work: string
+          created_at?: string
+          description: string
+          evidence_path?: string | null
+          good_faith_statement?: boolean
+          id?: string
+          infringing_url: string
+          reporter_address?: string | null
+          reporter_email: string
+          reporter_name: string
+          reporter_phone?: string | null
+          signature: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          accuracy_statement?: boolean
+          admin_notes?: string | null
+          copyright_work?: string
+          created_at?: string
+          description?: string
+          evidence_path?: string | null
+          good_faith_statement?: boolean
+          id?: string
+          infringing_url?: string
+          reporter_address?: string | null
+          reporter_email?: string
+          reporter_name?: string
+          reporter_phone?: string | null
+          signature?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      onboarding_audit_log: {
+        Row: {
+          changed_by: string | null
+          changed_by_email: string | null
+          created_at: string
+          field_name: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          onboarding_request_id: string
+        }
+        Insert: {
+          changed_by?: string | null
+          changed_by_email?: string | null
+          created_at?: string
+          field_name: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          onboarding_request_id: string
+        }
+        Update: {
+          changed_by?: string | null
+          changed_by_email?: string | null
+          created_at?: string
+          field_name?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          onboarding_request_id?: string
+        }
+        Relationships: []
+      }
       onboarding_requests: {
         Row: {
           access_code: string | null

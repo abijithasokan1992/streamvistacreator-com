@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { CheckCircle2, Loader2, BadgeCheck, AlertCircle, Tag, CreditCard, Wallet } from "lucide-react";
+import { CheckCircle2, Loader2, BadgeCheck, AlertCircle, Tag, CreditCard, Wallet, Globe } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -366,7 +366,12 @@ export const OnboardingForm = ({ selected }: Props) => {
           <aside className="glass-strong rounded-3xl p-8 h-fit lg:sticky lg:top-24 animate-fade-in">
             <div className="text-xs uppercase tracking-[0.2em] text-accent mb-2">Order Summary</div>
             <div className="font-display text-2xl font-bold mb-1">Launch Partner Plan</div>
-            <div className="text-sm text-muted-foreground mb-6">{plan.label} billing · 50 TB · India</div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
+              {plan.label} billing · 50 TB
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/10 text-accent text-[11px] font-semibold">
+                <Globe className="w-3 h-3" /> India West (Mumbai)
+              </span>
+            </div>
 
             <div className="space-y-3 py-5 border-y border-border/60 text-sm">
               <Row label={`Base (${plan.label})`} value={`₹${plan.price.toLocaleString("en-IN")}`} />

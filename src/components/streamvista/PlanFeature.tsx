@@ -1,7 +1,7 @@
 import { HardDrive, MapPin, Activity, Users, Archive, LifeBuoy } from "lucide-react";
 
 const features = [
-  { icon: HardDrive, title: "25TB + 25TB Bonus", desc: "50 TB total month-1 allocation for Launch Partners." },
+  { icon: HardDrive, title: "Cloud Storage", desc: "Scalable, secure storage for your production assets." },
   { icon: MapPin, title: "India Region", desc: "Data sovereignty with low-latency Mumbai-region storage." },
   { icon: Activity, title: "99.9% Uptime SLA", desc: "Enterprise-grade reliability for production workloads." },
   { icon: Users, title: "2 Concurrent Users", desc: "Collaborate seamlessly across teams and timelines." },
@@ -13,7 +13,7 @@ export const PlanFeature = () => (
   <section id="plan" className="py-24 relative">
     <div className="container">
       <div className="text-center max-w-2xl mx-auto mb-16 animate-fade-in">
-        <div className="text-xs uppercase tracking-[0.25em] text-accent mb-4">Launch Partner Plan</div>
+        <div className="text-xs uppercase tracking-[0.25em] text-accent mb-4">Cloud X Plan</div>
         <h2 className="font-display text-4xl md:text-5xl font-bold mb-4">
           One plan. <span className="gradient-text">Built for production.</span>
         </h2>

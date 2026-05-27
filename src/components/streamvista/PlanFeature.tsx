@@ -2,7 +2,7 @@ import { HardDrive, MapPin, Activity, Users, Archive, LifeBuoy } from "lucide-re
 
 const features = [
   { icon: HardDrive, title: "Cloud Storage", desc: "Scalable, secure storage for your production assets." },
-  { icon: MapPin, title: "India Region", desc: "Data sovereignty with low-latency Mumbai-region storage." },
+  { icon: MapPin, title: "Mumbai Region", desc: "Data sovereignty with low-latency Mumbai-region storage." },
   { icon: Activity, title: "99.9% Uptime SLA", desc: "Enterprise-grade reliability for production workloads." },
   { icon: Users, title: "2 Concurrent Users", desc: "Collaborate seamlessly across teams and timelines." },
   { icon: Archive, title: "Archive Support", desc: "Cold storage tier for delivered projects and masters." },
@@ -10,28 +10,51 @@ const features = [
 ];
 
 export const PlanFeature = () => (
-  <section id="plan" className="py-24 relative">
+  <section id="plan" className="py-28 relative border-b border-border/40">
     <div className="container">
-      <div className="text-center max-w-2xl mx-auto mb-16 animate-fade-in">
-        <div className="text-xs uppercase tracking-[0.25em] text-accent mb-4">Cloud X Plan</div>
-        <h2 className="font-display text-4xl md:text-5xl font-bold mb-4">
-          One plan. <span className="gradient-text">Built for production.</span>
-        </h2>
-        <p className="text-muted-foreground">Everything a studio, VFX house, or independent creator needs to ship.</p>
+      {/* Editorial header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16 animate-fade-in">
+        <div className="max-w-2xl">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-8 h-px bg-accent" />
+            <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">
+              [ Phase 01 — Production Standards ]
+            </span>
+          </div>
+          <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-5xl md:text-7xl">
+            One plan.
+            <br />
+            <span className="gradient-text">Built for production.</span>
+          </h2>
+        </div>
+        <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
+          Everything a studio, VFX house, or independent creator needs to ship —
+          no add-on tier, no asterisks.
+        </p>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-6xl mx-auto">
+      {/* Editorial list */}
+      <div className="border-t border-border/60">
         {features.map(({ icon: Icon, title, desc }, i) => (
           <div
             key={title}
-            className="glass rounded-2xl p-6 hover:border-primary/40 hover:-translate-y-1 transition-all duration-300 animate-fade-in"
-            style={{ animationDelay: `${i * 80}ms` }}
+            className="group grid grid-cols-[auto_1fr_auto] gap-4 md:gap-10 items-start py-8 md:py-10 border-b border-border/60 hover:bg-primary/[0.03] transition-colors px-2 -mx-2 animate-fade-in"
+            style={{ animationDelay: `${i * 60}ms` }}
           >
-            <div className="w-12 h-12 rounded-xl bg-gradient-primary grid place-items-center mb-5 glow-primary">
-              <Icon className="w-5 h-5 text-primary-foreground" />
+            <span className="font-mono-tech text-xs text-muted-foreground pt-2 w-10">
+              {String(i + 1).padStart(2, "0")}
+            </span>
+            <div className="grid md:grid-cols-[1.1fr_1.4fr] gap-2 md:gap-10 items-start">
+              <h3 className="font-display font-bold uppercase text-2xl md:text-3xl tracking-tight">
+                {title}
+              </h3>
+              <p className="text-sm md:text-base text-muted-foreground leading-relaxed max-w-md">
+                {desc}
+              </p>
             </div>
-            <h3 className="font-display font-semibold text-lg mb-2">{title}</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
+            <div className="w-10 h-10 rounded-full border border-border grid place-items-center group-hover:border-primary group-hover:bg-primary/10 transition-colors">
+              <Icon className="w-4 h-4 text-primary" />
+            </div>
           </div>
         ))}
       </div>

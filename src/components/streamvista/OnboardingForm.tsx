@@ -237,14 +237,25 @@ export const OnboardingForm = ({ selected }: Props) => {
   }
 
   return (
-    <section id="onboard" className="py-24">
-      <div className="container max-w-5xl">
-        <div className="text-center mb-12 animate-fade-in">
-          <div className="text-xs uppercase tracking-[0.25em] text-accent mb-4">Onboarding Workspace</div>
-          <h2 className="font-display text-4xl md:text-5xl font-bold mb-4">
-            Reserve your <span className="gradient-text">Cloud X workspace</span>
-          </h2>
-          <p className="text-muted-foreground">A few details to get your team activated.</p>
+    <section id="onboard" className="py-28">
+      <div className="container max-w-6xl">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-14 animate-fade-in">
+          <div>
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-8 h-px bg-accent" />
+              <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">
+                [ Phase 03 — Onboarding Workspace ]
+              </span>
+            </div>
+            <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-5xl md:text-7xl">
+              Reserve your
+              <br />
+              <span className="gradient-text">Cloud X workspace.</span>
+            </h2>
+          </div>
+          <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
+            A few details to get your team activated on the Mumbai sovereign node.
+          </p>
         </div>
 
         <div className="grid lg:grid-cols-[1.4fr_1fr] gap-6">

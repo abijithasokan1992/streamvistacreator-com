@@ -57,6 +57,12 @@ export const OnboardingForm = ({ selected }: Props) => {
   const [promoState, setPromoState] = useState<PromoState>("idle");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [provider, setProvider] = useState<"razorpay" | "card">("razorpay");
+  const [stripeCheckout, setStripeCheckout] = useState<null | { email?: string }>(null);
+
+  const stripePriceId =
+    selected === "monthly" ? "cloudx_monthly" :
+    selected === "quarterly" ? "cloudx_quarterly" : "cloudx_yearly";
 
   const subtotal = useMemo(
     () => (promoApplied ? Math.round(plan.price * (1 - PROMO_DISCOUNT)) : plan.price),
@@ -129,6 +135,14 @@ export const OnboardingForm = ({ selected }: Props) => {
     }
 
     const onboardingId = inserted.id;
+
+    // Branch on payment provider
+    if (provider === "card") {
+      setSubmitting(false);
+      setStripeCheckout({ email: parsed.data.businessEmail || undefined });
+      return;
+    }
+
     const amountPaise = Math.round(finalPrice * 100);
 
     const ok = await loadRazorpay();

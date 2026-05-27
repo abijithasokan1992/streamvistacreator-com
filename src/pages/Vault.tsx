@@ -18,6 +18,7 @@ type SharedFile = {
   size_bytes: number;
   tier: string;
   share_token: string;
+  storage_path: string;
   expires_at: string | null;
   max_downloads: number | null;
   download_count: number;

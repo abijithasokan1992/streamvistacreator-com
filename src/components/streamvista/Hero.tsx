@@ -8,10 +8,6 @@ export const Hero = () => (
 
     <div className="container relative">
       <div className="max-w-4xl mx-auto text-center animate-fade-in">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass text-xs uppercase tracking-[0.2em] text-muted-foreground mb-8">
-          <Sparkles className="w-3.5 h-3.5 text-accent" />
-          Launch Partner Program · India Region
-        </div>
 
         <h1 className="font-display font-bold text-5xl md:text-7xl lg:text-8xl leading-[1.05] mb-6">
           The Creator Cloud

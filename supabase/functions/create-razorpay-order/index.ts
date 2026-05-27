@@ -13,10 +13,11 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const { onboardingId, currency = "INR" } = await req.json();
+    const { onboardingId } = await req.json();
     if (!onboardingId || typeof onboardingId !== "string") {
       return jsonError("Invalid input", 400);
     }
+    const CURRENCY = "INR"; // hardcoded — never trust caller
 
     const keyId = Deno.env.get("RAZORPAY_KEY_ID");
     const keySecret = Deno.env.get("RAZORPAY_KEY_SECRET");
@@ -53,7 +54,7 @@ Deno.serve(async (req) => {
       headers: { "Content-Type": "application/json", Authorization: `Basic ${auth}` },
       body: JSON.stringify({
         amount: amountPaise,
-        currency,
+        currency: CURRENCY,
         receipt: `onb_${onboardingId.slice(0, 30)}`,
         notes: { onboarding_id: onboardingId },
       }),

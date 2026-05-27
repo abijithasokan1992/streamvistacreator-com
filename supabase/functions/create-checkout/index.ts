@@ -58,6 +58,25 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Open-redirect protection: returnUrl must be on an allow-listed origin.
+    const allowList = (Deno.env.get("SITE_ORIGIN") ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    let returnOrigin: string;
+    try {
+      returnOrigin = new URL(returnUrl).origin;
+    } catch {
+      return new Response(JSON.stringify({ error: "Invalid returnUrl" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (allowList.length && !allowList.includes(returnOrigin)) {
+      return new Response(JSON.stringify({ error: "Invalid returnUrl" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const env: StripeEnv = environment;
     const stripe = createStripeClient(env);
 
@@ -95,7 +114,7 @@ Deno.serve(async (req) => {
     });
   } catch (e) {
     console.error("create-checkout error", e);
-    return new Response(JSON.stringify({ error: String(e?.message ?? e) }), {
+    return new Response(JSON.stringify({ error: "Checkout session creation failed" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

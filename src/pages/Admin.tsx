@@ -165,7 +165,7 @@ export default function Admin() {
 
         <div className="grid gap-4">
           {rows.map(r => (
-            <div key={r.id} className="glass rounded-2xl p-6 grid md:grid-cols-[1.4fr_1fr_auto] gap-6 items-start animate-fade-in">
+            <div key={r.id} id={`req-${r.id}`} className="glass rounded-2xl p-6 grid md:grid-cols-[1.4fr_1fr_auto] gap-6 items-start animate-fade-in scroll-mt-24">
               <div>
                 <div className="font-display font-bold text-lg">{r.client_name}</div>
                 <div className="text-xs text-muted-foreground mb-3">{r.professional_role} · {new Date(r.created_at).toLocaleString()}</div>

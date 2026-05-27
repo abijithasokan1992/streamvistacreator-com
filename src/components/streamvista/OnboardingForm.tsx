@@ -167,7 +167,7 @@ export const OnboardingForm = ({ selected }: Props) => {
 
     const { data: orderData, error: orderErr } = await supabase.functions.invoke(
       "create-razorpay-order",
-      { body: { onboardingId, amount: amountPaise } }
+      { body: { onboardingId } }
     );
     if (orderErr || !orderData?.orderId) {
       setSubmitting(false);
@@ -300,13 +300,13 @@ export const OnboardingForm = ({ selected }: Props) => {
                     Remove
                   </button>
                 ) : (
-                  <button type="button" onClick={handleApplyPromo} className="px-5 h-12 rounded-md bg-gradient-primary text-primary-foreground text-sm font-semibold hover:scale-[1.02] transition-transform">
-                    Apply
+                  <button type="button" onClick={handleApplyPromo} disabled={promoChecking} className="px-5 h-12 rounded-md bg-gradient-primary text-primary-foreground text-sm font-semibold hover:scale-[1.02] transition-transform disabled:opacity-60">
+                    {promoChecking ? "Checking…" : "Apply"}
                   </button>
                 )}
               </div>
               {promoState === "valid" && (
-                <p className="text-sm text-[hsl(var(--success))] flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Code {promoApplied} verified — 10% off applied.</p>
+                <p className="text-sm text-[hsl(var(--success))] flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Code {promoApplied} verified — {Math.round(promoDiscount * 100)}% off applied.</p>
               )}
               {promoState === "invalid" && (
                 <p className="text-sm text-destructive flex items-center gap-2"><AlertCircle className="w-4 h-4" /> Invalid promo code.</p>

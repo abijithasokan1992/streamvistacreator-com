@@ -31,8 +31,17 @@ export default function Admin() {
   const [rows, setRows] = useState<Row[]>([]);
   const [fetching, setFetching] = useState(false);
   const [claiming, setClaiming] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
+  const adminUrl = typeof window !== "undefined" ? `${window.location.origin}/admin` : "/admin";
+  const copyAdmin = async () => {
+    try {
+      await navigator.clipboard.writeText(adminUrl);
+      setCopied(true);
+      toast.success("Admin link copied");
+      setTimeout(() => setCopied(false), 2000);
+    } catch { toast.error("Copy failed"); }
+  };
     if (!loading && !user) navigate("/auth", { replace: true });
   }, [user, loading, navigate]);
 

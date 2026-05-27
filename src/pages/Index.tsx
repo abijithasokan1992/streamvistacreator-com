@@ -15,6 +15,8 @@ const Index = () => {
       <Navbar />
       <Hero />
       <PlanFeature />
+      <CloudStudioPartners />
+
       <Pricing selected={selected} onSelect={setSelected} />
       <OnboardingForm selected={selected} />
       <Footer />

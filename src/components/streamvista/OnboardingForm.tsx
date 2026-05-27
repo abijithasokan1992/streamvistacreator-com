@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { CheckCircle2, Loader2, BadgeCheck, AlertCircle, Tag, CreditCard, Wallet } from "lucide-react";
+import { CheckCircle2, Loader2, BadgeCheck, AlertCircle, Tag, CreditCard, Wallet, Globe } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";

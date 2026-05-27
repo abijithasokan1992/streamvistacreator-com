@@ -5,6 +5,7 @@ import { PlanFeature } from "@/components/streamvista/PlanFeature";
 import { Pricing } from "@/components/streamvista/Pricing";
 import { OnboardingForm } from "@/components/streamvista/OnboardingForm";
 import { CloudStudioPartners } from "@/components/streamvista/CloudStudioPartners";
+import { MFILimitedEdition } from "@/components/streamvista/MFILimitedEdition";
 import { Footer } from "@/components/streamvista/Footer";
 import type { Cycle } from "@/components/streamvista/plans";
 
@@ -16,6 +17,7 @@ const Index = () => {
       <Hero />
       <PlanFeature />
       <CloudStudioPartners />
+      <MFILimitedEdition />
 
       <Pricing selected={selected} onSelect={setSelected} />
       <OnboardingForm selected={selected} />

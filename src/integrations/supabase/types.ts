@@ -168,8 +168,10 @@ export type Database = {
           created_at: string
           final_price: number
           id: string
+          mfi_proof_path: string | null
           onboarding_status: string
           payment_status: string
+          plan_type: string
           professional_role: string
           promo_code: string | null
           razorpay_order_id: string | null
@@ -186,8 +188,10 @@ export type Database = {
           created_at?: string
           final_price: number
           id?: string
+          mfi_proof_path?: string | null
           onboarding_status?: string
           payment_status?: string
+          plan_type?: string
           professional_role: string
           promo_code?: string | null
           razorpay_order_id?: string | null
@@ -204,8 +208,10 @@ export type Database = {
           created_at?: string
           final_price?: number
           id?: string
+          mfi_proof_path?: string | null
           onboarding_status?: string
           payment_status?: string
+          plan_type?: string
           professional_role?: string
           promo_code?: string | null
           razorpay_order_id?: string | null
@@ -299,6 +305,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      mfi_seats_taken: { Args: never; Returns: number }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

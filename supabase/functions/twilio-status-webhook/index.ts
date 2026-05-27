@@ -24,6 +24,22 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  // Authenticity check: require a shared secret on the StatusCallback URL.
+  // Configure Twilio's StatusCallback as:
+  //   https://<project>.supabase.co/functions/v1/twilio-status-webhook?secret=<TWILIO_WEBHOOK_SECRET>
+  const expectedSecret = Deno.env.get("TWILIO_WEBHOOK_SECRET");
+  if (expectedSecret) {
+    const url = new URL(req.url);
+    const provided = url.searchParams.get("secret") ?? "";
+    if (provided !== expectedSecret) {
+      return new Response("Forbidden", { status: 403, headers: corsHeaders });
+    }
+  } else {
+    console.error("TWILIO_WEBHOOK_SECRET not configured — rejecting callback");
+    return new Response("Forbidden", { status: 403, headers: corsHeaders });
+  }
+
+
   try {
     const contentType = req.headers.get("content-type") || "";
     let params: Record<string, string> = {};
@@ -78,7 +94,7 @@ Deno.serve(async (req) => {
     if (updateErr) {
       console.error("Update error:", updateErr);
       return new Response(
-        JSON.stringify({ error: updateErr.message }),
+        JSON.stringify({ error: "Internal error" }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -104,8 +120,7 @@ Deno.serve(async (req) => {
     );
   } catch (err) {
     console.error("Webhook error:", err);
-    const msg = err instanceof Error ? err.message : "Unknown error";
-    return new Response(JSON.stringify({ error: msg }), {
+    return new Response(JSON.stringify({ error: "Internal error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

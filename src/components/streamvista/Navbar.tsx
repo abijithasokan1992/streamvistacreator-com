@@ -16,6 +16,10 @@ export const Navbar = () => (
         <a href="#plan" className="hover:text-foreground transition-colors">Plan</a>
         <a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a>
         <a href="#onboard" className="hover:text-foreground transition-colors">Onboarding</a>
+        <a href="/launching-special-plan" className="relative hover:text-foreground transition-colors">
+          <span className="gradient-text font-medium">Launching Special Plan</span>
+          <span className="absolute -top-2 -right-3 w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+        </a>
       </nav>
       <a href="#onboard" className="text-xs md:text-sm font-medium px-4 py-2 rounded-full bg-gradient-primary text-primary-foreground glow-primary hover:scale-105 transition-transform">
         Reserve Cloud

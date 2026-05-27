@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { CheckCircle2, Loader2, BadgeCheck, AlertCircle, Tag } from "lucide-react";
+import { CheckCircle2, Loader2, BadgeCheck, AlertCircle, Tag, CreditCard, Wallet } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { planByCycle, type Cycle } from "./plans";
+import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
 import { cn } from "@/lib/utils";
 
 const ROLES = [
@@ -56,6 +57,12 @@ export const OnboardingForm = ({ selected }: Props) => {
   const [promoState, setPromoState] = useState<PromoState>("idle");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [provider, setProvider] = useState<"razorpay" | "card">("razorpay");
+  const [stripeCheckout, setStripeCheckout] = useState<null | { email?: string }>(null);
+
+  const stripePriceId =
+    selected === "monthly" ? "cloudx_monthly" :
+    selected === "quarterly" ? "cloudx_quarterly" : "cloudx_yearly";
 
   const subtotal = useMemo(
     () => (promoApplied ? Math.round(plan.price * (1 - PROMO_DISCOUNT)) : plan.price),
@@ -128,6 +135,14 @@ export const OnboardingForm = ({ selected }: Props) => {
     }
 
     const onboardingId = inserted.id;
+
+    // Branch on payment provider
+    if (provider === "card") {
+      setSubmitting(false);
+      setStripeCheckout({ email: parsed.data.businessEmail || undefined });
+      return;
+    }
+
     const amountPaise = Math.round(finalPrice * 100);
 
     const ok = await loadRazorpay();
@@ -285,9 +300,42 @@ export const OnboardingForm = ({ selected }: Props) => {
               )}
             </div>
 
+            {/* PAYMENT METHOD */}
+            <div className="space-y-2">
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Payment Method</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setProvider("razorpay")}
+                  className={cn(
+                    "h-14 rounded-xl border-2 flex items-center justify-center gap-2 text-sm font-semibold transition-all",
+                    provider === "razorpay"
+                      ? "border-primary bg-primary/10 text-foreground glow-primary"
+                      : "border-border bg-input/40 text-muted-foreground hover:border-border/80"
+                  )}
+                >
+                  <Wallet className="w-4 h-4" /> UPI / Netbanking
+                  <span className="text-[10px] opacity-70 ml-1">(India)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setProvider("card")}
+                  className={cn(
+                    "h-14 rounded-xl border-2 flex items-center justify-center gap-2 text-sm font-semibold transition-all",
+                    provider === "card"
+                      ? "border-primary bg-primary/10 text-foreground glow-primary"
+                      : "border-border bg-input/40 text-muted-foreground hover:border-border/80"
+                  )}
+                >
+                  <CreditCard className="w-4 h-4" /> Card
+                  <span className="text-[10px] opacity-70 ml-1">(Global)</span>
+                </button>
+              </div>
+            </div>
+
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || !!stripeCheckout}
               className={cn(
                 "w-full h-14 rounded-xl bg-gradient-primary text-primary-foreground font-display font-semibold text-base glow-primary",
                 "hover:scale-[1.01] transition-transform disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
@@ -295,6 +343,22 @@ export const OnboardingForm = ({ selected }: Props) => {
             >
               {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : <>Pay ₹{finalPrice.toLocaleString("en-IN")} & Activate →</>}
             </button>
+
+            {stripeCheckout && (
+              <div className="mt-4 rounded-2xl border border-border/60 bg-background/60 p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-xs uppercase tracking-wider text-accent">Secure Card Checkout</div>
+                  <button type="button" onClick={() => setStripeCheckout(null)} className="text-xs text-muted-foreground hover:text-foreground">
+                    Cancel
+                  </button>
+                </div>
+                <StripeEmbeddedCheckout
+                  priceId={stripePriceId}
+                  customerEmail={stripeCheckout.email}
+                  returnUrl={`${window.location.origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`}
+                />
+              </div>
+            )}
             <p className="text-xs text-muted-foreground text-center">By submitting you agree to be contacted by the Crayons team to activate your workspace.</p>
           </form>
 

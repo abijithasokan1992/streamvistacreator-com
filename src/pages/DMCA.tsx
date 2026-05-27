@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Shield, Mail, FileText } from "lucide-react";
+import { DMCAForm } from "@/components/streamvista/DMCAForm";
 
 export default function DMCA() {
   return (
@@ -53,6 +54,10 @@ export default function DMCA() {
             </div>
           </Section>
         </article>
+
+        <div id="submit-notice" className="mt-12 scroll-mt-24">
+          <DMCAForm />
+        </div>
       </div>
     </main>
   );

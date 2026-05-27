@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Loader2, LogOut, ShieldCheck, Crown, RefreshCw, Mail, Phone, Tag } from "lucide-react";
+import { Loader2, LogOut, ShieldCheck, Crown, RefreshCw, Mail, Phone, Tag, History } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface Row {
   id: string;
@@ -142,12 +143,13 @@ export default function Admin() {
                 </div>
               </div>
 
-              <div className="md:w-44">
+              <div className="md:w-44 space-y-2">
                 <div className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Onboarding</div>
                 <Select value={r.onboarding_status} onValueChange={v => setStatus(r.id, v)}>
                   <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                   <SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}</SelectContent>
                 </Select>
+                <AuditTrail requestId={r.id} clientName={r.client_name} />
               </div>
             </div>
           ))}
@@ -157,5 +159,68 @@ export default function Admin() {
         </div>
       </section>
     </main>
+  );
+}
+
+interface AuditEntry {
+  id: string;
+  field_name: string;
+  old_value: string | null;
+  new_value: string | null;
+  changed_by_email: string | null;
+  created_at: string;
+}
+
+function AuditTrail({ requestId, clientName }: { requestId: string; clientName: string }) {
+  const [entries, setEntries] = useState<AuditEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("onboarding_audit_log")
+      .select("*")
+      .eq("onboarding_request_id", requestId)
+      .order("created_at", { ascending: false });
+    setLoading(false);
+    if (error) { toast.error(error.message); return; }
+    setEntries((data as AuditEntry[]) ?? []);
+  };
+
+  return (
+    <Dialog onOpenChange={(o) => { if (o) load(); }}>
+      <DialogTrigger asChild>
+        <button className="w-full h-9 rounded-md border border-border hover:bg-secondary text-xs flex items-center justify-center gap-1.5">
+          <History className="w-3.5 h-3.5" /> Audit trail
+        </button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Audit trail · {clientName}</DialogTitle>
+        </DialogHeader>
+        {loading ? (
+          <div className="py-10 grid place-items-center"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+        ) : entries.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-6 text-center">No status changes recorded yet.</p>
+        ) : (
+          <ul className="space-y-3 max-h-[60vh] overflow-y-auto">
+            {entries.map(e => (
+              <li key={e.id} className="border border-border rounded-lg p-3 text-sm">
+                <div className="flex justify-between gap-2 text-xs text-muted-foreground mb-1">
+                  <span className="uppercase tracking-wider">{e.field_name.replace("_", " ")}</span>
+                  <span>{new Date(e.created_at).toLocaleString()}</span>
+                </div>
+                <div className="font-medium">
+                  <span className="text-muted-foreground">{e.old_value ?? "—"}</span>
+                  <span className="mx-2 text-accent">→</span>
+                  <span>{e.new_value ?? "—"}</span>
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">by {e.changed_by_email ?? "system"}</div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

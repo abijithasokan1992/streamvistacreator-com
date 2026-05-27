@@ -104,6 +104,59 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_notifications: {
+        Row: {
+          channel: string
+          created_at: string
+          error_code: string | null
+          error_message: string | null
+          event: string
+          id: string
+          message_sid: string | null
+          onboarding_request_id: string
+          raw: Json | null
+          status: string
+          to_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          event: string
+          id?: string
+          message_sid?: string | null
+          onboarding_request_id: string
+          raw?: Json | null
+          status?: string
+          to_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          event?: string
+          id?: string
+          message_sid?: string | null
+          onboarding_request_id?: string
+          raw?: Json | null
+          status?: string
+          to_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_notifications_onboarding_request_id_fkey"
+            columns: ["onboarding_request_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       onboarding_requests: {
         Row: {
           access_code: string | null

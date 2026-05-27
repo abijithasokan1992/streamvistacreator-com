@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Loader2, LogOut, ShieldCheck, Crown, RefreshCw, Mail, Phone, Tag, History } from "lucide-react";
+import { Loader2, LogOut, ShieldCheck, Crown, RefreshCw, Mail, Phone, Tag, History, Copy, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -31,6 +31,17 @@ export default function Admin() {
   const [rows, setRows] = useState<Row[]>([]);
   const [fetching, setFetching] = useState(false);
   const [claiming, setClaiming] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const adminUrl = typeof window !== "undefined" ? `${window.location.origin}/admin` : "/admin";
+  const copyAdmin = async () => {
+    try {
+      await navigator.clipboard.writeText(adminUrl);
+      setCopied(true);
+      toast.success("Admin link copied");
+      setTimeout(() => setCopied(false), 2000);
+    } catch { toast.error("Copy failed"); }
+  };
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth", { replace: true });
@@ -100,6 +111,12 @@ export default function Admin() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2 px-2 py-1 rounded-md border border-border/70 bg-secondary/40 text-xs">
+              <span className="font-mono text-foreground">/admin</span>
+              <button onClick={copyAdmin} aria-label="Copy admin panel link" className="text-muted-foreground hover:text-accent transition-colors">
+                {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              </button>
+            </div>
             <Link to="/" className="px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground">Site</Link>
             <button onClick={load} disabled={fetching} className="px-3 py-2 text-sm rounded-md border border-border hover:bg-secondary flex items-center gap-2">
               <RefreshCw className={`w-4 h-4 ${fetching ? "animate-spin" : ""}`} /> Refresh

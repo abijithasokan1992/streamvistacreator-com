@@ -63,7 +63,7 @@ export const Pricing = ({ selected, onSelect }: Props) => (
               <p className="text-sm text-muted-foreground mb-6 leading-relaxed">{p.description}</p>
 
               <ul className="space-y-2.5 text-sm">
-                {["50 TB launch allocation", "India region", "99.9% uptime SLA", "2 concurrent users", "Archive + onboarding"].map((f) => (
+                {["Scalable cloud storage", "India region", "99.9% uptime SLA", "2 concurrent users", "Archive + onboarding"].map((f) => (
                   <li key={f} className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                     <span className="text-muted-foreground">{f}</span>

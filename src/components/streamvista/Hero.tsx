@@ -31,7 +31,7 @@ export const Hero = () => (
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
           {[
-            { icon: Zap, label: "50 TB", sub: "Launch Partner Lifetime Storage" },
+            { icon: Zap, label: "Cloud-First", sub: "Elastic production storage" },
             { icon: ShieldCheck, label: "99.9%", sub: "Uptime SLA" },
             { icon: Sparkles, label: "India", sub: "Sovereign region" },
           ].map(({ icon: Icon, label, sub }) => (

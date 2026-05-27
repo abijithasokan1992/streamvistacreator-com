@@ -59,9 +59,16 @@ export const DMCAForm = () => {
         evidence_path = path;
       }
       const { error } = await supabase.from("dmca_requests").insert({
-        ...parsed.data,
+        reporter_name: parsed.data.reporter_name,
+        reporter_email: parsed.data.reporter_email,
         reporter_phone: form.reporter_phone || null,
         reporter_address: form.reporter_address || null,
+        copyright_work: parsed.data.copyright_work,
+        infringing_url: parsed.data.infringing_url,
+        description: parsed.data.description,
+        signature: parsed.data.signature,
+        good_faith_statement: true,
+        accuracy_statement: true,
         evidence_path,
         status: "pending",
       });

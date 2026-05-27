@@ -156,7 +156,7 @@ export const OnboardingForm = ({ selected }: Props) => {
       return;
     }
 
-    const amountPaise = Math.round(finalPrice * 100);
+    
 
     const ok = await loadRazorpay();
     if (!ok) {

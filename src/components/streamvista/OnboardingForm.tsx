@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { planByCycle, type Cycle } from "./plans";
+import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
+import { cn } from "@/lib/utils";
 
 const ROLES = [
   "Production Studio",

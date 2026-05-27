@@ -80,9 +80,25 @@ export const MFILimitedEdition = () => {
 
     setSubmitting(true);
 
-    const { data: inserted, error: insertErr } = await supabase
+    const requestId = crypto.randomUUID();
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "bin";
+    const path = `${requestId}/proof.${ext}`;
+
+    // Upload proof first so we can store the path on insert
+    const { error: upErr } = await supabase.storage
+      .from("mfi-proof")
+      .upload(path, file, { contentType: file.type, upsert: true });
+
+    if (upErr) {
+      setSubmitting(false);
+      toast.error(`Upload failed: ${upErr.message}`);
+      return;
+    }
+
+    const { error: insertErr } = await supabase
       .from("onboarding_requests")
       .insert({
+        id: requestId,
         client_name: parsed.data.clientName,
         professional_role: parsed.data.professionalRole,
         contact_phone: parsed.data.whatsapp,
@@ -92,32 +108,14 @@ export const MFILimitedEdition = () => {
         final_price: 0,
         plan_type: "mfi_limited",
         onboarding_status: "pending",
-      })
-      .select("id")
-      .single();
+        mfi_proof_path: path,
+      });
 
-    if (insertErr || !inserted) {
+    if (insertErr) {
       setSubmitting(false);
-      toast.error("Submission failed. Please try again.");
+      toast.error(`Submission failed: ${insertErr.message}`);
       return;
     }
-
-    const ext = file.name.split(".").pop()?.toLowerCase() ?? "bin";
-    const path = `${inserted.id}/proof.${ext}`;
-    const { error: upErr } = await supabase.storage
-      .from("mfi-proof")
-      .upload(path, file, { contentType: file.type, upsert: true });
-
-    if (upErr) {
-      setSubmitting(false);
-      toast.error("Upload failed. We saved your request — an admin will follow up.");
-      return;
-    }
-
-    await supabase
-      .from("onboarding_requests")
-      .update({ mfi_proof_path: path })
-      .eq("id", inserted.id);
 
     setSubmitting(false);
     setDone(true);

@@ -220,6 +220,57 @@ export type Database = {
         }
         Relationships: []
       }
+      shared_files: {
+        Row: {
+          created_at: string
+          download_count: number
+          expires_at: string | null
+          filename: string
+          id: string
+          max_downloads: number | null
+          mime_type: string | null
+          owner_id: string
+          password_hash: string | null
+          revoked: boolean
+          share_token: string
+          size_bytes: number
+          storage_path: string
+          tier: string
+        }
+        Insert: {
+          created_at?: string
+          download_count?: number
+          expires_at?: string | null
+          filename: string
+          id?: string
+          max_downloads?: number | null
+          mime_type?: string | null
+          owner_id: string
+          password_hash?: string | null
+          revoked?: boolean
+          share_token: string
+          size_bytes: number
+          storage_path: string
+          tier?: string
+        }
+        Update: {
+          created_at?: string
+          download_count?: number
+          expires_at?: string | null
+          filename?: string
+          id?: string
+          max_downloads?: number | null
+          mime_type?: string | null
+          owner_id?: string
+          password_hash?: string | null
+          revoked?: boolean
+          share_token?: string
+          size_bytes?: number
+          storage_path?: string
+          tier?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           cancel_at_period_end: boolean | null

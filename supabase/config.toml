@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.twilio-status-webhook]
 verify_jwt = false
+
+[functions.vault-share]
+verify_jwt = false

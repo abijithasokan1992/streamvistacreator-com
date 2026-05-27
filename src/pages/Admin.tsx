@@ -60,6 +60,33 @@ export default function Admin() {
 
   useEffect(() => { if (isAdmin) load(); }, [isAdmin]);
 
+  // Realtime: notify admin of new onboarding requests
+  useEffect(() => {
+    if (!isAdmin) return;
+    const channel = supabase
+      .channel("admin-onboarding-inserts")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "onboarding_requests" },
+        (payload) => {
+          const row = payload.new as Row;
+          setRows(prev => [row, ...prev.filter(r => r.id !== row.id)]);
+          toast.success(`New onboarding request · ${row.client_name}`, {
+            description: `${row.professional_role} · ${row.selected_cycle} · ₹${Number(row.final_price).toLocaleString("en-IN")}${row.business_email ? ` · ${row.business_email}` : ""}${row.contact_phone ? ` · ${row.contact_phone}` : ""}`,
+            duration: 10000,
+            action: {
+              label: "View",
+              onClick: () => {
+                document.getElementById(`req-${row.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+              },
+            },
+          });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [isAdmin]);
+
   const claimAdmin = async () => {
     setClaiming(true);
     const { data, error } = await supabase.rpc("claim_admin_if_none");
@@ -138,7 +165,7 @@ export default function Admin() {
 
         <div className="grid gap-4">
           {rows.map(r => (
-            <div key={r.id} className="glass rounded-2xl p-6 grid md:grid-cols-[1.4fr_1fr_auto] gap-6 items-start animate-fade-in">
+            <div key={r.id} id={`req-${r.id}`} className="glass rounded-2xl p-6 grid md:grid-cols-[1.4fr_1fr_auto] gap-6 items-start animate-fade-in scroll-mt-24">
               <div>
                 <div className="font-display font-bold text-lg">{r.client_name}</div>
                 <div className="text-xs text-muted-foreground mb-3">{r.professional_role} · {new Date(r.created_at).toLocaleString()}</div>

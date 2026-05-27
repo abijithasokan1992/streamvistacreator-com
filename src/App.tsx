@@ -10,6 +10,8 @@ import Admin from "./pages/Admin.tsx";
 import DMCA from "./pages/DMCA.tsx";
 import LaunchingSpecialPlan from "./pages/LaunchingSpecialPlan.tsx";
 import CheckoutReturn from "./pages/CheckoutReturn.tsx";
+import Vault from "./pages/Vault.tsx";
+import Share from "./pages/Share.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { PaymentTestModeBanner } from "./components/PaymentTestModeBanner.tsx";
 
@@ -30,6 +32,8 @@ const App = () => (
             <Route path="/dmca" element={<DMCA />} />
             <Route path="/launching-special-plan" element={<LaunchingSpecialPlan />} />
             <Route path="/checkout/return" element={<CheckoutReturn />} />
+            <Route path="/vault" element={<Vault />} />
+            <Route path="/s/:token" element={<Share />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

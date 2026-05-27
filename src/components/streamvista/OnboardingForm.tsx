@@ -23,8 +23,7 @@ const ROLES = [
   "Other",
 ];
 
-const VALID_PROMO = "INDUSTRY100";
-const PROMO_DISCOUNT = 0.1;
+// Promo codes & discounts are validated server-side via the `validate-promo` edge function.
 
 const GST_RATE = 0.18;
 
@@ -54,7 +53,9 @@ export const OnboardingForm = ({ selected }: Props) => {
   const [contactPhone, setContactPhone] = useState("");
   const [promoInput, setPromoInput] = useState("");
   const [promoApplied, setPromoApplied] = useState<string | null>(null);
+  const [promoDiscount, setPromoDiscount] = useState(0);
   const [promoState, setPromoState] = useState<PromoState>("idle");
+  const [promoChecking, setPromoChecking] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [provider, setProvider] = useState<"razorpay" | "card">("razorpay");
@@ -65,29 +66,41 @@ export const OnboardingForm = ({ selected }: Props) => {
     selected === "quarterly" ? "cloudx_quarterly" : "cloudx_yearly";
 
   const subtotal = useMemo(
-    () => (promoApplied ? Math.round(plan.price * (1 - PROMO_DISCOUNT)) : plan.price),
-    [plan.price, promoApplied]
+    () => (promoApplied ? Math.round(plan.price * (1 - promoDiscount)) : plan.price),
+    [plan.price, promoApplied, promoDiscount]
   );
   const savings = plan.price - subtotal;
   const gstAmount = Math.round(subtotal * GST_RATE);
   const finalPrice = subtotal + gstAmount;
 
-  const handleApplyPromo = () => {
+  const handleApplyPromo = async () => {
     const code = promoInput.trim().toUpperCase();
-    if (!code) return;
-    if (code === VALID_PROMO) {
-      setPromoApplied(code);
-      setPromoState("valid");
-      toast.success("Promo applied — 10% discount unlocked");
-    } else {
-      setPromoApplied(null);
+    if (!code || promoChecking) return;
+    setPromoChecking(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("validate-promo", { body: { code } });
+      if (error || !data?.valid) {
+        setPromoApplied(null);
+        setPromoDiscount(0);
+        setPromoState("invalid");
+        toast.error("Invalid promo code");
+      } else {
+        setPromoApplied(data.code);
+        setPromoDiscount(data.discount);
+        setPromoState("valid");
+        toast.success(`Promo applied — ${Math.round(data.discount * 100)}% discount unlocked`);
+      }
+    } catch {
       setPromoState("invalid");
-      toast.error("Invalid promo code");
+      toast.error("Could not validate promo code");
+    } finally {
+      setPromoChecking(false);
     }
   };
 
   const removePromo = () => {
     setPromoApplied(null);
+    setPromoDiscount(0);
     setPromoState("idle");
     setPromoInput("");
   };
@@ -143,7 +156,7 @@ export const OnboardingForm = ({ selected }: Props) => {
       return;
     }
 
-    const amountPaise = Math.round(finalPrice * 100);
+    
 
     const ok = await loadRazorpay();
     if (!ok) {
@@ -154,7 +167,7 @@ export const OnboardingForm = ({ selected }: Props) => {
 
     const { data: orderData, error: orderErr } = await supabase.functions.invoke(
       "create-razorpay-order",
-      { body: { onboardingId, amount: amountPaise } }
+      { body: { onboardingId } }
     );
     if (orderErr || !orderData?.orderId) {
       setSubmitting(false);
@@ -287,13 +300,13 @@ export const OnboardingForm = ({ selected }: Props) => {
                     Remove
                   </button>
                 ) : (
-                  <button type="button" onClick={handleApplyPromo} className="px-5 h-12 rounded-md bg-gradient-primary text-primary-foreground text-sm font-semibold hover:scale-[1.02] transition-transform">
-                    Apply
+                  <button type="button" onClick={handleApplyPromo} disabled={promoChecking} className="px-5 h-12 rounded-md bg-gradient-primary text-primary-foreground text-sm font-semibold hover:scale-[1.02] transition-transform disabled:opacity-60">
+                    {promoChecking ? "Checking…" : "Apply"}
                   </button>
                 )}
               </div>
               {promoState === "valid" && (
-                <p className="text-sm text-[hsl(var(--success))] flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Code {promoApplied} verified — 10% off applied.</p>
+                <p className="text-sm text-[hsl(var(--success))] flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Code {promoApplied} verified — {Math.round(promoDiscount * 100)}% off applied.</p>
               )}
               {promoState === "invalid" && (
                 <p className="text-sm text-destructive flex items-center gap-2"><AlertCircle className="w-4 h-4" /> Invalid promo code.</p>

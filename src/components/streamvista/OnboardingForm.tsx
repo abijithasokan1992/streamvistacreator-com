@@ -23,8 +23,7 @@ const ROLES = [
   "Other",
 ];
 
-const VALID_PROMO = "INDUSTRY100";
-const PROMO_DISCOUNT = 0.1;
+// Promo codes & discounts are validated server-side via the `validate-promo` edge function.
 
 const GST_RATE = 0.18;
 
@@ -54,7 +53,9 @@ export const OnboardingForm = ({ selected }: Props) => {
   const [contactPhone, setContactPhone] = useState("");
   const [promoInput, setPromoInput] = useState("");
   const [promoApplied, setPromoApplied] = useState<string | null>(null);
+  const [promoDiscount, setPromoDiscount] = useState(0);
   const [promoState, setPromoState] = useState<PromoState>("idle");
+  const [promoChecking, setPromoChecking] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [provider, setProvider] = useState<"razorpay" | "card">("razorpay");
@@ -65,29 +66,41 @@ export const OnboardingForm = ({ selected }: Props) => {
     selected === "quarterly" ? "cloudx_quarterly" : "cloudx_yearly";
 
   const subtotal = useMemo(
-    () => (promoApplied ? Math.round(plan.price * (1 - PROMO_DISCOUNT)) : plan.price),
-    [plan.price, promoApplied]
+    () => (promoApplied ? Math.round(plan.price * (1 - promoDiscount)) : plan.price),
+    [plan.price, promoApplied, promoDiscount]
   );
   const savings = plan.price - subtotal;
   const gstAmount = Math.round(subtotal * GST_RATE);
   const finalPrice = subtotal + gstAmount;
 
-  const handleApplyPromo = () => {
+  const handleApplyPromo = async () => {
     const code = promoInput.trim().toUpperCase();
-    if (!code) return;
-    if (code === VALID_PROMO) {
-      setPromoApplied(code);
-      setPromoState("valid");
-      toast.success("Promo applied — 10% discount unlocked");
-    } else {
-      setPromoApplied(null);
+    if (!code || promoChecking) return;
+    setPromoChecking(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("validate-promo", { body: { code } });
+      if (error || !data?.valid) {
+        setPromoApplied(null);
+        setPromoDiscount(0);
+        setPromoState("invalid");
+        toast.error("Invalid promo code");
+      } else {
+        setPromoApplied(data.code);
+        setPromoDiscount(data.discount);
+        setPromoState("valid");
+        toast.success(`Promo applied — ${Math.round(data.discount * 100)}% discount unlocked`);
+      }
+    } catch {
       setPromoState("invalid");
-      toast.error("Invalid promo code");
+      toast.error("Could not validate promo code");
+    } finally {
+      setPromoChecking(false);
     }
   };
 
   const removePromo = () => {
     setPromoApplied(null);
+    setPromoDiscount(0);
     setPromoState("idle");
     setPromoInput("");
   };

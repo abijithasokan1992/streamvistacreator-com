@@ -361,8 +361,6 @@ export const OnboardingForm = ({ selected }: Props) => {
             )}
             <p className="text-xs text-muted-foreground text-center">By submitting you agree to be contacted by the Crayons team to activate your workspace.</p>
           </form>
-            <p className="text-xs text-muted-foreground text-center">By submitting you agree to be contacted by the Crayons team to activate your workspace.</p>
-          </form>
 
           {/* SUMMARY */}
           <aside className="glass-strong rounded-3xl p-8 h-fit lg:sticky lg:top-24 animate-fade-in">

@@ -42,6 +42,8 @@ export default function Admin() {
       setTimeout(() => setCopied(false), 2000);
     } catch { toast.error("Copy failed"); }
   };
+
+  useEffect(() => {
     if (!loading && !user) navigate("/auth", { replace: true });
   }, [user, loading, navigate]);
 

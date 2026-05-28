@@ -254,7 +254,7 @@ export const OnboardingForm = ({ selected }: Props) => {
             </h2>
           </div>
           <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
-            A few details to get your team activated on the Mumbai sovereign node.
+            A few details to get your team activated on your workspace.
           </p>
         </div>
 
@@ -392,9 +392,6 @@ export const OnboardingForm = ({ selected }: Props) => {
             <div className="font-display text-2xl font-bold mb-1">Cloud X Plan</div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
               {plan.label} billing
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/10 text-accent text-[11px] font-semibold">
-                <Globe className="w-3 h-3" /> India West (Mumbai)
-              </span>
             </div>
 
             <div className="space-y-3 py-5 border-y border-border/60 text-sm">

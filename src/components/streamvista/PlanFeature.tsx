@@ -1,9 +1,9 @@
-import { HardDrive, MapPin, Activity, Users, Archive, LifeBuoy } from "lucide-react";
+import { HardDrive, ShieldCheck, Share2, Users, Archive, LifeBuoy } from "lucide-react";
 
 const features = [
   { icon: HardDrive, title: "Cloud Storage", desc: "Scalable, secure storage for your production assets." },
-  { icon: MapPin, title: "Mumbai Region", desc: "Data sovereignty with low-latency Mumbai-region storage." },
-  { icon: Activity, title: "99.9% Uptime SLA", desc: "Enterprise-grade reliability for production workloads." },
+  { icon: ShieldCheck, title: "Secure by Default", desc: "Encrypted at rest and in transit with granular access control." },
+  { icon: Share2, title: "Protected Sharing", desc: "Password, expiry and download-capped links for every file." },
   { icon: Users, title: "2 Concurrent Users", desc: "Collaborate seamlessly across teams and timelines." },
   { icon: Archive, title: "Archive Support", desc: "Cold storage tier for delivered projects and masters." },
   { icon: LifeBuoy, title: "Onboarding Support", desc: "White-glove setup, training and migration assistance." },

@@ -9,7 +9,6 @@ export const Navbar = () => (
         </div>
         <div className="leading-tight">
           <div className="font-display font-bold text-sm tracking-tight">StreamVista <span className="gradient-text">Cloud X</span></div>
-          <div className="text-[10px] text-muted-foreground uppercase tracking-[0.18em]">Crayons Creator Portal</div>
         </div>
       </div>
       <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">

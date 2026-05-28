@@ -7,7 +7,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index.tsx";
 import Auth from "./pages/Auth.tsx";
 import Admin from "./pages/Admin.tsx";
-import DMCA from "./pages/DMCA.tsx";
+
 import LaunchingSpecialPlan from "./pages/LaunchingSpecialPlan.tsx";
 import CheckoutReturn from "./pages/CheckoutReturn.tsx";
 import Vault from "./pages/Vault.tsx";
@@ -29,7 +29,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin" element={<Admin />} />
-            <Route path="/dmca" element={<DMCA />} />
+            
             <Route path="/launching-special-plan" element={<LaunchingSpecialPlan />} />
             <Route path="/checkout/return" element={<CheckoutReturn />} />
             <Route path="/vault" element={<Vault />} />

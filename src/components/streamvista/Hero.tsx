@@ -8,13 +8,7 @@ export const Hero = () => (
     <div className="absolute bottom-0 -right-32 w-[36rem] h-[36rem] rounded-full bg-primary-glow/10 blur-[140px]" />
 
     <div className="container relative">
-      {/* Tag rail */}
-      <div className="flex items-center gap-3 mb-10 animate-fade-in">
-        <div className="w-10 h-px bg-primary" />
-        <span className="font-mono-tech text-[10px] tracking-[0.3em] uppercase text-primary">
-          Mumbai Region · Sovereign Node 01
-        </span>
-      </div>
+      <div className="mb-10" />
 
       <div className="grid lg:grid-cols-[1.4fr_1fr] gap-12 lg:gap-20 items-end animate-fade-in">
         {/* Editorial headline */}
@@ -31,7 +25,7 @@ export const Hero = () => (
         {/* Sidebar copy + CTAs */}
         <div className="space-y-8 max-w-md">
           <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-            Sovereign storage, secure collaboration and enterprise-grade reliability —
+            Secure storage and collaboration —
             engineered for studios, VFX houses, post teams and independent creators.
           </p>
 

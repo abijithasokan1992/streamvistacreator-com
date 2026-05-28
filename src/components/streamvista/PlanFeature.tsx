@@ -18,7 +18,7 @@ export const PlanFeature = () => (
           <div className="flex items-center gap-3 mb-5">
             <div className="w-8 h-px bg-accent" />
             <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">
-              [ Phase 01 — Production Standards ]
+              [ Production Standards ]
             </span>
           </div>
           <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-5xl md:text-7xl">

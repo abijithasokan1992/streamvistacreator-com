@@ -54,28 +54,6 @@ export const Hero = () => (
         </div>
       </div>
 
-      {/* Spec strip */}
-      <div className="mt-20 grid grid-cols-2 md:grid-cols-4 border-y border-border/60">
-        {[
-          { k: "Region", v: "Mumbai", sub: "ap-south-1" },
-          { k: "Uptime", v: "99.9%", sub: "Production SLA" },
-          { k: "Storage", v: "Elastic", sub: "Cloud-first" },
-          { k: "Latency", v: "Sub-10ms", sub: "Intra-region" },
-        ].map((s, i) => (
-          <div
-            key={s.k}
-            className={`p-6 md:p-7 ${i !== 0 ? "md:border-l border-border/60" : ""} ${i % 2 === 1 ? "border-l border-border/60 md:border-l" : ""}`}
-          >
-            <span className="block font-mono-tech text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-2">
-              {s.k}
-            </span>
-            <span className="font-display font-black text-3xl md:text-4xl tracking-tight">
-              {s.v}
-            </span>
-            <span className="block text-[11px] text-muted-foreground mt-1">{s.sub}</span>
-          </div>
-        ))}
-      </div>
     </div>
   </section>
 );

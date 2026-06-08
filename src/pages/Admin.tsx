@@ -103,11 +103,11 @@ export default function Admin() {
     toast.success("Status updated");
   };
 
-  if (loading) return <div className="min-h-screen grid place-items-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
+  if (loading) return <div className="min-h-dvh grid place-items-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
 
   if (!isAdmin) {
     return (
-      <main className="min-h-screen grid place-items-center px-4">
+      <main className="min-h-dvh grid place-items-center px-4">
         <div className="glass-strong rounded-3xl p-10 max-w-md text-center animate-fade-in">
           <Crown className="w-12 h-12 mx-auto text-accent mb-4" />
           <h1 className="font-display text-2xl font-bold mb-2">No Admin Access</h1>
@@ -125,7 +125,7 @@ export default function Admin() {
   }
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-dvh">
       <header className="border-b border-border/50 glass sticky top-0 z-40">
         <div className="container flex items-center justify-between h-16">
           <div className="flex items-center gap-3">

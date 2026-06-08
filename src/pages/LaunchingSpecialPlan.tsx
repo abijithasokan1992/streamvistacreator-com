@@ -3,7 +3,7 @@ import { Footer } from "@/components/streamvista/Footer";
 import { MFILimitedEdition } from "@/components/streamvista/MFILimitedEdition";
 
 const LaunchingSpecialPlan = () => (
-  <main className="min-h-screen">
+  <main className="min-h-dvh">
     <Navbar />
     <section className="pt-32 pb-6">
       <div className="container max-w-6xl">

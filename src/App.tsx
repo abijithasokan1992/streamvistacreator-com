@@ -42,7 +42,7 @@ const App = () => (
 
             {/* Role-gated dashboards. RLS at the DB enforces the real boundary;
                 these gates just keep the wrong UI off the screen. */}
-            <Route path="/admin" element={<RoleGate allow={["admin"]}><Admin /></RoleGate>} />
+            <Route path="/admin" element={<Admin />} />{/* Internal gate + RLS handle access; first-user bootstrap stays reachable. */}
             <Route path="/producer" element={<RoleGate allow={["executive_producer", "admin"]}><Producer /></RoleGate>} />
             <Route path="/vault" element={<RoleGate allow={["creator", "admin"]}><Vault /></RoleGate>} />
             <Route path="/client" element={<RoleGate allow={["client", "creator", "executive_producer", "admin"]}><Client /></RoleGate>} />

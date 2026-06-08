@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Upload, Copy, Trash2, Shield, Cloud, Loader2 } from "lucide-react";
+import ReferralRewards from "@/components/dashboard/ReferralRewards";
 
 type Tier = "lite" | "sovereign";
 
@@ -271,6 +272,8 @@ const Vault = () => {
             </div>
           )}
         </Card>
+
+        <ReferralRewards />
       </main>
     </div>
   );

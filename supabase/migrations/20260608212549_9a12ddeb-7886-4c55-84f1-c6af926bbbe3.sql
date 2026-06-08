@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Visitors can read onboarding request identifiers" ON public.onboarding_requests;

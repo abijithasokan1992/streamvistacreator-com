@@ -22,7 +22,7 @@ export const Navbar = () => (
         <a href="/vault" className="hover:text-foreground transition-colors">Vault</a>
       </nav>
       <a href="#onboard" className="text-xs md:text-sm font-medium px-4 py-2 rounded-full bg-gradient-primary text-primary-foreground glow-primary hover:scale-105 transition-transform">
-        Reserve Cloud
+        Create crayons Vault Storage
       </a>
     </div>
   </header>

@@ -137,15 +137,32 @@ export default function Auth() {
     if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
     setSubmitting(true);
     if (view === "signup") {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: parsed.data.email,
         password: parsed.data.password,
         options: { emailRedirectTo: `${window.location.origin}/vault` },
       });
+      if (error) { setSubmitting(false); return toast.error(error.message); }
+      // If email confirmation is off, signUp returns a session — go straight in.
+      if (data.session) {
+        setSubmitting(false);
+        toast.success("Welcome to Cloud X.");
+        await continueAfterAuth();
+        return;
+      }
+      // Fallback: try immediate sign-in (works when auto-confirm is enabled server-side).
+      const { error: siErr } = await supabase.auth.signInWithPassword({
+        email: parsed.data.email,
+        password: parsed.data.password,
+      });
       setSubmitting(false);
-      if (error) return toast.error(error.message);
-      toast.success("Workspace created — check your inbox to verify.");
-      setView("login");
+      if (siErr) {
+        toast.success("Account created — check your inbox to verify, then sign in.");
+        setView("login");
+        return;
+      }
+      toast.success("Welcome to Cloud X.");
+      await continueAfterAuth();
     } else {
       const { error } = await supabase.auth.signInWithPassword({
         email: parsed.data.email,

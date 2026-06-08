@@ -120,8 +120,9 @@ const Vault = () => {
       toast.success("Uploaded — share link ready");
       setPassword(""); setExpiryDays(""); setMaxDownloads("");
       load();
-    } catch (e: any) {
-      toast.error(e?.message || "Upload failed");
+    } catch (e) {
+      console.error("Vault upload error", e);
+      toast.error("Upload failed. Please try again.");
     } finally {
       setUploading(false);
       setProgress(0);

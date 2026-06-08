@@ -61,7 +61,7 @@ function randomToken() {
 
 const VaultInner = () => {
   const { user, loading, signOut } = useAuth();
-  const { enqueue, setRunner } = useUploadManager();
+  const { enqueue } = useUploadManager();
   const [section, setSection] = useState<SectionId>("files");
   const [files, setFiles] = useState<SharedFile[]>([]);
   const [tier, setTier] = useState<Tier>("lite");
@@ -71,6 +71,7 @@ const VaultInner = () => {
   const [drag, setDrag] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+
 
 
   const load = async () => {

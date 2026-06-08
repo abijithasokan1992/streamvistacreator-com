@@ -248,7 +248,7 @@ const Vault = () => {
                     <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 mt-1">
                       <span>{fmtSize(f.size_bytes)}</span>
                       <span>{f.tier === "sovereign" ? "Sovereign" : "Lite"}</span>
-                      {f.password_hash && <span>🔒 Password</span>}
+                      {f.has_password && <span>🔒 Password</span>}
                       {f.expires_at && <span>Expires {new Date(f.expires_at).toLocaleDateString()}</span>}
                       <span>{f.download_count}{f.max_downloads ? `/${f.max_downloads}` : ""} downloads</span>
                       {f.revoked && <Badge variant="destructive">Revoked</Badge>}

@@ -4,7 +4,8 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { Loader2, Eye, EyeOff, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, dashboardForRole } from "@/hooks/useAuth";
+import { supabase as sb } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { planByCycle, type Cycle } from "@/components/streamvista/plans";
 

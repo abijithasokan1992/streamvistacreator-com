@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Upload, Copy, Trash2, Shield, Cloud, Loader2 } from "lucide-react";
 import ReferralRewards from "@/components/dashboard/ReferralRewards";
+import MyAccount from "@/components/dashboard/MyAccount";
 
 type Tier = "lite" | "sovereign";
 
@@ -153,7 +154,7 @@ const Vault = () => {
     <div className="min-h-dvh bg-background text-foreground">
       <header className="border-b border-border">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="font-bold text-xl">Cloud X · Vault</Link>
+          <Link to="/" className="font-bold text-xl">My Vault</Link>
           <div className="text-sm text-muted-foreground">{user.email}</div>
         </div>
       </header>
@@ -161,10 +162,10 @@ const Vault = () => {
       <main className="container mx-auto px-4 py-8 max-w-5xl space-y-8">
         <div>
           <h1 className="text-3xl font-bold mb-2">Secure File Vault</h1>
-          <p className="text-muted-foreground">Upload up to 2.5 GB per file. Share with link + password + expiry.</p>
+          <p className="text-muted-foreground">Upload up to 2.5 GB per file. Share with link, password and expiry.</p>
         </div>
 
-        {/* Tier picker */}
+        {/* Tier picker — plain language */}
         <div className="grid md:grid-cols-2 gap-4">
           <Card
             onClick={() => setTier("lite")}
@@ -172,7 +173,7 @@ const Vault = () => {
           >
             <div className="flex items-center gap-2 mb-2">
               <Cloud className="h-5 w-5" />
-              <h3 className="font-semibold">Cloud X Lite</h3>
+              <h3 className="font-semibold">Standard Storage</h3>
               <Badge variant="secondary">Free · 5 GB</Badge>
             </div>
             <p className="text-sm text-muted-foreground">Fast global storage. Great for previews and proofs.</p>
@@ -183,12 +184,13 @@ const Vault = () => {
           >
             <div className="flex items-center gap-2 mb-2">
               <Shield className="h-5 w-5" />
-              <h3 className="font-semibold">Cloud X Sovereign</h3>
+              <h3 className="font-semibold">India Secure Storage</h3>
               <Badge>₹499/mo · 500 GB</Badge>
             </div>
-            <p className="text-sm text-muted-foreground">India-sovereign node. Password + expiry + download caps.</p>
+            <p className="text-sm text-muted-foreground">Data stays in India. Adds password, expiry, and download limits.</p>
           </Card>
         </div>
+
 
         {/* Upload */}
         <Card className="p-6">
@@ -206,7 +208,7 @@ const Vault = () => {
           >
             <Upload className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
             <p className="font-medium">{uploading ? "Uploading…" : "Drag & drop or click to choose"}</p>
-            <p className="text-xs text-muted-foreground mt-1">Max 2.5 GB · tier: {tier === "lite" ? "Cloud X Lite" : "Cloud X Sovereign"}</p>
+            <p className="text-xs text-muted-foreground mt-1">Max 2.5 GB · using: {tier === "lite" ? "Standard Storage" : "India Secure Storage"}</p>
             {uploading && (
               <div className="mt-4 flex items-center justify-center gap-2 text-sm">
                 <Loader2 className="h-4 w-4 animate-spin" /> {progress}%
@@ -249,7 +251,7 @@ const Vault = () => {
                     <div className="font-medium truncate">{f.filename}</div>
                     <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 mt-1">
                       <span>{fmtSize(f.size_bytes)}</span>
-                      <span>{f.tier === "sovereign" ? "Sovereign" : "Lite"}</span>
+                      <span>{f.tier === "sovereign" ? "India Secure" : "Standard"}</span>
                       {f.has_password && <span>🔒 Password</span>}
                       {f.expires_at && <span>Expires {new Date(f.expires_at).toLocaleDateString()}</span>}
                       <span>{f.download_count}{f.max_downloads ? `/${f.max_downloads}` : ""} downloads</span>
@@ -272,6 +274,8 @@ const Vault = () => {
             </div>
           )}
         </Card>
+
+        <MyAccount />
 
         <ReferralRewards />
       </main>

@@ -18,18 +18,18 @@ export const PlanFeature = () => (
           <div className="flex items-center gap-3 mb-5">
             <div className="w-8 h-px bg-accent" />
             <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">
-              [ Production Standards ]
+              Production Standards
             </span>
           </div>
           <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-5xl md:text-7xl">
-            One plan.
+            Professional tools.
             <br />
-            <span className="gradient-text">Built for production.</span>
+            <span className="gradient-text">Scalable plans.</span>
           </h2>
         </div>
         <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
           Everything a studio, VFX house, or independent creator needs to ship —
-          no add-on tier, no asterisks.
+          from free tier to full production scale.
         </p>
       </div>
 

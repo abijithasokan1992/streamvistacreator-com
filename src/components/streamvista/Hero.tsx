@@ -35,7 +35,7 @@ export const Hero = () => (
               className="cta-guide group relative h-14 inline-flex items-center justify-between px-6 bg-gradient-primary text-primary-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md"
             >
               <span className="cta-hint">Start here</span>
-              View Launch Plan
+              <span className="flex-1 text-center">View Launch Plan</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </a>
             <a

@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      branding_settings: {
+        Row: {
+          allow_user_logos: boolean
+          created_at: string
+          footer_logo_position: string
+          footer_logo_url: string | null
+          id: string
+          show_wordmark: boolean
+          site_logo_position: string
+          site_logo_url: string | null
+          updated_at: string
+          updated_by: string | null
+          user_logos_paid_only: boolean
+        }
+        Insert: {
+          allow_user_logos?: boolean
+          created_at?: string
+          footer_logo_position?: string
+          footer_logo_url?: string | null
+          id?: string
+          show_wordmark?: boolean
+          site_logo_position?: string
+          site_logo_url?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          user_logos_paid_only?: boolean
+        }
+        Update: {
+          allow_user_logos?: boolean
+          created_at?: string
+          footer_logo_position?: string
+          footer_logo_url?: string | null
+          id?: string
+          show_wordmark?: boolean
+          site_logo_position?: string
+          site_logo_url?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          user_logos_paid_only?: boolean
+        }
+        Relationships: []
+      }
       dmca_requests: {
         Row: {
           accuracy_statement: boolean
@@ -496,6 +538,75 @@ export type Database = {
           stripe_subscription_id?: string
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      support_requests: {
+        Row: {
+          admin_reply: string | null
+          created_at: string
+          id: string
+          message: string
+          request_type: string
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_reply?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          request_type: string
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_reply?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          request_type?: string
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          personal_logo_url: string | null
+          plan_tier: string
+          studio_name: string | null
+          updated_at: string
+          user_id: string
+          whatsapp: string | null
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          personal_logo_url?: string | null
+          plan_tier?: string
+          studio_name?: string | null
+          updated_at?: string
+          user_id: string
+          whatsapp?: string | null
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          personal_logo_url?: string | null
+          plan_tier?: string
+          studio_name?: string | null
+          updated_at?: string
+          user_id?: string
+          whatsapp?: string | null
         }
         Relationships: []
       }

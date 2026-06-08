@@ -1,4 +1,4 @@
-export type Cycle = "monthly" | "quarterly" | "yearly";
+export type Cycle = "free" | "monthly" | "quarterly" | "yearly";
 
 export interface Plan {
   cycle: Cycle;
@@ -12,6 +12,15 @@ export interface Plan {
 }
 
 export const PLANS: Plan[] = [
+  {
+    cycle: "free",
+    label: "Free",
+    price: 0,
+    priceLabel: "₹0",
+    cadence: "/forever",
+    badge: "Default",
+    description: "Get started instantly. Storage and sharing on the house — upgrade anytime from your account.",
+  },
   {
     cycle: "monthly",
     label: "Monthly",

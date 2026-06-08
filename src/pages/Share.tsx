@@ -77,7 +77,7 @@ const Share = () => {
               <h1 className="text-xl font-bold break-all">{info.filename}</h1>
               <div className="text-sm text-muted-foreground mt-1 flex flex-wrap gap-x-3">
                 <span>{fmtSize(info.size_bytes)}</span>
-                <span>{info.tier === "sovereign" ? "Sovereign tier" : "Lite tier"}</span>
+                <span>{info.tier === "sovereign" ? "India Secure Storage" : "Standard Storage"}</span>
                 {info.expires_at && <span>Expires {new Date(info.expires_at).toLocaleDateString()}</span>}
                 {info.downloads_left != null && <span>{info.downloads_left} downloads left</span>}
               </div>

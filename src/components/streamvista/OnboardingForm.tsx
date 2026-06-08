@@ -60,6 +60,7 @@ export const OnboardingForm = ({ selected }: Props) => {
   const [done, setDone] = useState(false);
   const [provider, setProvider] = useState<"razorpay" | "card">("razorpay");
   const [stripeCheckout, setStripeCheckout] = useState<null | { email?: string }>(null);
+  const [showExtras, setShowExtras] = useState(false);
 
   const stripePriceId =
     selected === "monthly" ? "cloudx_monthly" :

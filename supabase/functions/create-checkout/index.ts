@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
 import { type StripeEnv, createStripeClient } from "../_shared/stripe.ts";
 
 const ALLOWED_PRICE_IDS = new Set(["cloudx_monthly", "cloudx_quarterly", "cloudx_yearly"]);
@@ -38,7 +38,7 @@ async function resolveOrCreateCustomer(
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response("ok", { headers: buildCorsHeaders(req) });
 
   try {
     const { priceId, returnUrl, environment } = await req.json();
@@ -65,17 +65,17 @@ Deno.serve(async (req) => {
 
     if (!priceId || !ALLOWED_PRICE_IDS.has(priceId)) {
       return new Response(JSON.stringify({ error: "Invalid priceId" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...buildCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
     if (environment !== "sandbox" && environment !== "live") {
       return new Response(JSON.stringify({ error: "Invalid environment" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...buildCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
     if (!returnUrl || typeof returnUrl !== "string") {
       return new Response(JSON.stringify({ error: "Missing returnUrl" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...buildCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -89,18 +89,18 @@ Deno.serve(async (req) => {
       returnOrigin = new URL(returnUrl).origin;
     } catch {
       return new Response(JSON.stringify({ error: "Invalid returnUrl" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...buildCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
     if (!allowList.length) {
       console.error("SITE_ORIGIN is not configured");
       return new Response(JSON.stringify({ error: "Server misconfiguration" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500, headers: { ...buildCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
     if (!allowList.includes(returnOrigin)) {
       return new Response(JSON.stringify({ error: "Invalid returnUrl" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...buildCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -137,12 +137,12 @@ Deno.serve(async (req) => {
     });
 
     return new Response(JSON.stringify({ clientSecret: session.client_secret }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...buildCorsHeaders(req), "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("create-checkout error", e);
     return new Response(JSON.stringify({ error: "Checkout session creation failed" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...buildCorsHeaders(req), "Content-Type": "application/json" },
     });
   }
 });

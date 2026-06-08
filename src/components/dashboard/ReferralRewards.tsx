@@ -107,7 +107,7 @@ export default function ReferralRewards() {
 
   const shareNative = async () => {
     if (!shareUrl) return;
-    const text = "Join me on Crayons Creator Cloud — secure, India-sovereign storage for creators.";
+    const text = "Join me on StreamVista — simple, secure storage for creators.";
     if (navigator.share) {
       try { await navigator.share({ title: "Crayons Creator Cloud", text, url: shareUrl }); return; } catch { /* user cancelled */ }
     }

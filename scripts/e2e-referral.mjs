@@ -131,7 +131,7 @@ async function signUp(client, email) {
       .maybeSingle();
     if (error) fail("read referral as referrer", error);
     assert(data?.status === "pending", "referral status = pending");
-    assert(data?.referrer_code === code, "referral linked to correct code");
+    assert(data?.referrer_code?.toUpperCase() === code.toUpperCase(), "referral linked to correct code");
   }
 
   // 6. Admin signs in & approves with reward

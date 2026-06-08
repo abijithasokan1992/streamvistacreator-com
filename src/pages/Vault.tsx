@@ -90,6 +90,8 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
   };
 
   useEffect(() => { load(); }, [user?.id]);
+  useEffect(() => { if (reloadRef) reloadRef.current = load; }, [reloadRef, user?.id]);
+
 
   const stats = useMemo(() => {
     const active = files.filter((f) => !f.revoked);

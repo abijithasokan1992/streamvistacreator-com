@@ -157,19 +157,8 @@ const Vault = () => {
     load();
   };
 
-  const stats = useMemo(() => {
-    const active = files.filter((f) => !f.revoked);
-    const totalBytes = files.reduce((s, f) => s + f.size_bytes, 0);
-    const totalDownloads = files.reduce((s, f) => s + (f.download_count || 0), 0);
-    const protectedCount = files.filter((f) => f.has_password).length;
-    return {
-      fileCount: files.length,
-      activeCount: active.length,
-      totalBytes,
-      totalDownloads,
-      protectedCount,
-    };
-  }, [files]);
+
+
 
   const UploadDialog = (
     <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>

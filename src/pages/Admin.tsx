@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import PremiumInvitations from "@/components/admin/PremiumInvitations";
 import OracleStorageMonitor from "@/components/admin/OracleStorageMonitor";
 import FreeTierConfig from "@/components/admin/FreeTierConfig";
+import BrandingSettings from "@/components/admin/BrandingSettings";
+import SupportInbox from "@/components/admin/SupportInbox";
 
 interface Row {
   id: string;
@@ -135,8 +137,8 @@ export default function Admin() {
             <div className="w-9 h-9 rounded-xl bg-gradient-primary grid place-items-center glow-primary">
               <ShieldCheck className="w-5 h-5 text-primary-foreground" />
             </div>
-            <div>
-              <div className="font-display font-bold text-sm">Crayons Control · Admin</div>
+            <div title="Crayons Creator Portal">
+              <div className="font-display font-bold text-sm">Admin</div>
               <div className="text-[11px] text-muted-foreground">{user?.email}</div>
             </div>
           </div>
@@ -159,9 +161,12 @@ export default function Admin() {
       </header>
 
       <section className="container py-10 space-y-10">
+        <BrandingSettings />
         <FreeTierConfig />
+        <SupportInbox />
         <PremiumInvitations />
         <OracleStorageMonitor />
+
 
 
         <div className="flex items-baseline justify-between mb-6">

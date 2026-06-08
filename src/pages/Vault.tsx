@@ -59,19 +59,19 @@ function randomToken() {
   return Array.from(arr).map((b) => b.toString(36).padStart(2, "0")).join("").slice(0, 24);
 }
 
-const Vault = () => {
+const VaultInner = () => {
   const { user, loading, signOut } = useAuth();
+  const { enqueue, setRunner } = useUploadManager();
   const [section, setSection] = useState<SectionId>("files");
   const [files, setFiles] = useState<SharedFile[]>([]);
   const [tier, setTier] = useState<Tier>("lite");
   const [password, setPassword] = useState("");
   const [expiryDays, setExpiryDays] = useState<number | "">("");
   const [maxDownloads, setMaxDownloads] = useState<number | "">("");
-  const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [drag, setDrag] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+
 
   const load = async () => {
     if (!user) return;

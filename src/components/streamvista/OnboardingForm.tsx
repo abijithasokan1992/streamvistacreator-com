@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { CheckCircle2, Loader2, BadgeCheck, AlertCircle, Tag } from "lucide-react";
+import { CheckCircle2, Loader2, BadgeCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,62 +9,46 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 const ROLES = [
-  "Creator",
-  "Editor",
-  "Director",
-  "Cinematographer",
-  "Production Studio",
-  "Production House",
-  "Post-Production Team",
-  "VFX Facility",
-  "Independent Filmmaker",
-  "Other",
+  "Creator", "Editor", "Director", "Cinematographer",
+  "Production Studio", "Production House", "Post-Production Team",
+  "VFX Facility", "Independent Filmmaker", "Other",
 ];
 
 const Schema = z.object({
-  accessCode: z.string().trim().max(50).optional(),
   clientName: z.string().trim().min(2, "Please enter your name").max(200),
   professionalRole: z.string().min(1, "Please pick your role"),
   businessEmail: z.string().trim().email("Please enter a valid email").max(255),
   contactPhone: z.string().trim().max(30).or(z.literal("")),
 });
 
-type PromoState = "idle" | "valid" | "invalid";
+/** Fire-and-forget welcome notifications (Email now; SMS/WhatsApp stubbed).
+ *  Never awaited from the signup flow so it can't block or break the UI. */
+function fireWelcomeNotifications(email: string, name: string) {
+  // Email via existing app-email function if deployed; silently ignore if not.
+  supabase.functions
+    .invoke("send-transactional-email", {
+      body: {
+        templateName: "account-created",
+        recipientEmail: email,
+        idempotencyKey: `signup-${email}-${Date.now()}`,
+        templateData: { name },
+      },
+    })
+    .catch(() => { /* infra optional — stub */ });
+  // SMS + WhatsApp: stubbed for now, wired once Twilio creds are added.
+}
 
 export const OnboardingForm = () => {
-  const [accessCode, setAccessCode] = useState("");
   const [clientName, setClientName] = useState("");
   const [professionalRole, setProfessionalRole] = useState("");
   const [businessEmail, setBusinessEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
-  const [promoInput, setPromoInput] = useState("");
-  const [promoApplied, setPromoApplied] = useState<string | null>(null);
-  const [promoState, setPromoState] = useState<PromoState>("idle");
-  const [promoChecking, setPromoChecking] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
-  const [showExtras, setShowExtras] = useState(false);
-
-  const handleApplyPromo = async () => {
-    const code = promoInput.trim().toUpperCase();
-    if (!code || promoChecking) return;
-    setPromoChecking(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("validate-promo", { body: { code } });
-      if (error || !data?.valid) {
-        setPromoApplied(null); setPromoState("invalid"); toast.error("That code didn't work");
-      } else {
-        setPromoApplied(data.code); setPromoState("valid");
-        toast.success(`Code ${data.code} applied — saved for your first upgrade`);
-      }
-    } catch {
-      setPromoState("invalid"); toast.error("Could not check that code");
-    } finally { setPromoChecking(false); }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = Schema.safeParse({ accessCode, clientName, professionalRole, businessEmail, contactPhone });
+    const parsed = Schema.safeParse({ clientName, professionalRole, businessEmail, contactPhone });
     if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
     setSubmitting(true);
     toast.loading("Setting up your StreamVista workspace...", { id: "onboard" });
@@ -74,34 +58,25 @@ export const OnboardingForm = () => {
       professional_role: parsed.data.professionalRole,
       contact_phone: parsed.data.contactPhone || null,
       business_email: parsed.data.businessEmail,
-      access_code: parsed.data.accessCode || null,
       selected_cycle: "free",
       base_price: 0,
       final_price: 0,
-      promo_code: promoApplied,
       onboarding_status: "pending",
       payment_status: "free",
+      plan_type: "free",
     });
 
     toast.dismiss("onboard");
 
     if (error) {
       setSubmitting(false);
-      toast.error("Could not set up your account. Please try again.");
+      console.error("[onboard] insert failed:", error);
+      toast.error(error.message || "Could not set up your account. Please try again.");
       return;
     }
 
-    // Trigger account-created notification (email channel only; SMS + WhatsApp stubbed)
-    try {
-      await supabase.functions.invoke("send-transactional-email", {
-        body: {
-          templateName: "account-created",
-          recipientEmail: parsed.data.businessEmail,
-          idempotencyKey: `signup-${parsed.data.businessEmail}-${Date.now()}`,
-          templateData: { name: parsed.data.clientName },
-        },
-      });
-    } catch { /* infra optional; swallow */ }
+    // Trigger welcome notifications asynchronously — do NOT await.
+    fireWelcomeNotifications(parsed.data.businessEmail, parsed.data.clientName);
 
     setSubmitting(false);
     setDone(true);
@@ -181,52 +156,6 @@ export const OnboardingForm = () => {
             <Input id="phone" type="tel" value={contactPhone} onChange={e => setContactPhone(e.target.value)}
               placeholder="+91 9xxxxxxxxx" className="bg-input/60 border-border h-12" />
           </div>
-
-          {!showExtras && (
-            <button type="button" onClick={() => setShowExtras(true)}
-              className="text-xs text-accent underline underline-offset-4 hover:text-accent/80">
-              Got an Invite Code or Promo Code?
-            </button>
-          )}
-
-          {showExtras && (
-            <div className="space-y-4 border-t border-border/50 pt-4">
-              <div className="space-y-2">
-                <Label htmlFor="accessCode" className="text-sm">Invite Code (Optional)</Label>
-                <Input id="accessCode" value={accessCode} onChange={e => setAccessCode(e.target.value)}
-                  placeholder="e.g. SVX-1234" className="bg-input/60 border-border h-12" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm">Got a Promo Code?</Label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input value={promoInput}
-                      onChange={e => { setPromoInput(e.target.value); setPromoState("idle"); }}
-                      placeholder="Enter code" disabled={!!promoApplied}
-                      className="bg-input/60 border-border h-12 pl-10 uppercase" />
-                  </div>
-                  {promoApplied ? (
-                    <button type="button" onClick={() => { setPromoApplied(null); setPromoInput(""); setPromoState("idle"); }}
-                      className="px-5 h-12 rounded-md border border-border text-sm font-medium hover:bg-secondary">Remove</button>
-                  ) : (
-                    <button type="button" onClick={handleApplyPromo} disabled={promoChecking}
-                      className="px-5 h-12 rounded-md bg-gradient-primary text-primary-foreground text-sm font-semibold hover:scale-[1.02] transition-transform disabled:opacity-60">
-                      {promoChecking ? "Checking…" : "Apply"}
-                    </button>
-                  )}
-                </div>
-                {promoState === "valid" && (
-                  <p className="text-sm text-[hsl(var(--success))] flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4" /> Saved for your first upgrade.
-                  </p>
-                )}
-                {promoState === "invalid" && (
-                  <p className="text-sm text-destructive flex items-center gap-2"><AlertCircle className="w-4 h-4" /> Code not recognised.</p>
-                )}
-              </div>
-            </div>
-          )}
 
           <button type="submit" disabled={submitting}
             className={cn(

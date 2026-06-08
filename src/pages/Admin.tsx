@@ -313,28 +313,72 @@ function MetricCard({ label, value }: { label: string; value: string }) {
 
 function DomainHostingPanel() {
   const currentOrigin = typeof window !== "undefined" ? window.location.origin : "";
-  const [primary, setPrimary] = useState("streamvistacreator.com");
-  const [extra, setExtra] = useState("www.streamvistacreator.com");
+  const [primary, setPrimary] = useState("");
+  const [extra, setExtra] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase
+        .from("site_config")
+        .select("primary_domain, extra_origins")
+        .eq("id", true)
+        .maybeSingle();
+      if (!error && data) {
+        setPrimary(data.primary_domain ?? "");
+        setExtra((data.extra_origins ?? []).join(", "));
+      }
+      setLoading(false);
+    })();
+  }, []);
+
+  const normalize = (s: string) => {
+    const t = s.trim().replace(/\/$/, "");
+    if (!t) return "";
+    return /^https?:\/\//i.test(t) ? t : `https://${t}`;
+  };
+
+  const onSave = async () => {
+    setSaving(true);
+    const primary_domain = normalize(primary);
+    const extra_origins = extra
+      .split(",").map(normalize).filter(Boolean);
+    const { error } = await supabase
+      .from("site_config")
+      .upsert({ id: true, primary_domain, extra_origins }, { onConflict: "id" });
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Saved. Edge functions pick up the new origin within ~60s.");
+  };
+
   return (
     <div className="glass rounded-2xl p-6 space-y-5">
       <div>
         <h2 className="font-display text-2xl font-bold flex items-center gap-2"><Code2 className="w-5 h-5 text-accent" /> Domain & Hosting</h2>
         <p className="text-xs text-muted-foreground mt-1">Manage the primary domain that powers links, emails and CORS. Current origin: <span className="font-mono text-foreground">{currentOrigin}</span></p>
       </div>
-      <div className="grid sm:grid-cols-2 gap-4">
-        <div className="space-y-1.5">
-          <label className="text-xs uppercase tracking-wider text-muted-foreground">Primary domain</label>
-          <input value={primary} onChange={e => setPrimary(e.target.value)} placeholder="example.com" className="w-full h-11 px-3 rounded-xl bg-secondary/40 border border-border/60 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" />
-        </div>
-        <div className="space-y-1.5">
-          <label className="text-xs uppercase tracking-wider text-muted-foreground">Additional origins (comma-separated)</label>
-          <input value={extra} onChange={e => setExtra(e.target.value)} placeholder="www.example.com" className="w-full h-11 px-3 rounded-xl bg-secondary/40 border border-border/60 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" />
-        </div>
-      </div>
-      <button
-        onClick={() => toast.success("Saved. Lovable Cloud picks up the new origin on next request.")}
-        className="h-11 px-5 rounded-xl bg-gradient-primary text-primary-foreground font-semibold glow-primary text-sm"
-      >Save & Apply</button>
+      {loading ? (
+        <div className="py-8 grid place-items-center"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+      ) : (
+        <>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs uppercase tracking-wider text-muted-foreground">Primary domain</label>
+              <input value={primary} onChange={e => setPrimary(e.target.value)} placeholder="https://example.com" className="w-full h-11 px-3 rounded-xl bg-secondary/40 border border-border/60 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs uppercase tracking-wider text-muted-foreground">Additional origins (comma-separated)</label>
+              <input value={extra} onChange={e => setExtra(e.target.value)} placeholder="https://www.example.com" className="w-full h-11 px-3 rounded-xl bg-secondary/40 border border-border/60 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" />
+            </div>
+          </div>
+          <button
+            onClick={onSave}
+            disabled={saving}
+            className="h-11 px-5 rounded-xl bg-gradient-primary text-primary-foreground font-semibold glow-primary text-sm disabled:opacity-60 inline-flex items-center gap-2"
+          >{saving && <Loader2 className="w-4 h-4 animate-spin" />} Save & Apply</button>
+        </>
+      )}
       <div className="rounded-xl border border-border/40 bg-secondary/20 p-4 text-xs text-muted-foreground space-y-1">
         <p className="font-semibold text-foreground">DNS records (point your registrar here):</p>
         <p>A · @ → <span className="font-mono text-foreground">185.158.133.1</span></p>

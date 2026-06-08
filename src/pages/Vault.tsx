@@ -122,33 +122,8 @@ const VaultInner = () => {
     toast.success(`${file.name} added to upload queue`);
   };
 
-  // Register the actual upload runner with the manager (Supabase Storage + DB row + optional password)
-  useEffect(() => {
-    if (!user) return;
-    setRunner(async (file, opts) => {
-      const token = randomToken();
-      const ext = file.name.includes(".") ? file.name.split(".").pop() : "bin";
-      const path = `${user.id}/${token}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("vault").upload(path, file, {
-        cacheControl: "3600", upsert: false, contentType: file.type || "application/octet-stream",
-      });
-      if (upErr) throw upErr;
-      const expiresAt = opts.expiryDays ? new Date(Date.now() + Number(opts.expiryDays) * 86400000).toISOString() : null;
-      const { data: inserted, error: dbErr } = await supabase.from("shared_files").insert({
-        owner_id: user.id, storage_path: path, filename: file.name, size_bytes: file.size,
-        mime_type: file.type || null, tier: opts.tier, share_token: token, expires_at: expiresAt,
-        max_downloads: opts.maxDownloads ? Number(opts.maxDownloads) : null,
-      }).select("id").single();
-      if (dbErr) throw dbErr;
-      if (opts.password && inserted?.id) {
-        const { error: pwErr } = await supabase.functions.invoke("vault-share", {
-          body: { action: "set-password", fileId: inserted.id, newPassword: opts.password },
-        });
-        if (pwErr) throw pwErr;
-      }
-      load();
-    });
-  }, [user?.id, setRunner]);
+  // Nothing else needed here — the provider owns the upload pipeline via its `config` prop on the outer wrapper.
+
 
 
   const copyLink = (token: string) => {

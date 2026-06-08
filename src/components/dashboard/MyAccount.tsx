@@ -324,7 +324,7 @@ function UpgradeSection({ currentTier, email, name, userId, onUpgraded }: { curr
       handler: async (resp: any) => {
         const { data: vData } = await supabase.functions.invoke("verify-razorpay-payment", {
           body: {
-            onboardingId: inserted.id,
+            onboardingId,
             userId,
             razorpay_order_id: resp.razorpay_order_id,
             razorpay_payment_id: resp.razorpay_payment_id,

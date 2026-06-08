@@ -86,10 +86,11 @@ export default function ReferralRewards() {
     return () => { supabase.removeChannel(ch); };
   }, [user]);
 
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const baseUrl = "https://streamvistacreator.com";
   const shareUrl = useMemo(() =>
-    code ? `${origin}/?utm_campaign=referral&utm_source=link&ref=${encodeURIComponent(code)}` : "",
-    [code, origin]);
+    code ? `${baseUrl}/?utm_campaign=referral&utm_source=link&ref=${encodeURIComponent(code)}` : "",
+    [code]);
+
 
   const copy = async () => {
     if (!shareUrl) return;

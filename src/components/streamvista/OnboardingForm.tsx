@@ -93,9 +93,10 @@ export const OnboardingForm = () => {
             </div>
             <h3 className="font-display text-3xl font-bold mb-3">Welcome to <span className="gradient-text">StreamVista</span></h3>
             <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-              Your free workspace is being set up. We've sent the next steps to <span className="text-foreground">{businessEmail}</span>.
-              Sign in to start sharing files, and upgrade anytime from your account.
+              Your free workspace for <span className="text-foreground">{businessEmail}</span> is ready.
+              Sign in to start sharing files — you can upgrade anytime from your account.
             </p>
+
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent text-sm font-semibold">
               <BadgeCheck className="w-4 h-4" /> Free plan · Active
             </div>

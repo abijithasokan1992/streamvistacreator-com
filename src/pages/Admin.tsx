@@ -13,6 +13,7 @@ import OracleStorageMonitor from "@/components/admin/OracleStorageMonitor";
 import FreeTierConfig from "@/components/admin/FreeTierConfig";
 import BrandingSettings from "@/components/admin/BrandingSettings";
 import SupportInbox from "@/components/admin/SupportInbox";
+import OnboardingApprovals from "@/components/admin/OnboardingApprovals";
 
 interface Row {
   id: string;
@@ -182,50 +183,7 @@ export default function Admin() {
             <BrandingSettings />
             <FreeTierConfig />
             <SupportInbox />
-            <div className="glass rounded-2xl p-6">
-              <div className="flex items-baseline justify-between mb-6 flex-wrap gap-2">
-                <div>
-                  <h2 className="font-display text-2xl font-bold flex items-center gap-2"><Inbox className="w-5 h-5 text-accent" /> Onboarding Requests</h2>
-                  <p className="text-sm text-muted-foreground mt-1">{rows.length} total · live from the database</p>
-                </div>
-              </div>
-              <div className="grid gap-4">
-                {rows.map(r => (
-                  <div key={r.id} id={`req-${r.id}`} className="glass rounded-2xl p-6 grid md:grid-cols-[1.4fr_1fr_auto] gap-6 items-start animate-fade-in scroll-mt-24">
-                    <div>
-                      <div className="font-display font-bold text-lg">{r.client_name}</div>
-                      <div className="text-xs text-muted-foreground mb-3">{r.professional_role} · {new Date(r.created_at).toLocaleString()}</div>
-                      <div className="flex flex-wrap gap-3 text-xs">
-                        {r.business_email && <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-secondary/60"><Mail className="w-3 h-3" /> {r.business_email}</span>}
-                        {r.contact_phone && <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-secondary/60"><Phone className="w-3 h-3" /> {r.contact_phone}</span>}
-                        {r.promo_code && <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-accent/10 text-accent"><Tag className="w-3 h-3" /> {r.promo_code}</span>}
-                      </div>
-                    </div>
-                    <div className="text-sm space-y-1">
-                      <div className="text-muted-foreground text-xs uppercase tracking-wider">Plan</div>
-                      <div className="font-semibold capitalize">{r.selected_cycle}</div>
-                      <div className="text-muted-foreground">₹{Number(r.final_price).toLocaleString("en-IN")} <span className="text-xs">(base ₹{Number(r.base_price).toLocaleString("en-IN")})</span></div>
-                      <div className="mt-2">
-                        <span className={`inline-block px-2 py-0.5 rounded text-[11px] font-semibold ${r.payment_status === "paid" ? "bg-green-500/15 text-green-400" : r.payment_status === "failed" ? "bg-destructive/15 text-destructive" : "bg-muted/50 text-muted-foreground"}`}>
-                          Payment: {r.payment_status}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="md:w-44 space-y-2">
-                      <div className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Onboarding</div>
-                      <Select value={r.onboarding_status} onValueChange={v => setStatus(r.id, v)}>
-                        <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-                        <SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}</SelectContent>
-                      </Select>
-                      <AuditTrail requestId={r.id} clientName={r.client_name} />
-                    </div>
-                  </div>
-                ))}
-                {rows.length === 0 && !fetching && (
-                  <div className="text-center py-20 text-muted-foreground">No onboarding requests yet.</div>
-                )}
-              </div>
-            </div>
+            <OnboardingApprovals />
           </TabsContent>
 
           {/* 2. Finance & Billing */}

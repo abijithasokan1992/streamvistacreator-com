@@ -14,6 +14,7 @@ import FreeTierConfig from "@/components/admin/FreeTierConfig";
 import BrandingSettings from "@/components/admin/BrandingSettings";
 import SupportInbox from "@/components/admin/SupportInbox";
 import OnboardingApprovals from "@/components/admin/OnboardingApprovals";
+import PartnerLogos from "@/components/admin/PartnerLogos";
 
 interface Row {
   id: string;
@@ -181,6 +182,7 @@ export default function Admin() {
           <TabsContent value="ops" className="space-y-8 mt-0 animate-fade-in">
             <DeptHeader icon={<Briefcase className="w-5 h-5" />} title="Business & Operations" desc="Subscriptions, user roles, branding & CMS controls." />
             <BrandingSettings />
+            <PartnerLogos />
             <FreeTierConfig />
             <SupportInbox />
             <OnboardingApprovals />

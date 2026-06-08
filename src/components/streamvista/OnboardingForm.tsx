@@ -60,6 +60,7 @@ export const OnboardingForm = ({ selected }: Props) => {
   const [done, setDone] = useState(false);
   const [provider, setProvider] = useState<"razorpay" | "card">("razorpay");
   const [stripeCheckout, setStripeCheckout] = useState<null | { email?: string }>(null);
+  const [showExtras, setShowExtras] = useState(false);
 
   const stripePriceId =
     selected === "monthly" ? "cloudx_monthly" :
@@ -244,36 +245,79 @@ export const OnboardingForm = ({ selected }: Props) => {
             <div className="flex items-center gap-3 mb-5">
               <div className="w-8 h-px bg-accent" />
               <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">
-                [ Onboarding Workspace ]
+                [ StreamVista Onboarding ]
               </span>
             </div>
             <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-5xl md:text-7xl">
-              Reserve your
+              Create your
               <br />
-              <span className="gradient-text">Cloud X workspace.</span>
+              <span className="gradient-text">Crayons Workspace.</span>
             </h2>
           </div>
-          <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
-            A few details to get your team activated on your workspace.
-          </p>
         </div>
 
         <div className="grid lg:grid-cols-[1.4fr_1fr] gap-6">
           {/* FORM */}
           <form onSubmit={handleSubmit} className="glass rounded-3xl p-8 space-y-5 animate-fade-in">
-            <div className="space-y-2">
-              <Label htmlFor="accessCode" className="text-xs uppercase tracking-wider text-muted-foreground">Access Authorization Code <span className="opacity-50">(optional)</span></Label>
-              <Input id="accessCode" value={accessCode} onChange={e => setAccessCode(e.target.value)} placeholder="e.g. SVX-2026-XXXX" className="bg-input/60 border-border h-12" />
-            </div>
+            {/* Collapsible extras */}
+            {!showExtras && (
+              <button
+                type="button"
+                onClick={() => setShowExtras(true)}
+                className="text-xs text-accent underline underline-offset-4 hover:text-accent/80 transition-colors"
+              >
+                Have an Invite or Promo Code?
+              </button>
+            )}
+
+            {showExtras && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="accessCode" className="text-xs uppercase tracking-wider text-muted-foreground">Access Authorization Code <span className="opacity-50">(optional)</span></Label>
+                  <Input id="accessCode" value={accessCode} onChange={e => setAccessCode(e.target.value)} placeholder="e.g. SVX-2026-XXXX" className="bg-input/60 border-border h-12" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Promo Code</Label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        value={promoInput}
+                        onChange={e => { setPromoInput(e.target.value); setPromoState("idle"); }}
+                        placeholder="Enter code"
+                        disabled={!!promoApplied}
+                        className="bg-input/60 border-border h-12 pl-10 uppercase"
+                      />
+                    </div>
+                    {promoApplied ? (
+                      <button type="button" onClick={removePromo} className="px-5 h-12 rounded-md border border-border text-sm font-medium hover:bg-secondary transition-colors">
+                        Remove
+                      </button>
+                    ) : (
+                      <button type="button" onClick={handleApplyPromo} disabled={promoChecking} className="px-5 h-12 rounded-md bg-gradient-primary text-primary-foreground text-sm font-semibold hover:scale-[1.02] transition-transform disabled:opacity-60">
+                        {promoChecking ? "Checking…" : "Apply"}
+                      </button>
+                    )}
+                  </div>
+                  {promoState === "valid" && (
+                    <p className="text-sm text-[hsl(var(--success))] flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Code {promoApplied} verified — {Math.round(promoDiscount * 100)}% off applied.</p>
+                  )}
+                  {promoState === "invalid" && (
+                    <p className="text-sm text-destructive flex items-center gap-2"><AlertCircle className="w-4 h-4" /> Invalid promo code.</p>
+                  )}
+                </div>
+              </>
+            )}
 
             <div className="space-y-2">
-              <Label htmlFor="clientName" className="text-xs uppercase tracking-wider text-muted-foreground">Entity / Individual Name</Label>
+              <Label htmlFor="clientName" className="text-xs uppercase tracking-wider text-muted-foreground">Studio or Creator Name</Label>
               <Input id="clientName" value={clientName} onChange={e => setClientName(e.target.value)} placeholder="Studio name or your full name" className="bg-input/60 border-border h-12" required />
             </div>
 
             <div className="grid md:grid-cols-2 gap-5">
               <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Professional Role</Label>
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Your Role (e.g., Director, Editor, Creator)</Label>
                 <Select value={professionalRole} onValueChange={setProfessionalRole}>
                   <SelectTrigger className="bg-input/60 border-border h-12"><SelectValue placeholder="Select your role" /></SelectTrigger>
                   <SelectContent>
@@ -282,46 +326,14 @@ export const OnboardingForm = ({ selected }: Props) => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-xs uppercase tracking-wider text-muted-foreground">Business Email</Label>
+                <Label htmlFor="email" className="text-xs uppercase tracking-wider text-muted-foreground">Email Address</Label>
                 <Input id="email" type="email" value={businessEmail} onChange={e => setBusinessEmail(e.target.value)} placeholder="ops@yourstudio.com" className="bg-input/60 border-border h-12" />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone" className="text-xs uppercase tracking-wider text-muted-foreground">WhatsApp Contact <span className="opacity-50">(optional if email provided)</span></Label>
+              <Label htmlFor="phone" className="text-xs uppercase tracking-wider text-muted-foreground">WhatsApp Number (Optional)</Label>
               <Input id="phone" type="tel" value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="+91 98xxxxxx" className="bg-input/60 border-border h-12" />
-            </div>
-
-            {/* PROMO */}
-            <div className="space-y-2">
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Promo Code</Label>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    value={promoInput}
-                    onChange={e => { setPromoInput(e.target.value); setPromoState("idle"); }}
-                    placeholder="Enter code"
-                    disabled={!!promoApplied}
-                    className="bg-input/60 border-border h-12 pl-10 uppercase"
-                  />
-                </div>
-                {promoApplied ? (
-                  <button type="button" onClick={removePromo} className="px-5 h-12 rounded-md border border-border text-sm font-medium hover:bg-secondary transition-colors">
-                    Remove
-                  </button>
-                ) : (
-                  <button type="button" onClick={handleApplyPromo} disabled={promoChecking} className="px-5 h-12 rounded-md bg-gradient-primary text-primary-foreground text-sm font-semibold hover:scale-[1.02] transition-transform disabled:opacity-60">
-                    {promoChecking ? "Checking…" : "Apply"}
-                  </button>
-                )}
-              </div>
-              {promoState === "valid" && (
-                <p className="text-sm text-[hsl(var(--success))] flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Code {promoApplied} verified — {Math.round(promoDiscount * 100)}% off applied.</p>
-              )}
-              {promoState === "invalid" && (
-                <p className="text-sm text-destructive flex items-center gap-2"><AlertCircle className="w-4 h-4" /> Invalid promo code.</p>
-              )}
             </div>
 
             {/* PAYMENT METHOD */}

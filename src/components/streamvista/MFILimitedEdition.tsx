@@ -90,8 +90,9 @@ export const MFILimitedEdition = () => {
       .upload(path, file, { contentType: file.type, upsert: true });
 
     if (upErr) {
+      console.error("MFI upload error", upErr);
       setSubmitting(false);
-      toast.error(`Upload failed: ${upErr.message}`);
+      toast.error("Upload failed. Please try again.");
       return;
     }
 
@@ -112,8 +113,9 @@ export const MFILimitedEdition = () => {
       });
 
     if (insertErr) {
+      console.error("MFI insert error", insertErr);
       setSubmitting(false);
-      toast.error(`Submission failed: ${insertErr.message}`);
+      toast.error("Submission failed. Please try again.");
       return;
     }
 

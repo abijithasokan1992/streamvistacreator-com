@@ -75,8 +75,9 @@ export const DMCAForm = () => {
       if (error) throw error;
       setDone(true);
       toast.success("Takedown notice submitted");
-    } catch (err: any) {
-      toast.error(err.message || "Submission failed");
+    } catch (err) {
+      console.error("DMCA submission error", err);
+      toast.error("Submission failed. Please try again.");
     } finally {
       setSubmitting(false);
     }

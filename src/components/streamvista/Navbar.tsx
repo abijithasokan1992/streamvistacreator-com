@@ -40,7 +40,7 @@ export const Navbar = () => {
           <a href="/vault" className="hover:text-foreground transition-colors">My Vault</a>
         </nav>
         {pos === "top-right" ? brandBlock : (
-          <a href="#onboard" className="text-xs md:text-sm font-medium px-4 py-2 rounded-full bg-gradient-primary text-primary-foreground glow-primary hover:scale-105 transition-transform">
+          <a href="#onboard" className="cta-guide relative text-xs md:text-sm font-semibold px-5 py-2.5 rounded-full bg-gradient-primary text-primary-foreground hover:scale-105 transition-transform">
             Start Free
           </a>
         )}

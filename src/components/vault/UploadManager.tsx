@@ -96,8 +96,9 @@ type ProviderConfig = {
 };
 
 type Ctx = {
-  enqueue: (file: File, opts: UploadOptions) => string;
+  enqueue: (file: File, opts: UploadOptions, handle?: any /* FileSystemFileHandle */) => string;
   attachFile: (taskId: string, file: File) => void;
+  pickAndEnqueue: (opts: UploadOptions) => Promise<string | null>;
 };
 
 const UploadManagerContext = createContext<Ctx | null>(null);

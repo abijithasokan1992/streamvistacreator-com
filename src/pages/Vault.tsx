@@ -428,7 +428,14 @@ const VaultInner = () => {
   );
 };
 
+const Vault = () => (
+  <UploadManagerProvider>
+    <VaultInner />
+  </UploadManagerProvider>
+);
+
 export default Vault;
+
 
 /* ───────── helpers ───────── */
 

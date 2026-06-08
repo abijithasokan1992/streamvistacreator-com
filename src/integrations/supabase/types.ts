@@ -234,6 +234,7 @@ export type Database = {
           note: string | null
           redeemed_at: string | null
           redeemed_by: string | null
+          referral_code: string | null
           sent_channels: string[]
           status: string
           storage_tb: number
@@ -254,6 +255,7 @@ export type Database = {
           note?: string | null
           redeemed_at?: string | null
           redeemed_by?: string | null
+          referral_code?: string | null
           sent_channels?: string[]
           status?: string
           storage_tb?: number
@@ -274,12 +276,79 @@ export type Database = {
           note?: string | null
           redeemed_at?: string | null
           redeemed_by?: string | null
+          referral_code?: string | null
           sent_channels?: string[]
           status?: string
           storage_tb?: number
           token?: string
           updated_at?: string
           validity_days?: number
+        }
+        Relationships: []
+      }
+      referral_codes: {
+        Row: {
+          code: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          code?: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          id: string
+          note: string | null
+          referred_email: string | null
+          referred_user_id: string | null
+          referrer_code: string
+          referrer_user_id: string | null
+          reward_amount: number
+          reward_type: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          referred_email?: string | null
+          referred_user_id?: string | null
+          referrer_code: string
+          referrer_user_id?: string | null
+          reward_amount?: number
+          reward_type?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          referred_email?: string | null
+          referred_user_id?: string | null
+          referrer_code?: string
+          referrer_user_id?: string | null
+          reward_amount?: number
+          reward_type?: string | null
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }

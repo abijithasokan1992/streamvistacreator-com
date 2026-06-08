@@ -220,6 +220,69 @@ export type Database = {
         }
         Relationships: []
       }
+      premium_invitations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          discount_percent: number
+          expires_at: string
+          id: string
+          invitee_email: string | null
+          invitee_name: string
+          invitee_phone: string | null
+          is_free: boolean
+          note: string | null
+          redeemed_at: string | null
+          redeemed_by: string | null
+          sent_channels: string[]
+          status: string
+          storage_tb: number
+          token: string
+          updated_at: string
+          validity_days: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          discount_percent?: number
+          expires_at?: string
+          id?: string
+          invitee_email?: string | null
+          invitee_name: string
+          invitee_phone?: string | null
+          is_free?: boolean
+          note?: string | null
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          sent_channels?: string[]
+          status?: string
+          storage_tb?: number
+          token?: string
+          updated_at?: string
+          validity_days?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          discount_percent?: number
+          expires_at?: string
+          id?: string
+          invitee_email?: string | null
+          invitee_name?: string
+          invitee_phone?: string | null
+          is_free?: boolean
+          note?: string | null
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          sent_channels?: string[]
+          status?: string
+          storage_tb?: number
+          token?: string
+          updated_at?: string
+          validity_days?: number
+        }
+        Relationships: []
+      }
       shared_files: {
         Row: {
           created_at: string

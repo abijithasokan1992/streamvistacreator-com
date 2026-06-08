@@ -16,6 +16,9 @@ import {
 } from "lucide-react";
 import MyAccount from "@/components/dashboard/MyAccount";
 import ReferralRewards from "@/components/dashboard/ReferralRewards";
+import { UploadManagerProvider, useUploadManager } from "@/components/vault/UploadManager";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
 
 type Tier = "lite" | "sovereign";
 
@@ -56,19 +59,19 @@ function randomToken() {
   return Array.from(arr).map((b) => b.toString(36).padStart(2, "0")).join("").slice(0, 24);
 }
 
-const Vault = () => {
+const VaultInner = () => {
   const { user, loading, signOut } = useAuth();
+  const { enqueue, setRunner } = useUploadManager();
   const [section, setSection] = useState<SectionId>("files");
   const [files, setFiles] = useState<SharedFile[]>([]);
   const [tier, setTier] = useState<Tier>("lite");
   const [password, setPassword] = useState("");
   const [expiryDays, setExpiryDays] = useState<number | "">("");
   const [maxDownloads, setMaxDownloads] = useState<number | "">("");
-  const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [drag, setDrag] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+
 
   const load = async () => {
     if (!user) return;
@@ -105,11 +108,23 @@ const Vault = () => {
   if (!user) return <Navigate to="/auth" replace />;
 
 
-  const handleUpload = async (file: File) => {
+  const handleUpload = (file: File) => {
     if (file.size > MAX_BYTES) { toast.error("File exceeds 2.5 GB limit"); return; }
-    setUploading(true);
-    setProgress(0);
-    try {
+    enqueue(file, {
+      tier,
+      password: password || undefined,
+      expiryDays,
+      maxDownloads,
+    });
+    setPassword(""); setExpiryDays(""); setMaxDownloads("");
+    setUploadOpen(false);
+    toast.success(`${file.name} added to upload queue`);
+  };
+
+  // Register the actual upload runner with the manager (Supabase Storage + DB row + optional password)
+  useEffect(() => {
+    if (!user) return;
+    setRunner(async (file, opts) => {
       const token = randomToken();
       const ext = file.name.includes(".") ? file.name.split(".").pop() : "bin";
       const path = `${user.id}/${token}.${ext}`;
@@ -117,29 +132,23 @@ const Vault = () => {
         cacheControl: "3600", upsert: false, contentType: file.type || "application/octet-stream",
       });
       if (upErr) throw upErr;
-      setProgress(100);
-      const expiresAt = expiryDays ? new Date(Date.now() + Number(expiryDays) * 86400000).toISOString() : null;
+      const expiresAt = opts.expiryDays ? new Date(Date.now() + Number(opts.expiryDays) * 86400000).toISOString() : null;
       const { data: inserted, error: dbErr } = await supabase.from("shared_files").insert({
         owner_id: user.id, storage_path: path, filename: file.name, size_bytes: file.size,
-        mime_type: file.type || null, tier, share_token: token, expires_at: expiresAt,
-        max_downloads: maxDownloads ? Number(maxDownloads) : null,
+        mime_type: file.type || null, tier: opts.tier, share_token: token, expires_at: expiresAt,
+        max_downloads: opts.maxDownloads ? Number(opts.maxDownloads) : null,
       }).select("id").single();
       if (dbErr) throw dbErr;
-      if (password && inserted?.id) {
+      if (opts.password && inserted?.id) {
         const { error: pwErr } = await supabase.functions.invoke("vault-share", {
-          body: { action: "set-password", fileId: inserted.id, newPassword: password },
+          body: { action: "set-password", fileId: inserted.id, newPassword: opts.password },
         });
         if (pwErr) throw pwErr;
       }
-      toast.success("Uploaded — share link ready");
-      setPassword(""); setExpiryDays(""); setMaxDownloads("");
-      setUploadOpen(false);
       load();
-    } catch (e) {
-      console.error("Vault upload error", e);
-      toast.error("Upload failed. Please try again.");
-    } finally { setUploading(false); setProgress(0); }
-  };
+    });
+  }, [user?.id, setRunner]);
+
 
   const copyLink = (token: string) => {
     navigator.clipboard.writeText(`${window.location.origin}/s/${token}`);
@@ -162,11 +171,19 @@ const Vault = () => {
 
   const UploadDialog = (
     <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
-      <DialogTrigger asChild>
-        <button className="h-11 px-5 rounded-xl bg-gradient-primary text-primary-foreground font-semibold glow-primary text-sm inline-flex items-center gap-2 transition hover:opacity-95">
-          <Upload className="w-4 h-4" /> Upload File
-        </button>
-      </DialogTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DialogTrigger asChild>
+            <button className="relative h-11 px-5 rounded-xl bg-gradient-primary text-primary-foreground font-semibold glow-primary text-sm inline-flex items-center gap-2 transition hover:scale-[1.02] hover:shadow-[0_0_40px_-6px_hsl(var(--accent)/0.7)]">
+              <Upload className="w-4 h-4" /> Upload File
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-accent animate-ping opacity-60" />
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-accent" />
+            </button>
+          </DialogTrigger>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">Drop a file, paste from clipboard, or ingest from a card — uploads run in the background.</TooltipContent>
+      </Tooltip>
+
       <DialogContent className="max-w-xl glass-strong border-border/60">
         <DialogHeader>
           <DialogTitle className="font-display text-xl">Upload to {tier === "lite" ? "Standard Storage" : "India Secure Storage"}</DialogTitle>
@@ -174,22 +191,18 @@ const Vault = () => {
         <div
           onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
           onDragLeave={() => setDrag(false)}
-          onDrop={(e) => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files?.[0]; if (f) handleUpload(f); }}
+          onDrop={(e) => { e.preventDefault(); setDrag(false); const dropped = Array.from(e.dataTransfer.files || []); dropped.forEach(handleUpload); }}
           onClick={() => fileInput.current?.click()}
-          className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition ${drag ? "border-accent bg-accent/5" : "border-border/60 hover:border-accent/60"}`}
+          className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition ${drag ? "border-accent bg-accent/5 shadow-[0_0_40px_-10px_hsl(var(--accent)/0.6)]" : "border-border/60 hover:border-accent/60 hover:shadow-[0_0_30px_-15px_hsl(var(--accent)/0.5)]"}`}
         >
-          <Upload className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
-          <p className="font-medium">{uploading ? "Uploading…" : "Drag & drop or click to choose"}</p>
-          <p className="text-xs text-muted-foreground mt-1">Max 2.5 GB per file</p>
-          {uploading && (
-            <div className="mt-4 flex items-center justify-center gap-2 text-sm">
-              <Loader2 className="h-4 w-4 animate-spin" /> {progress}%
-            </div>
-          )}
+          <Upload className="h-8 w-8 mx-auto mb-3 text-accent" />
+          <p className="font-medium">Drag & drop files, or click to choose</p>
+          <p className="text-xs text-muted-foreground mt-1">Multiple files supported · Max 2.5 GB each · Upload keeps running in the background</p>
           <input
-            ref={fileInput} type="file" className="hidden"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f); e.currentTarget.value = ""; }}
+            ref={fileInput} type="file" multiple className="hidden"
+            onChange={(e) => { const list = Array.from(e.target.files || []); list.forEach(handleUpload); e.currentTarget.value = ""; }}
           />
+
         </div>
 
         <Accordion type="single" collapsible>
@@ -423,7 +436,14 @@ const Vault = () => {
   );
 };
 
+const Vault = () => (
+  <UploadManagerProvider>
+    <VaultInner />
+  </UploadManagerProvider>
+);
+
 export default Vault;
+
 
 /* ───────── helpers ───────── */
 

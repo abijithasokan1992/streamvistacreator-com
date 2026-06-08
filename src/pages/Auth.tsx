@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, Eye, EyeOff, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,8 @@ const Schema = z.object({
 
 const VALID_CYCLES: Cycle[] = ["free", "monthly", "quarterly", "yearly"];
 
+type View = "login" | "signup" | "forgot";
+
 export default function Auth() {
   const navigate = useNavigate();
   const [search] = useSearchParams();
@@ -25,17 +27,15 @@ export default function Auth() {
   const plan = planCycle ? planByCycle(planCycle) : null;
   const isPaidPlan = !!plan && plan.cycle !== "free";
 
-  const [mode, setMode] = useState<"login" | "signup">(planCycle ? "signup" : "login");
+  const [view, setView] = useState<View>(planCycle ? "signup" : "login");
   const [email, setEmail] = useState(search.get("email") ?? "");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [focused, setFocused] = useState<"email" | "password" | null>("email");
 
-  // After auth: paid plan → open Razorpay overlay → verify → vault. Otherwise → vault.
   const continueAfterAuth = async () => {
     if (isPaidPlan && plan) {
       try {
-        // Resolve onboardingId from URL or sessionStorage stash.
         let onboardingId = search.get("onb") || "";
         if (!onboardingId) {
           try {
@@ -118,10 +118,25 @@ export default function Auth() {
 
   const handle = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (view === "forgot") {
+      const emailOk = z.string().email().safeParse(email);
+      if (!emailOk.success) return toast.error("Enter a valid email");
+      setSubmitting(true);
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth`,
+      });
+      setSubmitting(false);
+      if (error) return toast.error(error.message);
+      toast.success("Reset link sent — check your inbox.");
+      setView("login");
+      return;
+    }
+
     const parsed = Schema.safeParse({ email, password });
     if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
     setSubmitting(true);
-    if (mode === "signup") {
+    if (view === "signup") {
       const { error } = await supabase.auth.signUp({
         email: parsed.data.email,
         password: parsed.data.password,
@@ -130,7 +145,7 @@ export default function Auth() {
       setSubmitting(false);
       if (error) return toast.error(error.message);
       toast.success("Workspace created — check your inbox to verify.");
-      setMode("login");
+      setView("login");
     } else {
       const { error } = await supabase.auth.signInWithPassword({
         email: parsed.data.email,
@@ -142,6 +157,15 @@ export default function Auth() {
     }
   };
 
+  const heading = view === "forgot" ? "Reset" : view === "signup" ? "Create" : "Sign in";
+  const ctaLabel = submitting
+    ? "One moment…"
+    : view === "forgot"
+    ? "Send reset link"
+    : view === "signup"
+    ? (isPaidPlan ? "Create account & continue" : "Create account")
+    : (isPaidPlan ? "Sign in & continue" : "Login");
+
   return (
     <main className="relative min-h-dvh overflow-hidden bg-background text-foreground grid place-items-center px-4">
       <div className="pointer-events-none absolute inset-0">
@@ -150,86 +174,114 @@ export default function Auth() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,hsl(var(--background))_100%)]" />
       </div>
 
-      <div className="relative w-full max-w-md">
-        <Link to="/" className="block text-center text-[11px] uppercase tracking-[0.45em] text-muted-foreground/80 mb-10 hover:text-foreground transition-colors">
+      <div className="relative w-full max-w-sm">
+        <Link to="/" className="block text-center text-[11px] uppercase tracking-[0.45em] text-muted-foreground/80 mb-8 hover:text-foreground transition-colors">
           StreamVista <span className="text-accent">·</span> Cloud X
         </Link>
 
-        <div className="glass-strong rounded-3xl p-10 animate-fade-in border border-white/5">
-          <div className="text-center mb-7">
-            <h1 className="font-display text-[28px] leading-tight font-semibold tracking-tight">
-              Workspace <span className="gradient-text">Login</span>
+        <div className="glass-strong rounded-3xl p-9 animate-fade-in border border-white/5">
+          <div className="text-center mb-8">
+            <h1 className="font-display text-[26px] leading-tight font-semibold tracking-tight">
+              <span className="gradient-text">{heading}</span>
             </h1>
-            {plan && (
-              <div className="mt-5 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30 text-xs">
+            {view === "forgot" && (
+              <p className="mt-2 text-xs text-muted-foreground/80">Enter your email and we'll send a reset link.</p>
+            )}
+            {plan && view !== "forgot" && (
+              <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30 text-xs">
                 <Sparkles className="w-3 h-3 text-accent" />
-                <span className="text-muted-foreground uppercase tracking-[0.2em] text-[10px]">Plan</span>
                 <span className="font-semibold">{plan.label}</span>
                 <span className="text-accent">{plan.priceLabel}</span>
               </div>
             )}
           </div>
 
-          <form onSubmit={handle} className="space-y-5" autoComplete="on">
-            <div className={cn("relative group", focused === "email" && "is-active")}>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                onFocus={() => setFocused("email")}
-                placeholder="you@studio.com"
-                required
-                autoComplete="email"
-                className="peer w-full h-14 px-5 rounded-2xl bg-input/40 border border-border/60 text-base text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-accent/70 focus:bg-input/70"
-              />
-              <span className={cn(
-                "pointer-events-none absolute inset-0 rounded-2xl transition-opacity duration-500",
-                "ring-2 ring-accent/40 shadow-[0_0_28px_-4px_hsl(var(--accent)/0.55)] opacity-0",
-                "peer-focus:opacity-100 peer-focus:animate-pulse"
-              )} />
-            </div>
+          <form onSubmit={handle} className="space-y-4" autoComplete="on">
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="Email"
+              required
+              autoComplete="email"
+              className="peer w-full h-12 px-4 rounded-xl bg-input/40 border border-border/60 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-accent/70 focus:bg-input/70 focus:shadow-[0_0_24px_-6px_hsl(var(--accent)/0.5)]"
+            />
 
-            <div className={cn("relative group", focused === "password" && "is-active")}>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                onFocus={() => setFocused("password")}
-                placeholder="••••••••"
-                required
-                minLength={8}
-                autoComplete={mode === "login" ? "current-password" : "new-password"}
-                className="peer w-full h-14 px-5 rounded-2xl bg-input/40 border border-border/60 text-base text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-accent/70 focus:bg-input/70"
-              />
-              <span className={cn(
-                "pointer-events-none absolute inset-0 rounded-2xl transition-opacity duration-500",
-                "ring-2 ring-accent/40 shadow-[0_0_28px_-4px_hsl(var(--accent)/0.55)] opacity-0",
-                "peer-focus:opacity-100 peer-focus:animate-pulse"
-              )} />
-            </div>
+            {view !== "forgot" && (
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="Password"
+                  required
+                  minLength={8}
+                  autoComplete={view === "login" ? "current-password" : "new-password"}
+                  className="w-full h-12 pl-4 pr-12 rounded-xl bg-input/40 border border-border/60 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-accent/70 focus:bg-input/70 focus:shadow-[0_0_24px_-6px_hsl(var(--accent)/0.5)]"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(s => !s)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 grid place-items-center rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-white/5 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            )}
 
             <button
               type="submit"
               disabled={submitting}
-              className="relative w-full h-14 rounded-2xl bg-gradient-primary text-primary-foreground font-display font-semibold text-[15px] tracking-wide glow-primary hover:scale-[1.01] active:scale-[0.99] transition-transform disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 overflow-hidden"
+              className={cn(
+                "relative w-full h-12 rounded-xl bg-gradient-primary text-primary-foreground font-display font-semibold text-sm tracking-wide glow-primary",
+                "hover:scale-[1.01] active:scale-[0.99] transition-transform disabled:opacity-60 disabled:cursor-not-allowed",
+                "flex items-center justify-center gap-2"
+              )}
             >
-              {submitting ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> One moment…</>
-              ) : mode === "login"
-                ? (isPaidPlan ? "Sign in & continue to checkout" : "Enter Workspace")
-                : (isPaidPlan ? "Create account & continue" : "Create Workspace")}
+              {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+              {ctaLabel}
             </button>
+          </form>
 
-            <div className="flex items-center justify-center pt-2">
+          <div className="mt-6 flex items-center justify-between text-[11px] tracking-[0.15em] uppercase">
+            {view === "login" && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setView("forgot")}
+                  className="text-muted-foreground/60 hover:text-accent transition-colors"
+                >
+                  Forgot password
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setView("signup")}
+                  className="text-muted-foreground/60 hover:text-accent transition-colors"
+                >
+                  Sign up
+                </button>
+              </>
+            )}
+            {view === "signup" && (
               <button
                 type="button"
-                onClick={() => setMode(mode === "login" ? "signup" : "login")}
-                className="text-[12px] tracking-[0.2em] uppercase text-muted-foreground/70 hover:text-accent transition-colors"
+                onClick={() => setView("login")}
+                className="mx-auto text-muted-foreground/60 hover:text-accent transition-colors"
               >
-                {mode === "login" ? "Request access" : "Have an account? Sign in"}
+                Have an account? Sign in
               </button>
-            </div>
-          </form>
+            )}
+            {view === "forgot" && (
+              <button
+                type="button"
+                onClick={() => setView("login")}
+                className="mx-auto text-muted-foreground/60 hover:text-accent transition-colors"
+              >
+                Back to sign in
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </main>

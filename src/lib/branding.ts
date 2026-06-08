@@ -21,19 +21,20 @@ let inflight: Promise<BrandingSettings | null> | null = null;
 export async function fetchBranding(force = false): Promise<BrandingSettings | null> {
   if (cached && !force) return cached;
   if (inflight) return inflight;
-  inflight = supabase
-    .from("branding_settings")
-    .select("*")
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle()
-    .then(({ data }) => {
-      cached = (data as BrandingSettings | null) ?? null;
-      inflight = null;
-      return cached;
-    });
+  inflight = (async () => {
+    const { data } = await supabase
+      .from("branding_settings")
+      .select("*")
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    cached = (data as BrandingSettings | null) ?? null;
+    inflight = null;
+    return cached;
+  })();
   return inflight;
 }
+
 
 export function useBranding() {
   const [b, setB] = useState<BrandingSettings | null>(cached);

@@ -31,18 +31,18 @@ export const Hero = () => (
 
           <div className="flex flex-col gap-4">
             <a
-              href="#pricing"
+              href="/auth?plan=free"
               className="cta-guide group relative h-14 inline-flex items-center justify-between px-6 bg-gradient-primary text-primary-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md"
             >
               <span className="cta-hint">Start here</span>
-              <span className="flex-1 text-center">View Launch Plan</span>
+              <span className="flex-1 text-center">Get Cloud X Free Account</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </a>
             <a
               href="#onboard"
               className="h-14 inline-flex items-center justify-between px-6 border border-border/70 text-muted-foreground font-medium uppercase tracking-[0.18em] text-xs hover:text-foreground hover:border-primary/60 transition-colors rounded-md"
             >
-              Start Onboarding
+              Create Studio Partner Account
               <ArrowRight className="w-4 h-4" />
             </a>
           </div>

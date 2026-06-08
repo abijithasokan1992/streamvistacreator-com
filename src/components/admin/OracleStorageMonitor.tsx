@@ -25,6 +25,8 @@ const EMPTY: OracleConfig = {
 
 export default function OracleStorageMonitor() {
   const [cfg, setCfg] = useState<OracleConfig>(EMPTY);
+  const [pem, setPem] = useState("");
+  const [showPem, setShowPem] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -36,7 +38,7 @@ export default function OracleStorageMonitor() {
     (async () => {
       const { data } = await supabase
         .from("site_config")
-        .select("oracle_tenancy_ocid, oracle_user_ocid, oracle_fingerprint, oracle_region, oracle_namespace, oracle_bucket, oracle_private_key_set")
+        .select("oracle_tenancy_ocid, oracle_user_ocid, oracle_fingerprint, oracle_region, oracle_namespace, oracle_bucket, oracle_private_key_set, oracle_private_key")
         .eq("id", true)
         .maybeSingle();
       if (data) {
@@ -47,7 +49,7 @@ export default function OracleStorageMonitor() {
           oracle_region: data.oracle_region ?? "ap-mumbai-1",
           oracle_namespace: data.oracle_namespace ?? "",
           oracle_bucket: data.oracle_bucket ?? "",
-          oracle_private_key_set: !!data.oracle_private_key_set,
+          oracle_private_key_set: !!data.oracle_private_key_set || !!data.oracle_private_key,
         });
       }
       setLoading(false);
@@ -56,14 +58,24 @@ export default function OracleStorageMonitor() {
 
   const save = async () => {
     setSaving(true);
-    const { error } = await supabase.from("site_config").upsert(
-      { id: true, ...cfg },
-      { onConflict: "id" },
-    );
+    const payload: Record<string, unknown> = { id: true, ...cfg };
+    const trimmedPem = pem.trim();
+    if (trimmedPem) {
+      if (!/-----BEGIN [A-Z ]*PRIVATE KEY-----/.test(trimmedPem)) {
+        setSaving(false);
+        toast.error("Private key must be a PEM-encoded block (BEGIN/END headers).");
+        return;
+      }
+      payload.oracle_private_key = trimmedPem;
+      payload.oracle_private_key_set = true;
+    }
+    const { error } = await supabase.from("site_config").upsert(payload, { onConflict: "id" });
     setSaving(false);
     if (error) { toast.error(error.message); return; }
+    if (trimmedPem) { setPem(""); setShowPem(false); }
     toast.success("Oracle config saved");
   };
+
 
   const testConnection = async () => {
     setTesting(true); setTestResult(null);

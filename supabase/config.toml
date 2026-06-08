@@ -11,6 +11,8 @@ project_id = "hllgmkfqgeuqlmpcirvn"
     verify_jwt = false
   [functions.process-email-queue]
     verify_jwt = true
+  [functions.razorpay-webhook]
+    verify_jwt = false
   [functions.twilio-status-webhook]
     verify_jwt = false
   [functions.validate-promo]

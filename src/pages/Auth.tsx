@@ -4,7 +4,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { Loader2, Eye, EyeOff, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, dashboardForRole } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { planByCycle, type Cycle } from "@/components/streamvista/plans";
 
@@ -90,7 +90,14 @@ export default function Auth() {
             }
             try { sessionStorage.removeItem("sv_onboarding"); } catch {}
             toast.success("Payment confirmed — welcome to your workspace.");
-            navigate("/vault", { replace: true });
+            // Paid plan → creator workspace by default; if user already has a higher role, honour it.
+            const { data: roleRow } = await supabase
+              .from("user_roles").select("role").eq("user_id", (await supabase.auth.getUser()).data.user?.id || "");
+            const roles = (roleRow || []).map((r: any) => r.role);
+            const target = roles.includes("admin") ? "/admin"
+              : roles.includes("executive_producer") ? "/producer"
+              : "/vault";
+            navigate(target, { replace: true });
           },
           modal: {
             ondismiss: () => {
@@ -110,7 +117,12 @@ export default function Auth() {
         toast.error("Couldn't open checkout — taking you to your workspace to retry.");
       }
     }
-    navigate("/vault", { replace: true });
+    // Free flow / default: send to the dashboard that matches the user's role.
+    const { data: roleRow } = await supabase
+      .from("user_roles").select("role").eq("user_id", (await supabase.auth.getUser()).data.user?.id || "");
+    const roles = (roleRow || []).map((r: any) => r.role);
+    const primary = ["admin", "executive_producer", "creator", "client"].find((r) => roles.includes(r)) as any;
+    navigate(dashboardForRole(primary || "client"), { replace: true });
   };
 
   useEffect(() => {

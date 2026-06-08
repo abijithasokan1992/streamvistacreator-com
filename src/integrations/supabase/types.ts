@@ -565,6 +565,30 @@ export type Database = {
         }
         Relationships: []
       }
+      producer_assignments: {
+        Row: {
+          assigned_by: string | null
+          created_at: string
+          creator_user_id: string
+          ep_user_id: string
+          id: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          created_at?: string
+          creator_user_id: string
+          ep_user_id: string
+          id?: string
+        }
+        Update: {
+          assigned_by?: string | null
+          created_at?: string
+          creator_user_id?: string
+          ep_user_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
       referral_codes: {
         Row: {
           code: string
@@ -929,6 +953,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_producer_of: {
+        Args: { _creator: string; _ep: string }
+        Returns: boolean
+      }
       mfi_seats_taken: { Args: never; Returns: number }
       move_to_dlq: {
         Args: {
@@ -938,6 +966,10 @@ export type Database = {
           source_queue: string
         }
         Returns: number
+      }
+      primary_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
       }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
@@ -949,7 +981,13 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role:
+        | "admin"
+        | "moderator"
+        | "user"
+        | "executive_producer"
+        | "creator"
+        | "client"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1077,7 +1115,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: [
+        "admin",
+        "moderator",
+        "user",
+        "executive_producer",
+        "creator",
+        "client",
+      ],
     },
   },
 } as const

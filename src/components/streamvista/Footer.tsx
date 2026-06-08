@@ -108,18 +108,20 @@ export const Footer = () => {
             <span className="opacity-60"> · Operated by Crayons Pictures · Ernakulam, Kerala, India.</span>
           </p>
 
-          <ul className="flex flex-wrap items-center gap-2 md:gap-2.5">
-            {TRUST.map(({ icon: Icon, label }) => (
-              <li
-                key={label}
-                title={label}
-                className="group inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-foreground/[0.02] backdrop-blur-xl px-2.5 py-1 text-[10px] font-mono-tech uppercase tracking-[0.16em] text-muted-foreground hover:text-foreground hover:border-border transition-colors"
-              >
-                <Icon className="w-3 h-3 opacity-70 group-hover:opacity-100" strokeWidth={1.75} />
-                <span>{label}</span>
-              </li>
-            ))}
-          </ul>
+          {isHome && (
+            <ul className="flex flex-wrap items-center gap-2 md:gap-2.5">
+              {TRUST.map(({ icon: Icon, label }) => (
+                <li
+                  key={label}
+                  title={label}
+                  className="group inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-foreground/[0.02] backdrop-blur-xl px-2.5 py-1 text-[10px] font-mono-tech uppercase tracking-[0.16em] text-muted-foreground hover:text-foreground hover:border-border transition-colors"
+                >
+                  <Icon className="w-3 h-3 opacity-70 group-hover:opacity-100" strokeWidth={1.75} />
+                  <span>{label}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </footer>

@@ -36,7 +36,12 @@ export const Pricing = ({ selected, onSelect }: Props) => (
           return (
             <button
               key={p.cycle}
-              onClick={() => onSelect(p.cycle)}
+              onClick={() => {
+                onSelect(p.cycle);
+                requestAnimationFrame(() => {
+                  document.getElementById("onboard")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                });
+              }}
               className={cn(
                 "relative text-left p-7 md:p-8 transition-all duration-300 animate-fade-in group",
                 active

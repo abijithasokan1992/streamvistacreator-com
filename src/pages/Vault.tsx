@@ -412,11 +412,52 @@ const VaultInner = () => {
   );
 };
 
-const Vault = () => (
-  <UploadManagerProvider>
-    <VaultInner />
-  </UploadManagerProvider>
-);
+const Vault = () => {
+  const { user } = useAuth();
+  const reloadRef = useRef<() => void>(() => {});
+
+  const config = useMemo(() => ({
+    bucket: "vault",
+    getPath: (file: File) => {
+      const token = randomToken();
+      const ext = file.name.includes(".") ? file.name.split(".").pop() : "bin";
+      const uid = user?.id ?? "anon";
+      return { path: `${uid}/${token}.${ext}`, shareToken: token };
+    },
+    postUpload: async (ctx: { storagePath: string; filename: string; size: number; mime: string; shareToken: string }, opts: { tier: "lite" | "sovereign"; password?: string; expiryDays?: number | ""; maxDownloads?: number | "" }) => {
+      if (!user) throw new Error("Not signed in");
+      const expiresAt = opts.expiryDays
+        ? new Date(Date.now() + Number(opts.expiryDays) * 86400000).toISOString()
+        : null;
+      const { data: inserted, error: dbErr } = await supabase.from("shared_files").insert({
+        owner_id: user.id,
+        storage_path: ctx.storagePath,
+        filename: ctx.filename,
+        size_bytes: ctx.size,
+        mime_type: ctx.mime || null,
+        tier: opts.tier,
+        share_token: ctx.shareToken,
+        expires_at: expiresAt,
+        max_downloads: opts.maxDownloads ? Number(opts.maxDownloads) : null,
+      }).select("id").single();
+      if (dbErr) throw dbErr;
+      if (opts.password && inserted?.id) {
+        const { error: pwErr } = await supabase.functions.invoke("vault-share", {
+          body: { action: "set-password", fileId: inserted.id, newPassword: opts.password },
+        });
+        if (pwErr) throw pwErr;
+      }
+    },
+    onUploaded: () => reloadRef.current?.(),
+  }), [user?.id]);
+
+  return (
+    <UploadManagerProvider config={config}>
+      <VaultInner reloadRef={reloadRef} />
+    </UploadManagerProvider>
+  );
+};
+
 
 export default Vault;
 

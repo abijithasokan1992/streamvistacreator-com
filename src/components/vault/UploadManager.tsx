@@ -271,16 +271,30 @@ export function UploadManagerProvider({
   // Single set of listeners (no per-task leak, no stale closures).
   useEffect(() => {
     const onOffline = () => {
+      let paused = 0;
       uploadsRef.current.forEach((up, id) => {
         try { up.abort(); } catch {}
         update(id, { status: "paused", error: "Offline — will auto-resume when reconnected" });
+        paused++;
       });
+      if (paused > 0) {
+        toast(`Connection lost — ${paused} upload${paused > 1 ? "s" : ""} paused. Will resume automatically.`, {
+          duration: 3500,
+          icon: "📶",
+        });
+      }
     };
     const onOnline = () => {
+      let resumed = 0;
       uploadsRef.current.forEach((up, id) => {
         update(id, { status: "uploading", error: undefined });
-        try { up.start(); } catch {}
+        try { up.start(); resumed++; } catch {}
       });
+      if (resumed > 0) {
+        toast.success(`Back online — resuming ${resumed} upload${resumed > 1 ? "s" : ""} from where it stopped.`, {
+          duration: 2500,
+        });
+      }
     };
     window.addEventListener("offline", onOffline);
     window.addEventListener("online", onOnline);
@@ -291,7 +305,7 @@ export function UploadManagerProvider({
   }, [update]);
 
   const enqueue = useCallback(
-    (file: File, opts: UploadOptions) => {
+    (file: File, opts: UploadOptions, handle?: any) => {
       const { path, shareToken } = configRef.current.getPath(file);
       const id = `up_${Date.now()}_${shareToken.slice(0, 6)}`;
       const task: UploadTask = {
@@ -310,6 +324,10 @@ export function UploadManagerProvider({
       setTasks((prev) => [task, ...prev]);
       setOpen(true);
       setMinimized(false);
+      // Persist FileSystemFileHandle so we can auto-resume after refresh / power loss.
+      if (handle && typeof handle.queryPermission === "function") {
+        idbPut(id, handle).catch(() => {});
+      }
       setTimeout(() => startTus(task, file), 30);
       return id;
     },
@@ -329,6 +347,70 @@ export function UploadManagerProvider({
     [tasks, startTus, update],
   );
 
+  // Use the File System Access API when available so we can persist a handle
+  // and silently auto-resume after refresh / power loss.
+  const pickAndEnqueue = useCallback(
+    async (opts: UploadOptions): Promise<string | null> => {
+      const w = window as any;
+      if (typeof w.showOpenFilePicker === "function") {
+        try {
+          const [handle] = await w.showOpenFilePicker({ multiple: false });
+          const file = await handle.getFile();
+          return enqueue(file, opts, handle);
+        } catch (e: any) {
+          if (e?.name === "AbortError") return null;
+          // fall through to legacy picker
+        }
+      }
+      return new Promise((resolve) => {
+        const inp = document.createElement("input");
+        inp.type = "file";
+        inp.onchange = () => {
+          const f = inp.files?.[0];
+          resolve(f ? enqueue(f, opts) : null);
+        };
+        inp.click();
+      });
+    },
+    [enqueue],
+  );
+
+  // Auto-resume on mount: for any task in `needs-file`, try the persisted FS handle.
+  // If permission can be granted (often silently in same-origin returning sessions),
+  // we re-attach the File and continue the tus upload without user interaction.
+  const didAutoResumeRef = useRef(false);
+  useEffect(() => {
+    if (didAutoResumeRef.current) return;
+    didAutoResumeRef.current = true;
+    const candidates = tasks.filter((t) => t.status === "needs-file");
+    if (candidates.length === 0) return;
+    (async () => {
+      let resumed = 0;
+      for (const t of candidates) {
+        try {
+          const handle: any = await idbGet(t.id);
+          if (!handle || typeof handle.getFile !== "function") continue;
+          let perm = await handle.queryPermission?.({ mode: "read" });
+          if (perm !== "granted") {
+            // Some browsers allow silent re-grant; if not, this stays "prompt" and we skip.
+            try { perm = await handle.requestPermission?.({ mode: "read" }); } catch { /* requires gesture */ }
+          }
+          if (perm !== "granted") continue;
+          const file: File = await handle.getFile();
+          if (file.size !== t.size) continue;
+          startTus(t, file);
+          resumed++;
+        } catch { /* skip */ }
+      }
+      if (resumed > 0) {
+        toast.success(`Auto-resumed ${resumed} upload${resumed > 1 ? "s" : ""} from where they stopped.`, {
+          duration: 3000,
+        });
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const pauseTask = (id: string) => {
     const up = uploadsRef.current.get(id);
     if (up) { try { up.abort(); } catch {} }
@@ -341,7 +423,6 @@ export function UploadManagerProvider({
       update(id, { status: "uploading", error: undefined });
       try { up.start(); } catch {}
     } else {
-      // Lost the file handle (e.g. after page refresh) — need user to re-pick.
       update(id, { status: "needs-file" });
     }
   };
@@ -350,12 +431,13 @@ export function UploadManagerProvider({
     if (up) { try { up.abort(true); } catch {} }
     uploadsRef.current.delete(id);
     filesRef.current.delete(id);
+    idbDel(id).catch(() => {});
     setTasks((prev) => prev.filter((t) => t.id !== id));
   };
   const clearFinished = () =>
     setTasks((prev) => prev.filter((t) => t.status !== "done" && t.status !== "error"));
 
-  const ctxValue = useMemo<Ctx>(() => ({ enqueue, attachFile }), [enqueue, attachFile]);
+  const ctxValue = useMemo<Ctx>(() => ({ enqueue, attachFile, pickAndEnqueue }), [enqueue, attachFile, pickAndEnqueue]);
 
   const active = tasks.filter((t) => t.status === "uploading" || t.status === "queued");
   const needsResume = tasks.filter((t) => t.status === "needs-file" || t.status === "paused");

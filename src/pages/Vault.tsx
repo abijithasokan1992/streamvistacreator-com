@@ -170,7 +170,19 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
           onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
           onDragLeave={() => setDrag(false)}
           onDrop={(e) => { e.preventDefault(); setDrag(false); const dropped = Array.from(e.dataTransfer.files || []); dropped.forEach(handleUpload); }}
-          onClick={() => fileInput.current?.click()}
+          onClick={async () => {
+            // Prefer FS Access API so we can auto-resume across refresh / power loss.
+            const id = await pickAndEnqueue({
+              tier, password: password || undefined, expiryDays, maxDownloads,
+            });
+            if (id) {
+              setPassword(""); setExpiryDays(""); setMaxDownloads("");
+              setUploadOpen(false);
+              toast.success("Added to upload queue — will auto-resume if interrupted");
+            } else {
+              fileInput.current?.click();
+            }
+          }}
           className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition ${drag ? "border-accent bg-accent/5 shadow-[0_0_40px_-10px_hsl(var(--accent)/0.6)]" : "border-border/60 hover:border-accent/60 hover:shadow-[0_0_30px_-15px_hsl(var(--accent)/0.5)]"}`}
         >
           <Upload className="h-8 w-8 mx-auto mb-3 text-accent" />

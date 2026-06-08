@@ -5,12 +5,12 @@ import { computeFinalPricePaise, type Cycle } from "../_shared/pricing.ts";
 function jsonError(message: string, status: number) {
   return new Response(JSON.stringify({ error: message }), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...buildCorsHeaders(req), "Content-Type": "application/json" },
   });
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response("ok", { headers: buildCorsHeaders(req) });
 
   try {
     const { onboardingId } = await req.json();
@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
           currency: "INR",
           keyId: keyId2,
         }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { headers: { ...buildCorsHeaders(req), "Content-Type": "application/json" } },
       );
     }
 
@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({ orderId: order.id, amount: order.amount, currency: order.currency, keyId }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { headers: { ...buildCorsHeaders(req), "Content-Type": "application/json" } },
     );
   } catch (e) {
     console.error("create-razorpay-order error:", e);

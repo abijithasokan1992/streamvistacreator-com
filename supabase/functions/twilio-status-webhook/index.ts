@@ -21,7 +21,7 @@ function normalize(s: string): string {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: buildCorsHeaders(req) });
   }
 
   // Authenticity check: require a shared secret on the StatusCallback URL.
@@ -32,11 +32,11 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const provided = url.searchParams.get("secret") ?? "";
     if (provided !== expectedSecret) {
-      return new Response("Forbidden", { status: 403, headers: corsHeaders });
+      return new Response("Forbidden", { status: 403, headers: buildCorsHeaders(req) });
     }
   } else {
     console.error("TWILIO_WEBHOOK_SECRET not configured — rejecting callback");
-    return new Response("Forbidden", { status: 403, headers: corsHeaders });
+    return new Response("Forbidden", { status: 403, headers: buildCorsHeaders(req) });
   }
 
 
@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: "Missing MessageSid" }),
         {
           status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...buildCorsHeaders(req), "Content-Type": "application/json" },
         },
       );
     }
@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: "Internal error" }),
         {
           status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...buildCorsHeaders(req), "Content-Type": "application/json" },
         },
       );
     }
@@ -115,14 +115,14 @@ Deno.serve(async (req) => {
       JSON.stringify({ ok: true, sid: messageSid, status }),
       {
         status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...buildCorsHeaders(req), "Content-Type": "application/json" },
       },
     );
   } catch (err) {
     console.error("Webhook error:", err);
     return new Response(JSON.stringify({ error: "Internal error" }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...buildCorsHeaders(req), "Content-Type": "application/json" },
     });
   }
 });

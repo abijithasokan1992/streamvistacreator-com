@@ -6,12 +6,12 @@ import { computeFinalPricePaise, type Cycle } from "../_shared/pricing.ts";
 function jsonError(message: string, status: number) {
   return new Response(JSON.stringify({ error: message }), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...buildCorsHeaders(req), "Content-Type": "application/json" },
   });
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response("ok", { headers: buildCorsHeaders(req) });
 
   try {
     const { onboardingId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = await req.json();
@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({ verified: true }), {
       status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...buildCorsHeaders(req), "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("verify-razorpay-payment error:", e);

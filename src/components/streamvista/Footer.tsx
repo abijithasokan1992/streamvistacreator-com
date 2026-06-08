@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Lock, CreditCard, Cloud, ShieldCheck, type LucideIcon } from "lucide-react";
 import { useBranding } from "@/lib/branding";
 

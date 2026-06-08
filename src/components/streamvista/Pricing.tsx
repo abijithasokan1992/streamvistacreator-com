@@ -88,7 +88,7 @@ export const Pricing = () => (
                 to={`/auth?plan=${p.cycle}`}
                 className="cta-guide group/btn relative h-12 w-full inline-flex items-center justify-center gap-2 bg-gradient-primary text-primary-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md"
               >
-                <span>Claim Free Workspace</span>
+                <span>{isFree ? "Claim Free Workspace" : "Get Started"}</span>
                 <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
               </Link>
             </div>

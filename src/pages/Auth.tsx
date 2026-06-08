@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { planByCycle, type Cycle } from "@/components/streamvista/plans";
+import { TrustBadges } from "@/components/streamvista/TrustBadges";
+
 
 const Schema = z.object({
   email: z.string().trim().email("Enter a valid email").max(255),
@@ -299,8 +301,13 @@ export default function Auth() {
               </button>
             )}
           </div>
+
+          <div className="mt-8 pt-6 border-t border-border/40">
+            <TrustBadges compact className="justify-center" />
+          </div>
         </div>
       </div>
     </main>
   );
 }
+

@@ -1,5 +1,7 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { CheckCircle2 } from "lucide-react";
+import { TrustBadges } from "@/components/streamvista/TrustBadges";
+
 
 export default function CheckoutReturn() {
   const [params] = useSearchParams();
@@ -20,7 +22,12 @@ export default function CheckoutReturn() {
         <Link to="/vault" className="inline-flex items-center px-6 h-11 rounded-md bg-gradient-primary text-primary-foreground font-semibold">
           Enter your workspace →
         </Link>
+
+        <div className="mt-8 pt-6 border-t border-border/40">
+          <TrustBadges compact className="justify-center" />
+        </div>
       </div>
     </main>
   );
 }
+

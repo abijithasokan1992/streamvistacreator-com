@@ -42,7 +42,7 @@ export function useBranding() {
     let live = true;
     fetchBranding().then((v) => { if (live) setB(v); });
     const channel = supabase
-      .channel("branding-live")
+      .channel(`branding-live-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "branding_settings" }, () => {
         fetchBranding(true).then((v) => { if (live) setB(v); });
       })

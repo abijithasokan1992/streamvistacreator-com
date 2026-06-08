@@ -87,8 +87,23 @@ const Vault = () => {
 
   useEffect(() => { load(); }, [user?.id]);
 
+  const stats = useMemo(() => {
+    const active = files.filter((f) => !f.revoked);
+    const totalBytes = files.reduce((s, f) => s + f.size_bytes, 0);
+    const totalDownloads = files.reduce((s, f) => s + (f.download_count || 0), 0);
+    const protectedCount = files.filter((f) => f.has_password).length;
+    return {
+      fileCount: files.length,
+      activeCount: active.length,
+      totalBytes,
+      totalDownloads,
+      protectedCount,
+    };
+  }, [files]);
+
   if (loading) return <div className="min-h-dvh grid place-items-center text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin" /></div>;
   if (!user) return <Navigate to="/auth" replace />;
+
 
   const handleUpload = async (file: File) => {
     if (file.size > MAX_BYTES) { toast.error("File exceeds 2.5 GB limit"); return; }
@@ -142,19 +157,8 @@ const Vault = () => {
     load();
   };
 
-  const stats = useMemo(() => {
-    const active = files.filter((f) => !f.revoked);
-    const totalBytes = files.reduce((s, f) => s + f.size_bytes, 0);
-    const totalDownloads = files.reduce((s, f) => s + (f.download_count || 0), 0);
-    const protectedCount = files.filter((f) => f.has_password).length;
-    return {
-      fileCount: files.length,
-      activeCount: active.length,
-      totalBytes,
-      totalDownloads,
-      protectedCount,
-    };
-  }, [files]);
+
+
 
   const UploadDialog = (
     <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>

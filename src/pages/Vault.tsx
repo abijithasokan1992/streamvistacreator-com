@@ -262,8 +262,8 @@ const Vault = () => {
                     {!f.revoked && (
                       <Button size="sm" variant="outline" onClick={() => revoke(f.id)}>Revoke</Button>
                     )}
-                    <Button size="sm" variant="ghost" onClick={() => remove(f)}>
-                      <Trash2 className="h-4 w-4" />
+                    <Button size="sm" variant="ghost" onClick={() => remove(f)} aria-label={`Delete ${f.filename}`}>
+                      <Trash2 className="h-4 w-4" aria-hidden="true" />
                     </Button>
                   </div>
                 </div>

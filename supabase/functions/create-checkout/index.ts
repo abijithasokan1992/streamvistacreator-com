@@ -1,3 +1,4 @@
+import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { type StripeEnv, createStripeClient } from "../_shared/stripe.ts";
 
@@ -40,7 +41,27 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const { priceId, customerEmail, userId, returnUrl, environment } = await req.json();
+    const { priceId, returnUrl, environment } = await req.json();
+
+    // Derive userId / email from authenticated session — never trust client.
+    let userId: string | undefined;
+    let customerEmail: string | undefined;
+    const authHeader = req.headers.get("Authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      const supaUrl = Deno.env.get("SUPABASE_URL");
+      const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+      if (supaUrl && anonKey) {
+        const sb = createClient(supaUrl, anonKey, {
+          global: { headers: { Authorization: authHeader } },
+        });
+        const token = authHeader.replace("Bearer ", "");
+        const { data } = await sb.auth.getClaims(token);
+        if (data?.claims?.sub) {
+          userId = data.claims.sub as string;
+          customerEmail = (data.claims.email as string | undefined) ?? undefined;
+        }
+      }
+    }
 
     if (!priceId || !ALLOWED_PRICE_IDS.has(priceId)) {
       return new Response(JSON.stringify({ error: "Invalid priceId" }), {
@@ -71,7 +92,13 @@ Deno.serve(async (req) => {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    if (allowList.length && !allowList.includes(returnOrigin)) {
+    if (!allowList.length) {
+      console.error("SITE_ORIGIN is not configured");
+      return new Response(JSON.stringify({ error: "Server misconfiguration" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (!allowList.includes(returnOrigin)) {
       return new Response(JSON.stringify({ error: "Invalid returnUrl" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

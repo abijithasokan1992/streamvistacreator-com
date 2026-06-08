@@ -33,11 +33,26 @@ Deno.serve(async (req) => {
     // Fetch the onboarding request server-side and compute the authoritative price.
     const { data: row, error: fetchErr } = await supabase
       .from("onboarding_requests")
-      .select("id, selected_cycle, promo_code")
+      .select("id, selected_cycle, promo_code, razorpay_order_id, amount_paid_paise")
       .eq("id", onboardingId)
       .single();
     if (fetchErr || !row) {
       return jsonError("Onboarding request not found", 404);
+    }
+
+    // Idempotency guard: if an order already exists for this onboarding row, return it.
+    // Prevents an attacker from re-creating orders and overwriting the legitimate one.
+    if (row.razorpay_order_id) {
+      const keyId2 = Deno.env.get("RAZORPAY_KEY_ID")!;
+      return new Response(
+        JSON.stringify({
+          orderId: row.razorpay_order_id,
+          amount: row.amount_paid_paise,
+          currency: "INR",
+          keyId: keyId2,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
     let priced;

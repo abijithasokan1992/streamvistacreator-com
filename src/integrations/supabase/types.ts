@@ -231,6 +231,7 @@ export type Database = {
           mime_type: string | null
           owner_id: string
           password_hash: string | null
+          password_salt: string | null
           revoked: boolean
           share_token: string
           size_bytes: number
@@ -247,6 +248,7 @@ export type Database = {
           mime_type?: string | null
           owner_id: string
           password_hash?: string | null
+          password_salt?: string | null
           revoked?: boolean
           share_token: string
           size_bytes: number
@@ -263,6 +265,7 @@ export type Database = {
           mime_type?: string | null
           owner_id?: string
           password_hash?: string | null
+          password_salt?: string | null
           revoked?: boolean
           share_token?: string
           size_bytes?: number

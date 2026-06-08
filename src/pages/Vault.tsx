@@ -24,15 +24,10 @@ type SharedFile = {
   download_count: number;
   revoked: boolean;
   created_at: string;
-  password_hash: string | null;
+  has_password: boolean;
 };
 
 const MAX_BYTES = 2_684_354_560; // 2.5 GB
-
-async function sha256(s: string): Promise<string> {
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
-}
 
 function fmtSize(b: number) {
   if (b < 1024) return `${b} B`;
@@ -63,10 +58,15 @@ const Vault = () => {
     if (!user) return;
     const { data } = await supabase
       .from("shared_files")
-      .select("*")
+      .select("id, filename, size_bytes, tier, share_token, storage_path, expires_at, max_downloads, download_count, revoked, created_at, password_hash")
       .eq("owner_id", user.id)
       .order("created_at", { ascending: false });
-    setFiles((data ?? []) as SharedFile[]);
+    setFiles(((data ?? []) as any[]).map((r) => ({
+      id: r.id, filename: r.filename, size_bytes: r.size_bytes, tier: r.tier,
+      share_token: r.share_token, storage_path: r.storage_path, expires_at: r.expires_at,
+      max_downloads: r.max_downloads, download_count: r.download_count, revoked: r.revoked,
+      created_at: r.created_at, has_password: !!r.password_hash,
+    })));
   };
 
   useEffect(() => { load(); }, [user?.id]);
@@ -94,10 +94,9 @@ const Vault = () => {
       if (upErr) throw upErr;
       setProgress(100);
 
-      const pwdHash = password ? await sha256(password) : null;
       const expiresAt = expiryDays ? new Date(Date.now() + Number(expiryDays) * 86400000).toISOString() : null;
 
-      const { error: dbErr } = await supabase.from("shared_files").insert({
+      const { data: inserted, error: dbErr } = await supabase.from("shared_files").insert({
         owner_id: user.id,
         storage_path: path,
         filename: file.name,
@@ -105,11 +104,18 @@ const Vault = () => {
         mime_type: file.type || null,
         tier,
         share_token: token,
-        password_hash: pwdHash,
         expires_at: expiresAt,
         max_downloads: maxDownloads ? Number(maxDownloads) : null,
-      });
+      }).select("id").single();
       if (dbErr) throw dbErr;
+
+      // Hash + store password server-side with per-file salt (PBKDF2).
+      if (password && inserted?.id) {
+        const { error: pwErr } = await supabase.functions.invoke("vault-share", {
+          body: { action: "set-password", fileId: inserted.id, newPassword: password },
+        });
+        if (pwErr) throw pwErr;
+      }
 
       toast.success("Uploaded — share link ready");
       setPassword(""); setExpiryDays(""); setMaxDownloads("");

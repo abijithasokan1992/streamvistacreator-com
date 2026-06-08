@@ -86,10 +86,11 @@ export default function ReferralRewards() {
     return () => { supabase.removeChannel(ch); };
   }, [user]);
 
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const baseUrl = "https://streamvistacreator.com";
   const shareUrl = useMemo(() =>
-    code ? `${origin}/?utm_campaign=referral&utm_source=link&ref=${encodeURIComponent(code)}` : "",
-    [code, origin]);
+    code ? `${baseUrl}/?utm_campaign=referral&utm_source=link&ref=${encodeURIComponent(code)}` : "",
+    [code]);
+
 
   const copy = async () => {
     if (!shareUrl) return;
@@ -124,7 +125,7 @@ export default function ReferralRewards() {
     if (error) return toast.error(error.message);
 
     // Compose intro email via user's mail client (consistent with PremiumInvitations pattern)
-    const inviteUrl = `${origin}/?utm_campaign=referral&utm_source=intro&ref=${encodeURIComponent(code ?? "")}&invite=${data.token}`;
+    const inviteUrl = `${baseUrl}/?utm_campaign=referral&utm_source=intro&ref=${encodeURIComponent(code ?? "")}&invite=${data.token}`;
     const subject = `${fn}, an invite to join me on StreamVista`;
     const body = [
       `Hi ${fn},`, ``,
@@ -162,10 +163,10 @@ export default function ReferralRewards() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h2 className="font-semibold text-lg flex items-center gap-2">
-            <Award className="h-5 w-5 text-primary" /> Referrals & Rewards
+            <Award className="h-5 w-5 text-primary" /> Refer & Earn
           </h2>
           <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
-            <Percent className="h-3.5 w-3.5" /> Earn <b className="text-foreground mx-1">10%</b> of every referred user's revenue — for <b className="text-foreground mx-1">5 years</b> after they join.
+            <Percent className="h-3.5 w-3.5" /> Introduce your friends, teammates, and fellow creators to StreamVista Cloud X. Earn <b className="text-foreground mx-1">10%</b> of every referred user's revenue for <b className="text-foreground mx-1">5 years</b>.
           </p>
         </div>
         <div className="flex gap-4 text-sm">
@@ -196,7 +197,7 @@ export default function ReferralRewards() {
           {/* Intro form */}
           <div className="rounded-lg border border-border p-4">
             <h3 className="font-semibold flex items-center gap-2 mb-1">
-              <UserPlus className="h-4 w-4 text-primary" /> Introduce someone to the StreamVista Team
+              <UserPlus className="h-4 w-4 text-primary" /> Invite a teammate to StreamVista Cloud X
             </h3>
             <p className="text-xs text-muted-foreground mb-3">
               We'll open a pre-filled email from your account so the prospect hears it from you directly.

@@ -119,7 +119,7 @@ export default function MyAccount() {
         </TabsContent>
 
         <TabsContent value="account" className="space-y-5">
-          <UpgradeSection currentTier={profile.plan_tier} email={user?.email ?? undefined} name={profile.display_name ?? undefined} />
+          <UpgradeSection currentTier={profile.plan_tier} email={user?.email ?? undefined} name={profile.display_name ?? undefined} userId={profile.user_id} onUpgraded={(tier) => setProfile({ ...profile, plan_tier: tier })} />
         </TabsContent>
 
         <TabsContent value="statements">
@@ -267,7 +267,7 @@ function SupportRequestForm() {
 }
 
 /* ---------------- Upgrade / Payment ---------------- */
-function UpgradeSection({ currentTier, email, name }: { currentTier: string; email?: string; name?: string }) {
+function UpgradeSection({ currentTier, email, name, userId, onUpgraded }: { currentTier: string; email?: string; name?: string; userId: string; onUpgraded: (tier: Profile["plan_tier"]) => void; }) {
   const [selected, setSelected] = useState<Cycle>("monthly");
   const [provider, setProvider] = useState<"razorpay" | "card">("razorpay");
   const [busy, setBusy] = useState(false);
@@ -323,14 +323,17 @@ function UpgradeSection({ currentTier, email, name }: { currentTier: string; ema
         const { data: vData } = await supabase.functions.invoke("verify-razorpay-payment", {
           body: {
             onboardingId: inserted.id,
+            userId,
             razorpay_order_id: resp.razorpay_order_id,
             razorpay_payment_id: resp.razorpay_payment_id,
             razorpay_signature: resp.razorpay_signature,
           },
         });
         setBusy(false);
-        if (vData?.verified) toast.success("Upgrade confirmed — refresh to see your new plan");
-        else toast.error("Payment could not be verified");
+        if (vData?.verified) {
+          onUpgraded(selected as Profile["plan_tier"]);
+          toast.success(`Upgrade confirmed — you're now on the ${plan.label} plan`);
+        } else toast.error("Payment could not be verified");
       },
       modal: { ondismiss: () => { setBusy(false); toast.info("Payment cancelled"); } },
     });

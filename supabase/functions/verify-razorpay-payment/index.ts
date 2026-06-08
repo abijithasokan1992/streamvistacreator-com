@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: buildCorsHeaders(req) });
 
   try {
-    const { onboardingId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = await req.json();
+    const { onboardingId, userId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = await req.json();
     if (!onboardingId || !razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return jsonError(req, "Missing fields", 400);
     }
@@ -84,7 +84,15 @@ Deno.serve(async (req) => {
       .eq("id", onboardingId)
       .eq("razorpay_order_id", razorpay_order_id);
 
-    return new Response(JSON.stringify({ verified: true }), {
+    // Upgrade the user's plan tier so the dashboard reflects the new plan immediately.
+    if (userId && typeof userId === "string") {
+      await supabase
+        .from("user_profiles")
+        .update({ plan_tier: row.selected_cycle })
+        .eq("user_id", userId);
+    }
+
+    return new Response(JSON.stringify({ verified: true, planTier: row.selected_cycle }), {
       status: 200,
       headers: { ...buildCorsHeaders(req), "Content-Type": "application/json" },
     });

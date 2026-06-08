@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
 import { type StripeEnv, createStripeClient } from "../_shared/stripe.ts";
 
 const ALLOWED_PRICE_IDS = new Set(["cloudx_monthly", "cloudx_quarterly", "cloudx_yearly"]);

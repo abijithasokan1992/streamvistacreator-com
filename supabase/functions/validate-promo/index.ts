@@ -1,4 +1,4 @@
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
 import { PROMO_CODES } from "../_shared/pricing.ts";
 
 Deno.serve(async (req) => {

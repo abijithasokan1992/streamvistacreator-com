@@ -25,6 +25,8 @@ const EMPTY: OracleConfig = {
 
 export default function OracleStorageMonitor() {
   const [cfg, setCfg] = useState<OracleConfig>(EMPTY);
+  const [pem, setPem] = useState("");
+  const [showPem, setShowPem] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -36,7 +38,7 @@ export default function OracleStorageMonitor() {
     (async () => {
       const { data } = await supabase
         .from("site_config")
-        .select("oracle_tenancy_ocid, oracle_user_ocid, oracle_fingerprint, oracle_region, oracle_namespace, oracle_bucket, oracle_private_key_set")
+        .select("oracle_tenancy_ocid, oracle_user_ocid, oracle_fingerprint, oracle_region, oracle_namespace, oracle_bucket, oracle_private_key_set, oracle_private_key")
         .eq("id", true)
         .maybeSingle();
       if (data) {
@@ -47,7 +49,7 @@ export default function OracleStorageMonitor() {
           oracle_region: data.oracle_region ?? "ap-mumbai-1",
           oracle_namespace: data.oracle_namespace ?? "",
           oracle_bucket: data.oracle_bucket ?? "",
-          oracle_private_key_set: !!data.oracle_private_key_set,
+          oracle_private_key_set: !!data.oracle_private_key_set || !!data.oracle_private_key,
         });
       }
       setLoading(false);
@@ -56,14 +58,24 @@ export default function OracleStorageMonitor() {
 
   const save = async () => {
     setSaving(true);
-    const { error } = await supabase.from("site_config").upsert(
-      { id: true, ...cfg },
-      { onConflict: "id" },
-    );
+    const payload: Record<string, unknown> = { id: true, ...cfg };
+    const trimmedPem = pem.trim();
+    if (trimmedPem) {
+      if (!/-----BEGIN [A-Z ]*PRIVATE KEY-----/.test(trimmedPem)) {
+        setSaving(false);
+        toast.error("Private key must be a PEM-encoded block (BEGIN/END headers).");
+        return;
+      }
+      payload.oracle_private_key = trimmedPem;
+      payload.oracle_private_key_set = true;
+    }
+    const { error } = await supabase.from("site_config").upsert(payload, { onConflict: "id" });
     setSaving(false);
     if (error) { toast.error(error.message); return; }
+    if (trimmedPem) { setPem(""); setShowPem(false); }
     toast.success("Oracle config saved");
   };
+
 
   const testConnection = async () => {
     setTesting(true); setTestResult(null);
@@ -128,14 +140,34 @@ export default function OracleStorageMonitor() {
             <Field label="Bucket" value={cfg.oracle_bucket} onChange={v => setCfg({ ...cfg, oracle_bucket: v })} placeholder="streamvista-media" />
           </div>
 
-          <label className="inline-flex items-center gap-2 text-xs text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={cfg.oracle_private_key_set}
-              onChange={e => setCfg({ ...cfg, oracle_private_key_set: e.target.checked })}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <KeyRound className="w-3.5 h-3.5" /> Oracle Private Key (PEM, PKCS#8)
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowPem(s => !s)}
+                className="text-[11px] uppercase tracking-wider text-accent hover:underline"
+              >{showPem ? "Hide" : "Show"}</button>
+            </div>
+            <textarea
+              value={pem}
+              onChange={e => setPem(e.target.value)}
+              placeholder={cfg.oracle_private_key_set
+                ? "•••••••••• key on file. Paste a new PEM only to rotate."
+                : "-----BEGIN PRIVATE KEY-----\nMIIEv...\n-----END PRIVATE KEY-----"}
+              rows={6}
+              spellCheck={false}
+              autoComplete="off"
+              className={`w-full px-3 py-2 rounded-xl bg-secondary/40 border border-border/60 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-accent/40 resize-y ${showPem ? "" : "[-webkit-text-security:disc] [text-security:disc]"}`}
+              style={showPem ? undefined : ({ WebkitTextSecurity: "disc" } as React.CSSProperties)}
             />
-            I have set the <span className="font-mono text-foreground">ORACLE_PRIVATE_KEY</span> backend secret (PEM, PKCS#8)
-          </label>
+            <p className="text-[11px] text-muted-foreground">
+              Stored encrypted at rest, readable only by admins and the signing function. Never sent to other browsers.
+            </p>
+          </div>
+
 
           <div className="flex flex-wrap gap-2">
             <button

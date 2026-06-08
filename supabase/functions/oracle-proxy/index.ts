@@ -18,6 +18,7 @@ type SiteConfig = {
   oracle_region: string | null;
   oracle_namespace: string | null;
   oracle_bucket: string | null;
+  oracle_private_key: string | null;
 };
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -157,13 +158,13 @@ Deno.serve(async (req) => {
 
   const { data: cfg } = await admin
     .from("site_config")
-    .select("oracle_tenancy_ocid, oracle_user_ocid, oracle_fingerprint, oracle_region, oracle_namespace, oracle_bucket")
+    .select("oracle_tenancy_ocid, oracle_user_ocid, oracle_fingerprint, oracle_region, oracle_namespace, oracle_bucket, oracle_private_key")
     .eq("id", true)
     .maybeSingle<SiteConfig>();
 
-  const pem = Deno.env.get("ORACLE_PRIVATE_KEY");
+  const pem = cfg?.oracle_private_key || Deno.env.get("ORACLE_PRIVATE_KEY");
   const missing: string[] = [];
-  if (!pem) missing.push("ORACLE_PRIVATE_KEY (secret)");
+  if (!pem) missing.push("private key (paste PEM in Admin → Oracle card)");
   if (!cfg?.oracle_tenancy_ocid) missing.push("tenancy OCID");
   if (!cfg?.oracle_user_ocid) missing.push("user OCID");
   if (!cfg?.oracle_fingerprint) missing.push("fingerprint");

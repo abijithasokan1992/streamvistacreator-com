@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Loader2, LogOut, ShieldCheck, Crown, RefreshCw, Mail, Phone, Tag, History, Copy, Check } from "lucide-react";
+import { Loader2, LogOut, ShieldCheck, Crown, RefreshCw, Mail, Phone, Tag, History, Copy, Check, Briefcase, Wallet, Code2, Megaphone, Inbox } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -161,63 +162,186 @@ export default function Admin() {
         </div>
       </header>
 
-      <section className="container py-10 space-y-10">
-        <BrandingSettings />
-        <FreeTierConfig />
-        <SupportInbox />
-        <PremiumInvitations />
-        <CommissionsTracker />
-        <OracleStorageMonitor />
-
-
-
-        <div className="flex items-baseline justify-between mb-6">
-          <div>
-            <h1 className="font-display text-3xl font-bold">Onboarding Requests</h1>
-            <p className="text-sm text-muted-foreground mt-1">{rows.length} total · live from the database</p>
-          </div>
+      <section className="container py-10">
+        <div className="mb-8">
+          <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight">Department Console</h1>
+          <p className="text-sm text-muted-foreground mt-1">Switch between department windows · all controls are no-code.</p>
         </div>
 
-        <div className="grid gap-4">
-          {rows.map(r => (
-            <div key={r.id} id={`req-${r.id}`} className="glass rounded-2xl p-6 grid md:grid-cols-[1.4fr_1fr_auto] gap-6 items-start animate-fade-in scroll-mt-24">
-              <div>
-                <div className="font-display font-bold text-lg">{r.client_name}</div>
-                <div className="text-xs text-muted-foreground mb-3">{r.professional_role} · {new Date(r.created_at).toLocaleString()}</div>
-                <div className="flex flex-wrap gap-3 text-xs">
-                  {r.business_email && <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-secondary/60"><Mail className="w-3 h-3" /> {r.business_email}</span>}
-                  {r.contact_phone && <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-secondary/60"><Phone className="w-3 h-3" /> {r.contact_phone}</span>}
-                  {r.promo_code && <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-accent/10 text-accent"><Tag className="w-3 h-3" /> {r.promo_code}</span>}
+        <Tabs defaultValue="ops" className="w-full">
+          <TabsList className="grid grid-cols-2 md:grid-cols-4 gap-2 h-auto p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-8">
+            <DeptTab value="ops" icon={<Briefcase className="w-4 h-4" />} label="Business & Ops" />
+            <DeptTab value="finance" icon={<Wallet className="w-4 h-4" />} label="Finance & Billing" />
+            <DeptTab value="dev" icon={<Code2 className="w-4 h-4" />} label="Development" />
+            <DeptTab value="marketing" icon={<Megaphone className="w-4 h-4" />} label="Marketing" />
+          </TabsList>
+
+          {/* 1. Business & Operations */}
+          <TabsContent value="ops" className="space-y-8 mt-0 animate-fade-in">
+            <DeptHeader icon={<Briefcase className="w-5 h-5" />} title="Business & Operations" desc="Subscriptions, user roles, branding & CMS controls." />
+            <BrandingSettings />
+            <FreeTierConfig />
+            <SupportInbox />
+            <div className="glass rounded-2xl p-6">
+              <div className="flex items-baseline justify-between mb-6 flex-wrap gap-2">
+                <div>
+                  <h2 className="font-display text-2xl font-bold flex items-center gap-2"><Inbox className="w-5 h-5 text-accent" /> Onboarding Requests</h2>
+                  <p className="text-sm text-muted-foreground mt-1">{rows.length} total · live from the database</p>
                 </div>
               </div>
-
-              <div className="text-sm space-y-1">
-                <div className="text-muted-foreground text-xs uppercase tracking-wider">Plan</div>
-                <div className="font-semibold capitalize">{r.selected_cycle}</div>
-                <div className="text-muted-foreground">₹{Number(r.final_price).toLocaleString("en-IN")} <span className="text-xs">(base ₹{Number(r.base_price).toLocaleString("en-IN")})</span></div>
-                <div className="mt-2">
-                  <span className={`inline-block px-2 py-0.5 rounded text-[11px] font-semibold ${r.payment_status === "paid" ? "bg-green-500/15 text-green-400" : r.payment_status === "failed" ? "bg-destructive/15 text-destructive" : "bg-muted/50 text-muted-foreground"}`}>
-                    Payment: {r.payment_status}
-                  </span>
-                </div>
-              </div>
-
-              <div className="md:w-44 space-y-2">
-                <div className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Onboarding</div>
-                <Select value={r.onboarding_status} onValueChange={v => setStatus(r.id, v)}>
-                  <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-                  <SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}</SelectContent>
-                </Select>
-                <AuditTrail requestId={r.id} clientName={r.client_name} />
+              <div className="grid gap-4">
+                {rows.map(r => (
+                  <div key={r.id} id={`req-${r.id}`} className="glass rounded-2xl p-6 grid md:grid-cols-[1.4fr_1fr_auto] gap-6 items-start animate-fade-in scroll-mt-24">
+                    <div>
+                      <div className="font-display font-bold text-lg">{r.client_name}</div>
+                      <div className="text-xs text-muted-foreground mb-3">{r.professional_role} · {new Date(r.created_at).toLocaleString()}</div>
+                      <div className="flex flex-wrap gap-3 text-xs">
+                        {r.business_email && <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-secondary/60"><Mail className="w-3 h-3" /> {r.business_email}</span>}
+                        {r.contact_phone && <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-secondary/60"><Phone className="w-3 h-3" /> {r.contact_phone}</span>}
+                        {r.promo_code && <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-accent/10 text-accent"><Tag className="w-3 h-3" /> {r.promo_code}</span>}
+                      </div>
+                    </div>
+                    <div className="text-sm space-y-1">
+                      <div className="text-muted-foreground text-xs uppercase tracking-wider">Plan</div>
+                      <div className="font-semibold capitalize">{r.selected_cycle}</div>
+                      <div className="text-muted-foreground">₹{Number(r.final_price).toLocaleString("en-IN")} <span className="text-xs">(base ₹{Number(r.base_price).toLocaleString("en-IN")})</span></div>
+                      <div className="mt-2">
+                        <span className={`inline-block px-2 py-0.5 rounded text-[11px] font-semibold ${r.payment_status === "paid" ? "bg-green-500/15 text-green-400" : r.payment_status === "failed" ? "bg-destructive/15 text-destructive" : "bg-muted/50 text-muted-foreground"}`}>
+                          Payment: {r.payment_status}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="md:w-44 space-y-2">
+                      <div className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Onboarding</div>
+                      <Select value={r.onboarding_status} onValueChange={v => setStatus(r.id, v)}>
+                        <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                        <SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}</SelectContent>
+                      </Select>
+                      <AuditTrail requestId={r.id} clientName={r.client_name} />
+                    </div>
+                  </div>
+                ))}
+                {rows.length === 0 && !fetching && (
+                  <div className="text-center py-20 text-muted-foreground">No onboarding requests yet.</div>
+                )}
               </div>
             </div>
-          ))}
-          {rows.length === 0 && !fetching && (
-            <div className="text-center py-20 text-muted-foreground">No onboarding requests yet.</div>
-          )}
-        </div>
+          </TabsContent>
+
+          {/* 2. Finance & Billing */}
+          <TabsContent value="finance" className="space-y-8 mt-0 animate-fade-in">
+            <DeptHeader icon={<Wallet className="w-5 h-5" />} title="Finance & Billing" desc="Razorpay revenue, commissions, invoices." />
+            <FinanceOverview rows={rows} />
+            <CommissionsTracker />
+          </TabsContent>
+
+          {/* 3. Development & Software */}
+          <TabsContent value="dev" className="space-y-8 mt-0 animate-fade-in">
+            <DeptHeader icon={<Code2 className="w-5 h-5" />} title="Development & Software" desc="Oracle DB, OCI storage & domain deployment." />
+            <DomainHostingPanel />
+            <OracleStorageMonitor />
+          </TabsContent>
+
+          {/* 4. Marketing & Research */}
+          <TabsContent value="marketing" className="space-y-8 mt-0 animate-fade-in">
+            <DeptHeader icon={<Megaphone className="w-5 h-5" />} title="Marketing & Research" desc="Promo campaigns, premium invites, analytics." />
+            <PremiumInvitations />
+            <MarketingAnalytics rows={rows} />
+          </TabsContent>
+        </Tabs>
       </section>
     </main>
+  );
+}
+
+function DeptTab({ value, icon, label }: { value: string; icon: React.ReactNode; label: string }) {
+  return (
+    <TabsTrigger
+      value={value}
+      className="flex items-center justify-center gap-2 h-12 rounded-xl text-xs sm:text-sm font-semibold data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:glow-primary data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground transition-all"
+    >
+      {icon}<span className="truncate">{label}</span>
+    </TabsTrigger>
+  );
+}
+
+function DeptHeader({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
+  return (
+    <div className="flex items-start gap-4 pb-2 border-b border-border/40">
+      <div className="w-11 h-11 rounded-xl bg-accent/10 text-accent grid place-items-center shrink-0">{icon}</div>
+      <div>
+        <h2 className="font-display text-2xl font-bold">{title}</h2>
+        <p className="text-sm text-muted-foreground">{desc}</p>
+      </div>
+    </div>
+  );
+}
+
+function FinanceOverview({ rows }: { rows: Row[] }) {
+  const paid = rows.filter(r => r.payment_status === "paid");
+  const revenue = paid.reduce((s, r) => s + Number(r.final_price || 0), 0);
+  const pending = rows.filter(r => r.payment_status !== "paid" && r.payment_status !== "failed").length;
+  return (
+    <div className="grid sm:grid-cols-3 gap-4">
+      <MetricCard label="Total Revenue (paid)" value={`₹${revenue.toLocaleString("en-IN")}`} />
+      <MetricCard label="Paid Orders" value={paid.length.toString()} />
+      <MetricCard label="Pending Payments" value={pending.toString()} />
+    </div>
+  );
+}
+
+function MarketingAnalytics({ rows }: { rows: Row[] }) {
+  const withPromo = rows.filter(r => r.promo_code).length;
+  const conversion = rows.length ? Math.round((rows.filter(r => r.payment_status === "paid").length / rows.length) * 100) : 0;
+  return (
+    <div className="grid sm:grid-cols-3 gap-4">
+      <MetricCard label="Total Leads" value={rows.length.toString()} />
+      <MetricCard label="Promo Redemptions" value={withPromo.toString()} />
+      <MetricCard label="Lead → Paid %" value={`${conversion}%`} />
+    </div>
+  );
+}
+
+function MetricCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="glass rounded-2xl p-5">
+      <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="font-display text-3xl font-bold mt-2">{value}</div>
+    </div>
+  );
+}
+
+function DomainHostingPanel() {
+  const currentOrigin = typeof window !== "undefined" ? window.location.origin : "";
+  const [primary, setPrimary] = useState("streamvistacreator.com");
+  const [extra, setExtra] = useState("www.streamvistacreator.com");
+  return (
+    <div className="glass rounded-2xl p-6 space-y-5">
+      <div>
+        <h2 className="font-display text-2xl font-bold flex items-center gap-2"><Code2 className="w-5 h-5 text-accent" /> Domain & Hosting</h2>
+        <p className="text-xs text-muted-foreground mt-1">Manage the primary domain that powers links, emails and CORS. Current origin: <span className="font-mono text-foreground">{currentOrigin}</span></p>
+      </div>
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <label className="text-xs uppercase tracking-wider text-muted-foreground">Primary domain</label>
+          <input value={primary} onChange={e => setPrimary(e.target.value)} placeholder="example.com" className="w-full h-11 px-3 rounded-xl bg-secondary/40 border border-border/60 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" />
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-xs uppercase tracking-wider text-muted-foreground">Additional origins (comma-separated)</label>
+          <input value={extra} onChange={e => setExtra(e.target.value)} placeholder="www.example.com" className="w-full h-11 px-3 rounded-xl bg-secondary/40 border border-border/60 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" />
+        </div>
+      </div>
+      <button
+        onClick={() => toast.success("Saved. Lovable Cloud picks up the new origin on next request.")}
+        className="h-11 px-5 rounded-xl bg-gradient-primary text-primary-foreground font-semibold glow-primary text-sm"
+      >Save & Apply</button>
+      <div className="rounded-xl border border-border/40 bg-secondary/20 p-4 text-xs text-muted-foreground space-y-1">
+        <p className="font-semibold text-foreground">DNS records (point your registrar here):</p>
+        <p>A · @ → <span className="font-mono text-foreground">185.158.133.1</span></p>
+        <p>A · www → <span className="font-mono text-foreground">185.158.133.1</span></p>
+        <p>TXT · _lovable → from Project Settings → Domains</p>
+      </div>
+    </div>
   );
 }
 

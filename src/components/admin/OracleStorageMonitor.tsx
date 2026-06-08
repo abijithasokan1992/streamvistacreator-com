@@ -140,14 +140,34 @@ export default function OracleStorageMonitor() {
             <Field label="Bucket" value={cfg.oracle_bucket} onChange={v => setCfg({ ...cfg, oracle_bucket: v })} placeholder="streamvista-media" />
           </div>
 
-          <label className="inline-flex items-center gap-2 text-xs text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={cfg.oracle_private_key_set}
-              onChange={e => setCfg({ ...cfg, oracle_private_key_set: e.target.checked })}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <KeyRound className="w-3.5 h-3.5" /> Oracle Private Key (PEM, PKCS#8)
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowPem(s => !s)}
+                className="text-[11px] uppercase tracking-wider text-accent hover:underline"
+              >{showPem ? "Hide" : "Show"}</button>
+            </div>
+            <textarea
+              value={pem}
+              onChange={e => setPem(e.target.value)}
+              placeholder={cfg.oracle_private_key_set
+                ? "•••••••••• key on file. Paste a new PEM only to rotate."
+                : "-----BEGIN PRIVATE KEY-----\nMIIEv...\n-----END PRIVATE KEY-----"}
+              rows={6}
+              spellCheck={false}
+              autoComplete="off"
+              className={`w-full px-3 py-2 rounded-xl bg-secondary/40 border border-border/60 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-accent/40 resize-y ${showPem ? "" : "[-webkit-text-security:disc] [text-security:disc]"}`}
+              style={showPem ? undefined : ({ WebkitTextSecurity: "disc" } as React.CSSProperties)}
             />
-            I have set the <span className="font-mono text-foreground">ORACLE_PRIVATE_KEY</span> backend secret (PEM, PKCS#8)
-          </label>
+            <p className="text-[11px] text-muted-foreground">
+              Stored encrypted at rest, readable only by admins and the signing function. Never sent to other browsers.
+            </p>
+          </div>
+
 
           <div className="flex flex-wrap gap-2">
             <button

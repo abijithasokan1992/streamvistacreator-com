@@ -76,21 +76,9 @@ export default function PremiumInvitations() {
 
   useEffect(() => { load(); }, []);
 
-  useEffect(() => {
-    const ch = supabase
-      .channel("admin-invitations")
-      .on("postgres_changes", { event: "*", schema: "public", table: "premium_invitations" }, (payload) => {
-        if (payload.eventType === "INSERT") {
-          setRows(prev => [payload.new as Invitation, ...prev.filter(r => r.id !== (payload.new as Invitation).id)]);
-        } else if (payload.eventType === "UPDATE") {
-          setRows(prev => prev.map(r => r.id === (payload.new as Invitation).id ? (payload.new as Invitation) : r));
-        } else if (payload.eventType === "DELETE") {
-          setRows(prev => prev.filter(r => r.id !== (payload.old as Invitation).id));
-        }
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, []);
+  // Realtime subscription removed: premium_invitations is no longer in the realtime publication
+  // to prevent any authenticated client from receiving invitee PII/tokens. Admin list refreshes
+  // on dialog actions (create/revoke/mark-sent) via explicit reloads.
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const inviteUrl = (token: string) => `${origin}/invite/${encodeURIComponent(token)}`;

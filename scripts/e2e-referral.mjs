@@ -38,8 +38,8 @@ const ANON_KEY =
 const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL;
 const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD;
 const DOMAIN = process.env.E2E_EMAIL_DOMAIN || "e2e.test";
-const REWARD_TYPE = process.env.E2E_REWARD_TYPE || "storage";
-const REWARD_AMOUNT = Number(process.env.E2E_REWARD_AMOUNT || 100);
+const REWARD_TYPE = process.env.E2E_REWARD_TYPE || "storage_tb";
+const REWARD_AMOUNT = Number(process.env.E2E_REWARD_AMOUNT || 1);
 
 if (!SUPABASE_URL || !ANON_KEY) {
   console.error("✗ Missing SUPABASE_URL or anon key");

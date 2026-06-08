@@ -17,8 +17,8 @@ export default function CheckoutReturn() {
             ? "Your Cloud X workspace will be provisioned shortly. We'll be in touch within 24 hours."
             : "No session info was returned, but if your card was charged your account is being prepared."}
         </p>
-        <Link to="/" className="inline-flex items-center px-6 h-11 rounded-md bg-gradient-primary text-primary-foreground font-semibold">
-          Back to home
+        <Link to="/vault" className="inline-flex items-center px-6 h-11 rounded-md bg-gradient-primary text-primary-foreground font-semibold">
+          Enter your workspace →
         </Link>
       </div>
     </main>

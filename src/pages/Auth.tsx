@@ -215,7 +215,37 @@ export default function Auth() {
             )}
           </div>
 
+          {view !== "forgot" && (
+            <div className="mb-6 grid grid-cols-2 gap-1 p-1 rounded-xl bg-input/30 border border-border/50">
+              <button
+                type="button"
+                onClick={() => setView("login")}
+                className={cn(
+                  "h-9 rounded-lg text-xs font-semibold uppercase tracking-[0.15em] transition-all",
+                  view === "login"
+                    ? "bg-gradient-primary text-primary-foreground shadow-md"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                onClick={() => setView("signup")}
+                className={cn(
+                  "h-9 rounded-lg text-xs font-semibold uppercase tracking-[0.15em] transition-all",
+                  view === "signup"
+                    ? "bg-gradient-primary text-primary-foreground shadow-md"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Create Account
+              </button>
+            </div>
+          )}
+
           <form onSubmit={handle} className="space-y-4" autoComplete="on">
+
             <input
               type="email"
               value={email}

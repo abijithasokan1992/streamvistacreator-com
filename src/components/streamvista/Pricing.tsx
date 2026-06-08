@@ -1,13 +1,9 @@
-import { Check, Sparkles } from "lucide-react";
-import { PLANS, type Cycle } from "./plans";
+import { Check, Sparkles, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
+import { PLANS } from "./plans";
 import { cn } from "@/lib/utils";
 
-interface Props {
-  selected: Cycle;
-  onSelect: (c: Cycle) => void;
-}
-
-export const Pricing = ({ selected, onSelect }: Props) => (
+export const Pricing = () => (
   <section id="pricing" className="py-28 relative border-b border-border/40">
     <div className="container">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16 animate-fade-in">
@@ -31,23 +27,11 @@ export const Pricing = ({ selected, onSelect }: Props) => (
 
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-px bg-border/60 border border-border/60 max-w-6xl mx-auto">
         {PLANS.map((p, i) => {
-          const active = p.cycle === selected;
           const isFree = p.cycle === "free";
           return (
-            <button
+            <div
               key={p.cycle}
-              onClick={() => {
-                onSelect(p.cycle);
-                requestAnimationFrame(() => {
-                  document.getElementById("onboard")?.scrollIntoView({ behavior: "smooth", block: "start" });
-                });
-              }}
-              className={cn(
-                "relative text-left p-7 md:p-8 transition-all duration-300 animate-fade-in group",
-                active
-                  ? "bg-gradient-to-b from-primary/10 to-background"
-                  : "bg-background hover:bg-primary/[0.04]"
-              )}
+              className="relative text-left p-7 md:p-8 transition-all duration-300 animate-fade-in group bg-background hover:bg-primary/[0.04]"
               style={{ animationDelay: `${i * 80}ms` }}
             >
               {p.badge && (
@@ -66,11 +50,11 @@ export const Pricing = ({ selected, onSelect }: Props) => (
                 <div className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
                   {String(i + 1).padStart(2, "0")} · {p.label}
                 </div>
-                <div className={cn("w-4 h-4 rounded-full border-2 transition-all", active ? "bg-primary border-primary glow-primary" : "border-border")} />
+                <div className="w-4 h-4 rounded-full border-2 border-border" />
               </div>
 
               <div className="mb-1 flex items-baseline gap-2">
-                <span className={cn("font-display font-black text-4xl md:text-5xl tracking-tight", active && "gradient-text")}>
+                <span className="font-display font-black text-4xl md:text-5xl tracking-tight">
                   {p.priceLabel}
                 </span>
               </div>
@@ -88,7 +72,7 @@ export const Pricing = ({ selected, onSelect }: Props) => (
                 {p.description}
               </p>
 
-              <ul className="space-y-2.5 text-sm">
+              <ul className="space-y-2.5 text-sm mb-8">
                 {(isFree
                   ? ["Cloud storage to get started", "Secure file sharing", "Password & expiry on shares", "Upgrade anytime from your account"]
                   : ["Scalable cloud storage", "Secure by default", "Protected sharing", "2 concurrent users", "Archive + onboarding"]
@@ -99,7 +83,15 @@ export const Pricing = ({ selected, onSelect }: Props) => (
                   </li>
                 ))}
               </ul>
-            </button>
+
+              <Link
+                to={`/auth?plan=${p.cycle}`}
+                className="cta-guide group/btn relative h-12 w-full inline-flex items-center justify-center gap-2 bg-gradient-primary text-primary-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md"
+              >
+                <span>Claim Free Workspace</span>
+                <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+              </Link>
+            </div>
           );
         })}
       </div>

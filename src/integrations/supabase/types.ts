@@ -525,6 +525,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      attach_referral: {
+        Args: { _code: string; _email?: string }
+        Returns: string
+      }
       claim_admin_if_none: { Args: never; Returns: boolean }
       has_role: {
         Args: {

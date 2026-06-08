@@ -183,22 +183,18 @@ const VaultInner = () => {
         <div
           onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
           onDragLeave={() => setDrag(false)}
-          onDrop={(e) => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files?.[0]; if (f) handleUpload(f); }}
+          onDrop={(e) => { e.preventDefault(); setDrag(false); const dropped = Array.from(e.dataTransfer.files || []); dropped.forEach(handleUpload); }}
           onClick={() => fileInput.current?.click()}
-          className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition ${drag ? "border-accent bg-accent/5" : "border-border/60 hover:border-accent/60"}`}
+          className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition ${drag ? "border-accent bg-accent/5 shadow-[0_0_40px_-10px_hsl(var(--accent)/0.6)]" : "border-border/60 hover:border-accent/60 hover:shadow-[0_0_30px_-15px_hsl(var(--accent)/0.5)]"}`}
         >
-          <Upload className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
-          <p className="font-medium">{uploading ? "Uploading…" : "Drag & drop or click to choose"}</p>
-          <p className="text-xs text-muted-foreground mt-1">Max 2.5 GB per file</p>
-          {uploading && (
-            <div className="mt-4 flex items-center justify-center gap-2 text-sm">
-              <Loader2 className="h-4 w-4 animate-spin" /> {progress}%
-            </div>
-          )}
+          <Upload className="h-8 w-8 mx-auto mb-3 text-accent" />
+          <p className="font-medium">Drag & drop files, or click to choose</p>
+          <p className="text-xs text-muted-foreground mt-1">Multiple files supported · Max 2.5 GB each · Upload keeps running in the background</p>
           <input
-            ref={fileInput} type="file" className="hidden"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f); e.currentTarget.value = ""; }}
+            ref={fileInput} type="file" multiple className="hidden"
+            onChange={(e) => { const list = Array.from(e.target.files || []); list.forEach(handleUpload); e.currentTarget.value = ""; }}
           />
+
         </div>
 
         <Accordion type="single" collapsible>

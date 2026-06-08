@@ -16,6 +16,9 @@ import {
 } from "lucide-react";
 import MyAccount from "@/components/dashboard/MyAccount";
 import ReferralRewards from "@/components/dashboard/ReferralRewards";
+import { UploadManagerProvider, useUploadManager } from "@/components/vault/UploadManager";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
 
 type Tier = "lite" | "sovereign";
 

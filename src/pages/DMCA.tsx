@@ -4,7 +4,7 @@ import { DMCAForm } from "@/components/streamvista/DMCAForm";
 
 export default function DMCA() {
   return (
-    <main className="min-h-screen">
+    <main className="min-h-dvh">
       <div className="container max-w-3xl py-20">
         <Link to="/" className="text-xs uppercase tracking-[0.3em] text-muted-foreground hover:text-foreground">← Back to StreamVista Cloud X</Link>
 

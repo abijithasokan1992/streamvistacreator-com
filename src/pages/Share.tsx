@@ -57,7 +57,7 @@ const Share = () => {
   };
 
   return (
-    <main className="min-h-screen bg-background text-foreground grid place-items-center px-4">
+    <main className="min-h-dvh bg-background text-foreground grid place-items-center px-4">
       <Card className="w-full max-w-md p-6 space-y-5">
         <div className="flex items-center gap-2">
           <Shield className="h-5 w-5" />

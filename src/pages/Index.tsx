@@ -11,7 +11,7 @@ import type { Cycle } from "@/components/streamvista/plans";
 const Index = () => {
   const [selected, setSelected] = useState<Cycle>("yearly");
   return (
-    <main className="min-h-screen">
+    <main className="min-h-dvh">
       <Navbar />
       <Hero />
       <PlanFeature />

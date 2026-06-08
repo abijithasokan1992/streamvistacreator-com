@@ -53,7 +53,7 @@ export default function Auth() {
   };
 
   return (
-    <main className="min-h-screen grid place-items-center px-4">
+    <main className="min-h-dvh grid place-items-center px-4">
       <div className="w-full max-w-md">
         <Link to="/" className="block text-center text-xs uppercase tracking-[0.3em] text-muted-foreground mb-6">
           ← StreamVista Cloud X

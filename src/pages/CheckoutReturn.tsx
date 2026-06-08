@@ -6,7 +6,7 @@ export default function CheckoutReturn() {
   const sessionId = params.get("session_id");
 
   return (
-    <main className="min-h-screen grid place-items-center px-4">
+    <main className="min-h-dvh grid place-items-center px-4">
       <div className="glass-strong rounded-3xl p-12 text-center max-w-md w-full animate-scale-in">
         <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-primary grid place-items-center mb-6 glow-primary">
           <CheckCircle2 className="w-8 h-8 text-primary-foreground" />

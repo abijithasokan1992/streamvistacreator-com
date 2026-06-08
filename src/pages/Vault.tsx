@@ -71,7 +71,7 @@ const Vault = () => {
 
   useEffect(() => { load(); }, [user?.id]);
 
-  if (loading) return <div className="min-h-screen grid place-items-center text-muted-foreground">Loading…</div>;
+  if (loading) return <div className="min-h-dvh grid place-items-center text-muted-foreground">Loading…</div>;
   if (!user) return <Navigate to="/auth" replace />;
 
   const handleUpload = async (file: File) => {
@@ -149,7 +149,7 @@ const Vault = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-dvh bg-background text-foreground">
       <header className="border-b border-border">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/" className="font-bold text-xl">Cloud X · Vault</Link>

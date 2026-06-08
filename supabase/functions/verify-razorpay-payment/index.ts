@@ -3,7 +3,7 @@ import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
 import { createHmac } from "node:crypto";
 import { computeFinalPricePaise, type Cycle } from "../_shared/pricing.ts";
 
-function jsonError(req, req: Request, message: string, status: number) {
+function jsonError(req: Request, message: string, status: number) {
   return new Response(JSON.stringify({ error: message }), {
     status,
     headers: { ...buildCorsHeaders(req), "Content-Type": "application/json" },

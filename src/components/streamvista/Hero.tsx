@@ -1,4 +1,5 @@
 import { ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export const Hero = () => (
   <section className="relative pt-28 pb-12 overflow-hidden border-b border-border/40">
@@ -22,30 +23,20 @@ export const Hero = () => (
           </h1>
         </div>
 
-        {/* Sidebar copy + CTAs */}
+        {/* Sidebar copy + CTA */}
         <div className="space-y-8 max-w-md">
           <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
             Secure storage and collaboration —
             engineered for studios, VFX houses, post teams and independent creators.
           </p>
 
-          <div className="flex flex-col gap-4">
-            <a
-              href="/auth?plan=free"
-              className="cta-guide group relative h-14 inline-flex items-center justify-between px-6 bg-gradient-primary text-primary-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md"
-            >
-              <span className="cta-hint">Start here</span>
-              <span className="flex-1 text-center">Get Cloud X Free Account</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </a>
-            <a
-              href="#onboard"
-              className="h-14 inline-flex items-center justify-between px-6 border border-border/70 text-muted-foreground font-medium uppercase tracking-[0.18em] text-xs hover:text-foreground hover:border-primary/60 transition-colors rounded-md"
-            >
-              Create Studio Partner Account
-              <ArrowRight className="w-4 h-4" />
-            </a>
-          </div>
+          <Link
+            to="/auth?plan=free"
+            className="cta-guide group relative h-14 inline-flex items-center justify-center gap-3 px-6 bg-gradient-primary text-primary-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md w-full"
+          >
+            <span>Claim Free Workspace</span>
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </Link>
         </div>
       </div>
 

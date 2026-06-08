@@ -219,23 +219,30 @@ export function UploadManagerProvider({
 
     update(task.id, { status: "uploading", startedAt: Date.now(), error: undefined });
     upload.start();
+  }, [update]);
 
-    // Auto-pause on offline, auto-resume on online
+  // Global online/offline handler — pauses every in-flight upload and auto-resumes on reconnect.
+  // Single set of listeners (no per-task leak, no stale closures).
+  useEffect(() => {
     const onOffline = () => {
-      try { upload.abort(); } catch {}
-      update(task.id, { status: "paused", error: "Offline — will auto-resume when reconnected" });
+      uploadsRef.current.forEach((up, id) => {
+        try { up.abort(); } catch {}
+        update(id, { status: "paused", error: "Offline — will auto-resume when reconnected" });
+      });
     };
     const onOnline = () => {
-      const t = tasks.find((x) => x.id === task.id);
-      if (t?.status === "paused") {
-        update(task.id, { status: "uploading", error: undefined });
-        try { upload.start(); } catch {}
-      }
+      uploadsRef.current.forEach((up, id) => {
+        update(id, { status: "uploading", error: undefined });
+        try { up.start(); } catch {}
+      });
     };
     window.addEventListener("offline", onOffline);
     window.addEventListener("online", onOnline);
-    // cleanup wired on done/error via uploadsRef removal — listeners stay for life of page (harmless)
-  }, [update, tasks]);
+    return () => {
+      window.removeEventListener("offline", onOffline);
+      window.removeEventListener("online", onOnline);
+    };
+  }, [update]);
 
   const enqueue = useCallback(
     (file: File, opts: UploadOptions) => {

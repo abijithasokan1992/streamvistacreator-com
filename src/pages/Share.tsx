@@ -99,7 +99,7 @@ const Share = () => {
           </>
         )}
       </Card>
-    </div>
+    </main>
   );
 };
 

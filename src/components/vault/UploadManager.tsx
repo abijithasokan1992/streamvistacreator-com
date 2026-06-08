@@ -244,12 +244,14 @@ export function UploadManagerProvider({
             task.opts,
           );
           update(task.id, { status: "done", etaSeconds: 0 });
+          toast.success(`${task.filename} uploaded`, { duration: 2500 });
           configRef.current.onUploaded?.();
         } catch (e: any) {
           update(task.id, { status: "error", error: e?.message || "Post-upload failed" });
         } finally {
           uploadsRef.current.delete(task.id);
           filesRef.current.delete(task.id);
+          idbDel(task.id).catch(() => {});
         }
       },
     });

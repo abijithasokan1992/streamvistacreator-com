@@ -18,6 +18,7 @@ type SiteConfig = {
   oracle_region: string | null;
   oracle_namespace: string | null;
   oracle_bucket: string | null;
+  oracle_private_key: string | null;
 };
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;

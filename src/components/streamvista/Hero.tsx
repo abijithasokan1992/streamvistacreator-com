@@ -29,17 +29,18 @@ export const Hero = () => (
             engineered for studios, VFX houses, post teams and independent creators.
           </p>
 
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-4">
             <a
               href="#pricing"
-              className="group h-14 inline-flex items-center justify-between px-6 bg-gradient-primary text-primary-foreground font-semibold uppercase tracking-[0.18em] text-xs glow-primary"
+              className="cta-guide group relative h-14 inline-flex items-center justify-between px-6 bg-gradient-primary text-primary-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md"
             >
+              <span className="cta-hint">Start here</span>
               View Launch Plan
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </a>
             <a
               href="#onboard"
-              className="h-14 inline-flex items-center justify-between px-6 border border-border text-foreground font-semibold uppercase tracking-[0.18em] text-xs hover:border-primary/60 transition-colors"
+              className="h-14 inline-flex items-center justify-between px-6 border border-border/70 text-muted-foreground font-medium uppercase tracking-[0.18em] text-xs hover:text-foreground hover:border-primary/60 transition-colors rounded-md"
             >
               Start Onboarding
               <ArrowRight className="w-4 h-4" />

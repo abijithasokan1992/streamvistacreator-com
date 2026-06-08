@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { CheckCircle2, Loader2, BadgeCheck } from "lucide-react";
+import { CheckCircle2, Loader2, BadgeCheck, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { planByCycle, type Cycle } from "./plans";
+import { useNavigate } from "react-router-dom";
 
 const ROLES = [
   "Creator", "Editor", "Director", "Cinematographer",
@@ -21,10 +23,7 @@ const Schema = z.object({
   contactPhone: z.string().trim().max(30).or(z.literal("")),
 });
 
-/** Fire-and-forget welcome notifications (Email now; SMS/WhatsApp stubbed).
- *  Never awaited from the signup flow so it can't block or break the UI. */
 function fireWelcomeNotifications(email: string, name: string) {
-  // Email via existing app-email function if deployed; silently ignore if not.
   supabase.functions
     .invoke("send-transactional-email", {
       body: {
@@ -34,11 +33,18 @@ function fireWelcomeNotifications(email: string, name: string) {
         templateData: { name },
       },
     })
-    .catch(() => { /* infra optional — stub */ });
-  // SMS + WhatsApp: stubbed for now, wired once Twilio creds are added.
+    .catch(() => {});
 }
 
-export const OnboardingForm = () => {
+interface Props {
+  selectedCycle?: Cycle;
+}
+
+export const OnboardingForm = ({ selectedCycle = "free" }: Props) => {
+  const navigate = useNavigate();
+  const plan = planByCycle(selectedCycle);
+  const isPaid = plan.cycle !== "free";
+
   const [clientName, setClientName] = useState("");
   const [professionalRole, setProfessionalRole] = useState("");
   const [businessEmail, setBusinessEmail] = useState("");
@@ -51,19 +57,19 @@ export const OnboardingForm = () => {
     const parsed = Schema.safeParse({ clientName, professionalRole, businessEmail, contactPhone });
     if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
     setSubmitting(true);
-    toast.loading("Setting up your StreamVista workspace...", { id: "onboard" });
+    toast.loading(isPaid ? `Reserving your ${plan.label} workspace...` : "Setting up your StreamVista workspace...", { id: "onboard" });
 
     const { error } = await supabase.from("onboarding_requests").insert({
       client_name: parsed.data.clientName,
       professional_role: parsed.data.professionalRole,
       contact_phone: parsed.data.contactPhone || null,
       business_email: parsed.data.businessEmail,
-      selected_cycle: "free",
-      base_price: 0,
-      final_price: 0,
+      selected_cycle: plan.cycle,
+      base_price: plan.price,
+      final_price: plan.price,
       onboarding_status: "pending",
-      payment_status: "free",
-      plan_type: "free",
+      payment_status: isPaid ? "pending" : "free",
+      plan_type: isPaid ? "paid" : "free",
     });
 
     toast.dismiss("onboard");
@@ -75,12 +81,27 @@ export const OnboardingForm = () => {
       return;
     }
 
-    // Trigger welcome notifications asynchronously — do NOT await.
     fireWelcomeNotifications(parsed.data.businessEmail, parsed.data.clientName);
 
+    // Stash context so /auth can finish the journey (sign up → checkout for paid).
+    try {
+      sessionStorage.setItem("sv_onboarding", JSON.stringify({
+        email: parsed.data.businessEmail,
+        name: parsed.data.clientName,
+        cycle: plan.cycle,
+      }));
+    } catch {}
+
     setSubmitting(false);
+
+    if (isPaid) {
+      toast.success(`${plan.label} reserved — create your account to continue to secure checkout.`);
+      navigate(`/auth?plan=${plan.cycle}&email=${encodeURIComponent(parsed.data.businessEmail)}`);
+      return;
+    }
+
     setDone(true);
-    toast.success("You're in — check your inbox for next steps");
+    toast.success("You're in — sign in to access your vault and dashboard.");
   };
 
   if (done) {
@@ -94,14 +115,17 @@ export const OnboardingForm = () => {
             <h3 className="font-display text-3xl font-bold mb-3">Welcome to <span className="gradient-text">StreamVista</span></h3>
             <p className="text-muted-foreground mb-8 max-w-md mx-auto">
               Your free workspace for <span className="text-foreground">{businessEmail}</span> is ready.
-              Sign in to start sharing files — you can upgrade anytime from your account.
+              Sign in to access your storage vault and dashboard.
             </p>
 
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent text-sm font-semibold">
               <BadgeCheck className="w-4 h-4" /> Free plan · Active
             </div>
             <div className="mt-6">
-              <a href="/auth" className="text-sm text-accent underline underline-offset-4">Sign in to your account →</a>
+              <a href={`/auth?email=${encodeURIComponent(businessEmail)}`}
+                 className="inline-flex items-center justify-center h-12 px-6 rounded-xl bg-gradient-primary text-primary-foreground font-semibold glow-primary">
+                Sign in to your workspace →
+              </a>
             </div>
           </div>
         </div>
@@ -115,15 +139,28 @@ export const OnboardingForm = () => {
         <div className="mb-10 animate-fade-in text-center">
           <div className="flex items-center justify-center gap-3 mb-5">
             <div className="w-8 h-px bg-accent" />
-            <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">[ Get Started — Free ]</span>
+            <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">
+              [ {isPaid ? `Continue with ${plan.label}` : "Get Started — Free"} ]
+            </span>
             <div className="w-8 h-px bg-accent" />
           </div>
           <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-4xl md:text-6xl">
-            Create your <span className="gradient-text">free account.</span>
+            {isPaid ? <>Create your <span className="gradient-text">{plan.label.toLowerCase()} workspace.</span></>
+                    : <>Create your <span className="gradient-text">free account.</span></>}
           </h2>
           <p className="text-muted-foreground mt-4 text-sm">
-            Start on the Free plan. Upgrade from your account whenever you're ready.
+            {isPaid
+              ? "Tell us who you are — you'll create your sign-in and finish secure checkout next."
+              : "Start on the Free plan. Upgrade from your account whenever you're ready."}
           </p>
+
+          <div className="mt-6 inline-flex items-center gap-3 px-4 py-2 rounded-full bg-primary/10 border border-primary/30 text-sm">
+            <Sparkles className="w-3.5 h-3.5 text-accent" />
+            <span className="font-mono-tech text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Selected</span>
+            <span className="font-semibold">{plan.label}</span>
+            <span className="text-accent font-display">{plan.priceLabel}</span>
+            <span className="text-muted-foreground text-xs">{plan.cadence}</span>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="glass rounded-3xl p-8 space-y-5 animate-fade-in">
@@ -163,11 +200,13 @@ export const OnboardingForm = () => {
               "w-full h-14 rounded-xl bg-gradient-primary text-primary-foreground font-display font-semibold text-base glow-primary",
               "hover:scale-[1.01] transition-transform disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             )}>
-            {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Setting up your StreamVista workspace...</> : <>Create my Free account →</>}
+            {submitting
+              ? <><Loader2 className="w-4 h-4 animate-spin" /> {isPaid ? "Reserving your workspace..." : "Setting up your StreamVista workspace..."}</>
+              : <>{isPaid ? `Continue to ${plan.label} checkout →` : "Create my Free account →"}</>}
           </button>
 
           <p className="text-xs text-muted-foreground text-center">
-            By creating an account you agree to be contacted by our team about your workspace.
+            By continuing you agree to be contacted by our team about your workspace.
           </p>
         </form>
       </div>

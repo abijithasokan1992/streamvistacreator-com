@@ -31,19 +31,80 @@ export default function Auth() {
   const [submitting, setSubmitting] = useState(false);
   const [focused, setFocused] = useState<"email" | "password" | null>("email");
 
-  // After auth: paid plan → kick off checkout; otherwise → vault.
+  // After auth: paid plan → open Razorpay overlay → verify → vault. Otherwise → vault.
   const continueAfterAuth = async () => {
     if (isPaidPlan && plan) {
       try {
+        // Resolve onboardingId from URL or sessionStorage stash.
+        let onboardingId = search.get("onb") || "";
+        if (!onboardingId) {
+          try {
+            const stash = JSON.parse(sessionStorage.getItem("sv_onboarding") || "{}");
+            if (stash?.onboardingId) onboardingId = stash.onboardingId;
+          } catch {}
+        }
+        if (!onboardingId) {
+          toast.error("Missing onboarding context — please re-select your plan.");
+          navigate("/#pricing", { replace: true });
+          return;
+        }
+
         toast.loading("Preparing secure checkout...", { id: "co" });
         const { data, error } = await supabase.functions.invoke("create-razorpay-order", {
-          body: { cycle: plan.cycle },
+          body: { onboardingId },
         });
         toast.dismiss("co");
-        if (error) throw error;
-        if (data?.checkoutUrl) { window.location.href = data.checkoutUrl; return; }
+        if (error || !data?.orderId) throw error || new Error("Order creation failed");
+
+        const Razorpay = (window as any).Razorpay;
+        if (!Razorpay) {
+          toast.error("Checkout failed to load — please refresh and retry.");
+          return;
+        }
+
+        const rzp = new Razorpay({
+          key: data.keyId,
+          order_id: data.orderId,
+          amount: data.amount,
+          currency: data.currency,
+          name: "StreamVista Cloud X",
+          description: `${plan.label} workspace`,
+          prefill: { email: email || undefined },
+          theme: { color: "#3D7BFD" },
+          handler: async (resp: any) => {
+            toast.loading("Verifying payment...", { id: "vp" });
+            const { data: v, error: vErr } = await supabase.functions.invoke("verify-razorpay-payment", {
+              body: {
+                onboardingId,
+                razorpay_order_id: resp.razorpay_order_id,
+                razorpay_payment_id: resp.razorpay_payment_id,
+                razorpay_signature: resp.razorpay_signature,
+              },
+            });
+            toast.dismiss("vp");
+            if (vErr || !v?.verified) {
+              toast.error("Payment couldn't be verified. Contact support if you were charged.");
+              return;
+            }
+            try { sessionStorage.removeItem("sv_onboarding"); } catch {}
+            toast.success("Payment confirmed — welcome to your workspace.");
+            navigate("/vault", { replace: true });
+          },
+          modal: {
+            ondismiss: () => {
+              toast.message("Checkout closed — you can retry anytime from your vault.");
+              navigate("/vault", { replace: true });
+            },
+          },
+        });
+        rzp.on("payment.failed", () => {
+          toast.error("Payment failed — please try again.");
+        });
+        rzp.open();
+        return;
       } catch (e: any) {
         toast.dismiss("co");
+        console.error("checkout error:", e);
         toast.error("Couldn't open checkout — taking you to your workspace to retry.");
       }
     }

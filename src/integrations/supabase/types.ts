@@ -631,6 +631,51 @@ export type Database = {
         }
         Relationships: []
       }
+      site_config: {
+        Row: {
+          extra_origins: string[]
+          id: boolean
+          oracle_bucket: string | null
+          oracle_fingerprint: string | null
+          oracle_namespace: string | null
+          oracle_private_key_set: boolean
+          oracle_region: string | null
+          oracle_tenancy_ocid: string | null
+          oracle_user_ocid: string | null
+          primary_domain: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          extra_origins?: string[]
+          id?: boolean
+          oracle_bucket?: string | null
+          oracle_fingerprint?: string | null
+          oracle_namespace?: string | null
+          oracle_private_key_set?: boolean
+          oracle_region?: string | null
+          oracle_tenancy_ocid?: string | null
+          oracle_user_ocid?: string | null
+          primary_domain?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          extra_origins?: string[]
+          id?: boolean
+          oracle_bucket?: string | null
+          oracle_fingerprint?: string | null
+          oracle_namespace?: string | null
+          oracle_private_key_set?: boolean
+          oracle_region?: string | null
+          oracle_tenancy_ocid?: string | null
+          oracle_user_ocid?: string | null
+          primary_domain?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           cancel_at_period_end: boolean | null

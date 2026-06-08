@@ -9,7 +9,7 @@ import { Footer } from "@/components/streamvista/Footer";
 import type { Cycle } from "@/components/streamvista/plans";
 
 const Index = () => {
-  const [selected, setSelected] = useState<Cycle>("yearly");
+  const [selected, setSelected] = useState<Cycle>("free");
   return (
     <main className="min-h-dvh">
       <Navbar />
@@ -18,7 +18,7 @@ const Index = () => {
       <CloudStudioPartners />
 
       <Pricing selected={selected} onSelect={setSelected} />
-      <OnboardingForm selected={selected} />
+      <OnboardingForm />
       <Footer />
     </main>
   );

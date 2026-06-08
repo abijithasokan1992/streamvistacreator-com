@@ -71,6 +71,48 @@ export type Database = {
         }
         Relationships: []
       }
+      free_tier_config: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          duration_days: number
+          id: string
+          is_active: boolean
+          label: string
+          notes: string | null
+          storage_gb: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          duration_days?: number
+          id?: string
+          is_active?: boolean
+          label?: string
+          notes?: string | null
+          storage_gb?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          duration_days?: number
+          id?: string
+          is_active?: boolean
+          label?: string
+          notes?: string | null
+          storage_gb?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       onboarding_audit_log: {
         Row: {
           changed_by: string | null

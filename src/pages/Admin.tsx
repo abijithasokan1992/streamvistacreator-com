@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import PremiumInvitations from "@/components/admin/PremiumInvitations";
 import OracleStorageMonitor from "@/components/admin/OracleStorageMonitor";
+import FreeTierConfig from "@/components/admin/FreeTierConfig";
 
 interface Row {
   id: string;
@@ -158,6 +159,7 @@ export default function Admin() {
       </header>
 
       <section className="container py-10 space-y-10">
+        <FreeTierConfig />
         <PremiumInvitations />
         <OracleStorageMonitor />
 

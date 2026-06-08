@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import PremiumInvitations from "@/components/admin/PremiumInvitations";
+import CommissionsTracker from "@/components/admin/CommissionsTracker";
 import OracleStorageMonitor from "@/components/admin/OracleStorageMonitor";
 import FreeTierConfig from "@/components/admin/FreeTierConfig";
 import BrandingSettings from "@/components/admin/BrandingSettings";
@@ -165,6 +166,7 @@ export default function Admin() {
         <FreeTierConfig />
         <SupportInbox />
         <PremiumInvitations />
+        <CommissionsTracker />
         <OracleStorageMonitor />
 
 

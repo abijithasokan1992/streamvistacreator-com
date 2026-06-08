@@ -155,6 +155,54 @@ export type Database = {
         }
         Relationships: []
       }
+      intro_invites: {
+        Row: {
+          accepted_at: string | null
+          accepted_user_id: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          first_name: string
+          id: string
+          inviter_user_id: string
+          last_name: string
+          rate: number
+          status: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_user_id?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          first_name: string
+          id?: string
+          inviter_user_id: string
+          last_name?: string
+          rate?: number
+          status?: string
+          token?: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_user_id?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          first_name?: string
+          id?: string
+          inviter_user_id?: string
+          last_name?: string
+          rate?: number
+          status?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       onboarding_audit_log: {
         Row: {
           changed_by: string | null
@@ -392,6 +440,8 @@ export type Database = {
         Row: {
           approved_at: string | null
           approved_by: string | null
+          commission_rate: number
+          commission_until: string | null
           created_at: string
           id: string
           note: string | null
@@ -407,6 +457,8 @@ export type Database = {
         Insert: {
           approved_at?: string | null
           approved_by?: string | null
+          commission_rate?: number
+          commission_until?: string | null
           created_at?: string
           id?: string
           note?: string | null
@@ -422,6 +474,8 @@ export type Database = {
         Update: {
           approved_at?: string | null
           approved_by?: string | null
+          commission_rate?: number
+          commission_until?: string | null
           created_at?: string
           id?: string
           note?: string | null

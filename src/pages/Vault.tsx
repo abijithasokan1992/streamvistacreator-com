@@ -59,7 +59,7 @@ function randomToken() {
   return Array.from(arr).map((b) => b.toString(36).padStart(2, "0")).join("").slice(0, 24);
 }
 
-const VaultInner = () => {
+const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => void> }) => {
   const { user, loading, signOut } = useAuth();
   const { enqueue } = useUploadManager();
   const [section, setSection] = useState<SectionId>("files");

@@ -18,7 +18,7 @@ const Index = () => {
       <CloudStudioPartners />
 
       <Pricing selected={selected} onSelect={setSelected} />
-      <OnboardingForm />
+      <OnboardingForm selectedCycle={selected} />
       <Footer />
     </main>
   );

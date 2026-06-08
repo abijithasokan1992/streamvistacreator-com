@@ -3,7 +3,7 @@ import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
 import { createHmac } from "node:crypto";
 import { computeFinalPricePaise, type Cycle } from "../_shared/pricing.ts";
 
-function jsonError(message: string, status: number) {
+function jsonError(req, req: Request, message: string, status: number) {
   return new Response(JSON.stringify({ error: message }), {
     status,
     headers: { ...buildCorsHeaders(req), "Content-Type": "application/json" },
@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
   try {
     const { onboardingId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = await req.json();
     if (!onboardingId || !razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-      return jsonError("Missing fields", 400);
+      return jsonError(req, "Missing fields", 400);
     }
 
     const secret = Deno.env.get("RAZORPAY_KEY_SECRET");
@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (!secret || !keyId || !supabaseUrl || !serviceKey) {
       console.error("Missing required environment configuration");
-      return jsonError("Service temporarily unavailable", 503);
+      return jsonError(req, "Service temporarily unavailable", 503);
     }
 
     const expected = createHmac("sha256", secret)
@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
 
     const signatureValid = expected === razorpay_signature;
     if (!signatureValid) {
-      return jsonError("Payment verification failed", 400);
+      return jsonError(req, "Payment verification failed", 400);
     }
 
     const supabase = createClient(supabaseUrl, serviceKey);
@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
       .eq("id", onboardingId)
       .single();
     if (rowErr || !row || row.razorpay_order_id !== razorpay_order_id) {
-      return jsonError("Payment verification failed", 400);
+      return jsonError(req, "Payment verification failed", 400);
     }
 
     // Recompute expected amount server-side.
@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
     try {
       priced = computeFinalPricePaise(row.selected_cycle as Cycle, row.promo_code);
     } catch {
-      return jsonError("Payment verification failed", 400);
+      return jsonError(req, "Payment verification failed", 400);
     }
 
     // Cross-check actual amount with Razorpay's order record.
@@ -65,12 +65,12 @@ Deno.serve(async (req) => {
     const orderData = await orderRes.json();
     if (!orderRes.ok) {
       console.error("Razorpay order fetch failed", orderData);
-      return jsonError("Payment verification failed", 502);
+      return jsonError(req, "Payment verification failed", 502);
     }
 
     if (orderData.amount !== priced.finalPaise || orderData.status !== "paid") {
       console.error("Amount mismatch", { expected: priced.finalPaise, got: orderData.amount, status: orderData.status });
-      return jsonError("Payment verification failed", 400);
+      return jsonError(req, "Payment verification failed", 400);
     }
 
     await supabase
@@ -90,6 +90,6 @@ Deno.serve(async (req) => {
     });
   } catch (e) {
     console.error("verify-razorpay-payment error:", e);
-    return jsonError("Internal server error", 500);
+    return jsonError(req, "Internal server error", 500);
   }
 });

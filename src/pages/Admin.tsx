@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import PremiumInvitations from "@/components/admin/PremiumInvitations";
 
 interface Row {
   id: string;
@@ -155,7 +156,9 @@ export default function Admin() {
         </div>
       </header>
 
-      <section className="container py-10">
+      <section className="container py-10 space-y-10">
+        <PremiumInvitations />
+
         <div className="flex items-baseline justify-between mb-6">
           <div>
             <h1 className="font-display text-3xl font-bold">Onboarding Requests</h1>

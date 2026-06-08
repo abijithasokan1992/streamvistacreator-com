@@ -61,7 +61,7 @@ function randomToken() {
 
 const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => void> }) => {
   const { user, loading, signOut } = useAuth();
-  const { enqueue } = useUploadManager();
+  const { enqueue, pickAndEnqueue } = useUploadManager();
   const [section, setSection] = useState<SectionId>("files");
   const [files, setFiles] = useState<SharedFile[]>([]);
   const [tier, setTier] = useState<Tier>("lite");

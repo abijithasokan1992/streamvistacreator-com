@@ -4,9 +4,52 @@ import {
   ChevronUp, CheckCircle2, AlertCircle, Loader2, Upload, X, Minimize2, FileVideo,
   Pause, Play, RefreshCw, FolderOpen,
 } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
+
+// ─── IndexedDB persistence for FileSystemFileHandle (auto-resume across refresh/power loss) ───
+const IDB_NAME = "sv_upload_handles";
+const IDB_STORE = "handles";
+
+function idbOpen(): Promise<IDBDatabase | null> {
+  return new Promise((resolve) => {
+    try {
+      const req = indexedDB.open(IDB_NAME, 1);
+      req.onupgradeneeded = () => req.result.createObjectStore(IDB_STORE);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(null);
+    } catch { resolve(null); }
+  });
+}
+async function idbPut(key: string, value: any) {
+  const db = await idbOpen(); if (!db) return;
+  await new Promise<void>((res) => {
+    const tx = db.transaction(IDB_STORE, "readwrite");
+    tx.objectStore(IDB_STORE).put(value, key);
+    tx.oncomplete = () => res(); tx.onerror = () => res();
+  });
+  db.close();
+}
+async function idbGet(key: string): Promise<any | null> {
+  const db = await idbOpen(); if (!db) return null;
+  return await new Promise((res) => {
+    const tx = db.transaction(IDB_STORE, "readonly");
+    const r = tx.objectStore(IDB_STORE).get(key);
+    r.onsuccess = () => { res(r.result ?? null); db.close(); };
+    r.onerror = () => { res(null); db.close(); };
+  });
+}
+async function idbDel(key: string) {
+  const db = await idbOpen(); if (!db) return;
+  await new Promise<void>((res) => {
+    const tx = db.transaction(IDB_STORE, "readwrite");
+    tx.objectStore(IDB_STORE).delete(key);
+    tx.oncomplete = () => res(); tx.onerror = () => res();
+  });
+  db.close();
+}
 
 export type UploadOptions = {
   tier: "lite" | "sovereign";

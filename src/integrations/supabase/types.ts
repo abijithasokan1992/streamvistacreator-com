@@ -439,6 +439,66 @@ export type Database = {
         }
         Relationships: []
       }
+      partner_logos: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          is_active: boolean
+          logo_url: string
+          name: string
+          sort_order: number
+          tag: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          id?: string
+          is_active?: boolean
+          logo_url: string
+          name: string
+          sort_order?: number
+          tag?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          is_active?: boolean
+          logo_url?: string
+          name?: string
+          sort_order?: number
+          tag?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      partner_logos_settings: {
+        Row: {
+          aspect_ratio: string
+          container_bg: string
+          id: boolean
+          object_fit: string
+          updated_at: string
+        }
+        Insert: {
+          aspect_ratio?: string
+          container_bg?: string
+          id?: boolean
+          object_fit?: string
+          updated_at?: string
+        }
+        Update: {
+          aspect_ratio?: string
+          container_bg?: string
+          id?: boolean
+          object_fit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       premium_invitations: {
         Row: {
           created_at: string

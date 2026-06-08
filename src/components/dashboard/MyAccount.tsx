@@ -293,8 +293,10 @@ function UpgradeSection({ currentTier, email, name, userId, onUpgraded }: { curr
   const startUpgrade = async () => {
     if (selected === "free") { toast.info("You're already on the Free plan"); return; }
     setBusy(true);
+    const onboardingId = crypto.randomUUID();
     // Create an onboarding_request row to record this upgrade attempt
-    const { data: inserted, error } = await supabase.from("onboarding_requests").insert({
+    const { error } = await supabase.from("onboarding_requests").insert({
+      id: onboardingId,
       client_name: name ?? "Account upgrade",
       professional_role: "Existing user",
       business_email: email,
@@ -302,15 +304,15 @@ function UpgradeSection({ currentTier, email, name, userId, onUpgraded }: { curr
       base_price: plan.price,
       final_price: total,
       onboarding_status: "pending",
-    }).select("id").single();
-    if (error || !inserted) { setBusy(false); toast.error("Could not start upgrade"); return; }
+    });
+    if (error) { setBusy(false); toast.error("Could not start upgrade"); return; }
 
     if (provider === "card") { setBusy(false); setStripeOpen(true); return; }
 
     const ok = await loadRazorpay();
     if (!ok) { setBusy(false); toast.error("Could not load payment gateway"); return; }
     const { data: orderData, error: orderErr } = await supabase.functions.invoke("create-razorpay-order", {
-      body: { onboardingId: inserted.id },
+      body: { onboardingId },
     });
     if (orderErr || !orderData?.orderId) { setBusy(false); toast.error("Could not initiate payment"); return; }
 
@@ -322,7 +324,7 @@ function UpgradeSection({ currentTier, email, name, userId, onUpgraded }: { curr
       handler: async (resp: any) => {
         const { data: vData } = await supabase.functions.invoke("verify-razorpay-payment", {
           body: {
-            onboardingId: inserted.id,
+            onboardingId,
             userId,
             razorpay_order_id: resp.razorpay_order_id,
             razorpay_payment_id: resp.razorpay_payment_id,

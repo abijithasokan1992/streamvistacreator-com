@@ -59,7 +59,10 @@ export const OnboardingForm = ({ selectedCycle = "free" }: Props) => {
     setSubmitting(true);
     toast.loading(isPaid ? `Reserving your ${plan.label} workspace...` : "Setting up your StreamVista workspace...", { id: "onboard" });
 
-    const { data: inserted, error } = await supabase.from("onboarding_requests").insert({
+    const onboardingId = crypto.randomUUID();
+
+    const { error } = await supabase.from("onboarding_requests").insert({
+      id: onboardingId,
       client_name: parsed.data.clientName,
       professional_role: parsed.data.professionalRole,
       contact_phone: parsed.data.contactPhone || null,
@@ -70,11 +73,11 @@ export const OnboardingForm = ({ selectedCycle = "free" }: Props) => {
       onboarding_status: "pending",
       payment_status: isPaid ? "pending" : "free",
       plan_type: isPaid ? "paid" : "free",
-    }).select("id").single();
+    });
 
     toast.dismiss("onboard");
 
-    if (error || !inserted) {
+    if (error) {
       setSubmitting(false);
       console.error("[onboard] insert failed:", error);
       toast.error(error?.message || "Could not set up your account. Please try again.");
@@ -86,7 +89,7 @@ export const OnboardingForm = ({ selectedCycle = "free" }: Props) => {
     // Stash context so /auth can finish the journey (sign up → checkout for paid).
     try {
       sessionStorage.setItem("sv_onboarding", JSON.stringify({
-        onboardingId: inserted.id,
+        onboardingId,
         email: parsed.data.businessEmail,
         name: parsed.data.clientName,
         cycle: plan.cycle,
@@ -97,7 +100,7 @@ export const OnboardingForm = ({ selectedCycle = "free" }: Props) => {
 
     if (isPaid) {
       toast.success(`${plan.label} reserved — create your account to continue to secure checkout.`);
-      navigate(`/auth?plan=${plan.cycle}&email=${encodeURIComponent(parsed.data.businessEmail)}&onb=${inserted.id}`);
+      navigate(`/auth?plan=${plan.cycle}&email=${encodeURIComponent(parsed.data.businessEmail)}&onb=${onboardingId}`);
       return;
     }
 

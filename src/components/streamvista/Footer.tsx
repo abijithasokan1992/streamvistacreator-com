@@ -43,6 +43,8 @@ const TRUST: { icon: LucideIcon; label: string }[] = [
 export const Footer = () => {
   const b = useBranding();
   const logo = b?.footer_logo_url;
+  const location = useLocation();
+  const isHome = location.pathname === "/";
 
   return (
     <footer className="relative mt-24 border-t border-border/40">

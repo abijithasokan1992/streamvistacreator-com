@@ -8,18 +8,16 @@ import {
   Container,
   Head,
   Heading,
+  Hr,
   Html,
   Link,
   Preview,
+  Section,
   Text,
 } from 'npm:@react-email/components@0.0.22'
 
 interface EmailChangeEmailProps {
   siteName: string
-  // oldEmail is the user's current address (HookData.OldEmail). For the
-  // NEW-recipient half of a secure email_change fanout, `email` equals the
-  // recipient (NEW), so the "from" line must render oldEmail to read
-  // "from OLD to NEW" instead of "from NEW to NEW".
   oldEmail: string
   email: string
   newEmail: string
@@ -27,37 +25,38 @@ interface EmailChangeEmailProps {
 }
 
 export const EmailChangeEmail = ({
-  siteName,
   oldEmail,
   newEmail,
   confirmationUrl,
 }: EmailChangeEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>Confirm your email change for {siteName}</Preview>
+    <Preview>Confirm your StreamVista email change</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>Confirm your email change</Heading>
-        <Text style={text}>
-          You requested to change your email address for {siteName} from{' '}
-          <Link href={`mailto:${oldEmail}`} style={link}>
-            {oldEmail}
-          </Link>{' '}
-          to{' '}
-          <Link href={`mailto:${newEmail}`} style={link}>
-            {newEmail}
-          </Link>
-          .
+        <Section style={brandBar}>
+          <Text style={brandMark}>STREAMVISTA <span style={brandDot}>·</span> CLOUD X</Text>
+        </Section>
+
+        <Heading style={h1}>Confirm your new email</Heading>
+        <Text style={lead}>
+          You requested to move your StreamVista workspace from{' '}
+          <Link href={`mailto:${oldEmail}`} style={inlineLink}>{oldEmail}</Link>{' '}
+          to <Link href={`mailto:${newEmail}`} style={inlineLink}>{newEmail}</Link>. Tap below to confirm.
         </Text>
-        <Text style={text}>
-          Click the button below to confirm this change:
+
+        <Section style={ctaWrap}>
+          <Button style={button} href={confirmationUrl}>Confirm email change</Button>
+        </Section>
+
+        <Text style={fineprint}>
+          Or paste this link into your browser:<br />
+          <Link href={confirmationUrl} style={rawLink}>{confirmationUrl}</Link>
         </Text>
-        <Button style={button} href={confirmationUrl}>
-          Confirm Email Change
-        </Button>
+
+        <Hr style={divider} />
         <Text style={footer}>
-          If you didn't request this change, please secure your account
-          immediately.
+          Didn't request this? Please secure your account immediately by signing in and changing your password.
         </Text>
       </Container>
     </Body>
@@ -66,27 +65,40 @@ export const EmailChangeEmail = ({
 
 export default EmailChangeEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
-const h1 = {
-  fontSize: '22px',
-  fontWeight: 'bold' as const,
-  color: '#000000',
-  margin: '0 0 20px',
+const main = {
+  backgroundColor: '#ffffff',
+  fontFamily:
+    '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Inter, Arial, sans-serif',
+  margin: 0,
+  padding: '40px 12px',
 }
-const text = {
-  fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
-  margin: '0 0 25px',
+const container = {
+  maxWidth: '560px',
+  margin: '0 auto',
+  padding: '40px 36px',
+  border: '1px solid #eceef3',
+  borderRadius: '20px',
+  backgroundColor: '#ffffff',
 }
-const link = { color: 'inherit', textDecoration: 'underline' }
+const brandBar = { marginBottom: '28px' }
+const brandMark = { fontSize: '11px', letterSpacing: '0.32em', color: '#08091a', fontWeight: 700 as const, margin: 0 }
+const brandDot = { color: '#F5C73A' }
+const h1 = { fontSize: '26px', fontWeight: 700 as const, color: '#08091a', margin: '0 0 14px', letterSpacing: '-0.01em' }
+const lead = { fontSize: '15px', color: '#4a4e5c', lineHeight: '1.6', margin: '0 0 28px' }
+const inlineLink = { color: '#3D7BFD', textDecoration: 'none', fontWeight: 600 as const }
+const ctaWrap = { margin: '0 0 24px' }
 const button = {
-  backgroundColor: '#000000',
+  display: 'inline-block',
+  backgroundImage: 'linear-gradient(135deg,#3D7BFD 0%,#8B6BFC 100%)',
+  backgroundColor: '#3D7BFD',
   color: '#ffffff',
-  fontSize: '14px',
-  borderRadius: '8px',
-  padding: '12px 20px',
+  fontSize: '15px',
+  fontWeight: 600 as const,
+  borderRadius: '14px',
+  padding: '14px 26px',
   textDecoration: 'none',
 }
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
+const fineprint = { fontSize: '12px', color: '#8a8f9c', lineHeight: '1.5', margin: '0 0 24px', wordBreak: 'break-all' as const }
+const rawLink = { color: '#3D7BFD', textDecoration: 'underline' }
+const divider = { borderColor: '#eceef3', margin: '24px 0' }
+const footer = { fontSize: '12px', color: '#8a8f9c', margin: 0, lineHeight: '1.6' }

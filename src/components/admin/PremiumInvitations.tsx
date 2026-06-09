@@ -36,6 +36,7 @@ interface Invitation {
   discount_percent: number;
   validity_days: number;
   is_free: boolean;
+  account_type: AccountType;
   status: string;
   sent_channels: string[];
   expires_at: string;

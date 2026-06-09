@@ -367,6 +367,7 @@ export default function Auth() {
                     value={firstName}
                     onChange={e => setFirstName(e.target.value)}
                     placeholder="First name"
+                    aria-label="First name"
                     required
                     autoComplete="given-name"
                     maxLength={80}
@@ -377,6 +378,7 @@ export default function Auth() {
                     value={lastName}
                     onChange={e => setLastName(e.target.value)}
                     placeholder="Last name"
+                    aria-label="Last name"
                     required
                     autoComplete="family-name"
                     maxLength={80}
@@ -389,6 +391,7 @@ export default function Auth() {
                   value={studioName}
                   onChange={e => setStudioName(e.target.value)}
                   placeholder="Studio / company name"
+                  aria-label="Studio or company name"
                   required
                   autoComplete="organization"
                   maxLength={160}
@@ -402,6 +405,7 @@ export default function Auth() {
                     value={mobile}
                     onChange={e => setMobile(e.target.value.replace(/[^\d\s\-()]/g, ""))}
                     placeholder="Mobile number"
+                    aria-label="Mobile number"
                     required
                     autoComplete="tel-national"
                     maxLength={20}
@@ -416,6 +420,7 @@ export default function Auth() {
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="Email"
+              aria-label="Email address"
               required
               autoComplete="email"
               className="peer w-full h-12 px-4 rounded-xl bg-input/40 border border-border/60 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-accent/70 focus:bg-input/70 focus:shadow-[0_0_24px_-6px_hsl(var(--accent)/0.5)]"
@@ -429,11 +434,13 @@ export default function Auth() {
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="Password"
+                  aria-label="Password"
                   required
                   minLength={8}
                   autoComplete={view === "login" ? "current-password" : "new-password"}
                   className="w-full h-12 pl-4 pr-12 rounded-xl bg-input/40 border border-border/60 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-accent/70 focus:bg-input/70 focus:shadow-[0_0_24px_-6px_hsl(var(--accent)/0.5)]"
                 />
+
                 <button
                   type="button"
                   onClick={() => setShowPassword(s => !s)}

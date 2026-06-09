@@ -149,19 +149,7 @@ Deno.serve(async (req) => {
 
     if (action === "download") {
       if (file.view_only) return json({ error: "Download disabled for this link" }, 403);
-      if (file.password_hash) {
-        if (!password || typeof password !== "string") return json({ error: "Password required" }, 401);
-        if (!file.password_salt) {
-          // Legacy unsalted SHA-256 fallback (will be re-encoded on next owner update).
-          const legacy = bytesToHex(new Uint8Array(
-            await crypto.subtle.digest("SHA-256", new TextEncoder().encode(password)),
-          ));
-          if (!timingSafeEqual(legacy, file.password_hash)) return json({ error: "Wrong password" }, 401);
-        } else {
-          const h = await hashPassword(password, file.password_salt);
-          if (!timingSafeEqual(h, file.password_hash)) return json({ error: "Wrong password" }, 401);
-        }
-      }
+      const bad = await verifyPwd(); if (bad) return bad;
 
       const { data: signed, error: sErr } = await admin.storage
         .from("vault").createSignedUrl(file.storage_path, 300, { download: file.filename });

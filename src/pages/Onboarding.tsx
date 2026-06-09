@@ -100,7 +100,34 @@ export default function Onboarding() {
     setSaving(false);
     if (error) return toast.error(error.message);
     await refreshRole();
-    toast.success("Welcome to your workspace.");
+
+    // Persist completion banner state for first dashboard visit
+    try {
+      sessionStorage.setItem("sv_onboarding_just_completed", "1");
+      localStorage.setItem(`sv_onboarding_done_${user.id}`, new Date().toISOString());
+    } catch {}
+
+    // Optional: fire onboarding-complete email (silently no-op if template/function missing)
+    const displayName = `${firstName} ${lastName}`.trim() || studioName || user.email || "there";
+    supabase.functions.invoke("send-transactional-email", {
+      body: {
+        templateName: "onboarding-complete",
+        recipientEmail: user.email,
+        idempotencyKey: `onboarding-complete-${user.id}`,
+        templateData: {
+          name: displayName,
+          studio: studioName,
+          plan: selectedCycle,
+          role: professionalRole,
+          whatsapp: whatsapp || null,
+        },
+      },
+    }).catch(() => {});
+
+    toast.success("You're all set — welcome to StreamVista.", {
+      description: `Workspace ready for ${studioName || displayName} on the ${selectedCycle} plan.`,
+      duration: 6000,
+    });
     navigate(dashboardForRole(role ?? "client"), { replace: true });
   };
 

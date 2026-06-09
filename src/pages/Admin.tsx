@@ -18,6 +18,7 @@ import PartnerLogos from "@/components/admin/PartnerLogos";
 import RolesManager from "@/components/admin/RolesManager";
 import RazorpayCredentials from "@/components/admin/RazorpayCredentials";
 import ResendCredentials from "@/components/admin/ResendCredentials";
+import AdminCredentials from "@/components/admin/AdminCredentials";
 
 interface Row {
   id: string;
@@ -43,6 +44,7 @@ export default function Admin() {
   const [rows, setRows] = useState<Row[]>([]);
   const [fetching, setFetching] = useState(false);
   const [claiming, setClaiming] = useState(false);
+  const [adminAlreadyExists, setAdminAlreadyExists] = useState<boolean | null>(null);
   const [copied, setCopied] = useState(false);
 
   const adminUrl = typeof window !== "undefined" ? `${window.location.origin}/admin` : "/admin";
@@ -56,8 +58,15 @@ export default function Admin() {
   };
 
   useEffect(() => {
-    if (!loading && !user) navigate("/auth", { replace: true });
+    if (!loading && !user) navigate("/auth?next=/admin", { replace: true });
   }, [user, loading, navigate]);
+
+  // Hide the "Claim Admin Role" CTA the moment an admin exists somewhere in
+  // the system — prevents would-be attackers from spamming the button.
+  useEffect(() => {
+    if (loading || !user || isAdmin) return;
+    supabase.rpc("admin_exists").then(({ data }) => setAdminAlreadyExists(!!data));
+  }, [user, loading, isAdmin]);
 
   const load = async () => {
     setFetching(true);

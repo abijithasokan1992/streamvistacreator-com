@@ -100,13 +100,12 @@ Deno.serve(async (req) => {
       .eq("id", onboardingId)
       .eq("razorpay_order_id", razorpay_order_id);
 
-    // Upgrade the user's plan tier so the dashboard reflects the new plan immediately.
-    if (userId && typeof userId === "string") {
-      await supabase
-        .from("user_profiles")
-        .update({ plan_tier: row.selected_cycle })
-        .eq("user_id", userId);
-    }
+    // Upgrade plan tier for the authenticated user only (userId derived from JWT above).
+    await supabase
+      .from("user_profiles")
+      .update({ plan_tier: row.selected_cycle })
+      .eq("user_id", userId);
+
 
     return new Response(JSON.stringify({ verified: true, planTier: row.selected_cycle }), {
       status: 200,

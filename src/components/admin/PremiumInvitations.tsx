@@ -128,14 +128,23 @@ export default function PremiumInvitations() {
     ].join("\n");
   };
 
-  const sendEmail = (inv: Invitation) => {
+  const sendEmail = async (inv: Invitation) => {
     if (!inv.invitee_email) return toast.error("No email on this invite");
-    const subject = "Your exclusive Crayons Creator Cloud invite";
-    const cc = CC_EMAILS.join(",");
-    // Admin will be signed into FROM_EMAIL in their mail client — From is set automatically.
-    const url = `mailto:${encodeURIComponent(inv.invitee_email)}?cc=${encodeURIComponent(cc)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBodyFor(inv))}`;
-    window.location.href = url;
-    markSent(inv, "email");
+    setSendingId(inv.id);
+    const t = toast.loading(`Sending invite to ${inv.invitee_email}…`);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-premium-invitation", {
+        body: { invitationId: inv.id },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast.success(`Invite emailed to ${inv.invitee_email}`, { id: t });
+      load();
+    } catch (e: any) {
+      toast.error(e?.message || "Could not send email", { id: t });
+    } finally {
+      setSendingId(null);
+    }
   };
 
   const revoke = async (inv: Invitation) => {

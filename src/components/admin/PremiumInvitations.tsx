@@ -175,17 +175,40 @@ export default function PremiumInvitations() {
   return (
     <div className="space-y-6">
       <div className="glass rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
           <div>
-            <h2 className="font-display text-2xl font-bold flex items-center gap-2"><Ticket className="w-5 h-5 text-accent" /> Premium Invitations</h2>
-            <p className="text-xs text-muted-foreground mt-1">1 TB · ₹650 + 18% GST · 30-day validity · auto from {FROM_EMAIL}</p>
+            <h2 className="font-display text-2xl font-bold flex items-center gap-2">
+              <Ticket className="w-5 h-5 text-accent" /> StreamVista Cloud X · Premium Invitations
+            </h2>
+            <p className="text-xs text-muted-foreground mt-1">Special Invite · Plan 1 TB Free · 30-day validity · sent from {FROM_EMAIL}</p>
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2"><Plus className="w-4 h-4" /> Send invite</Button>
+              <Button className="gap-2" disabled={usage.personal >= QUOTAS.personal && usage.professional >= QUOTAS.professional}>
+                <Plus className="w-4 h-4" /> Send invite
+              </Button>
             </DialogTrigger>
-            <NewInvitationDialog onCreated={() => setOpen(false)} />
+            <NewInvitationDialog usage={usage} onCreated={() => { setOpen(false); load(); }} />
           </Dialog>
+        </div>
+
+        {/* Quota meters */}
+        <div className="grid sm:grid-cols-2 gap-3 mb-6">
+          {(["personal","professional"] as AccountType[]).map(t => {
+            const used = usage[t]; const max = QUOTAS[t]; const pct = Math.min(100, Math.round((used/max)*100));
+            return (
+              <div key={t} className="rounded-xl border border-border/60 bg-secondary/20 p-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold uppercase tracking-wider text-muted-foreground">{t} quota</span>
+                  <span className="font-mono"><b className="text-foreground">{used}</b> / {max}</span>
+                </div>
+                <div className="mt-2 h-1.5 rounded-full bg-border/50 overflow-hidden">
+                  <div className="h-full rounded-full bg-gradient-to-r from-fuchsia-500 via-pink-500 to-amber-400 transition-all" style={{ width: `${pct}%` }} />
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1.5">{max - used} invites remaining</p>
+              </div>
+            );
+          })}
         </div>
 
         {loading ? (
@@ -195,22 +218,22 @@ export default function PremiumInvitations() {
         ) : (
           <ul className="grid gap-3">
             {rows.map(inv => {
-              const price = computeStoragePrice(inv.storage_tb, inv.discount_percent, inv.is_free);
               return (
                 <li key={inv.id} className="border border-border/60 rounded-xl p-4 grid md:grid-cols-[1.3fr_1fr_auto] gap-4 items-start">
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold inline-flex items-center gap-1"><Mail className="w-3.5 h-3.5 text-muted-foreground" /> {inv.invitee_email}</span>
                       <span className={`text-[11px] px-2 py-0.5 rounded font-semibold uppercase tracking-wider ${STATUS_STYLES[inv.status]}`}>{inv.status}</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded font-semibold uppercase tracking-wider border border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-300">{inv.account_type}</span>
                     </div>
                     {inv.referral_code && (
                       <p className="text-[11px] text-muted-foreground mt-2 font-mono break-all">ref: {refUrl(inv.referral_code)}</p>
                     )}
                   </div>
                   <div className="text-sm space-y-0.5">
-                    <div><span className="text-muted-foreground">Storage:</span> <b>{inv.storage_tb} TB</b></div>
+                    <div><span className="text-muted-foreground">Storage:</span> <b>{inv.storage_tb} TB</b> <span className="text-[10px] uppercase tracking-wider text-amber-400 ml-1">Free</span></div>
                     <div><span className="text-muted-foreground">Validity:</span> {inv.validity_days} days</div>
-                    <div><span className="text-muted-foreground">Total:</span> <b>{formatInr(price.totalInr)}</b></div>
+                    <div className="text-[11px] text-muted-foreground font-mono break-all">invite: {inviteUrl(inv.token)}</div>
                   </div>
                   <div className="flex flex-wrap gap-2 md:justify-end">
                     <Button size="sm" variant="outline" onClick={() => copyLink(inv)} className="gap-1">

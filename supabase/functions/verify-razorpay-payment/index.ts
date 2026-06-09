@@ -15,17 +15,29 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: buildCorsHeaders(req) });
 
   try {
-    const { onboardingId, userId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = await req.json();
+    const { onboardingId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = await req.json();
     if (!onboardingId || !razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return jsonError(req, "Missing fields", 400);
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!supabaseUrl || !serviceKey) {
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    if (!supabaseUrl || !serviceKey || !anonKey) {
       console.error("Missing required environment configuration");
       return jsonError(req, "Service temporarily unavailable", 503);
     }
+
+    // Require an authenticated caller. Derive userId from the JWT — never trust the body.
+    const authHeader = req.headers.get("Authorization") ?? "";
+    if (!authHeader.startsWith("Bearer ")) return jsonError(req, "Unauthorized", 401);
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: userRes, error: userErr } = await userClient.auth.getUser();
+    const userId = userRes?.user?.id;
+    if (userErr || !userId) return jsonError(req, "Unauthorized", 401);
+
     const supabase = createClient(supabaseUrl, serviceKey);
     const creds = await loadRazorpayCreds(supabase);
     if (!creds) {

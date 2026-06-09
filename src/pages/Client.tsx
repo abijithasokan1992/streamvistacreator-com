@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { LogOut, Link2, Inbox, ShieldCheck } from "lucide-react";
+import OnboardingCompleteBanner from "@/components/OnboardingCompleteBanner";
 
 /**
  * Client dashboard — view-only.
@@ -32,6 +33,7 @@ export default function Client() {
       </header>
 
       <main className="container py-10 max-w-3xl">
+        <OnboardingCompleteBanner />
         <h1 className="font-display text-2xl font-bold mb-2">Welcome</h1>
         <p className="text-muted-foreground mb-6">
           Your account is set up as a <span className="text-accent">Client</span>. Open any share

@@ -667,6 +667,7 @@ export type Database = {
           download_count: number
           expires_at: string | null
           filename: string
+          has_password: boolean | null
           id: string
           max_downloads: number | null
           mime_type: string | null
@@ -685,6 +686,7 @@ export type Database = {
           download_count?: number
           expires_at?: string | null
           filename: string
+          has_password?: boolean | null
           id?: string
           max_downloads?: number | null
           mime_type?: string | null
@@ -703,6 +705,7 @@ export type Database = {
           download_count?: number
           expires_at?: string | null
           filename?: string
+          has_password?: boolean | null
           id?: string
           max_downloads?: number | null
           mime_type?: string | null

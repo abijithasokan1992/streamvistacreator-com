@@ -72,6 +72,7 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
   const [maxDownloads, setMaxDownloads] = useState<number | "">("");
   const [drag, setDrag] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [shareTarget, setShareTarget] = useState<ShareLinkFile | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
 

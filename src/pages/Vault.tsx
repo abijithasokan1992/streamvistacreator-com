@@ -524,9 +524,9 @@ function TierTile({ active, onClick, icon, title, sub }: { active: boolean; onCl
   );
 }
 
-function FileRow({ file: f, onCopy, onRevoke, onRemove }: {
+function FileRow({ file: f, onShare, onRevoke, onRemove }: {
   file: SharedFile;
-  onCopy: (t: string) => void;
+  onShare: (f: SharedFile) => void;
   onRevoke: (id: string) => void;
   onRemove: (f: SharedFile) => void;
 }) {
@@ -542,6 +542,7 @@ function FileRow({ file: f, onCopy, onRevoke, onRemove }: {
           <span>·</span>
           <span>{f.tier === "sovereign" ? "India Secure" : "Standard"}</span>
           {f.has_password && (<><span>·</span><span>🔒</span></>)}
+          {f.view_only && (<><span>·</span><Badge variant="secondary" className="text-[10px] py-0">View only</Badge></>)}
           {f.expires_at && (<><span>·</span><span>exp {new Date(f.expires_at).toLocaleDateString()}</span></>)}
           <span>·</span>
           <span>{f.download_count}{f.max_downloads ? `/${f.max_downloads}` : ""}↓</span>
@@ -549,8 +550,8 @@ function FileRow({ file: f, onCopy, onRevoke, onRemove }: {
         </div>
       </div>
       <div className="flex gap-1.5">
-        <Button size="sm" variant="outline" className="h-8" onClick={() => onCopy(f.share_token)} disabled={f.revoked}>
-          <Copy className="h-3.5 w-3.5 sm:mr-1" /> <span className="hidden sm:inline">Share</span>
+        <Button size="sm" variant="outline" className="h-8" onClick={() => onShare(f)} disabled={f.revoked}>
+          <Link2 className="h-3.5 w-3.5 sm:mr-1" /> <span className="hidden sm:inline">Share</span>
         </Button>
         {!f.revoked && (
           <Button size="sm" variant="ghost" className="h-8" onClick={() => onRevoke(f.id)}>Revoke</Button>

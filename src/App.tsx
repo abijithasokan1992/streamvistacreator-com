@@ -18,6 +18,7 @@ import About from "./pages/About.tsx";
 import LaunchingSpecialPlan from "./pages/LaunchingSpecialPlan.tsx";
 import CheckoutReturn from "./pages/CheckoutReturn.tsx";
 import Vault from "./pages/Vault.tsx";
+import Studio from "./pages/Studio.tsx";
 import Producer from "./pages/Producer.tsx";
 import Client from "./pages/Client.tsx";
 import Share from "./pages/Share.tsx";
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="/admin" element={<Admin />} />{/* Internal gate + RLS handle access; first-user bootstrap stays reachable. */}
             <Route path="/producer" element={<RoleGate allow={["executive_producer", "admin"]}><Producer /></RoleGate>} />
             <Route path="/vault" element={<RoleGate allow={["creator", "admin"]}><Vault /></RoleGate>} />
+            <Route path="/studio" element={<RoleGate allow={["creator", "executive_producer", "admin"]}><Studio /></RoleGate>} />
             <Route path="/client" element={<RoleGate allow={["client", "creator", "executive_producer", "admin"]}><Client /></RoleGate>} />
 
             <Route path="/launching-special-plan" element={<LaunchingSpecialPlan />} />

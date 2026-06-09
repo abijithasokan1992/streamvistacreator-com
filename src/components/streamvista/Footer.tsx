@@ -9,17 +9,12 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
     title: "StreamVista OPC",
     links: [
       { to: "/about", label: "About Us" },
-      { to: "/about#partner", label: "Partner with OPC" },
-      { to: "/about#contact", label: "Contact OPC" },
-      { to: "/about#investors", label: "Finance & Investors" },
     ],
   },
   {
     title: "Support",
     links: [
       { to: "/support", label: "Help Center" },
-      { to: "/support#guide", label: "Creator Studio Guide" },
-      { to: "/support#status", label: "System Status" },
     ],
   },
   {

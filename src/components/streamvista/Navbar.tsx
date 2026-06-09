@@ -3,10 +3,10 @@ import { Link } from "react-router-dom";
 import { useBranding } from "@/lib/branding";
 
 const NAV_LINKS = [
-  { href: "#plan", label: "Solutions" },
-  { href: "/about", label: "Partner with OPC" },
+  { href: "/#plan", label: "Solutions" },
+  { href: "/#pricing", label: "Pricing" },
+  { href: "/about", label: "About OPC" },
   { href: "/support", label: "Support" },
-  { href: "/about#contact", label: "Contact OPC" },
 ];
 
 export const Navbar = () => {

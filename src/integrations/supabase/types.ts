@@ -622,6 +622,60 @@ export type Database = {
         }
         Relationships: []
       }
+      recent_uploads: {
+        Row: {
+          bucket: string
+          created_at: string
+          error_message: string | null
+          file_name: string
+          file_size: number
+          id: string
+          mime_type: string | null
+          namespace: string
+          object_key: string
+          par_expires_at: string | null
+          par_url: string | null
+          region: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bucket: string
+          created_at?: string
+          error_message?: string | null
+          file_name: string
+          file_size?: number
+          id?: string
+          mime_type?: string | null
+          namespace: string
+          object_key: string
+          par_expires_at?: string | null
+          par_url?: string | null
+          region: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bucket?: string
+          created_at?: string
+          error_message?: string | null
+          file_name?: string
+          file_size?: number
+          id?: string
+          mime_type?: string | null
+          namespace?: string
+          object_key?: string
+          par_expires_at?: string | null
+          par_url?: string | null
+          region?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       referral_codes: {
         Row: {
           code: string

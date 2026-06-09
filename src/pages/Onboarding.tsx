@@ -95,6 +95,28 @@ export default function Onboarding() {
     navigate(dashboardForRole(role ?? "client"), { replace: true });
   };
 
+  const skipToDashboard = async () => {
+    if (!user) return;
+    setSaving(true);
+    const { error } = await supabase.from("user_profiles").upsert({
+      user_id: user.id,
+      first_name: firstName.trim() || "Creator",
+      display_name: firstName.trim() || "Creator",
+      professional_role: professionalRole || "Creator",
+      plan_tier: "free",
+      onboarding_step: "done",
+    }, { onConflict: "user_id" });
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    await refreshRole();
+    try {
+      sessionStorage.setItem("sv_onboarding_just_completed", "1");
+      localStorage.setItem(`sv_onboarding_done_${user.id}`, new Date().toISOString());
+    } catch {}
+    toast.success("Welcome to StreamVista.", { duration: 4000 });
+    navigate(dashboardForRole(role ?? "client"), { replace: true });
+  };
+
   if (loading || hydrating) {
     return <div className="min-h-dvh grid place-items-center"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>;
   }

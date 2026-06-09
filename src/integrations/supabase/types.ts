@@ -501,6 +501,7 @@ export type Database = {
       }
       premium_invitations: {
         Row: {
+          account_type: string
           created_at: string
           created_by: string | null
           discount_percent: number
@@ -522,6 +523,7 @@ export type Database = {
           validity_days: number
         }
         Insert: {
+          account_type?: string
           created_at?: string
           created_by?: string | null
           discount_percent?: number
@@ -543,6 +545,7 @@ export type Database = {
           validity_days?: number
         }
         Update: {
+          account_type?: string
           created_at?: string
           created_by?: string | null
           discount_percent?: number

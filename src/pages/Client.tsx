@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -18,6 +18,24 @@ export default function Client() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [linkInput, setLinkInput] = useState("");
+  const linkInputRef = useRef<HTMLInputElement | null>(null);
+
+  const focusLinkInput = async () => {
+    linkInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    linkInputRef.current?.focus();
+    // Try to auto-paste from the clipboard if the browser allows it.
+    try {
+      if (navigator.clipboard?.readText) {
+        const text = (await navigator.clipboard.readText()).trim();
+        if (text && /\/s\//.test(text)) {
+          setLinkInput(text);
+          toast.success("Link pasted from clipboard");
+        }
+      }
+    } catch {
+      // Clipboard permission denied — user can paste manually.
+    }
+  };
 
   const openLink = () => {
     const raw = linkInput.trim();
@@ -87,7 +105,7 @@ export default function Client() {
           </div>
         </section>
 
-        {user && <FirstStepsCard userId={user.id} variant="client" />}
+        {user && <FirstStepsCard userId={user.id} variant="client" onPasteLink={focusLinkInput} />}
 
         {/* Open-a-link panel */}
         <section className="glass-strong rounded-3xl p-6 md:p-7 border border-border/40 mb-8 animate-fade-in">
@@ -101,6 +119,7 @@ export default function Client() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
             <input
+              ref={linkInputRef}
               value={linkInput}
               onChange={(e) => setLinkInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && openLink()}

@@ -20,12 +20,14 @@ export default function FirstStepsCard({
   onUpload,
   onShare,
   onInvite,
+  onPasteLink,
 }: {
   userId: string;
   variant?: "creator" | "client";
   onUpload?: () => void;
   onShare?: () => void;
   onInvite?: () => void;
+  onPasteLink?: () => void;
 }) {
   const storageKey = `sv_first_steps_dismissed_${userId}_${variant}`;
   const [open, setOpen] = useState(true);
@@ -56,7 +58,7 @@ export default function FirstStepsCard({
   ];
 
   const clientSteps: Step[] = [
-    { icon: Link2, title: "Open your share link", body: "Paste the /s/... link your studio sent into the address bar.", cta: "Paste link" },
+    { icon: Link2, title: "Open your share link", body: "Paste the /s/... link your studio sent into the field below.", cta: "Paste link", onClick: () => { onPasteLink?.(); markDone(0); } },
     { icon: Sparkles, title: "Review with timecode", body: "Add frame-accurate notes; your studio sees them instantly.", cta: "Got it", onClick: () => markDone(1) },
     { icon: Check, title: "Approve the cut", body: "One-click approval — your studio is notified the moment you sign off.", cta: "Understood", onClick: () => markDone(2) },
   ];

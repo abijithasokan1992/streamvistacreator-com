@@ -211,6 +211,7 @@ export default function Admin() {
           <TabsContent value="marketing" className="space-y-8 mt-0 animate-fade-in">
             <DeptHeader icon={<Megaphone className="w-5 h-5" />} title="Marketing & Research" desc="Promo campaigns, premium invites, analytics." />
             <PremiumInvitations />
+            <ResendCredentials />
             <MarketingAnalytics rows={rows} />
           </TabsContent>
         </Tabs>

@@ -182,6 +182,14 @@ export default function Onboarding() {
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Enter workspace <ArrowRight className="w-4 h-4" /></>}
           </button>
 
+          <button
+            onClick={skipToDashboard}
+            disabled={saving}
+            className="mt-3 w-full h-12 rounded-xl border border-border/60 bg-transparent text-sm font-medium text-muted-foreground hover:text-foreground hover:border-accent/40 hover:bg-accent/5 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Skip optional fields <SkipForward className="w-4 h-4" /></>}
+          </button>
+
           <p className="mt-4 text-[11px] text-muted-foreground/70 text-center">
             Starts on the Free plan (128 GB). Upgrade anytime — no card required now.
           </p>

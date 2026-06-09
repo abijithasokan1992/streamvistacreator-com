@@ -62,6 +62,7 @@ export default function PremiumInvitations() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [sendingId, setSendingId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);

@@ -303,7 +303,7 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
                   <FirstStepsCard
                     userId={user.id}
                     variant="creator"
-                    onUpload={() => pickAndEnqueue?.()}
+                    onUpload={() => setUploadOpen(true)}
                     onShare={() => setUploadOpen(true)}
                     onInvite={() => setSection("account" as SectionId)}
                   />

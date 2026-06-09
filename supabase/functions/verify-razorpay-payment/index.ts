@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
 import { createHmac } from "node:crypto";
 import { computeFinalPricePaise, type Cycle } from "../_shared/pricing.ts";
+import { loadRazorpayCreds } from "../_shared/razorpay-config.ts";
 
 function jsonError(req: Request, message: string, status: number) {
   return new Response(JSON.stringify({ error: message }), {
@@ -19,14 +20,19 @@ Deno.serve(async (req) => {
       return jsonError(req, "Missing fields", 400);
     }
 
-    const secret = Deno.env.get("RAZORPAY_KEY_SECRET");
-    const keyId = Deno.env.get("RAZORPAY_KEY_ID");
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!secret || !keyId || !supabaseUrl || !serviceKey) {
+    if (!supabaseUrl || !serviceKey) {
       console.error("Missing required environment configuration");
       return jsonError(req, "Service temporarily unavailable", 503);
     }
+    const supabase = createClient(supabaseUrl, serviceKey);
+    const creds = await loadRazorpayCreds(supabase);
+    if (!creds) {
+      console.error("Razorpay credentials are not configured");
+      return jsonError(req, "Service temporarily unavailable", 503);
+    }
+    const { keyId, keySecret: secret } = creds;
 
     const expected = createHmac("sha256", secret)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
@@ -36,8 +42,6 @@ Deno.serve(async (req) => {
     if (!signatureValid) {
       return jsonError(req, "Payment verification failed", 400);
     }
-
-    const supabase = createClient(supabaseUrl, serviceKey);
 
     // Look up the onboarding row and verify the order belongs to it.
     const { data: row, error: rowErr } = await supabase

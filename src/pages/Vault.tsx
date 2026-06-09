@@ -17,6 +17,7 @@ import {
 import MyAccount from "@/components/dashboard/MyAccount";
 import ReferralRewards from "@/components/dashboard/ReferralRewards";
 import { UploadManagerProvider, useUploadManager } from "@/components/vault/UploadManager";
+import ShareLinkModal, { ShareLinkFile } from "@/components/vault/ShareLinkModal";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 

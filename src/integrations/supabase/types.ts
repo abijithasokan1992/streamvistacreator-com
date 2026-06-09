@@ -884,6 +884,8 @@ export type Database = {
         Row: {
           created_at: string
           display_name: string | null
+          first_name: string | null
+          last_name: string | null
           personal_logo_url: string | null
           plan_tier: string
           studio_name: string | null
@@ -894,6 +896,8 @@ export type Database = {
         Insert: {
           created_at?: string
           display_name?: string | null
+          first_name?: string | null
+          last_name?: string | null
           personal_logo_url?: string | null
           plan_tier?: string
           studio_name?: string | null
@@ -904,6 +908,8 @@ export type Database = {
         Update: {
           created_at?: string
           display_name?: string | null
+          first_name?: string | null
+          last_name?: string | null
           personal_logo_url?: string | null
           plan_tier?: string
           studio_name?: string | null

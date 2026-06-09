@@ -7,12 +7,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth, dashboardForRole } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { planByCycle, type Cycle } from "@/components/streamvista/plans";
+import { CountryCodeSelect } from "@/components/auth/CountryCodeSelect";
+import { COUNTRIES, type Country } from "@/lib/countries";
 
-
-
-const Schema = z.object({
+const LoginSchema = z.object({
   email: z.string().trim().email("Enter a valid email").max(255),
   password: z.string().min(8, "Min 8 characters").max(72),
+});
+
+const SignupSchema = LoginSchema.extend({
+  firstName: z.string().trim().min(1, "First name is required").max(80),
+  lastName: z.string().trim().min(1, "Last name is required").max(80),
+  studioName: z.string().trim().min(1, "Studio / company name is required").max(160),
+  mobile: z.string().trim().min(4, "Enter a valid mobile number").max(20),
 });
 
 const VALID_CYCLES: Cycle[] = ["free", "monthly", "quarterly", "yearly"];
@@ -34,6 +41,15 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Sign-up only fields
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [studioName, setStudioName] = useState("");
+  const [country, setCountry] = useState<Country>(
+    COUNTRIES.find((c) => c.code === "IN") ?? COUNTRIES[0]
+  );
+  const [mobile, setMobile] = useState("");
 
   const continueAfterAuth = async () => {
     if (isPaidPlan && plan) {
@@ -147,18 +163,49 @@ export default function Auth() {
       return;
     }
 
-    const parsed = Schema.safeParse({ email, password });
-    if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
-    setSubmitting(true);
     if (view === "signup") {
+      const parsed = SignupSchema.safeParse({
+        email, password, firstName, lastName, studioName, mobile,
+      });
+      if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
+      setSubmitting(true);
+
+      const fullMobile = `${country.dial} ${parsed.data.mobile.replace(/^\+?\d{1,4}\s*/, "")}`.trim();
+      const displayName = `${parsed.data.firstName} ${parsed.data.lastName}`.trim();
+
       const { data, error } = await supabase.auth.signUp({
         email: parsed.data.email,
         password: parsed.data.password,
-        options: { emailRedirectTo: `${window.location.origin}/vault` },
+        options: {
+          emailRedirectTo: `${window.location.origin}/vault`,
+          data: {
+            display_name: displayName,
+            first_name: parsed.data.firstName,
+            last_name: parsed.data.lastName,
+            studio_name: parsed.data.studioName,
+            whatsapp: fullMobile,
+            country_code: country.code,
+          },
+        },
       });
       if (error) { setSubmitting(false); return toast.error(error.message); }
+
+      const persistProfile = async () => {
+        const uid = (await supabase.auth.getUser()).data.user?.id;
+        if (!uid) return;
+        await supabase.from("user_profiles").upsert({
+          user_id: uid,
+          display_name: displayName,
+          first_name: parsed.data.firstName,
+          last_name: parsed.data.lastName,
+          studio_name: parsed.data.studioName,
+          whatsapp: fullMobile,
+        }, { onConflict: "user_id" });
+      };
+
       // If email confirmation is off, signUp returns a session — go straight in.
       if (data.session) {
+        await persistProfile();
         setSubmitting(false);
         toast.success("Welcome to Cloud X.");
         await continueAfterAuth();
@@ -169,6 +216,7 @@ export default function Auth() {
         email: parsed.data.email,
         password: parsed.data.password,
       });
+      if (!siErr) await persistProfile();
       setSubmitting(false);
       if (siErr) {
         toast.success("Account created — check your inbox to verify, then sign in.");
@@ -178,6 +226,9 @@ export default function Auth() {
       toast.success("Welcome to Cloud X.");
       await continueAfterAuth();
     } else {
+      const parsed = LoginSchema.safeParse({ email, password });
+      if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
+      setSubmitting(true);
       const { error } = await supabase.auth.signInWithPassword({
         email: parsed.data.email,
         password: parsed.data.password,
@@ -256,7 +307,59 @@ export default function Auth() {
             </div>
           )}
 
-          <form onSubmit={handle} className="space-y-4" autoComplete="on">
+          <form onSubmit={handle} className="space-y-3.5" autoComplete="on">
+
+            {view === "signup" && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <input
+                    type="text"
+                    value={firstName}
+                    onChange={e => setFirstName(e.target.value)}
+                    placeholder="First name"
+                    required
+                    autoComplete="given-name"
+                    maxLength={80}
+                    className="w-full h-12 px-4 rounded-xl bg-input/40 border border-border/60 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-accent/70 focus:bg-input/70 focus:shadow-[0_0_24px_-6px_hsl(var(--accent)/0.5)]"
+                  />
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={e => setLastName(e.target.value)}
+                    placeholder="Last name"
+                    required
+                    autoComplete="family-name"
+                    maxLength={80}
+                    className="w-full h-12 px-4 rounded-xl bg-input/40 border border-border/60 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-accent/70 focus:bg-input/70 focus:shadow-[0_0_24px_-6px_hsl(var(--accent)/0.5)]"
+                  />
+                </div>
+
+                <input
+                  type="text"
+                  value={studioName}
+                  onChange={e => setStudioName(e.target.value)}
+                  placeholder="Studio / company name"
+                  required
+                  autoComplete="organization"
+                  maxLength={160}
+                  className="w-full h-12 px-4 rounded-xl bg-input/40 border border-border/60 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-accent/70 focus:bg-input/70 focus:shadow-[0_0_24px_-6px_hsl(var(--accent)/0.5)]"
+                />
+
+                <div className="flex">
+                  <CountryCodeSelect value={country} onChange={setCountry} />
+                  <input
+                    type="tel"
+                    value={mobile}
+                    onChange={e => setMobile(e.target.value.replace(/[^\d\s\-()]/g, ""))}
+                    placeholder="Mobile number"
+                    required
+                    autoComplete="tel-national"
+                    maxLength={20}
+                    className="flex-1 h-12 px-4 rounded-r-xl bg-input/40 border border-border/60 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-accent/70 focus:bg-input/70 focus:shadow-[0_0_24px_-6px_hsl(var(--accent)/0.5)]"
+                  />
+                </div>
+              </>
+            )}
 
             <input
               type="email"
@@ -267,6 +370,7 @@ export default function Auth() {
               autoComplete="email"
               className="peer w-full h-12 px-4 rounded-xl bg-input/40 border border-border/60 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-accent/70 focus:bg-input/70 focus:shadow-[0_0_24px_-6px_hsl(var(--accent)/0.5)]"
             />
+
 
             {view !== "forgot" && (
               <div className="relative">

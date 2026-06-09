@@ -261,13 +261,18 @@ export default function PremiumInvitations() {
   );
 }
 
-function NewInvitationDialog({ onCreated }: { onCreated: () => void }) {
+function NewInvitationDialog({ usage, onCreated }: { usage: { personal: number; professional: number }; onCreated: () => void }) {
   const [email, setEmail] = useState("");
+  const [accountType, setAccountType] = useState<AccountType>("personal");
   const [saving, setSaving] = useState(false);
+
+  const remaining = QUOTAS[accountType] - usage[accountType];
+  const overQuota = remaining <= 0;
 
   const submit = async () => {
     const e = email.trim().toLowerCase();
     if (!/^\S+@\S+\.\S+$/.test(e)) return toast.error("Enter a valid email");
+    if (overQuota) return toast.error(`${accountType} quota reached (${QUOTAS[accountType]} max). Upgrade or choose another tier.`);
     setSaving(true);
     const t = toast.loading(`Creating invite & sending to ${e}…`);
     try {
@@ -279,7 +284,8 @@ function NewInvitationDialog({ onCreated }: { onCreated: () => void }) {
         storage_tb: DEFAULT_STORAGE_TB,
         discount_percent: DEFAULT_DISCOUNT,
         validity_days: DEFAULT_VALIDITY_DAYS,
-        is_free: false,
+        is_free: true,
+        account_type: accountType,
         expires_at,
         created_by: user?.id ?? null,
       }).select("id").single();
@@ -303,10 +309,12 @@ function NewInvitationDialog({ onCreated }: { onCreated: () => void }) {
 
   return (
     <DialogContent className="max-w-md">
-      <DialogHeader><DialogTitle>New premium invitation</DialogTitle></DialogHeader>
+      <DialogHeader>
+        <DialogTitle>New StreamVista Cloud X invite</DialogTitle>
+      </DialogHeader>
       <div className="space-y-4">
         <div className="grid gap-2">
-          <Label htmlFor="inv-email">Email address</Label>
+          <Label htmlFor="inv-email">Recipient email</Label>
           <Input
             id="inv-email"
             type="email"
@@ -318,16 +326,36 @@ function NewInvitationDialog({ onCreated }: { onCreated: () => void }) {
             onKeyDown={(e) => { if (e.key === "Enter" && !saving) submit(); }}
           />
         </div>
-        <div className="rounded-lg bg-secondary/40 p-3 text-xs text-muted-foreground space-y-0.5">
-          <div>Storage: <span className="text-foreground font-semibold">1 TB</span></div>
+        <div className="grid gap-2">
+          <Label htmlFor="inv-type">Account type</Label>
+          <Select value={accountType} onValueChange={(v: AccountType) => setAccountType(v)}>
+            <SelectTrigger id="inv-type"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="personal">Personal — up to {QUOTAS.personal} invites</SelectItem>
+              <SelectItem value="professional">Professional — up to {QUOTAS.professional} invites</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className={`text-[11px] ${overQuota ? "text-destructive" : "text-muted-foreground"}`}>
+            {usage[accountType]} of {QUOTAS[accountType]} used · <b className="text-foreground">{Math.max(0, remaining)}</b> remaining
+          </p>
+        </div>
+        <div className="rounded-lg bg-gradient-to-br from-fuchsia-500/10 via-pink-500/5 to-amber-400/10 border border-fuchsia-500/20 p-3 text-xs text-muted-foreground space-y-0.5">
+          <div className="text-[10px] uppercase tracking-[2px] text-amber-400 font-semibold mb-1">Special Invite · Plan 1 TB Free</div>
+          <div>Storage: <span className="text-foreground font-semibold">1 TB · FREE</span></div>
           <div>Validity: <span className="text-foreground font-semibold">30 days</span></div>
-          <div>Price: <span className="text-foreground font-semibold">₹650 + 18% GST = ₹767</span></div>
+          <div>Link domain: <span className="text-foreground font-mono">{PRIMARY_DOMAIN}</span></div>
           <div>From: <span className="text-foreground">{FROM_EMAIL}</span></div>
-          <div>CC: <span className="text-foreground">{CC_EMAILS.join(", ")}</span></div>
         </div>
       </div>
       <DialogFooter>
-        <Button onClick={submit} disabled={saving} className="w-full gap-2">
+        <Button onClick={submit} disabled={saving || overQuota} className="w-full gap-2">
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          {saving ? "Sending…" : overQuota ? "Quota reached" : "Send invite"}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  );
+}
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Send invite
         </Button>
       </DialogFooter>

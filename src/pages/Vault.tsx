@@ -17,6 +17,7 @@ import {
 import MyAccount from "@/components/dashboard/MyAccount";
 import ReferralRewards from "@/components/dashboard/ReferralRewards";
 import FirstStepsCard from "@/components/dashboard/FirstStepsCard";
+import StorageUsageCard from "@/components/dashboard/StorageUsageCard";
 import { UploadManagerProvider, useUploadManager } from "@/components/vault/UploadManager";
 import ShareLinkModal, { ShareLinkFile } from "@/components/vault/ShareLinkModal";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -308,6 +309,7 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
                     onInvite={() => setSection("account" as SectionId)}
                   />
                 )}
+                <StorageUsageCard />
                 <SectionHeader
                   title="My Vault"
                   desc="Securely store and share files with one-click links, passwords and expiries."

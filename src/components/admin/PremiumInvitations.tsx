@@ -17,9 +17,8 @@ const DEFAULT_DISCOUNT = 0;
 // Live primary domain used in the email link (must NOT use the lovable preview URL)
 const PRIMARY_DOMAIN = "https://streamvistacreator.com";
 
-// Per-account-type invite quotas
-const QUOTAS = { personal: 10, professional: 100 } as const;
-type AccountType = keyof typeof QUOTAS;
+// Invites are now unlimited — kept as a type for backwards compatibility only.
+type AccountType = "personal" | "professional";
 
 // Email routing
 const FROM_EMAIL = "StreamVista Cloud X <onboarding@resend.dev>";
@@ -93,7 +92,7 @@ export default function PremiumInvitations() {
   const inviteUrl = (token: string) => `${PRIMARY_DOMAIN}/invite/${encodeURIComponent(token)}`;
   const refUrl = (code: string | null) => code ? `${PRIMARY_DOMAIN}/?ref=${encodeURIComponent(code)}` : "";
 
-  // Per-account-type quota usage (counts ALL non-revoked invites of that type the current admin created)
+  // Counts retained for analytics; no longer used to block sending.
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null));
@@ -184,7 +183,7 @@ export default function PremiumInvitations() {
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2" disabled={usage.personal >= QUOTAS.personal && usage.professional >= QUOTAS.professional}>
+              <Button className="gap-2">
                 <Plus className="w-4 h-4" /> Send invite
               </Button>
             </DialogTrigger>
@@ -192,23 +191,17 @@ export default function PremiumInvitations() {
           </Dialog>
         </div>
 
-        {/* Quota meters */}
+        {/* Unlimited-invite counters (informational, no caps) */}
         <div className="grid sm:grid-cols-2 gap-3 mb-6">
-          {(["personal","professional"] as AccountType[]).map(t => {
-            const used = usage[t]; const max = QUOTAS[t]; const pct = Math.min(100, Math.round((used/max)*100));
-            return (
-              <div key={t} className="rounded-xl border border-border/60 bg-secondary/20 p-3">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold uppercase tracking-wider text-muted-foreground">{t} quota</span>
-                  <span className="font-mono"><b className="text-foreground">{used}</b> / {max}</span>
-                </div>
-                <div className="mt-2 h-1.5 rounded-full bg-border/50 overflow-hidden">
-                  <div className="h-full rounded-full bg-gradient-to-r from-fuchsia-500 via-pink-500 to-amber-400 transition-all" style={{ width: `${pct}%` }} />
-                </div>
-                <p className="text-[11px] text-muted-foreground mt-1.5">{max - used} invites remaining</p>
+          {(["personal","professional"] as AccountType[]).map(t => (
+            <div key={t} className="rounded-xl border border-border/60 bg-secondary/20 p-3">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold uppercase tracking-wider text-muted-foreground">{t} invites sent</span>
+                <span className="font-mono"><b className="text-foreground">{usage[t]}</b> · unlimited</span>
               </div>
-            );
-          })}
+              <p className="text-[11px] text-muted-foreground mt-1.5">No cap — invite as many as you want.</p>
+            </div>
+          ))}
         </div>
 
         {loading ? (
@@ -266,13 +259,9 @@ function NewInvitationDialog({ usage, onCreated }: { usage: { personal: number; 
   const [accountType, setAccountType] = useState<AccountType>("personal");
   const [saving, setSaving] = useState(false);
 
-  const remaining = QUOTAS[accountType] - usage[accountType];
-  const overQuota = remaining <= 0;
-
   const submit = async () => {
     const e = email.trim().toLowerCase();
     if (!/^\S+@\S+\.\S+$/.test(e)) return toast.error("Enter a valid email");
-    if (overQuota) return toast.error(`${accountType} quota reached (${QUOTAS[accountType]} max). Upgrade or choose another tier.`);
     setSaving(true);
     const t = toast.loading(`Creating invite & sending to ${e}…`);
     try {
@@ -331,12 +320,12 @@ function NewInvitationDialog({ usage, onCreated }: { usage: { personal: number; 
           <Select value={accountType} onValueChange={(v: AccountType) => setAccountType(v)}>
             <SelectTrigger id="inv-type"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="personal">Personal — up to {QUOTAS.personal} invites</SelectItem>
-              <SelectItem value="professional">Professional — up to {QUOTAS.professional} invites</SelectItem>
+              <SelectItem value="personal">Personal</SelectItem>
+              <SelectItem value="professional">Professional</SelectItem>
             </SelectContent>
           </Select>
-          <p className={`text-[11px] ${overQuota ? "text-destructive" : "text-muted-foreground"}`}>
-            {usage[accountType]} of {QUOTAS[accountType]} used · <b className="text-foreground">{Math.max(0, remaining)}</b> remaining
+          <p className="text-[11px] text-muted-foreground">
+            Unlimited invites · <b className="text-foreground">{usage[accountType]}</b> sent so far in this tier.
           </p>
         </div>
         <div className="rounded-lg bg-gradient-to-br from-fuchsia-500/10 via-pink-500/5 to-amber-400/10 border border-fuchsia-500/20 p-3 text-xs text-muted-foreground space-y-0.5">
@@ -348,9 +337,9 @@ function NewInvitationDialog({ usage, onCreated }: { usage: { personal: number; 
         </div>
       </div>
       <DialogFooter>
-        <Button onClick={submit} disabled={saving || overQuota} className="w-full gap-2">
+        <Button onClick={submit} disabled={saving} className="w-full gap-2">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-          {saving ? "Sending…" : overQuota ? "Quota reached" : "Send invite"}
+          {saving ? "Sending…" : "Send invite"}
         </Button>
       </DialogFooter>
     </DialogContent>

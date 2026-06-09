@@ -235,6 +235,7 @@ export default function Admin() {
             <UniversalBroadcast />
             <PremiumInvitations />
             <ResendCredentials />
+            <EmailLogMonitor />
             <MarketingAnalytics rows={rows} />
           </TabsContent>
         </Tabs>

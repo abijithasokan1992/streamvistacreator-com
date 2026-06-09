@@ -1,8 +1,12 @@
 import { LegalLayout, LegalSection } from "@/components/streamvista/LegalLayout";
+import { Seo } from "@/components/Seo";
 
 export default function Terms() {
   return (
+    <>
+      <Seo title="Terms of Service — StreamVista Cloud X" description="Terms governing your use of the StreamVista Cloud X platform, operated by Crayons Pictures under StreamVista OPC Pvt Ltd." path="/terms" />
     <LegalLayout title="Terms of Service" eyebrow="Legal · Terms">
+
       <LegalSection title="1. Acceptance of Terms">
         These Terms of Service ("Terms") govern your access to and use of the StreamVista Cloud X
         platform ("Service"), owned by <strong className="text-foreground">StreamVista OPC Pvt Ltd</strong> and
@@ -70,5 +74,6 @@ export default function Terms() {
         .
       </LegalSection>
     </LegalLayout>
+    </>
   );
 }

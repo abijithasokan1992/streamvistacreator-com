@@ -1,8 +1,15 @@
 import { LegalLayout, LegalSection } from "@/components/streamvista/LegalLayout";
+import { Seo } from "@/components/Seo";
+import { useLocation } from "react-router-dom";
 
 export default function IPCopyright() {
+  const { pathname } = useLocation();
+  const path = pathname === "/dmca" ? "/dmca" : "/ip-copyright";
   return (
+    <>
+      <Seo title={path === "/dmca" ? "DMCA & Copyright Policy — StreamVista" : "IP & Copyright Policy — StreamVista"} description="How to report copyright infringement on StreamVista Cloud X, our DMCA designated agent, and our IP protection process." path={path} />
     <LegalLayout title="IP & Copyright (DMCA) Policy" eyebrow="Legal · IP & DMCA">
+
       <LegalSection title="1. Our Commitment">
         StreamVista OPC Pvt Ltd and Crayons Pictures respect the intellectual property rights of
         creators, studios, and rights-holders. We respond promptly to clear notices of alleged
@@ -70,5 +77,6 @@ export default function IPCopyright() {
         </div>
       </LegalSection>
     </LegalLayout>
+    </>
   );
 }

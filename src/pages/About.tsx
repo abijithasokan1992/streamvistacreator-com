@@ -53,5 +53,6 @@ export default function About() {
         </p>
       </LegalSection>
     </LegalLayout>
+    </>
   );
 }

@@ -1,8 +1,12 @@
 import { LegalLayout, LegalSection } from "@/components/streamvista/LegalLayout";
+import { Seo } from "@/components/Seo";
 
 export default function Privacy() {
   return (
+    <>
+      <Seo title="Privacy Policy — StreamVista Cloud X" description="How StreamVista collects, uses and protects your account, billing and content data on StreamVista Cloud X." path="/privacy" />
     <LegalLayout title="Privacy Policy" eyebrow="Legal · Privacy">
+
       <LegalSection title="1. Who We Are">
         StreamVista Cloud X is owned by <strong className="text-foreground">StreamVista OPC Pvt Ltd</strong>{" "}
         and operated by <strong className="text-foreground">Crayons Pictures</strong>, with operations
@@ -64,5 +68,6 @@ export default function Privacy() {
         Kerala, India.
       </LegalSection>
     </LegalLayout>
+    </>
   );
 }

@@ -19,6 +19,8 @@ import RolesManager from "@/components/admin/RolesManager";
 import RazorpayCredentials from "@/components/admin/RazorpayCredentials";
 import ResendCredentials from "@/components/admin/ResendCredentials";
 import AdminCredentials from "@/components/admin/AdminCredentials";
+import GlobalAssetManager from "@/components/admin/GlobalAssetManager";
+import UniversalBroadcast from "@/components/admin/UniversalBroadcast";
 
 interface Row {
   id: string;
@@ -223,11 +225,13 @@ export default function Admin() {
             <DeptHeader icon={<Code2 className="w-5 h-5" />} title="Development & Software" desc="Oracle DB, OCI storage & domain deployment." />
             <DomainHostingPanel />
             <OracleStorageMonitor />
+            <GlobalAssetManager />
           </TabsContent>
 
           {/* 4. Marketing & Research */}
           <TabsContent value="marketing" className="space-y-8 mt-0 animate-fade-in">
             <DeptHeader icon={<Megaphone className="w-5 h-5" />} title="Marketing & Research" desc="Promo campaigns, premium invites, analytics." />
+            <UniversalBroadcast />
             <PremiumInvitations />
             <ResendCredentials />
             <MarketingAnalytics rows={rows} />

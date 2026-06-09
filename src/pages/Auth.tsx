@@ -22,7 +22,7 @@ const SignupSchema = LoginSchema.extend({
   mobile: z.string().trim().min(4, "Enter a valid mobile number").max(20),
 });
 
-const VALID_CYCLES: Cycle[] = ["free", "monthly", "quarterly", "yearly"];
+const VALID_CYCLES: Cycle[] = ["free", "creator"];
 
 type View = "login" | "signup" | "forgot";
 

@@ -203,6 +203,8 @@ export type Database = {
       free_tier_config: {
         Row: {
           amount: number
+          bandwidth_gb: number
+          bandwidth_overage_inr_per_gb: number
           created_at: string
           currency: string
           duration_days: number
@@ -216,6 +218,8 @@ export type Database = {
         }
         Insert: {
           amount?: number
+          bandwidth_gb?: number
+          bandwidth_overage_inr_per_gb?: number
           created_at?: string
           currency?: string
           duration_days?: number
@@ -229,6 +233,8 @@ export type Database = {
         }
         Update: {
           amount?: number
+          bandwidth_gb?: number
+          bandwidth_overage_inr_per_gb?: number
           created_at?: string
           currency?: string
           duration_days?: number
@@ -856,6 +862,45 @@ export type Database = {
         }
         Relationships: []
       }
+      storage_topups: {
+        Row: {
+          amount_inr: number
+          created_at: string
+          id: string
+          notes: string | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          status: string
+          tb_added: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_inr?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          status?: string
+          tb_added?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_inr?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          status?: string
+          tb_added?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           cancel_at_period_end: boolean | null
@@ -969,6 +1014,9 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          bandwidth_overage_inr_per_gb: number
+          bandwidth_quota_gb: number
+          bandwidth_used_mb: number
           created_at: string
           display_name: string | null
           first_name: string | null
@@ -977,13 +1025,18 @@ export type Database = {
           personal_logo_url: string | null
           plan_tier: string
           professional_role: string | null
+          storage_used_mb: number
           studio_name: string | null
           studio_slug: Database["public"]["Enums"]["studio_slug"]
+          topup_tb: number
           updated_at: string
           user_id: string
           whatsapp: string | null
         }
         Insert: {
+          bandwidth_overage_inr_per_gb?: number
+          bandwidth_quota_gb?: number
+          bandwidth_used_mb?: number
           created_at?: string
           display_name?: string | null
           first_name?: string | null
@@ -992,13 +1045,18 @@ export type Database = {
           personal_logo_url?: string | null
           plan_tier?: string
           professional_role?: string | null
+          storage_used_mb?: number
           studio_name?: string | null
           studio_slug?: Database["public"]["Enums"]["studio_slug"]
+          topup_tb?: number
           updated_at?: string
           user_id: string
           whatsapp?: string | null
         }
         Update: {
+          bandwidth_overage_inr_per_gb?: number
+          bandwidth_quota_gb?: number
+          bandwidth_used_mb?: number
           created_at?: string
           display_name?: string | null
           first_name?: string | null
@@ -1007,8 +1065,10 @@ export type Database = {
           personal_logo_url?: string | null
           plan_tier?: string
           professional_role?: string | null
+          storage_used_mb?: number
           studio_name?: string | null
           studio_slug?: Database["public"]["Enums"]["studio_slug"]
+          topup_tb?: number
           updated_at?: string
           user_id?: string
           whatsapp?: string | null

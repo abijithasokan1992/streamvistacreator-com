@@ -104,7 +104,7 @@ export const MFILimitedEdition = () => {
         professional_role: parsed.data.professionalRole,
         contact_phone: parsed.data.whatsapp,
         business_email: parsed.data.email || null,
-        selected_cycle: "monthly",
+        selected_cycle: "creator",
         base_price: 0,
         final_price: 0,
         plan_type: "mfi_limited",

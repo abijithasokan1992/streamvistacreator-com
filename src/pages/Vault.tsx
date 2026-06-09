@@ -17,6 +17,7 @@ import {
 import MyAccount from "@/components/dashboard/MyAccount";
 import ReferralRewards from "@/components/dashboard/ReferralRewards";
 import FirstStepsCard from "@/components/dashboard/FirstStepsCard";
+import StorageUsageCard from "@/components/dashboard/StorageUsageCard";
 import { UploadManagerProvider, useUploadManager } from "@/components/vault/UploadManager";
 import ShareLinkModal, { ShareLinkFile } from "@/components/vault/ShareLinkModal";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -289,7 +290,7 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
                 <span className="font-display font-semibold text-sm">Go Sovereign</span>
               </div>
               <p className="text-[11px] text-muted-foreground mb-3">India-resident storage, longer expiries, premium support.</p>
-              <Link to="/auth?plan=monthly" className="block w-full text-center h-9 leading-9 rounded-lg bg-gradient-primary text-primary-foreground text-xs font-semibold glow-primary">
+              <Link to="/auth?plan=creator" className="block w-full text-center h-9 leading-9 rounded-lg bg-gradient-primary text-primary-foreground text-xs font-semibold glow-primary">
                 Upgrade Plan
               </Link>
             </div>
@@ -308,6 +309,7 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
                     onInvite={() => setSection("account" as SectionId)}
                   />
                 )}
+                <StorageUsageCard />
                 <SectionHeader
                   title="My Vault"
                   desc="Securely store and share files with one-click links, passwords and expiries."
@@ -389,7 +391,7 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
                   title="My Account"
                   desc="Profile, billing, branding & subscription."
                   actions={
-                    <Link to="/auth?plan=monthly" className="h-10 px-4 rounded-xl bg-gradient-primary text-primary-foreground font-semibold glow-primary text-xs inline-flex items-center gap-1.5">
+                    <Link to="/auth?plan=creator" className="h-10 px-4 rounded-xl bg-gradient-primary text-primary-foreground font-semibold glow-primary text-xs inline-flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5" /> Upgrade
                     </Link>
                   }

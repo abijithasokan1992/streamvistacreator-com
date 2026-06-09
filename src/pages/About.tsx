@@ -1,9 +1,13 @@
 import { LegalLayout, LegalSection } from "@/components/streamvista/LegalLayout";
 import { TrustBadges } from "@/components/streamvista/TrustBadges";
+import { Seo } from "@/components/Seo";
 
 export default function About() {
   return (
+    <>
+      <Seo title="About StreamVista & Support — Crayons Pictures" description="StreamVista OPC Pvt Ltd and Crayons Pictures: who we are, what we build, and how to reach support for StreamVista Cloud X." path="/about" />
     <LegalLayout title="About Us & Support" eyebrow="Company · Support">
+
       <LegalSection title="StreamVista OPC Pvt Ltd">
         StreamVista OPC Pvt Ltd is an India-registered private company headquartered in{" "}
         <strong className="text-foreground">Ernakulam, Kerala</strong>. It owns and develops the
@@ -49,5 +53,6 @@ export default function About() {
         </p>
       </LegalSection>
     </LegalLayout>
+    </>
   );
 }

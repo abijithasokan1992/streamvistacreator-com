@@ -1,8 +1,12 @@
 import { LegalLayout, LegalSection } from "@/components/streamvista/LegalLayout";
+import { Seo } from "@/components/Seo";
 
 export default function Refund() {
   return (
+    <>
+      <Seo title="Refund & Cancellation Policy — StreamVista Cloud X" description="StreamVista Cloud X refund and cancellation terms, including the 7-day refund window for new paid subscriptions." path="/refund" />
     <LegalLayout title="Refund & Cancellation Policy" eyebrow="Legal · Billing">
+
       <LegalSection title="1. Overview">
         StreamVista Cloud X is a Software-as-a-Service (SaaS) platform. Because storage capacity,
         bandwidth, and infrastructure resources are reserved and allocated on Oracle Cloud at the
@@ -52,5 +56,6 @@ export default function Refund() {
         Kerala.
       </LegalSection>
     </LegalLayout>
+    </>
   );
 }

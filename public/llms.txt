@@ -1,0 +1,20 @@
+# StreamVista Cloud X
+
+> Secure creator-studio cloud platform for media professionals to onboard, store, share, and monetise content. White-labeled for StreamVista with Oracle Cloud–backed storage and Razorpay payments.
+
+StreamVista Cloud X is a SaaS for creators, studios, and executive producers. Each workspace gets its own Oracle Cloud child account for isolated storage. Plans include a free tier and paid creator tiers with bandwidth and storage allowances.
+
+## Pages
+
+- [Home](/): Overview of StreamVista Cloud X, plans, and features.
+- [About](/about): Who StreamVista is and what the platform offers.
+- [Launching Special Plan](/launching-special-plan): Limited-time launch pricing and details.
+- [Support](/support): How to reach the StreamVista team.
+
+## Optional
+
+- [Terms of Service](/terms)
+- [Privacy Policy](/privacy)
+- [Refund Policy](/refund)
+- [IP & Copyright Policy](/ip-copyright)
+- [DMCA](/dmca)

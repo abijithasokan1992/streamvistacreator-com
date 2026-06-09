@@ -176,9 +176,9 @@ export const OnboardingForm = ({ selectedCycle = "free" }: Props) => {
 
           <div className="grid md:grid-cols-2 gap-5">
             <div className="space-y-2">
-              <Label className="text-sm">What is your role?</Label>
+              <Label htmlFor="professionalRole" className="text-sm">What is your role?</Label>
               <Select value={professionalRole} onValueChange={setProfessionalRole}>
-                <SelectTrigger className="bg-input/60 border-border h-12">
+                <SelectTrigger id="professionalRole" aria-label="Professional role" className="bg-input/60 border-border h-12">
                   <SelectValue placeholder="e.g. Creator, Editor, Director" />
                 </SelectTrigger>
                 <SelectContent>

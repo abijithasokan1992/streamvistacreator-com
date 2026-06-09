@@ -89,9 +89,20 @@ export default function PremiumInvitations() {
   // to prevent any authenticated client from receiving invitee PII/tokens. Admin list refreshes
   // on dialog actions (create/revoke/mark-sent) via explicit reloads.
 
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const inviteUrl = (token: string) => `${origin}/invite/${encodeURIComponent(token)}`;
-  const refUrl = (code: string | null) => code ? `${origin}/?ref=${encodeURIComponent(code)}` : "";
+  // Always link via the live primary domain (never the preview URL)
+  const inviteUrl = (token: string) => `${PRIMARY_DOMAIN}/invite/${encodeURIComponent(token)}`;
+  const refUrl = (code: string | null) => code ? `${PRIMARY_DOMAIN}/?ref=${encodeURIComponent(code)}` : "";
+
+  // Per-account-type quota usage (counts ALL non-revoked invites of that type the current admin created)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null));
+  }, []);
+  const myRows = rows.filter(r => r.status !== "revoked");
+  const usage = {
+    personal: myRows.filter(r => r.account_type === "personal").length,
+    professional: myRows.filter(r => r.account_type === "professional").length,
+  };
 
   const copyLink = async (inv: Invitation) => {
     try {

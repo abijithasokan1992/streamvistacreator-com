@@ -227,23 +227,36 @@ function NewInvitationDialog({ onCreated }: { onCreated: () => void }) {
     const e = email.trim().toLowerCase();
     if (!/^\S+@\S+\.\S+$/.test(e)) return toast.error("Enter a valid email");
     setSaving(true);
-    const expires_at = new Date(Date.now() + DEFAULT_VALIDITY_DAYS * 86400_000).toISOString();
-    const { data: { user } } = await supabase.auth.getUser();
-    const { error } = await supabase.from("premium_invitations").insert({
-      invitee_name: e.split("@")[0],
-      invitee_email: e,
-      storage_tb: DEFAULT_STORAGE_TB,
-      discount_percent: DEFAULT_DISCOUNT,
-      validity_days: DEFAULT_VALIDITY_DAYS,
-      is_free: false,
-      expires_at,
-      created_by: user?.id ?? null,
-    });
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    toast.success("Invitation created — open the email button to send");
-    setEmail("");
-    onCreated();
+    const t = toast.loading(`Creating invite & sending to ${e}…`);
+    try {
+      const expires_at = new Date(Date.now() + DEFAULT_VALIDITY_DAYS * 86400_000).toISOString();
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: inserted, error } = await supabase.from("premium_invitations").insert({
+        invitee_name: e.split("@")[0],
+        invitee_email: e,
+        storage_tb: DEFAULT_STORAGE_TB,
+        discount_percent: DEFAULT_DISCOUNT,
+        validity_days: DEFAULT_VALIDITY_DAYS,
+        is_free: false,
+        expires_at,
+        created_by: user?.id ?? null,
+      }).select("id").single();
+      if (error) throw error;
+
+      const { data: sendData, error: sendErr } = await supabase.functions.invoke("send-premium-invitation", {
+        body: { invitationId: inserted.id },
+      });
+      if (sendErr) throw sendErr;
+      if ((sendData as any)?.error) throw new Error((sendData as any).error);
+
+      toast.success(`Invite sent to ${e}`, { id: t });
+      setEmail("");
+      onCreated();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to send invite", { id: t });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (

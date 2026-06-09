@@ -973,8 +973,10 @@ export type Database = {
           display_name: string | null
           first_name: string | null
           last_name: string | null
+          onboarding_step: string
           personal_logo_url: string | null
           plan_tier: string
+          professional_role: string | null
           studio_name: string | null
           updated_at: string
           user_id: string
@@ -985,8 +987,10 @@ export type Database = {
           display_name?: string | null
           first_name?: string | null
           last_name?: string | null
+          onboarding_step?: string
           personal_logo_url?: string | null
           plan_tier?: string
+          professional_role?: string | null
           studio_name?: string | null
           updated_at?: string
           user_id: string
@@ -997,8 +1001,10 @@ export type Database = {
           display_name?: string | null
           first_name?: string | null
           last_name?: string | null
+          onboarding_step?: string
           personal_logo_url?: string | null
           plan_tier?: string
+          professional_role?: string | null
           studio_name?: string | null
           updated_at?: string
           user_id?: string
@@ -1032,6 +1038,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_exists: { Args: never; Returns: boolean }
       attach_referral: {
         Args: { _code: string; _email?: string }
         Returns: string

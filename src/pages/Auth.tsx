@@ -163,18 +163,49 @@ export default function Auth() {
       return;
     }
 
-    const parsed = Schema.safeParse({ email, password });
-    if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
-    setSubmitting(true);
     if (view === "signup") {
+      const parsed = SignupSchema.safeParse({
+        email, password, firstName, lastName, studioName, mobile,
+      });
+      if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
+      setSubmitting(true);
+
+      const fullMobile = `${country.dial} ${parsed.data.mobile.replace(/^\+?\d{1,4}\s*/, "")}`.trim();
+      const displayName = `${parsed.data.firstName} ${parsed.data.lastName}`.trim();
+
       const { data, error } = await supabase.auth.signUp({
         email: parsed.data.email,
         password: parsed.data.password,
-        options: { emailRedirectTo: `${window.location.origin}/vault` },
+        options: {
+          emailRedirectTo: `${window.location.origin}/vault`,
+          data: {
+            display_name: displayName,
+            first_name: parsed.data.firstName,
+            last_name: parsed.data.lastName,
+            studio_name: parsed.data.studioName,
+            whatsapp: fullMobile,
+            country_code: country.code,
+          },
+        },
       });
       if (error) { setSubmitting(false); return toast.error(error.message); }
+
+      const persistProfile = async () => {
+        const uid = (await supabase.auth.getUser()).data.user?.id;
+        if (!uid) return;
+        await supabase.from("user_profiles").upsert({
+          user_id: uid,
+          display_name: displayName,
+          first_name: parsed.data.firstName,
+          last_name: parsed.data.lastName,
+          studio_name: parsed.data.studioName,
+          whatsapp: fullMobile,
+        }, { onConflict: "user_id" });
+      };
+
       // If email confirmation is off, signUp returns a session — go straight in.
       if (data.session) {
+        await persistProfile();
         setSubmitting(false);
         toast.success("Welcome to Cloud X.");
         await continueAfterAuth();
@@ -185,6 +216,7 @@ export default function Auth() {
         email: parsed.data.email,
         password: parsed.data.password,
       });
+      if (!siErr) await persistProfile();
       setSubmitting(false);
       if (siErr) {
         toast.success("Account created — check your inbox to verify, then sign in.");
@@ -194,6 +226,9 @@ export default function Auth() {
       toast.success("Welcome to Cloud X.");
       await continueAfterAuth();
     } else {
+      const parsed = LoginSchema.safeParse({ email, password });
+      if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
+      setSubmitting(true);
       const { error } = await supabase.auth.signInWithPassword({
         email: parsed.data.email,
         password: parsed.data.password,

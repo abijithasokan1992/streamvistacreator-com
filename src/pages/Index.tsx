@@ -6,9 +6,27 @@ import { Testimonials } from "@/components/streamvista/Testimonials";
 import { Pricing } from "@/components/streamvista/Pricing";
 import { CloudStudioPartners } from "@/components/streamvista/CloudStudioPartners";
 import { Footer } from "@/components/streamvista/Footer";
+import { Seo } from "@/components/Seo";
 
 const Index = () => (
   <main className="min-h-dvh">
+    <Seo
+      title="StreamVista Cloud X — Creator Studio Cloud Storage"
+      description="Secure cloud workspace for filmmakers, studios and creators — Oracle-backed storage, controlled sharing, DMCA protection, and pricing that scales from free to full production."
+      path="/"
+      jsonLd={[
+        { "@context": "https://schema.org", "@type": "Organization", name: "StreamVista", url: "https://streamvistacreator.com/" },
+        { "@context": "https://schema.org", "@type": "WebSite", name: "StreamVista Cloud X", url: "https://streamvistacreator.com/" },
+        {
+          "@context": "https://schema.org",
+          "@type": "Service",
+          name: "StreamVista Cloud X",
+          provider: { "@type": "Organization", name: "StreamVista OPC Pvt Ltd" },
+          serviceType: "Creator cloud storage and distribution",
+          areaServed: "Global",
+        },
+      ]}
+    />
     <Navbar />
     <Hero />
     <PlanFeature />

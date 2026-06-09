@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
 import { computeFinalPricePaise, type Cycle } from "../_shared/pricing.ts";
+import { loadRazorpayCreds } from "../_shared/razorpay-config.ts";
 
 function jsonError(req: Request, message: string, status: number) {
   return new Response(JSON.stringify({ error: message }), {
@@ -19,16 +20,20 @@ Deno.serve(async (req) => {
     }
     const CURRENCY = "INR"; // hardcoded — never trust caller
 
-    const keyId = Deno.env.get("RAZORPAY_KEY_ID");
-    const keySecret = Deno.env.get("RAZORPAY_KEY_SECRET");
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!keyId || !keySecret || !supabaseUrl || !serviceKey) {
+    if (!supabaseUrl || !serviceKey) {
       console.error("Missing required environment configuration");
       return jsonError(req, "Service temporarily unavailable", 503);
     }
 
     const supabase = createClient(supabaseUrl, serviceKey);
+    const creds = await loadRazorpayCreds(supabase);
+    if (!creds) {
+      console.error("Razorpay credentials are not configured");
+      return jsonError(req, "Payments are not configured. Please contact support.", 503);
+    }
+    const { keyId, keySecret } = creds;
 
     // Fetch the onboarding request server-side and compute the authoritative price.
     const { data: row, error: fetchErr } = await supabase
@@ -41,15 +46,13 @@ Deno.serve(async (req) => {
     }
 
     // Idempotency guard: if an order already exists for this onboarding row, return it.
-    // Prevents an attacker from re-creating orders and overwriting the legitimate one.
     if (row.razorpay_order_id) {
-      const keyId2 = Deno.env.get("RAZORPAY_KEY_ID")!;
       return new Response(
         JSON.stringify({
           orderId: row.razorpay_order_id,
           amount: row.amount_paid_paise,
           currency: "INR",
-          keyId: keyId2,
+          keyId,
         }),
         { headers: { ...buildCorsHeaders(req), "Content-Type": "application/json" } },
       );

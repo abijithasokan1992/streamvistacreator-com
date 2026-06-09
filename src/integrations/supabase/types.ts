@@ -589,6 +589,36 @@ export type Database = {
         }
         Relationships: []
       }
+      razorpay_config: {
+        Row: {
+          id: boolean
+          key_id: string | null
+          key_secret: string | null
+          mode: string
+          updated_at: string
+          updated_by: string | null
+          webhook_secret: string | null
+        }
+        Insert: {
+          id?: boolean
+          key_id?: string | null
+          key_secret?: string | null
+          mode?: string
+          updated_at?: string
+          updated_by?: string | null
+          webhook_secret?: string | null
+        }
+        Update: {
+          id?: boolean
+          key_id?: string | null
+          key_secret?: string | null
+          mode?: string
+          updated_at?: string
+          updated_by?: string | null
+          webhook_secret?: string | null
+        }
+        Relationships: []
+      }
       referral_codes: {
         Row: {
           code: string

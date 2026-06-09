@@ -6,6 +6,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { loadRazorpayCreds } from "../_shared/razorpay-config.ts";
 
 function ok(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -17,11 +18,18 @@ function ok(body: unknown, status = 200) {
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
 
-  const secret = Deno.env.get("RAZORPAY_WEBHOOK_SECRET");
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!secret || !supabaseUrl || !serviceKey) {
+  if (!supabaseUrl || !serviceKey) {
     console.error("razorpay-webhook: missing env");
+    return ok({ error: "unavailable" }, 503);
+  }
+
+  const supabase = createClient(supabaseUrl, serviceKey);
+  const creds = await loadRazorpayCreds(supabase);
+  const secret = creds?.webhookSecret;
+  if (!secret) {
+    console.error("razorpay-webhook: webhook secret not configured");
     return ok({ error: "unavailable" }, 503);
   }
 
@@ -43,7 +51,6 @@ Deno.serve(async (req) => {
   let event: any;
   try { event = JSON.parse(raw); } catch { return ok({ error: "bad json" }, 400); }
 
-  const supabase = createClient(supabaseUrl, serviceKey);
   const type = event?.event as string;
   const payment = event?.payload?.payment?.entity;
   const order = event?.payload?.order?.entity;

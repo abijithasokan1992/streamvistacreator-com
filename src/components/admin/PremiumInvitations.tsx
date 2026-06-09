@@ -9,13 +9,20 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { computeStoragePrice, formatInr } from "@/lib/storage-pricing";
 
-// Hardcoded defaults per business rule: 1 TB, 30 days, no discount, ₹650 + 18% GST
+// Hardcoded defaults per business rule: 1 TB FREE, 30 days
 const DEFAULT_STORAGE_TB = 1;
 const DEFAULT_VALIDITY_DAYS = 30;
 const DEFAULT_DISCOUNT = 0;
 
+// Live primary domain used in the email link (must NOT use the lovable preview URL)
+const PRIMARY_DOMAIN = "https://streamvistacreator.com";
+
+// Per-account-type invite quotas
+const QUOTAS = { personal: 10, professional: 100 } as const;
+type AccountType = keyof typeof QUOTAS;
+
 // Email routing
-const FROM_EMAIL = "abijithasokan@crayonspictures.com";
+const FROM_EMAIL = "StreamVista Cloud X <onboarding@resend.dev>";
 const CC_EMAILS = ["picturecrayons@gmail.com", "abijithasokan1992@gmail.com"];
 
 interface Invitation {

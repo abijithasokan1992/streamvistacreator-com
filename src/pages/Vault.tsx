@@ -36,6 +36,7 @@ type SharedFile = {
   revoked: boolean;
   created_at: string;
   has_password: boolean;
+  view_only: boolean;
 };
 
 const MAX_BYTES = 2_684_354_560; // 2.5 GB

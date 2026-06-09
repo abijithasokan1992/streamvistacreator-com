@@ -978,6 +978,7 @@ export type Database = {
           plan_tier: string
           professional_role: string | null
           studio_name: string | null
+          studio_slug: Database["public"]["Enums"]["studio_slug"]
           updated_at: string
           user_id: string
           whatsapp: string | null
@@ -992,6 +993,7 @@ export type Database = {
           plan_tier?: string
           professional_role?: string | null
           studio_name?: string | null
+          studio_slug?: Database["public"]["Enums"]["studio_slug"]
           updated_at?: string
           user_id: string
           whatsapp?: string | null
@@ -1006,6 +1008,7 @@ export type Database = {
           plan_tier?: string
           professional_role?: string | null
           studio_name?: string | null
+          studio_slug?: Database["public"]["Enums"]["studio_slug"]
           updated_at?: string
           user_id?: string
           whatsapp?: string | null
@@ -1094,6 +1097,10 @@ export type Database = {
         | "executive_producer"
         | "creator"
         | "client"
+      studio_slug:
+        | "crayons_pictures"
+        | "abhijith_asokan_productions"
+        | "independent"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1228,6 +1235,11 @@ export const Constants = {
         "executive_producer",
         "creator",
         "client",
+      ],
+      studio_slug: [
+        "crayons_pictures",
+        "abhijith_asokan_productions",
+        "independent",
       ],
     },
   },

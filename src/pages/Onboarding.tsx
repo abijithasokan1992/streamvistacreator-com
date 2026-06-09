@@ -75,12 +75,18 @@ export default function Onboarding() {
     }
     setSaving(true);
     const display = `${firstName.trim()} ${lastName.trim()}`.trim();
+    const studioLower = studioName.trim().toLowerCase();
+    const studioSlug =
+      studioLower.includes("crayons") && studioLower.includes("pictures") ? "crayons_pictures"
+      : (studioLower.includes("abhijith") || studioLower.includes("abijith")) ? "abhijith_asokan_productions"
+      : "independent";
     const { error } = await supabase.from("user_profiles").upsert({
       user_id: user.id,
       first_name: firstName.trim(),
       last_name: lastName.trim(),
       display_name: display,
       studio_name: studioName.trim(),
+      studio_slug: studioSlug,
       whatsapp: whatsapp.trim() || null,
       professional_role: professionalRole,
       onboarding_step: "plan",

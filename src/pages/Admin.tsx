@@ -21,6 +21,7 @@ import ResendCredentials from "@/components/admin/ResendCredentials";
 import AdminCredentials from "@/components/admin/AdminCredentials";
 import GlobalAssetManager from "@/components/admin/GlobalAssetManager";
 import UniversalBroadcast from "@/components/admin/UniversalBroadcast";
+import EmailLogMonitor from "@/components/admin/EmailLogMonitor";
 
 interface Row {
   id: string;
@@ -234,6 +235,7 @@ export default function Admin() {
             <UniversalBroadcast />
             <PremiumInvitations />
             <ResendCredentials />
+            <EmailLogMonitor />
             <MarketingAnalytics rows={rows} />
           </TabsContent>
         </Tabs>

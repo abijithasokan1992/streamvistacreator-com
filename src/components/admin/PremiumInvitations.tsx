@@ -62,6 +62,7 @@ export default function PremiumInvitations() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [sendingId, setSendingId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -127,14 +128,23 @@ export default function PremiumInvitations() {
     ].join("\n");
   };
 
-  const sendEmail = (inv: Invitation) => {
+  const sendEmail = async (inv: Invitation) => {
     if (!inv.invitee_email) return toast.error("No email on this invite");
-    const subject = "Your exclusive Crayons Creator Cloud invite";
-    const cc = CC_EMAILS.join(",");
-    // Admin will be signed into FROM_EMAIL in their mail client — From is set automatically.
-    const url = `mailto:${encodeURIComponent(inv.invitee_email)}?cc=${encodeURIComponent(cc)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBodyFor(inv))}`;
-    window.location.href = url;
-    markSent(inv, "email");
+    setSendingId(inv.id);
+    const t = toast.loading(`Sending invite to ${inv.invitee_email}…`);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-premium-invitation", {
+        body: { invitationId: inv.id },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast.success(`Invite emailed to ${inv.invitee_email}`, { id: t });
+      load();
+    } catch (e: any) {
+      toast.error(e?.message || "Could not send email", { id: t });
+    } finally {
+      setSendingId(null);
+    }
   };
 
   const revoke = async (inv: Invitation) => {
@@ -187,8 +197,9 @@ export default function PremiumInvitations() {
                     <Button size="sm" variant="outline" onClick={() => copyLink(inv)} className="gap-1">
                       {copiedId === inv.id ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />} Link
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => sendEmail(inv)} className="gap-1" disabled={!inv.invitee_email}>
-                      <Send className="w-3.5 h-3.5" /> Send email
+                    <Button size="sm" variant="outline" onClick={() => sendEmail(inv)} className="gap-1" disabled={!inv.invitee_email || sendingId === inv.id}>
+                      {sendingId === inv.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                      {sendingId === inv.id ? "Sending…" : "Send email"}
                     </Button>
                     {inv.status !== "revoked" && inv.status !== "redeemed" && (
                       <Button size="sm" variant="ghost" onClick={() => revoke(inv)} className="gap-1 text-destructive hover:text-destructive">
@@ -216,23 +227,36 @@ function NewInvitationDialog({ onCreated }: { onCreated: () => void }) {
     const e = email.trim().toLowerCase();
     if (!/^\S+@\S+\.\S+$/.test(e)) return toast.error("Enter a valid email");
     setSaving(true);
-    const expires_at = new Date(Date.now() + DEFAULT_VALIDITY_DAYS * 86400_000).toISOString();
-    const { data: { user } } = await supabase.auth.getUser();
-    const { error } = await supabase.from("premium_invitations").insert({
-      invitee_name: e.split("@")[0],
-      invitee_email: e,
-      storage_tb: DEFAULT_STORAGE_TB,
-      discount_percent: DEFAULT_DISCOUNT,
-      validity_days: DEFAULT_VALIDITY_DAYS,
-      is_free: false,
-      expires_at,
-      created_by: user?.id ?? null,
-    });
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    toast.success("Invitation created — open the email button to send");
-    setEmail("");
-    onCreated();
+    const t = toast.loading(`Creating invite & sending to ${e}…`);
+    try {
+      const expires_at = new Date(Date.now() + DEFAULT_VALIDITY_DAYS * 86400_000).toISOString();
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: inserted, error } = await supabase.from("premium_invitations").insert({
+        invitee_name: e.split("@")[0],
+        invitee_email: e,
+        storage_tb: DEFAULT_STORAGE_TB,
+        discount_percent: DEFAULT_DISCOUNT,
+        validity_days: DEFAULT_VALIDITY_DAYS,
+        is_free: false,
+        expires_at,
+        created_by: user?.id ?? null,
+      }).select("id").single();
+      if (error) throw error;
+
+      const { data: sendData, error: sendErr } = await supabase.functions.invoke("send-premium-invitation", {
+        body: { invitationId: inserted.id },
+      });
+      if (sendErr) throw sendErr;
+      if ((sendData as any)?.error) throw new Error((sendData as any).error);
+
+      toast.success(`Invite sent to ${e}`, { id: t });
+      setEmail("");
+      onCreated();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to send invite", { id: t });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (

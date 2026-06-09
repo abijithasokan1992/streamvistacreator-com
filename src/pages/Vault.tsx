@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import MyAccount from "@/components/dashboard/MyAccount";
 import ReferralRewards from "@/components/dashboard/ReferralRewards";
+import FirstStepsCard from "@/components/dashboard/FirstStepsCard";
 import { UploadManagerProvider, useUploadManager } from "@/components/vault/UploadManager";
 import ShareLinkModal, { ShareLinkFile } from "@/components/vault/ShareLinkModal";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -298,6 +299,15 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
           <main className="min-w-0 space-y-6 animate-fade-in">
             {section === "files" && (
               <>
+                {user && (
+                  <FirstStepsCard
+                    userId={user.id}
+                    variant="creator"
+                    onUpload={() => pickAndEnqueue?.()}
+                    onShare={() => setUploadOpen(true)}
+                    onInvite={() => setSection("account" as SectionId)}
+                  />
+                )}
                 <SectionHeader
                   title="My Vault"
                   desc="Securely store and share files with one-click links, passwords and expiries."

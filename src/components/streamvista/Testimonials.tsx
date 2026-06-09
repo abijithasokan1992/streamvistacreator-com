@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 const TESTIMONIALS = [
   {
-    quote: "We replaced three different tools — WeTransfer, Frame.io and a custom S3 setup — with StreamVista. Our editors actually use it.",
+    quote: "We consolidated three different tools — file transfer, review and a custom S3 setup — into StreamVista. Our editors actually use it.",
     author: "Production Lead",
     studio: "Crayons Pictures",
     accent: "from-primary to-primary-glow",

@@ -1,39 +1,26 @@
-import { Check, X, Sparkles } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Check, Sparkles } from "lucide-react";
 
-type Row = {
-  feature: string;
-  sv: string | boolean;
-  framio: string | boolean;
-  dropbox: string | boolean;
-  gdrive: string | boolean;
+/**
+ * Brand-neutral "Why StreamVista" feature grid.
+ * (Previous side-by-side comparison referencing third-party brands has been
+ * retired — we now stand on our own capabilities, no trademarks of others
+ * appear on the marketing surface.)
+ */
+type Capability = {
+  title: string;
+  body: string;
 };
 
-const ROWS: Row[] = [
-  { feature: "Built for filmmakers (RAW, R3D, ProRes)", sv: true, framio: true, dropbox: false, gdrive: false },
-  { feature: "Camera-to-cloud ingest", sv: true, framio: true, dropbox: false, gdrive: false },
-  { feature: "Frame-accurate review & comments", sv: true, framio: true, dropbox: false, gdrive: false },
-  { feature: "Branded client share links", sv: true, framio: "Add-on", dropbox: false, gdrive: false },
-  { feature: "Watermarking & view tracking", sv: true, framio: true, dropbox: false, gdrive: false },
-  { feature: "UPI / Razorpay checkout (₹ INR)", sv: true, framio: false, dropbox: false, gdrive: false },
-  { feature: "WhatsApp + Email support", sv: true, framio: false, dropbox: false, gdrive: false },
-  { feature: "Free plan with real storage", sv: true, framio: "Limited", dropbox: "2 GB", gdrive: "15 GB" },
-  { feature: "Starting price", sv: "Free → ₹499/mo", framio: "$15/mo", dropbox: "$12/mo", gdrive: "$2/mo" },
+const CAPABILITIES: Capability[] = [
+  { title: "Built for filmmakers", body: "Native handling of RAW, R3D and ProRes — no transcoding before upload." },
+  { title: "Camera-to-cloud ingest", body: "Push dailies straight from set into your secure cinematic vault." },
+  { title: "Frame-accurate review", body: "Timecode-anchored comments. Approve cuts in one click, no chat threads." },
+  { title: "Branded client share links", body: "Password, expiry, watermark, view tracking — included on every plan." },
+  { title: "UPI / Razorpay checkout", body: "Native ₹ INR billing, GST invoice, instant top-up. No FX surprises." },
+  { title: "WhatsApp + Email support", body: "Real humans, real fast. Reach the OPC team without a ticket queue." },
+  { title: "Free plan with real storage", body: "128 GB and 500 GB/month bandwidth — enough to ship a short film." },
+  { title: "Predictable pricing", body: "Start free. Scale to 1 TB for ₹767/mo. Auto Pay-As-You-Go beyond that." },
 ];
-
-const Cell = ({ v, highlight }: { v: string | boolean; highlight?: boolean }) => {
-  if (typeof v === "boolean") {
-    return v
-      ? <Check className={cn("w-4 h-4 mx-auto", highlight ? "text-accent" : "text-primary")} />
-      : <X className="w-4 h-4 mx-auto text-muted-foreground/40" />;
-  }
-  return (
-    <span className={cn(
-      "text-xs md:text-sm whitespace-nowrap",
-      highlight ? "text-accent font-semibold" : "text-muted-foreground"
-    )}>{v}</span>
-  );
-};
 
 export const ComparisonTable = () => (
   <section id="compare" className="py-24 border-t border-border/40 relative">
@@ -47,48 +34,43 @@ export const ComparisonTable = () => (
             </span>
           </div>
           <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-4xl md:text-6xl">
-            Frame.io power.
+            Cinema-grade cloud.
             <br />
             <span className="gradient-text">Indian pricing.</span>
           </h2>
         </div>
         <p className="text-muted-foreground max-w-sm text-sm leading-relaxed">
-          A side-by-side comparison with the tools your team probably uses today.
+          Everything an indie film team actually needs — without renting tools built for
+          someone else's workflow.
         </p>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-border/60 glass">
-        <table className="w-full min-w-[720px]">
-          <thead>
-            <tr className="border-b border-border/60">
-              <th className="text-left p-5 font-mono-tech text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Feature</th>
-              <th className="p-5 bg-gradient-primary/5">
-                <div className="flex items-center justify-center gap-2">
-                  <Sparkles className="w-3.5 h-3.5 text-accent" />
-                  <span className="font-display font-bold text-sm gradient-text">StreamVista</span>
-                </div>
-              </th>
-              <th className="p-5 font-display font-bold text-sm text-muted-foreground text-center">Frame.io</th>
-              <th className="p-5 font-display font-bold text-sm text-muted-foreground text-center">Dropbox</th>
-              <th className="p-5 font-display font-bold text-sm text-muted-foreground text-center">Google Drive</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ROWS.map((r, i) => (
-              <tr key={r.feature} className={cn("border-b border-border/40 last:border-b-0", i % 2 === 0 && "bg-primary/[0.02]")}>
-                <td className="p-4 md:p-5 text-sm">{r.feature}</td>
-                <td className="p-4 md:p-5 text-center bg-gradient-primary/[0.04]"><Cell v={r.sv} highlight /></td>
-                <td className="p-4 md:p-5 text-center"><Cell v={r.framio} /></td>
-                <td className="p-4 md:p-5 text-center"><Cell v={r.dropbox} /></td>
-                <td className="p-4 md:p-5 text-center"><Cell v={r.gdrive} /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-border/60 border border-border/60 rounded-2xl overflow-hidden">
+        {CAPABILITIES.map((c, i) => (
+          <article
+            key={c.title}
+            className="bg-background p-6 md:p-7 animate-fade-in hover:bg-primary/[0.04] transition-colors"
+            style={{ animationDelay: `${i * 60}ms` }}
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <Check className="w-3.5 h-3.5 text-accent" strokeWidth={3} />
+              <span className="font-mono-tech text-[10px] uppercase tracking-[0.25em] text-accent">
+                Included
+              </span>
+            </div>
+            <h3 className="font-display font-bold text-base md:text-lg mb-1.5 flex items-start gap-2">
+              <Sparkles className="w-4 h-4 text-primary mt-1 shrink-0" />
+              <span>{c.title}</span>
+            </h3>
+            <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
+              {c.body}
+            </p>
+          </article>
+        ))}
       </div>
 
-      <p className="mt-4 text-[11px] text-muted-foreground/70 text-center font-mono-tech">
-        Comparison based on publicly listed plans as of {new Date().getFullYear()}. Trademarks belong to their respective owners.
+      <p className="mt-6 text-[11px] text-muted-foreground/70 text-center font-mono-tech">
+        Every capability above ships on the free plan unless explicitly marked otherwise.
       </p>
     </div>
   </section>

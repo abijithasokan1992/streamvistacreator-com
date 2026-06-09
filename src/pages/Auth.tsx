@@ -157,6 +157,16 @@ export default function Auth() {
     if (!loading && user) continueAfterAuth();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, loading]);
+  const handleGoogleSignIn = async () => {
+    setSubmitting(true);
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
+    setSubmitting(false);
+    if (result.error) {
+      toast.error(result.error.message || "Google sign-in failed.");
+    }
+  };
 
   const handle = async (e: React.FormEvent) => {
     e.preventDefault();

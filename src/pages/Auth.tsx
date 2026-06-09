@@ -307,7 +307,59 @@ export default function Auth() {
             </div>
           )}
 
-          <form onSubmit={handle} className="space-y-4" autoComplete="on">
+          <form onSubmit={handle} className="space-y-3.5" autoComplete="on">
+
+            {view === "signup" && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <input
+                    type="text"
+                    value={firstName}
+                    onChange={e => setFirstName(e.target.value)}
+                    placeholder="First name"
+                    required
+                    autoComplete="given-name"
+                    maxLength={80}
+                    className="w-full h-12 px-4 rounded-xl bg-input/40 border border-border/60 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-accent/70 focus:bg-input/70 focus:shadow-[0_0_24px_-6px_hsl(var(--accent)/0.5)]"
+                  />
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={e => setLastName(e.target.value)}
+                    placeholder="Last name"
+                    required
+                    autoComplete="family-name"
+                    maxLength={80}
+                    className="w-full h-12 px-4 rounded-xl bg-input/40 border border-border/60 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-accent/70 focus:bg-input/70 focus:shadow-[0_0_24px_-6px_hsl(var(--accent)/0.5)]"
+                  />
+                </div>
+
+                <input
+                  type="text"
+                  value={studioName}
+                  onChange={e => setStudioName(e.target.value)}
+                  placeholder="Studio / company name"
+                  required
+                  autoComplete="organization"
+                  maxLength={160}
+                  className="w-full h-12 px-4 rounded-xl bg-input/40 border border-border/60 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-accent/70 focus:bg-input/70 focus:shadow-[0_0_24px_-6px_hsl(var(--accent)/0.5)]"
+                />
+
+                <div className="flex">
+                  <CountryCodeSelect value={country} onChange={setCountry} />
+                  <input
+                    type="tel"
+                    value={mobile}
+                    onChange={e => setMobile(e.target.value.replace(/[^\d\s\-()]/g, ""))}
+                    placeholder="Mobile number"
+                    required
+                    autoComplete="tel-national"
+                    maxLength={20}
+                    className="flex-1 h-12 px-4 rounded-r-xl bg-input/40 border border-border/60 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-accent/70 focus:bg-input/70 focus:shadow-[0_0_24px_-6px_hsl(var(--accent)/0.5)]"
+                  />
+                </div>
+              </>
+            )}
 
             <input
               type="email"
@@ -318,6 +370,7 @@ export default function Auth() {
               autoComplete="email"
               className="peer w-full h-12 px-4 rounded-xl bg-input/40 border border-border/60 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-accent/70 focus:bg-input/70 focus:shadow-[0_0_24px_-6px_hsl(var(--accent)/0.5)]"
             />
+
 
             {view !== "forgot" && (
               <div className="relative">

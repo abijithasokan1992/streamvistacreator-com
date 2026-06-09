@@ -678,6 +678,7 @@ export type Database = {
           size_bytes: number
           storage_path: string
           tier: string
+          view_only: boolean
         }
         Insert: {
           created_at?: string
@@ -695,6 +696,7 @@ export type Database = {
           size_bytes: number
           storage_path: string
           tier?: string
+          view_only?: boolean
         }
         Update: {
           created_at?: string
@@ -712,6 +714,7 @@ export type Database = {
           size_bytes?: number
           storage_path?: string
           tier?: string
+          view_only?: boolean
         }
         Relationships: []
       }

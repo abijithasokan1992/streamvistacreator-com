@@ -1,0 +1,1 @@
+ALTER TABLE public.shared_files ADD COLUMN IF NOT EXISTS view_only boolean NOT NULL DEFAULT false;

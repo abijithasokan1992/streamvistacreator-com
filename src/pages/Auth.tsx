@@ -62,8 +62,9 @@ export default function Auth() {
           } catch {}
         }
         if (!onboardingId) {
-          toast.error("Missing onboarding context — please re-select your plan.");
-          navigate("/#pricing", { replace: true });
+          // No pre-created onboarding record — send user through the onboarding wizard
+          // where they can complete profile and then pay from the dashboard.
+          navigate("/onboarding", { replace: true });
           return;
         }
 

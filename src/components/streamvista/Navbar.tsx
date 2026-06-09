@@ -56,7 +56,7 @@ export const Navbar = () => {
             to="/auth?plan=free"
             className="cta-guide relative text-xs md:text-sm font-semibold px-5 py-2.5 rounded-full bg-gradient-primary text-primary-foreground hover:scale-105 transition-transform"
           >
-            Claim Free Workspace
+            Get Started
           </Link>
         </div>
       </div>

@@ -9,13 +9,20 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { computeStoragePrice, formatInr } from "@/lib/storage-pricing";
 
-// Hardcoded defaults per business rule: 1 TB, 30 days, no discount, ₹650 + 18% GST
+// Hardcoded defaults per business rule: 1 TB FREE, 30 days
 const DEFAULT_STORAGE_TB = 1;
 const DEFAULT_VALIDITY_DAYS = 30;
 const DEFAULT_DISCOUNT = 0;
 
+// Live primary domain used in the email link (must NOT use the lovable preview URL)
+const PRIMARY_DOMAIN = "https://streamvistacreator.com";
+
+// Per-account-type invite quotas
+const QUOTAS = { personal: 10, professional: 100 } as const;
+type AccountType = keyof typeof QUOTAS;
+
 // Email routing
-const FROM_EMAIL = "abijithasokan@crayonspictures.com";
+const FROM_EMAIL = "StreamVista Cloud X <onboarding@resend.dev>";
 const CC_EMAILS = ["picturecrayons@gmail.com", "abijithasokan1992@gmail.com"];
 
 interface Invitation {
@@ -29,6 +36,7 @@ interface Invitation {
   discount_percent: number;
   validity_days: number;
   is_free: boolean;
+  account_type: AccountType;
   status: string;
   sent_channels: string[];
   expires_at: string;
@@ -81,9 +89,20 @@ export default function PremiumInvitations() {
   // to prevent any authenticated client from receiving invitee PII/tokens. Admin list refreshes
   // on dialog actions (create/revoke/mark-sent) via explicit reloads.
 
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const inviteUrl = (token: string) => `${origin}/invite/${encodeURIComponent(token)}`;
-  const refUrl = (code: string | null) => code ? `${origin}/?ref=${encodeURIComponent(code)}` : "";
+  // Always link via the live primary domain (never the preview URL)
+  const inviteUrl = (token: string) => `${PRIMARY_DOMAIN}/invite/${encodeURIComponent(token)}`;
+  const refUrl = (code: string | null) => code ? `${PRIMARY_DOMAIN}/?ref=${encodeURIComponent(code)}` : "";
+
+  // Per-account-type quota usage (counts ALL non-revoked invites of that type the current admin created)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null));
+  }, []);
+  const myRows = rows.filter(r => r.status !== "revoked");
+  const usage = {
+    personal: myRows.filter(r => r.account_type === "personal").length,
+    professional: myRows.filter(r => r.account_type === "professional").length,
+  };
 
   const copyLink = async (inv: Invitation) => {
     try {
@@ -156,17 +175,40 @@ export default function PremiumInvitations() {
   return (
     <div className="space-y-6">
       <div className="glass rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
           <div>
-            <h2 className="font-display text-2xl font-bold flex items-center gap-2"><Ticket className="w-5 h-5 text-accent" /> Premium Invitations</h2>
-            <p className="text-xs text-muted-foreground mt-1">1 TB · ₹650 + 18% GST · 30-day validity · auto from {FROM_EMAIL}</p>
+            <h2 className="font-display text-2xl font-bold flex items-center gap-2">
+              <Ticket className="w-5 h-5 text-accent" /> StreamVista Cloud X · Premium Invitations
+            </h2>
+            <p className="text-xs text-muted-foreground mt-1">Special Invite · Plan 1 TB Free · 30-day validity · sent from {FROM_EMAIL}</p>
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2"><Plus className="w-4 h-4" /> Send invite</Button>
+              <Button className="gap-2" disabled={usage.personal >= QUOTAS.personal && usage.professional >= QUOTAS.professional}>
+                <Plus className="w-4 h-4" /> Send invite
+              </Button>
             </DialogTrigger>
-            <NewInvitationDialog onCreated={() => setOpen(false)} />
+            <NewInvitationDialog usage={usage} onCreated={() => { setOpen(false); load(); }} />
           </Dialog>
+        </div>
+
+        {/* Quota meters */}
+        <div className="grid sm:grid-cols-2 gap-3 mb-6">
+          {(["personal","professional"] as AccountType[]).map(t => {
+            const used = usage[t]; const max = QUOTAS[t]; const pct = Math.min(100, Math.round((used/max)*100));
+            return (
+              <div key={t} className="rounded-xl border border-border/60 bg-secondary/20 p-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold uppercase tracking-wider text-muted-foreground">{t} quota</span>
+                  <span className="font-mono"><b className="text-foreground">{used}</b> / {max}</span>
+                </div>
+                <div className="mt-2 h-1.5 rounded-full bg-border/50 overflow-hidden">
+                  <div className="h-full rounded-full bg-gradient-to-r from-fuchsia-500 via-pink-500 to-amber-400 transition-all" style={{ width: `${pct}%` }} />
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1.5">{max - used} invites remaining</p>
+              </div>
+            );
+          })}
         </div>
 
         {loading ? (
@@ -176,22 +218,22 @@ export default function PremiumInvitations() {
         ) : (
           <ul className="grid gap-3">
             {rows.map(inv => {
-              const price = computeStoragePrice(inv.storage_tb, inv.discount_percent, inv.is_free);
               return (
                 <li key={inv.id} className="border border-border/60 rounded-xl p-4 grid md:grid-cols-[1.3fr_1fr_auto] gap-4 items-start">
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold inline-flex items-center gap-1"><Mail className="w-3.5 h-3.5 text-muted-foreground" /> {inv.invitee_email}</span>
                       <span className={`text-[11px] px-2 py-0.5 rounded font-semibold uppercase tracking-wider ${STATUS_STYLES[inv.status]}`}>{inv.status}</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded font-semibold uppercase tracking-wider border border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-300">{inv.account_type}</span>
                     </div>
                     {inv.referral_code && (
                       <p className="text-[11px] text-muted-foreground mt-2 font-mono break-all">ref: {refUrl(inv.referral_code)}</p>
                     )}
                   </div>
                   <div className="text-sm space-y-0.5">
-                    <div><span className="text-muted-foreground">Storage:</span> <b>{inv.storage_tb} TB</b></div>
+                    <div><span className="text-muted-foreground">Storage:</span> <b>{inv.storage_tb} TB</b> <span className="text-[10px] uppercase tracking-wider text-amber-400 ml-1">Free</span></div>
                     <div><span className="text-muted-foreground">Validity:</span> {inv.validity_days} days</div>
-                    <div><span className="text-muted-foreground">Total:</span> <b>{formatInr(price.totalInr)}</b></div>
+                    <div className="text-[11px] text-muted-foreground font-mono break-all">invite: {inviteUrl(inv.token)}</div>
                   </div>
                   <div className="flex flex-wrap gap-2 md:justify-end">
                     <Button size="sm" variant="outline" onClick={() => copyLink(inv)} className="gap-1">
@@ -219,13 +261,18 @@ export default function PremiumInvitations() {
   );
 }
 
-function NewInvitationDialog({ onCreated }: { onCreated: () => void }) {
+function NewInvitationDialog({ usage, onCreated }: { usage: { personal: number; professional: number }; onCreated: () => void }) {
   const [email, setEmail] = useState("");
+  const [accountType, setAccountType] = useState<AccountType>("personal");
   const [saving, setSaving] = useState(false);
+
+  const remaining = QUOTAS[accountType] - usage[accountType];
+  const overQuota = remaining <= 0;
 
   const submit = async () => {
     const e = email.trim().toLowerCase();
     if (!/^\S+@\S+\.\S+$/.test(e)) return toast.error("Enter a valid email");
+    if (overQuota) return toast.error(`${accountType} quota reached (${QUOTAS[accountType]} max). Upgrade or choose another tier.`);
     setSaving(true);
     const t = toast.loading(`Creating invite & sending to ${e}…`);
     try {
@@ -237,7 +284,8 @@ function NewInvitationDialog({ onCreated }: { onCreated: () => void }) {
         storage_tb: DEFAULT_STORAGE_TB,
         discount_percent: DEFAULT_DISCOUNT,
         validity_days: DEFAULT_VALIDITY_DAYS,
-        is_free: false,
+        is_free: true,
+        account_type: accountType,
         expires_at,
         created_by: user?.id ?? null,
       }).select("id").single();
@@ -261,10 +309,12 @@ function NewInvitationDialog({ onCreated }: { onCreated: () => void }) {
 
   return (
     <DialogContent className="max-w-md">
-      <DialogHeader><DialogTitle>New premium invitation</DialogTitle></DialogHeader>
+      <DialogHeader>
+        <DialogTitle>New StreamVista Cloud X invite</DialogTitle>
+      </DialogHeader>
       <div className="space-y-4">
         <div className="grid gap-2">
-          <Label htmlFor="inv-email">Email address</Label>
+          <Label htmlFor="inv-email">Recipient email</Label>
           <Input
             id="inv-email"
             type="email"
@@ -276,17 +326,31 @@ function NewInvitationDialog({ onCreated }: { onCreated: () => void }) {
             onKeyDown={(e) => { if (e.key === "Enter" && !saving) submit(); }}
           />
         </div>
-        <div className="rounded-lg bg-secondary/40 p-3 text-xs text-muted-foreground space-y-0.5">
-          <div>Storage: <span className="text-foreground font-semibold">1 TB</span></div>
+        <div className="grid gap-2">
+          <Label htmlFor="inv-type">Account type</Label>
+          <Select value={accountType} onValueChange={(v: AccountType) => setAccountType(v)}>
+            <SelectTrigger id="inv-type"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="personal">Personal — up to {QUOTAS.personal} invites</SelectItem>
+              <SelectItem value="professional">Professional — up to {QUOTAS.professional} invites</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className={`text-[11px] ${overQuota ? "text-destructive" : "text-muted-foreground"}`}>
+            {usage[accountType]} of {QUOTAS[accountType]} used · <b className="text-foreground">{Math.max(0, remaining)}</b> remaining
+          </p>
+        </div>
+        <div className="rounded-lg bg-gradient-to-br from-fuchsia-500/10 via-pink-500/5 to-amber-400/10 border border-fuchsia-500/20 p-3 text-xs text-muted-foreground space-y-0.5">
+          <div className="text-[10px] uppercase tracking-[2px] text-amber-400 font-semibold mb-1">Special Invite · Plan 1 TB Free</div>
+          <div>Storage: <span className="text-foreground font-semibold">1 TB · FREE</span></div>
           <div>Validity: <span className="text-foreground font-semibold">30 days</span></div>
-          <div>Price: <span className="text-foreground font-semibold">₹650 + 18% GST = ₹767</span></div>
+          <div>Link domain: <span className="text-foreground font-mono">{PRIMARY_DOMAIN}</span></div>
           <div>From: <span className="text-foreground">{FROM_EMAIL}</span></div>
-          <div>CC: <span className="text-foreground">{CC_EMAILS.join(", ")}</span></div>
         </div>
       </div>
       <DialogFooter>
-        <Button onClick={submit} disabled={saving} className="w-full gap-2">
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Send invite
+        <Button onClick={submit} disabled={saving || overQuota} className="w-full gap-2">
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          {saving ? "Sending…" : overQuota ? "Quota reached" : "Send invite"}
         </Button>
       </DialogFooter>
     </DialogContent>

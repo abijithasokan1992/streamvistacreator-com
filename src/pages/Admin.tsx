@@ -18,6 +18,7 @@ import PartnerLogos from "@/components/admin/PartnerLogos";
 import RolesManager from "@/components/admin/RolesManager";
 import RazorpayCredentials from "@/components/admin/RazorpayCredentials";
 import ResendCredentials from "@/components/admin/ResendCredentials";
+import AdminCredentials from "@/components/admin/AdminCredentials";
 
 interface Row {
   id: string;
@@ -43,6 +44,7 @@ export default function Admin() {
   const [rows, setRows] = useState<Row[]>([]);
   const [fetching, setFetching] = useState(false);
   const [claiming, setClaiming] = useState(false);
+  const [adminAlreadyExists, setAdminAlreadyExists] = useState<boolean | null>(null);
   const [copied, setCopied] = useState(false);
 
   const adminUrl = typeof window !== "undefined" ? `${window.location.origin}/admin` : "/admin";
@@ -56,8 +58,15 @@ export default function Admin() {
   };
 
   useEffect(() => {
-    if (!loading && !user) navigate("/auth", { replace: true });
+    if (!loading && !user) navigate("/auth?next=/admin", { replace: true });
   }, [user, loading, navigate]);
+
+  // Hide the "Claim Admin Role" CTA the moment an admin exists somewhere in
+  // the system — prevents would-be attackers from spamming the button.
+  useEffect(() => {
+    if (loading || !user || isAdmin) return;
+    supabase.rpc("admin_exists").then(({ data }) => setAdminAlreadyExists(!!data));
+  }, [user, loading, isAdmin]);
 
   const load = async () => {
     setFetching(true);
@@ -118,18 +127,26 @@ export default function Admin() {
   if (loading) return <div className="min-h-dvh grid place-items-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
 
   if (!isAdmin) {
+    const canClaim = adminAlreadyExists === false;
     return (
       <main className="min-h-dvh grid place-items-center px-4">
         <div className="glass-strong rounded-3xl p-10 max-w-md text-center animate-fade-in">
           <Crown className="w-12 h-12 mx-auto text-accent mb-4" />
-          <h1 className="font-display text-2xl font-bold mb-2">No Admin Access</h1>
+          <h1 className="font-display text-2xl font-bold mb-2">
+            {canClaim ? "Bootstrap the Control Panel" : "No Admin Access"}
+          </h1>
           <p className="text-sm text-muted-foreground mb-6">
-            Signed in as <span className="text-foreground">{user?.email}</span>. If you're the first user, claim admin to bootstrap the control panel.
+            Signed in as <span className="text-foreground">{user?.email}</span>.{" "}
+            {canClaim
+              ? "No admin exists yet — claim the role to bootstrap the panel."
+              : "An administrator already manages this workspace. Ask them to grant you access."}
           </p>
-          <button onClick={claimAdmin} disabled={claiming} className="w-full h-12 rounded-xl bg-gradient-primary text-primary-foreground font-semibold glow-primary disabled:opacity-60 flex items-center justify-center gap-2">
-            {claiming ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-            Claim Admin Role
-          </button>
+          {canClaim && (
+            <button onClick={claimAdmin} disabled={claiming} className="w-full h-12 rounded-xl bg-gradient-primary text-primary-foreground font-semibold glow-primary disabled:opacity-60 flex items-center justify-center gap-2">
+              {claiming ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+              Claim Admin Role
+            </button>
+          )}
           <button onClick={signOut} className="mt-3 w-full h-10 rounded-xl border border-border text-sm font-medium hover:bg-secondary">Sign out</button>
         </div>
       </main>
@@ -190,6 +207,7 @@ export default function Admin() {
             <FreeTierConfig />
             <SupportInbox />
             <OnboardingApprovals />
+            <AdminCredentials />
           </TabsContent>
 
           {/* 2. Finance & Billing */}

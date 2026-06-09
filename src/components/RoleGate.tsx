@@ -25,6 +25,12 @@ export default function RoleGate({
     );
   }
   if (!user) return <Navigate to={`/auth?next=${encodeURIComponent(location.pathname)}`} replace />;
-  if (!role || !allow.includes(role)) return <Navigate to={dashboardForRole(role)} replace />;
+  if (!role || !allow.includes(role)) {
+    const target = dashboardForRole(role);
+    // Loop guard: if the role's home is the route we're guarding, render the
+    // children rather than ping-pong forever.
+    if (target === location.pathname) return <>{children}</>;
+    return <Navigate to={target} replace />;
+  }
   return <>{children}</>;
 }

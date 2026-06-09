@@ -133,12 +133,22 @@ export default function Auth() {
         toast.error("Couldn't open checkout — taking you to your workspace to retry.");
       }
     }
-    // Free flow / default: send to the dashboard that matches the user's role.
+    // Free flow / default: route through the onboarding gate. It decides
+    // whether to send the user to the wizard or straight to their dashboard.
+    const nextParam = search.get("next");
+    if (nextParam && nextParam.startsWith("/")) {
+      navigate(nextParam, { replace: true });
+      return;
+    }
+    // Admins skip onboarding entirely.
     const { data: roleRow } = await supabase
       .from("user_roles").select("role").eq("user_id", (await supabase.auth.getUser()).data.user?.id || "");
     const roles = (roleRow || []).map((r: any) => r.role);
-    const primary = ["admin", "executive_producer", "creator", "client"].find((r) => roles.includes(r)) as any;
-    navigate(dashboardForRole(primary || "client"), { replace: true });
+    if (roles.includes("admin")) {
+      navigate("/admin", { replace: true });
+      return;
+    }
+    navigate("/onboarding", { replace: true });
   };
 
   useEffect(() => {

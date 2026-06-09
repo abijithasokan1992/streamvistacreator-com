@@ -42,6 +42,15 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  // Sign-up only fields
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [studioName, setStudioName] = useState("");
+  const [country, setCountry] = useState<Country>(
+    COUNTRIES.find((c) => c.code === "IN") ?? COUNTRIES[0]
+  );
+  const [mobile, setMobile] = useState("");
+
   const continueAfterAuth = async () => {
     if (isPaidPlan && plan) {
       try {

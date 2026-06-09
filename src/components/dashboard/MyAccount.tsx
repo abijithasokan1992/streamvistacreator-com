@@ -20,7 +20,7 @@ interface Profile {
   display_name: string | null;
   studio_name: string | null;
   whatsapp: string | null;
-  plan_tier: "free" | "monthly" | "quarterly" | "yearly";
+  plan_tier: "free" | "creator";
   personal_logo_url: string | null;
 }
 
@@ -268,19 +268,18 @@ function SupportRequestForm() {
 
 /* ---------------- Upgrade / Payment ---------------- */
 function UpgradeSection({ currentTier, email, name, userId, onUpgraded }: { currentTier: string; email?: string; name?: string; userId: string; onUpgraded: (tier: Profile["plan_tier"]) => void; }) {
-  const [selected, setSelected] = useState<Cycle>("monthly");
+  const [selected, setSelected] = useState<Cycle>("creator");
   const [provider, setProvider] = useState<"razorpay" | "card">("razorpay");
   const [busy, setBusy] = useState(false);
   const [stripeOpen, setStripeOpen] = useState(false);
 
   const plan = planByCycle(selected);
-  const subtotal = plan.price;
+  const subtotal = plan.price; // ₹650 per TB pre-GST
   const gst = Math.round(subtotal * GST_RATE);
   const total = subtotal + gst;
 
-  const stripePriceId =
-    selected === "monthly" ? "cloudx_monthly" :
-    selected === "quarterly" ? "cloudx_quarterly" : "cloudx_yearly";
+  // Single Stripe price-id for the Creator plan (PAYG, ₹767 incl. GST per TB / month)
+  const stripePriceId = "cloudx_creator";
 
   const loadRazorpay = () => new Promise<boolean>((resolve) => {
     if ((window as any).Razorpay) return resolve(true);

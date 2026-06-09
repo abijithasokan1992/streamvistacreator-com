@@ -332,7 +332,7 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
                   ) : (
                     <div className="space-y-2">
                       {files.map((f) => (
-                        <FileRow key={f.id} file={f} onCopy={copyLink} onRevoke={revoke} onRemove={remove} />
+                        <FileRow key={f.id} file={f} onShare={(file) => setShareTarget(file)} onRevoke={revoke} onRemove={remove} />
                       ))}
                     </div>
                   )}

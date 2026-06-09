@@ -56,7 +56,7 @@ const App = () => (
                 <Route path="/producer" element={<OnboardingGate><RoleGate allow={["executive_producer", "admin"]}><Producer /></RoleGate></OnboardingGate>} />
                 <Route path="/vault" element={<OnboardingGate><RoleGate allow={["creator", "admin"]}><Vault /></RoleGate></OnboardingGate>} />
                 <Route path="/studio" element={<OnboardingGate><RoleGate allow={["creator", "executive_producer", "admin"]}><Studio /></RoleGate></OnboardingGate>} />
-                <Route path="/client" element={<OnboardingGate><RoleGate allow={["client", "creator", "executive_producer", "admin", "user"]}><Client /></RoleGate></OnboardingGate>} />
+                <Route path="/client" element={<OnboardingGate><RoleGate allow={["client", "user"]}><Client /></RoleGate></OnboardingGate>} />
 
                 <Route path="/launching-special-plan" element={<LaunchingSpecialPlan />} />
                 <Route path="/checkout/return" element={<CheckoutReturn />} />

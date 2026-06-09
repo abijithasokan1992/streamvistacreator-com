@@ -46,13 +46,17 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
 
+                {/* Linear onboarding wizard — must come BEFORE the dashboards. */}
+                <Route path="/onboarding" element={<Onboarding />} />
+
                 {/* Role-gated dashboards. RLS at the DB enforces the real boundary;
-                    these gates just keep the wrong UI off the screen. */}
+                    OnboardingGate enforces the linear flow, RoleGate keeps the
+                    wrong UI off the screen. */}
                 <Route path="/admin" element={<Admin />} />
-                <Route path="/producer" element={<RoleGate allow={["executive_producer", "admin"]}><Producer /></RoleGate>} />
-                <Route path="/vault" element={<RoleGate allow={["creator", "admin"]}><Vault /></RoleGate>} />
-                <Route path="/studio" element={<RoleGate allow={["creator", "executive_producer", "admin"]}><Studio /></RoleGate>} />
-                <Route path="/client" element={<RoleGate allow={["client", "creator", "executive_producer", "admin"]}><Client /></RoleGate>} />
+                <Route path="/producer" element={<OnboardingGate><RoleGate allow={["executive_producer", "admin"]}><Producer /></RoleGate></OnboardingGate>} />
+                <Route path="/vault" element={<OnboardingGate><RoleGate allow={["creator", "admin"]}><Vault /></RoleGate></OnboardingGate>} />
+                <Route path="/studio" element={<OnboardingGate><RoleGate allow={["creator", "executive_producer", "admin"]}><Studio /></RoleGate></OnboardingGate>} />
+                <Route path="/client" element={<OnboardingGate><RoleGate allow={["client", "creator", "executive_producer", "admin", "user"]}><Client /></RoleGate></OnboardingGate>} />
 
                 <Route path="/launching-special-plan" element={<LaunchingSpecialPlan />} />
                 <Route path="/checkout/return" element={<CheckoutReturn />} />

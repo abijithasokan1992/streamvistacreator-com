@@ -113,27 +113,42 @@ Deno.serve(async (req) => {
       return json({
         filename: file.filename,
         size_bytes: file.size_bytes,
+        mime_type: file.mime_type ?? null,
         tier: file.tier,
         requires_password: !!file.password_hash,
         expires_at: file.expires_at,
         downloads_left: file.max_downloads != null ? file.max_downloads - file.download_count : null,
+        view_only: !!file.view_only,
       });
     }
 
-    if (action === "download") {
-      if (file.password_hash) {
-        if (!password || typeof password !== "string") return json({ error: "Password required" }, 401);
-        if (!file.password_salt) {
-          // Legacy unsalted SHA-256 fallback (will be re-encoded on next owner update).
-          const legacy = bytesToHex(new Uint8Array(
-            await crypto.subtle.digest("SHA-256", new TextEncoder().encode(password)),
-          ));
-          if (!timingSafeEqual(legacy, file.password_hash)) return json({ error: "Wrong password" }, 401);
-        } else {
-          const h = await hashPassword(password, file.password_salt);
-          if (!timingSafeEqual(h, file.password_hash)) return json({ error: "Wrong password" }, 401);
-        }
+    // Verify password helper (used by view + download)
+    async function verifyPwd(): Promise<Response | null> {
+      if (!file.password_hash) return null;
+      if (!password || typeof password !== "string") return json({ error: "Password required" }, 401);
+      if (!file.password_salt) {
+        const legacy = bytesToHex(new Uint8Array(
+          await crypto.subtle.digest("SHA-256", new TextEncoder().encode(password)),
+        ));
+        if (!timingSafeEqual(legacy, file.password_hash)) return json({ error: "Wrong password" }, 401);
+      } else {
+        const h = await hashPassword(password, file.password_salt);
+        if (!timingSafeEqual(h, file.password_hash)) return json({ error: "Wrong password" }, 401);
       }
+      return null;
+    }
+
+    if (action === "view") {
+      const bad = await verifyPwd(); if (bad) return bad;
+      const { data: signed, error: sErr } = await admin.storage
+        .from("vault").createSignedUrl(file.storage_path, 600);
+      if (sErr || !signed) return json({ error: "Storage error" }, 500);
+      return json({ url: signed.signedUrl, filename: file.filename, mime_type: file.mime_type ?? null });
+    }
+
+    if (action === "download") {
+      if (file.view_only) return json({ error: "Download disabled for this link" }, 403);
+      const bad = await verifyPwd(); if (bad) return bad;
 
       const { data: signed, error: sErr } = await admin.storage
         .from("vault").createSignedUrl(file.storage_path, 300, { download: file.filename });

@@ -113,9 +113,12 @@ export default function Client() {
             <Link2 className="w-4 h-4 text-accent" />
             <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">Open a review</span>
           </div>
-          <h2 className="font-display text-xl font-bold mb-1">Paste your share link</h2>
-          <p className="text-sm text-muted-foreground mb-4">
-            Drop in the full URL, the <code className="text-accent">/s/token</code> path, or just the token your studio sent.
+          <h2 className="font-display text-xl font-bold mb-1">Got a share link from your studio?</h2>
+          <p className="text-sm text-muted-foreground mb-1">
+            Drop it in below. Accepts the full URL, the <code className="text-accent">/s/token</code> path, or just the token.
+          </p>
+          <p className="text-[11px] text-muted-foreground/70 mb-4">
+            Heads up: no link is emailed from this page. Your studio sends it directly via WhatsApp / email / SMS — once it arrives, paste it here.
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
             <input

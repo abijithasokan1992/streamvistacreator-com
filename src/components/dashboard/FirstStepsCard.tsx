@@ -58,8 +58,8 @@ export default function FirstStepsCard({
   ];
 
   const clientSteps: Step[] = [
-    { icon: Link2, title: "Open your share link", body: "Paste the /s/... link your studio sent into the field below.", cta: "Paste link", onClick: () => { onPasteLink?.(); markDone(0); } },
-    { icon: Sparkles, title: "Review with timecode", body: "Add frame-accurate notes; your studio sees them instantly.", cta: "Got it", onClick: () => markDone(1) },
+    { icon: Link2, title: "Wait for your studio's link", body: "Your studio shares a /s/... link via WhatsApp, email, or SMS. No link is sent automatically from here.", cta: "I have a link — paste it", onClick: () => { onPasteLink?.(); markDone(0); } },
+    { icon: Sparkles, title: "Review with timecode", body: "Open the link, scrub the cut, and drop frame-accurate notes. Your studio sees them live.", cta: "Got it", onClick: () => markDone(1) },
     { icon: Check, title: "Approve the cut", body: "One-click approval — your studio is notified the moment you sign off.", cta: "Understood", onClick: () => markDone(2) },
   ];
 

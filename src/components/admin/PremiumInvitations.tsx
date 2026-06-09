@@ -356,12 +356,6 @@ function NewInvitationDialog({ usage, onCreated }: { usage: { personal: number; 
     </DialogContent>
   );
 }
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Send invite
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  );
-}
 
 function ReferralsAdminPanel() {
   const [rows, setRows] = useState<ReferralRow[]>([]);

@@ -80,14 +80,14 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
     if (!user) return;
     const { data } = await supabase
       .from("shared_files")
-      .select("id, filename, size_bytes, tier, share_token, storage_path, expires_at, max_downloads, download_count, revoked, created_at, password_hash")
+      .select("id, filename, size_bytes, tier, share_token, storage_path, expires_at, max_downloads, download_count, revoked, created_at, password_hash, view_only")
       .eq("owner_id", user.id)
       .order("created_at", { ascending: false });
     setFiles(((data ?? []) as any[]).map((r) => ({
       id: r.id, filename: r.filename, size_bytes: r.size_bytes, tier: r.tier,
       share_token: r.share_token, storage_path: r.storage_path, expires_at: r.expires_at,
       max_downloads: r.max_downloads, download_count: r.download_count, revoked: r.revoked,
-      created_at: r.created_at, has_password: !!r.password_hash,
+      created_at: r.created_at, has_password: !!r.password_hash, view_only: !!r.view_only,
     })));
   };
 

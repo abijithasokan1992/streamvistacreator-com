@@ -133,7 +133,6 @@ Deno.serve(async (req) => {
         if (!timingSafeEqual(legacy, file.password_hash)) return json({ error: "Wrong password" }, 401);
       } else {
         const h = await hashPassword(password, file.password_salt);
-        if (!timingSafeEqual(h, file.password_salt ? h : "")) {} // no-op for type
         if (!timingSafeEqual(h, file.password_hash)) return json({ error: "Wrong password" }, 401);
       }
       return null;

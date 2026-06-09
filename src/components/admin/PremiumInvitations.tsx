@@ -197,8 +197,9 @@ export default function PremiumInvitations() {
                     <Button size="sm" variant="outline" onClick={() => copyLink(inv)} className="gap-1">
                       {copiedId === inv.id ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />} Link
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => sendEmail(inv)} className="gap-1" disabled={!inv.invitee_email}>
-                      <Send className="w-3.5 h-3.5" /> Send email
+                    <Button size="sm" variant="outline" onClick={() => sendEmail(inv)} className="gap-1" disabled={!inv.invitee_email || sendingId === inv.id}>
+                      {sendingId === inv.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                      {sendingId === inv.id ? "Sending…" : "Send email"}
                     </Button>
                     {inv.status !== "revoked" && inv.status !== "redeemed" && (
                       <Button size="sm" variant="ghost" onClick={() => revoke(inv)} className="gap-1 text-destructive hover:text-destructive">

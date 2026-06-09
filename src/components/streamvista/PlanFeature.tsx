@@ -1,13 +1,15 @@
-import { HardDrive, ShieldCheck, Share2, Users, Archive, LifeBuoy } from "lucide-react";
+import { HardDrive, ShieldCheck, Share2, Users, Archive, LifeBuoy, RefreshCw } from "lucide-react";
 
 const features = [
   { icon: HardDrive, title: "Cloud Storage", desc: "Scalable, secure storage for your production assets." },
   { icon: ShieldCheck, title: "Secure by Default", desc: "Encrypted at rest and in transit with granular access control." },
+  { icon: RefreshCw, title: "Auto-Resume Uploads", desc: "Background multitasking with offline-resume powered by the tus protocol." },
   { icon: Share2, title: "Protected Sharing", desc: "Password, expiry and download-capped links for every file." },
   { icon: Users, title: "2 Concurrent Users", desc: "Collaborate seamlessly across teams and timelines." },
   { icon: Archive, title: "Archive Support", desc: "Cold storage tier for delivered projects and masters." },
   { icon: LifeBuoy, title: "Onboarding Support", desc: "White-glove setup, training and migration assistance." },
 ];
+
 
 export const PlanFeature = () => (
   <section id="plan" className="py-28 relative border-b border-border/40">

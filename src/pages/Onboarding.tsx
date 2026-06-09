@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Loader2, ArrowRight, Sparkles } from "lucide-react";
+import { Loader2, ArrowRight, Sparkles, SkipForward } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, dashboardForRole } from "@/hooks/useAuth";
 
@@ -95,6 +95,28 @@ export default function Onboarding() {
     navigate(dashboardForRole(role ?? "client"), { replace: true });
   };
 
+  const skipToDashboard = async () => {
+    if (!user) return;
+    setSaving(true);
+    const { error } = await supabase.from("user_profiles").upsert({
+      user_id: user.id,
+      first_name: firstName.trim() || "Creator",
+      display_name: firstName.trim() || "Creator",
+      professional_role: professionalRole || "Creator",
+      plan_tier: "free",
+      onboarding_step: "done",
+    }, { onConflict: "user_id" });
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    await refreshRole();
+    try {
+      sessionStorage.setItem("sv_onboarding_just_completed", "1");
+      localStorage.setItem(`sv_onboarding_done_${user.id}`, new Date().toISOString());
+    } catch {}
+    toast.success("Welcome to StreamVista.", { duration: 4000 });
+    navigate(dashboardForRole(role ?? "client"), { replace: true });
+  };
+
   if (loading || hydrating) {
     return <div className="min-h-dvh grid place-items-center"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>;
   }
@@ -158,6 +180,14 @@ export default function Onboarding() {
             className="mt-6 w-full h-12 rounded-xl bg-gradient-primary text-primary-foreground font-semibold glow-primary disabled:opacity-60 flex items-center justify-center gap-2"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Enter workspace <ArrowRight className="w-4 h-4" /></>}
+          </button>
+
+          <button
+            onClick={skipToDashboard}
+            disabled={saving}
+            className="mt-3 w-full h-12 rounded-xl border border-border/60 bg-transparent text-sm font-medium text-muted-foreground hover:text-foreground hover:border-accent/40 hover:bg-accent/5 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Skip optional fields <SkipForward className="w-4 h-4" /></>}
           </button>
 
           <p className="mt-4 text-[11px] text-muted-foreground/70 text-center">

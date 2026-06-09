@@ -7,12 +7,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth, dashboardForRole } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { planByCycle, type Cycle } from "@/components/streamvista/plans";
+import { CountryCodeSelect } from "@/components/auth/CountryCodeSelect";
+import { COUNTRIES, type Country } from "@/lib/countries";
 
-
-
-const Schema = z.object({
+const LoginSchema = z.object({
   email: z.string().trim().email("Enter a valid email").max(255),
   password: z.string().min(8, "Min 8 characters").max(72),
+});
+
+const SignupSchema = LoginSchema.extend({
+  firstName: z.string().trim().min(1, "First name is required").max(80),
+  lastName: z.string().trim().min(1, "Last name is required").max(80),
+  studioName: z.string().trim().min(1, "Studio / company name is required").max(160),
+  mobile: z.string().trim().min(4, "Enter a valid mobile number").max(20),
 });
 
 const VALID_CYCLES: Cycle[] = ["free", "monthly", "quarterly", "yearly"];

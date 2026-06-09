@@ -16,6 +16,7 @@ import SupportInbox from "@/components/admin/SupportInbox";
 import OnboardingApprovals from "@/components/admin/OnboardingApprovals";
 import PartnerLogos from "@/components/admin/PartnerLogos";
 import RolesManager from "@/components/admin/RolesManager";
+import RazorpayCredentials from "@/components/admin/RazorpayCredentials";
 
 interface Row {
   id: string;
@@ -194,6 +195,7 @@ export default function Admin() {
           <TabsContent value="finance" className="space-y-8 mt-0 animate-fade-in">
             <DeptHeader icon={<Wallet className="w-5 h-5" />} title="Finance & Billing" desc="Razorpay revenue, commissions, invoices." />
             <FinanceOverview rows={rows} />
+            <RazorpayCredentials />
             <CommissionsTracker />
           </TabsContent>
 

@@ -307,8 +307,9 @@ function MetricCard({ label, value }: { label: string; value: string }) {
 }
 
 function DomainHostingPanel() {
+  const DEFAULT_PRIMARY = "https://app.crayonspictures.com";
   const currentOrigin = typeof window !== "undefined" ? window.location.origin : "";
-  const [primary, setPrimary] = useState("");
+  const [primary, setPrimary] = useState(DEFAULT_PRIMARY);
   const [extra, setExtra] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -321,7 +322,7 @@ function DomainHostingPanel() {
         .eq("id", true)
         .maybeSingle();
       if (!error && data) {
-        setPrimary(data.primary_domain ?? "");
+        setPrimary(data.primary_domain?.trim() || DEFAULT_PRIMARY);
         setExtra((data.extra_origins ?? []).join(", "));
       }
       setLoading(false);

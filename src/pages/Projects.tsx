@@ -47,6 +47,7 @@ export default function Projects() {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [shareProject, setShareProject] = useState<Project | null>(null);
 
   // Create-workspace inline UI
   const [newWsName, setNewWsName] = useState("");

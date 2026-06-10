@@ -83,6 +83,7 @@ Deno.serve(async (req) => {
     const amountPaise = priced.finalPaise;
 
     const auth = btoa(`${keyId}:${keySecret}`);
+    const t = timer();
     const rzpRes = await fetch("https://api.razorpay.com/v1/orders", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Basic ${auth}` },
@@ -96,6 +97,13 @@ Deno.serve(async (req) => {
     const order = await rzpRes.json();
     if (!rzpRes.ok) {
       console.error("Razorpay order error", order);
+      await logPayment(supabase, {
+        severity: "ERROR", action_type: "order.create",
+        user_id: userRes.user.id, order_id: null,
+        error_message: order?.error?.description ?? "Razorpay order create failed",
+        duration_ms: t(),
+        extra: { onboarding_id: onboardingId, http_status: rzpRes.status, mode: creds.mode },
+      });
       return jsonError(req, "Order creation failed", 502);
     }
 
@@ -107,6 +115,13 @@ Deno.serve(async (req) => {
         final_price: amountPaise / 100,
       })
       .eq("id", onboardingId);
+
+    await logPayment(supabase, {
+      severity: "INFO", action_type: "order.create",
+      user_id: userRes.user.id, order_id: order.id,
+      duration_ms: t(),
+      extra: { onboarding_id: onboardingId, amount_paise: amountPaise, mode: creds.mode },
+    });
 
     return new Response(
       JSON.stringify({ orderId: order.id, amount: order.amount, currency: order.currency, keyId }),

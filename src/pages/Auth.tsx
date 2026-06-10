@@ -198,19 +198,53 @@ export default function Auth() {
   };
 
   useEffect(() => {
-    if (!loading && user) continueAfterAuth();
+    if (loading || !user) return;
+    // If this session arrived via Google OAuth redirect, fire the appropriate
+    // welcome / login alert before routing onward.
+    try {
+      const intent = sessionStorage.getItem("sv_oauth_intent");
+      if (intent === "signup" || intent === "login") {
+        sessionStorage.removeItem("sv_oauth_intent");
+        void fireWelcomeAlert(intent, "google");
+      }
+    } catch {}
+    continueAfterAuth();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, loading]);
+
+  // Fire the Welcome (signup) or Login-alert (sign-in) email + SMS/WhatsApp.
+  // Safe to call after any successful auth — the edge function auto-detects
+  // signup vs login from auth.users.created_at when intent is omitted.
+  const fireWelcomeAlert = async (intent: "signup" | "login" | "auto", method?: string) => {
+    try {
+      await supabase.functions.invoke("send-welcome-alert", {
+        body: { intent, method },
+      });
+    } catch (err) {
+      // Non-blocking — auth has already succeeded.
+      console.error("welcome-alert dispatch failed:", err);
+    }
+  };
+
   const handleGoogleSignIn = async () => {
     setSubmitting(true);
+    // Record the intent so the post-redirect handler knows whether to send a
+    // Welcome or a Login alert when Google bounces the user back.
+    try { sessionStorage.setItem("sv_oauth_intent", view === "signup" ? "signup" : "login"); } catch {}
     const result = await lovable.auth.signInWithOAuth("google", {
       redirect_uri: window.location.origin,
+      extraParams: {
+        // Force the account chooser on signup so the user can pick a fresh
+        // Google identity; on login we let Google reuse the last session.
+        prompt: view === "signup" ? "select_account" : "select_account",
+      },
     });
     setSubmitting(false);
     if (result.error) {
       toast.error(result.error.message || "Google sign-in failed.");
     }
   };
+
 
   const handle = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -283,6 +317,7 @@ export default function Auth() {
         await persistProfile();
         setSubmitting(false);
         toast.success("Welcome to Cloud X.");
+        void fireWelcomeAlert("signup", "email");
         await continueAfterAuth();
         return;
       }
@@ -299,7 +334,9 @@ export default function Auth() {
         return;
       }
       toast.success("Welcome to Cloud X.");
+      void fireWelcomeAlert("signup", "email");
       await continueAfterAuth();
+
     } else {
       const parsed = LoginSchema.safeParse({ email, password });
       if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
@@ -310,7 +347,9 @@ export default function Auth() {
       });
       setSubmitting(false);
       if (error) return toast.error(error.message);
+      void fireWelcomeAlert("login", "email");
       await continueAfterAuth();
+
     }
   };
 
@@ -402,7 +441,7 @@ export default function Auth() {
                 <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
               </svg>
-              {view === "signup" ? "Sign up with Google" : "Sign in with Google"}
+              {view === "signup" ? "Create Account with Google" : "Log In with Google"}
             </button>
           )}
 

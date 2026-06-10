@@ -78,7 +78,8 @@ const emptyForm: FormState = {
 };
 
 export default function Projects() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  useBackGuard(!!user);
   const { workspaces, active, activeId, setActiveId, loading: wsLoading, createWorkspace, renameWorkspace } = useWorkspaces();
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameValue, setRenameValue] = useState("");

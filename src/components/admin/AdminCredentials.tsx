@@ -29,7 +29,7 @@ export default function AdminCredentials() {
     setSavingEmail(true);
     const { error } = await supabase.auth.updateUser(
       { email: parsed.data },
-      { emailRedirectTo: `${window.location.origin}/admin` },
+      { emailRedirectTo: `${getAppOrigin()}/admin` },
     );
     setSavingEmail(false);
     if (error) return toast.error(error.message);

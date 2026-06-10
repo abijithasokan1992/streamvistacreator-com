@@ -72,7 +72,41 @@ function slug(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
 
-type UploadStat = { name: string; status: "uploading" | "done" | "failed"; error?: string; category: string; progress: number };
+type UploadStatus = "queued" | "uploading" | "processing" | "completed" | "failed";
+type UploadStat = { name: string; status: UploadStatus; error?: string; category: string; progress: number };
+
+const STATUS_META: Record<UploadStatus, { label: string; dotClass: string; badgeClass: string; barClass: string }> = {
+  queued: {
+    label: "Queued",
+    dotClass: "bg-muted-foreground/70",
+    badgeClass: "border-border/60 bg-muted/30 text-muted-foreground",
+    barClass: "bg-muted-foreground/40",
+  },
+  uploading: {
+    label: "Uploading",
+    dotClass: "bg-accent animate-pulse",
+    badgeClass: "border-accent/40 bg-accent/10 text-accent",
+    barClass: "bg-gradient-to-r from-accent via-primary to-accent shadow-[0_0_12px_hsl(var(--accent)/0.7)]",
+  },
+  processing: {
+    label: "Processing",
+    dotClass: "bg-primary animate-pulse",
+    badgeClass: "border-primary/40 bg-primary/10 text-primary",
+    barClass: "bg-gradient-to-r from-primary via-accent to-primary animate-pulse",
+  },
+  completed: {
+    label: "Completed",
+    dotClass: "bg-accent",
+    badgeClass: "border-accent/50 bg-accent/15 text-accent",
+    barClass: "bg-accent",
+  },
+  failed: {
+    label: "Failed",
+    dotClass: "bg-destructive",
+    badgeClass: "border-destructive/50 bg-destructive/15 text-destructive",
+    barClass: "bg-destructive",
+  },
+};
 
 const BRIDGE_CHECKLIST: { key: string; label: string; hint: string }[] = [
   { key: "golden_master", label: "Golden Master Video File", hint: "ProRes / High-Res" },

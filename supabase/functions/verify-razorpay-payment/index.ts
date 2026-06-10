@@ -100,6 +100,23 @@ Deno.serve(async (req) => {
       .eq("id", onboardingId)
       .eq("razorpay_order_id", razorpay_order_id);
 
+    // Audit
+    try {
+      await supabase.from("razorpay_audit_log").insert({
+        event_type: "verify.payment",
+        source: "verify-function",
+        order_id: razorpay_order_id,
+        payment_id: razorpay_payment_id,
+        amount_paise: orderData.amount,
+        currency: orderData.currency ?? "INR",
+        status: orderData.status,
+        signature_valid: true,
+        user_id: userId,
+        payload: { onboardingId, planTier: row.selected_cycle },
+      });
+    } catch (e) { console.error("audit insert failed", e); }
+
+
     // Upgrade plan tier for the authenticated user only (userId derived from JWT above).
     await supabase
       .from("user_profiles")

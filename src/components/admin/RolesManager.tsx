@@ -228,6 +228,66 @@ export default function RolesManager() {
               ))}
             </div>
           </div>
+
+          {/* Admin divisions */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <LayoutGrid className="w-4 h-4 text-accent" />
+              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Admin Divisions</Label>
+            </div>
+            <p className="text-xs text-muted-foreground -mt-1">
+              Scope an admin to one or more department windows. Admins without any division retain full access.
+            </p>
+            <div className="rounded-2xl border border-border/40 divide-y divide-border/40 max-h-[320px] overflow-y-auto">
+              {admins.length === 0 && (
+                <div className="p-4 text-sm text-muted-foreground">No admins yet. Grant the Admin role above first.</div>
+              )}
+              {admins.map((p) => {
+                const userDivs = divisions.filter((d) => d.user_id === p.user_id);
+                const userDivValues = userDivs.map((d) => d.division);
+                return (
+                  <div key={p.user_id} className="p-3 flex flex-wrap items-center gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium truncate inline-flex items-center gap-1.5">
+                        <Crown className="w-3.5 h-3.5 text-accent" /> {p.display_name || "—"}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground font-mono truncate">{p.user_id}</div>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {userDivs.map((d) => {
+                        const meta = DIVISIONS.find((x) => x.value === d.division);
+                        return (
+                          <button
+                            key={d.id}
+                            onClick={() => removeDivision(d.id)}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold border border-primary/40 bg-primary/10 text-primary hover:bg-destructive/15 hover:border-destructive/40 hover:text-destructive transition"
+                            title="Click to remove"
+                          >
+                            {meta?.icon} {meta?.label || d.division} <Trash2 className="w-3 h-3 ml-0.5" />
+                          </button>
+                        );
+                      })}
+                      {userDivValues.length === 0 && (
+                        <span className="text-[11px] text-muted-foreground italic px-1">All divisions</span>
+                      )}
+                    </div>
+                    <Select onValueChange={(v) => addDivision(p.user_id, v as Division)}>
+                      <SelectTrigger className="h-8 w-[170px] bg-secondary/40 border-border/60 text-xs">
+                        <SelectValue placeholder="+ Add division" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {DIVISIONS.filter((d) => !userDivValues.includes(d.value)).map((d) => (
+                          <SelectItem key={d.value} value={d.value}>
+                            <span className="inline-flex items-center gap-2">{d.icon} {d.label}</span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </>
       )}
     </div>

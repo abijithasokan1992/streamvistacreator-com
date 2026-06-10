@@ -116,6 +116,13 @@ export default function OracleStorageMonitor() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, editing, cfg]);
 
+  useEffect(() => {
+    if (verified === true && usage === null) {
+      fetchUsage(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [verified]);
+
   const save = async () => {
     // Light client-side validation
     const required: Array<[keyof OracleConfig, string]> = [

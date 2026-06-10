@@ -71,6 +71,9 @@ const PublicRoutes = () => (
     {/* Linear onboarding wizard — must come BEFORE the dashboards. */}
     <Route path="/onboarding" element={<Onboarding />} />
 
+    {/* Shared post-login landing for regular users. Admins are bounced to /admin inside the page. */}
+    <Route path="/dashboard" element={<Dashboard />} />
+
     {/* Role-gated dashboards. RLS at the DB enforces the real boundary;
         OnboardingGate enforces the linear flow, RoleGate keeps the
         wrong UI off the screen. */}

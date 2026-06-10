@@ -1179,6 +1179,9 @@ export type Database = {
           id: string
           lens_brand: string | null
           name: string
+          production_banner:
+            | Database["public"]["Enums"]["production_banner"]
+            | null
           resolution: string | null
           schedule_artists: string | null
           schedule_charting: string | null
@@ -1200,6 +1203,9 @@ export type Database = {
           id?: string
           lens_brand?: string | null
           name: string
+          production_banner?:
+            | Database["public"]["Enums"]["production_banner"]
+            | null
           resolution?: string | null
           schedule_artists?: string | null
           schedule_charting?: string | null
@@ -1221,6 +1227,9 @@ export type Database = {
           id?: string
           lens_brand?: string | null
           name?: string
+          production_banner?:
+            | Database["public"]["Enums"]["production_banner"]
+            | null
           resolution?: string | null
           schedule_artists?: string | null
           schedule_charting?: string | null
@@ -1389,6 +1398,9 @@ export type Database = {
           oci_upload_id: string | null
           par_expires_at: string | null
           par_url: string | null
+          production_banner:
+            | Database["public"]["Enums"]["production_banner"]
+            | null
           project_id: string | null
           region: string
           status: string
@@ -1411,6 +1423,9 @@ export type Database = {
           oci_upload_id?: string | null
           par_expires_at?: string | null
           par_url?: string | null
+          production_banner?:
+            | Database["public"]["Enums"]["production_banner"]
+            | null
           project_id?: string | null
           region: string
           status?: string
@@ -1433,6 +1448,9 @@ export type Database = {
           oci_upload_id?: string | null
           par_expires_at?: string | null
           par_url?: string | null
+          production_banner?:
+            | Database["public"]["Enums"]["production_banner"]
+            | null
           project_id?: string | null
           region?: string
           status?: string
@@ -1971,6 +1989,9 @@ export type Database = {
           mime_type: string | null
           object_key: string | null
           oci_upload_id: string | null
+          production_banner:
+            | Database["public"]["Enums"]["production_banner"]
+            | null
           status: string
           total_chunks: number | null
           updated_at: string
@@ -1988,6 +2009,9 @@ export type Database = {
           mime_type?: string | null
           object_key?: string | null
           oci_upload_id?: string | null
+          production_banner?:
+            | Database["public"]["Enums"]["production_banner"]
+            | null
           status?: string
           total_chunks?: number | null
           updated_at?: string
@@ -2005,6 +2029,9 @@ export type Database = {
           mime_type?: string | null
           object_key?: string | null
           oci_upload_id?: string | null
+          production_banner?:
+            | Database["public"]["Enums"]["production_banner"]
+            | null
           status?: string
           total_chunks?: number | null
           updated_at?: string
@@ -2235,6 +2262,9 @@ export type Database = {
           id: string
           name: string
           owner_id: string
+          production_banner:
+            | Database["public"]["Enums"]["production_banner"]
+            | null
           updated_at: string
         }
         Insert: {
@@ -2242,6 +2272,9 @@ export type Database = {
           id?: string
           name: string
           owner_id: string
+          production_banner?:
+            | Database["public"]["Enums"]["production_banner"]
+            | null
           updated_at?: string
         }
         Update: {
@@ -2249,6 +2282,9 @@ export type Database = {
           id?: string
           name?: string
           owner_id?: string
+          production_banner?:
+            | Database["public"]["Enums"]["production_banner"]
+            | null
           updated_at?: string
         }
         Relationships: []
@@ -2295,6 +2331,7 @@ export type Database = {
         Args: { _creator: string; _ep: string }
         Returns: boolean
       }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       is_workspace_admin: {
         Args: { _user_id: string; _workspace_id: string }
         Returns: boolean
@@ -2353,6 +2390,13 @@ export type Database = {
       }
       revoke_creator_role: { Args: { _user_id: string }; Returns: undefined }
       set_initial_role: { Args: { _role: string }; Returns: boolean }
+      user_in_banner: {
+        Args: {
+          _banner: Database["public"]["Enums"]["production_banner"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       validate_razorpay_live_secrets: {
         Args: { _key_secret: string; _webhook_secret: string }
         Returns: Json
@@ -2367,6 +2411,7 @@ export type Database = {
         | "executive_producer"
         | "creator"
         | "client"
+      production_banner: "Crayons Pictures" | "Abhijith Asokan Productions"
       studio_slug:
         | "crayons_pictures"
         | "abhijith_asokan_productions"
@@ -2508,6 +2553,7 @@ export const Constants = {
         "creator",
         "client",
       ],
+      production_banner: ["Crayons Pictures", "Abhijith Asokan Productions"],
       studio_slug: [
         "crayons_pictures",
         "abhijith_asokan_productions",

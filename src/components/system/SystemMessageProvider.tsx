@@ -140,6 +140,20 @@ export function SystemMessageProvider({ children }: { children: ReactNode }) {
                 Report to admin
               </Button>
             )}
+            {current?.extraAction && (
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={reporting}
+                onClick={async () => {
+                  const action = current.extraAction!;
+                  try { await action.onClick(); }
+                  finally { if (action.closeOnClick !== false) close(); }
+                }}
+              >
+                {current.extraAction.label}
+              </Button>
+            )}
             <Button type="button" onClick={handleOk} disabled={reporting} className="bg-gradient-primary text-primary-foreground">
               {current?.okLabel ?? "OK"}
             </Button>

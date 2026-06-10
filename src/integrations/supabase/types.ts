@@ -380,6 +380,32 @@ export type Database = {
         }
         Relationships: []
       }
+      intro_invite_secrets: {
+        Row: {
+          created_at: string
+          intro_invite_id: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          intro_invite_id: string
+          token: string
+        }
+        Update: {
+          created_at?: string
+          intro_invite_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intro_invite_secrets_intro_invite_id_fkey"
+            columns: ["intro_invite_id"]
+            isOneToOne: true
+            referencedRelation: "intro_invites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       intro_invites: {
         Row: {
           accepted_at: string | null
@@ -393,7 +419,6 @@ export type Database = {
           last_name: string
           rate: number
           status: string
-          token: string
           updated_at: string
         }
         Insert: {
@@ -408,7 +433,6 @@ export type Database = {
           last_name?: string
           rate?: number
           status?: string
-          token?: string
           updated_at?: string
         }
         Update: {
@@ -423,7 +447,6 @@ export type Database = {
           last_name?: string
           rate?: number
           status?: string
-          token?: string
           updated_at?: string
         }
         Relationships: []
@@ -540,6 +563,7 @@ export type Database = {
           razorpay_order_id: string | null
           razorpay_payment_id: string | null
           selected_cycle: string
+          submitter_user_id: string | null
         }
         Insert: {
           access_code?: string | null
@@ -566,6 +590,7 @@ export type Database = {
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
           selected_cycle: string
+          submitter_user_id?: string | null
         }
         Update: {
           access_code?: string | null
@@ -592,6 +617,7 @@ export type Database = {
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
           selected_cycle?: string
+          submitter_user_id?: string | null
         }
         Relationships: [
           {
@@ -1036,6 +1062,41 @@ export type Database = {
         }
         Relationships: []
       }
+      review_link_secrets: {
+        Row: {
+          created_at: string
+          password_hash: string
+          password_hash_algo: string
+          password_salt: string
+          review_link_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          password_hash: string
+          password_hash_algo?: string
+          password_salt: string
+          review_link_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          password_hash?: string
+          password_hash_algo?: string
+          password_salt?: string
+          review_link_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_link_secrets_review_link_id_fkey"
+            columns: ["review_link_id"]
+            isOneToOne: true
+            referencedRelation: "review_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       review_links: {
         Row: {
           asset_mime: string | null
@@ -1050,10 +1111,8 @@ export type Database = {
           id: string
           last_viewed_at: string | null
           max_views: number | null
-          password_hash: string | null
-          password_hash_algo: string
-          password_salt: string | null
           project_id: string | null
+          requires_password: boolean
           revoked: boolean
           token: string
           updated_at: string
@@ -1075,10 +1134,8 @@ export type Database = {
           id?: string
           last_viewed_at?: string | null
           max_views?: number | null
-          password_hash?: string | null
-          password_hash_algo?: string
-          password_salt?: string | null
           project_id?: string | null
+          requires_password?: boolean
           revoked?: boolean
           token?: string
           updated_at?: string
@@ -1100,10 +1157,8 @@ export type Database = {
           id?: string
           last_viewed_at?: string | null
           max_views?: number | null
-          password_hash?: string | null
-          password_hash_algo?: string
-          password_salt?: string | null
           project_id?: string | null
+          requires_password?: boolean
           revoked?: boolean
           token?: string
           updated_at?: string
@@ -1136,19 +1191,49 @@ export type Database = {
           },
         ]
       }
+      shared_file_secrets: {
+        Row: {
+          created_at: string
+          password_hash: string
+          password_salt: string | null
+          shared_file_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          password_hash: string
+          password_salt?: string | null
+          shared_file_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          password_hash?: string
+          password_salt?: string | null
+          shared_file_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_file_secrets_shared_file_id_fkey"
+            columns: ["shared_file_id"]
+            isOneToOne: true
+            referencedRelation: "shared_files"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shared_files: {
         Row: {
           created_at: string
           download_count: number
           expires_at: string | null
           filename: string
-          has_password: boolean | null
+          has_password: boolean
           id: string
           max_downloads: number | null
           mime_type: string | null
           owner_id: string
-          password_hash: string | null
-          password_salt: string | null
           recipient_email: string | null
           revoked: boolean
           share_token: string
@@ -1162,13 +1247,11 @@ export type Database = {
           download_count?: number
           expires_at?: string | null
           filename: string
-          has_password?: boolean | null
+          has_password?: boolean
           id?: string
           max_downloads?: number | null
           mime_type?: string | null
           owner_id: string
-          password_hash?: string | null
-          password_salt?: string | null
           recipient_email?: string | null
           revoked?: boolean
           share_token: string
@@ -1182,13 +1265,11 @@ export type Database = {
           download_count?: number
           expires_at?: string | null
           filename?: string
-          has_password?: boolean | null
+          has_password?: boolean
           id?: string
           max_downloads?: number | null
           mime_type?: string | null
           owner_id?: string
-          password_hash?: string | null
-          password_salt?: string | null
           recipient_email?: string | null
           revoked?: boolean
           share_token?: string
@@ -1653,81 +1734,6 @@ export type Database = {
       }
     }
     Views: {
-      review_links_safe: {
-        Row: {
-          asset_mime: string | null
-          asset_name: string | null
-          asset_size_bytes: number | null
-          created_at: string | null
-          created_by: string | null
-          expires_at: string | null
-          id: string | null
-          last_viewed_at: string | null
-          max_views: number | null
-          project_id: string | null
-          requires_password: boolean | null
-          revoked: boolean | null
-          token: string | null
-          updated_at: string | null
-          view_count: number | null
-          view_only: boolean | null
-          workspace_id: string | null
-        }
-        Insert: {
-          asset_mime?: string | null
-          asset_name?: string | null
-          asset_size_bytes?: number | null
-          created_at?: string | null
-          created_by?: string | null
-          expires_at?: string | null
-          id?: string | null
-          last_viewed_at?: string | null
-          max_views?: number | null
-          project_id?: string | null
-          requires_password?: never
-          revoked?: boolean | null
-          token?: string | null
-          updated_at?: string | null
-          view_count?: number | null
-          view_only?: boolean | null
-          workspace_id?: string | null
-        }
-        Update: {
-          asset_mime?: string | null
-          asset_name?: string | null
-          asset_size_bytes?: number | null
-          created_at?: string | null
-          created_by?: string | null
-          expires_at?: string | null
-          id?: string | null
-          last_viewed_at?: string | null
-          max_views?: number | null
-          project_id?: string | null
-          requires_password?: never
-          revoked?: boolean | null
-          token?: string | null
-          updated_at?: string | null
-          view_count?: number | null
-          view_only?: boolean | null
-          workspace_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "review_links_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "review_links_workspace_id_fkey"
-            columns: ["workspace_id"]
-            isOneToOne: false
-            referencedRelation: "workspaces"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       v_kammattam_meter: {
         Row: {
           black_paise: number | null

@@ -1,19 +1,6 @@
 /**
  * review-link — public review token resolver.
- *
- * Actions (POST body):
- *   - { action: "info", token }
- *       → returns { filename, mime, size, requires_password, view_only,
- *                   expires_at, max_views, view_count }
- *       Never reveals the playback URL.
- *
- *   - { action: "unlock", token, password? }
- *       → verifies password if set, increments view_count, returns
- *         { filename, mime, size, playback_url, expires_at, view_only }.
- *       Returns 401 on bad password, 403 on revoked / 410 on expired/exhausted.
- *
- * The function uses the service role so the public visitor never queries
- * `review_links` directly. RLS on the table blocks public reads.
+ * Reads password hash/salt from review_link_secrets (service-role only).
  */
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
@@ -48,14 +35,59 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const action = String(body?.action ?? "");
+    const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
+
+    // Owner/writer-only: set or clear a review link password.
+    if (action === "set-password") {
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
+      const userClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: claims } = await userClient.auth.getClaims(authHeader.replace("Bearer ", ""));
+      const uid = claims?.claims?.sub;
+      if (!uid) return json({ error: "Unauthorized" }, 401);
+
+      const reviewLinkId = String(body?.reviewLinkId ?? "");
+      const pwd = typeof body?.password === "string" ? body.password : "";
+      if (!reviewLinkId) return json({ error: "reviewLinkId required" }, 400);
+      if (pwd.length > 256) return json({ error: "Password too long" }, 400);
+
+      const { data: link } = await admin
+        .from("review_links")
+        .select("id, workspace_id, created_by")
+        .eq("id", reviewLinkId)
+        .maybeSingle();
+      if (!link) return json({ error: "Not found" }, 404);
+
+      // Only the creator or workspace writers can set the password
+      const { data: canWrite } = await admin.rpc("can_write_workspace", {
+        _workspace_id: link.workspace_id, _user_id: uid,
+      });
+      if (link.created_by !== uid && !canWrite) return json({ error: "Forbidden" }, 403);
+
+      if (pwd) {
+        const salt = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+          .map((b) => b.toString(16).padStart(2, "0")).join("");
+        const hash = await sha256Hex(`${salt}::${pwd}`);
+        await admin.from("review_link_secrets").upsert({
+          review_link_id: reviewLinkId, password_hash: hash, password_salt: salt,
+          password_hash_algo: "sha256", updated_at: new Date().toISOString(),
+        });
+        await admin.from("review_links").update({ requires_password: true }).eq("id", reviewLinkId);
+      } else {
+        await admin.from("review_link_secrets").delete().eq("review_link_id", reviewLinkId);
+        await admin.from("review_links").update({ requires_password: false }).eq("id", reviewLinkId);
+      }
+      return json({ ok: true });
+    }
+
     const token = String(body?.token ?? "").trim();
     if (!token || token.length < 8) return json({ error: "Invalid token" }, 400);
-
-    const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
     const { data: row, error } = await admin
       .from("review_links")
       .select(
-        "id, asset_name, asset_mime, asset_size_bytes, asset_par_url, asset_par_expires_at, password_hash, password_salt, view_only, expires_at, max_views, view_count, revoked",
+        "id, asset_name, asset_mime, asset_size_bytes, asset_par_url, asset_par_expires_at, requires_password, view_only, expires_at, max_views, view_count, revoked",
       )
       .eq("token", token)
       .maybeSingle();
@@ -73,7 +105,7 @@ Deno.serve(async (req) => {
         filename: row.asset_name,
         mime: row.asset_mime,
         size: row.asset_size_bytes,
-        requires_password: !!row.password_hash,
+        requires_password: !!row.requires_password,
         view_only: row.view_only,
         expires_at: row.expires_at,
         max_views: row.max_views,
@@ -82,16 +114,21 @@ Deno.serve(async (req) => {
     }
 
     if (action === "unlock") {
-      if (row.password_hash) {
+      if (row.requires_password) {
         const pwd = String(body?.password ?? "");
         if (!pwd) return json({ error: "Password required" }, 401);
-        const candidate = await sha256Hex(`${row.password_salt ?? ""}::${pwd}`);
-        if (candidate !== row.password_hash) {
+        const { data: secret } = await admin
+          .from("review_link_secrets")
+          .select("password_hash, password_salt")
+          .eq("review_link_id", row.id)
+          .maybeSingle();
+        if (!secret) return json({ error: "Incorrect password" }, 401);
+        const candidate = await sha256Hex(`${secret.password_salt ?? ""}::${pwd}`);
+        if (candidate !== secret.password_hash) {
           return json({ error: "Incorrect password" }, 401);
         }
       }
 
-      // Bump view counter (best-effort; ignore conflict)
       await admin
         .from("review_links")
         .update({

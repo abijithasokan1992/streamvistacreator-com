@@ -30,7 +30,7 @@ type ReviewLink = {
   view_count: number;
   revoked: boolean;
   view_only: boolean;
-  password_hash: string | null;
+  requires_password: boolean;
   created_at: string;
 };
 
@@ -89,7 +89,7 @@ export default function ShareReviewModal({
         .limit(50),
       (supabase as any)
         .from("review_links")
-        .select("id, token, asset_name, expires_at, max_views, view_count, revoked, view_only, password_hash, created_at")
+        .select("id, token, asset_name, expires_at, max_views, view_count, revoked, view_only, requires_password, created_at")
         .eq("workspace_id", workspaceId)
         .eq("project_id", projectId)
         .order("created_at", { ascending: false }),
@@ -112,16 +112,10 @@ export default function ShareReviewModal({
     const hrs = Number(expiresHours);
     const mv = maxViews.trim() ? Math.max(1, Math.floor(Number(maxViews))) : null;
     const expiresAt = hrs > 0 ? new Date(Date.now() + hrs * 3600 * 1000).toISOString() : null;
-
-    let passwordHash: string | null = null;
-    let passwordSalt: string | null = null;
-    if (password.trim()) {
-      passwordSalt = randomSalt();
-      passwordHash = await sha256Hex(`${passwordSalt}::${password.trim()}`);
-    }
+    const pwd = password.trim();
 
     setCreating(true);
-    const { error } = await (supabase as any).from("review_links").insert({
+    const { data: inserted, error } = await (supabase as any).from("review_links").insert({
       workspace_id: workspaceId,
       project_id: projectId,
       upload_id: upload.id,
@@ -132,15 +126,22 @@ export default function ShareReviewModal({
       asset_object_key: upload.object_key,
       asset_par_url: upload.par_url,
       asset_par_expires_at: upload.par_expires_at,
-      password_hash: passwordHash,
-      password_salt: passwordSalt,
+      requires_password: !!pwd,
       expires_at: expiresAt,
       max_views: mv,
       view_only: viewOnly,
-    });
-    setCreating(false);
-    if (error) return toast.error(error.message);
+    }).select("id").maybeSingle();
 
+    if (error) { setCreating(false); return toast.error(error.message); }
+
+    if (pwd && inserted?.id) {
+      const { error: pErr } = await supabase.functions.invoke("review-link", {
+        body: { action: "set-password", reviewLinkId: inserted.id, password: pwd },
+      });
+      if (pErr) { setCreating(false); return toast.error("Link created but password failed: " + pErr.message); }
+    }
+
+    setCreating(false);
     toast.success("Review link created");
     setPassword("");
     setMaxViews("");
@@ -290,7 +291,7 @@ export default function ShareReviewModal({
                           <div className="text-[10px] text-muted-foreground flex flex-wrap gap-x-2">
                             <span>{l.view_count}{l.max_views ? `/${l.max_views}` : ""} views</span>
                             {l.expires_at && <span>· exp {new Date(l.expires_at).toLocaleDateString()}</span>}
-                            {l.password_hash && <span>· 🔒</span>}
+                            {l.requires_password && <span>· 🔒</span>}
                             {l.revoked && <span className="text-destructive">· revoked</span>}
                             {expired && !l.revoked && <span className="text-destructive">· expired</span>}
                             {exhausted && !l.revoked && !expired && <span className="text-destructive">· limit reached</span>}

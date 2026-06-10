@@ -10,35 +10,26 @@ const PBKDF2_KEY_LEN = 32;
 function bytesToHex(b: Uint8Array): string {
   return Array.from(b).map((x) => x.toString(16).padStart(2, "0")).join("");
 }
-
 function hexToBytes(hex: string): Uint8Array {
   const out = new Uint8Array(hex.length / 2);
   for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.substr(i * 2, 2), 16);
   return out;
 }
-
 function randomSalt(): string {
   const arr = new Uint8Array(16);
   crypto.getRandomValues(arr);
   return bytesToHex(arr);
 }
-
 async function hashPassword(pwd: string, saltHex: string): Promise<string> {
   const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(pwd),
-    { name: "PBKDF2" },
-    false,
-    ["deriveBits"],
+    "raw", new TextEncoder().encode(pwd), { name: "PBKDF2" }, false, ["deriveBits"],
   );
   const bits = await crypto.subtle.deriveBits(
     { name: "PBKDF2", salt: hexToBytes(saltHex), iterations: PBKDF2_ITERATIONS, hash: PBKDF2_HASH },
-    key,
-    PBKDF2_KEY_LEN * 8,
+    key, PBKDF2_KEY_LEN * 8,
   );
   return bytesToHex(new Uint8Array(bits));
 }
-
 function timingSafeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   let r = 0;
@@ -49,10 +40,7 @@ function timingSafeEqual(a: string, b: string): boolean {
 Deno.serve(async (req) => {
   const cors = buildCorsHeaders(req);
   const json = (body: unknown, status = 200) =>
-    new Response(JSON.stringify(body), {
-      status,
-      headers: { ...cors, "Content-Type": "application/json" },
-    });
+    new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
 
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
 
@@ -64,7 +52,6 @@ Deno.serve(async (req) => {
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-    // Owner-only: set/update password for a file by id (requires JWT).
     if (action === "set-password") {
       const authHeader = req.headers.get("Authorization");
       if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
@@ -80,22 +67,22 @@ Deno.serve(async (req) => {
         .from("shared_files").select("id, owner_id").eq("id", fileId).maybeSingle();
       if (rowErr || !row || row.owner_id !== uid) return json({ error: "Not found" }, 404);
 
-      let salt: string | null = null;
-      let hash: string | null = null;
       if (newPassword && typeof newPassword === "string" && newPassword.length > 0) {
         if (newPassword.length > 256) return json({ error: "Password too long" }, 400);
-        salt = randomSalt();
-        hash = await hashPassword(newPassword, salt);
+        const salt = randomSalt();
+        const hash = await hashPassword(newPassword, salt);
+        const { error: upErr } = await admin
+          .from("shared_file_secrets")
+          .upsert({ shared_file_id: fileId, password_hash: hash, password_salt: salt, updated_at: new Date().toISOString() });
+        if (upErr) return json({ error: "Update failed" }, 500);
+        await admin.from("shared_files").update({ has_password: true }).eq("id", fileId);
+      } else {
+        await admin.from("shared_file_secrets").delete().eq("shared_file_id", fileId);
+        await admin.from("shared_files").update({ has_password: false }).eq("id", fileId);
       }
-      const { error: upErr } = await admin
-        .from("shared_files")
-        .update({ password_hash: hash, password_salt: salt })
-        .eq("id", fileId);
-      if (upErr) return json({ error: "Update failed" }, 500);
       return json({ ok: true });
     }
 
-    // Recipient flows: info / download by token
     if (!token || typeof token !== "string" || token.length < 8 || token.length > 128) {
       return json({ error: "Invalid token" }, 400);
     }
@@ -115,25 +102,30 @@ Deno.serve(async (req) => {
         size_bytes: file.size_bytes,
         mime_type: file.mime_type ?? null,
         tier: file.tier,
-        requires_password: !!file.password_hash,
+        requires_password: !!file.has_password,
         expires_at: file.expires_at,
         downloads_left: file.max_downloads != null ? file.max_downloads - file.download_count : null,
         view_only: !!file.view_only,
       });
     }
 
-    // Verify password helper (used by view + download)
     async function verifyPwd(): Promise<Response | null> {
-      if (!file.password_hash) return null;
+      if (!file.has_password) return null;
       if (!password || typeof password !== "string") return json({ error: "Password required" }, 401);
-      if (!file.password_salt) {
+      const { data: secret } = await admin
+        .from("shared_file_secrets")
+        .select("password_hash, password_salt")
+        .eq("shared_file_id", file.id)
+        .maybeSingle();
+      if (!secret) return json({ error: "Wrong password" }, 401);
+      if (!secret.password_salt) {
         const legacy = bytesToHex(new Uint8Array(
           await crypto.subtle.digest("SHA-256", new TextEncoder().encode(password)),
         ));
-        if (!timingSafeEqual(legacy, file.password_hash)) return json({ error: "Wrong password" }, 401);
+        if (!timingSafeEqual(legacy, secret.password_hash)) return json({ error: "Wrong password" }, 401);
       } else {
-        const h = await hashPassword(password, file.password_salt);
-        if (!timingSafeEqual(h, file.password_hash)) return json({ error: "Wrong password" }, 401);
+        const h = await hashPassword(password, secret.password_salt);
+        if (!timingSafeEqual(h, secret.password_hash)) return json({ error: "Wrong password" }, 401);
       }
       return null;
     }

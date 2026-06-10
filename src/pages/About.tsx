@@ -23,7 +23,7 @@ export default function About() {
       </LegalSection>
 
       <LegalSection title="What We Build">
-        A secure, cinematic, and frictionless cloud studio: enterprise-grade storage on Oracle
+        A secure, cinematic, and frictionless cloud studio: enterprise-grade storage on C CLOUD,
         Cloud, controlled sharing, DMCA-respecting distribution, and pricing that scales from a
         free tier to full production capacity.
       </LegalSection>

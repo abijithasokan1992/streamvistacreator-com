@@ -30,11 +30,11 @@ export default function Privacy() {
         social sign-in providers may share verified email and profile only.
       </LegalSection>
 
-      <LegalSection title="4. Storage on Oracle Cloud">
-        All User Content is stored on <strong className="text-foreground">Oracle Cloud Infrastructure</strong>{" "}
+      <LegalSection title="4. Storage on C CLOUD">
+        All User Content is stored on <strong className="text-foreground">C CLOUD Infrastructure</strong>{" "}
         object storage with server-side AES-256 encryption at rest and TLS 1.2+ in transit. Access
         is mediated by short-lived pre-authenticated requests; raw bucket credentials are never
-        exposed to the browser. Backups and lifecycle policies follow Oracle's enterprise SLA of
+        exposed to the browser. Backups and lifecycle policies follow C CLOUD's enterprise SLA of
         99.9% uptime.
       </LegalSection>
 
@@ -45,7 +45,7 @@ export default function Privacy() {
 
       <LegalSection title="6. Sharing">
         We share data only with vetted processors strictly required for operation — payment
-        gateways, email delivery, telephony, analytics, and Oracle Cloud — each bound by data
+        gateways, email delivery, telephony, analytics, and C CLOUD — each bound by data
         processing agreements.
       </LegalSection>
 

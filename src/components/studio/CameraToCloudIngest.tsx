@@ -10,6 +10,7 @@ import { useSystemMessage } from "@/components/system/SystemMessageProvider";
 import { useWorkspaces } from "@/hooks/useWorkspaces";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { useStorageQuota, StorageWarningBanner } from "@/hooks/useStorageQuota";
 
 type RecentUpload = {
   id: string;
@@ -47,6 +48,7 @@ export default function CameraToCloudIngest() {
   const inputRef = useRef<HTMLInputElement>(null);
   const { showMessage } = useSystemMessage();
   const { workspaces, activeId, setActiveId, canWriteActive } = useWorkspaces();
+  const quota = useStorageQuota();
 
   const refresh = useCallback(async () => {
     if (!activeId) { setRecent([]); return; }
@@ -146,6 +148,7 @@ export default function CameraToCloudIngest() {
       toast.error("You only have viewer access to this workspace");
       return;
     }
+    if (!quota.checkOrPaywall()) return;
     const arr = Array.from(files);
     if (arr.length === 0) return;
     const items: Pending[] = arr.map((f) => ({
@@ -154,7 +157,7 @@ export default function CameraToCloudIngest() {
     }));
     setPending((cur) => [...items, ...cur].slice(0, 30));
     items.forEach((it) => uploadOne(it));
-  }, [uploadOne, activeId, canWriteActive]);
+  }, [uploadOne, activeId, canWriteActive, quota]);
 
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault(); setDragOver(false);

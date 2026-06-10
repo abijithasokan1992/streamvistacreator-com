@@ -221,12 +221,77 @@ Deno.serve(async (req) => {
           return new Response(JSON.stringify({ error: "You cannot delete yourself" }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
         }
         const { data: u } = await admin.auth.admin.getUserById(target);
+        const targetEmail = u?.user?.email ?? null;
+
+        // 1. Cancel billing FIRST so we stop charging the user even if a later
+        //    step fails. Both helpers are best-effort and never throw.
+        const razorpay = await cancelRazorpaySubscriptionsForUser(admin, target);
+        const stripe = await cancelStripeSubscriptionsForUser(admin, target);
+
+        // 2. Purge OCI Object Storage to free the storage quota.
+        let storage: { deleted: number; failed: number; total: number; skipped?: string } =
+          { deleted: 0, failed: 0, total: 0 };
+        try {
+          const oci = await loadOciConfig(admin);
+          if (!oci) {
+            storage = { ...storage, skipped: "oci_not_configured" };
+          } else {
+            storage = await deleteUserObjects(admin, oci, target);
+          }
+        } catch (e) {
+          storage = { ...storage, skipped: `oci_error: ${(e as Error).message}` };
+        }
+
+        // 3. Clear app-table rows that don't cascade via FK to auth.users.
+        //    Most user-scoped tables already cascade on auth.users delete, but
+        //    these touch the user via email / referrer columns and need an
+        //    explicit pass.
+        const cleanupErrors: string[] = [];
+        const sweep = async (q: Promise<{ error: any }>, label: string) => {
+          try {
+            const { error } = await q;
+            if (error) cleanupErrors.push(`${label}: ${error.message}`);
+          } catch (e) {
+            cleanupErrors.push(`${label}: ${(e as Error).message}`);
+          }
+        };
+        await sweep(admin.from("recent_uploads").delete().eq("user_id", target), "recent_uploads");
+        await sweep(admin.from("shared_files").delete().eq("owner_id", target), "shared_files.owner");
+        await sweep(admin.from("storage_topups").delete().eq("user_id", target), "storage_topups");
+        await sweep(admin.from("fastlink_payments").delete().eq("user_id", target), "fastlink_payments");
+        await sweep(admin.from("support_requests").delete().eq("user_id", target), "support_requests");
+        await sweep(admin.from("referrals").delete().eq("referred_user_id", target), "referrals.referred");
+        await sweep(admin.from("referrals").delete().eq("referrer_user_id", target), "referrals.referrer");
+        await sweep(admin.from("referral_codes").delete().eq("user_id", target), "referral_codes");
+        await sweep(admin.from("producer_assignments").delete().eq("creator_user_id", target), "producer_assignments.creator");
+        await sweep(admin.from("producer_assignments").delete().eq("ep_user_id", target), "producer_assignments.ep");
+        await sweep(admin.from("subscriptions").delete().eq("user_id", target), "subscriptions");
+        await sweep(admin.from("user_roles").delete().eq("user_id", target), "user_roles");
+        await sweep(admin.from("user_profiles").delete().eq("user_id", target), "user_profiles");
+        if (targetEmail) {
+          await sweep(admin.from("suppressed_emails").delete().eq("email", targetEmail.toLowerCase()), "suppressed_emails");
+          await sweep(admin.from("onboarding_requests").delete().eq("email", targetEmail.toLowerCase()), "onboarding_requests");
+        }
+
+        // 4. Finally remove the auth.users row. Any remaining FK rows that
+        //    cascade on auth.users(id) will be wiped automatically.
         const { error } = await admin.auth.admin.deleteUser(target);
         if (error) {
+          await writeAudit(target, targetEmail, "delete_failed", {
+            error: error.message, razorpay, stripe, storage, cleanupErrors,
+          });
           return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
         }
-        await writeAudit(target, u?.user?.email ?? null, "delete", {});
-        return new Response(JSON.stringify({ ok: true }), { headers: { ...cors, "Content-Type": "application/json" } });
+
+        await writeAudit(target, targetEmail, "delete", {
+          razorpay, stripe, storage, cleanupErrors,
+        });
+        return new Response(JSON.stringify({
+          ok: true,
+          billing: { razorpay, stripe },
+          storage,
+          cleanupErrors,
+        }), { headers: { ...cors, "Content-Type": "application/json" } });
       }
 
       case "inviteAdmin": {

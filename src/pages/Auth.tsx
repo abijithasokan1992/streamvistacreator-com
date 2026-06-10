@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Loader2, Eye, EyeOff, Sparkles } from "lucide-react";
+import { Loader2, Eye, EyeOff, Sparkles, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth, dashboardForRole } from "@/hooks/useAuth";
@@ -54,6 +54,17 @@ export default function Auth() {
     COUNTRIES.find((c) => c.code === "IN") ?? COUNTRIES[0]
   );
   const [mobile, setMobile] = useState("");
+
+  // Real-time validation flags
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+  // Strong-enough: 8+ chars with at least one letter and one number
+  const passwordValid =
+    password.length >= 8 && /[A-Za-z]/.test(password) && /\d/.test(password);
+  const passwordChecks = {
+    length: password.length >= 8,
+    letter: /[A-Za-z]/.test(password),
+    number: /\d/.test(password),
+  };
 
   const continueAfterAuth = async () => {
     if (isPaidPlan && plan) {
@@ -425,40 +436,81 @@ export default function Auth() {
               </>
             )}
 
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="Email"
-              aria-label="Email address"
-              required
-              autoComplete="email"
-              className="peer w-full h-12 px-4 rounded-xl bg-input/40 border border-border/60 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-accent/70 focus:bg-input/70 focus:shadow-[0_0_24px_-6px_hsl(var(--accent)/0.5)]"
-            />
+            <div className="relative">
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="Email"
+                aria-label="Email address"
+                required
+                autoComplete="email"
+                className={cn(
+                  "peer w-full h-12 pl-4 pr-11 rounded-xl bg-input/40 border text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:bg-input/70 focus:shadow-[0_0_24px_-6px_hsl(var(--accent)/0.5)]",
+                  emailValid
+                    ? "border-emerald-400/60 focus:border-emerald-400"
+                    : "border-border/60 focus:border-accent/70",
+                )}
+              />
+              {emailValid && (
+                <CheckCircle2
+                  aria-label="Valid email"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-400 animate-fade-in"
+                />
+              )}
+            </div>
 
 
             {view !== "forgot" && (
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="Password"
-                  aria-label="Password"
-                  required
-                  minLength={8}
-                  autoComplete={view === "login" ? "current-password" : "new-password"}
-                  className="w-full h-12 pl-4 pr-12 rounded-xl bg-input/40 border border-border/60 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-accent/70 focus:bg-input/70 focus:shadow-[0_0_24px_-6px_hsl(var(--accent)/0.5)]"
-                />
+              <div>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="Password"
+                    aria-label="Password"
+                    required
+                    minLength={8}
+                    autoComplete={view === "login" ? "current-password" : "new-password"}
+                    className={cn(
+                      "w-full h-12 pl-4 pr-20 rounded-xl bg-input/40 border text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:bg-input/70 focus:shadow-[0_0_24px_-6px_hsl(var(--accent)/0.5)]",
+                      passwordValid
+                        ? "border-emerald-400/60 focus:border-emerald-400"
+                        : "border-border/60 focus:border-accent/70",
+                    )}
+                  />
 
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(s => !s)}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 grid place-items-center rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-white/5 transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+                  {passwordValid && (
+                    <CheckCircle2
+                      aria-label="Strong password"
+                      className="absolute right-12 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-400 animate-fade-in"
+                    />
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(s => !s)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 grid place-items-center rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-white/5 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+
+                {view === "signup" && password.length > 0 && !passwordValid && (
+                  <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] uppercase tracking-[0.15em] text-muted-foreground/70">
+                    <span className={cn("flex items-center gap-1", passwordChecks.length && "text-emerald-400")}>
+                      <CheckCircle2 className="w-3 h-3" /> 8+ chars
+                    </span>
+                    <span className={cn("flex items-center gap-1", passwordChecks.letter && "text-emerald-400")}>
+                      <CheckCircle2 className="w-3 h-3" /> letter
+                    </span>
+                    <span className={cn("flex items-center gap-1", passwordChecks.number && "text-emerald-400")}>
+                      <CheckCircle2 className="w-3 h-3" /> number
+                    </span>
+                  </div>
+                )}
               </div>
             )}
 

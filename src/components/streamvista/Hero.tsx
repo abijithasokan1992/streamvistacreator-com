@@ -26,11 +26,11 @@ export const Hero = () => (
         {/* Editorial headline */}
         <div>
           <h1 className="font-display font-black uppercase leading-[0.88] tracking-tight text-[clamp(3rem,10vw,8rem)]">
-            From camera
+            THE CREATOR
             <br />
-            to client —
+            CLOUD STUDIO
             <br />
-            <span className="gradient-text">in one link.</span>
+            <span className="gradient-text">BUILT FOR CINEMA</span>
           </h1>
         </div>
 

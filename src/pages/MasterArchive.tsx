@@ -190,6 +190,9 @@ export default function MasterArchive() {
           </div>
         </div>
 
+        <div className="mb-6"><StorageWarningBanner /></div>
+
+
         {/* Project + Reel selector */}
         <div className="grid sm:grid-cols-2 gap-4 mb-6">
           <div>

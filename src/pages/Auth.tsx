@@ -177,11 +177,10 @@ export default function Auth() {
       return;
     }
 
-    // Public host: admins should not stay here — bounce to the admin subdomain.
+    // Public host (including /admin on main domain): route admins to /admin,
+    // everyone else to their normal dashboard.
     if (isAdmin) {
-      await supabase.auth.signOut();
-      toast.message("Redirecting to the admin portal…");
-      window.location.replace(urlForHost("admin", "/auth"));
+      navigate("/admin", { replace: true });
       return;
     }
 

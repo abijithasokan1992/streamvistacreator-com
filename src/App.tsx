@@ -49,7 +49,7 @@ const AdminRoutes = () => (
   </Routes>
 );
 
-/** Public main domain (streamvistacreator.com): everything except /admin. */
+/** Public main domain (streamvistacreator.com): everything including /admin. */
 const PublicRoutes = () => (
   <Routes>
     <Route path="/" element={<Index />} />
@@ -66,8 +66,8 @@ const PublicRoutes = () => (
     <Route path="/studio" element={<OnboardingGate><RoleGate allow={["creator", "executive_producer", "admin"]}><Studio /></RoleGate></OnboardingGate>} />
     <Route path="/client" element={<OnboardingGate><RoleGate allow={["client", "user"]}><Client /></RoleGate></OnboardingGate>} />
 
-    {/* /admin is NOT reachable on the public host */}
-    <Route path="/admin" element={<WrongPortal expected="admin" />} />
+    {/* Admin console is also reachable on the main domain until the admin subdomain DNS is fully configured. */}
+    <Route path="/admin" element={<Admin />} />
 
     <Route path="/launching-special-plan" element={<LaunchingSpecialPlan />} />
     <Route path="/checkout/return" element={<CheckoutReturn />} />

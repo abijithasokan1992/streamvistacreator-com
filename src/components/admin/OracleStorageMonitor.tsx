@@ -1,8 +1,154 @@
 import { useEffect, useState } from "react";
-import { Cloud, Loader2, KeyRound, CheckCircle2, XCircle, Link as LinkIcon, Copy, Pencil, ShieldCheck, ShieldAlert } from "lucide-react";
+import { Cloud, Loader2, KeyRound, CheckCircle2, XCircle, Link as LinkIcon, Copy, Pencil, ShieldCheck, ShieldAlert, AlertTriangle, Wand2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+
+// ---------------- Self-diagnostic helpers ----------------
+
+type Diagnosis = {
+  code:
+    | "ok"
+    | "pem_missing_headers"
+    | "pem_bad_base64"
+    | "pem_wrong_type"
+    | "auth_failed"
+    | "not_found"
+    | "network_cors"
+    | "server_error"
+    | "rate_limited"
+    | "unknown";
+  title: string;
+  detail: string;
+  fix: string;
+};
+
+function diagnose(raw: string | undefined, httpHint?: number): Diagnosis {
+  const msg = (raw ?? "").toString();
+  const m = msg.toLowerCase();
+  const statusMatch = msg.match(/\b(4\d\d|5\d\d)\b/);
+  const status = httpHint ?? (statusMatch ? Number(statusMatch[1]) : undefined);
+
+  if (m.includes("pem") && (m.includes("header") || m.includes("begin") || m.includes("end"))) {
+    return {
+      code: "pem_missing_headers",
+      title: "Invalid PEM format · missing BEGIN/END headers",
+      detail: "The private key is missing the -----BEGIN PRIVATE KEY----- / -----END PRIVATE KEY----- boundary lines.",
+      fix: "Click Auto-format key, or repaste the full PEM block from OCI exactly as downloaded.",
+    };
+  }
+  if (m.includes("pkcs1") || m.includes("rsa private key")) {
+    return {
+      code: "pem_wrong_type",
+      title: "Wrong key format · expected PKCS#8",
+      detail: "OCI requires a PKCS#8 PEM. You appear to have pasted a PKCS#1 (BEGIN RSA PRIVATE KEY) key.",
+      fix: "Convert it: openssl pkcs8 -topk8 -nocrypt -in key.pem -out key-pkcs8.pem and paste the new file.",
+    };
+  }
+  if (m.includes("base64") || m.includes("decode") || m.includes("invalid key")) {
+    return {
+      code: "pem_bad_base64",
+      title: "PEM body could not be decoded",
+      detail: "The key body contains stray characters or was truncated during copy/paste.",
+      fix: "Re-download the key from OCI and paste the entire file — including the header and footer lines.",
+    };
+  }
+  if (status === 401 || status === 403 || m.includes("unauthor") || m.includes("not author") || m.includes("forbidden") || m.includes("signature")) {
+    return {
+      code: "auth_failed",
+      title: "Authentication failed · check Fingerprint / OCIDs",
+      detail: `OCI rejected the signed request${status ? ` (HTTP ${status})` : ""}. The Tenancy OCID, User OCID, or Fingerprint likely does not match the uploaded public key.`,
+      fix: "Open the OCI console → User → API Keys. Confirm the fingerprint matches and the public key is active.",
+    };
+  }
+  if (status === 404 || m.includes("not found") || m.includes("notfound") || (m.includes("bucket") && m.includes("does not exist"))) {
+    return {
+      code: "not_found",
+      title: "Bucket or namespace not found",
+      detail: "OCI returned 404 — the bucket name or namespace is wrong, or the bucket lives in a different region.",
+      fix: "Verify Namespace (Tenancy → Object Storage Namespace) and Bucket name. Check the Region matches the bucket.",
+    };
+  }
+  if (status === 429 || m.includes("rate") || m.includes("throttl")) {
+    return {
+      code: "rate_limited",
+      title: "OCI rate-limited the request",
+      detail: "Too many calls in a short window.",
+      fix: "Wait 30–60 seconds and re-test.",
+    };
+  }
+  if (m.includes("network") || m.includes("cors") || m.includes("fetch") || m.includes("failed to fetch") || m.includes("dns")) {
+    return {
+      code: "network_cors",
+      title: "Network / CORS blocked",
+      detail: "The browser or edge function could not reach objectstorage.<region>.oraclecloud.com.",
+      fix: "Check connectivity, then confirm the bucket CORS rules allow this origin. If the edge function failed, retry — it may be cold-starting.",
+    };
+  }
+  if (status && status >= 500) {
+    return {
+      code: "server_error",
+      title: `OCI server error (HTTP ${status})`,
+      detail: "Oracle Object Storage reported a transient server-side issue.",
+      fix: "Retry in a minute. If it persists, check the OCI status page.",
+    };
+  }
+  if (m && m !== "unknown error") {
+    return {
+      code: "unknown",
+      title: "Verification failed",
+      detail: msg,
+      fix: "Re-check every field, then click Re-test connection. Use Edit credentials if anything looks off.",
+    };
+  }
+  return {
+    code: "unknown",
+    title: "Verification failed",
+    detail: "No additional detail returned by the proxy.",
+    fix: "Open browser devtools → Network → oracle-proxy to inspect the response, then retry.",
+  };
+}
+
+/**
+ * Tidies a pasted OCI private key:
+ *  - strips zero-width chars, BOMs, smart quotes
+ *  - normalises CRLF → LF
+ *  - re-wraps base64 body to 64-char lines
+ *  - guarantees -----BEGIN/END PRIVATE KEY----- boundaries
+ */
+function autoFormatPem(input: string): { pem: string; changed: boolean; valid: boolean; reason?: string } {
+  const original = input ?? "";
+  if (!original.trim()) return { pem: "", changed: false, valid: false, reason: "Empty input" };
+
+  let s = original
+    .replace(/\uFEFF/g, "")
+    .replace(/[\u200B-\u200D]/g, "")
+    .replace(/[\u2018\u2019\u201C\u201D]/g, "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .trim();
+
+  if (/-----BEGIN RSA PRIVATE KEY-----/i.test(s)) {
+    return { pem: s, changed: s !== original, valid: false, reason: "PKCS#1 key detected — convert to PKCS#8" };
+  }
+
+  const headerRe = /-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----/i;
+  const footerRe = /-----END [A-Z0-9 ]*PRIVATE KEY-----/i;
+  let body: string;
+  if (headerRe.test(s) && footerRe.test(s)) {
+    body = s.replace(headerRe, "").replace(footerRe, "");
+  } else {
+    body = s;
+  }
+  body = body.replace(/[^A-Za-z0-9+/=]/g, "");
+  if (body.length < 200) {
+    return { pem: original, changed: false, valid: false, reason: "Key body looks too short — re-paste full PEM" };
+  }
+  const wrapped = body.match(/.{1,64}/g)!.join("\n");
+  const pem = `-----BEGIN PRIVATE KEY-----\n${wrapped}\n-----END PRIVATE KEY-----\n`;
+  return { pem, changed: pem !== original, valid: true };
+}
+
 
 type OracleConfig = {
   oracle_tenancy_ocid: string;
@@ -135,6 +281,9 @@ export default function OracleStorageMonitor() {
   const [testing, setTesting] = useState(false);
   const [verified, setVerified] = useState<null | boolean>(null);
   const [verifyMsg, setVerifyMsg] = useState<string>("");
+  const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null);
+  const [pemHint, setPemHint] = useState<{ tone: "ok" | "warn" | "err"; text: string } | null>(null);
+
   const [editing, setEditing] = useState(false);
   const [parUrl, setParUrl] = useState<string | null>(null);
   const [creatingPar, setCreatingPar] = useState(false);
@@ -181,13 +330,20 @@ export default function OracleStorageMonitor() {
     setTesting(false);
     const ok = !error && !!data?.ok;
     setVerified(ok);
-    setVerifyMsg(ok ? `Reached bucket "${data.bucket}" in ${data.region}` : (error?.message ?? data?.error ?? "Unknown error"));
-    if (!silent) {
-      if (ok) toast.success("Oracle connection verified");
-      else toast.error("Oracle verification failed", { description: data?.error ?? error?.message });
+    if (ok) {
+      setVerifyMsg(`Reached bucket "${data.bucket}" in ${data.region}`);
+      setDiagnosis(null);
+      if (!silent) toast.success("Oracle connection verified");
+    } else {
+      const raw = data?.error ?? error?.message ?? "Unknown error";
+      const dx = diagnose(raw, data?.status);
+      setVerifyMsg(raw);
+      setDiagnosis(dx);
+      if (!silent) toast.error(dx.title, { description: dx.fix });
     }
     return ok;
   };
+
 
   useEffect(() => {
     (async () => {
@@ -229,9 +385,17 @@ export default function OracleStorageMonitor() {
     }
     const trimmedPem = pem.trim();
     if (trimmedPem) {
-      toast.error("Private key is now managed as the ORACLE_PRIVATE_KEY backend secret. Set it in Backend → Secrets — it cannot be stored in this table for security reasons.");
+      const fmt = autoFormatPem(trimmedPem);
+      if (!fmt.valid) {
+        toast.error("Private key looks malformed", { description: fmt.reason ?? "Click Auto-format key first." });
+        return;
+      }
+      toast.error("Private key must be set as the ORACLE_PRIVATE_KEY backend secret", {
+        description: "For security, the PEM is never stored in the database. Open Backend → Secrets and paste the auto-formatted key there.",
+      });
       return;
     }
+
 
     setSaving(true);
     const payload: Record<string, unknown> = { id: true, ...draft };
@@ -319,19 +483,50 @@ export default function OracleStorageMonitor() {
             />
           </div>
 
+          <MissingFieldsChecklist draft={draft} pemPresentOnFile={cfg.oracle_private_key_set} />
+
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                 <KeyRound className="w-3.5 h-3.5" /> Oracle Private Key (PEM, PKCS#8)
               </label>
-              <button type="button" onClick={() => setShowPem(s => !s)}
-                className="text-[11px] uppercase tracking-wider text-accent hover:underline">
-                {showPem ? "Hide" : "Show"}
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const fmt = autoFormatPem(pem);
+                    if (!pem.trim()) {
+                      setPemHint({ tone: "warn", text: "Paste a PEM first, then auto-format." });
+                      return;
+                    }
+                    setPem(fmt.pem);
+                    if (fmt.valid) {
+                      setPemHint({ tone: "ok", text: fmt.changed ? "Key cleaned up and BEGIN/END headers ensured." : "Key already well-formed." });
+                      toast.success("Private key auto-formatted");
+                    } else {
+                      setPemHint({ tone: "err", text: fmt.reason ?? "Unable to parse PEM." });
+                    }
+                  }}
+                  className="text-[11px] uppercase tracking-wider text-accent hover:underline inline-flex items-center gap-1"
+                >
+                  <Wand2 className="w-3 h-3" /> Auto-format key
+                </button>
+                <button type="button" onClick={() => setShowPem(s => !s)}
+                  className="text-[11px] uppercase tracking-wider text-accent hover:underline">
+                  {showPem ? "Hide" : "Show"}
+                </button>
+              </div>
             </div>
             <textarea
               value={pem}
-              onChange={e => setPem(e.target.value)}
+              onChange={e => { setPem(e.target.value); setPemHint(null); }}
+              onBlur={() => {
+                if (!pem.trim()) return;
+                const fmt = autoFormatPem(pem);
+                setPemHint(fmt.valid
+                  ? { tone: "ok", text: "PEM structure looks valid." }
+                  : { tone: "err", text: fmt.reason ?? "Invalid PEM." });
+              }}
               placeholder={cfg.oracle_private_key_set
                 ? "•••••••••• key on file. Paste a new PEM only to rotate."
                 : "-----BEGIN PRIVATE KEY-----\nMIIEv...\n-----END PRIVATE KEY-----"}
@@ -344,10 +539,22 @@ export default function OracleStorageMonitor() {
               )}
               style={showPem ? undefined : ({ WebkitTextSecurity: "disc" } as React.CSSProperties)}
             />
-            <p className="text-[11px] text-muted-foreground">
-              Stored encrypted at rest, readable only by admins and the signing function.
+            {pemHint && (
+              <p className={cn(
+                "text-[11px] inline-flex items-center gap-1.5",
+                pemHint.tone === "ok" && "text-emerald-400",
+                pemHint.tone === "warn" && "text-amber-400",
+                pemHint.tone === "err" && "text-destructive",
+              )}>
+                {pemHint.tone === "ok" ? <CheckCircle2 className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
+                {pemHint.text}
+              </p>
+            )}
+            <p className="text-[11px] text-muted-foreground inline-flex items-center gap-1.5">
+              <Lock className="w-3 h-3" /> Stored as the ORACLE_PRIVATE_KEY backend secret — never written to the database or sent to browsers.
             </p>
           </div>
+
 
           <div className="flex flex-wrap gap-2">
             <button
@@ -386,12 +593,10 @@ export default function OracleStorageMonitor() {
             disabled={verified !== true}
           />
 
-          {verifyMsg && verified === false && (
-            <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs flex items-start gap-2">
-              <XCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
-              <span className="font-mono break-all">{verifyMsg}</span>
-            </div>
+          {verified === false && (
+            <DiagnosisCard dx={diagnosis ?? diagnose(verifyMsg)} raw={verifyMsg} onEdit={() => setEditing(true)} onRetry={() => runTest(false)} testing={testing} />
           )}
+
 
           <div className="flex flex-wrap gap-2">
             <button
@@ -460,4 +665,68 @@ function ReadRow({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+function MissingFieldsChecklist({ draft, pemPresentOnFile }: { draft: OracleConfig; pemPresentOnFile: boolean }) {
+  const items: Array<{ label: string; ok: boolean; hint: string }> = [
+    { label: "Tenancy OCID", ok: !!draft.oracle_tenancy_ocid.trim(), hint: "OCI Console → Profile → Tenancy" },
+    { label: "User OCID", ok: !!draft.oracle_user_ocid.trim(), hint: "OCI Console → Profile → User Settings" },
+    { label: "Fingerprint", ok: /^[a-f0-9:]{20,}$/i.test(draft.oracle_fingerprint.trim()), hint: "Format: aa:bb:cc:… (colon-separated hex)" },
+    { label: "Region", ok: /^[a-z]{2}-[a-z]+-\d$/.test(draft.oracle_region.trim()), hint: "e.g. ap-mumbai-1" },
+    { label: "Namespace", ok: !!draft.oracle_namespace.trim(), hint: "Object Storage Namespace (under Tenancy)" },
+    { label: "Bucket", ok: !!draft.oracle_bucket.trim(), hint: "Exact bucket name in the chosen region" },
+    { label: "Private key (backend secret)", ok: pemPresentOnFile, hint: "Stored as ORACLE_PRIVATE_KEY in Backend → Secrets" },
+  ];
+  const missing = items.filter(i => !i.ok);
+  if (missing.length === 0) return null;
+  return (
+    <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
+      <div className="flex items-center gap-1.5 font-semibold text-amber-400 mb-2">
+        <ShieldAlert className="w-3.5 h-3.5" /> {missing.length} field{missing.length > 1 ? "s" : ""} still need attention
+      </div>
+      <ul className="space-y-1">
+        {missing.map(m => (
+          <li key={m.label} className="flex items-start gap-2">
+            <XCircle className="w-3 h-3 text-amber-400 shrink-0 mt-0.5" />
+            <span><span className="font-semibold">{m.label}</span> — <span className="text-muted-foreground">{m.hint}</span></span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function DiagnosisCard({
+  dx, raw, onEdit, onRetry, testing,
+}: { dx: Diagnosis; raw: string; onEdit: () => void; onRetry: () => void; testing: boolean }) {
+  return (
+    <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-xs space-y-2">
+      <div className="flex items-start gap-2">
+        <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0">
+          <div className="font-semibold text-destructive text-sm">{dx.title}</div>
+          <div className="text-muted-foreground mt-1">{dx.detail}</div>
+          <div className="mt-2 text-foreground"><span className="font-semibold">Fix:</span> {dx.fix}</div>
+        </div>
+      </div>
+      <details className="text-[11px] text-muted-foreground">
+        <summary className="cursor-pointer hover:text-foreground">Raw response</summary>
+        <pre className="mt-1 whitespace-pre-wrap break-all font-mono">{raw}</pre>
+      </details>
+      <div className="flex flex-wrap gap-2 pt-1">
+        <button onClick={onRetry} disabled={testing}
+          className="h-8 px-3 rounded-lg border border-border bg-secondary/40 hover:bg-secondary text-[11px] font-semibold inline-flex items-center gap-1.5 disabled:opacity-50">
+          {testing ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />} Re-test now
+        </button>
+        <button onClick={onEdit}
+          className="h-8 px-3 rounded-lg border border-accent/40 text-accent hover:bg-accent/10 text-[11px] font-semibold inline-flex items-center gap-1.5">
+          <Pencil className="w-3 h-3" /> Edit credentials
+        </button>
+        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground ml-auto">
+          <Lock className="w-3 h-3" /> Saved config preserved
+        </span>
+      </div>
+    </div>
+  );
+}
+
 

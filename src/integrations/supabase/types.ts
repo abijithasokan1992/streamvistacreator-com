@@ -863,29 +863,23 @@ export type Database = {
         Row: {
           id: boolean
           key_id: string | null
-          key_secret: string | null
           mode: string
           updated_at: string
           updated_by: string | null
-          webhook_secret: string | null
         }
         Insert: {
           id?: boolean
           key_id?: string | null
-          key_secret?: string | null
           mode?: string
           updated_at?: string
           updated_by?: string | null
-          webhook_secret?: string | null
         }
         Update: {
           id?: boolean
           key_id?: string | null
-          key_secret?: string | null
           mode?: string
           updated_at?: string
           updated_by?: string | null
-          webhook_secret?: string | null
         }
         Relationships: []
       }
@@ -1057,6 +1051,7 @@ export type Database = {
           last_viewed_at: string | null
           max_views: number | null
           password_hash: string | null
+          password_hash_algo: string
           password_salt: string | null
           project_id: string | null
           revoked: boolean
@@ -1081,6 +1076,7 @@ export type Database = {
           last_viewed_at?: string | null
           max_views?: number | null
           password_hash?: string | null
+          password_hash_algo?: string
           password_salt?: string | null
           project_id?: string | null
           revoked?: boolean
@@ -1105,6 +1101,7 @@ export type Database = {
           last_viewed_at?: string | null
           max_views?: number | null
           password_hash?: string | null
+          password_hash_algo?: string
           password_salt?: string | null
           project_id?: string | null
           revoked?: boolean

@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import PremiumInvitations from "@/components/admin/PremiumInvitations";
 import CommissionsTracker from "@/components/admin/CommissionsTracker";
 import OracleOciStorageCard from "@/components/admin/OracleOciStorageCard";
+import RazorpayAuditLog from "@/components/admin/RazorpayAuditLog";
 import FreeTierConfig from "@/components/admin/FreeTierConfig";
 import BrandingSettings from "@/components/admin/BrandingSettings";
 import SupportInbox from "@/components/admin/SupportInbox";
@@ -226,6 +227,7 @@ export default function Admin() {
             <AiMcpControlCenter />
             <DomainHostingPanel />
             <OracleOciStorageCard />
+            <RazorpayAuditLog />
             <GlobalAssetManager />
           </TabsContent>
 

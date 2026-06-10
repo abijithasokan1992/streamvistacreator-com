@@ -32,6 +32,7 @@ import Unsubscribe from "./pages/Unsubscribe.tsx";
 import { PaymentTestModeBanner } from "./components/PaymentTestModeBanner.tsx";
 import ReferralCapture from "./components/ReferralCapture.tsx";
 import WrongPortal from "./components/WrongPortal.tsx";
+import { SystemMessageProvider } from "./components/system/SystemMessageProvider.tsx";
 import { useHostMode } from "@/hooks/useHostMode";
 
 const queryClient = new QueryClient();
@@ -98,11 +99,13 @@ const App = () => (
         <Sonner />
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <AuthProvider>
-            <PaymentTestModeBanner />
-            <ReferralCapture />
-            <ErrorBoundary>
-              <HostAwareRoutes />
-            </ErrorBoundary>
+            <SystemMessageProvider>
+              <PaymentTestModeBanner />
+              <ReferralCapture />
+              <ErrorBoundary>
+                <HostAwareRoutes />
+              </ErrorBoundary>
+            </SystemMessageProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   LogOut, Link2, Inbox, ShieldCheck, MessageSquareText, Play,
   CheckCircle2, Sparkles, ArrowRight, ArrowLeft, MailOpen, Clock, Eye, SkipForward,
-  Film, Lock, ExternalLink,
+  Film, Lock, ExternalLink, AlertTriangle, Loader2, RefreshCw, Mail,
 } from "lucide-react";
 import OnboardingCompleteBanner from "@/components/OnboardingCompleteBanner";
 import FirstStepsCard from "@/components/dashboard/FirstStepsCard";

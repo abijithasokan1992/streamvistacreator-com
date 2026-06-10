@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Upload, Link2, Send, Sparkles, X, Check } from "lucide-react";
+import { Upload, Link2, Send, Sparkles, X, Check, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Step = {
@@ -53,12 +53,14 @@ export default function FirstStepsCard({
 
   const creatorSteps: Step[] = [
     { icon: Upload, title: "Upload your first clip", body: "Drag any video or RAW file. Encryption + virus scan are automatic.", cta: "Upload now", onClick: () => { onUpload?.(); markDone(0); } },
-    // { icon: Link2, title: "Generate a share link", body: "Branded, password-protected, with download limits and expiry.", cta: "Create link", onClick: () => { onShare?.(); markDone(1); } },
-    // { icon: Send, title: "Send to your client", body: "Email or WhatsApp the link. Watch views, downloads, and comments live.", cta: "Send invite", onClick: () => { onInvite?.(); markDone(2); } },
+    { icon: Link2, title: "Generate a share link", body: "Branded, password-protected, with download limits and expiry.", cta: "Create link", onClick: () => { onShare?.(); markDone(1); } },
+    { icon: Send, title: "Send to your client", body: "Email or WhatsApp the link. Watch views, downloads, and comments live.", cta: "Send invite", onClick: () => { onInvite?.(); markDone(2); } },
   ];
 
   const clientSteps: Step[] = [
-    // Review features temporarily hidden
+    { icon: Link2, title: "Open your studio's link", body: "Paste the share link from your studio to load your review.", cta: "Paste link", onClick: () => { onPasteLink?.(); markDone(0); } },
+    { icon: Play, title: "Review with frame notes", body: "Drop comments at the exact frame. The team sees them instantly.", cta: "Got it", onClick: () => markDone(1) },
+    { icon: Check, title: "Approve the cut", body: "One tap to sign off. Approvals are timestamped and audit-logged.", cta: "Got it", onClick: () => markDone(2) },
   ];
 
   const steps = variant === "creator" ? creatorSteps : clientSteps;

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Cloud, Loader2, KeyRound, CheckCircle2, XCircle, Link as LinkIcon, Copy, Pencil, ShieldCheck, ShieldAlert, AlertTriangle, Wand2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";

@@ -125,193 +125,147 @@ export default function Client() {
   );
 }
 
-/* ───────────────────────── Wizard ───────────────────────── */
-const STEPS = [
-  { n: 1 as const, label: "Wait for link" },
-  { n: 2 as const, label: "Review" },
-  { n: 3 as const, label: "Approve" },
-];
+/* ───────────────────────── Sandbox activation panel ───────────────────────── */
+function playTempleBell() {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(240, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + 1.5);
+    gain.gain.setValueAtTime(0.4, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 2);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 2);
+  } catch {}
+}
 
-function WizardView({
-  step, setStep, finish,
-}: {
-  step: 1 | 2 | 3;
-  setStep: (s: 1 | 2 | 3) => void;
-  finish: () => void;
-}) {
-  const next = () => setStep(step === 1 ? 2 : 3);
-  const back = () => setStep(step === 3 ? 2 : 1);
+function loadRazorpayScript(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if ((window as any).Razorpay) return resolve();
+    const s = document.createElement("script");
+    s.src = "https://checkout.razorpay.com/v1/checkout.js";
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error("Failed to load Razorpay"));
+    document.body.appendChild(s);
+  });
+}
+
+function SandboxView({ finish }: { finish: () => void }) {
+  const [busy, setBusy] = useState(false);
+
+  const activate = async () => {
+    if (busy) return;
+    playTempleBell();
+    setBusy(true);
+
+    try {
+      await loadRazorpayScript();
+    } catch {
+      setBusy(false);
+      return toast.error("Checkout failed to load — please retry.");
+    }
+
+    toast.loading("Provisioning Nilavara A sandbox…", { id: "sbx" });
+    const { data, error } = await supabase.functions.invoke("fastlink-pay", {
+      body: { action: "create" },
+    });
+    toast.dismiss("sbx");
+    if (error || !data?.orderId) {
+      setBusy(false);
+      return toast.error(error?.message || "Could not start verification.");
+    }
+
+    const Razorpay = (window as any).Razorpay;
+    const { data: u } = await supabase.auth.getUser();
+    const email = u?.user?.email ?? undefined;
+
+    const rzp = new Razorpay({
+      key: data.keyId,
+      order_id: data.orderId,
+      amount: data.amount,
+      currency: data.currency,
+      name: "StreamVista · Kammattam",
+      description: "Workspace Node Verification",
+      prefill: { email },
+      theme: { color: "#f59e0b" },
+      handler: async (resp: any) => {
+        toast.loading("Verifying activation…", { id: "sbv" });
+        const { data: v, error: vErr } = await supabase.functions.invoke("fastlink-pay", {
+          body: {
+            action: "verify",
+            razorpay_order_id: resp.razorpay_order_id,
+            razorpay_payment_id: resp.razorpay_payment_id,
+            razorpay_signature: resp.razorpay_signature,
+          },
+        });
+        toast.dismiss("sbv");
+        if (vErr || !v?.verified) {
+          setBusy(false);
+          return toast.error("Verification failed. Contact support if you were charged.");
+        }
+        toast.success("Workspace node activated.");
+        finish();
+      },
+      modal: {
+        ondismiss: () => {
+          setBusy(false);
+          toast.message("Checkout closed — you can retry anytime.");
+        },
+      },
+    });
+    rzp.on("payment.failed", () => {
+      setBusy(false);
+      toast.error("Payment failed — please try again.");
+    });
+    rzp.open();
+  };
 
   return (
-    <main className="container py-8 md:py-12 max-w-2xl">
-      {/* Intro banner */}
-      <div className="text-center mb-7">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-accent/40 bg-accent/5 mb-3">
-          <Sparkles className="w-3 h-3 text-accent" />
-          <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">Quick guide · 30 seconds</span>
+    <main className="container py-10 md:py-14 max-w-2xl">
+      <div className="bg-zinc-950 border border-zinc-800 p-6 md:p-8 rounded-2xl shadow-xl space-y-6 text-center animate-fade-in">
+        <div className="space-y-2">
+          <span className="text-xs font-mono font-bold text-amber-500 uppercase tracking-widest">
+            Kammattam Sandbox Node
+          </span>
+          <h3 className="text-xl md:text-2xl font-black text-white">
+            No Project Link From Studio Yet?
+          </h3>
+          <p className="text-xs md:text-sm text-zinc-400 max-w-sm mx-auto">
+            Don't sit tight waiting. Deploy your localized free pipeline inside Nilavara A and
+            experience the full-fidelity review matrix instantly.
+          </p>
         </div>
-        <p className="text-sm text-muted-foreground max-w-md mx-auto">
-          A 3-step walkthrough of how to use the <span className="text-foreground font-semibold">share link</span> your
-          studio sends. No uploads here — you only watch, comment, and approve.
-        </p>
-      </div>
 
-      {/* Stepper */}
-      <div className="flex items-center justify-center gap-2 mb-7" aria-label={`Step ${step} of 3`}>
-        {STEPS.map(({ n, label }) => {
-          const state = n === step ? "active" : n < step ? "done" : "todo";
-          return (
-            <div key={n} className="flex items-center gap-2">
-              <div
-                className={`flex items-center gap-2 px-3 h-9 rounded-full border text-[11px] font-mono-tech uppercase tracking-[0.18em] transition-all ${
-                  state === "active"
-                    ? "border-accent/60 bg-accent/10 text-accent glow-primary"
-                    : state === "done"
-                    ? "border-accent/30 bg-accent/5 text-accent/80"
-                    : "border-border/50 text-muted-foreground/70"
-                }`}
-              >
-                <span className={`w-5 h-5 rounded-full grid place-items-center text-[10px] ${
-                  state === "done" ? "bg-accent text-background" : state === "active" ? "bg-gradient-primary text-primary-foreground" : "bg-border/40"
-                }`}>
-                  {state === "done" ? <CheckCircle2 className="w-3 h-3" /> : n}
-                </span>
-                <span className="hidden sm:inline">{label}</span>
-              </div>
-              {n < 3 && <div className={`h-px w-4 sm:w-6 ${n < step ? "bg-accent/50" : "bg-border/40"}`} />}
-            </div>
-          );
-        })}
-      </div>
+        <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl text-left font-mono text-xs text-zinc-400 space-y-1">
+          <p><strong className="text-zinc-200">Vault:</strong> Nilavara A (Free Allocation Tier)</p>
+          <p><strong className="text-zinc-200">Provision Cost:</strong> ₹1 Integration Charge (Refundable verification setup)</p>
+        </div>
 
-      {step === 1 && <StepWaitForLink />}
-      {step === 2 && <StepReview />}
-      {step === 3 && <StepApprove />}
-
-      {/* Nav */}
-      <div className="mt-8 flex items-center justify-between gap-3">
         <button
-          onClick={back}
-          disabled={step === 1}
-          className="inline-flex items-center gap-2 px-4 h-11 rounded-xl border border-border/60 text-sm text-muted-foreground hover:text-foreground hover:border-accent/40 disabled:opacity-40 disabled:cursor-not-allowed"
+          onClick={activate}
+          disabled={busy}
+          className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black py-4 rounded-xl font-black text-sm tracking-wide shadow-lg shadow-amber-950/20 transition-all uppercase disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
         >
-          <ArrowLeft className="w-4 h-4" /> Back
+          {busy ? "Provisioning…" : "Activate Workspace Node (₹1 Verification)"}
+          {!busy && <ArrowRight className="w-4 h-4" />}
         </button>
 
         <button
           onClick={finish}
-          className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5"
+          className="text-[11px] text-zinc-500 hover:text-zinc-300 inline-flex items-center gap-1.5"
         >
-          <SkipForward className="w-3.5 h-3.5" /> Skip & go to dashboard
+          <SkipForward className="w-3 h-3" /> Skip — I'll wait for the studio link
         </button>
-
-        {step < 3 ? (
-          <button
-            onClick={next}
-            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-gradient-primary text-primary-foreground text-sm font-semibold glow-primary"
-          >
-            Next <ArrowRight className="w-4 h-4" />
-          </button>
-        ) : (
-          <button
-            onClick={finish}
-            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-gradient-primary text-primary-foreground text-sm font-semibold glow-primary"
-          >
-            Finish <ArrowRight className="w-4 h-4" />
-          </button>
-        )}
       </div>
     </main>
   );
 }
 
-/* ── Step cards ─────────────────────────────────────────── */
-function StepShell({
-  badge, icon: Icon, title, children,
-}: { badge: string; icon: any; title: string; children: React.ReactNode }) {
-  return (
-    <section className="relative glass-strong rounded-3xl p-7 md:p-9 overflow-hidden border border-border/40 animate-fade-in">
-      <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-primary/20 blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full bg-accent/10 blur-3xl pointer-events-none" />
-      <div className="relative">
-        <div className="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full border border-accent/40 bg-accent/5">
-          <Icon className="w-3 h-3 text-accent" />
-          <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">{badge}</span>
-        </div>
-        <h2 className="font-display text-2xl md:text-4xl font-black uppercase tracking-tight leading-[0.95] mb-4">
-          {title}
-        </h2>
-        <div className="text-sm md:text-[15px] text-muted-foreground leading-relaxed space-y-3">
-          {children}
-        </div>
-      </div>
-    </section>
-  );
-}
 
-function StepWaitForLink() {
-  return (
-    <StepShell badge="Step 1 of 3" icon={MailOpen} title={<>Your studio sends you a <span className="gradient-text">share link</span>.</> as any}>
-      <p>
-        Reviews always start <span className="text-foreground font-semibold">outside this app</span>. Your studio will
-        send you a private link via <span className="text-accent">WhatsApp, email, or SMS</span> — something like{" "}
-        <code className="text-accent">streamvistacreator.com/s/abc123</code>.
-      </p>
-      <p>
-        When it arrives, just tap it. You'll land straight on the review player — no app to install, no account juggling.
-      </p>
-      <div className="flex items-start gap-3 rounded-xl border border-border/50 bg-background/40 p-3 mt-4">
-        <Clock className="w-4 h-4 text-accent shrink-0 mt-0.5" />
-        <div className="text-xs">
-          <div className="font-semibold text-foreground">Don't see a link yet?</div>
-          <div className="text-muted-foreground">Skip the tour and ping your studio. They'll send one as soon as a cut is ready.</div>
-        </div>
-      </div>
-    </StepShell>
-  );
-}
-
-function StepReview() {
-  return (
-    <StepShell badge="Step 2 of 3" icon={MessageSquareText} title={<>Watch, then drop <span className="gradient-text">timecoded notes</span>.</> as any}>
-      <p>
-        The player is frame-accurate on phone, tablet, and desktop. Pause anywhere, type a note, and it gets pinned to
-        that exact frame — your studio sees comments the moment you post them.
-      </p>
-      <div className="grid sm:grid-cols-2 gap-3 pt-2">
-        <Tile icon={Play} title="Cinematic player" body="Scrub, loop, fullscreen — all without losing quality." />
-        <Tile icon={Eye} title="Watermarked preview" body="Your email may appear on-screen to keep the cut private." />
-      </div>
-    </StepShell>
-  );
-}
-
-function StepApprove() {
-  return (
-    <StepShell badge="Step 3 of 3" icon={CheckCircle2} title={<>One click to <span className="gradient-text">approve the cut</span>.</> as any}>
-      <p>
-        When you're happy, hit <span className="text-accent font-semibold">Approve</span>. Your studio is notified
-        instantly and the version is locked. Need changes? Leave notes instead and they'll send a new cut with a fresh link.
-      </p>
-      <div className="rounded-xl border border-accent/30 bg-accent/5 p-4 mt-2">
-        <div className="text-xs font-mono-tech uppercase tracking-[0.2em] text-accent mb-1">That's the whole flow</div>
-        <div className="text-sm text-foreground">Wait for the link → review with notes → approve. You're ready.</div>
-      </div>
-    </StepShell>
-  );
-}
-
-function Tile({ icon: Icon, title, body }: { icon: any; title: string; body: string }) {
-  return (
-    <div className="rounded-2xl border border-border/40 bg-background/40 p-4">
-      <div className="w-9 h-9 rounded-xl bg-gradient-primary grid place-items-center mb-2 glow-primary">
-        <Icon className="w-4 h-4 text-primary-foreground" />
-      </div>
-      <div className="text-sm font-semibold">{title}</div>
-      <div className="text-[12px] text-muted-foreground leading-relaxed">{body}</div>
-    </div>
-  );
-}
 
 /* ───────────────────────── Hub (post-wizard) ───────────────────────── */
 function HubView({

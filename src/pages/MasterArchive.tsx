@@ -72,7 +72,41 @@ function slug(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
 
-type UploadStat = { name: string; status: "uploading" | "done" | "failed"; error?: string; category: string; progress: number };
+type UploadStatus = "queued" | "uploading" | "processing" | "completed" | "failed";
+type UploadStat = { name: string; status: UploadStatus; error?: string; category: string; progress: number };
+
+const STATUS_META: Record<UploadStatus, { label: string; dotClass: string; badgeClass: string; barClass: string }> = {
+  queued: {
+    label: "Queued",
+    dotClass: "bg-muted-foreground/70",
+    badgeClass: "border-border/60 bg-muted/30 text-muted-foreground",
+    barClass: "bg-muted-foreground/40",
+  },
+  uploading: {
+    label: "Uploading",
+    dotClass: "bg-accent animate-pulse",
+    badgeClass: "border-accent/40 bg-accent/10 text-accent",
+    barClass: "bg-gradient-to-r from-accent via-primary to-accent shadow-[0_0_12px_hsl(var(--accent)/0.7)]",
+  },
+  processing: {
+    label: "Processing",
+    dotClass: "bg-primary animate-pulse",
+    badgeClass: "border-primary/40 bg-primary/10 text-primary",
+    barClass: "bg-gradient-to-r from-primary via-accent to-primary animate-pulse",
+  },
+  completed: {
+    label: "Completed",
+    dotClass: "bg-accent",
+    badgeClass: "border-accent/50 bg-accent/15 text-accent",
+    barClass: "bg-accent",
+  },
+  failed: {
+    label: "Failed",
+    dotClass: "bg-destructive",
+    badgeClass: "border-destructive/50 bg-destructive/15 text-destructive",
+    barClass: "bg-destructive",
+  },
+};
 
 const BRIDGE_CHECKLIST: { key: string; label: string; hint: string }[] = [
   { key: "golden_master", label: "Golden Master Video File", hint: "ProRes / High-Res" },
@@ -127,9 +161,16 @@ export default function MasterArchive() {
 
     const url = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/oci-upload`;
 
-    for (const f of Array.from(files)) {
-      const stat: UploadStat = { name: f.name, status: "uploading", category: currentCategory, progress: 0 };
-      setUploads((u) => [stat, ...u]);
+    // Enqueue all files first so the user sees the full batch in "Queued" state
+    const queued: UploadStat[] = Array.from(files).map((f) => ({
+      name: f.name, status: "queued", category: currentCategory, progress: 0,
+    }));
+    setUploads((u) => [...queued, ...u]);
+
+    for (let i = 0; i < queued.length; i++) {
+      const stat = queued[i];
+      const f = files[i];
+      setUploads((u) => u.map((x) => x === stat ? { ...x, status: "uploading" } : x));
       try {
         const fd = new FormData();
         fd.append("file", f);
@@ -147,6 +188,10 @@ export default function MasterArchive() {
             const pct = Math.round((ev.loaded / ev.total) * 100);
             setUploads((u) => u.map((x) => x === stat ? { ...x, progress: pct } : x));
           };
+          xhr.upload.onload = () => {
+            // Bytes finished — server is now processing (storing to OCI, DB record, etc.)
+            setUploads((u) => u.map((x) => x === stat ? { ...x, status: "processing", progress: 100 } : x));
+          };
           xhr.onload = () => {
             try {
               const json = JSON.parse(xhr.responseText || "{}");
@@ -160,7 +205,7 @@ export default function MasterArchive() {
           xhr.send(fd);
         });
 
-        setUploads((u) => u.map((x) => x === stat ? { ...x, status: "done", progress: 100 } : x));
+        setUploads((u) => u.map((x) => x === stat ? { ...x, status: "completed", progress: 100 } : x));
       } catch (e) {
         setUploads((u) => u.map((x) => x === stat ? { ...x, status: "failed", error: (e as Error).message } : x));
       }
@@ -342,48 +387,60 @@ export default function MasterArchive() {
             <h3 className="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-2">This session</h3>
             <div className="space-y-2">
               {uploads.map((u, i) => {
-                const isUp = u.status === "uploading";
+                const meta = STATUS_META[u.status];
+                const isActive = u.status === "uploading" || u.status === "processing" || u.status === "queued";
+                const showPct = u.status === "uploading" || u.status === "processing";
+                const barWidth = u.status === "failed" || u.status === "completed" ? 100
+                  : u.status === "queued" ? 4 : u.progress;
                 return (
                   <div
                     key={i}
                     className={cn(
                       "relative overflow-hidden rounded-xl border backdrop-blur-md transition-all",
                       "border-border/50 bg-card/40",
-                      isUp && "opacity-50 border-accent/40",
-                      u.status === "done" && "border-accent/30",
+                      u.status === "uploading" && "opacity-50 border-accent/40",
+                      u.status === "processing" && "opacity-60 border-primary/40",
+                      u.status === "queued" && "opacity-70",
+                      u.status === "completed" && "border-accent/30",
                       u.status === "failed" && "border-destructive/40",
                     )}
                   >
                     <div className="px-4 py-3 flex items-center justify-between gap-3 text-sm relative z-10">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
-                        {isUp ? <Loader2 className="w-3.5 h-3.5 animate-spin text-accent shrink-0" />
-                          : u.status === "done" ? <CheckCircle2 className="w-3.5 h-3.5 text-accent shrink-0" />
-                          : <span className="w-3.5 h-3.5 rounded-full bg-destructive shrink-0" />}
+                        {u.status === "uploading" || u.status === "processing"
+                          ? <Loader2 className="w-3.5 h-3.5 animate-spin text-accent shrink-0" />
+                          : u.status === "completed"
+                          ? <CheckCircle2 className="w-3.5 h-3.5 text-accent shrink-0" />
+                          : u.status === "failed"
+                          ? <span className="w-3.5 h-3.5 rounded-full bg-destructive shrink-0" />
+                          : <Circle className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
                         <span className="truncate font-medium">{u.name}</span>
                       </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        {isUp && (
+                      <div className="flex items-center gap-2 shrink-0">
+                        {showPct && (
                           <span className="font-mono text-xs tabular-nums text-accent tracking-wider">
                             {u.progress.toString().padStart(2, "0")}%
                           </span>
                         )}
-                        <span className="text-[10px] font-mono text-muted-foreground truncate max-w-[180px] hidden sm:inline">
-                          {u.error ?? u.category}
+                        <span className={cn(
+                          "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-mono uppercase tracking-wider",
+                          meta.badgeClass,
+                        )}>
+                          <span className={cn("w-1.5 h-1.5 rounded-full", meta.dotClass)} />
+                          {meta.label}
                         </span>
                       </div>
                     </div>
                     {/* Cinematic scoreboard progress bar */}
                     <div className="h-1 w-full bg-muted/40">
                       <div
-                        className={cn(
-                          "h-full transition-all duration-200 ease-out",
-                          isUp && "bg-gradient-to-r from-accent via-primary to-accent shadow-[0_0_12px_hsl(var(--accent)/0.7)]",
-                          u.status === "done" && "bg-accent",
-                          u.status === "failed" && "bg-destructive",
-                        )}
-                        style={{ width: `${u.status === "failed" ? 100 : u.progress}%` }}
+                        className={cn("h-full transition-all duration-200 ease-out", meta.barClass)}
+                        style={{ width: `${barWidth}%` }}
                       />
                     </div>
+                    {u.error && (
+                      <p className="px-4 pb-2 text-[10px] font-mono text-destructive truncate">{u.error}</p>
+                    )}
                   </div>
                 );
               })}

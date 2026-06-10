@@ -759,6 +759,36 @@ export type Database = {
         }
         Relationships: []
       }
+      projects: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          production_banner: Database["public"]["Enums"]["production_house_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          production_banner?: Database["public"]["Enums"]["production_house_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          production_banner?: Database["public"]["Enums"]["production_house_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       razorpay_config: {
         Row: {
           id: boolean
@@ -1451,6 +1481,7 @@ export type Database = {
         | "executive_producer"
         | "creator"
         | "client"
+      production_house_type: "CRAYONS_PICTURES" | "ABHIJITH_ASOKAN_PRODUCTIONS"
       studio_slug:
         | "crayons_pictures"
         | "abhijith_asokan_productions"
@@ -1590,6 +1621,10 @@ export const Constants = {
         "executive_producer",
         "creator",
         "client",
+      ],
+      production_house_type: [
+        "CRAYONS_PICTURES",
+        "ABHIJITH_ASOKAN_PRODUCTIONS",
       ],
       studio_slug: [
         "crayons_pictures",

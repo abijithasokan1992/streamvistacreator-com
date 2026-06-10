@@ -81,6 +81,6 @@ Deno.serve(async (req) => {
     return json({ topupId: row.id, orderId: order.id, amount: order.amount, currency: order.currency, keyId: creds.keyId });
   } catch (e) {
     console.error("create-storage-topup error", e);
-    return json({ error: (e as Error).message || "Server error" }, 500);
+    return json({ error: "Internal server error" }, 500);
   }
 });

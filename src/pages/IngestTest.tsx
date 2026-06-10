@@ -1,4 +1,5 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,9 +7,55 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, CloudUpload, FileIcon, Loader2, XCircle } from "lucide-react";
 import { useSystemMessage } from "@/components/system/SystemMessageProvider";
+import { useWorkspaces } from "@/hooks/useWorkspaces";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  uploadFileMultipart,
+  MULTIPART_THRESHOLD,
+  ResumableUploadInterrupted,
+} from "@/lib/ociMultipartUpload";
 
 const PAR_BASE =
   "https://objectstorage.ap-mumbai-1.oraclecloud.com/p/JeKB364pUi17Y_pIPaqVDc_M6XMrsCdj0xUXOHkWJT-2sOgzisRkuAB1KzAtfmym/n/bma8wibnommg/b/bucket-20260526-1544/o/";
+
+/** Map the manual's 4 category IDs onto the canonical 03-RAW-INGEST category tag. */
+const INGEST_CATEGORY_LABEL: Record<string, string> = {
+  hardware: "Dedicated Hardware",
+  mobile: "Mobile Ingest",
+  ndi: "NDI / IP Workflow",
+  virtual: "Virtual / Software Encoders",
+};
+
+function ingestCategoryTag(catId: string | null): string {
+  const id = (catId && INGEST_CATEGORY_LABEL[catId]) ? catId : "hardware";
+  return `c2c-${id}-raw-ingest`;
+}
+
+async function sha256Hex(file: File): Promise<string | null> {
+  // Skip very large files to keep the test snappy; the multipart engine still
+  // hashes them internally for cross-device resume.
+  if (file.size > 256 * 1024 * 1024) return null;
+  try {
+    const buf = await file.arrayBuffer();
+    const digest = await crypto.subtle.digest("SHA-256", buf);
+    return Array.from(new Uint8Array(digest))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  } catch {
+    return null;
+  }
+}
+
+async function reportIngest(payload: Record<string, unknown>) {
+  // Fire-and-forget; the c2c-ingest-webhook writes to payment_debug_logs.
+  try {
+    await supabase.functions.invoke("c2c-ingest-webhook", { body: payload });
+  } catch (e) {
+    // Telemetry must never block a user-visible upload.
+    console.warn("c2c telemetry failed", e);
+  }
+}
+
 
 type Status = "idle" | "uploading" | "success" | "error";
 
@@ -39,15 +86,25 @@ export default function IngestTest() {
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { showMessage } = useSystemMessage();
+  const { active } = useWorkspaces();
+  const [search] = useSearchParams();
 
-  const uploadOne = useCallback((item: UploadItem) => {
+  // Category passed in via the manual's per-card "Test this path" link.
+  const ingestPath = (search.get("category") || "hardware").toLowerCase();
+  const workspaceIdFromUrl = search.get("workspace");
+  const workspaceId = workspaceIdFromUrl || active?.id || null;
+  const productionBanner = (active as any)?.production_banner ?? null;
+  const categoryTag = useMemo(() => ingestCategoryTag(ingestPath), [ingestPath]);
+
+  // Direct-PAR path for small files (≤ 5MB). Larger files go through the
+  // chunked + SHA-256 multipart engine so they're ledgered in
+  // upload_sessions + ingest_telemetry.
+  const uploadSmallPAR = useCallback((item: UploadItem) => {
     const url = `${PAR_BASE}${encodeURIComponent(sanitize(item.file.name))}`;
     const xhr = new XMLHttpRequest();
+    const t0 = performance.now();
     xhr.open("PUT", url, true);
-    xhr.setRequestHeader(
-      "Content-Type",
-      item.file.type || "application/octet-stream",
-    );
+    xhr.setRequestHeader("Content-Type", item.file.type || "application/octet-stream");
 
     xhr.upload.onprogress = (e) => {
       if (!e.lengthComputable) return;
@@ -57,7 +114,8 @@ export default function IngestTest() {
       );
     };
 
-    xhr.onload = () => {
+    xhr.onload = async () => {
+      const dur = Math.round(performance.now() - t0);
       if (xhr.status >= 200 && xhr.status < 300) {
         setItems((prev) =>
           prev.map((it) =>
@@ -66,6 +124,20 @@ export default function IngestTest() {
         );
         toast.success("Upload complete", {
           description: `${item.file.name} delivered to Crayons Bridge`,
+        });
+        const sha = await sha256Hex(item.file);
+        void reportIngest({
+          file_name: item.file.name,
+          size_bytes: item.file.size,
+          sha256: sha,
+          etag: xhr.getResponseHeader("ETag"),
+          duration_ms: dur,
+          workspace_id: workspaceId,
+          production_banner: productionBanner,
+          category: categoryTag,
+          ingest_path: ingestPath,
+          par_status: xhr.status,
+          transport: "par",
         });
       } else {
         const msg = `C CLOUD returned ${xhr.status}`;
@@ -88,6 +160,17 @@ export default function IngestTest() {
               : "Inspect the PAR validity and bucket CORS rules.") +
             "\n\nReport this to admin if it keeps happening.",
           context: `file=${item.file.name}; size=${item.file.size}; status=${xhr.status}`,
+        });
+        void reportIngest({
+          file_name: item.file.name,
+          size_bytes: item.file.size,
+          duration_ms: dur,
+          workspace_id: workspaceId,
+          production_banner: productionBanner,
+          category: categoryTag,
+          ingest_path: ingestPath,
+          par_status: xhr.status,
+          transport: "par",
         });
       }
     };
@@ -126,7 +209,86 @@ export default function IngestTest() {
       prev.map((it) => (it.id === item.id ? { ...it, xhr, status: "uploading" } : it)),
     );
     xhr.send(item.file);
-  }, [showMessage]);
+  }, [showMessage, workspaceId, productionBanner, categoryTag, ingestPath]);
+
+  // Large file path → chunked multipart engine with SHA-256 + cross-device resume.
+  const uploadLargeMultipart = useCallback(async (item: UploadItem) => {
+    if (!workspaceId) {
+      // Without a workspace the multipart Edge Function can't ledger the
+      // session. Fall back to direct PAR so the test still proves the path.
+      uploadSmallPAR(item);
+      return;
+    }
+    setItems((prev) =>
+      prev.map((it) => (it.id === item.id ? { ...it, status: "uploading" } : it)),
+    );
+    const t0 = performance.now();
+    try {
+      const result = await uploadFileMultipart({
+        file: item.file,
+        workspaceId,
+        pendingId: `c2c-${ingestPath}-${item.id}`,
+        category: categoryTag,
+        onProgress: (loaded, total) => {
+          const pct = total > 0 ? Math.round((loaded / total) * 100) : 0;
+          setItems((prev) =>
+            prev.map((it) => (it.id === item.id ? { ...it, progress: pct } : it)),
+          );
+        },
+      });
+      setItems((prev) =>
+        prev.map((it) =>
+          it.id === item.id ? { ...it, status: "success", progress: 100 } : it,
+        ),
+      );
+      toast.success("Chunked ingest complete", {
+        description: `${item.file.name} · SHA-256 verified${result.resumed ? " · resumed from previous device" : ""}`,
+      });
+      void reportIngest({
+        file_name: item.file.name,
+        size_bytes: item.file.size,
+        sha256: (result.upload as any)?.file_sha256 ?? null,
+        etag: (result.upload as any)?.oci_upload_id ?? null,
+        duration_ms: Math.round(performance.now() - t0),
+        workspace_id: workspaceId,
+        production_banner: productionBanner,
+        category: categoryTag,
+        ingest_path: ingestPath,
+        par_status: "multipart",
+        transport: "multipart",
+      });
+    } catch (e) {
+      const resumable = e instanceof ResumableUploadInterrupted;
+      const msg = e instanceof ResumableUploadInterrupted
+        ? `Paused at part ${e.partNumber}/${e.totalChunks} — re-drop to resume`
+        : (e instanceof Error ? e.message : "Chunked ingest failed");
+      setItems((prev) =>
+        prev.map((it) =>
+          it.id === item.id ? { ...it, status: "error", error: msg } : it,
+        ),
+      );
+      if (resumable) {
+        toast.message("Upload paused — safely resumable", {
+          description: "Progress is checkpointed. Re-drop the same file (from any device) to resume.",
+        });
+      } else {
+        showMessage({
+          severity: "error",
+          title: "Chunked ingest failed",
+          message: `Multipart upload couldn't finish for "${item.file.name}". ${msg}`,
+          context: `file=${item.file.name}; size=${item.file.size}; category=${categoryTag}`,
+        });
+      }
+    }
+  }, [workspaceId, productionBanner, categoryTag, ingestPath, showMessage, uploadSmallPAR]);
+
+  const uploadOne = useCallback((item: UploadItem) => {
+    if (item.file.size > MULTIPART_THRESHOLD) {
+      void uploadLargeMultipart(item);
+    } else {
+      uploadSmallPAR(item);
+    }
+  }, [uploadLargeMultipart, uploadSmallPAR]);
 
   const addFiles = useCallback(
     (files: FileList | File[]) => {
@@ -142,6 +304,20 @@ export default function IngestTest() {
     },
     [uploadOne],
   );
+
+  // Surface the active routing so testers know which studio path their files land in.
+  useEffect(() => {
+    if (active) {
+      // No layout change — toast only on first mount per workspace+category.
+      const label = INGEST_CATEGORY_LABEL[ingestPath] ?? "Hardware";
+      toast.message(`Routing: ${label}`, {
+        description: `Studio: ${productionBanner ?? "Default"} · chunked > 5MB`,
+        duration: 2500,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active?.id, ingestPath]);
+
 
   const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();

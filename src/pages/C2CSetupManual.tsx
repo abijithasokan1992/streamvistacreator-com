@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   BookOpen, Cpu, Wifi, Bluetooth, Radio, CheckCircle2,
@@ -8,8 +8,17 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { useWorkspaces } from "@/hooks/useWorkspaces";
 
-const PAR_URL = "https://objectstorage.ap-mumbai-1.oraclecloud.com/p/JeKB364pUi17Y_pIPaqVDc_M6XMrsCdj0xUXOHkWJT-2sOgzisRkuAB1KzAtfmym/n/bma8wibnommg/b/bucket-20260526-1544/o/";
+const PAR_BASE_URL = "https://objectstorage.ap-mumbai-1.oraclecloud.com/p/JeKB364pUi17Y_pIPaqVDc_M6XMrsCdj0xUXOHkWJT-2sOgzisRkuAB1KzAtfmym/n/bma8wibnommg/b/bucket-20260526-1544/o/";
+
+/** Stable, URL-safe studio token derived from the workspace's production_banner. */
+function studioToken(banner: string | null | undefined): string {
+  if (banner === "Crayons Pictures") return "crayons-pictures";
+  if (banner === "Abhijith Asokan Productions") return "abhijith-asokan-productions";
+  return "default";
+}
+
 
 /* ─────────────── Types ─────────────── */
 type Step = {
@@ -206,9 +215,9 @@ const CATEGORIES: Category[] = [
 ];
 
 /* ─────────────── Components ─────────────── */
-function CopyUrlButton() {
+function CopyUrlButton({ url }: { url: string }) {
   const handleCopy = () => {
-    navigator.clipboard.writeText(PAR_URL);
+    navigator.clipboard.writeText(url);
     toast.success("PAR URL copied to clipboard");
   };
 
@@ -217,11 +226,12 @@ function CopyUrlButton() {
       onClick={handleCopy}
       className="group inline-flex items-center gap-2 rounded-lg bg-secondary/60 border border-border/60 px-3 py-2 text-xs font-mono-tech break-all hover:bg-secondary transition"
     >
-      <span className="truncate max-w-[260px] sm:max-w-[420px] md:max-w-[560px]">{PAR_URL}</span>
+      <span className="truncate max-w-[260px] sm:max-w-[420px] md:max-w-[560px]">{url}</span>
       <Copy className="w-3.5 h-3.5 text-muted-foreground group-hover:text-accent shrink-0" />
     </button>
   );
 }
+
 
 function StepCard({ step }: { step: Step }) {
   const Icon = step.icon;
@@ -253,7 +263,7 @@ function StepCard({ step }: { step: Step }) {
   );
 }
 
-function CategoryCard({ cat }: { cat: Category }) {
+function CategoryCard({ cat, ingestHref }: { cat: Category; ingestHref: string }) {
   const [open, setOpen] = useState(false);
   const Icon = cat.icon;
 
@@ -317,15 +327,46 @@ function CategoryCard({ cat }: { cat: Category }) {
               <StepCard key={s.number} step={s} />
             ))}
           </div>
+
+          {/* per-category test link — routes to Ingest Test with category pre-bound
+              so the modal uses the 5MB chunked + SHA-256 pipeline for this path. */}
+          <div className="mt-6 pt-4 border-t border-border/40">
+            <Link
+              to={ingestHref}
+              className="inline-flex items-center gap-1.5 text-[11px] font-mono-tech uppercase tracking-wider text-accent hover:text-accent/80 transition"
+            >
+              Test this path → chunked ingest <ExternalLink className="w-3 h-3" />
+            </Link>
+          </div>
         </div>
       )}
     </article>
   );
 }
 
+
 /* ─────────────── Page ─────────────── */
 export default function C2CSetupManual() {
+  const { active } = useWorkspaces();
+  const banner = (active as any)?.production_banner as string | null | undefined;
+  const token = studioToken(banner);
+  const wsShort = active?.id ? active.id.slice(0, 8) : null;
+  const parUrl = useMemo(() => {
+    const params = new URLSearchParams({ ws: token });
+    if (wsShort) params.set("w", wsShort);
+    return `${PAR_BASE_URL}?${params.toString()}`;
+  }, [token, wsShort]);
+  const ingestQuery = (categoryId: string) => {
+    const p = new URLSearchParams({ category: categoryId, ws: token });
+    if (active?.id) p.set("workspace", active.id);
+    return `/ingest-test?${p.toString()}`;
+  };
+
+  const bannerLabel = banner ?? "Default Studio";
+
   return (
+
+
     <div className="min-h-dvh bg-background text-foreground">
       {/* Header */}
       <header className="border-b border-border/50 glass sticky top-0 z-40">
@@ -386,13 +427,16 @@ export default function C2CSetupManual() {
           </div>
         </section>
 
-        {/* PAR URL strip */}
+        {/* PAR URL strip — workspace-parameterized for studio isolation */}
         <section className="glass rounded-2xl p-5 border border-border/40 flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="flex items-center gap-2 shrink-0">
             <Cloud className="w-4 h-4 text-accent" />
             <span className="text-xs font-semibold uppercase tracking-wider">C CLOUD PAR URL</span>
+            <Badge variant="outline" className="text-[10px] uppercase tracking-wider border-accent/40 text-accent">
+              {bannerLabel}
+            </Badge>
           </div>
-          <CopyUrlButton />
+          <CopyUrlButton url={parUrl} />
         </section>
 
         {/* Categories */}
@@ -404,9 +448,10 @@ export default function C2CSetupManual() {
             </span>
           </div>
           {CATEGORIES.map((cat) => (
-            <CategoryCard key={cat.id} cat={cat} />
+            <CategoryCard key={cat.id} cat={cat} ingestHref={ingestQuery(cat.id)} />
           ))}
         </section>
+
 
         {/* CTA */}
         <section className="glass rounded-2xl p-6 border border-border/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

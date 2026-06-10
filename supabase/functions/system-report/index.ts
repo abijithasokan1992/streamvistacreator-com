@@ -94,7 +94,8 @@ Deno.serve(async (req) => {
       emailFailures: sendResults.filter((r) => r.status === "rejected").length,
     });
   } catch (e) {
-    return json({ error: e instanceof Error ? e.message : String(e) }, 500);
+    console.error("system-report error", e instanceof Error ? e.message : String(e));
+    return json({ error: "Internal server error" }, 500);
   }
 });
 

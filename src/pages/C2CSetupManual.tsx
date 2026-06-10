@@ -52,7 +52,7 @@ const CATEGORIES: Category[] = [
         title: "Network Uplink",
         body: "Plug Ethernet into the encoder, or bond multiple LTE/5G modems for field redundancy.",
         details: ["RJ-45 Gigabit preferred", "Wi-Fi 6E fallback for roaming rigs"],
-        icon: Ethernet,
+        icon: Cable,
       },
       {
         number: 3,

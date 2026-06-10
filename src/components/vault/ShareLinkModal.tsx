@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useSystemMessage } from "@/components/system/SystemMessageProvider";
 import {
   Copy, Eye, Download, Lock, Clock, Hash, Link2, Loader2, Shield, ExternalLink, Mail, Send,
 } from "lucide-react";

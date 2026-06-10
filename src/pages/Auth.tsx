@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { planByCycle, type Cycle } from "@/components/streamvista/plans";
 import { CountryCodeSelect } from "@/components/auth/CountryCodeSelect";
 import { COUNTRIES, type Country } from "@/lib/countries";
+import { useHostMode, urlForHost } from "@/hooks/useHostMode";
 
 const LoginSchema = z.object({
   email: z.string().trim().email("Enter a valid email").max(255),

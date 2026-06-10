@@ -92,8 +92,8 @@ function classify(msg: string): { title: string; body: string } {
   }
   if (m.includes("oracle") || m.includes("oci") || m.includes("objectstorage")) {
     return {
-      title: "Oracle storage error",
-      body: "We couldn't reach Oracle Object Storage. Your files are safe, but the bridge needs attention.",
+      title: "C CLOUD storage error",
+      body: "We couldn't reach C CLOUD Object Storage. Your files are safe, but the bridge needs attention.",
     };
   }
   if (m.includes("failed to fetch") || m.includes("network") || m.includes("networkerror")) {

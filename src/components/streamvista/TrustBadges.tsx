@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 const BADGES = [
   { icon: Lock, label: "256-bit SSL Secure", emoji: "🔒" },
   { icon: CreditCard, label: "100% Secure Payments", emoji: "💳" },
-  { icon: Cloud, label: "Oracle Cloud · 99.9% Uptime SLA", emoji: "☁️" },
+  { icon: Cloud, label: "C CLOUD · 99.9% UPTIME SLA", emoji: "☁️" },
   { icon: ShieldCheck, label: "DMCA Protected", emoji: "🛡️" },
 ];
 

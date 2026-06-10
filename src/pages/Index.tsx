@@ -25,7 +25,7 @@ const Index = () => {
     <main className="min-h-dvh">
       <Seo
         title="StreamVista Cloud X — Creator Studio Cloud Storage"
-        description="Secure cloud workspace for filmmakers, studios and creators — Oracle-backed storage, controlled sharing, DMCA protection, and pricing that scales from free to full production."
+        description="Secure cloud workspace for filmmakers, studios and creators — C CLOUD-backed storage, controlled sharing, DMCA protection, and pricing that scales from free to full production."
         path="/"
         jsonLd={[
           { "@context": "https://schema.org", "@type": "Organization", name: "StreamVista", url: "https://streamvistacreator.com/" },

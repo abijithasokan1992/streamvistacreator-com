@@ -31,7 +31,7 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
 const TRUST: { icon: LucideIcon; label: string }[] = [
   { icon: Lock, label: "256-bit SSL Secure" },
   { icon: CreditCard, label: "100% Secure Payments" },
-  { icon: Cloud, label: "Oracle Cloud · 99.9% SLA" },
+  { icon: Cloud, label: "C CLOUD · 99.9% UPTIME SLA" },
   { icon: ShieldCheck, label: "DMCA Protected" },
 ];
 

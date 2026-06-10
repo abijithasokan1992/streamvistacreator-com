@@ -34,7 +34,7 @@ export default function CinematicOnboarding({ onComplete }: { onComplete: () => 
 
           // Dynamic mass text changes to make it look highly complex
 
-          if (oldProgress === 30) setLoadingText('Syncing with Oracle OCI Node-1...');
+          if (oldProgress === 30) setLoadingText('Syncing with C CLOUD Node-1...');
 
           if (oldProgress === 65) setLoadingText('Optimizing ProRes & RAW Pipeline...');
 
@@ -220,7 +220,7 @@ export default function CinematicOnboarding({ onComplete }: { onComplete: () => 
 
                 <p className="text-zinc-200 font-bold uppercase text-xs">Nilavara C: 90/120 Day Inactivity Lifecycle</p>
 
-                <p className="mt-1 leading-relaxed">Idle directories are flagged at 90 days. Total freeze and OCI data cold-archiving takes place at 120 days.</p>
+                <p className="mt-1 leading-relaxed">Idle directories are flagged at 90 days. Total freeze and C CLOUD data cold-archiving takes place at 120 days.</p>
 
               </div>
 

@@ -23,6 +23,7 @@ function fmtSize(b: number) {
 
 export default function Producer() {
   const { user, signOut } = useAuth();
+  useBackGuard(!!user);
   const [loading, setLoading] = useState(true);
   const [creators, setCreators] = useState<CreatorRow[]>([]);
   const [files, setFiles] = useState<FileRow[]>([]);

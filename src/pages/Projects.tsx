@@ -3,12 +3,13 @@ import { Link } from "react-router-dom";
 import {
   Plus, Pencil, Trash2, Loader2, Film, ArrowLeft, Building2, Share2,
   Sparkles, ChevronDown, ChevronUp, Upload, FileText, X, Settings2,
-  Wand2, Mic2, FileSignature, PackageCheck, FolderTree,
+  Wand2, Mic2, FileSignature, PackageCheck, FolderTree, LogOut,
 } from "lucide-react";
 import ShareReviewModal from "@/components/projects/ShareReviewModal";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useBackGuard } from "@/hooks/useBackGuard";
 import { useWorkspaces, type Workspace } from "@/hooks/useWorkspaces";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

@@ -506,6 +506,59 @@ export default function Auth() {
                   className="w-full h-12 px-4 rounded-xl bg-input/40 border border-border/60 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-accent/70 focus:bg-input/70 focus:shadow-[0_0_24px_-6px_hsl(var(--accent)/0.5)]"
                 />
 
+                {!isAdminLogin && (
+                  <div className="space-y-2">
+                    <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground/70 px-1">
+                      I am a&hellip;
+                    </p>
+                    <div
+                      role="radiogroup"
+                      aria-label="Account role"
+                      className="grid grid-cols-3 gap-2"
+                    >
+                      {(
+                        [
+                          { value: "executive_producer", label: "Executive Producer", hint: "Oversee creators" },
+                          { value: "creator", label: "Creator", hint: "Make & ship work" },
+                          { value: "client", label: "Client", hint: "Review deliveries" },
+                        ] as { value: SignupRole; label: string; hint: string }[]
+                      ).map((opt) => {
+                        const active = signupRole === opt.value;
+                        return (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            role="radio"
+                            aria-checked={active}
+                            onClick={() => setSignupRole(opt.value)}
+                            className={cn(
+                              "rounded-xl border px-3 py-3 text-left transition-all outline-none",
+                              active
+                                ? "border-accent/70 bg-accent/10 shadow-[0_0_24px_-8px_hsl(var(--accent)/0.6)]"
+                                : "border-border/60 bg-input/30 hover:border-accent/40 hover:bg-input/50"
+                            )}
+                          >
+                            <div className={cn("text-[12px] font-semibold", active ? "text-foreground" : "text-foreground/80")}>
+                              {opt.label}
+                            </div>
+                            <div className="text-[10px] text-muted-foreground/70 mt-0.5">{opt.hint}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground/60 px-1">
+                      You can change this later from your profile. Admin access is granted manually.
+                    </p>
+                  </div>
+                )}
+
+                  placeholder="Studio / company name (optional)"
+                  aria-label="Studio or company name"
+                  autoComplete="organization"
+                  maxLength={160}
+                  className="w-full h-12 px-4 rounded-xl bg-input/40 border border-border/60 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-accent/70 focus:bg-input/70 focus:shadow-[0_0_24px_-6px_hsl(var(--accent)/0.5)]"
+                />
+
                 <div className="flex">
                   <CountryCodeSelect value={country} onChange={setCountry} />
                   <input

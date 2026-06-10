@@ -25,6 +25,7 @@ const WIZARD_KEY = "sv_seen_client_wizard_v2";
 export default function Client() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  useBackGuard(!!user);
   const [linkInput, setLinkInput] = useState("");
   const linkInputRef = useRef<HTMLInputElement | null>(null);
 

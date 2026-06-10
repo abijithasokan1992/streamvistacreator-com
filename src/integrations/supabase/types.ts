@@ -2138,6 +2138,10 @@ export type Database = {
       }
       revoke_creator_role: { Args: { _user_id: string }; Returns: undefined }
       set_initial_role: { Args: { _role: string }; Returns: boolean }
+      validate_razorpay_live_secrets: {
+        Args: { _key_secret: string; _webhook_secret: string }
+        Returns: Json
+      }
     }
     Enums: {
       admin_division: "ops" | "finance" | "dev" | "marketing"

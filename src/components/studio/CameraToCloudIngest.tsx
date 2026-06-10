@@ -173,11 +173,40 @@ export default function CameraToCloudIngest() {
             Drop footage, audio, RAW or proxies — streamed to Oracle OCI Object Storage with cryptographic integrity.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={refresh} disabled={loadingList}>
-          <RefreshCw className={cn("h-4 w-4 mr-2", loadingList && "animate-spin")} />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          {workspaces.length > 0 && (
+            <Select value={activeId ?? ""} onValueChange={(v) => setActiveId(v)}>
+              <SelectTrigger className="h-9 w-[220px] text-xs">
+                <Building2 className="w-3.5 h-3.5 mr-1" />
+                <SelectValue placeholder="Pick a workspace…" />
+              </SelectTrigger>
+              <SelectContent>
+                {workspaces.map((w) => (
+                  <SelectItem key={w.id} value={w.id}>
+                    {w.name}
+                    <span className="ml-2 text-[10px] uppercase text-muted-foreground">{w.role}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <Button variant="outline" size="sm" onClick={refresh} disabled={loadingList || !activeId}>
+            <RefreshCw className={cn("h-4 w-4 mr-2", loadingList && "animate-spin")} />
+            Refresh
+          </Button>
+        </div>
       </div>
+
+      {!activeId && (
+        <Card className="p-4 text-sm text-muted-foreground border-amber-500/30 bg-amber-500/5">
+          Pick a workspace above to start routing camera-to-cloud uploads into its isolated OCI prefix.
+        </Card>
+      )}
+      {activeId && !canWriteActive && (
+        <Card className="p-4 text-sm text-muted-foreground border-destructive/30 bg-destructive/5">
+          You only have viewer access to this workspace. Switch to one where you are owner, admin, or editor to upload.
+        </Card>
+      )}
 
       <Card
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}

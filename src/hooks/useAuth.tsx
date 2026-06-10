@@ -73,7 +73,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  const signOut = async () => { await supabase.auth.signOut(); };
+  const signOut = async () => {
+    try { await supabase.auth.signOut(); } catch { /* ignore */ }
+    try {
+      // Belt-and-braces: wipe any cached supabase tokens before redirect.
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith("sb-") || k.includes("supabase.auth"))
+        .forEach((k) => localStorage.removeItem(k));
+      Object.keys(sessionStorage)
+        .filter((k) => k.startsWith("sb-") || k.includes("supabase.auth"))
+        .forEach((k) => sessionStorage.removeItem(k));
+    } catch { /* ignore */ }
+    setSession(null);
+    setUser(null);
+    setRole(null);
+    // Hard-replace so the dashboard cannot be reached via the back button.
+    if (typeof window !== "undefined") {
+      window.location.replace("/auth");
+    }
+  };
   const refreshRole = async () => { await checkRole(user?.id); };
 
   return (

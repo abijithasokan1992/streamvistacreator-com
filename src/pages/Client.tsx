@@ -803,3 +803,13 @@ function IncomingReviews() {
     </section>
   );
 }
+
+function ClientTeamSlot() {
+  const { role } = useAuth();
+  if (role !== "creator" && role !== "executive_producer" && role !== "admin") return null;
+  return (
+    <div className="mb-8">
+      <TeamMembersPanel />
+    </div>
+  );
+}

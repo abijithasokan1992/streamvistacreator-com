@@ -571,7 +571,7 @@ function FileRow({ file: f, onShare, onRevoke, onRemove }: {
       </div>
       <div className="flex gap-1.5">
         {!f.revoked && (
-          <Button size="sm" variant="ghost" className="h-8 gap-1.5" onClick={() => onShare(f as unknown as ShareLinkFile)}>
+          <Button size="sm" variant="ghost" className="h-8 gap-1.5" onClick={() => onShare(f)}>
             <Link2 className="w-3.5 h-3.5" /> Share
           </Button>
         )}

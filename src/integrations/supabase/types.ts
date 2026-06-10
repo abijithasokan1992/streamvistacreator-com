@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_divisions: {
+        Row: {
+          created_at: string
+          division: Database["public"]["Enums"]["admin_division"]
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          division: Database["public"]["Enums"]["admin_division"]
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          division?: Database["public"]["Enums"]["admin_division"]
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       branding_settings: {
         Row: {
           allow_user_logos: boolean
@@ -1150,6 +1171,7 @@ export type Database = {
       }
     }
     Enums: {
+      admin_division: "ops" | "finance" | "dev" | "marketing"
       app_role:
         | "admin"
         | "moderator"
@@ -1288,6 +1310,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      admin_division: ["ops", "finance", "dev", "marketing"],
       app_role: [
         "admin",
         "moderator",

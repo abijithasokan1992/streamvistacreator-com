@@ -121,17 +121,19 @@ export default function Projects() {
 
   const load = async () => {
     if (!user) return;
+    if (!activeId) { setRows([]); setLoading(false); return; }
     setLoading(true);
     const { data, error } = await (supabase as any)
       .from("projects")
       .select("*")
+      .eq("workspace_id", activeId)
       .order("created_at", { ascending: false });
     setLoading(false);
     if (error) { toast.error(error.message); return; }
     setRows(((data ?? []) as unknown) as Project[]);
   };
 
-  useEffect(() => { load(); }, [user?.id]);
+  useEffect(() => { load(); }, [user?.id, activeId]);
 
   const openCreate = () => {
     setEditing(null);

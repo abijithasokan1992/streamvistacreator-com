@@ -199,17 +199,18 @@ export default function RolesManager() {
                           <button
                             key={r}
                             onClick={() => removeRole(p.user_id, r)}
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold border border-accent/40 bg-accent/10 text-accent hover:bg-destructive/15 hover:border-destructive/40 hover:text-destructive transition"
-                            title="Click to remove"
+                            disabled={!unlocked}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold border border-accent/40 bg-accent/10 text-accent hover:bg-destructive/15 hover:border-destructive/40 hover:text-destructive transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-accent/10 disabled:hover:border-accent/40 disabled:hover:text-accent"
+                            title={unlocked ? "Click to remove" : "Unlock editing to remove"}
                           >
                             {meta?.icon} {meta?.label || r} <Trash2 className="w-3 h-3 ml-0.5" />
                           </button>
                         );
                       })}
                     </div>
-                    <Select onValueChange={(v) => addRole(p.user_id, v as Role)}>
-                      <SelectTrigger className="h-8 w-[150px] bg-secondary/40 border-border/60 text-xs">
-                        <SelectValue placeholder="+ Add role" />
+                    <Select disabled={!unlocked} onValueChange={(v) => addRole(p.user_id, v as Role)}>
+                      <SelectTrigger className="h-8 w-[150px] bg-secondary/40 border-border/60 text-xs disabled:opacity-50">
+                        <SelectValue placeholder={unlocked ? "+ Add role" : "🔒 Locked"} />
                       </SelectTrigger>
                       <SelectContent>
                         {ROLES.filter((r) => !userRoles.includes(r.value)).map((r) => (

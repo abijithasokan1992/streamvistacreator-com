@@ -51,10 +51,13 @@ export default function OracleStorageMonitor() {
   const [parUrl, setParUrl] = useState<string | null>(null);
   const [creatingPar, setCreatingPar] = useState(false);
 
+  const [usage, setUsage] = useState<{ bytes: number; count: number; truncated: boolean } | null>(null);
+  const [loadingUsage, setLoadingUsage] = useState(false);
+
   const load = async () => {
     const { data } = await supabase
       .from("site_config")
-      .select("oracle_tenancy_ocid, oracle_user_ocid, oracle_fingerprint, oracle_region, oracle_namespace, oracle_bucket, oracle_private_key_set, oracle_private_key")
+      .select("oracle_tenancy_ocid, oracle_user_ocid, oracle_fingerprint, oracle_region, oracle_namespace, oracle_bucket, oracle_private_key_set, oracle_private_key, oracle_capacity_gb")
       .eq("id", true)
       .maybeSingle();
     const next: OracleConfig = data ? {
@@ -65,11 +68,23 @@ export default function OracleStorageMonitor() {
       oracle_namespace: data.oracle_namespace ?? "",
       oracle_bucket: data.oracle_bucket ?? "",
       oracle_private_key_set: !!data.oracle_private_key_set || !!data.oracle_private_key,
+      oracle_capacity_gb: data.oracle_capacity_gb != null ? Number(data.oracle_capacity_gb) : null,
     } : EMPTY;
     setCfg(next);
     setDraft(next);
     setEditing(!hasAllRequired(next));
     setLoading(false);
+  };
+
+  const fetchUsage = async (silent = false) => {
+    setLoadingUsage(true);
+    const { data, error } = await supabase.functions.invoke("oracle-proxy", { body: { action: "usage" } });
+    setLoadingUsage(false);
+    if (error || !data?.ok) {
+      if (!silent) toast.error("Could not read bucket usage", { description: error?.message ?? data?.error });
+      return;
+    }
+    setUsage({ bytes: Number(data.totalBytes ?? 0), count: Number(data.objectCount ?? 0), truncated: !!data.truncated });
   };
 
   const runTest = async (silent = false): Promise<boolean> => {

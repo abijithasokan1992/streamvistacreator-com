@@ -31,4 +31,7 @@ project_id = "hllgmkfqgeuqlmpcirvn"
     verify_jwt = false
   [functions.send-welcome-alert]
     verify_jwt = true
+  [functions.fastlink-pay]
+    verify_jwt = true
+
 

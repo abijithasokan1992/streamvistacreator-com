@@ -1474,6 +1474,24 @@ export type Database = {
         Args: { _creator: string; _ep: string }
         Returns: boolean
       }
+      list_shares_for_me: {
+        Args: never
+        Returns: {
+          created_at: string
+          download_count: number
+          expires_at: string
+          filename: string
+          has_password: boolean
+          id: string
+          max_downloads: number
+          mime_type: string
+          revoked: boolean
+          share_token: string
+          size_bytes: number
+          tier: string
+          view_only: boolean
+        }[]
+      }
       mfi_seats_taken: { Args: never; Returns: number }
       move_to_dlq: {
         Args: {

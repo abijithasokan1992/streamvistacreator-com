@@ -593,25 +593,36 @@ export default function MasterArchive() {
           </div>
           <ul className="grid sm:grid-cols-2 gap-2">
             {BRIDGE_CHECKLIST.map((item) => {
-              const done = !!checklist[item.key];
+              const count = satisfiedCounts[item.key] ?? 0;
+              const done = count > 0;
+              const isTargetActive = selected?.folder === item.target.folder && selected?.sub === item.target.sub;
               return (
                 <li key={item.key}>
                   <button
-                    onClick={() => toggleCheck(item.key)}
+                    onClick={() => selectChecklistTarget(item)}
+                    title={done ? `${count} file${count === 1 ? "" : "s"} ingested — click to set destination again` : `Click to pre-select → ${item.target.sub}`}
                     className={cn(
                       "w-full text-left flex items-start gap-3 rounded-xl border px-3.5 py-3 transition-all",
                       "backdrop-blur-sm",
                       done
                         ? "border-accent/50 bg-accent/10 shadow-[inset_0_0_0_1px_hsl(var(--accent)/0.2)]"
                         : "border-border/50 bg-background/30 hover:border-accent/40 hover:bg-accent/5",
+                      isTargetActive && "ring-1 ring-primary/50",
                     )}
                   >
                     {done
                       ? <CheckCircle2 className="w-4 h-4 text-accent shrink-0 mt-0.5" />
                       : <Circle className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />}
-                    <div className="min-w-0">
-                      <p className={cn("text-sm font-medium leading-snug", done && "text-accent")}>{item.label}</p>
-                      <p className="text-[11px] text-muted-foreground font-mono mt-0.5">{item.hint}</p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className={cn("text-sm font-medium leading-snug", done && "text-accent")}>{item.label}</p>
+                        {done && (
+                          <span className="font-mono text-[10px] text-accent tabular-nums shrink-0">×{count}</span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
+                        {item.hint} · → {item.target.sub}
+                      </p>
                     </div>
                   </button>
                 </li>

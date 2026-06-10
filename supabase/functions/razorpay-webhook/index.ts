@@ -44,18 +44,44 @@ Deno.serve(async (req) => {
   const sig = req.headers.get("x-razorpay-signature") ?? "";
   const expected = createHmac("sha256", secret).update(raw).digest("hex");
 
+  let signatureValid = false;
   try {
     const a = new TextEncoder().encode(sig);
     const b = new TextEncoder().encode(expected);
-    if (a.byteLength !== b.byteLength || !timingSafeEqual(a, b)) {
-      return ok({ error: "invalid signature" }, 400);
-    }
-  } catch {
-    return ok({ error: "invalid signature" }, 400);
+    signatureValid = a.byteLength === b.byteLength && timingSafeEqual(a, b);
+  } catch { signatureValid = false; }
+
+  let event: any = null;
+  try { event = JSON.parse(raw); } catch { /* logged below */ }
+
+  // Audit-log every received event regardless of validity. Failures here
+  // must never block webhook processing.
+  try {
+    const payment = event?.payload?.payment?.entity;
+    const order = event?.payload?.order?.entity;
+    const subscription = event?.payload?.subscription?.entity;
+    await supabase.from("razorpay_audit_log").insert({
+      event_type: event?.event ?? "unknown",
+      source: "webhook",
+      order_id: payment?.order_id ?? order?.id ?? null,
+      payment_id: payment?.id ?? null,
+      subscription_id: subscription?.id ?? null,
+      amount_paise: payment?.amount ?? order?.amount ?? null,
+      currency: payment?.currency ?? order?.currency ?? null,
+      status: payment?.status ?? order?.status ?? subscription?.status ?? null,
+      error_code: payment?.error_code ?? null,
+      error_description: payment?.error_description ?? null,
+      signature_valid: signatureValid,
+      user_id: subscription?.notes?.userId ?? null,
+      payload: event ?? { raw: raw.slice(0, 4000) },
+    });
+  } catch (e) {
+    console.error("razorpay-webhook: audit insert failed", e);
   }
 
-  let event: any;
-  try { event = JSON.parse(raw); } catch { return ok({ error: "bad json" }, 400); }
+  if (!signatureValid) return ok({ error: "invalid signature" }, 400);
+  if (!event) return ok({ error: "bad json" }, 400);
+
 
   const type = event?.event as string;
   const payment = event?.payload?.payment?.entity;

@@ -86,10 +86,21 @@ Deno.serve(async (req) => {
       const res = await fetch("https://api.razorpay.com/v1/payments?count=1", {
         headers: { Authorization: `Basic ${auth}` },
       });
-      if (res.ok) return json(req, { ok: true, message: "Razorpay credentials are valid." });
-      const detail = await res.json().catch(() => ({}));
-      const msg = detail?.error?.description || `HTTP ${res.status}`;
-      return json(req, { ok: false, error: msg }, 200);
+      const okFlag = res.ok;
+      const detail = okFlag ? null : await res.json().catch(() => ({}));
+      const msg = okFlag ? "Razorpay credentials are valid." : (detail?.error?.description || `HTTP ${res.status}`);
+      try {
+        await admin.from("razorpay_audit_log").insert({
+          event_type: "admin.test",
+          source: "razorpay-admin",
+          status: okFlag ? "success" : "failed",
+          error_code: okFlag ? null : String(res.status),
+          error_description: okFlag ? null : msg,
+          user_id: uid,
+          payload: { key_id_preview: mask(useId) },
+        });
+      } catch (e) { console.error("audit insert failed", e); }
+      return json(req, okFlag ? { ok: true, message: msg } : { ok: false, error: msg }, 200);
     } catch (e: any) {
       return json(req, { ok: false, error: e?.message || "Network error" }, 200);
     }

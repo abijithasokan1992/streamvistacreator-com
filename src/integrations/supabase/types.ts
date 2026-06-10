@@ -526,6 +526,35 @@ export type Database = {
         }
         Relationships: []
       }
+      premium_invitation_redemptions: {
+        Row: {
+          id: string
+          invitation_id: string
+          redeemed_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          invitation_id: string
+          redeemed_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          invitation_id?: string
+          redeemed_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "premium_invitation_redemptions_invitation_id_fkey"
+            columns: ["invitation_id"]
+            isOneToOne: false
+            referencedRelation: "premium_invitations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       premium_invitations: {
         Row: {
           account_type: string
@@ -930,12 +959,15 @@ export type Database = {
           current_period_start: string | null
           customer_email: string | null
           environment: string
+          gateway: string
           id: string
-          price_id: string
-          product_id: string
+          price_id: string | null
+          product_id: string | null
+          razorpay_plan_id: string | null
+          razorpay_subscription_id: string | null
           status: string
-          stripe_customer_id: string
-          stripe_subscription_id: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
           updated_at: string
           user_id: string | null
         }
@@ -946,12 +978,15 @@ export type Database = {
           current_period_start?: string | null
           customer_email?: string | null
           environment?: string
+          gateway?: string
           id?: string
-          price_id: string
-          product_id: string
+          price_id?: string | null
+          product_id?: string | null
+          razorpay_plan_id?: string | null
+          razorpay_subscription_id?: string | null
           status?: string
-          stripe_customer_id: string
-          stripe_subscription_id: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -962,12 +997,15 @@ export type Database = {
           current_period_start?: string | null
           customer_email?: string | null
           environment?: string
+          gateway?: string
           id?: string
-          price_id?: string
-          product_id?: string
+          price_id?: string | null
+          product_id?: string | null
+          razorpay_plan_id?: string | null
+          razorpay_subscription_id?: string | null
           status?: string
-          stripe_customer_id?: string
-          stripe_subscription_id?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -1136,6 +1174,7 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      grant_creator_role: { Args: { _user_id: string }; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1169,6 +1208,7 @@ export type Database = {
           read_ct: number
         }[]
       }
+      revoke_creator_role: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {
       admin_division: "ops" | "finance" | "dev" | "marketing"

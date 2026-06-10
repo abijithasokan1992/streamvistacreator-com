@@ -368,7 +368,9 @@ export default function Projects() {
 
       {shareProject && (
         <ShareReviewModal
-          project={shareProject as any}
+          projectId={shareProject.id}
+          projectName={shareProject.name}
+          workspaceId={shareProject.workspace_id}
           open={!!shareProject}
           onOpenChange={(o) => !o && setShareProject(null)}
         />

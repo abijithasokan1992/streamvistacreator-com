@@ -53,14 +53,12 @@ export default function FirstStepsCard({
 
   const creatorSteps: Step[] = [
     { icon: Upload, title: "Upload your first clip", body: "Drag any video or RAW file. Encryption + virus scan are automatic.", cta: "Upload now", onClick: () => { onUpload?.(); markDone(0); } },
-    { icon: Link2, title: "Generate a share link", body: "Branded, password-protected, with download limits and expiry.", cta: "Create link", onClick: () => { onShare?.(); markDone(1); } },
-    { icon: Send, title: "Send to your client", body: "Email or WhatsApp the link. Watch views, downloads, and comments live.", cta: "Send invite", onClick: () => { onInvite?.(); markDone(2); } },
+    // { icon: Link2, title: "Generate a share link", body: "Branded, password-protected, with download limits and expiry.", cta: "Create link", onClick: () => { onShare?.(); markDone(1); } },
+    // { icon: Send, title: "Send to your client", body: "Email or WhatsApp the link. Watch views, downloads, and comments live.", cta: "Send invite", onClick: () => { onInvite?.(); markDone(2); } },
   ];
 
   const clientSteps: Step[] = [
-    { icon: Link2, title: "Wait for your studio's link", body: "Your studio shares a /s/... link via WhatsApp, email, or SMS. No link is sent automatically from here.", cta: "I have a link — paste it", onClick: () => { onPasteLink?.(); markDone(0); } },
-    { icon: Sparkles, title: "Review with timecode", body: "Open the link, scrub the cut, and drop frame-accurate notes. Your studio sees them live.", cta: "Got it", onClick: () => markDone(1) },
-    { icon: Check, title: "Approve the cut", body: "One-click approval — your studio is notified the moment you sign off.", cta: "Understood", onClick: () => markDone(2) },
+    // Review features temporarily hidden
   ];
 
   const steps = variant === "creator" ? creatorSteps : clientSteps;

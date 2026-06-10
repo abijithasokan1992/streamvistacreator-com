@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Pencil, Trash2, Loader2, Film, ArrowLeft, Building2, Link2 } from "lucide-react";
-import ShareReviewModal from "@/components/projects/ShareReviewModal";
+import { Plus, Pencil, Trash2, Loader2, Film, ArrowLeft, Building2 } from "lucide-react";
+// import ShareReviewModal from "@/components/projects/ShareReviewModal";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -230,15 +230,7 @@ export default function Projects() {
                   <div className="flex items-start justify-between gap-2">
                     <CardTitle className="text-base truncate">{p.name}</CardTitle>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7 text-accent"
-                        onClick={() => setShareProject(p)}
-                        title="Share / Review"
-                      >
-                        <Link2 className="w-3.5 h-3.5" />
-                      </Button>
+                      {/* Share/Review temporarily hidden */}
                       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(p)}>
                         <Pencil className="w-3.5 h-3.5" />
                       </Button>
@@ -371,15 +363,7 @@ export default function Projects() {
         </DialogContent>
       </Dialog>
 
-      {shareProject && (
-        <ShareReviewModal
-          open={!!shareProject}
-          onOpenChange={(v) => !v && setShareProject(null)}
-          projectId={shareProject.id}
-          projectName={shareProject.name}
-          workspaceId={shareProject.workspace_id}
-        />
-      )}
+      {/* ShareReviewModal temporarily hidden */}
 
       <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
         <DialogContent className="sm:max-w-md">

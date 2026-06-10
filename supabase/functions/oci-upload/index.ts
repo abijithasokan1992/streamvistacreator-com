@@ -145,24 +145,78 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: `file exceeds ${MAX_BYTES} bytes` }), { status: 413, headers: cors });
   }
 
-  const objectKey = `uploads/${userId}/${Date.now()}-${crypto.randomUUID()}-${safeName(file.name)}`;
+  // Idempotency: clients pass a stable pendingId so retrying the same upload
+  // reuses the existing row + objectKey instead of creating a duplicate.
+  const pendingIdRaw = form.get("pendingId");
+  const pendingId = typeof pendingIdRaw === "string" ? pendingIdRaw.slice(0, 80) : null;
   const mime = file.type || "application/octet-stream";
 
-  const { data: row, error: insErr } = await admin
-    .from("recent_uploads")
-    .insert({
-      user_id: userId,
-      file_name: file.name,
-      file_size: file.size,
-      mime_type: mime,
-      bucket, namespace: ns, region,
-      object_key: objectKey,
-      status: "uploading",
-    })
-    .select().single();
-  if (insErr || !row) {
-    return new Response(JSON.stringify({ error: insErr?.message ?? "insert failed" }), { status: 500, headers: cors });
+  let row: { id: string; object_key: string; status: string } | null = null;
+
+  if (pendingId) {
+    const { data: existing } = await admin
+      .from("recent_uploads")
+      .select("id, object_key, status")
+      .eq("user_id", userId)
+      .eq("client_pending_id", pendingId)
+      .maybeSingle();
+    if (existing) {
+      // Already completed → return the prior row, no second OCI PUT.
+      if (existing.status === "uploaded") {
+        const { data: full } = await admin
+          .from("recent_uploads").select("*").eq("id", existing.id).single();
+        return new Response(JSON.stringify({ upload: full, idempotent: true }), { headers: cors });
+      }
+      // Re-attempt: reuse the same object_key so OCI overwrites in place.
+      await admin.from("recent_uploads")
+        .update({ status: "uploading", error_message: null })
+        .eq("id", existing.id);
+      row = existing;
+    }
   }
+
+  if (!row) {
+    const objectKey = `uploads/${userId}/${Date.now()}-${crypto.randomUUID()}-${safeName(file.name)}`;
+    const { data: inserted, error: insErr } = await admin
+      .from("recent_uploads")
+      .insert({
+        user_id: userId,
+        file_name: file.name,
+        file_size: file.size,
+        mime_type: mime,
+        bucket, namespace: ns, region,
+        object_key: objectKey,
+        status: "uploading",
+        client_pending_id: pendingId,
+      })
+      .select("id, object_key, status").single();
+    if (insErr || !inserted) {
+      // Race: another concurrent retry inserted first — fetch and reuse it.
+      if (pendingId) {
+        const { data: again } = await admin
+          .from("recent_uploads")
+          .select("id, object_key, status")
+          .eq("user_id", userId)
+          .eq("client_pending_id", pendingId)
+          .maybeSingle();
+        if (again) {
+          if (again.status === "uploaded") {
+            const { data: full } = await admin
+              .from("recent_uploads").select("*").eq("id", again.id).single();
+            return new Response(JSON.stringify({ upload: full, idempotent: true }), { headers: cors });
+          }
+          row = again;
+        }
+      }
+      if (!row) {
+        return new Response(JSON.stringify({ error: insErr?.message ?? "insert failed" }), { status: 500, headers: cors });
+      }
+    } else {
+      row = inserted;
+    }
+  }
+
+  const objectKey = row.object_key;
 
   try {
     const privateKey = await importPrivateKey(pem);

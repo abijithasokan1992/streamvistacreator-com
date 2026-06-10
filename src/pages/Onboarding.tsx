@@ -125,6 +125,12 @@ export default function Onboarding() {
     return <div className="min-h-dvh grid place-items-center"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>;
   }
 
+  if (showCinematic) {
+    return (
+      <CinematicOnboarding onComplete={() => setShowCinematic(false)} />
+    );
+  }
+
   return (
     <main className="relative min-h-dvh overflow-hidden bg-background text-foreground grid place-items-center px-4 py-12">
       <div className="pointer-events-none absolute inset-0">

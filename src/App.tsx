@@ -23,7 +23,7 @@ import CheckoutReturn from "./pages/CheckoutReturn.tsx";
 import Vault from "./pages/Vault.tsx";
 import Studio from "./pages/Studio.tsx";
 import Producer from "./pages/Producer.tsx";
-
+import Client from "./pages/Client.tsx";
 import Share from "./pages/Share.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import IngestTest from "./pages/IngestTest.tsx";
@@ -58,7 +58,7 @@ const App = () => (
                 <Route path="/producer" element={<OnboardingGate><RoleGate allow={["executive_producer", "admin"]}><Producer /></RoleGate></OnboardingGate>} />
                 <Route path="/vault" element={<OnboardingGate><RoleGate allow={["creator", "admin"]}><Vault /></RoleGate></OnboardingGate>} />
                 <Route path="/studio" element={<OnboardingGate><RoleGate allow={["creator", "executive_producer", "admin"]}><Studio /></RoleGate></OnboardingGate>} />
-                
+                <Route path="/client" element={<OnboardingGate><RoleGate allow={["client", "user"]}><Client /></RoleGate></OnboardingGate>} />
 
                 <Route path="/launching-special-plan" element={<LaunchingSpecialPlan />} />
                 <Route path="/checkout/return" element={<CheckoutReturn />} />

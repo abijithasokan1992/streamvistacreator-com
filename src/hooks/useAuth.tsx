@@ -93,7 +93,7 @@ export function dashboardForRole(r: AppRole | null): string {
     case "admin": return "/admin";
     case "executive_producer": return "/producer";
     case "creator": return "/vault";
-    case "client": return "/";
-    default: return "/";
+    case "client": return "/client";
+    default: return "/client";
   }
 }

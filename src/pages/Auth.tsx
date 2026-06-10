@@ -31,9 +31,12 @@ export default function Auth() {
   const navigate = useNavigate();
   const [search] = useSearchParams();
   const { user, loading } = useAuth();
+  const hostMode = useHostMode();
 
   const nextPath = search.get("next") || "";
-  const isAdminLogin = nextPath.startsWith("/admin");
+  // On the admin subdomain, EVERY visit to /auth is an admin login —
+  // the "next" param is ignored and forced to /admin.
+  const isAdminLogin = hostMode === "admin" || nextPath.startsWith("/admin");
 
   const planParam = search.get("plan") as Cycle | null;
   const planCycle: Cycle | null = planParam && VALID_CYCLES.includes(planParam) ? planParam : null;

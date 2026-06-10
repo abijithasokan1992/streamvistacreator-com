@@ -20,7 +20,8 @@ export const Navbar = () => {
         {/* Brand — Left */}
         <Link to="/" className="flex items-center gap-2.5 shrink-0">
           {logo ? (
-            <img src={logo} alt="StreamVista Cloud X" className="h-9 w-auto max-w-[160px] object-contain" />
+            <img src={logo} alt="StreamVista Cloud X" className="h-9 w-auto max-w-[160px] object-contain bg-transparent border-0 outline-none shadow-none p-0 mix-blend-lighten" />
+
           ) : (
             <div className="w-9 h-9 rounded-xl bg-gradient-primary grid place-items-center glow-primary">
               <Cloud className="w-5 h-5 text-primary-foreground" strokeWidth={2.5} />

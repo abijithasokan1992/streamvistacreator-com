@@ -48,9 +48,6 @@ export const Hero = () => (
             <span>Start Free — No Card Needed</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
-          <p className="text-[11px] text-muted-foreground/80 text-center font-mono-tech uppercase tracking-[0.18em]">
-            Free forever · Cancel anytime · Your footage, your keys
-          </p>
         </div>
       </div>
 

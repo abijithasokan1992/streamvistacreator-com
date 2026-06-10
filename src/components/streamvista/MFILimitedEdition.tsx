@@ -166,7 +166,7 @@ export const MFILimitedEdition = () => {
               <ul className="mt-5 space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-accent" /> Verified manually by admin</li>
                 <li className="flex items-center gap-2"><Film className="w-4 h-4 text-accent" /> Secure cloud workspace</li>
-                <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-accent" /> Cancel anytime</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-accent" /> Cancellation via admin support only</li>
               </ul>
             </div>
           </div>

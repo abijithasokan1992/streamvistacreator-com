@@ -298,6 +298,14 @@ export default function OracleStorageMonitor() {
             <ReadRow label="Private key" value={cfg.oracle_private_key_set ? "•••••••• on file" : "not set"} />
           </div>
 
+          <StorageGauge
+            usage={usage}
+            capacityGb={cfg.oracle_capacity_gb}
+            loading={loadingUsage}
+            onRefresh={() => fetchUsage(false)}
+            disabled={verified !== true}
+          />
+
           {verifyMsg && verified === false && (
             <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs flex items-start gap-2">
               <XCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />

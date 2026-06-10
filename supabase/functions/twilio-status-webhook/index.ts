@@ -24,20 +24,24 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: buildCorsHeaders(req) });
   }
 
-  // Authenticity check: require a shared secret on the StatusCallback URL.
-  // Configure Twilio's StatusCallback as:
-  //   https://<project>.supabase.co/functions/v1/twilio-status-webhook?secret=<TWILIO_WEBHOOK_SECRET>
+  // Authenticity check: require a shared secret in a request header.
+  // Configure Twilio's StatusCallback with a custom header:
+  //   X-Twilio-Webhook-Secret: <TWILIO_WEBHOOK_SECRET>
+  // (Header-based auth keeps the secret out of access/proxy logs that
+  // routinely capture full request URLs including query strings.)
   const expectedSecret = Deno.env.get("TWILIO_WEBHOOK_SECRET");
-  if (expectedSecret) {
-    const url = new URL(req.url);
-    const provided = url.searchParams.get("secret") ?? "";
-    if (provided !== expectedSecret) {
-      return new Response("Forbidden", { status: 403, headers: buildCorsHeaders(req) });
-    }
-  } else {
+  if (!expectedSecret) {
     console.error("TWILIO_WEBHOOK_SECRET not configured — rejecting callback");
     return new Response("Forbidden", { status: 403, headers: buildCorsHeaders(req) });
   }
+  const provided =
+    req.headers.get("x-twilio-webhook-secret") ??
+    req.headers.get("X-Twilio-Webhook-Secret") ??
+    "";
+  if (provided !== expectedSecret) {
+    return new Response("Forbidden", { status: 403, headers: buildCorsHeaders(req) });
+  }
+
 
 
   try {

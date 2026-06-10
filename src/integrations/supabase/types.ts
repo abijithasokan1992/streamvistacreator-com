@@ -1800,6 +1800,10 @@ export type Database = {
           view_only: boolean
         }[]
       }
+      log_onboarding_request_view: {
+        Args: { _ids: string[] }
+        Returns: undefined
+      }
       mfi_seats_taken: { Args: never; Returns: number }
       move_to_dlq: {
         Args: {

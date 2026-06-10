@@ -60,7 +60,12 @@ export default function OnboardingApprovals() {
       .order("created_at", { ascending: false });
     setLoading(false);
     if (error) return toast.error("Could not load onboarding requests");
-    setRows((data as Row[]) ?? []);
+    const list = (data as Row[]) ?? [];
+    setRows(list);
+    // PII access audit log — admin opened the approvals list
+    if (list.length > 0) {
+      supabase.rpc("log_onboarding_request_view", { _ids: list.map(r => r.id) }).then(() => {});
+    }
   };
 
   useEffect(() => { if (isAdmin) load(); }, [isAdmin]);

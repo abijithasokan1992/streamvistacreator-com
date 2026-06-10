@@ -128,7 +128,7 @@ export default function MasterArchive() {
     const url = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/oci-upload`;
 
     for (const f of Array.from(files)) {
-      const stat: UploadStat = { name: f.name, status: "uploading", category: currentCategory };
+      const stat: UploadStat = { name: f.name, status: "uploading", category: currentCategory, progress: 0 };
       setUploads((u) => [stat, ...u]);
       try {
         const fd = new FormData();
@@ -137,20 +137,54 @@ export default function MasterArchive() {
         fd.append("category", currentCategory);
         if (projectId) fd.append("projectId", projectId);
         fd.append("pendingId", `archive-${currentCategory}-${Date.now()}-${f.name}`);
-        const res = await fetch(url, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${session.access_token}` },
-          body: fd,
+
+        await new Promise<void>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("POST", url);
+          xhr.setRequestHeader("Authorization", `Bearer ${session.access_token}`);
+          xhr.upload.onprogress = (ev) => {
+            if (!ev.lengthComputable) return;
+            const pct = Math.round((ev.loaded / ev.total) * 100);
+            setUploads((u) => u.map((x) => x === stat ? { ...x, progress: pct } : x));
+          };
+          xhr.onload = () => {
+            try {
+              const json = JSON.parse(xhr.responseText || "{}");
+              if (xhr.status < 200 || xhr.status >= 300 || json?.error) {
+                return reject(new Error(json?.error ?? `HTTP ${xhr.status}`));
+              }
+              resolve();
+            } catch (e) { reject(e as Error); }
+          };
+          xhr.onerror = () => reject(new Error("Network error"));
+          xhr.send(fd);
         });
-        const json = await res.json().catch(() => ({}));
-        if (!res.ok || json?.error) throw new Error(json?.error ?? `HTTP ${res.status}`);
-        setUploads((u) => u.map((x) => x === stat ? { ...x, status: "done" } : x));
+
+        setUploads((u) => u.map((x) => x === stat ? { ...x, status: "done", progress: 100 } : x));
       } catch (e) {
         setUploads((u) => u.map((x) => x === stat ? { ...x, status: "failed", error: (e as Error).message } : x));
       }
     }
     toast.success("Archive upload complete");
   };
+
+  // Crayons Bridge checklist (per-project, persisted locally)
+  const checklistKey = projectId ? `crayons-bridge-checklist:${projectId}` : "crayons-bridge-checklist:none";
+  const [checklist, setChecklist] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(checklistKey);
+      setChecklist(raw ? JSON.parse(raw) : {});
+    } catch { setChecklist({}); }
+  }, [checklistKey]);
+  const toggleCheck = (key: string) => {
+    setChecklist((c) => {
+      const next = { ...c, [key]: !c[key] };
+      try { localStorage.setItem(checklistKey, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
+  const checkedCount = BRIDGE_CHECKLIST.filter((i) => checklist[i.key]).length;
 
   return (
     <main className="min-h-dvh bg-background text-foreground">

@@ -437,7 +437,14 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
           </main>
         </div>
       </div>
-      {/* ShareLinkModal temporarily hidden */}
+      {shareTarget && (
+        <ShareLinkModal
+          file={shareTarget}
+          open={!!shareTarget}
+          onOpenChange={(o) => !o && setShareTarget(null)}
+          onSaved={() => { setShareTarget(null); reloadRef.current?.(); }}
+        />
+      )}
     </div>
   );
 };
@@ -563,7 +570,11 @@ function FileRow({ file: f, onShare, onRevoke, onRemove }: {
         </div>
       </div>
       <div className="flex gap-1.5">
-        {/* Share button temporarily hidden */}
+        {!f.revoked && (
+          <Button size="sm" variant="ghost" className="h-8 gap-1.5" onClick={() => onShare(f as unknown as ShareLinkFile)}>
+            <Link2 className="w-3.5 h-3.5" /> Share
+          </Button>
+        )}
         {!f.revoked && (
           <Button size="sm" variant="ghost" className="h-8" onClick={() => onRevoke(f.id)}>Revoke</Button>
         )}

@@ -281,6 +281,9 @@ export default function OracleStorageMonitor() {
   const [testing, setTesting] = useState(false);
   const [verified, setVerified] = useState<null | boolean>(null);
   const [verifyMsg, setVerifyMsg] = useState<string>("");
+  const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null);
+  const [pemHint, setPemHint] = useState<{ tone: "ok" | "warn" | "err"; text: string } | null>(null);
+
   const [editing, setEditing] = useState(false);
   const [parUrl, setParUrl] = useState<string | null>(null);
   const [creatingPar, setCreatingPar] = useState(false);

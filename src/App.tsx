@@ -27,6 +27,7 @@ import Client from "./pages/Client.tsx";
 import Share from "./pages/Share.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import IngestTest from "./pages/IngestTest.tsx";
+import C2CSetupManual from "./pages/C2CSetupManual.tsx";
 import { PaymentTestModeBanner } from "./components/PaymentTestModeBanner.tsx";
 import ReferralCapture from "./components/ReferralCapture.tsx";
 
@@ -69,6 +70,7 @@ const App = () => (
                 <Route path="/refund" element={<Refund />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/ingest-test" element={<IngestTest />} />
+                <Route path="/c2c-setup" element={<C2CSetupManual />} />
                 <Route path="/support" element={<About />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />

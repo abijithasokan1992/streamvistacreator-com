@@ -694,44 +694,110 @@ export default function MasterArchive() {
               </div>
             </div>
           </div>
+          {canManageChecklist && (
+            <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-2 inline-flex items-center gap-1.5">
+              <Shield className="w-3 h-3 text-accent" />
+              Admin override mode — force-tick, undo, or restore auto-sync per item
+            </p>
+          )}
           <ul className="grid sm:grid-cols-2 gap-2">
             {BRIDGE_CHECKLIST.map((item) => {
               const count = satisfiedCounts[item.key] ?? 0;
-              const done = count > 0;
+              const ov = overrides[item.key];
+              const done = isItemDone(item.key);
+              const isForced = !!ov;
               const isTargetActive = selected?.folder === item.target.folder && selected?.sub === item.target.sub;
               return (
                 <li key={item.key}>
-                  <button
-                    onClick={() => selectChecklistTarget(item)}
-                    title={done ? `${count} file${count === 1 ? "" : "s"} ingested — click to set destination again` : `Click to pre-select → ${item.target.sub}`}
+                  <div
                     className={cn(
-                      "w-full text-left flex items-start gap-3 rounded-xl border px-3.5 py-3 transition-all",
-                      "backdrop-blur-sm",
+                      "w-full rounded-xl border px-3.5 py-3 transition-all backdrop-blur-sm",
                       done
                         ? "border-accent/50 bg-accent/10 shadow-[inset_0_0_0_1px_hsl(var(--accent)/0.2)]"
                         : "border-border/50 bg-background/30 hover:border-accent/40 hover:bg-accent/5",
                       isTargetActive && "ring-1 ring-primary/50",
+                      isForced && "ring-1 ring-accent/60",
                     )}
                   >
-                    {done
-                      ? <CheckCircle2 className="w-4 h-4 text-accent shrink-0 mt-0.5" />
-                      : <Circle className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className={cn("text-sm font-medium leading-snug", done && "text-accent")}>{item.label}</p>
-                        {done && (
-                          <span className="font-mono text-[10px] text-accent tabular-nums shrink-0">×{count}</span>
-                        )}
+                    <button
+                      type="button"
+                      onClick={() => selectChecklistTarget(item)}
+                      title={done ? `Click to set destination → ${item.target.sub}` : `Click to pre-select → ${item.target.sub}`}
+                      className="w-full text-left flex items-start gap-3"
+                    >
+                      {done
+                        ? <CheckCircle2 className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+                        : <Circle className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className={cn("text-sm font-medium leading-snug", done && "text-accent")}>{item.label}</p>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {count > 0 && (
+                              <span className="font-mono text-[10px] text-accent tabular-nums">×{count}</span>
+                            )}
+                            {isForced && (
+                              <span className={cn(
+                                "font-mono text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded border",
+                                ov.state === "forced_complete"
+                                  ? "border-accent/50 bg-accent/15 text-accent"
+                                  : "border-destructive/50 bg-destructive/10 text-destructive",
+                              )}>
+                                {ov.state === "forced_complete" ? "Forced ✓" : "Forced ✗"}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
+                          {item.hint} · → {item.target.sub}
+                          {isForced && ov.set_by_email && (
+                            <span className="ml-1 opacity-70">· by {ov.set_by_email}</span>
+                          )}
+                        </p>
                       </div>
-                      <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
-                        {item.hint} · → {item.target.sub}
-                      </p>
-                    </div>
-                  </button>
+                    </button>
+
+                    {canManageChecklist && (
+                      <div className="mt-2 pt-2 border-t border-border/40 flex items-center gap-1.5 flex-wrap">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={ov?.state === "forced_complete" ? "default" : "outline"}
+                          className="h-7 px-2 text-[10px] gap-1 font-mono uppercase tracking-wider"
+                          onClick={(e) => { e.stopPropagation(); void setOverride(item.key, "forced_complete"); }}
+                        >
+                          <Check className="w-3 h-3" /> Force ✓
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={ov?.state === "forced_incomplete" ? "destructive" : "outline"}
+                          className="h-7 px-2 text-[10px] gap-1 font-mono uppercase tracking-wider"
+                          onClick={(e) => { e.stopPropagation(); void setOverride(item.key, "forced_incomplete"); }}
+                        >
+                          <X className="w-3 h-3" /> Undo
+                        </Button>
+                        {isForced && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 text-[10px] gap-1 font-mono uppercase tracking-wider text-muted-foreground"
+                            onClick={(e) => { e.stopPropagation(); void clearOverride(item.key); }}
+                          >
+                            <RotateCcw className="w-3 h-3" /> Auto
+                          </Button>
+                        )}
+                        <span className="text-[10px] text-muted-foreground font-mono ml-auto">
+                          auto: {count > 0 ? `${count} file${count === 1 ? "" : "s"}` : "none"}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </li>
               );
             })}
           </ul>
+
         </div>
       </section>
     </main>

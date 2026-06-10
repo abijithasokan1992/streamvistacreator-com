@@ -993,6 +993,103 @@ export type Database = {
         }
         Relationships: []
       }
+      review_links: {
+        Row: {
+          asset_mime: string | null
+          asset_name: string
+          asset_object_key: string | null
+          asset_par_expires_at: string | null
+          asset_par_url: string | null
+          asset_size_bytes: number | null
+          created_at: string
+          created_by: string
+          expires_at: string | null
+          id: string
+          last_viewed_at: string | null
+          max_views: number | null
+          password_hash: string | null
+          password_salt: string | null
+          project_id: string | null
+          revoked: boolean
+          token: string
+          updated_at: string
+          upload_id: string | null
+          view_count: number
+          view_only: boolean
+          workspace_id: string
+        }
+        Insert: {
+          asset_mime?: string | null
+          asset_name: string
+          asset_object_key?: string | null
+          asset_par_expires_at?: string | null
+          asset_par_url?: string | null
+          asset_size_bytes?: number | null
+          created_at?: string
+          created_by: string
+          expires_at?: string | null
+          id?: string
+          last_viewed_at?: string | null
+          max_views?: number | null
+          password_hash?: string | null
+          password_salt?: string | null
+          project_id?: string | null
+          revoked?: boolean
+          token?: string
+          updated_at?: string
+          upload_id?: string | null
+          view_count?: number
+          view_only?: boolean
+          workspace_id: string
+        }
+        Update: {
+          asset_mime?: string | null
+          asset_name?: string
+          asset_object_key?: string | null
+          asset_par_expires_at?: string | null
+          asset_par_url?: string | null
+          asset_size_bytes?: number | null
+          created_at?: string
+          created_by?: string
+          expires_at?: string | null
+          id?: string
+          last_viewed_at?: string | null
+          max_views?: number | null
+          password_hash?: string | null
+          password_salt?: string | null
+          project_id?: string | null
+          revoked?: boolean
+          token?: string
+          updated_at?: string
+          upload_id?: string | null
+          view_count?: number
+          view_only?: boolean
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_links_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_links_upload_id_fkey"
+            columns: ["upload_id"]
+            isOneToOne: false
+            referencedRelation: "recent_uploads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_links_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shared_files: {
         Row: {
           created_at: string

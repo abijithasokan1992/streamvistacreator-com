@@ -1,13 +1,13 @@
 import { HardDrive, ShieldCheck, Share2, Users, Archive, LifeBuoy, RefreshCw } from "lucide-react";
 
 const features = [
-  { icon: HardDrive, title: "Cloud Storage", desc: "Scalable, secure storage for your production assets." },
-  { icon: ShieldCheck, title: "Secure by Default", desc: "Encrypted at rest and in transit with granular access control." },
-  { icon: RefreshCw, title: "Auto-Resume Uploads", desc: "Background multitasking with offline-resume powered by the tus protocol." },
-  { icon: Share2, title: "Protected Sharing", desc: "Password, expiry and download-capped links for every file." },
-  { icon: Users, title: "2 Concurrent Users", desc: "Collaborate seamlessly across teams and timelines." },
-  { icon: Archive, title: "Archive Support", desc: "Cold storage tier for delivered projects and masters." },
-  { icon: LifeBuoy, title: "Onboarding Support", desc: "White-glove setup, training and migration assistance." },
+  { icon: HardDrive, title: "Cloud Storage", desc: "Secure, scalable storage for all your media." },
+  { icon: ShieldCheck, title: "Top Security", desc: "Fully encrypted files with custom access controls." },
+  { icon: RefreshCw, title: "Smart Uploads", desc: "Auto-resume your uploads, even if you go offline." },
+  { icon: Share2, title: "Safe Sharing", desc: "Share links with passwords, expiry, and download limits." },
+  { icon: Users, title: "Team Access", desc: "2 concurrent users for easy collaboration." },
+  { icon: Archive, title: "Cold Archive", desc: "Long-term storage for your finished projects." },
+  { icon: LifeBuoy, title: "Pro Onboarding", desc: "Expert help with setup and data migration." },
 ];
 
 
@@ -40,17 +40,17 @@ export const PlanFeature = () => (
         {features.map(({ icon: Icon, title, desc }, i) => (
           <div
             key={title}
-            className="group grid grid-cols-[auto_1fr_auto] gap-4 md:gap-10 items-start py-8 md:py-10 border-b border-border/60 hover:bg-primary/[0.03] transition-colors px-2 -mx-2 animate-fade-in"
+            className="group grid grid-cols-[2.5rem_1fr_2.5rem] gap-4 md:gap-10 items-center py-8 md:py-10 border-b border-border/60 hover:bg-primary/[0.03] transition-colors px-2 -mx-2 animate-fade-in"
             style={{ animationDelay: `${i * 60}ms` }}
           >
-            <span className="font-mono-tech text-xs text-muted-foreground pt-2 w-10">
+            <span className="font-mono-tech text-xs text-muted-foreground w-10 text-center">
               {String(i + 1).padStart(2, "0")}
             </span>
-            <div className="grid md:grid-cols-[1.1fr_1.4fr] gap-2 md:gap-10 items-start">
+            <div className="grid md:grid-cols-[1.1fr_1.4fr] gap-4 md:gap-10 items-center">
               <h3 className="font-display font-bold uppercase text-2xl md:text-3xl tracking-tight">
                 {title}
               </h3>
-              <p className="text-sm md:text-base text-muted-foreground leading-relaxed max-w-md">
+              <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
                 {desc}
               </p>
             </div>

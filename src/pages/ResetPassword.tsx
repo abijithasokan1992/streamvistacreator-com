@@ -6,6 +6,7 @@ import { Loader2, Eye, EyeOff, Zap, KeyRound, CheckCircle2, Sparkles, Mail, Aler
 import { supabase } from "@/integrations/supabase/client";
 import { dashboardForRole, type AppRole } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
+import { getAppOrigin } from "@/lib/site";
 
 /**
  * Password recovery landing page.

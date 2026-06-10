@@ -55,6 +55,17 @@ export default function Auth() {
   );
   const [mobile, setMobile] = useState("");
 
+  // Real-time validation flags
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+  // Strong-enough: 8+ chars with at least one letter and one number
+  const passwordValid =
+    password.length >= 8 && /[A-Za-z]/.test(password) && /\d/.test(password);
+  const passwordChecks = {
+    length: password.length >= 8,
+    letter: /[A-Za-z]/.test(password),
+    number: /\d/.test(password),
+  };
+
   const continueAfterAuth = async () => {
     if (isPaidPlan && plan) {
       try {

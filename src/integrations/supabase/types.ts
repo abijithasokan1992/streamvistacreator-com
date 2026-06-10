@@ -791,29 +791,37 @@ export type Database = {
           description: string | null
           id: string
           name: string
-          production_banner: Database["public"]["Enums"]["production_house_type"]
           updated_at: string
           user_id: string
+          workspace_id: string
         }
         Insert: {
           created_at?: string
           description?: string | null
           id?: string
           name: string
-          production_banner?: Database["public"]["Enums"]["production_house_type"]
           updated_at?: string
           user_id: string
+          workspace_id: string
         }
         Update: {
           created_at?: string
           description?: string | null
           id?: string
           name?: string
-          production_banner?: Database["public"]["Enums"]["production_house_type"]
           updated_at?: string
           user_id?: string
+          workspace_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "projects_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       razorpay_config: {
         Row: {
@@ -863,6 +871,7 @@ export type Database = {
           status: string
           updated_at: string
           user_id: string
+          workspace_id: string
         }
         Insert: {
           bucket: string
@@ -881,6 +890,7 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id: string
+          workspace_id: string
         }
         Update: {
           bucket?: string
@@ -899,8 +909,17 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id?: string
+          workspace_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "recent_uploads_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       referral_codes: {
         Row: {
@@ -1436,6 +1455,62 @@ export type Database = {
         }
         Relationships: []
       }
+      workspace_members: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["workspace_role"]
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["workspace_role"]
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["workspace_role"]
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_members_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspaces: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       v_kammattam_meter: {
@@ -1451,6 +1526,10 @@ export type Database = {
       attach_referral: {
         Args: { _code: string; _email?: string }
         Returns: string
+      }
+      can_write_workspace: {
+        Args: { _user_id: string; _workspace_id: string }
+        Returns: boolean
       }
       claim_admin_if_none: { Args: never; Returns: boolean }
       delete_email: {
@@ -1472,6 +1551,14 @@ export type Database = {
       invoke_edge_function: { Args: { fn_name: string }; Returns: number }
       is_producer_of: {
         Args: { _creator: string; _ep: string }
+        Returns: boolean
+      }
+      is_workspace_admin: {
+        Args: { _user_id: string; _workspace_id: string }
+        Returns: boolean
+      }
+      is_workspace_member: {
+        Args: { _user_id: string; _workspace_id: string }
         Returns: boolean
       }
       list_shares_for_me: {
@@ -1525,11 +1612,11 @@ export type Database = {
         | "executive_producer"
         | "creator"
         | "client"
-      production_house_type: "CRAYONS_PICTURES" | "ABHIJITH_ASOKAN_PRODUCTIONS"
       studio_slug:
         | "crayons_pictures"
         | "abhijith_asokan_productions"
         | "independent"
+      workspace_role: "owner" | "admin" | "editor" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1666,15 +1753,12 @@ export const Constants = {
         "creator",
         "client",
       ],
-      production_house_type: [
-        "CRAYONS_PICTURES",
-        "ABHIJITH_ASOKAN_PRODUCTIONS",
-      ],
       studio_slug: [
         "crayons_pictures",
         "abhijith_asokan_productions",
         "independent",
       ],
+      workspace_role: ["owner", "admin", "editor", "viewer"],
     },
   },
 } as const

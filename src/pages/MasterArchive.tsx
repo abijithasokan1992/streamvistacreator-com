@@ -292,29 +292,63 @@ export default function MasterArchive() {
     }
     toast.success("Archive upload complete");
   };
-        setUploads((u) => u.map((x) => x === stat ? { ...x, status: "failed", error: (e as Error).message } : x));
+
+  // ── Crayons Bridge checklist (DB-derived, live) ─────────────────────────────
+  // Each item is ticked when at least one `recent_uploads` row exists for this
+  // workspace (+ project, if scoped) whose `category` matches the item's
+  // canonical destination subfolders and whose status is finalised.
+  const [satisfiedCounts, setSatisfiedCounts] = useState<Record<string, number>>({});
+
+  const recomputeChecklist = useMemo(() => async () => {
+    if (!activeId) { setSatisfiedCounts({}); return; }
+    let q = (supabase as any)
+      .from("recent_uploads")
+      .select("category,status")
+      .eq("workspace_id", activeId)
+      .in("status", ["uploaded", "completed"])
+      .like("category", "archive-%")
+      .limit(1000);
+    if (projectId) q = q.eq("project_id", projectId);
+    const { data } = await q;
+    const counts: Record<string, number> = {};
+    for (const row of (data ?? []) as { category: string | null }[]) {
+      for (const item of BRIDGE_CHECKLIST) {
+        if (categorySatisfies(row.category, item)) {
+          counts[item.key] = (counts[item.key] ?? 0) + 1;
+        }
       }
     }
-    toast.success("Archive upload complete");
-  };
+    setSatisfiedCounts(counts);
+  }, [activeId, projectId]);
 
-  // Crayons Bridge checklist (per-project, persisted locally)
-  const checklistKey = projectId ? `crayons-bridge-checklist:${projectId}` : "crayons-bridge-checklist:none";
-  const [checklist, setChecklist] = useState<Record<string, boolean>>({});
+  useEffect(() => { void recomputeChecklist(); }, [recomputeChecklist]);
+
+  // Live updates: whenever a recent_uploads row for this workspace/project
+  // changes, recompute. We re-query (vs. patching) so deletes drop counts
+  // correctly and the source of truth stays the database.
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(checklistKey);
-      setChecklist(raw ? JSON.parse(raw) : {});
-    } catch { setChecklist({}); }
-  }, [checklistKey]);
-  const toggleCheck = (key: string) => {
-    setChecklist((c) => {
-      const next = { ...c, [key]: !c[key] };
-      try { localStorage.setItem(checklistKey, JSON.stringify(next)); } catch {}
-      return next;
+    if (!activeId) return;
+    const channel = supabase
+      .channel(`bridge-checklist-${activeId}-${projectId || "all"}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "recent_uploads", filter: `workspace_id=eq.${activeId}` },
+        () => { void recomputeChecklist(); },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [activeId, projectId, recomputeChecklist]);
+
+  const checkedCount = BRIDGE_CHECKLIST.filter((i) => (satisfiedCounts[i.key] ?? 0) > 0).length;
+
+  // Clicking a checklist row pre-selects its canonical destination so the
+  // admin can drop straight into the right folder without hunting for it.
+  const selectChecklistTarget = (item: typeof BRIDGE_CHECKLIST[number]) => {
+    setSelected({ folder: item.target.folder, sub: item.target.sub });
+    toast.message(`Destination set → ${item.target.sub}`, {
+      description: `Ready to ingest "${item.label}".`,
     });
   };
-  const checkedCount = BRIDGE_CHECKLIST.filter((i) => checklist[i.key]).length;
 
   return (
     <main className="min-h-dvh bg-background text-foreground">

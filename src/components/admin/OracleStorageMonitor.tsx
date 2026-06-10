@@ -666,3 +666,67 @@ function ReadRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function MissingFieldsChecklist({ draft, pemPresentOnFile }: { draft: OracleConfig; pemPresentOnFile: boolean }) {
+  const items: Array<{ label: string; ok: boolean; hint: string }> = [
+    { label: "Tenancy OCID", ok: !!draft.oracle_tenancy_ocid.trim(), hint: "OCI Console → Profile → Tenancy" },
+    { label: "User OCID", ok: !!draft.oracle_user_ocid.trim(), hint: "OCI Console → Profile → User Settings" },
+    { label: "Fingerprint", ok: /^[a-f0-9:]{20,}$/i.test(draft.oracle_fingerprint.trim()), hint: "Format: aa:bb:cc:… (colon-separated hex)" },
+    { label: "Region", ok: /^[a-z]{2}-[a-z]+-\d$/.test(draft.oracle_region.trim()), hint: "e.g. ap-mumbai-1" },
+    { label: "Namespace", ok: !!draft.oracle_namespace.trim(), hint: "Object Storage Namespace (under Tenancy)" },
+    { label: "Bucket", ok: !!draft.oracle_bucket.trim(), hint: "Exact bucket name in the chosen region" },
+    { label: "Private key (backend secret)", ok: pemPresentOnFile, hint: "Stored as ORACLE_PRIVATE_KEY in Backend → Secrets" },
+  ];
+  const missing = items.filter(i => !i.ok);
+  if (missing.length === 0) return null;
+  return (
+    <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
+      <div className="flex items-center gap-1.5 font-semibold text-amber-400 mb-2">
+        <ShieldAlert className="w-3.5 h-3.5" /> {missing.length} field{missing.length > 1 ? "s" : ""} still need attention
+      </div>
+      <ul className="space-y-1">
+        {missing.map(m => (
+          <li key={m.label} className="flex items-start gap-2">
+            <XCircle className="w-3 h-3 text-amber-400 shrink-0 mt-0.5" />
+            <span><span className="font-semibold">{m.label}</span> — <span className="text-muted-foreground">{m.hint}</span></span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function DiagnosisCard({
+  dx, raw, onEdit, onRetry, testing,
+}: { dx: Diagnosis; raw: string; onEdit: () => void; onRetry: () => void; testing: boolean }) {
+  return (
+    <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-xs space-y-2">
+      <div className="flex items-start gap-2">
+        <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0">
+          <div className="font-semibold text-destructive text-sm">{dx.title}</div>
+          <div className="text-muted-foreground mt-1">{dx.detail}</div>
+          <div className="mt-2 text-foreground"><span className="font-semibold">Fix:</span> {dx.fix}</div>
+        </div>
+      </div>
+      <details className="text-[11px] text-muted-foreground">
+        <summary className="cursor-pointer hover:text-foreground">Raw response</summary>
+        <pre className="mt-1 whitespace-pre-wrap break-all font-mono">{raw}</pre>
+      </details>
+      <div className="flex flex-wrap gap-2 pt-1">
+        <button onClick={onRetry} disabled={testing}
+          className="h-8 px-3 rounded-lg border border-border bg-secondary/40 hover:bg-secondary text-[11px] font-semibold inline-flex items-center gap-1.5 disabled:opacity-50">
+          {testing ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />} Re-test now
+        </button>
+        <button onClick={onEdit}
+          className="h-8 px-3 rounded-lg border border-accent/40 text-accent hover:bg-accent/10 text-[11px] font-semibold inline-flex items-center gap-1.5">
+          <Pencil className="w-3 h-3" /> Edit credentials
+        </button>
+        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground ml-auto">
+          <Lock className="w-3 h-3" /> Saved config preserved
+        </span>
+      </div>
+    </div>
+  );
+}
+
+

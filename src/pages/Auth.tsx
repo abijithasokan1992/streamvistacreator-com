@@ -19,9 +19,10 @@ const LoginSchema = z.object({
 
 const SignupSchema = LoginSchema.extend({
   firstName: z.string().trim().min(1, "First name is required").max(80),
-  lastName: z.string().trim().min(1, "Last name is required").max(80),
-  studioName: z.string().trim().min(1, "Studio / company name is required").max(160),
-  mobile: z.string().trim().min(4, "Enter a valid mobile number").max(20),
+  lastName: z.string().trim().max(80).optional().or(z.literal("")),
+  studioName: z.string().trim().max(160).optional().or(z.literal("")),
+  // Mobile is optional. When present, we treat it as the user's WhatsApp number internally.
+  mobile: z.string().trim().max(20).optional().or(z.literal("")),
 });
 
 const VALID_CYCLES: Cycle[] = ["free", "creator"];
@@ -232,8 +233,13 @@ export default function Auth() {
       if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
       setSubmitting(true);
 
-      const fullMobile = `${country.dial} ${parsed.data.mobile.replace(/^\+?\d{1,4}\s*/, "")}`.trim();
-      const displayName = `${parsed.data.firstName} ${parsed.data.lastName}`.trim();
+      const rawMobile = (parsed.data.mobile ?? "").trim();
+      const fullMobile = rawMobile
+        ? `${country.dial} ${rawMobile.replace(/^\+?\d{1,4}\s*/, "")}`.trim()
+        : "";
+      const lastNameVal = (parsed.data.lastName ?? "").trim();
+      const studioNameVal = (parsed.data.studioName ?? "").trim();
+      const displayName = `${parsed.data.firstName} ${lastNameVal}`.trim();
 
       const { data, error } = await supabase.auth.signUp({
         email: parsed.data.email,
@@ -243,9 +249,10 @@ export default function Auth() {
           data: {
             display_name: displayName,
             first_name: parsed.data.firstName,
-            last_name: parsed.data.lastName,
-            studio_name: parsed.data.studioName,
-            whatsapp: fullMobile,
+            last_name: lastNameVal || null,
+            studio_name: studioNameVal || null,
+            // Mobile is captured once at signup and reused as the WhatsApp contact internally.
+            whatsapp: fullMobile || null,
             country_code: country.code,
           },
         },
@@ -255,13 +262,16 @@ export default function Auth() {
       const persistProfile = async () => {
         const uid = (await supabase.auth.getUser()).data.user?.id;
         if (!uid) return;
+        // Mark onboarding complete right away — we already have everything we need
+        // to drop the user straight into their workspace. No second wizard.
         await supabase.from("user_profiles").upsert({
           user_id: uid,
-          display_name: displayName,
+          display_name: displayName || parsed.data.firstName,
           first_name: parsed.data.firstName,
-          last_name: parsed.data.lastName,
-          studio_name: parsed.data.studioName,
-          whatsapp: fullMobile,
+          last_name: lastNameVal || null,
+          studio_name: studioNameVal || null,
+          whatsapp: fullMobile || null,
+          onboarding_step: "done",
         }, { onConflict: "user_id" });
       };
 
@@ -424,9 +434,8 @@ export default function Auth() {
                     type="text"
                     value={lastName}
                     onChange={e => setLastName(e.target.value)}
-                    placeholder="Last name"
+                    placeholder="Last name (optional)"
                     aria-label="Last name"
-                    required
                     autoComplete="family-name"
                     maxLength={80}
                     className="w-full h-12 px-4 rounded-xl bg-input/40 border border-border/60 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-accent/70 focus:bg-input/70 focus:shadow-[0_0_24px_-6px_hsl(var(--accent)/0.5)]"
@@ -437,9 +446,8 @@ export default function Auth() {
                   type="text"
                   value={studioName}
                   onChange={e => setStudioName(e.target.value)}
-                  placeholder="Studio / company name"
+                  placeholder="Studio / company name (optional)"
                   aria-label="Studio or company name"
-                  required
                   autoComplete="organization"
                   maxLength={160}
                   className="w-full h-12 px-4 rounded-xl bg-input/40 border border-border/60 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-accent/70 focus:bg-input/70 focus:shadow-[0_0_24px_-6px_hsl(var(--accent)/0.5)]"
@@ -451,14 +459,16 @@ export default function Auth() {
                     type="tel"
                     value={mobile}
                     onChange={e => setMobile(e.target.value.replace(/[^\d\s\-()]/g, ""))}
-                    placeholder="Mobile number"
-                    aria-label="Mobile number"
-                    required
+                    placeholder="WhatsApp number (optional)"
+                    aria-label="WhatsApp number"
                     autoComplete="tel-national"
                     maxLength={20}
                     className="flex-1 h-12 px-4 rounded-r-xl bg-input/40 border border-border/60 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-accent/70 focus:bg-input/70 focus:shadow-[0_0_24px_-6px_hsl(var(--accent)/0.5)]"
                   />
                 </div>
+                <p className="text-[10px] text-muted-foreground/60 -mt-1 px-1">
+                  Only first name, email & password are required. Mobile is used as your WhatsApp contact if provided.
+                </p>
               </>
             )}
 

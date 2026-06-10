@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Loader2, Eye, EyeOff, Zap, KeyRound, CheckCircle2, Sparkles } from "lucide-react";
+import { Loader2, Eye, EyeOff, Zap, KeyRound, CheckCircle2, Sparkles, Mail, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { dashboardForRole, type AppRole } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";

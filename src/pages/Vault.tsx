@@ -22,6 +22,7 @@ import { UploadManagerProvider, useUploadManager } from "@/components/vault/Uplo
 import { useStorageQuota, StorageWarningBanner } from "@/hooks/useStorageQuota";
 import ShareLinkModal, { ShareLinkFile } from "@/components/vault/ShareLinkModal";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 
 type Tier = "lite" | "sovereign";

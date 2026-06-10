@@ -110,7 +110,7 @@ export default function Client() {
       </header>
 
       {showWizard ? (
-        <WizardView step={step} setStep={setStep} finish={completeWizard} />
+        <SandboxView finish={completeWizard} />
       ) : (
         <HubView
           user={user}

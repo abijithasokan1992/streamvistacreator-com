@@ -27,6 +27,7 @@ import Studio from "./pages/Studio.tsx";
 import Producer from "./pages/Producer.tsx";
 import Client from "./pages/Client.tsx";
 import Projects from "./pages/Projects.tsx";
+import Review from "./pages/Review.tsx";
 import Share from "./pages/Share.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import IngestTest from "./pages/IngestTest.tsx";
@@ -80,6 +81,7 @@ const PublicRoutes = () => (
     <Route path="/launching-special-plan" element={<LaunchingSpecialPlan />} />
     <Route path="/checkout/return" element={<CheckoutReturn />} />
     <Route path="/s/:token" element={<Share />} />
+    <Route path="/review/:token" element={<Review />} />
     <Route path="/terms" element={<Terms />} />
     <Route path="/privacy" element={<Privacy />} />
     <Route path="/ip-copyright" element={<IPCopyright />} />

@@ -210,6 +210,42 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === "usage") {
+      // Paginate ListObjects, summing 'size'. Capped to avoid runaway costs.
+      let totalBytes = 0;
+      let count = 0;
+      let start: string | undefined = undefined;
+      const MAX_PAGES = 20; // 20 * 1000 = up to 20k objects sampled
+      let pages = 0;
+      let truncated = false;
+      while (pages < MAX_PAGES) {
+        const qs = new URLSearchParams({ fields: "size", limit: "1000" });
+        if (start) qs.set("start", start);
+        const r = await ociFetch({
+          method: "GET",
+          host,
+          path: `/n/${ns}/b/${bucket}/o?${qs.toString()}`,
+          keyId,
+          privateKey,
+        });
+        if (!r.ok) {
+          const text = await r.text().catch(() => "");
+          return new Response(JSON.stringify({ ok: false, status: r.status, error: text || r.statusText }), { status: 200, headers: cors });
+        }
+        const json = await r.json();
+        const objects = (json.objects ?? []) as Array<{ size?: number }>;
+        for (const o of objects) {
+          totalBytes += Number(o.size ?? 0);
+          count += 1;
+        }
+        pages += 1;
+        if (json.nextStartWith) { start = json.nextStartWith; }
+        else { start = undefined; break; }
+      }
+      if (start) truncated = true;
+      return new Response(JSON.stringify({ ok: true, bucket, region, totalBytes, objectCount: count, truncated, sampledPages: pages }), { headers: cors });
+    }
+
     if (action === "create-par") {
       const name = String(body.name ?? `par-${Date.now()}`);
       const objectName = String(body.objectName ?? "uploads/");

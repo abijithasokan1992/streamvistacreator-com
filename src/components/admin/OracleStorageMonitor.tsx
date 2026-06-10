@@ -12,6 +12,7 @@ type OracleConfig = {
   oracle_namespace: string;
   oracle_bucket: string;
   oracle_private_key_set: boolean;
+  oracle_capacity_gb: number | null;
 };
 
 const EMPTY: OracleConfig = {
@@ -22,6 +23,7 @@ const EMPTY: OracleConfig = {
   oracle_namespace: "",
   oracle_bucket: "",
   oracle_private_key_set: false,
+  oracle_capacity_gb: null,
 };
 
 function mask(s: string, head = 6, tail = 4) {
@@ -49,10 +51,13 @@ export default function OracleStorageMonitor() {
   const [parUrl, setParUrl] = useState<string | null>(null);
   const [creatingPar, setCreatingPar] = useState(false);
 
+  const [usage, setUsage] = useState<{ bytes: number; count: number; truncated: boolean } | null>(null);
+  const [loadingUsage, setLoadingUsage] = useState(false);
+
   const load = async () => {
     const { data } = await supabase
       .from("site_config")
-      .select("oracle_tenancy_ocid, oracle_user_ocid, oracle_fingerprint, oracle_region, oracle_namespace, oracle_bucket, oracle_private_key_set, oracle_private_key")
+      .select("oracle_tenancy_ocid, oracle_user_ocid, oracle_fingerprint, oracle_region, oracle_namespace, oracle_bucket, oracle_private_key_set, oracle_private_key, oracle_capacity_gb")
       .eq("id", true)
       .maybeSingle();
     const next: OracleConfig = data ? {
@@ -63,11 +68,23 @@ export default function OracleStorageMonitor() {
       oracle_namespace: data.oracle_namespace ?? "",
       oracle_bucket: data.oracle_bucket ?? "",
       oracle_private_key_set: !!data.oracle_private_key_set || !!data.oracle_private_key,
+      oracle_capacity_gb: data.oracle_capacity_gb != null ? Number(data.oracle_capacity_gb) : null,
     } : EMPTY;
     setCfg(next);
     setDraft(next);
     setEditing(!hasAllRequired(next));
     setLoading(false);
+  };
+
+  const fetchUsage = async (silent = false) => {
+    setLoadingUsage(true);
+    const { data, error } = await supabase.functions.invoke("oracle-proxy", { body: { action: "usage" } });
+    setLoadingUsage(false);
+    if (error || !data?.ok) {
+      if (!silent) toast.error("Could not read bucket usage", { description: error?.message ?? data?.error });
+      return;
+    }
+    setUsage({ bytes: Number(data.totalBytes ?? 0), count: Number(data.objectCount ?? 0), truncated: !!data.truncated });
   };
 
   const runTest = async (silent = false): Promise<boolean> => {
@@ -98,6 +115,13 @@ export default function OracleStorageMonitor() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, editing, cfg]);
+
+  useEffect(() => {
+    if (verified === true && usage === null) {
+      fetchUsage(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [verified]);
 
   const save = async () => {
     // Light client-side validation
@@ -207,6 +231,12 @@ export default function OracleStorageMonitor() {
             <Field label="Region" value={draft.oracle_region} onChange={v => setDraft({ ...draft, oracle_region: v })} placeholder="ap-mumbai-1" />
             <Field label="Namespace" value={draft.oracle_namespace} onChange={v => setDraft({ ...draft, oracle_namespace: v })} placeholder="axxxxxxxxxx" />
             <Field label="Bucket" value={draft.oracle_bucket} onChange={v => setDraft({ ...draft, oracle_bucket: v })} placeholder="streamvista-media" />
+            <Field
+              label="Bucket Capacity (GB) — for usage gauge"
+              value={draft.oracle_capacity_gb != null ? String(draft.oracle_capacity_gb) : ""}
+              onChange={v => setDraft({ ...draft, oracle_capacity_gb: v.trim() === "" ? null : Number(v) })}
+              placeholder="e.g. 1024"
+            />
           </div>
 
           <div className="space-y-1.5">
@@ -267,6 +297,14 @@ export default function OracleStorageMonitor() {
             <ReadRow label="Bucket" value={cfg.oracle_bucket} />
             <ReadRow label="Private key" value={cfg.oracle_private_key_set ? "•••••••• on file" : "not set"} />
           </div>
+
+          <StorageGauge
+            usage={usage}
+            capacityGb={cfg.oracle_capacity_gb}
+            loading={loadingUsage}
+            onRefresh={() => fetchUsage(false)}
+            disabled={verified !== true}
+          />
 
           {verifyMsg && verified === false && (
             <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs flex items-start gap-2">
@@ -339,6 +377,94 @@ function ReadRow({ label, value }: { label: string; value: string }) {
     <div className="rounded-xl border border-border/40 bg-secondary/20 px-3 py-2.5">
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
       <div className="font-mono text-foreground text-[13px] mt-0.5 truncate">{value || "—"}</div>
+    </div>
+  );
+}
+
+function formatBytes(n: number): string {
+  if (!n || n < 1024) return `${n} B`;
+  const units = ["KB", "MB", "GB", "TB", "PB"];
+  let v = n / 1024, i = 0;
+  while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+  return `${v.toFixed(v >= 100 ? 0 : v >= 10 ? 1 : 2)} ${units[i]}`;
+}
+
+function StorageGauge({
+  usage, capacityGb, loading, onRefresh, disabled,
+}: {
+  usage: { bytes: number; count: number; truncated: boolean } | null;
+  capacityGb: number | null;
+  loading: boolean;
+  onRefresh: () => void;
+  disabled: boolean;
+}) {
+  const capacityBytes = capacityGb ? capacityGb * 1024 ** 3 : 0;
+  const usedBytes = usage?.bytes ?? 0;
+  const pct = capacityBytes > 0 ? Math.min(100, (usedBytes / capacityBytes) * 100) : 0;
+  const tier = pct >= 90 ? "red" : pct >= 70 ? "yellow" : "green";
+  const barColor =
+    tier === "red" ? "bg-gradient-to-r from-rose-500 to-red-600" :
+    tier === "yellow" ? "bg-gradient-to-r from-amber-400 to-orange-500" :
+    "bg-gradient-to-r from-emerald-400 to-cyan-400";
+  const ringColor =
+    tier === "red" ? "text-red-400" :
+    tier === "yellow" ? "text-amber-400" :
+    "text-emerald-400";
+  const labelTone =
+    tier === "red" ? "bg-red-500/15 text-red-400 border-red-500/30" :
+    tier === "yellow" ? "bg-amber-500/15 text-amber-400 border-amber-500/30" :
+    "bg-emerald-500/15 text-emerald-400 border-emerald-500/30";
+
+  return (
+    <div className="rounded-2xl border border-border/50 bg-secondary/20 p-5 space-y-4">
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">Bucket usage</div>
+          <div className={cn("font-display text-2xl font-bold mt-1", ringColor)}>
+            {capacityBytes > 0 ? `${pct.toFixed(1)}%` : "—"}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">
+            {usage ? (
+              <>
+                {formatBytes(usedBytes)}
+                {capacityBytes > 0 ? ` of ${formatBytes(capacityBytes)}` : ""}
+                {" · "}{usage.count.toLocaleString()} objects
+                {usage.truncated ? " (sampled)" : ""}
+              </>
+            ) : (
+              capacityGb ? "No usage data yet" : "Set Bucket Capacity in credentials to enable gauge"
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {capacityBytes > 0 && (
+            <span className={cn("inline-flex items-center px-2.5 py-1 rounded-full border text-[11px] font-semibold uppercase tracking-wider", labelTone)}>
+              {tier === "red" ? "Critical" : tier === "yellow" ? "Warning" : "Healthy"}
+            </span>
+          )}
+          <button
+            onClick={onRefresh}
+            disabled={loading || disabled}
+            className="h-9 px-3 rounded-lg border border-border bg-secondary/40 hover:bg-secondary text-xs font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
+          >
+            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <div className="relative h-3 rounded-full bg-secondary/60 overflow-hidden border border-border/40">
+        <div
+          className={cn("absolute inset-y-0 left-0 transition-[width] duration-700 ease-out", barColor)}
+          style={{ width: `${capacityBytes > 0 ? pct : 0}%` }}
+        />
+        {/* threshold ticks at 70% and 90% */}
+        <div className="absolute inset-y-0 w-px bg-foreground/20" style={{ left: "70%" }} />
+        <div className="absolute inset-y-0 w-px bg-foreground/30" style={{ left: "90%" }} />
+      </div>
+      <div className="flex justify-between text-[10px] uppercase tracking-wider text-muted-foreground">
+        <span>0</span><span>70% warn</span><span>90% crit</span><span>{capacityGb ? `${capacityGb} GB` : "—"}</span>
+      </div>
     </div>
   );
 }

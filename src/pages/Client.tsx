@@ -111,18 +111,14 @@ export default function Client() {
         </div>
       </header>
 
-      {showWizard ? (
-        <SandboxView finish={completeWizard} userEmail={user?.email ?? null} />
-      ) : (
-        <HubView
-          user={user}
-          linkInput={linkInput}
-          setLinkInput={setLinkInput}
-          openLink={openLink}
-          focusLinkInput={focusLinkInput}
-          linkInputRef={linkInputRef}
-        />
-      )}
+      <HubView
+        user={user}
+        linkInput={linkInput}
+        setLinkInput={setLinkInput}
+        openLink={openLink}
+        focusLinkInput={focusLinkInput}
+        linkInputRef={linkInputRef}
+      />
     </div>
   );
 }

@@ -167,6 +167,57 @@ Deno.serve(async (req) => {
     const keyId = `${tenancy}/${user}/${fingerprint}`;
     const privateKey = await getPrivateKey();
 
+    // -------- LOOKUP (cross-device resume by SHA-256) --------
+    if (action === "lookup") {
+      const fileSha256 = String(body.fileSha256 || "").trim();
+      if (!fileSha256) return json({ error: "missing fileSha256" }, 400, cors);
+      const { data: sess } = await admin
+        .from("upload_sessions")
+        .select("id, file_name, file_size, mime_type, object_key, oci_upload_id, total_chunks, uploaded_parts, status, workspace_id, updated_at")
+        .eq("user_id", userId)
+        .eq("file_sha256", fileSha256)
+        .in("status", ["pending", "processing"])
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!sess || !sess.oci_upload_id) return json({ found: false }, 200, cors);
+
+      // Confirm with OCI which parts are actually stored.
+      const path = `/n/${ns}/b/${bucket}/u/${encodeURIComponent(sess.object_key)}?uploadId=${encodeURIComponent(sess.oci_upload_id)}`;
+      const sig = await buildOciSignature({ method: "GET", host, path, contentSha256: "", keyId, privateKey });
+      const resp = await fetch(`https://${host}${path}`, {
+        method: "GET", headers: { host, date: sig.date, Authorization: sig.authorization },
+      });
+      const text = await resp.text();
+      let parts: Array<{ partNumber: number; etag: string; size?: number }> = [];
+      if (resp.ok) {
+        try {
+          const arr = JSON.parse(text);
+          if (Array.isArray(arr)) {
+            parts = arr.map((p: any) => ({
+              partNumber: Number(p.partNumber ?? p.uploadPartNum ?? p.part_num),
+              etag: String(p.etag ?? p.ETag ?? "").replace(/^"|"$/g, ""),
+              size: typeof p.size === "number" ? p.size : undefined,
+            })).filter((p) => Number.isInteger(p.partNumber) && p.etag);
+          }
+        } catch { /* ignore */ }
+      }
+      const nextPart = (parts.reduce((m, p) => Math.max(m, p.partNumber), 0) || 0) + 1;
+      await logIngest(admin, {
+        user_id: userId, session_id: sess.id, oci_upload_id: sess.oci_upload_id,
+        event: "session.resumed", severity: "info",
+        metadata: { parts_already_uploaded: parts.length, next_part: nextPart },
+      });
+      return json({
+        found: true,
+        session: sess,
+        bucket, namespace: ns, region,
+        partSize: MAX_PART,
+        partsAlreadyUploaded: parts,
+        nextPartNumber: nextPart,
+      }, 200, cors);
+    }
+
     // -------- INIT --------
     if (action === "init") {
       const fileName = String(body.fileName || "").trim();

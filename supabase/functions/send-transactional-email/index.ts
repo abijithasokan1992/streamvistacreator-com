@@ -25,9 +25,14 @@ function generateToken(): string {
     .join('')
 }
 
-// Auth note: this function uses verify_jwt = true in config.toml, so Supabase's
-// gateway validates the caller's JWT (anon or service_role) before the request
-// reaches this code. No in-function auth check is needed.
+// Auth: verify_jwt = true at the gateway accepts BOTH anon and service_role JWTs.
+// The anon key is public, so we MUST check the caller in code to prevent abuse
+// (anyone could otherwise send platform-branded emails to arbitrary addresses).
+// Policy:
+//   - service_role JWT  -> allowed (server-to-server calls from other edge functions)
+//   - authenticated user -> allowed ONLY when sending to their own auth email
+//                           (or to a template with a fixed `to` recipient)
+//   - anon JWT          -> denied (403)
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
@@ -46,6 +51,46 @@ Deno.serve(async (req) => {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
+    )
+  }
+
+  // ---- Caller authorization (in-function check) ----
+  const authHeader = req.headers.get('Authorization') ?? ''
+  const token = authHeader.toLowerCase().startsWith('bearer ')
+    ? authHeader.slice(7).trim()
+    : ''
+
+  if (!token) {
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  let callerRole: 'service_role' | 'authenticated' | 'anon' = 'anon'
+  let callerEmail: string | null = null
+  try {
+    // Signature was verified by the gateway (verify_jwt = true); we only inspect claims.
+    const parts = token.split('.')
+    if (parts.length === 3) {
+      const payloadJson = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'))
+      const payload = JSON.parse(payloadJson)
+      if (payload?.role === 'service_role') {
+        callerRole = 'service_role'
+      } else if (payload?.sub && payload?.role === 'authenticated') {
+        callerRole = 'authenticated'
+        callerEmail = (payload.email ?? '').toString().toLowerCase() || null
+      }
+    }
+  } catch (_e) {
+    // fall through as anon
+  }
+
+  if (callerRole === 'anon') {
+    console.warn('Rejected anon call to send-transactional-email')
+    return new Response(
+      JSON.stringify({ error: 'Forbidden' }),
+      { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 
@@ -115,6 +160,23 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     )
+  }
+
+  // Authenticated (non-service) callers may only send to their own auth email,
+  // unless the template defines a fixed `to` recipient (controlled server-side).
+  if (callerRole === 'authenticated' && !template.to) {
+    const targetEmail = (recipientEmail ?? '').toString().toLowerCase()
+    if (!callerEmail || targetEmail !== callerEmail) {
+      console.warn('Authenticated caller attempted to send to a different recipient', {
+        callerEmail,
+        targetEmail,
+        templateName,
+      })
+      return new Response(
+        JSON.stringify({ error: 'Forbidden: can only send to your own email' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
   }
 
   // Create Supabase client with service role (bypasses RLS)

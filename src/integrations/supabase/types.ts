@@ -2018,6 +2018,10 @@ export type Database = {
           read_ct: number
         }[]
       }
+      request_creator_link: {
+        Args: { _creator_email: string }
+        Returns: boolean
+      }
       revoke_creator_role: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {

@@ -1,10 +1,43 @@
 // Verify OCI connection by issuing a signed HEAD against the namespace bucket.
 // Reads the private key strictly from the ORACLE_PRIVATE_KEY backend secret;
-// admin-supplied public fields (tenancy, fingerprint, namespace, bucket) come
-// in the request body. Returns a precise diagnosis on failure.
+// admin-supplied public fields come in the request body.
+// Bulletproof CORS + zero-crash JSON parsing.
 
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
+
+const ALLOWED_ORIGINS = [
+  "https://app.crayonspictures.com",
+  "https://www.app.crayonspictures.com",
+];
+
+function corsFor(req: Request): Record<string, string> {
+  const origin = req.headers.get("origin") ?? "";
+  let allow = "*";
+  try {
+    if (origin) {
+      const u = new URL(origin);
+      const host = u.hostname;
+      if (
+        ALLOWED_ORIGINS.includes(origin) ||
+        host.endsWith(".lovableproject.com") ||
+        host.endsWith(".lovable.app") ||
+        host.endsWith(".lovable.dev") ||
+        host === "localhost" ||
+        host === "127.0.0.1"
+      ) {
+        allow = origin;
+      }
+    }
+  } catch { /* ignore */ }
+  return {
+    "Access-Control-Allow-Origin": allow,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Max-Age": "3600",
+    "Vary": "Origin",
+  };
+}
 
 function pemToPkcs8(pem: string): ArrayBuffer {
   const b64 = pem
@@ -46,21 +79,31 @@ interface Body {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const cors = corsFor(req);
+
+  // Preflight — always 200 with full CORS headers.
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 200, headers: cors });
+  }
 
   const json = (status: number, b: unknown) =>
     new Response(JSON.stringify(b), {
       status,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors, "Content-Type": "application/json" },
     });
 
   try {
-    // Require an authenticated admin to call this.
+    if (req.method !== "POST") {
+      return json(405, { error: "method_not_allowed" });
+    }
+
     const authHeader = req.headers.get("Authorization") ?? "";
     const supaUrl = Deno.env.get("SUPABASE_URL")!;
     const anon = Deno.env.get("SUPABASE_ANON_KEY")!;
     const svc = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const userClient = createClient(supaUrl, anon, { global: { headers: { Authorization: authHeader } } });
+    const userClient = createClient(supaUrl, anon, {
+      global: { headers: { Authorization: authHeader } },
+    });
     const { data: ures } = await userClient.auth.getUser();
     const user = ures?.user;
     if (!user) return json(401, { error: "auth_required" });
@@ -71,13 +114,19 @@ Deno.serve(async (req) => {
       return json(403, { error: "admin_required" });
     }
 
-    const body = (await req.json().catch(() => ({}))) as Body;
+    // Zero-crash body parsing.
+    let body: Body = {};
+    try {
+      const raw = await req.text();
+      body = raw ? (JSON.parse(raw) as Body) : {};
+    } catch (e) {
+      return json(400, { error: `Invalid JSON body: ${(e as Error).message}` });
+    }
+
     const tenancy = (body.tenancyOcid ?? "").trim();
     const fingerprint = (body.keyFingerprint ?? "").trim();
     const namespace = (body.namespace ?? "").trim();
     const bucket = (body.bucketName ?? "").trim();
-    // userOcid + region are needed to sign; fall back to env if the card
-    // doesn't expose them (keeps the new lock/modify UI minimal).
     const userOcid = (body.userOcid ?? Deno.env.get("OCI_USER_OCID") ?? "").trim();
     const region = (body.region ?? Deno.env.get("OCI_REGION") ?? "").trim();
     const pem = Deno.env.get("ORACLE_PRIVATE_KEY") ?? "";
@@ -121,16 +170,16 @@ Deno.serve(async (req) => {
         headers: { host, date, Authorization: authz },
       });
     } catch (e) {
-      return json(502, { error: `Network/CORS unreachable: ${(e as Error).message}` });
+      return json(502, { error: `Network unreachable to OCI: ${(e as Error).message}` });
     }
 
     if (res.status === 200 || res.status === 204) {
       return json(200, { ok: true, status: res.status, host, namespace, bucket });
     }
-    if (res.status === 401) return json(401, { error: "Auth failed (401): check fingerprint, user OCID, or that the public key is uploaded to OCI." });
-    if (res.status === 403) return json(403, { error: "Forbidden (403): tenancy/user lacks permission on this bucket." });
-    if (res.status === 404) return json(404, { error: "Not found (404): namespace or bucket name is wrong." });
-    return json(res.status, { error: `OCI responded ${res.status}` });
+    if (res.status === 401) return json(200, { ok: false, error: "Auth failed (401): check fingerprint, user OCID, or that the public key is uploaded to OCI." });
+    if (res.status === 403) return json(200, { ok: false, error: "Forbidden (403): tenancy/user lacks permission on this bucket." });
+    if (res.status === 404) return json(200, { ok: false, error: "Not found (404): namespace or bucket name is wrong." });
+    return json(200, { ok: false, error: `OCI responded ${res.status}` });
   } catch (e) {
     return json(500, { error: (e as Error).message || "Unknown error" });
   }

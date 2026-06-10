@@ -23,6 +23,13 @@ export interface SystemMessagePayload {
   /** Custom label for the primary button. Defaults to "OK". */
   okLabel?: string;
   onOk?: () => void;
+  /** Optional secondary action button shown between Report and OK (e.g. "Retry upload"). */
+  extraAction?: {
+    label: string;
+    onClick: () => void | Promise<void>;
+    /** If true, closes the modal after onClick resolves. Defaults to true. */
+    closeOnClick?: boolean;
+  };
 }
 
 interface Ctx {
@@ -131,6 +138,20 @@ export function SystemMessageProvider({ children }: { children: ReactNode }) {
               >
                 {reporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldAlert className="w-4 h-4" />}
                 Report to admin
+              </Button>
+            )}
+            {current?.extraAction && (
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={reporting}
+                onClick={async () => {
+                  const action = current.extraAction!;
+                  try { await action.onClick(); }
+                  finally { if (action.closeOnClick !== false) close(); }
+                }}
+              >
+                {current.extraAction.label}
               </Button>
             )}
             <Button type="button" onClick={handleOk} disabled={reporting} className="bg-gradient-primary text-primary-foreground">

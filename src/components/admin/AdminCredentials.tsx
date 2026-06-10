@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 export default function AdminCredentials() {
   const { user } = useAuth();
   const [email, setEmail] = useState(user?.email ?? "");
+  const [currentPassword, setCurrentPassword] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [savingEmail, setSavingEmail] = useState(false);
@@ -35,14 +36,28 @@ export default function AdminCredentials() {
   };
 
   const updatePassword = async () => {
+    if (!user?.email) return toast.error("No admin email on session");
+    if (!currentPassword) return toast.error("Enter your current password");
     const ok = z.string().min(8, "Min 8 characters").max(72).safeParse(password);
     if (!ok.success) return toast.error(ok.error.issues[0].message);
     if (password !== confirm) return toast.error("Passwords don't match");
+    if (password === currentPassword) return toast.error("New password must differ from current");
+
     setSavingPwd(true);
+    // Strictly verify the current password by re-authenticating against Supabase Auth.
+    // On success the session is refreshed; on failure no rotation happens.
+    const { error: verifyErr } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: currentPassword,
+    });
+    if (verifyErr) {
+      setSavingPwd(false);
+      return toast.error("Current password is incorrect");
+    }
     const { error } = await supabase.auth.updateUser({ password });
     setSavingPwd(false);
     if (error) return toast.error(error.message);
-    setPassword(""); setConfirm("");
+    setCurrentPassword(""); setPassword(""); setConfirm("");
     toast.success("Admin password updated.");
   };
 
@@ -80,6 +95,17 @@ export default function AdminCredentials() {
 
         <div className="space-y-2">
           <label className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            <KeyRound className="w-3.5 h-3.5" /> Current password
+          </label>
+          <input
+            type="password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            placeholder="Enter current password"
+            autoComplete="current-password"
+            className="w-full h-11 px-3 rounded-xl bg-secondary/40 border border-border/60 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40"
+          />
+          <label className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 pt-2">
             <KeyRound className="w-3.5 h-3.5" /> New password
           </label>
           <input
@@ -87,6 +113,7 @@ export default function AdminCredentials() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Min 8 characters"
+            autoComplete="new-password"
             className="w-full h-11 px-3 rounded-xl bg-secondary/40 border border-border/60 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40"
           />
           <input

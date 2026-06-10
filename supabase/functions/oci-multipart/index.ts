@@ -105,11 +105,37 @@ function safeName(name: string): string {
   return name.replace(/[^\w.\-]+/g, "_").slice(0, 120);
 }
 
-// ---------- handler ----------
+// ---------- telemetry ----------
+
+async function logIngest(admin: any, evt: {
+  user_id?: string | null; session_id?: string | null; oci_upload_id?: string | null;
+  part_number?: number | null; event: string;
+  severity?: "info" | "warn" | "error";
+  duration_ms?: number | null; bytes?: number | null;
+  http_status?: number | null; error_message?: string | null;
+  metadata?: Record<string, unknown> | null;
+}) {
+  try {
+    await admin.from("ingest_telemetry").insert({
+      user_id: evt.user_id ?? null,
+      session_id: evt.session_id ?? null,
+      oci_upload_id: evt.oci_upload_id ?? null,
+      part_number: evt.part_number ?? null,
+      event: evt.event,
+      severity: evt.severity ?? "info",
+      duration_ms: evt.duration_ms ?? null,
+      bytes: evt.bytes ?? null,
+      http_status: evt.http_status ?? null,
+      error_message: evt.error_message ?? null,
+      metadata: evt.metadata ?? null,
+    });
+  } catch { /* never block the upload on a logging failure */ }
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return handleOptions(req);
   const cors = { ...buildCorsHeaders(req), "Content-Type": "application/json" };
+
 
   try {
     const token = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");

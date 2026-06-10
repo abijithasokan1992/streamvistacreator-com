@@ -211,11 +211,28 @@ export default function CameraToCloudIngest() {
         </Card>
       )}
 
+      <StorageWarningBanner />
+
+      {quota.locked ? (
+        <Card
+          onClick={() => quota.openPaywall()}
+          className="relative cursor-pointer overflow-hidden border-2 border-dashed p-12 text-center border-destructive/50 bg-destructive/5 hover:bg-destructive/10 transition"
+        >
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 ring-1 ring-destructive/30">
+            <AlertTriangle className="h-8 w-8 text-destructive" />
+          </div>
+          <h3 className="mt-4 text-xl font-semibold">Storage full — uploads paused</h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Upgrade to the Creator Plan to keep ingesting. Existing footage stays viewable.
+          </p>
+          <Button variant="default" className="mt-4">Upgrade · ₹767 / mo</Button>
+        </Card>
+      ) : (
       <Card
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onDrop={onDrop}
-        onClick={() => inputRef.current?.click()}
+        onClick={() => { if (quota.checkOrPaywall()) inputRef.current?.click(); }}
         className={cn(
           "relative cursor-pointer overflow-hidden border-2 border-dashed transition-all",
           "bg-gradient-to-br from-background via-background to-primary/5",
@@ -242,6 +259,7 @@ export default function CameraToCloudIngest() {
           <Badge variant="outline">SHA-256 verified</Badge>
         </div>
       </Card>
+      )}
 
       {pending.length > 0 && (
         <div className="space-y-2">

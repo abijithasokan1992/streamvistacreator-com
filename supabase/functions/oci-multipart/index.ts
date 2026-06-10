@@ -544,6 +544,14 @@ Deno.serve(async (req) => {
       const { data: updated } = await admin.from("recent_uploads")
         .update({ status: "uploaded", error_message: null })
         .eq("id", uploadRowId).select().single();
+      await admin.from("upload_sessions")
+        .update({ status: "completed", uploaded_parts: partsToCommit })
+        .eq("user_id", userId).eq("oci_upload_id", uploadId);
+      await logIngest(admin, {
+        user_id: userId, oci_upload_id: uploadId,
+        event: "session.completed", severity: "info",
+        metadata: { parts: partsToCommit.length },
+      });
       return json({ upload: updated }, 200, cors);
     }
 
@@ -562,8 +570,16 @@ Deno.serve(async (req) => {
       await admin.from("recent_uploads")
         .update({ status: "failed", error_message: "aborted by user" })
         .eq("id", uploadRowId);
+      await admin.from("upload_sessions")
+        .update({ status: "aborted", error_message: "aborted by user" })
+        .eq("user_id", userId).eq("oci_upload_id", uploadId);
+      await logIngest(admin, {
+        user_id: userId, oci_upload_id: uploadId,
+        event: "session.aborted", severity: "warn", http_status: r.status,
+      });
       return json({ ok: r.ok, status: r.status }, 200, cors);
     }
+
 
     return json({ error: "unknown action" }, 400, cors);
   } catch (e) {

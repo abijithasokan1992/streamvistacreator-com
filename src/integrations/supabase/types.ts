@@ -941,6 +941,54 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_debug_logs: {
+        Row: {
+          action_type: string
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          event_id: string | null
+          extra: Json
+          id: string
+          order_id: string | null
+          payment_id: string | null
+          severity: string
+          source: string
+          ts: string
+          user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          event_id?: string | null
+          extra?: Json
+          id?: string
+          order_id?: string | null
+          payment_id?: string | null
+          severity?: string
+          source?: string
+          ts?: string
+          user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          event_id?: string | null
+          extra?: Json
+          id?: string
+          order_id?: string | null
+          payment_id?: string | null
+          severity?: string
+          source?: string
+          ts?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       premium_invitation_redemptions: {
         Row: {
           id: string
@@ -1212,6 +1260,60 @@ export type Database = {
           mode?: string
           updated_at?: string
           updated_by?: string | null
+        }
+        Relationships: []
+      }
+      razorpay_webhook_ledger: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          event_id: string
+          event_type: string | null
+          id: string
+          last_attempt_at: string | null
+          order_id: string | null
+          payload: Json
+          payment_id: string | null
+          processed_at: string | null
+          retry_count: number
+          signature_valid: boolean | null
+          status: string
+          subscription_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          event_id: string
+          event_type?: string | null
+          id?: string
+          last_attempt_at?: string | null
+          order_id?: string | null
+          payload: Json
+          payment_id?: string | null
+          processed_at?: string | null
+          retry_count?: number
+          signature_valid?: boolean | null
+          status?: string
+          subscription_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          event_id?: string
+          event_type?: string | null
+          id?: string
+          last_attempt_at?: string | null
+          order_id?: string | null
+          payload?: Json
+          payment_id?: string | null
+          processed_at?: string | null
+          retry_count?: number
+          signature_valid?: boolean | null
+          status?: string
+          subscription_id?: string | null
+          updated_at?: string
         }
         Relationships: []
       }

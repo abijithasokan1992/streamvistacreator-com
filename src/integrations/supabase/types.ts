@@ -613,6 +613,42 @@ export type Database = {
         }
         Relationships: []
       }
+      mcp_audit_log: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_user_id: string | null
+          allowed: boolean
+          created_at: string
+          details: Json
+          id: string
+          permission_key: string | null
+          resource: string | null
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_user_id?: string | null
+          allowed?: boolean
+          created_at?: string
+          details?: Json
+          id?: string
+          permission_key?: string | null
+          resource?: string | null
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_user_id?: string | null
+          allowed?: boolean
+          created_at?: string
+          details?: Json
+          id?: string
+          permission_key?: string | null
+          resource?: string | null
+        }
+        Relationships: []
+      }
       news_events: {
         Row: {
           created_at: string

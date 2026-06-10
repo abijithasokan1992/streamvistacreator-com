@@ -347,7 +347,9 @@ export default function Auth() {
       });
       setSubmitting(false);
       if (error) return toast.error(error.message);
+      void fireWelcomeAlert("login", "email");
       await continueAfterAuth();
+
     }
   };
 

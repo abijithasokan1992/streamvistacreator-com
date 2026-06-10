@@ -97,10 +97,10 @@ Deno.serve(async (req) => {
       if (pwd) {
         const salt = Array.from(crypto.getRandomValues(new Uint8Array(16)))
           .map((b) => b.toString(16).padStart(2, "0")).join("");
-        const hash = await sha256Hex(`${salt}::${pwd}`);
+        const hash = await pbkdf2Hex(pwd, salt);
         await admin.from("review_link_secrets").upsert({
           review_link_id: reviewLinkId, password_hash: hash, password_salt: salt,
-          password_hash_algo: "sha256", updated_at: new Date().toISOString(),
+          password_hash_algo: "pbkdf2-sha256", updated_at: new Date().toISOString(),
         });
         await admin.from("review_links").update({ requires_password: true }).eq("id", reviewLinkId);
       } else {

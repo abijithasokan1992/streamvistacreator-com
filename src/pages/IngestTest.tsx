@@ -259,7 +259,7 @@ export default function IngestTest() {
       });
     } catch (e) {
       const resumable = e instanceof ResumableUploadInterrupted;
-      const msg = resumable
+      const msg = e instanceof ResumableUploadInterrupted
         ? `Paused at part ${e.partNumber}/${e.totalChunks} — re-drop to resume`
         : (e instanceof Error ? e.message : "Chunked ingest failed");
       setItems((prev) =>

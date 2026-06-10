@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import PremiumInvitations from "@/components/admin/PremiumInvitations";
 import CommissionsTracker from "@/components/admin/CommissionsTracker";
-import OracleStorageMonitor from "@/components/admin/OracleStorageMonitor";
 import OracleOciStorageCard from "@/components/admin/OracleOciStorageCard";
 import FreeTierConfig from "@/components/admin/FreeTierConfig";
 import BrandingSettings from "@/components/admin/BrandingSettings";
@@ -227,7 +226,6 @@ export default function Admin() {
             <AiMcpControlCenter />
             <DomainHostingPanel />
             <OracleOciStorageCard />
-            <OracleStorageMonitor />
             <GlobalAssetManager />
           </TabsContent>
 

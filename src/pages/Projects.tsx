@@ -380,6 +380,34 @@ export default function Projects() {
           workspaceId={shareProject.workspace_id}
         />
       )}
+
+      <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Rename workspace</DialogTitle>
+            <DialogDescription>
+              Set the studio / production company name shown across projects and uploads.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="ws-rename">Company / studio name</Label>
+            <Input
+              id="ws-rename"
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              placeholder="e.g. Northlight Studios"
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRenameOpen(false)} disabled={renaming}>Cancel</Button>
+            <Button onClick={submitRename} disabled={renaming || !renameValue.trim()} className="gap-2">
+              {renaming && <Loader2 className="w-4 h-4 animate-spin" />}
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }

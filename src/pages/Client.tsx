@@ -210,12 +210,7 @@ function SandboxView({ finish, userEmail }: { finish: () => void; userEmail: str
     if (paymentId !== undefined) setLastPaymentId(paymentId);
     toast.error(msg);
   };
-    setErrorKind(kind);
-    setErrorMsg(msg);
-    setPhase("error");
-    if (paymentId !== undefined) setLastPaymentId(paymentId);
-    toast.error(msg);
-  };
+
 
   const activate = async () => {
     if (busy) return;

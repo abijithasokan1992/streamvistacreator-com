@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Loader2, ShieldCheck, Lock, Unlock, AlertTriangle, Cloud } from "lucide-react";
+import { Loader2, ShieldCheck, Lock, Unlock, AlertTriangle, Cloud, Terminal, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface OciPublicConfig {
@@ -7,6 +7,16 @@ interface OciPublicConfig {
   keyFingerprint: string;
   namespace: string;
   bucketName: string;
+}
+
+interface EdgeFnLog {
+  ts: string;
+  name: string;
+  durationMs: number;
+  status: number | null;
+  request: unknown;
+  response: unknown;
+  error: string | null;
 }
 
 /**

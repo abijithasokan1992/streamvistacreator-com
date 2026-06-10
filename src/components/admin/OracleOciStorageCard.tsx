@@ -42,6 +42,8 @@ export default function OracleOciStorageCard() {
   const [isLoading, setIsLoading] = useState(true);
   const [connectionStatus, setConnectionStatus] = useState<"IDLE" | "GREEN" | "RED">("IDLE");
   const [uiMessage, setUiMessage] = useState("");
+  const [lastLog, setLastLog] = useState<EdgeFnLog | null>(null);
+  const [showLogDetails, setShowLogDetails] = useState(false);
 
   useEffect(() => {
     (async () => {

@@ -193,7 +193,7 @@ export default function Auth() {
     }
     const target = roles.includes("executive_producer") ? "/producer"
       : roles.includes("creator") ? "/vault"
-      : "/client";
+      : "/";
     navigate(target, { replace: true });
   };
 

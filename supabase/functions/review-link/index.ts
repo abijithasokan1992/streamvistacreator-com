@@ -147,13 +147,29 @@ Deno.serve(async (req) => {
         if (!pwd) return json({ error: "Password required" }, 401);
         const { data: secret } = await admin
           .from("review_link_secrets")
-          .select("password_hash, password_salt")
+          .select("password_hash, password_salt, password_hash_algo")
           .eq("review_link_id", row.id)
           .maybeSingle();
         if (!secret) return json({ error: "Incorrect password" }, 401);
-        const candidate = await sha256Hex(`${secret.password_salt ?? ""}::${pwd}`);
-        if (candidate !== secret.password_hash) {
+        const salt = secret.password_salt ?? "";
+        const algo = (secret as any).password_hash_algo ?? "sha256";
+        const candidate = algo === "pbkdf2-sha256"
+          ? await pbkdf2Hex(pwd, salt)
+          : await sha256Hex(`${salt}::${pwd}`);
+        if (!timingSafeEqualStr(candidate, secret.password_hash)) {
           return json({ error: "Incorrect password" }, 401);
+        }
+        // Opportunistic upgrade of legacy sha256 rows to PBKDF2 on successful unlock.
+        if (algo !== "pbkdf2-sha256") {
+          try {
+            const newSalt = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+              .map((b) => b.toString(16).padStart(2, "0")).join("");
+            const newHash = await pbkdf2Hex(pwd, newSalt);
+            await admin.from("review_link_secrets").update({
+              password_hash: newHash, password_salt: newSalt,
+              password_hash_algo: "pbkdf2-sha256", updated_at: new Date().toISOString(),
+            }).eq("review_link_id", row.id);
+          } catch (e) { console.error("review-link: pbkdf2 upgrade failed", e); }
         }
       }
 

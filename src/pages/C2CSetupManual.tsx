@@ -215,9 +215,9 @@ const CATEGORIES: Category[] = [
 ];
 
 /* ─────────────── Components ─────────────── */
-function CopyUrlButton() {
+function CopyUrlButton({ url }: { url: string }) {
   const handleCopy = () => {
-    navigator.clipboard.writeText(PAR_URL);
+    navigator.clipboard.writeText(url);
     toast.success("PAR URL copied to clipboard");
   };
 
@@ -226,11 +226,12 @@ function CopyUrlButton() {
       onClick={handleCopy}
       className="group inline-flex items-center gap-2 rounded-lg bg-secondary/60 border border-border/60 px-3 py-2 text-xs font-mono-tech break-all hover:bg-secondary transition"
     >
-      <span className="truncate max-w-[260px] sm:max-w-[420px] md:max-w-[560px]">{PAR_URL}</span>
+      <span className="truncate max-w-[260px] sm:max-w-[420px] md:max-w-[560px]">{url}</span>
       <Copy className="w-3.5 h-3.5 text-muted-foreground group-hover:text-accent shrink-0" />
     </button>
   );
 }
+
 
 function StepCard({ step }: { step: Step }) {
   const Icon = step.icon;

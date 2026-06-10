@@ -226,7 +226,6 @@ export default function Admin() {
             <AiMcpControlCenter />
             <DomainHostingPanel />
             <OracleOciStorageCard />
-            <OracleStorageMonitor />
             <GlobalAssetManager />
           </TabsContent>
 

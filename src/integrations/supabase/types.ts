@@ -1330,6 +1330,7 @@ export type Database = {
           mime_type: string | null
           namespace: string
           object_key: string
+          oci_upload_id: string | null
           par_expires_at: string | null
           par_url: string | null
           project_id: string | null
@@ -1351,6 +1352,7 @@ export type Database = {
           mime_type?: string | null
           namespace: string
           object_key: string
+          oci_upload_id?: string | null
           par_expires_at?: string | null
           par_url?: string | null
           project_id?: string | null
@@ -1372,6 +1374,7 @@ export type Database = {
           mime_type?: string | null
           namespace?: string
           object_key?: string
+          oci_upload_id?: string | null
           par_expires_at?: string | null
           par_url?: string | null
           project_id?: string | null

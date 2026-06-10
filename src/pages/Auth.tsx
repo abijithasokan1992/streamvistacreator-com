@@ -198,9 +198,20 @@ export default function Auth() {
   };
 
   useEffect(() => {
-    if (!loading && user) continueAfterAuth();
+    if (loading || !user) return;
+    // If this session arrived via Google OAuth redirect, fire the appropriate
+    // welcome / login alert before routing onward.
+    try {
+      const intent = sessionStorage.getItem("sv_oauth_intent");
+      if (intent === "signup" || intent === "login") {
+        sessionStorage.removeItem("sv_oauth_intent");
+        void fireWelcomeAlert(intent, "google");
+      }
+    } catch {}
+    continueAfterAuth();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, loading]);
+
   // Fire the Welcome (signup) or Login-alert (sign-in) email + SMS/WhatsApp.
   // Safe to call after any successful auth — the edge function auto-detects
   // signup vs login from auth.users.created_at when intent is omitted.

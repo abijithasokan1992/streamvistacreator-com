@@ -437,12 +437,7 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
           </main>
         </div>
       </div>
-      <ShareLinkModal
-        file={shareTarget}
-        open={!!shareTarget}
-        onOpenChange={(o) => { if (!o) setShareTarget(null); }}
-        onSaved={load}
-      />
+      {/* ShareLinkModal temporarily hidden */}
     </div>
   );
 };

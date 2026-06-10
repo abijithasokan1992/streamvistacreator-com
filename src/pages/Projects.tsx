@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Pencil, Trash2, Loader2, Film, ArrowLeft, Building2, Link2 } from "lucide-react";
-import ShareReviewModal from "@/components/projects/ShareReviewModal";
+import { Plus, Pencil, Trash2, Loader2, Film, ArrowLeft, Building2 } from "lucide-react";
+// import ShareReviewModal from "@/components/projects/ShareReviewModal";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";

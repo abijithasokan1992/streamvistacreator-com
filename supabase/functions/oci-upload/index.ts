@@ -217,9 +217,39 @@ Deno.serve(async (req) => {
     }
   }
 
+  // Optional project + category routing for DIT folder organization.
+  // If a projectId is supplied (and belongs to the workspace) we build:
+  //   workspaces/{ws}/projects/{proj}/{category}/users/{user}/{ts}-{uuid}-{name}
+  // Category defaults to "ingest"; common values: raw, proxy, script, archive.
+  // If the project is in "manual" foldering mode for that category, the
+  // client may pass `subpath` to be used in place of the category segment.
+  const projectIdRaw = form.get("projectId");
+  const categoryRaw = form.get("category");
+  const subpathRaw = form.get("subpath");
+  let projectSegment = "";
+  let categorySegment = "ingest";
+  if (typeof projectIdRaw === "string" && projectIdRaw.trim()) {
+    const { data: proj } = await admin
+      .from("projects")
+      .select("id, workspace_id, foldering_mode_archive, foldering_mode_raw")
+      .eq("id", projectIdRaw.trim())
+      .maybeSingle();
+    if (proj && proj.workspace_id === workspaceId) {
+      projectSegment = `projects/${proj.id}/`;
+      const cat = typeof categoryRaw === "string" ? categoryRaw.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "") : "";
+      if (cat) categorySegment = cat;
+      const manual =
+        (cat === "raw" && proj.foldering_mode_raw === "manual") ||
+        (cat === "archive" && proj.foldering_mode_archive === "manual");
+      if (manual && typeof subpathRaw === "string" && subpathRaw.trim()) {
+        const clean = subpathRaw.trim().replace(/^\/+|\/+$/g, "").replace(/[^\w./-]+/g, "_").slice(0, 200);
+        if (clean) categorySegment = clean;
+      }
+    }
+  }
+
   if (!row) {
-    // Direct ingest path: workspaces/{workspace_id}/users/{user_id}/{timestamp}-{uuid}-{name}
-    const objectKey = `workspaces/${workspaceId}/users/${userId}/${Date.now()}-${crypto.randomUUID()}-${safeName(file.name)}`;
+    const objectKey = `workspaces/${workspaceId}/${projectSegment}${categorySegment}/users/${userId}/${Date.now()}-${crypto.randomUUID()}-${safeName(file.name)}`;
     const { data: inserted, error: insErr } = await admin
       .from("recent_uploads")
       .insert({
@@ -232,6 +262,8 @@ Deno.serve(async (req) => {
         object_key: objectKey,
         status: "uploading",
         client_pending_id: pendingId,
+        project_id: projectSegment ? projectIdRaw : null,
+        category: projectSegment ? categorySegment : null,
       })
       .select("id, object_key, status").single();
     if (insErr || !inserted) {

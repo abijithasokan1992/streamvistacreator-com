@@ -72,6 +72,6 @@ Deno.serve(async (req) => {
     return json({ ok: true, topup_tb: next });
   } catch (e) {
     console.error("verify-storage-topup error", e);
-    return json({ error: (e as Error).message || "Server error" }, 500);
+    return json({ error: "Internal server error" }, 500);
   }
 });

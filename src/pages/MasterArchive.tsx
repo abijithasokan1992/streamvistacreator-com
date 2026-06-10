@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft, Archive, Film, Music2, FileText, Upload, Loader2, Building2,
-  CheckCircle2, FolderOpen, Layers, Sparkles,
+  CheckCircle2, FolderOpen, Layers, Sparkles, ClipboardCheck, Circle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";

@@ -145,6 +145,27 @@ export default function RolesManager() {
         </div>
       </div>
 
+      {/* Lock toggle */}
+      <div className={`flex items-center justify-between gap-3 rounded-2xl border p-3 ${unlocked ? "border-destructive/40 bg-destructive/5" : "border-accent/30 bg-accent/5"}`}>
+        <div className="flex items-center gap-2 min-w-0">
+          {unlocked ? <Unlock className="w-4 h-4 text-destructive shrink-0" /> : <Lock className="w-4 h-4 text-accent shrink-0" />}
+          <div className="min-w-0">
+            <div className="text-sm font-semibold">
+              Editing is {unlocked ? "Unlocked" : "Locked"}
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              {unlocked
+                ? "All role, assignment, and division controls are active. Re-lock when done."
+                : "All add / remove controls are disabled to prevent accidental changes."}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-[11px] uppercase tracking-wider text-muted-foreground">{unlocked ? "Unlock" : "Lock"}</span>
+          <Switch checked={unlocked} onCheckedChange={setUnlocked} />
+        </div>
+      </div>
+
       {loading ? (
         <div className="text-muted-foreground inline-flex items-center gap-2 text-sm">
           <Loader2 className="w-4 h-4 animate-spin" /> Loading users…

@@ -70,18 +70,36 @@ export default function ResetPassword() {
     let cancelled = false;
     const ensure = async () => {
       const { data } = await supabase.auth.getSession();
-      if (!cancelled && data.session) setSessionReady(true);
+      if (cancelled) return;
+      setSessionReady(!!data.session);
+      setSessionChecked(true);
     };
     ensure();
     const { data: sub } = supabase.auth.onAuthStateChange((evt, sess) => {
       if (cancelled) return;
-      if (evt === "PASSWORD_RECOVERY" || sess) setSessionReady(!!sess);
+      if (evt === "PASSWORD_RECOVERY" || sess) {
+        setSessionReady(!!sess);
+        setSessionChecked(true);
+      }
     });
     return () => {
       cancelled = true;
       sub.subscription.unsubscribe();
     };
   }, []);
+
+  const resendRecovery = async () => {
+    const email = recoverEmail.trim().toLowerCase();
+    if (!email || !/.+@.+\..+/.test(email)) return toast.error("Enter a valid email");
+    setResending(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setResending(false);
+    if (error) return toast.error(error.message);
+    toast.success("Fresh recovery link sent — check your inbox.");
+  };
+
 
   const checks = {
     length: password.length >= 8,

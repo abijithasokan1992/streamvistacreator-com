@@ -14,18 +14,33 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: buildCorsHeaders(req) });
 
   try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    if (!supabaseUrl || !serviceKey || !anonKey) {
+      console.error("Missing required environment configuration");
+      return jsonError(req, "Service temporarily unavailable", 503);
+    }
+
+    // Require an authenticated caller. Prevents anonymous parties from
+    // hijacking an onboarding row's payment flow with just its UUID.
+    const authHeader = req.headers.get("Authorization") ?? "";
+    if (!authHeader.startsWith("Bearer ")) {
+      return jsonError(req, "Authentication required", 401);
+    }
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: userRes, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !userRes?.user?.id) {
+      return jsonError(req, "Invalid session", 401);
+    }
+
     const { onboardingId } = await req.json();
     if (!onboardingId || typeof onboardingId !== "string") {
       return jsonError(req, "Invalid input", 400);
     }
     const CURRENCY = "INR"; // hardcoded — never trust caller
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!supabaseUrl || !serviceKey) {
-      console.error("Missing required environment configuration");
-      return jsonError(req, "Service temporarily unavailable", 503);
-    }
 
     const supabase = createClient(supabaseUrl, serviceKey);
     const creds = await loadRazorpayCreds(supabase);

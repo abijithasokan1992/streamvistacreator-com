@@ -82,25 +82,24 @@ export default function RazorpayCredentials() {
         return;
       }
     }
-    if (!status?.configured && (!keyId.trim() || !keySecret.trim())) {
-      toast.error("Key ID and Key Secret are required for first-time setup.");
-      return;
-    }
 
     setSaving(true);
+    // Only the non-secret Key ID + mode live in the database. The Key Secret
+    // and Webhook Secret are stored exclusively as backend environment
+    // secrets (RAZORPAY_KEY_SECRET / RAZORPAY_WEBHOOK_SECRET) — never in DB.
     const payload: Record<string, any> = { id: true, mode };
     if (keyId.trim()) payload.key_id = keyId.trim();
-    if (keySecret.trim()) payload.key_secret = keySecret.trim();
-    if (webhookSecret.trim()) payload.webhook_secret = webhookSecret.trim();
 
     const { error } = await supabase
       .from("razorpay_config")
       .upsert(payload, { onConflict: "id" });
     if (error) { setSaving(false); toast.error(error.message); return; }
-    setKeySecret(""); setWebhookSecret("");
     const s = await loadStatus();
     setSaving(false);
-    if (!s?.configured) return;
+    if (!s?.configured) {
+      toast.message("Saved Key ID. Add RAZORPAY_KEY_SECRET in Backend Secrets to finish setup.");
+      return;
+    }
     const ok = await runTest(false);
     if (ok) setEditing(false);
   };
@@ -192,40 +191,15 @@ export default function RazorpayCredentials() {
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs uppercase tracking-wider text-muted-foreground">Key Secret</label>
-              <div className="relative">
-                <input
-                  type={showSecret ? "text" : "password"}
-                  value={keySecret}
-                  onChange={(e) => setKeySecret(e.target.value)}
-                  placeholder={status?.configured ? "•••••••• (leave blank to keep)" : "Paste from Razorpay dashboard"}
-                  autoComplete="new-password"
-                  className="w-full h-11 px-3 pr-11 rounded-xl bg-secondary/40 border border-border/60 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent/40"
-                />
-                <button type="button" onClick={() => setShowSecret(s => !s)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 grid place-items-center rounded-md text-muted-foreground hover:text-foreground hover:bg-white/5">
-                  {showSecret ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs uppercase tracking-wider text-muted-foreground">Webhook Secret</label>
-              <div className="relative">
-                <input
-                  type={showWebhook ? "text" : "password"}
-                  value={webhookSecret}
-                  onChange={(e) => setWebhookSecret(e.target.value)}
-                  placeholder={status?.webhook_set ? "•••••••• (leave blank to keep)" : "Set when creating webhook in Razorpay"}
-                  autoComplete="new-password"
-                  className="w-full h-11 px-3 pr-11 rounded-xl bg-secondary/40 border border-border/60 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent/40"
-                />
-                <button type="button" onClick={() => setShowWebhook(s => !s)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 grid place-items-center rounded-md text-muted-foreground hover:text-foreground hover:bg-white/5">
-                  {showWebhook ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                </button>
-              </div>
+            <div className="rounded-xl border border-border/40 bg-secondary/20 p-3 text-xs text-muted-foreground space-y-1">
+              <p className="font-semibold text-foreground">Key Secret & Webhook Secret</p>
+              <p>
+                For security, payment gateway secrets are stored only as backend
+                environment variables — never in the database. Set / rotate them in
+                <span className="font-mono text-foreground"> Backend → Secrets</span> as
+                <span className="font-mono text-foreground"> RAZORPAY_KEY_SECRET</span> and
+                <span className="font-mono text-foreground"> RAZORPAY_WEBHOOK_SECRET</span>.
+              </p>
             </div>
 
             <div className="flex flex-wrap gap-3 pt-2">

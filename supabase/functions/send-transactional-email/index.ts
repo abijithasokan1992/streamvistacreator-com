@@ -162,6 +162,23 @@ Deno.serve(async (req) => {
     )
   }
 
+  // Authenticated (non-service) callers may only send to their own auth email,
+  // unless the template defines a fixed `to` recipient (controlled server-side).
+  if (callerRole === 'authenticated' && !template.to) {
+    const targetEmail = (recipientEmail ?? '').toString().toLowerCase()
+    if (!callerEmail || targetEmail !== callerEmail) {
+      console.warn('Authenticated caller attempted to send to a different recipient', {
+        callerEmail,
+        targetEmail,
+        templateName,
+      })
+      return new Response(
+        JSON.stringify({ error: 'Forbidden: can only send to your own email' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+  }
+
   // Create Supabase client with service role (bypasses RLS)
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
 

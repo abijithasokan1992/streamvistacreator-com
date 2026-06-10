@@ -262,6 +262,8 @@ Deno.serve(async (req) => {
         object_key: objectKey,
         status: "uploading",
         client_pending_id: pendingId,
+        project_id: projectSegment ? projectIdRaw : null,
+        category: projectSegment ? categorySegment : null,
       })
       .select("id, object_key, status").single();
     if (insErr || !inserted) {

@@ -37,6 +37,94 @@ function hasAllRequired(c: OracleConfig) {
             c.oracle_region && c.oracle_namespace && c.oracle_bucket && c.oracle_private_key_set);
 }
 
+function formatBytes(n: number): string {
+  if (!n || n < 1024) return `${n} B`;
+  const units = ["KB", "MB", "GB", "TB", "PB"];
+  let v = n / 1024, i = 0;
+  while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+  return `${v.toFixed(v >= 100 ? 0 : v >= 10 ? 1 : 2)} ${units[i]}`;
+}
+
+function StorageGauge({
+  usage, capacityGb, loading, onRefresh, disabled,
+}: {
+  usage: { bytes: number; count: number; truncated: boolean } | null;
+  capacityGb: number | null;
+  loading: boolean;
+  onRefresh: () => void;
+  disabled: boolean;
+}) {
+  const capacityBytes = capacityGb ? capacityGb * 1024 ** 3 : 0;
+  const usedBytes = usage?.bytes ?? 0;
+  const pct = capacityBytes > 0 ? Math.min(100, (usedBytes / capacityBytes) * 100) : 0;
+  const tier = pct >= 90 ? "red" : pct >= 70 ? "yellow" : "green";
+  const barColor =
+    tier === "red" ? "bg-gradient-to-r from-rose-500 to-red-600" :
+    tier === "yellow" ? "bg-gradient-to-r from-amber-400 to-orange-500" :
+    "bg-gradient-to-r from-emerald-400 to-cyan-400";
+  const ringColor =
+    tier === "red" ? "text-red-400" :
+    tier === "yellow" ? "text-amber-400" :
+    "text-emerald-400";
+  const labelTone =
+    tier === "red" ? "bg-red-500/15 text-red-400 border-red-500/30" :
+    tier === "yellow" ? "bg-amber-500/15 text-amber-400 border-amber-500/30" :
+    "bg-emerald-500/15 text-emerald-400 border-emerald-500/30";
+
+  return (
+    <div className="rounded-2xl border border-border/50 bg-secondary/20 p-5 space-y-4">
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">Bucket usage</div>
+          <div className={cn("font-display text-2xl font-bold mt-1", ringColor)}>
+            {capacityBytes > 0 ? `${pct.toFixed(1)}%` : "—"}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">
+            {usage ? (
+              <>
+                {formatBytes(usedBytes)}
+                {capacityBytes > 0 ? ` of ${formatBytes(capacityBytes)}` : ""}
+                {" · "}{usage.count.toLocaleString()} objects
+                {usage.truncated ? " (sampled)" : ""}
+              </>
+            ) : (
+              capacityGb ? "No usage data yet" : "Set Bucket Capacity in credentials to enable gauge"
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {capacityBytes > 0 && (
+            <span className={cn("inline-flex items-center px-2.5 py-1 rounded-full border text-[11px] font-semibold uppercase tracking-wider", labelTone)}>
+              {tier === "red" ? "Critical" : tier === "yellow" ? "Warning" : "Healthy"}
+            </span>
+          )}
+          <button
+            onClick={onRefresh}
+            disabled={loading || disabled}
+            className="h-9 px-3 rounded-lg border border-border bg-secondary/40 hover:bg-secondary text-xs font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
+          >
+            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <div className="relative h-3 rounded-full bg-secondary/60 overflow-hidden border border-border/40">
+        <div
+          className={cn("absolute inset-y-0 left-0 transition-[width] duration-700 ease-out", barColor)}
+          style={{ width: `${capacityBytes > 0 ? pct : 0}%` }}
+        />
+        {/* threshold ticks at 70% and 90% */}
+        <div className="absolute inset-y-0 w-px bg-foreground/20" style={{ left: "70%" }} />
+        <div className="absolute inset-y-0 w-px bg-foreground/30" style={{ left: "90%" }} />
+      </div>
+      <div className="flex justify-between text-[10px] uppercase tracking-wider text-muted-foreground">
+        <span>0</span><span>70% warn</span><span>90% crit</span><span>{capacityGb ? `${capacityGb} GB` : "—"}</span>
+      </div>
+    </div>
+  );
+}
+
 export default function OracleStorageMonitor() {
   const [cfg, setCfg] = useState<OracleConfig>(EMPTY);
   const [draft, setDraft] = useState<OracleConfig>(EMPTY);
@@ -381,90 +469,3 @@ function ReadRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function formatBytes(n: number): string {
-  if (!n || n < 1024) return `${n} B`;
-  const units = ["KB", "MB", "GB", "TB", "PB"];
-  let v = n / 1024, i = 0;
-  while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
-  return `${v.toFixed(v >= 100 ? 0 : v >= 10 ? 1 : 2)} ${units[i]}`;
-}
-
-function StorageGauge({
-  usage, capacityGb, loading, onRefresh, disabled,
-}: {
-  usage: { bytes: number; count: number; truncated: boolean } | null;
-  capacityGb: number | null;
-  loading: boolean;
-  onRefresh: () => void;
-  disabled: boolean;
-}) {
-  const capacityBytes = capacityGb ? capacityGb * 1024 ** 3 : 0;
-  const usedBytes = usage?.bytes ?? 0;
-  const pct = capacityBytes > 0 ? Math.min(100, (usedBytes / capacityBytes) * 100) : 0;
-  const tier = pct >= 90 ? "red" : pct >= 70 ? "yellow" : "green";
-  const barColor =
-    tier === "red" ? "bg-gradient-to-r from-rose-500 to-red-600" :
-    tier === "yellow" ? "bg-gradient-to-r from-amber-400 to-orange-500" :
-    "bg-gradient-to-r from-emerald-400 to-cyan-400";
-  const ringColor =
-    tier === "red" ? "text-red-400" :
-    tier === "yellow" ? "text-amber-400" :
-    "text-emerald-400";
-  const labelTone =
-    tier === "red" ? "bg-red-500/15 text-red-400 border-red-500/30" :
-    tier === "yellow" ? "bg-amber-500/15 text-amber-400 border-amber-500/30" :
-    "bg-emerald-500/15 text-emerald-400 border-emerald-500/30";
-
-  return (
-    <div className="rounded-2xl border border-border/50 bg-secondary/20 p-5 space-y-4">
-      <div className="flex items-start justify-between flex-wrap gap-3">
-        <div>
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">Bucket usage</div>
-          <div className={cn("font-display text-2xl font-bold mt-1", ringColor)}>
-            {capacityBytes > 0 ? `${pct.toFixed(1)}%` : "—"}
-          </div>
-          <div className="text-xs text-muted-foreground mt-1">
-            {usage ? (
-              <>
-                {formatBytes(usedBytes)}
-                {capacityBytes > 0 ? ` of ${formatBytes(capacityBytes)}` : ""}
-                {" · "}{usage.count.toLocaleString()} objects
-                {usage.truncated ? " (sampled)" : ""}
-              </>
-            ) : (
-              capacityGb ? "No usage data yet" : "Set Bucket Capacity in credentials to enable gauge"
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {capacityBytes > 0 && (
-            <span className={cn("inline-flex items-center px-2.5 py-1 rounded-full border text-[11px] font-semibold uppercase tracking-wider", labelTone)}>
-              {tier === "red" ? "Critical" : tier === "yellow" ? "Warning" : "Healthy"}
-            </span>
-          )}
-          <button
-            onClick={onRefresh}
-            disabled={loading || disabled}
-            className="h-9 px-3 rounded-lg border border-border bg-secondary/40 hover:bg-secondary text-xs font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
-          >
-            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-            Refresh
-          </button>
-        </div>
-      </div>
-
-      <div className="relative h-3 rounded-full bg-secondary/60 overflow-hidden border border-border/40">
-        <div
-          className={cn("absolute inset-y-0 left-0 transition-[width] duration-700 ease-out", barColor)}
-          style={{ width: `${capacityBytes > 0 ? pct : 0}%` }}
-        />
-        {/* threshold ticks at 70% and 90% */}
-        <div className="absolute inset-y-0 w-px bg-foreground/20" style={{ left: "70%" }} />
-        <div className="absolute inset-y-0 w-px bg-foreground/30" style={{ left: "90%" }} />
-      </div>
-      <div className="flex justify-between text-[10px] uppercase tracking-wider text-muted-foreground">
-        <span>0</span><span>70% warn</span><span>90% crit</span><span>{capacityGb ? `${capacityGb} GB` : "—"}</span>
-      </div>
-    </div>
-  );
-}

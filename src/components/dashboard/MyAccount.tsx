@@ -270,15 +270,16 @@ function SupportRequestForm() {
 function UpgradeSection({ currentTier, email, name, userId, onUpgraded }: { currentTier: string; email?: string; name?: string; userId: string; onUpgraded: (tier: Profile["plan_tier"]) => void; }) {
   const [selected, setSelected] = useState<Cycle>("creator");
   const [provider, setProvider] = useState<"razorpay" | "card">("razorpay");
+  const [tbCount, setTbCount] = useState<number>(1);
   const [busy, setBusy] = useState(false);
   const [stripeOpen, setStripeOpen] = useState(false);
 
   const plan = planByCycle(selected);
-  const subtotal = plan.price; // ₹650 per TB pre-GST
+  const subtotal = plan.price * tbCount; // ₹650 per TB pre-GST × TB
   const gst = Math.round(subtotal * GST_RATE);
   const total = subtotal + gst;
 
-  // Single Stripe price-id for the Creator plan (PAYG, ₹767 incl. GST per TB / month)
+  // Stripe price-id for the Creator plan (recurring monthly, ₹767/TB inc. GST)
   const stripePriceId = "cloudx_creator";
 
   const loadRazorpay = () => new Promise<boolean>((resolve) => {
@@ -292,51 +293,38 @@ function UpgradeSection({ currentTier, email, name, userId, onUpgraded }: { curr
   const startUpgrade = async () => {
     if (selected === "free") { toast.info("You're already on the Free plan"); return; }
     setBusy(true);
-    const onboardingId = crypto.randomUUID();
-    // Create an onboarding_request row to record this upgrade attempt
-    const { error } = await supabase.from("onboarding_requests").insert({
-      id: onboardingId,
-      client_name: name ?? "Account upgrade",
-      professional_role: "Existing user",
-      business_email: email,
-      selected_cycle: selected,
-      base_price: plan.price,
-      final_price: total,
-      onboarding_status: "pending",
-    });
-    if (error) { setBusy(false); toast.error("Could not start upgrade"); return; }
 
     if (provider === "card") { setBusy(false); setStripeOpen(true); return; }
 
-    const ok = await loadRazorpay();
-    if (!ok) { setBusy(false); toast.error("Could not load payment gateway"); return; }
-    const { data: orderData, error: orderErr } = await supabase.functions.invoke("create-razorpay-order", {
-      body: { onboardingId },
+    // Razorpay recurring subscription path
+    const loaded = await loadRazorpay();
+    if (!loaded) { setBusy(false); toast.error("Could not load payment gateway"); return; }
+
+    const { data: subData, error: subErr } = await supabase.functions.invoke("create-razorpay-subscription", {
+      body: { tbCount },
     });
-    if (orderErr || !orderData?.orderId) { setBusy(false); toast.error("Could not initiate payment"); return; }
+    if (subErr || !subData?.subscriptionId) {
+      setBusy(false);
+      toast.error(subErr?.message || "Could not start subscription");
+      return;
+    }
 
     const rzp = new (window as any).Razorpay({
-      key: orderData.keyId, amount: orderData.amount, currency: orderData.currency, order_id: orderData.orderId,
-      name: "StreamVista Cloud X", description: `${plan.label} upgrade`,
+      key: subData.keyId,
+      subscription_id: subData.subscriptionId,
+      name: "StreamVista Cloud X",
+      description: `${plan.label} — ${tbCount} TB / month`,
       prefill: { name, email },
       theme: { color: "#6366f1" },
-      handler: async (resp: any) => {
-        const { data: vData } = await supabase.functions.invoke("verify-razorpay-payment", {
-          body: {
-            onboardingId,
-            userId,
-            razorpay_order_id: resp.razorpay_order_id,
-            razorpay_payment_id: resp.razorpay_payment_id,
-            razorpay_signature: resp.razorpay_signature,
-          },
-        });
+      handler: async () => {
         setBusy(false);
-        if (vData?.verified) {
-          onUpgraded(selected as Profile["plan_tier"]);
-          toast.success(`Upgrade confirmed — you're now on the ${plan.label} plan`);
-        } else toast.error("Payment could not be verified");
+        // Webhook flips the role; reflect optimistically here.
+        onUpgraded(selected as Profile["plan_tier"]);
+        toast.success("Subscription activated — welcome to the Creator plan!");
       },
-      modal: { ondismiss: () => { setBusy(false); toast.info("Payment cancelled"); } },
+      modal: {
+        ondismiss: () => { setBusy(false); toast.info("Payment cancelled"); },
+      },
     });
     rzp.open();
   };
@@ -362,6 +350,18 @@ function UpgradeSection({ currentTier, email, name, userId, onUpgraded }: { curr
 
       {selected !== "free" && (
         <>
+          {selected === "creator" && (
+            <div>
+              <div className="text-sm font-medium mb-2">How many TB / month?</div>
+              <div className="flex items-center gap-3">
+                <Button variant="outline" size="sm" onClick={() => setTbCount(Math.max(1, tbCount - 1))}>−</Button>
+                <div className="font-semibold text-lg tabular-nums w-12 text-center">{tbCount} TB</div>
+                <Button variant="outline" size="sm" onClick={() => setTbCount(Math.min(10, tbCount + 1))}>+</Button>
+                <span className="text-xs text-muted-foreground ml-2">Billed monthly — auto-renews</span>
+              </div>
+            </div>
+          )}
+
           <div>
             <div className="text-sm font-medium mb-2">Payment method</div>
             <div className="grid grid-cols-2 gap-3">
@@ -379,15 +379,22 @@ function UpgradeSection({ currentTier, email, name, userId, onUpgraded }: { curr
           </div>
 
           <div className="border rounded-xl p-4 text-sm space-y-1 bg-secondary/30">
-            <div className="flex justify-between"><span className="text-muted-foreground">Base</span><span>₹{subtotal.toLocaleString("en-IN")}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Base × {tbCount} TB</span><span>₹{subtotal.toLocaleString("en-IN")}</span></div>
             <div className="flex justify-between"><span className="text-muted-foreground">GST (18%)</span><span>₹{gst.toLocaleString("en-IN")}</span></div>
-            <div className="flex justify-between pt-2 border-t font-semibold"><span>Total</span><span>₹{total.toLocaleString("en-IN")}</span></div>
+            <div className="flex justify-between pt-2 border-t font-semibold"><span>Total / month</span><span>₹{total.toLocaleString("en-IN")}</span></div>
           </div>
 
           <Button onClick={startUpgrade} disabled={busy} className="w-full h-12">
             {busy ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            Pay ₹{total.toLocaleString("en-IN")} &amp; Activate
+            Subscribe — ₹{total.toLocaleString("en-IN")} / month
           </Button>
+
+          <div className="text-[11px] text-muted-foreground text-center">
+            To cancel or change your subscription, please{" "}
+            <a href="#" onClick={(e) => { e.preventDefault(); document.getElementById("support-form")?.scrollIntoView({ behavior: "smooth" }); }}
+              className="text-accent underline-offset-2 hover:underline">open a support ticket</a>{" "}
+            — self-serve cancellation is coming soon.
+          </div>
 
           {stripeOpen && (
             <div className="mt-3 rounded-xl border p-3">
@@ -395,7 +402,7 @@ function UpgradeSection({ currentTier, email, name, userId, onUpgraded }: { curr
                 <span className="text-xs uppercase tracking-wider text-accent">Secure card checkout</span>
                 <button onClick={() => setStripeOpen(false)} className="text-xs text-muted-foreground hover:text-foreground">Cancel</button>
               </div>
-              <StripeEmbeddedCheckout priceId={stripePriceId} customerEmail={email}
+              <StripeEmbeddedCheckout priceId={stripePriceId} quantity={tbCount} customerEmail={email} userId={userId}
                 returnUrl={`${window.location.origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`} />
             </div>
           )}

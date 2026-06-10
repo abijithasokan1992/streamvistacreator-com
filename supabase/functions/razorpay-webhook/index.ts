@@ -1,8 +1,12 @@
 // Razorpay webhook handler.
 // Configure this URL in Razorpay Dashboard → Settings → Webhooks:
 //   https://hllgmkfqgeuqlmpcirvn.supabase.co/functions/v1/razorpay-webhook
-// Subscribed events: payment.captured, payment.failed, order.paid, refund.processed
-// Set the webhook secret as RAZORPAY_WEBHOOK_SECRET in edge function secrets.
+// Subscribed events:
+//   payment.captured, payment.failed, order.paid, refund.processed,
+//   subscription.activated, subscription.charged, subscription.halted,
+//   subscription.cancelled, subscription.completed, subscription.paused, subscription.resumed
+// Set the webhook secret as RAZORPAY_WEBHOOK_SECRET in edge function secrets
+// (or via the razorpay_config table).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { createHmac, timingSafeEqual } from "node:crypto";
@@ -14,6 +18,9 @@ function ok(body: unknown, status = 200) {
     headers: { "Content-Type": "application/json" },
   });
 }
+
+const ACTIVE_STATUSES = new Set(["active", "authenticated"]);
+const INACTIVE_STATUSES = new Set(["halted", "cancelled", "completed", "expired"]);
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
@@ -37,7 +44,6 @@ Deno.serve(async (req) => {
   const sig = req.headers.get("x-razorpay-signature") ?? "";
   const expected = createHmac("sha256", secret).update(raw).digest("hex");
 
-  // Constant-time compare
   try {
     const a = new TextEncoder().encode(sig);
     const b = new TextEncoder().encode(expected);
@@ -54,12 +60,12 @@ Deno.serve(async (req) => {
   const type = event?.event as string;
   const payment = event?.payload?.payment?.entity;
   const order = event?.payload?.order?.entity;
+  const subscription = event?.payload?.subscription?.entity;
   const orderId = payment?.order_id ?? order?.id;
 
   try {
-    if (!orderId) return ok({ received: true, ignored: "no order id" });
-
-    if (type === "payment.captured" || type === "order.paid") {
+    // ── One-shot payment & top-up handlers (existing flow) ──────────────
+    if (orderId && (type === "payment.captured" || type === "order.paid")) {
       await supabase
         .from("onboarding_requests")
         .update({
@@ -69,17 +75,63 @@ Deno.serve(async (req) => {
           amount_paid_paise: payment?.amount ?? order?.amount ?? null,
         })
         .eq("razorpay_order_id", orderId);
-    } else if (type === "payment.failed") {
+    } else if (orderId && type === "payment.failed") {
       await supabase
         .from("onboarding_requests")
         .update({ payment_status: "failed" })
         .eq("razorpay_order_id", orderId);
-    } else if (type === "refund.processed") {
+    } else if (orderId && type === "refund.processed") {
       await supabase
         .from("onboarding_requests")
         .update({ payment_status: "refunded" })
         .eq("razorpay_order_id", orderId);
-    } else {
+    }
+
+    // ── Subscription lifecycle (Creator recurring plan) ─────────────────
+    if (subscription?.id && type?.startsWith("subscription.")) {
+      const userId = subscription.notes?.userId ?? null;
+      const status: string = subscription.status ?? "unknown";
+
+      const currentStart = subscription.current_start
+        ? new Date(subscription.current_start * 1000).toISOString()
+        : null;
+      const currentEnd = subscription.current_end
+        ? new Date(subscription.current_end * 1000).toISOString()
+        : null;
+
+      await supabase.from("subscriptions").upsert(
+        {
+          user_id: userId,
+          razorpay_subscription_id: subscription.id,
+          razorpay_plan_id: subscription.plan_id ?? null,
+          price_id: "cloudx_creator",
+          status,
+          current_period_start: currentStart,
+          current_period_end: currentEnd,
+          cancel_at_period_end: status === "cancelled" || status === "completed",
+          environment: creds.mode === "live" ? "live" : "sandbox",
+          gateway: "razorpay",
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "razorpay_subscription_id" },
+      );
+
+      if (userId) {
+        if (type === "subscription.activated" ||
+            type === "subscription.charged" ||
+            type === "subscription.resumed" ||
+            ACTIVE_STATUSES.has(status)) {
+          await supabase.rpc("grant_creator_role", { _user_id: userId });
+        } else if (type === "subscription.cancelled" ||
+                   type === "subscription.halted" ||
+                   type === "subscription.completed" ||
+                   INACTIVE_STATUSES.has(status)) {
+          await supabase.rpc("revoke_creator_role", { _user_id: userId });
+        }
+      }
+    }
+
+    if (!orderId && !subscription?.id) {
       console.log("razorpay-webhook: unhandled event", type);
     }
   } catch (e) {

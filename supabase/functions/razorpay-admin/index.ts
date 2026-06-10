@@ -82,7 +82,12 @@ Deno.serve(async (req) => {
       useId = creds.keyId; useSecret = creds.keySecret;
     }
     try {
-      const auth = btoa(`${useId}:${useSecret}`);
+      // UTF-8 safe base64 (btoa rejects non-Latin1; stored secrets sometimes
+      // contain stray unicode whitespace that breaks btoa).
+      const bytes = new TextEncoder().encode(`${useId}:${useSecret}`);
+      let bin = "";
+      for (const b of bytes) bin += String.fromCharCode(b);
+      const auth = btoa(bin);
       const res = await fetch("https://api.razorpay.com/v1/payments?count=1", {
         headers: { Authorization: `Basic ${auth}` },
       });

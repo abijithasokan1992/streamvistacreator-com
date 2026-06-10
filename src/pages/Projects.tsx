@@ -211,6 +211,15 @@ export default function Projects() {
                   <div className="flex items-start justify-between gap-2">
                     <CardTitle className="text-base truncate">{p.name}</CardTitle>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 text-accent"
+                        onClick={() => setShareProject(p)}
+                        title="Share / Review"
+                      >
+                        <Link2 className="w-3.5 h-3.5" />
+                      </Button>
                       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(p)}>
                         <Pencil className="w-3.5 h-3.5" />
                       </Button>

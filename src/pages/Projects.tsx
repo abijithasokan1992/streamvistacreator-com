@@ -38,7 +38,21 @@ const emptyForm: FormState = { name: "", description: "", workspace_id: "" };
 
 export default function Projects() {
   const { user } = useAuth();
-  const { workspaces, activeId, setActiveId, loading: wsLoading, createWorkspace } = useWorkspaces();
+  const { workspaces, active, activeId, setActiveId, loading: wsLoading, createWorkspace, renameWorkspace } = useWorkspaces();
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
+  const [renaming, setRenaming] = useState(false);
+  const canRenameActive = !!active && (active.role === "owner" || active.role === "admin");
+  const openRename = () => { if (!active) return; setRenameValue(active.name); setRenameOpen(true); };
+  const submitRename = async () => {
+    if (!active) return;
+    setRenaming(true);
+    const ok = await renameWorkspace(active.id, renameValue);
+    setRenaming(false);
+    if (!ok) return toast.error("Couldn't rename workspace");
+    toast.success("Workspace renamed");
+    setRenameOpen(false);
+  };
 
   const [rows, setRows] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);

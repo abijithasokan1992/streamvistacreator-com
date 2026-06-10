@@ -593,12 +593,10 @@ export default function OracleStorageMonitor() {
             disabled={verified !== true}
           />
 
-          {verifyMsg && verified === false && (
-            <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs flex items-start gap-2">
-              <XCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
-              <span className="font-mono break-all">{verifyMsg}</span>
-            </div>
+          {verified === false && (
+            <DiagnosisCard dx={diagnosis ?? diagnose(verifyMsg)} raw={verifyMsg} onEdit={() => setEditing(true)} onRetry={() => runTest(false)} testing={testing} />
           )}
+
 
           <div className="flex flex-wrap gap-2">
             <button

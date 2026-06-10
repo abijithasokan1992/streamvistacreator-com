@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
+import { useSystemMessage } from "@/components/system/SystemMessageProvider";
 
 // ─── IndexedDB persistence for FileSystemFileHandle (auto-resume across refresh/power loss) ───
 const IDB_NAME = "sv_upload_handles";

@@ -343,9 +343,10 @@ Deno.serve(async (req) => {
         .from("recent_uploads").insert(insertPayload)
         .select("id").single();
       if (insErr || !inserted) {
+        console.error("recent_uploads insert failed:", insErr);
         // Best-effort abort the OCI upload so we don't leak parts.
         await abortMultipart({ host, ns, bucket, objectKey, uploadId, keyId, privateKey }).catch(() => {});
-        return json({ error: insErr?.message ?? "insert failed" }, 500, cors);
+        return json({ error: "INTERNAL_SERVER_ERROR", code: 500 }, 500, cors);
       }
 
       // Mirror into upload_sessions for cross-device SHA-256 resume.

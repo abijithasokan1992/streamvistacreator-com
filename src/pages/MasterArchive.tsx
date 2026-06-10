@@ -340,23 +340,109 @@ export default function MasterArchive() {
         {uploads.length > 0 && (
           <div className="mt-6">
             <h3 className="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-2">This session</h3>
-            <div className="rounded-xl border border-border/50 divide-y divide-border/50">
-              {uploads.map((u, i) => (
-                <div key={i} className="px-4 py-2.5 flex items-center justify-between gap-3 text-sm">
-                  <div className="flex items-center gap-2 min-w-0">
-                    {u.status === "uploading" ? <Loader2 className="w-3.5 h-3.5 animate-spin text-accent" />
-                      : u.status === "done" ? <CheckCircle2 className="w-3.5 h-3.5 text-accent" />
-                      : <span className="w-3.5 h-3.5 rounded-full bg-destructive" />}
-                    <span className="truncate">{u.name}</span>
+            <div className="space-y-2">
+              {uploads.map((u, i) => {
+                const isUp = u.status === "uploading";
+                return (
+                  <div
+                    key={i}
+                    className={cn(
+                      "relative overflow-hidden rounded-xl border backdrop-blur-md transition-all",
+                      "border-border/50 bg-card/40",
+                      isUp && "opacity-50 border-accent/40",
+                      u.status === "done" && "border-accent/30",
+                      u.status === "failed" && "border-destructive/40",
+                    )}
+                  >
+                    <div className="px-4 py-3 flex items-center justify-between gap-3 text-sm relative z-10">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        {isUp ? <Loader2 className="w-3.5 h-3.5 animate-spin text-accent shrink-0" />
+                          : u.status === "done" ? <CheckCircle2 className="w-3.5 h-3.5 text-accent shrink-0" />
+                          : <span className="w-3.5 h-3.5 rounded-full bg-destructive shrink-0" />}
+                        <span className="truncate font-medium">{u.name}</span>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        {isUp && (
+                          <span className="font-mono text-xs tabular-nums text-accent tracking-wider">
+                            {u.progress.toString().padStart(2, "0")}%
+                          </span>
+                        )}
+                        <span className="text-[10px] font-mono text-muted-foreground truncate max-w-[180px] hidden sm:inline">
+                          {u.error ?? u.category}
+                        </span>
+                      </div>
+                    </div>
+                    {/* Cinematic scoreboard progress bar */}
+                    <div className="h-1 w-full bg-muted/40">
+                      <div
+                        className={cn(
+                          "h-full transition-all duration-200 ease-out",
+                          isUp && "bg-gradient-to-r from-accent via-primary to-accent shadow-[0_0_12px_hsl(var(--accent)/0.7)]",
+                          u.status === "done" && "bg-accent",
+                          u.status === "failed" && "bg-destructive",
+                        )}
+                        style={{ width: `${u.status === "failed" ? 100 : u.progress}%` }}
+                      />
+                    </div>
                   </div>
-                  <span className="text-[10px] font-mono text-muted-foreground truncate max-w-[40%]">
-                    {u.error ?? u.category}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
+
+        {/* Crayons Bridge — Master Files Checklist */}
+        <div className="mt-8 rounded-2xl border border-accent/30 bg-card/40 backdrop-blur-xl p-5 shadow-[0_8px_32px_-12px_hsl(var(--accent)/0.3)]">
+          <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent/30 to-primary/20 grid place-items-center border border-accent/40">
+                <ClipboardCheck className="w-4 h-4 text-accent" />
+              </div>
+              <div>
+                <h3 className="font-display font-bold text-sm">Crayons Bridge — Master Files Checklist</h3>
+                <p className="text-[11px] text-muted-foreground">Business deliverables required before handoff</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-xs tabular-nums text-accent">
+                {checkedCount.toString().padStart(2, "0")}/{BRIDGE_CHECKLIST.length.toString().padStart(2, "0")}
+              </span>
+              <div className="w-24 h-1.5 rounded-full bg-muted/40 overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-accent to-primary transition-all"
+                  style={{ width: `${(checkedCount / BRIDGE_CHECKLIST.length) * 100}%` }}
+                />
+              </div>
+            </div>
+          </div>
+          <ul className="grid sm:grid-cols-2 gap-2">
+            {BRIDGE_CHECKLIST.map((item) => {
+              const done = !!checklist[item.key];
+              return (
+                <li key={item.key}>
+                  <button
+                    onClick={() => toggleCheck(item.key)}
+                    className={cn(
+                      "w-full text-left flex items-start gap-3 rounded-xl border px-3.5 py-3 transition-all",
+                      "backdrop-blur-sm",
+                      done
+                        ? "border-accent/50 bg-accent/10 shadow-[inset_0_0_0_1px_hsl(var(--accent)/0.2)]"
+                        : "border-border/50 bg-background/30 hover:border-accent/40 hover:bg-accent/5",
+                    )}
+                  >
+                    {done
+                      ? <CheckCircle2 className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+                      : <Circle className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />}
+                    <div className="min-w-0">
+                      <p className={cn("text-sm font-medium leading-snug", done && "text-accent")}>{item.label}</p>
+                      <p className="text-[11px] text-muted-foreground font-mono mt-0.5">{item.hint}</p>
+                    </div>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       </section>
     </main>
   );

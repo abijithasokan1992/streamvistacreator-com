@@ -55,7 +55,7 @@ export const Footer = () => {
           <div className="space-y-4">
             <Link to="/" className="inline-flex items-center gap-2.5">
               {logo ? (
-                <img src={logo} alt="StreamVista Cloud X" className="h-10 w-auto max-w-[160px] object-contain" />
+                <img src={logo} alt="StreamVista Cloud X" className="h-10 w-auto max-w-[160px] object-contain bg-transparent border-0 outline-none shadow-none p-0 mix-blend-lighten" />
               ) : (
                 <div className="font-display font-bold text-base tracking-tight">
                   StreamVista <span className="gradient-text">Cloud X</span>

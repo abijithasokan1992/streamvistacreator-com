@@ -47,6 +47,7 @@ const ShareLinkModal = ({ file, open, onOpenChange, onSaved, studioName }: Props
   const [recipient, setRecipient] = useState("");
   const [saving, setSaving] = useState(false);
   const [sending, setSending] = useState(false);
+  const { showMessage } = useSystemMessage();
 
   const link = useMemo(
     () => (file ? `${window.location.origin}/s/${file.share_token}` : ""),
@@ -105,7 +106,12 @@ const ShareLinkModal = ({ file, open, onOpenChange, onSaved, studioName }: Props
       onSaved?.();
       onOpenChange(false);
     } catch (e: any) {
-      toast.error(e?.message || "Could not save share settings");
+      showMessage({
+        severity: "error",
+        title: "Share settings not saved",
+        message: `We couldn't update the share settings for "${file.filename}".\n\nReason: ${e?.message || "Unknown error"}.\n\nYour previous settings are still active. Try again, or report this so an admin can take a look.`,
+        context: `fileId=${file.id}`,
+      });
     } finally {
       setSaving(false);
     }
@@ -147,7 +153,12 @@ const ShareLinkModal = ({ file, open, onOpenChange, onSaved, studioName }: Props
       toast.success(`Invite sent to ${email}`);
       onSaved?.();
     } catch (e: any) {
-      toast.error(e?.message || "Could not send the invite email.");
+      showMessage({
+        severity: "error",
+        title: "Invite email didn't go out",
+        message: `We couldn't email the review link to ${email} for "${file.filename}".\n\nReason: ${e?.message || "Unknown error"}.\n\nThe recipient is saved on the share, so you can copy the link manually below — or report this so an admin can retry the send.`,
+        context: `fileId=${file.id}; recipient=${email}`,
+      });
     } finally {
       setSending(false);
     }

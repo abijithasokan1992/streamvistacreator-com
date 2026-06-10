@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Loader2, ShieldCheck, Lock, Unlock, AlertTriangle, Cloud } from "lucide-react";
+import { Loader2, ShieldCheck, Lock, Unlock, AlertTriangle, Cloud, Terminal, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface OciPublicConfig {
@@ -7,6 +7,16 @@ interface OciPublicConfig {
   keyFingerprint: string;
   namespace: string;
   bucketName: string;
+}
+
+interface EdgeFnLog {
+  ts: string;
+  name: string;
+  durationMs: number;
+  status: number | null;
+  request: unknown;
+  response: unknown;
+  error: string | null;
 }
 
 /**
@@ -32,6 +42,8 @@ export default function OracleOciStorageCard() {
   const [isLoading, setIsLoading] = useState(true);
   const [connectionStatus, setConnectionStatus] = useState<"IDLE" | "GREEN" | "RED">("IDLE");
   const [uiMessage, setUiMessage] = useState("");
+  const [lastLog, setLastLog] = useState<EdgeFnLog | null>(null);
+  const [showLogDetails, setShowLogDetails] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -63,12 +75,31 @@ export default function OracleOciStorageCard() {
     }
     setIsVerifying(true);
     setUiMessage("Verifying connection with OCI Bucket…");
+    const startedAt = performance.now();
+    let log: EdgeFnLog = {
+      ts: new Date().toISOString(),
+      name: "verify-oci-connection",
+      durationMs: 0,
+      status: null,
+      request: { ...config },
+      response: null,
+      error: null,
+    };
     try {
       const { data, error } = await supabase.functions.invoke("verify-oci-connection", {
         body: { ...config },
       });
-      if (error) throw error;
-      if (data && (data as any).error) throw new Error((data as any).error);
+      log.durationMs = Math.round(performance.now() - startedAt);
+      if (error) {
+        log.status = (error as any).status ?? null;
+        log.error = error.message ?? String(error);
+        throw error;
+      }
+      log.response = data ?? null;
+      if (data && (data as any).error) {
+        log.error = (data as any).error;
+        throw new Error((data as any).error);
+      }
 
       const { error: upErr } = await supabase
         .from("admin_settings")
@@ -79,6 +110,8 @@ export default function OracleOciStorageCard() {
       setIsLocked(true);
       setUiMessage("Connection verified. Public fields saved and locked.");
     } catch (err: any) {
+      log.durationMs = Math.round(performance.now() - startedAt);
+      if (!log.error) log.error = err?.message ?? String(err);
       setConnectionStatus("RED");
       const msg = err?.message ?? "Unknown error";
       setUiMessage(
@@ -88,6 +121,7 @@ export default function OracleOciStorageCard() {
       );
     } finally {
       setIsVerifying(false);
+      setLastLog(log);
     }
   };
 
@@ -187,6 +221,75 @@ export default function OracleOciStorageCard() {
               </button>
             )}
           </div>
+
+          {/* Edge Function Debug Panel */}
+          {lastLog && (
+            <div className="mt-2 rounded-xl border border-border bg-black/40 overflow-hidden">
+              <button
+                onClick={() => setShowLogDetails((s) => !s)}
+                className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Terminal className="w-4 h-4 text-accent" />
+                  <span className="text-xs font-mono font-semibold">Edge Function Debug</span>
+                  <span className="text-[10px] font-mono text-muted-foreground">
+                    {lastLog.name} · {new Date(lastLog.ts).toLocaleTimeString()}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {lastLog.status !== null && (
+                    <span
+                      className={`text-[10px] font-mono px-1.5 py-0.5 rounded ring-1 ${
+                        lastLog.status >= 200 && lastLog.status < 300
+                          ? "bg-emerald-500/15 text-emerald-300 ring-emerald-500/40"
+                          : lastLog.status >= 400
+                          ? "bg-destructive/15 text-destructive ring-destructive/40"
+                          : "bg-amber-500/15 text-amber-300 ring-amber-500/40"
+                      }`}
+                    >
+                      HTTP {lastLog.status}
+                    </span>
+                  )}
+                  <span className="text-[10px] font-mono text-muted-foreground">{lastLog.durationMs}ms</span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setLastLog(null); }}
+                    className="text-muted-foreground hover:text-destructive transition-colors"
+                    aria-label="Clear log"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                  {showLogDetails ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
+                </div>
+              </button>
+
+              {showLogDetails && (
+                <div className="border-t border-border/60 px-4 py-3 space-y-3">
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Request body</div>
+                    <pre className="text-[11px] font-mono bg-black/30 rounded-md p-3 overflow-x-auto text-cyan-300/90">
+                      {JSON.stringify(lastLog.request, null, 2)}
+                    </pre>
+                  </div>
+                  {lastLog.error && (
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-destructive mb-1">Error</div>
+                      <pre className="text-[11px] font-mono bg-black/30 rounded-md p-3 overflow-x-auto text-destructive">
+                        {lastLog.error}
+                      </pre>
+                    </div>
+                  )}
+                  {lastLog.response && (
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-emerald-300 mb-1">Response</div>
+                      <pre className="text-[11px] font-mono bg-black/30 rounded-md p-3 overflow-x-auto text-emerald-300/90">
+                        {JSON.stringify(lastLog.response, null, 2)}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </>
       )}
     </div>

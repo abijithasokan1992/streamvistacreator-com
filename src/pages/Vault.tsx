@@ -258,12 +258,11 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
               <FolderLock className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <Link to="/" className="font-display font-bold text-sm hover:text-accent transition-colors">Creator Studio</Link>
+              <div className="font-display font-bold text-sm">Creator Studio</div>
               <div className="text-[11px] text-muted-foreground truncate max-w-[180px]">{user.email}</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Link to="/" className="hidden sm:inline-flex px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground">Site</Link>
             <button onClick={signOut} className="px-3 py-2 text-sm rounded-md border border-border/60 hover:bg-secondary inline-flex items-center gap-2">
               <LogOut className="w-4 h-4" /> <span className="hidden sm:inline">Sign out</span>
             </button>

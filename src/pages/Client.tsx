@@ -176,12 +176,16 @@ function isPreviewHost(): boolean {
 
 function SandboxView({ finish, userEmail }: { finish: () => void; userEmail: string | null }) {
   const navigate = useNavigate();
-  const [phase, setPhase] = useState<PayPhase>("idle");
+  const [phase, setPhase] = useState<PayPhase>(() => {
+    try { return localStorage.getItem(BYPASS_KEY) === "1" ? "success" : "idle"; } catch { return "idle"; }
+  });
   const [errorKind, setErrorKind] = useState<PayErrorKind | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [lastPaymentId, setLastPaymentId] = useState<string | null>(null);
   const [attempts, setAttempts] = useState(0);
   const [pasteLink, setPasteLink] = useState("");
+  const previewMode = isPreviewHost();
+  const isAdminUser = (userEmail ?? "").toLowerCase() === ADMIN_EMAIL.toLowerCase();
 
   const busy =
     phase === "loading_sdk" ||
@@ -191,7 +195,21 @@ function SandboxView({ finish, userEmail }: { finish: () => void; userEmail: str
 
   const activated = phase === "success";
 
+  const developerBypass = () => {
+    try { localStorage.setItem(BYPASS_KEY, "1"); } catch {}
+    setErrorKind(null);
+    setErrorMsg("");
+    setPhase("success");
+    toast.success("Workspace activated (developer bypass).");
+  };
+
   const failWith = (kind: PayErrorKind, msg: string, paymentId?: string | null) => {
+    setErrorKind(kind);
+    setErrorMsg(msg);
+    setPhase("error");
+    if (paymentId !== undefined) setLastPaymentId(paymentId);
+    toast.error(msg);
+  };
     setErrorKind(kind);
     setErrorMsg(msg);
     setPhase("error");

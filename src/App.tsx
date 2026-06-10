@@ -70,6 +70,7 @@ const App = () => (
                 <Route path="/refund" element={<Refund />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/ingest-test" element={<IngestTest />} />
+                <Route path="/c2c-setup" element={<C2CSetupManual />} />
                 <Route path="/support" element={<About />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />

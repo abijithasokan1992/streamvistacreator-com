@@ -230,21 +230,21 @@ export default function RolesManager() {
           <div className="space-y-3">
             <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Executive Producer → Creator</Label>
             <div className="grid sm:grid-cols-[1fr_1fr_auto] gap-2">
-              <Select value={epPick} onValueChange={setEpPick}>
-                <SelectTrigger className="bg-secondary/40 border-border/60"><SelectValue placeholder="Pick an EP" /></SelectTrigger>
+              <Select value={epPick} onValueChange={setEpPick} disabled={!unlocked}>
+                <SelectTrigger className="bg-secondary/40 border-border/60 disabled:opacity-50"><SelectValue placeholder={unlocked ? "Pick an EP" : "🔒 Locked"} /></SelectTrigger>
                 <SelectContent>
                   {eps.length === 0 && <div className="px-3 py-2 text-xs text-muted-foreground">No users have the EP role yet</div>}
                   {eps.map((p) => <SelectItem key={p.user_id} value={p.user_id}>{p.display_name || p.user_id.slice(0,8)}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <Select value={crPick} onValueChange={setCrPick}>
-                <SelectTrigger className="bg-secondary/40 border-border/60"><SelectValue placeholder="Pick a Creator" /></SelectTrigger>
+              <Select value={crPick} onValueChange={setCrPick} disabled={!unlocked}>
+                <SelectTrigger className="bg-secondary/40 border-border/60 disabled:opacity-50"><SelectValue placeholder={unlocked ? "Pick a Creator" : "🔒 Locked"} /></SelectTrigger>
                 <SelectContent>
                   {creators.length === 0 && <div className="px-3 py-2 text-xs text-muted-foreground">No users have the Creator role yet</div>}
                   {creators.map((p) => <SelectItem key={p.user_id} value={p.user_id}>{p.display_name || p.user_id.slice(0,8)}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <Button onClick={linkPair} className="bg-gradient-primary text-primary-foreground">
+              <Button onClick={linkPair} disabled={!unlocked} className="bg-gradient-primary text-primary-foreground">
                 <Plus className="w-4 h-4 mr-1" /> Link
               </Button>
             </div>

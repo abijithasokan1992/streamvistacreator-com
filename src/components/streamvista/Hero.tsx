@@ -18,7 +18,7 @@ export const Hero = () => (
       <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-accent/40 bg-accent/5 mb-8 animate-fade-in">
         <Sparkles className="w-3 h-3 text-accent" />
         <span className="font-mono-tech text-[10px] uppercase tracking-[0.25em] text-accent">
-          Made in India · For Film Teams · UPI · WhatsApp Support
+          Made in India
         </span>
       </div>
 
@@ -26,11 +26,11 @@ export const Hero = () => (
         {/* Editorial headline */}
         <div>
           <h1 className="font-display font-black uppercase leading-[0.88] tracking-tight text-[clamp(3rem,10vw,8rem)]">
-            From camera
+            THE CREATOR
             <br />
-            to client —
+            CLOUD STUDIO
             <br />
-            <span className="gradient-text">in one link.</span>
+            <span className="gradient-text">BUILT FOR CINEMA</span>
           </h1>
         </div>
 

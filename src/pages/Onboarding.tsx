@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Loader2, ArrowRight, Sparkles, SkipForward } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, dashboardForRole } from "@/hooks/useAuth";
+import CinematicOnboarding from "@/components/CinematicOnboarding";
 
 const ROLES = [
   "Creator", "Editor", "Director", "Cinematographer",

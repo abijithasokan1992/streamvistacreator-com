@@ -303,7 +303,7 @@ export default function Auth() {
             )}
           </div>
 
-          {view !== "forgot" && (
+          {view !== "forgot" && !isAdminLogin && (
             <div className="mb-6 grid grid-cols-2 gap-1 p-1 rounded-xl bg-input/30 border border-border/50">
               <button
                 type="button"
@@ -332,7 +332,14 @@ export default function Auth() {
             </div>
           )}
 
-          {view !== "forgot" && (
+          {isAdminLogin && view !== "forgot" && (
+            <div className="mb-6 px-4 py-3 rounded-xl border border-accent/30 bg-accent/5 text-[11px] text-muted-foreground text-center">
+              <span className="font-semibold text-accent uppercase tracking-[0.2em]">Admin Console</span>
+              <div className="mt-1">Sign in with your administrator credentials. New admin accounts and role changes are managed from inside the admin dashboard.</div>
+            </div>
+          )}
+
+          {view !== "forgot" && !isAdminLogin && (
             <button
               type="button"
               onClick={handleGoogleSignIn}
@@ -349,7 +356,7 @@ export default function Auth() {
             </button>
           )}
 
-          {view !== "forgot" && (
+          {view !== "forgot" && !isAdminLogin && (
             <div className="relative my-4">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t border-border/40" />

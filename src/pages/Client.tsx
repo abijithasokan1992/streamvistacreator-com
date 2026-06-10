@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useBackGuard } from "@/hooks/useBackGuard";
 import { supabase } from "@/integrations/supabase/client";
 import {
   LogOut, Link2, Inbox, ShieldCheck, MessageSquareText, Play,

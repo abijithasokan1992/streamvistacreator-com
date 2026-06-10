@@ -68,6 +68,45 @@ export type Database = {
         }
         Relationships: []
       }
+      billing_config: {
+        Row: {
+          api_rate_paise_per_1k: number
+          auto_charge_enabled: boolean
+          bandwidth_rate_paise_per_gb: number
+          creator_tier_tb: number
+          free_tier_gb: number
+          id: number
+          idle_flag_days: number
+          idle_freeze_days: number
+          storage_rate_paise_per_gb: number
+          updated_at: string
+        }
+        Insert: {
+          api_rate_paise_per_1k?: number
+          auto_charge_enabled?: boolean
+          bandwidth_rate_paise_per_gb?: number
+          creator_tier_tb?: number
+          free_tier_gb?: number
+          id?: number
+          idle_flag_days?: number
+          idle_freeze_days?: number
+          storage_rate_paise_per_gb?: number
+          updated_at?: string
+        }
+        Update: {
+          api_rate_paise_per_1k?: number
+          auto_charge_enabled?: boolean
+          bandwidth_rate_paise_per_gb?: number
+          creator_tier_tb?: number
+          free_tier_gb?: number
+          id?: number
+          idle_flag_days?: number
+          idle_freeze_days?: number
+          storage_rate_paise_per_gb?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       branding_settings: {
         Row: {
           allow_user_logos: boolean
@@ -1152,6 +1191,90 @@ export type Database = {
         }
         Relationships: []
       }
+      usage_meters: {
+        Row: {
+          api_calls: number
+          bandwidth_gb: number
+          created_at: string
+          last_recomputed_at: string
+          period_start: string
+          storage_gb: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          api_calls?: number
+          bandwidth_gb?: number
+          created_at?: string
+          last_recomputed_at?: string
+          period_start?: string
+          storage_gb?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          api_calls?: number
+          bandwidth_gb?: number
+          created_at?: string
+          last_recomputed_at?: string
+          period_start?: string
+          storage_gb?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      usage_overages: {
+        Row: {
+          amount_paise: number
+          charge_provider: string | null
+          charge_ref: string | null
+          charged_at: string | null
+          created_at: string
+          failure_reason: string | null
+          id: string
+          kind: string
+          period_start: string
+          rate_paise: number
+          status: string
+          units: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_paise: number
+          charge_provider?: string | null
+          charge_ref?: string | null
+          charged_at?: string | null
+          created_at?: string
+          failure_reason?: string | null
+          id?: string
+          kind: string
+          period_start: string
+          rate_paise: number
+          status?: string
+          units: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_paise?: number
+          charge_provider?: string | null
+          charge_ref?: string | null
+          charged_at?: string | null
+          created_at?: string
+          failure_reason?: string | null
+          id?: string
+          kind?: string
+          period_start?: string
+          rate_paise?: number
+          status?: string
+          units?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           bandwidth_overage_inr_per_gb: number
@@ -1160,7 +1283,11 @@ export type Database = {
           created_at: string
           display_name: string | null
           first_name: string | null
+          idle_flagged_at: string | null
+          idle_frozen_at: string | null
+          idle_status: string
           is_suspended: boolean
+          last_active_at: string
           last_name: string | null
           onboarding_step: string
           personal_logo_url: string | null
@@ -1181,7 +1308,11 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           first_name?: string | null
+          idle_flagged_at?: string | null
+          idle_frozen_at?: string | null
+          idle_status?: string
           is_suspended?: boolean
+          last_active_at?: string
           last_name?: string | null
           onboarding_step?: string
           personal_logo_url?: string | null
@@ -1202,7 +1333,11 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           first_name?: string | null
+          idle_flagged_at?: string | null
+          idle_frozen_at?: string | null
+          idle_status?: string
           is_suspended?: boolean
+          last_active_at?: string
           last_name?: string | null
           onboarding_step?: string
           personal_logo_url?: string | null
@@ -1241,7 +1376,13 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_kammattam_meter: {
+        Row: {
+          black_paise: number | null
+          white_paise: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       admin_exists: { Args: never; Returns: boolean }

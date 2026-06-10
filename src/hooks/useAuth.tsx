@@ -49,10 +49,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((evt, s) => {
       setSession(s);
       setUser(s?.user ?? null);
       setTimeout(() => checkRole(s?.user?.id), 0);
+      // Idle-tracker: keep last_active_at fresh + auto-unfreeze on real sign-in
+      if ((evt === "SIGNED_IN" || evt === "TOKEN_REFRESHED") && s?.user?.id) {
+        setTimeout(() => {
+          supabase.from("user_profiles").update({
+            last_active_at: new Date().toISOString(),
+            idle_status: "active",
+            idle_flagged_at: null,
+            idle_frozen_at: null,
+          }).eq("user_id", s.user!.id).then(() => {});
+        }, 0);
+      }
     });
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);

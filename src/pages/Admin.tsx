@@ -23,6 +23,7 @@ import GlobalAssetManager from "@/components/admin/GlobalAssetManager";
 import UniversalBroadcast from "@/components/admin/UniversalBroadcast";
 import EmailLogMonitor from "@/components/admin/EmailLogMonitor";
 import UsersAndCredentials from "@/components/admin/UsersAndCredentials";
+import KammattamMeter from "@/components/admin/KammattamMeter";
 
 interface Row {
   id: string;
@@ -191,6 +192,7 @@ export default function Admin() {
           {/* 2. Finance & Billing */}
           <TabsContent value="finance" className="space-y-8 mt-0 animate-fade-in">
             <DeptHeader icon={<Wallet className="w-5 h-5" />} title="Finance & Billing" desc="Razorpay revenue, commissions, invoices." />
+            <KammattamMeter />
             <FinanceOverview rows={rows} />
             <RazorpayCredentials />
             <CommissionsTracker />

@@ -1,0 +1,1 @@
+ALTER VIEW public.v_kammattam_meter SET (security_invoker = on);

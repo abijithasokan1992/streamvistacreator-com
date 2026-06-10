@@ -60,7 +60,8 @@ export default function ReferralRewards() {
       setCode(row?.code ?? null);
 
       const { data } = await (supabase as any)
-        .from("intro_invites").select("*")
+        .from("intro_invites")
+        .select("id,inviter_user_id,first_name,last_name,email,status,created_at,expires_at,accepted_user_id,accepted_at")
         .eq("inviter_user_id", user.id)
         .order("created_at", { ascending: false });
       if (!cancelled) {
@@ -78,7 +79,8 @@ export default function ReferralRewards() {
       .channel(`my-intro-invites-${user.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "intro_invites", filter: `inviter_user_id=eq.${user.id}` },
         async () => {
-          const { data } = await (supabase as any).from("intro_invites").select("*")
+          const { data } = await (supabase as any).from("intro_invites")
+            .select("id,inviter_user_id,first_name,last_name,email,status,created_at,expires_at,accepted_user_id,accepted_at")
             .eq("inviter_user_id", user.id).order("created_at", { ascending: false });
           setInvites((data as IntroInvite[]) ?? []);
         })

@@ -42,12 +42,10 @@ interface Row {
 const STATUSES = ["pending", "contacted", "activated", "rejected"];
 
 export default function Admin() {
-  const { user, isAdmin, loading, signOut, refreshRole } = useAuth();
+  const { user, isAdmin, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const [rows, setRows] = useState<Row[]>([]);
   const [fetching, setFetching] = useState(false);
-  const [claiming, setClaiming] = useState(false);
-  const [adminAlreadyExists, setAdminAlreadyExists] = useState<boolean | null>(null);
   const [copied, setCopied] = useState(false);
 
   const adminUrl = typeof window !== "undefined" ? `${window.location.origin}/admin` : "/admin";
@@ -63,13 +61,6 @@ export default function Admin() {
   useEffect(() => {
     if (!loading && !user) navigate("/auth?next=/admin", { replace: true });
   }, [user, loading, navigate]);
-
-  // Hide the "Claim Admin Role" CTA the moment an admin exists somewhere in
-  // the system — prevents would-be attackers from spamming the button.
-  useEffect(() => {
-    if (loading || !user || isAdmin) return;
-    supabase.rpc("admin_exists").then(({ data }) => setAdminAlreadyExists(!!data));
-  }, [user, loading, isAdmin]);
 
   const load = async () => {
     setFetching(true);
@@ -111,15 +102,6 @@ export default function Admin() {
     return () => { supabase.removeChannel(channel); };
   }, [isAdmin]);
 
-  const claimAdmin = async () => {
-    setClaiming(true);
-    const { data, error } = await supabase.rpc("claim_admin_if_none");
-    setClaiming(false);
-    if (error) return toast.error(error.message);
-    if (data) { toast.success("You are now admin"); await refreshRole(); }
-    else toast.error("An admin already exists. Ask them to grant you access.");
-  };
-
   const setStatus = async (id: string, status: string) => {
     const { error } = await supabase.from("onboarding_requests").update({ onboarding_status: status }).eq("id", id);
     if (error) return toast.error(error.message);
@@ -130,26 +112,17 @@ export default function Admin() {
   if (loading) return <div className="min-h-dvh grid place-items-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
 
   if (!isAdmin) {
-    const canClaim = adminAlreadyExists === false;
     return (
       <main className="min-h-dvh grid place-items-center px-4">
         <div className="glass-strong rounded-3xl p-10 max-w-md text-center animate-fade-in">
           <Crown className="w-12 h-12 mx-auto text-accent mb-4" />
-          <h1 className="font-display text-2xl font-bold mb-2">
-            {canClaim ? "Bootstrap the Control Panel" : "No Admin Access"}
-          </h1>
+          <h1 className="font-display text-2xl font-bold mb-2">No Admin Access</h1>
           <p className="text-sm text-muted-foreground mb-6">
-            Signed in as <span className="text-foreground">{user?.email}</span>.{" "}
-            {canClaim
-              ? "No admin exists yet — claim the role to bootstrap the panel."
-              : "An administrator already manages this workspace. Ask them to grant you access."}
+            Signed in as <span className="text-foreground">{user?.email}</span>.
+            This workspace is managed by an existing administrator. Roles and division
+            assignments are issued from inside the admin dashboard — please contact your
+            administrator to be granted access.
           </p>
-          {canClaim && (
-            <button onClick={claimAdmin} disabled={claiming} className="w-full h-12 rounded-xl bg-gradient-primary text-primary-foreground font-semibold glow-primary disabled:opacity-60 flex items-center justify-center gap-2">
-              {claiming ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-              Claim Admin Role
-            </button>
-          )}
           <button onClick={signOut} className="mt-3 w-full h-10 rounded-xl border border-border text-sm font-medium hover:bg-secondary">Sign out</button>
         </div>
       </main>

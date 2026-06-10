@@ -48,6 +48,7 @@ const STATUSES = ["pending", "contacted", "activated", "rejected"];
 export default function Admin() {
   const { user, isAdmin, loading, signOut } = useAuth();
   const navigate = useNavigate();
+  useBackGuard(!!user);
   const [rows, setRows] = useState<Row[]>([]);
   const [fetching, setFetching] = useState(false);
   const [copied, setCopied] = useState(false);

@@ -95,56 +95,61 @@ Deno.serve(async (req) => {
     let revenuePaise = 0;
 
     for (const row of rows ?? []) {
-      // Find the user's Stripe customer
+      // Prefer Stripe if a saved card exists; otherwise try Razorpay token.
       const { data: sub } = await supa
         .from("subscriptions")
-        .select("stripe_customer_id, environment")
+        .select("stripe_customer_id, environment, gateway, razorpay_customer_id, razorpay_token_id")
         .eq("user_id", row.user_id)
-        .not("stripe_customer_id", "is", null)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
 
-      if (!sub?.stripe_customer_id) {
-        await supa.from("usage_overages").update({
-          status: "failed", failure_reason: "no_saved_payment_method",
-          updated_at: new Date().toISOString(),
-        }).eq("id", row.id);
-        failed++;
-        continue;
-      }
+      let success = false;
+      let lastErr = "no_saved_payment_method";
 
-      try {
-        const stripe = createStripeClient((sub.environment as "sandbox" | "live") ?? "sandbox");
-        const pms = await stripe.paymentMethods.list({ customer: sub.stripe_customer_id, type: "card", limit: 1 });
-        const pmId = pms.data[0]?.id;
-        if (!pmId) throw new Error("no_card_on_file");
-
-        const intent = await stripe.paymentIntents.create({
-          amount: row.amount_paise,
-          currency: "inr",
-          customer: sub.stripe_customer_id,
-          payment_method: pmId,
-          off_session: true,
-          confirm: true,
-          description: `StreamVista overage · ${row.kind} · ${row.period_start}`,
-          metadata: { overage_id: row.id, user_id: row.user_id, kind: row.kind },
-        });
-
-        if (intent.status === "succeeded") {
+      if (sub?.stripe_customer_id) {
+        try {
+          const stripe = createStripeClient((sub.environment as "sandbox" | "live") ?? "sandbox");
+          const pms = await stripe.paymentMethods.list({ customer: sub.stripe_customer_id, type: "card", limit: 1 });
+          const pmId = pms.data[0]?.id;
+          if (!pmId) throw new Error("no_card_on_file");
+          const intent = await stripe.paymentIntents.create({
+            amount: row.amount_paise, currency: "inr",
+            customer: sub.stripe_customer_id, payment_method: pmId,
+            off_session: true, confirm: true,
+            description: `StreamVista overage · ${row.kind} · ${row.period_start}`,
+            metadata: { overage_id: row.id, user_id: row.user_id, kind: row.kind },
+          });
+          if (intent.status !== "succeeded") throw new Error(`status=${intent.status}`);
           await supa.from("usage_overages").update({
             status: "charged", charge_provider: "stripe", charge_ref: intent.id,
             charged_at: new Date().toISOString(), updated_at: new Date().toISOString(),
           }).eq("id", row.id);
-          charged++;
-          revenuePaise += row.amount_paise;
-        } else {
-          throw new Error(`status=${intent.status}`);
+          success = true;
+        } catch (e: any) {
+          lastErr = `stripe: ${String(e?.message ?? e).slice(0, 200)}`;
         }
-      } catch (e: any) {
+      }
+
+      if (!success && sub?.razorpay_token_id) {
+        const rz = await chargeRazorpay(supa, row as any);
+        if (rz.ok) {
+          await supa.from("usage_overages").update({
+            status: "charged", charge_provider: "razorpay", charge_ref: rz.ref,
+            charged_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+          }).eq("id", row.id);
+          success = true;
+        } else {
+          lastErr = `razorpay: ${rz.reason}`;
+        }
+      }
+
+      if (success) {
+        charged++;
+        revenuePaise += row.amount_paise;
+      } else {
         await supa.from("usage_overages").update({
-          status: "failed",
-          failure_reason: String(e?.message ?? e).slice(0, 240),
+          status: "failed", failure_reason: lastErr.slice(0, 240),
           updated_at: new Date().toISOString(),
         }).eq("id", row.id);
         failed++;

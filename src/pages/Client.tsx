@@ -214,6 +214,13 @@ function SandboxView({ finish, userEmail }: { finish: () => void; userEmail: str
 
   const activate = async () => {
     if (busy) return;
+    // Preview / test environments cannot run real Razorpay verification —
+    // skip the edge function call entirely so the activation screen never locks up.
+    if (previewMode) {
+      playTempleBell();
+      developerBypass();
+      return;
+    }
     playTempleBell();
     setAttempts((n) => n + 1);
     setErrorKind(null);

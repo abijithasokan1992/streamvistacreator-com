@@ -268,9 +268,19 @@ export default function RazorpayCredentials() {
         </>
       )}
 
-      {/* Webhook helper — always visible */}
+      {/* Webhook helper — always visible, auto-synced with deployed edge function */}
       <div className="rounded-xl border border-border/40 bg-secondary/20 p-4 space-y-2 text-xs">
-        <p className="font-semibold text-foreground">Webhook URL (paste in Razorpay → Settings → Webhooks)</p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="font-semibold text-foreground">Webhook URL (paste in Razorpay → Settings → Webhooks)</p>
+          <a
+            href={DASHBOARD_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 text-[11px] text-accent hover:underline"
+          >
+            Open Razorpay <ExternalLink className="w-3 h-3" />
+          </a>
+        </div>
         <div className="flex items-center gap-2">
           <code className="flex-1 px-3 py-2 rounded-md bg-background/60 border border-border/50 font-mono text-[11px] break-all">
             {WEBHOOK_URL}
@@ -283,8 +293,17 @@ export default function RazorpayCredentials() {
           Subscribe to: <span className="font-mono text-foreground">payment.captured</span>,{" "}
           <span className="font-mono text-foreground">payment.failed</span>,{" "}
           <span className="font-mono text-foreground">order.paid</span>,{" "}
-          <span className="font-mono text-foreground">refund.processed</span>.
+          <span className="font-mono text-foreground">refund.processed</span>,{" "}
+          <span className="font-mono text-foreground">subscription.*</span>.
         </p>
+        {SITE_ORIGIN && (
+          <p className="text-muted-foreground pt-1 border-t border-border/30">
+            Frontend origin: <span className="font-mono text-foreground">{SITE_ORIGIN}</span>
+            <span className="ml-1 opacity-70">
+              — for reference only. The webhook must point at the backend edge function above, never at the site domain.
+            </span>
+          </p>
+        )}
       </div>
     </div>
   );

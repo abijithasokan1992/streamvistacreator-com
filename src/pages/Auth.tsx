@@ -283,7 +283,7 @@ export default function Auth() {
         email: parsed.data.email,
         password: parsed.data.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/vault`,
+          emailRedirectTo: `${getAppOrigin()}/vault`,
           data: {
             display_name: displayName,
             first_name: parsed.data.firstName,

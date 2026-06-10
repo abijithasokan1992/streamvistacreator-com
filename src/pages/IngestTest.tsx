@@ -126,7 +126,7 @@ export default function IngestTest() {
       prev.map((it) => (it.id === item.id ? { ...it, xhr, status: "uploading" } : it)),
     );
     xhr.send(item.file);
-  }, []);
+  }, [showMessage]);
 
   const addFiles = useCallback(
     (files: FileList | File[]) => {

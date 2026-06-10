@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
-  Copy, Eye, Download, Lock, Clock, Hash, Link2, Loader2, Shield, ExternalLink,
+  Copy, Eye, Download, Lock, Clock, Hash, Link2, Loader2, Shield, ExternalLink, Mail, Send,
 } from "lucide-react";
 
 export type ShareLinkFile = {
@@ -19,6 +19,7 @@ export type ShareLinkFile = {
   max_downloads: number | null;
   view_only?: boolean;
   has_password: boolean;
+  recipient_email?: string | null;
 };
 
 interface Props {
@@ -26,6 +27,7 @@ interface Props {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   onSaved?: () => void;
+  studioName?: string;
 }
 
 function toLocalInput(iso: string | null): string {
@@ -35,13 +37,15 @@ function toLocalInput(iso: string | null): string {
   return new Date(d.getTime() - off * 60_000).toISOString().slice(0, 16);
 }
 
-const ShareLinkModal = ({ file, open, onOpenChange, onSaved }: Props) => {
+const ShareLinkModal = ({ file, open, onOpenChange, onSaved, studioName }: Props) => {
   const [pwd, setPwd] = useState("");
   const [clearPwd, setClearPwd] = useState(false);
   const [expires, setExpires] = useState<string>("");
   const [maxDl, setMaxDl] = useState<string>("");
   const [viewOnly, setViewOnly] = useState(false);
+  const [recipient, setRecipient] = useState("");
   const [saving, setSaving] = useState(false);
+  const [sending, setSending] = useState(false);
 
   const link = useMemo(
     () => (file ? `${window.location.origin}/s/${file.share_token}` : ""),
@@ -55,6 +59,7 @@ const ShareLinkModal = ({ file, open, onOpenChange, onSaved }: Props) => {
     setExpires(toLocalInput(file.expires_at));
     setMaxDl(file.max_downloads != null ? String(file.max_downloads) : "");
     setViewOnly(!!file.view_only);
+    setRecipient(file.recipient_email || "");
   }, [file?.id]);
 
   if (!file) return null;
@@ -70,12 +75,14 @@ const ShareLinkModal = ({ file, open, onOpenChange, onSaved }: Props) => {
       // 1. Update DB-side fields (RLS allows owner UPDATE).
       const expiresIso = expires ? new Date(expires).toISOString() : null;
       const maxDownloads = maxDl.trim() === "" ? null : Math.max(1, parseInt(maxDl, 10) || 0);
+      const trimmedEmail = recipient.trim();
       const { error: upErr } = await supabase
         .from("shared_files")
         .update({
           expires_at: expiresIso,
           max_downloads: maxDownloads,
           view_only: viewOnly,
+          recipient_email: trimmedEmail === "" ? null : trimmedEmail,
         })
         .eq("id", file.id);
       if (upErr) throw upErr;
@@ -100,6 +107,48 @@ const ShareLinkModal = ({ file, open, onOpenChange, onSaved }: Props) => {
       toast.error(e?.message || "Could not save share settings");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const sendToClient = async () => {
+    const email = recipient.trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Enter a valid client email address first.");
+      return;
+    }
+    setSending(true);
+    try {
+      // Persist the recipient (and current settings) so the link is auto-listed
+      // on the client's dashboard, then dispatch the email.
+      const expiresIso = expires ? new Date(expires).toISOString() : file.expires_at;
+      const { error: upErr } = await supabase
+        .from("shared_files")
+        .update({ recipient_email: email })
+        .eq("id", file.id);
+      if (upErr) throw upErr;
+
+      const { error } = await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "client-review-invite",
+          recipientEmail: email,
+          idempotencyKey: `client-review-invite-${file.id}-${email}`,
+          templateData: {
+            studioName: studioName || "Your studio",
+            filename: file.filename,
+            shareUrl: link,
+            expiresAt: expiresIso,
+            hasPassword: !!file.has_password || pwd.length > 0,
+            viewOnly,
+          },
+        },
+      });
+      if (error) throw error;
+      toast.success(`Invite sent to ${email}`);
+      onSaved?.();
+    } catch (e: any) {
+      toast.error(e?.message || "Could not send the invite email.");
+    } finally {
+      setSending(false);
     }
   };
 

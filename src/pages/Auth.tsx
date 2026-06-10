@@ -233,7 +233,7 @@ export default function Auth() {
     // Welcome or a Login alert when Google bounces the user back.
     try { sessionStorage.setItem("sv_oauth_intent", view === "signup" ? "signup" : "login"); } catch {}
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+      redirect_uri: `${getAppOrigin()}/auth`,
       extraParams: {
         // Force the account chooser on signup so the user can pick a fresh
         // Google identity; on login we let Google reuse the last session.

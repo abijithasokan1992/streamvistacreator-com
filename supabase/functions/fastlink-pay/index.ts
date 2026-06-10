@@ -157,8 +157,7 @@ Deno.serve(async (req) => {
 
     return json({ error: "Unknown action" }, 400);
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    console.error("fastlink-pay error:", msg);
-    return json({ error: msg }, 500);
+    console.error("fastlink-pay error:", e instanceof Error ? e.message : String(e));
+    return json({ error: "Internal server error" }, 500);
   }
 });

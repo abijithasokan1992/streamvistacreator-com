@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { Loader2, Users, FileVideo, LogOut, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useBackGuard } from "@/hooks/useBackGuard";
 
 type CreatorRow = { id: string; user_id: string; email?: string };
 type FileRow = {

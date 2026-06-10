@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import {
   ArrowLeft, Archive, Film, Music2, FileText, Upload, Loader2, Building2,
   CheckCircle2, FolderOpen, Layers, Sparkles, ClipboardCheck, Circle,
+  Shield, Check, X, RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -154,7 +155,7 @@ function categorySatisfies(category: string | null, item: typeof BRIDGE_CHECKLIS
 }
 
 export default function MasterArchive() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { workspaces, active, activeId, setActiveId, loading: wsLoading } = useWorkspaces();
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectId, setProjectId] = useState<string>("");
@@ -163,6 +164,12 @@ export default function MasterArchive() {
   const [uploads, setUploads] = useState<UploadStat[]>([]);
   const fileInput = useRef<HTMLInputElement>(null);
   const quota = useStorageQuota();
+
+  // Admin = global admin OR workspace owner/admin. UI gate only; RLS enforces server-side.
+  const canManageChecklist = isAdmin
+    || active?.role === "owner"
+    || active?.role === "admin";
+
 
   useEffect(() => {
     if (!user || !activeId) return;
@@ -339,7 +346,102 @@ export default function MasterArchive() {
     return () => { supabase.removeChannel(channel); };
   }, [activeId, projectId, recomputeChecklist]);
 
-  const checkedCount = BRIDGE_CHECKLIST.filter((i) => (satisfiedCounts[i.key] ?? 0) > 0).length;
+  // ── Admin overrides (force-complete / force-incomplete) ──────────────────────
+  // Read by all workspace members so the forced state shows for everyone.
+  // Writes are RLS-restricted to global admins, workspace owners/admins, and
+  // the super admin. The DB-driven auto-sync above is untouched: overrides
+  // simply *win* over the computed counts when present.
+  type OverrideState = "forced_complete" | "forced_incomplete";
+  type OverrideRow = {
+    id: string;
+    checklist_key: string;
+    state: OverrideState;
+    note: string | null;
+    set_by_email: string | null;
+    project_id: string | null;
+  };
+  const [overrides, setOverrides] = useState<Record<string, OverrideRow>>({});
+
+  const loadOverrides = useMemo(() => async () => {
+    if (!activeId) { setOverrides({}); return; }
+    let q = (supabase as any)
+      .from("checklist_overrides")
+      .select("id,checklist_key,state,note,set_by_email,project_id")
+      .eq("workspace_id", activeId);
+    if (projectId) q = q.or(`project_id.eq.${projectId},project_id.is.null`);
+    else q = q.is("project_id", null);
+    const { data } = await q;
+    const map: Record<string, OverrideRow> = {};
+    for (const row of (data ?? []) as OverrideRow[]) {
+      // Project-scoped wins over workspace-wide for the same key.
+      const existing = map[row.checklist_key];
+      if (!existing || (row.project_id && !existing.project_id)) {
+        map[row.checklist_key] = row;
+      }
+    }
+    setOverrides(map);
+  }, [activeId, projectId]);
+
+  useEffect(() => { void loadOverrides(); }, [loadOverrides]);
+
+  useEffect(() => {
+    if (!activeId) return;
+    const ch = supabase
+      .channel(`checklist-overrides-${activeId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "checklist_overrides", filter: `workspace_id=eq.${activeId}` },
+        () => { void loadOverrides(); },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [activeId, loadOverrides]);
+
+  const isItemDone = (key: string): boolean => {
+    const ov = overrides[key];
+    if (ov?.state === "forced_complete") return true;
+    if (ov?.state === "forced_incomplete") return false;
+    return (satisfiedCounts[key] ?? 0) > 0;
+  };
+
+  const setOverride = async (key: string, state: OverrideState) => {
+    if (!activeId || !canManageChecklist) return;
+    const payload = {
+      workspace_id: activeId,
+      project_id: projectId || null,
+      checklist_key: key,
+      state,
+      set_by: user?.id ?? null,
+      set_by_email: user?.email ?? null,
+    };
+    const { error } = await (supabase as any)
+      .from("checklist_overrides")
+      .upsert(payload, { onConflict: "workspace_id,project_id,checklist_key" });
+    if (error) {
+      toast.error("Override failed", { description: error.message });
+      return;
+    }
+    toast.success(state === "forced_complete" ? "Marked complete" : "Marked incomplete");
+    void loadOverrides();
+  };
+
+  const clearOverride = async (key: string) => {
+    if (!activeId || !canManageChecklist) return;
+    const existing = overrides[key];
+    if (!existing) return;
+    const { error } = await (supabase as any)
+      .from("checklist_overrides")
+      .delete()
+      .eq("id", existing.id);
+    if (error) {
+      toast.error("Could not clear override", { description: error.message });
+      return;
+    }
+    toast.success("Override cleared — auto-sync restored");
+    void loadOverrides();
+  };
+
+  const checkedCount = BRIDGE_CHECKLIST.filter((i) => isItemDone(i.key)).length;
 
   // Clicking a checklist row pre-selects its canonical destination so the
   // admin can drop straight into the right folder without hunting for it.
@@ -349,6 +451,7 @@ export default function MasterArchive() {
       description: `Ready to ingest "${item.label}".`,
     });
   };
+
 
   return (
     <main className="min-h-dvh bg-background text-foreground">
@@ -591,44 +694,110 @@ export default function MasterArchive() {
               </div>
             </div>
           </div>
+          {canManageChecklist && (
+            <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-2 inline-flex items-center gap-1.5">
+              <Shield className="w-3 h-3 text-accent" />
+              Admin override mode — force-tick, undo, or restore auto-sync per item
+            </p>
+          )}
           <ul className="grid sm:grid-cols-2 gap-2">
             {BRIDGE_CHECKLIST.map((item) => {
               const count = satisfiedCounts[item.key] ?? 0;
-              const done = count > 0;
+              const ov = overrides[item.key];
+              const done = isItemDone(item.key);
+              const isForced = !!ov;
               const isTargetActive = selected?.folder === item.target.folder && selected?.sub === item.target.sub;
               return (
                 <li key={item.key}>
-                  <button
-                    onClick={() => selectChecklistTarget(item)}
-                    title={done ? `${count} file${count === 1 ? "" : "s"} ingested — click to set destination again` : `Click to pre-select → ${item.target.sub}`}
+                  <div
                     className={cn(
-                      "w-full text-left flex items-start gap-3 rounded-xl border px-3.5 py-3 transition-all",
-                      "backdrop-blur-sm",
+                      "w-full rounded-xl border px-3.5 py-3 transition-all backdrop-blur-sm",
                       done
                         ? "border-accent/50 bg-accent/10 shadow-[inset_0_0_0_1px_hsl(var(--accent)/0.2)]"
                         : "border-border/50 bg-background/30 hover:border-accent/40 hover:bg-accent/5",
                       isTargetActive && "ring-1 ring-primary/50",
+                      isForced && "ring-1 ring-accent/60",
                     )}
                   >
-                    {done
-                      ? <CheckCircle2 className="w-4 h-4 text-accent shrink-0 mt-0.5" />
-                      : <Circle className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className={cn("text-sm font-medium leading-snug", done && "text-accent")}>{item.label}</p>
-                        {done && (
-                          <span className="font-mono text-[10px] text-accent tabular-nums shrink-0">×{count}</span>
-                        )}
+                    <button
+                      type="button"
+                      onClick={() => selectChecklistTarget(item)}
+                      title={done ? `Click to set destination → ${item.target.sub}` : `Click to pre-select → ${item.target.sub}`}
+                      className="w-full text-left flex items-start gap-3"
+                    >
+                      {done
+                        ? <CheckCircle2 className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+                        : <Circle className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className={cn("text-sm font-medium leading-snug", done && "text-accent")}>{item.label}</p>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {count > 0 && (
+                              <span className="font-mono text-[10px] text-accent tabular-nums">×{count}</span>
+                            )}
+                            {isForced && (
+                              <span className={cn(
+                                "font-mono text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded border",
+                                ov.state === "forced_complete"
+                                  ? "border-accent/50 bg-accent/15 text-accent"
+                                  : "border-destructive/50 bg-destructive/10 text-destructive",
+                              )}>
+                                {ov.state === "forced_complete" ? "Forced ✓" : "Forced ✗"}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
+                          {item.hint} · → {item.target.sub}
+                          {isForced && ov.set_by_email && (
+                            <span className="ml-1 opacity-70">· by {ov.set_by_email}</span>
+                          )}
+                        </p>
                       </div>
-                      <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
-                        {item.hint} · → {item.target.sub}
-                      </p>
-                    </div>
-                  </button>
+                    </button>
+
+                    {canManageChecklist && (
+                      <div className="mt-2 pt-2 border-t border-border/40 flex items-center gap-1.5 flex-wrap">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={ov?.state === "forced_complete" ? "default" : "outline"}
+                          className="h-7 px-2 text-[10px] gap-1 font-mono uppercase tracking-wider"
+                          onClick={(e) => { e.stopPropagation(); void setOverride(item.key, "forced_complete"); }}
+                        >
+                          <Check className="w-3 h-3" /> Force ✓
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={ov?.state === "forced_incomplete" ? "destructive" : "outline"}
+                          className="h-7 px-2 text-[10px] gap-1 font-mono uppercase tracking-wider"
+                          onClick={(e) => { e.stopPropagation(); void setOverride(item.key, "forced_incomplete"); }}
+                        >
+                          <X className="w-3 h-3" /> Undo
+                        </Button>
+                        {isForced && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 text-[10px] gap-1 font-mono uppercase tracking-wider text-muted-foreground"
+                            onClick={(e) => { e.stopPropagation(); void clearOverride(item.key); }}
+                          >
+                            <RotateCcw className="w-3 h-3" /> Auto
+                          </Button>
+                        )}
+                        <span className="text-[10px] text-muted-foreground font-mono ml-auto">
+                          auto: {count > 0 ? `${count} file${count === 1 ? "" : "s"}` : "none"}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </li>
               );
             })}
           </ul>
+
         </div>
       </section>
     </main>

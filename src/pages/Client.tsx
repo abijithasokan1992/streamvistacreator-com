@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import OnboardingCompleteBanner from "@/components/OnboardingCompleteBanner";
 import FirstStepsCard from "@/components/dashboard/FirstStepsCard";
+import TeamMembersPanel from "@/components/dashboard/TeamMembersPanel";
 import { toast } from "sonner";
 
 /**
@@ -667,6 +668,8 @@ function HubView({
 
       {user && <FirstStepsCard userId={user.id} variant="client" onPasteLink={focusLinkInput} />}
 
+      {user && <ClientTeamSlot />}
+
       {/* Incoming reviews — auto-listed shares addressed to this client's email */}
       <IncomingReviews />
 
@@ -798,5 +801,15 @@ function IncomingReviews() {
         ))}
       </ul>
     </section>
+  );
+}
+
+function ClientTeamSlot() {
+  const { role } = useAuth();
+  if (role !== "creator" && role !== "executive_producer" && role !== "admin") return null;
+  return (
+    <div className="mb-8">
+      <TeamMembersPanel />
+    </div>
   );
 }

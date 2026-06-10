@@ -387,48 +387,60 @@ export default function MasterArchive() {
             <h3 className="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-2">This session</h3>
             <div className="space-y-2">
               {uploads.map((u, i) => {
-                const isUp = u.status === "uploading";
+                const meta = STATUS_META[u.status];
+                const isActive = u.status === "uploading" || u.status === "processing" || u.status === "queued";
+                const showPct = u.status === "uploading" || u.status === "processing";
+                const barWidth = u.status === "failed" || u.status === "completed" ? 100
+                  : u.status === "queued" ? 4 : u.progress;
                 return (
                   <div
                     key={i}
                     className={cn(
                       "relative overflow-hidden rounded-xl border backdrop-blur-md transition-all",
                       "border-border/50 bg-card/40",
-                      isUp && "opacity-50 border-accent/40",
-                      u.status === "done" && "border-accent/30",
+                      u.status === "uploading" && "opacity-50 border-accent/40",
+                      u.status === "processing" && "opacity-60 border-primary/40",
+                      u.status === "queued" && "opacity-70",
+                      u.status === "completed" && "border-accent/30",
                       u.status === "failed" && "border-destructive/40",
                     )}
                   >
                     <div className="px-4 py-3 flex items-center justify-between gap-3 text-sm relative z-10">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
-                        {isUp ? <Loader2 className="w-3.5 h-3.5 animate-spin text-accent shrink-0" />
-                          : u.status === "done" ? <CheckCircle2 className="w-3.5 h-3.5 text-accent shrink-0" />
-                          : <span className="w-3.5 h-3.5 rounded-full bg-destructive shrink-0" />}
+                        {u.status === "uploading" || u.status === "processing"
+                          ? <Loader2 className="w-3.5 h-3.5 animate-spin text-accent shrink-0" />
+                          : u.status === "completed"
+                          ? <CheckCircle2 className="w-3.5 h-3.5 text-accent shrink-0" />
+                          : u.status === "failed"
+                          ? <span className="w-3.5 h-3.5 rounded-full bg-destructive shrink-0" />
+                          : <Circle className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
                         <span className="truncate font-medium">{u.name}</span>
                       </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        {isUp && (
+                      <div className="flex items-center gap-2 shrink-0">
+                        {showPct && (
                           <span className="font-mono text-xs tabular-nums text-accent tracking-wider">
                             {u.progress.toString().padStart(2, "0")}%
                           </span>
                         )}
-                        <span className="text-[10px] font-mono text-muted-foreground truncate max-w-[180px] hidden sm:inline">
-                          {u.error ?? u.category}
+                        <span className={cn(
+                          "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-mono uppercase tracking-wider",
+                          meta.badgeClass,
+                        )}>
+                          <span className={cn("w-1.5 h-1.5 rounded-full", meta.dotClass)} />
+                          {meta.label}
                         </span>
                       </div>
                     </div>
                     {/* Cinematic scoreboard progress bar */}
                     <div className="h-1 w-full bg-muted/40">
                       <div
-                        className={cn(
-                          "h-full transition-all duration-200 ease-out",
-                          isUp && "bg-gradient-to-r from-accent via-primary to-accent shadow-[0_0_12px_hsl(var(--accent)/0.7)]",
-                          u.status === "done" && "bg-accent",
-                          u.status === "failed" && "bg-destructive",
-                        )}
-                        style={{ width: `${u.status === "failed" ? 100 : u.progress}%` }}
+                        className={cn("h-full transition-all duration-200 ease-out", meta.barClass)}
+                        style={{ width: `${barWidth}%` }}
                       />
                     </div>
+                    {u.error && (
+                      <p className="px-4 pb-2 text-[10px] font-mono text-destructive truncate">{u.error}</p>
+                    )}
                   </div>
                 );
               })}

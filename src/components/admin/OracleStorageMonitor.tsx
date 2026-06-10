@@ -385,9 +385,17 @@ export default function OracleStorageMonitor() {
     }
     const trimmedPem = pem.trim();
     if (trimmedPem) {
-      toast.error("Private key is now managed as the ORACLE_PRIVATE_KEY backend secret. Set it in Backend → Secrets — it cannot be stored in this table for security reasons.");
+      const fmt = autoFormatPem(trimmedPem);
+      if (!fmt.valid) {
+        toast.error("Private key looks malformed", { description: fmt.reason ?? "Click Auto-format key first." });
+        return;
+      }
+      toast.error("Private key must be set as the ORACLE_PRIVATE_KEY backend secret", {
+        description: "For security, the PEM is never stored in the database. Open Backend → Secrets and paste the auto-formatted key there.",
+      });
       return;
     }
+
 
     setSaving(true);
     const payload: Record<string, unknown> = { id: true, ...draft };

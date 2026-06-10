@@ -11,6 +11,17 @@ const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return handleOptions(req);
   const cors = buildCorsHeaders(req);
+  const cronSecret = Deno.env.get("CRON_SECRET");
+  if (!cronSecret) {
+    return new Response(JSON.stringify({ ok: false, error: "server_misconfigured" }), {
+      status: 500, headers: { ...cors, "Content-Type": "application/json" },
+    });
+  }
+  if (req.headers.get("x-cron-secret") !== cronSecret) {
+    return new Response(JSON.stringify({ ok: false, error: "unauthorized" }), {
+      status: 401, headers: { ...cors, "Content-Type": "application/json" },
+    });
+  }
   try {
     const supa = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
     const periodStart = new Date();

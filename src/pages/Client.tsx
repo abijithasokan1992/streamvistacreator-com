@@ -154,34 +154,76 @@ function loadRazorpayScript(): Promise<void> {
   });
 }
 
+type PayPhase = "idle" | "loading_sdk" | "creating_order" | "awaiting_user" | "verifying" | "success" | "error";
+type PayErrorKind = "sdk" | "order" | "payment" | "verify" | "network";
+
+const SUPPORT_EMAIL = "support@streamvistacreator.com";
+
 function SandboxView({ finish }: { finish: () => void }) {
-  const [busy, setBusy] = useState(false);
+  const [phase, setPhase] = useState<PayPhase>("idle");
+  const [errorKind, setErrorKind] = useState<PayErrorKind | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string>("");
+  const [lastPaymentId, setLastPaymentId] = useState<string | null>(null);
+  const [attempts, setAttempts] = useState(0);
+
+  const busy =
+    phase === "loading_sdk" ||
+    phase === "creating_order" ||
+    phase === "awaiting_user" ||
+    phase === "verifying";
+
+  const failWith = (kind: PayErrorKind, msg: string, paymentId?: string | null) => {
+    setErrorKind(kind);
+    setErrorMsg(msg);
+    setPhase("error");
+    if (paymentId !== undefined) setLastPaymentId(paymentId);
+    toast.error(msg);
+  };
 
   const activate = async () => {
     if (busy) return;
     playTempleBell();
-    setBusy(true);
+    setAttempts((n) => n + 1);
+    setErrorKind(null);
+    setErrorMsg("");
+    setLastPaymentId(null);
+    setPhase("loading_sdk");
 
     try {
       await loadRazorpayScript();
     } catch {
-      setBusy(false);
-      return toast.error("Checkout failed to load — please retry.");
+      return failWith("sdk", "Razorpay checkout failed to load. Check your network and retry.");
     }
 
+    setPhase("creating_order");
     toast.loading("Provisioning Nilavara A sandbox…", { id: "sbx" });
-    const { data, error } = await supabase.functions.invoke("fastlink-pay", {
-      body: { action: "create" },
-    });
-    toast.dismiss("sbx");
-    if (error || !data?.orderId) {
-      setBusy(false);
-      return toast.error(error?.message || "Could not start verification.");
+    let createRes;
+    try {
+      createRes = await supabase.functions.invoke("fastlink-pay", {
+        body: { action: "create" },
+      });
+    } catch (e) {
+      toast.dismiss("sbx");
+      return failWith("network", e instanceof Error ? e.message : "Network error while creating order.");
     }
+    toast.dismiss("sbx");
+    const { data, error } = createRes;
+    if (error || !data?.orderId) {
+      return failWith("order", error?.message || "Could not start verification. Please retry.");
+    }
+
+    let userEmail: string | undefined;
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      userEmail = u?.user?.email ?? undefined;
+    } catch {}
 
     const Razorpay = (window as any).Razorpay;
-    const { data: u } = await supabase.auth.getUser();
-    const email = u?.user?.email ?? undefined;
+    if (!Razorpay) {
+      return failWith("sdk", "Razorpay SDK unavailable. Reload the page and try again.");
+    }
+
+    setPhase("awaiting_user");
 
     const rzp = new Razorpay({
       key: data.keyId,
@@ -190,38 +232,107 @@ function SandboxView({ finish }: { finish: () => void }) {
       currency: data.currency,
       name: "StreamVista · Kammattam",
       description: "Workspace Node Verification",
-      prefill: { email },
+      prefill: { email: userEmail },
       theme: { color: "#f59e0b" },
       handler: async (resp: any) => {
+        setPhase("verifying");
+        setLastPaymentId(resp?.razorpay_payment_id ?? null);
         toast.loading("Verifying activation…", { id: "sbv" });
-        const { data: v, error: vErr } = await supabase.functions.invoke("fastlink-pay", {
-          body: {
-            action: "verify",
-            razorpay_order_id: resp.razorpay_order_id,
-            razorpay_payment_id: resp.razorpay_payment_id,
-            razorpay_signature: resp.razorpay_signature,
-          },
-        });
-        toast.dismiss("sbv");
-        if (vErr || !v?.verified) {
-          setBusy(false);
-          return toast.error("Verification failed. Contact support if you were charged.");
+        let verifyRes;
+        try {
+          verifyRes = await supabase.functions.invoke("fastlink-pay", {
+            body: {
+              action: "verify",
+              razorpay_order_id: resp.razorpay_order_id,
+              razorpay_payment_id: resp.razorpay_payment_id,
+              razorpay_signature: resp.razorpay_signature,
+            },
+          });
+        } catch (e) {
+          toast.dismiss("sbv");
+          return failWith(
+            "verify",
+            e instanceof Error ? e.message : "Network error while verifying payment.",
+            resp?.razorpay_payment_id ?? null,
+          );
         }
+        toast.dismiss("sbv");
+        const { data: v, error: vErr } = verifyRes;
+        if (vErr || !v?.verified) {
+          return failWith(
+            "verify",
+            vErr?.message || "We couldn't verify your payment. If you were charged, contact support.",
+            resp?.razorpay_payment_id ?? null,
+          );
+        }
+        setPhase("success");
         toast.success("Workspace node activated.");
         finish();
       },
       modal: {
         ondismiss: () => {
-          setBusy(false);
-          toast.message("Checkout closed — you can retry anytime.");
+          // Only treat as error if we hadn't progressed past awaiting_user
+          setPhase((cur) => {
+            if (cur === "awaiting_user") {
+              toast.message("Checkout closed — you can retry anytime.");
+              return "idle";
+            }
+            return cur;
+          });
         },
       },
     });
-    rzp.on("payment.failed", () => {
-      setBusy(false);
-      toast.error("Payment failed — please try again.");
+
+    rzp.on("payment.failed", (resp: any) => {
+      const reason =
+        resp?.error?.description ||
+        resp?.error?.reason ||
+        "Payment failed. Please try a different card or method.";
+      failWith("payment", reason, resp?.error?.metadata?.payment_id ?? null);
     });
-    rzp.open();
+
+    try {
+      rzp.open();
+    } catch (e) {
+      failWith("sdk", e instanceof Error ? e.message : "Could not open Razorpay checkout.");
+    }
+  };
+
+  const requestFreshVerification = async () => {
+    toast.loading("Requesting a fresh verification order…", { id: "fresh" });
+    setLastPaymentId(null);
+    setErrorKind(null);
+    setErrorMsg("");
+    // A fresh activate() call creates a brand-new Razorpay order on the server.
+    await activate();
+    toast.dismiss("fresh");
+  };
+
+  const mailtoSupport = () => {
+    const subject = encodeURIComponent("Workspace Node ₹1 verification issue");
+    const body = encodeURIComponent(
+      [
+        "Hi StreamVista support,",
+        "",
+        "My ₹1 workspace verification didn't go through.",
+        `Attempts: ${attempts}`,
+        `Last error: ${errorKind ?? "n/a"} — ${errorMsg || "n/a"}`,
+        `Razorpay payment id: ${lastPaymentId ?? "n/a"}`,
+        "",
+        "Please help reconcile or refund.",
+      ].join("\n"),
+    );
+    window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
+  };
+
+  const phaseLabel: Record<PayPhase, string> = {
+    idle: "Activate Workspace Node (₹1 Verification)",
+    loading_sdk: "Loading checkout…",
+    creating_order: "Provisioning sandbox…",
+    awaiting_user: "Waiting for payment…",
+    verifying: "Verifying payment…",
+    success: "Activated",
+    error: "Retry Activation",
   };
 
   return (
@@ -245,18 +356,68 @@ function SandboxView({ finish }: { finish: () => void }) {
           <p><strong className="text-zinc-200">Provision Cost:</strong> ₹1 Integration Charge (Refundable verification setup)</p>
         </div>
 
+        {phase === "error" && (
+          <div
+            role="alert"
+            className="text-left p-4 bg-red-950/40 border border-red-900/60 rounded-xl space-y-3"
+          >
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="text-xs font-mono font-bold text-red-300 uppercase tracking-widest">
+                  {errorKind === "payment" && "Payment failed"}
+                  {errorKind === "verify" && "Verification failed"}
+                  {errorKind === "order" && "Couldn't start order"}
+                  {errorKind === "sdk" && "Checkout unavailable"}
+                  {errorKind === "network" && "Network error"}
+                </p>
+                <p className="text-xs text-red-200/90 leading-relaxed">{errorMsg}</p>
+                {lastPaymentId && (
+                  <p className="text-[10px] font-mono text-red-300/70 break-all">
+                    Razorpay ref: {lastPaymentId}
+                  </p>
+                )}
+                <p className="text-[10px] text-zinc-500">
+                  Attempt #{attempts}. Your card is only debited once verification succeeds.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <button
           onClick={activate}
           disabled={busy}
           className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black py-4 rounded-xl font-black text-sm tracking-wide shadow-lg shadow-amber-950/20 transition-all uppercase disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
         >
-          {busy ? "Provisioning…" : "Activate Workspace Node (₹1 Verification)"}
-          {!busy && <ArrowRight className="w-4 h-4" />}
+          {busy && <Loader2 className="w-4 h-4 animate-spin" />}
+          {phaseLabel[phase]}
+          {!busy && phase !== "error" && <ArrowRight className="w-4 h-4" />}
+          {!busy && phase === "error" && <RefreshCw className="w-4 h-4" />}
         </button>
+
+        {phase === "error" && (
+          <div className="flex flex-col sm:flex-row gap-2">
+            <button
+              onClick={requestFreshVerification}
+              disabled={busy}
+              className="flex-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-200 py-3 rounded-xl font-bold text-xs tracking-wider uppercase transition-all disabled:opacity-60 inline-flex items-center justify-center gap-2"
+            >
+              <RefreshCw className="w-3.5 h-3.5" /> Request Fresh Verification
+            </button>
+            <button
+              onClick={mailtoSupport}
+              className="flex-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-200 py-3 rounded-xl font-bold text-xs tracking-wider uppercase transition-all inline-flex items-center justify-center gap-2"
+            >
+              <Mail className="w-3.5 h-3.5" /> Contact Support
+            </button>
+          </div>
+        )}
 
         <button
           onClick={finish}
-          className="text-[11px] text-zinc-500 hover:text-zinc-300 inline-flex items-center gap-1.5"
+          disabled={busy}
+          className="text-[11px] text-zinc-500 hover:text-zinc-300 inline-flex items-center gap-1.5 disabled:opacity-60"
         >
           <SkipForward className="w-3 h-3" /> Skip — I'll wait for the studio link
         </button>
@@ -264,6 +425,8 @@ function SandboxView({ finish }: { finish: () => void }) {
     </main>
   );
 }
+
+
 
 
 

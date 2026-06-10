@@ -46,6 +46,8 @@ export default function RolesManager() {
     }
     return true;
   };
+
+  const load = async () => {
     setLoading(true);
     const [{ data: p }, { data: r }, { data: a }, { data: d }] = await Promise.all([
       supabase.from("user_profiles").select("user_id, display_name"),

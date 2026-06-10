@@ -352,7 +352,7 @@ export default function MasterArchive() {
               <h2 className="font-display text-base font-bold">For finished projects only</h2>
               <p className="text-xs text-muted-foreground max-w-2xl mt-1">
                 Use this vault for final delivery masters (business + sales). Files route into pre-organized
-                category folders on OCI, isolated to <b>{active?.name ?? "your workspace"}</b>. RLS keeps them
+                category folders on C CLOUD, isolated to <b>{active?.name ?? "your workspace"}</b>. RLS keeps them
                 private to your team.
               </p>
             </div>

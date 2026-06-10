@@ -192,9 +192,8 @@ export default function Auth() {
       return;
     }
     const target = roles.includes("executive_producer") ? "/producer"
-      : roles.includes("creator") ? "/vault"
-      : roles.includes("client") ? "/client"
-      : "/client"; // standard customers always land on their client dashboard
+      : roles.includes("creator") ? "/projects"
+      : "/projects"; // open self-serve: everyone lands on the workspace dashboard
     navigate(target, { replace: true });
   };
 

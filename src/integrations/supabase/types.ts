@@ -525,6 +525,12 @@ export type Database = {
           created_at: string
           final_price: number
           id: string
+          link_metadata: Json
+          link_source: string | null
+          link_status: string
+          linked_at: string | null
+          linked_file_id: string | null
+          linked_share_token: string | null
           mfi_proof_path: string | null
           onboarding_status: string
           payment_status: string
@@ -545,6 +551,12 @@ export type Database = {
           created_at?: string
           final_price: number
           id?: string
+          link_metadata?: Json
+          link_source?: string | null
+          link_status?: string
+          linked_at?: string | null
+          linked_file_id?: string | null
+          linked_share_token?: string | null
           mfi_proof_path?: string | null
           onboarding_status?: string
           payment_status?: string
@@ -565,6 +577,12 @@ export type Database = {
           created_at?: string
           final_price?: number
           id?: string
+          link_metadata?: Json
+          link_source?: string | null
+          link_status?: string
+          linked_at?: string | null
+          linked_file_id?: string | null
+          linked_share_token?: string | null
           mfi_proof_path?: string | null
           onboarding_status?: string
           payment_status?: string
@@ -575,7 +593,15 @@ export type Database = {
           razorpay_payment_id?: string | null
           selected_cycle?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_requests_linked_file_id_fkey"
+            columns: ["linked_file_id"]
+            isOneToOne: false
+            referencedRelation: "shared_files"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       partner_logos: {
         Row: {

@@ -275,9 +275,13 @@ export default function Projects() {
       <header className="border-b border-border/50 sticky top-0 z-30 backdrop-blur bg-background/80">
         <div className="container flex items-center justify-between h-16">
           <div className="flex items-center gap-3">
-            <Link to="/" className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm">
-              <ArrowLeft className="w-4 h-4" /> Home
-            </Link>
+            <button
+              onClick={signOut}
+              className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm px-2 py-1 rounded-md border border-border/60 hover:bg-secondary"
+              title="Sign out"
+            >
+              <LogOut className="w-4 h-4" /> Log Out
+            </button>
             <div className="h-6 w-px bg-border" />
             <h1 className="font-display font-bold text-lg">My Projects</h1>
           </div>

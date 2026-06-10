@@ -1,6 +1,13 @@
 // Client wrapper for the external Oracle OCI API Gateway (self-hosted Node.js proxy).
 // Set VITE_ORACLE_API_URL in your environment to enable. The proxy handles the
 // Oracle SDK auth/signing server-side; the browser only sees JSON over HTTPS.
+//
+// SECURITY: Every outbound request includes the caller's Supabase session
+// access token as a Bearer authorization header so the proxy can verify the
+// user before performing any OCI operation. The proxy MUST reject unauthenticated
+// requests.
+
+import { supabase } from "@/integrations/supabase/client";
 
 export const ORACLE_API_URL: string =
   (import.meta.env.VITE_ORACLE_API_URL as string | undefined)?.replace(/\/$/, "") || "";
@@ -27,9 +34,19 @@ export interface OracleObject {
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!ORACLE_API_URL) throw new Error("Oracle API Gateway URL not configured (VITE_ORACLE_API_URL).");
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    throw new Error("You must be signed in to access Oracle storage.");
+  }
+
   const res = await fetch(`${ORACLE_API_URL}${path}`, {
     ...init,
-    headers: { "Content-Type": "application/json", ...(init?.headers || {}) },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session.access_token}`,
+      ...(init?.headers || {}),
+    },
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");

@@ -12,6 +12,7 @@ import Index from "./pages/Index.tsx";
 import Auth from "./pages/Auth.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import Admin from "./pages/Admin.tsx";
+import AdminErrorBoundary from "./components/admin/AdminErrorBoundary";
 import KammattamPopout from "./pages/KammattamPopout.tsx";
 import Terms from "./pages/Terms.tsx";
 import Privacy from "./pages/Privacy.tsx";
@@ -51,7 +52,7 @@ const AdminRoutes = () => (
     <Route path="/" element={<Auth />} />
     <Route path="/auth" element={<Auth />} />
     <Route path="/reset-password" element={<ResetPassword />} />
-    <Route path="/admin" element={<Admin />} />
+    <Route path="/admin" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/kammattam" element={<KammattamPopout />} />
     {/* Anything else on the admin host = wrong portal */}
     <Route path="*" element={<WrongPortal expected="public" />} />
@@ -81,7 +82,7 @@ const PublicRoutes = () => (
     <Route path="/team" element={<OnboardingGate><RoleGate allow={["creator", "executive_producer", "admin"]}><Team /></RoleGate></OnboardingGate>} />
 
     {/* Admin console is also reachable on the main domain until the admin subdomain DNS is fully configured. */}
-    <Route path="/admin" element={<Admin />} />
+    <Route path="/admin" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/kammattam" element={<KammattamPopout />} />
 
     <Route path="/launching-special-plan" element={<LaunchingSpecialPlan />} />

@@ -108,40 +108,49 @@ const STATUS_META: Record<UploadStatus, { label: string; dotClass: string; badge
   },
 };
 
-const BRIDGE_CHECKLIST: { key: string; label: string; hint: string }[] = [
-  { key: "golden_master", label: "Golden Master Video File", hint: "ProRes / High-Res" },
-  { key: "audio_stems", label: "Separated Audio Stems", hint: "Dialogue, Music, Effects" },
-  { key: "subtitles", label: "Subtitles & Closed Captions", hint: "SRT / VTT" },
-  { key: "artwork", label: "High-Res Marketing Artwork & Posters", hint: "Key art, banners" },
-  { key: "trailer", label: "Official Trailer & Promos", hint: "Teasers, BTS" },
-  { key: "metadata", label: "Metadata & Synopsis Form", hint: "Title, logline, cast" },
-  { key: "rights", label: "Rights & Licensing Agreements", hint: "Music, talent, footage" },
+/**
+ * Bridge checklist with its canonical destination folder.
+ * `target` is what we pre-select in the folder picker on click, and
+ * `categoryMatchers` is what we match against `recent_uploads.category`
+ * (which is `archive-<folder>-<sub-slug>-reel-XX`) to auto-tick.
+ */
+const BRIDGE_CHECKLIST: {
+  key: string;
+  label: string;
+  hint: string;
+  target: { folder: string; sub: string };
+  categoryMatchers: { folder: string; subs: string[] }; // any sub-slug counts
+}[] = [
+  { key: "golden_master", label: "Golden Master Video File", hint: "ProRes / High-Res",
+    target: { folder: "video_masters", sub: "ProRes" },
+    categoryMatchers: { folder: "video_masters", subs: ["prores", "dpx", "j2k"] } },
+  { key: "audio_stems", label: "Separated Audio Stems", hint: "Dialogue, Music, Effects",
+    target: { folder: "audio_masters", sub: "STEMS" },
+    categoryMatchers: { folder: "audio_masters", subs: ["stems", "track-by-track", "atmos", "stereo"] } },
+  { key: "subtitles", label: "Subtitles & Closed Captions", hint: "SRT / VTT",
+    target: { folder: "assets_docs", sub: "SUBTITLES" },
+    categoryMatchers: { folder: "assets_docs", subs: ["subtitles"] } },
+  { key: "artwork", label: "High-Res Marketing Artwork & Posters", hint: "Key art, banners",
+    target: { folder: "assets_docs", sub: "STILLS" },
+    categoryMatchers: { folder: "assets_docs", subs: ["stills", "png", "jpg", "tif"] } },
+  { key: "trailer", label: "Official Trailer & Promos", hint: "Teasers, BTS",
+    target: { folder: "video_masters", sub: "Single MOV" },
+    categoryMatchers: { folder: "video_masters", subs: ["single-mov"] } },
+  { key: "metadata", label: "Metadata & Synopsis Form", hint: "Title, logline, cast",
+    target: { folder: "assets_docs", sub: "PDF" },
+    categoryMatchers: { folder: "assets_docs", subs: ["pdf", "doc", "cards"] } },
+  { key: "rights", label: "Rights & Licensing Agreements", hint: "Music, talent, footage",
+    target: { folder: "assets_docs", sub: "CERTIFICATES" },
+    categoryMatchers: { folder: "assets_docs", subs: ["certificates", "doc"] } },
 ];
 
-/** StreamVista Logic IP — internal auto-matching engine (not exposed to UI copy) */
-const STREAMVISTA_IP: Record<string, string[]> = {
-  srt: ["subtitles"],
-  vtt: ["subtitles"],
-  mov: ["golden_master", "trailer"],
-  mxf: ["golden_master", "trailer"],
-  prores: ["golden_master", "trailer"],
-  mp4: ["golden_master", "trailer"],
-  wav: ["audio_stems"],
-  aiff: ["audio_stems"],
-  aif: ["audio_stems"],
-  jpg: ["artwork"],
-  jpeg: ["artwork"],
-  png: ["artwork"],
-  psd: ["artwork"],
-  tif: ["artwork"],
-  tiff: ["artwork"],
-  pdf: ["metadata", "rights"],
-  docx: ["metadata", "rights"],
-  doc: ["metadata", "rights"],
-};
-function resolveBridgeKeys(fileName: string): string[] {
-  const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
-  return STREAMVISTA_IP[ext] ?? [];
+/** Does this `recent_uploads.category` satisfy a checklist item? */
+function categorySatisfies(category: string | null, item: typeof BRIDGE_CHECKLIST[number]): boolean {
+  if (!category) return false;
+  const prefix = `archive-${item.categoryMatchers.folder}-`;
+  if (!category.startsWith(prefix)) return false;
+  const rest = category.slice(prefix.length); // "<sub-slug>-reel-XX"
+  return item.categoryMatchers.subs.some((s) => rest.startsWith(`${s}-reel-`));
 }
 
 export default function MasterArchive() {

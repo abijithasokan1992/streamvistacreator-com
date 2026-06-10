@@ -68,7 +68,7 @@ export default function IngestTest() {
           description: `${item.file.name} delivered to Crayons Bridge`,
         });
       } else {
-        const msg = `Oracle returned ${xhr.status}`;
+        const msg = `C CLOUD returned ${xhr.status}`;
         setItems((prev) =>
           prev.map((it) =>
             it.id === item.id ? { ...it, status: "error", error: msg } : it,
@@ -76,9 +76,9 @@ export default function IngestTest() {
         );
         showMessage({
           severity: "error",
-          title: "Oracle PAR rejected the upload",
+          title: "C CLOUD PAR rejected the upload",
           message:
-            `"${item.file.name}" was streamed straight to Oracle Object Storage via the Pre-Authenticated Request (PAR), but Oracle answered with HTTP ${xhr.status}.\n\n` +
+            `"${item.file.name}" was streamed straight to C CLOUD Object Storage via the Pre-Authenticated Request (PAR), but C CLOUD answered with HTTP ${xhr.status}.\n\n` +
             (xhr.status === 401 || xhr.status === 403
               ? "The PAR is likely expired or revoked. Generate a fresh PAR in Admin → Oracle Storage and try again."
               : xhr.status === 404
@@ -102,14 +102,14 @@ export default function IngestTest() {
       );
       showMessage({
         severity: "error",
-        title: "Couldn't reach Oracle Object Storage",
+        title: "Couldn't reach C CLOUD Object Storage",
         message:
-          `The browser couldn't connect to Oracle's PAR endpoint for "${item.file.name}".\n\n` +
+          `The browser couldn't connect to C CLOUD's PAR endpoint for "${item.file.name}".\n\n` +
           `This usually means:\n` +
           `  • The PAR expired (regenerate it in Admin → Oracle Storage)\n` +
           `  • The bucket's CORS policy doesn't allow this origin\n` +
           `  • Your network is offline or blocking objectstorage.*.oraclecloud.com\n\n` +
-          `Report this if Oracle Storage is verified green in the admin panel.`,
+          `Report this if C CLOUD Storage is verified green in the admin panel.`,
         context: `file=${item.file.name}; size=${item.file.size}; origin=${window.location.origin}`,
       });
     };
@@ -175,7 +175,7 @@ export default function IngestTest() {
           <Badge variant="secondary" className="mx-auto">Internal test route</Badge>
           <h1 className="text-3xl font-semibold tracking-tight">Crayons Bridge · Ingest Test</h1>
           <p className="text-muted-foreground">
-            Direct browser → Oracle OCI upload via Pre-Authenticated Request.
+            Direct browser → C CLOUD upload via Pre-Authenticated Request.
           </p>
         </header>
 
@@ -183,7 +183,7 @@ export default function IngestTest() {
           <CardHeader>
             <CardTitle>Drop files to ingest</CardTitle>
             <CardDescription>
-              Files are PUT directly to OCI Object Storage. Nothing is proxied through our server.
+              Files are PUT directly to C CLOUD Object Storage. Nothing is proxied through our server.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

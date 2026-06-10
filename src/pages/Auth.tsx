@@ -185,13 +185,17 @@ export default function Auth() {
       return;
     }
 
-    // Non-admin on public host → normal flow
+    // Non-admin on public host → straight to their dashboard. The OnboardingGate
+    // will only divert to the wizard for legacy accounts whose step isn't 'done'.
     const nextParam = search.get("next");
     if (nextParam && nextParam.startsWith("/") && !nextParam.startsWith("/admin")) {
       navigate(nextParam, { replace: true });
       return;
     }
-    navigate("/onboarding", { replace: true });
+    const target = roles.includes("executive_producer") ? "/producer"
+      : roles.includes("creator") ? "/vault"
+      : "/client";
+    navigate(target, { replace: true });
   };
 
   useEffect(() => {

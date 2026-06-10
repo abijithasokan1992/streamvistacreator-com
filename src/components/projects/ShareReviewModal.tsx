@@ -290,7 +290,7 @@ export default function ShareReviewModal({
                           <div className="text-[10px] text-muted-foreground flex flex-wrap gap-x-2">
                             <span>{l.view_count}{l.max_views ? `/${l.max_views}` : ""} views</span>
                             {l.expires_at && <span>· exp {new Date(l.expires_at).toLocaleDateString()}</span>}
-                            {l.password_hash && <span>· 🔒</span>}
+                            {l.requires_password && <span>· 🔒</span>}
                             {l.revoked && <span className="text-destructive">· revoked</span>}
                             {expired && !l.revoked && <span className="text-destructive">· expired</span>}
                             {exhausted && !l.revoked && !expired && <span className="text-destructive">· limit reached</span>}

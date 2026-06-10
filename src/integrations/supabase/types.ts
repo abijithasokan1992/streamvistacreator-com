@@ -1653,6 +1653,81 @@ export type Database = {
       }
     }
     Views: {
+      review_links_safe: {
+        Row: {
+          asset_mime: string | null
+          asset_name: string | null
+          asset_size_bytes: number | null
+          created_at: string | null
+          created_by: string | null
+          expires_at: string | null
+          id: string | null
+          last_viewed_at: string | null
+          max_views: number | null
+          project_id: string | null
+          requires_password: boolean | null
+          revoked: boolean | null
+          token: string | null
+          updated_at: string | null
+          view_count: number | null
+          view_only: boolean | null
+          workspace_id: string | null
+        }
+        Insert: {
+          asset_mime?: string | null
+          asset_name?: string | null
+          asset_size_bytes?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string | null
+          last_viewed_at?: string | null
+          max_views?: number | null
+          project_id?: string | null
+          requires_password?: never
+          revoked?: boolean | null
+          token?: string | null
+          updated_at?: string | null
+          view_count?: number | null
+          view_only?: boolean | null
+          workspace_id?: string | null
+        }
+        Update: {
+          asset_mime?: string | null
+          asset_name?: string | null
+          asset_size_bytes?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string | null
+          last_viewed_at?: string | null
+          max_views?: number | null
+          project_id?: string | null
+          requires_password?: never
+          revoked?: boolean | null
+          token?: string | null
+          updated_at?: string | null
+          view_count?: number | null
+          view_only?: boolean | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_links_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_links_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_kammattam_meter: {
         Row: {
           black_paise: number | null

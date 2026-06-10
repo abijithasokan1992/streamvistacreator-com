@@ -1,67 +1,64 @@
-## 1. Client Review Suite → step-by-step wizard (UX redesign)
+## Users & Credentials — admin tab
 
-`src/pages/Client.tsx` today is a single dense hub with hero + paste-link + 3-up grid + safety strip + upsell — overwhelming for first-time clients. Redesign as a **3-step horizontal wizard** with progress dots and one-at-a-time focus:
+A 5th tab in the existing admin console (`/admin`) for full user lifecycle control, audit trail, and admin self-credentials.
 
-- **Step 1 — Welcome.** "You're set up as a Client" + 30-second explainer (Watch · Comment · Approve).
-- **Step 2 — Open your first review.** The paste-link panel, isolated, with clear example + helper.
-- **Step 3 — How review works.** The 3 feature cards (player / timecoded notes / approval) + safety strip + upgrade hint.
+### What the tab shows
 
-Local state only (`step` 1→3), no DB writes. Each step has Back/Next; final step has "Enter Review Suite" which marks `seen_client_wizard` in localStorage so returning users skip it and land on the existing hub layout (kept as the "post-wizard" view).
+A glassmorphic users table with:
+- Filter toggle: **All users** / **Staff only** (admin · executive_producer · moderator)
+- Search by email / name
+- Columns: avatar, email, display name, primary role, plan tier, status (active / suspended), last sign-in, created
+- Row actions: **View**, **Modify** (role + plan), **Hold** (suspend / unsuspend), **Delete**
 
-Pure presentation — no business-logic changes.
+A second card: **My admin credentials**
+- Shows the admin URL (`/admin`) with copy button
+- "Send me a password-reset link" button (uses Lovable auth recovery email)
+- "Invite new admin" form (email → sends magic-link invite, role pre-set to `admin`)
 
-## 2. Creator plan billing — recurring on both gateways
+A third card: **Audit log** — last 50 admin actions (who did what, when, on which user).
 
-### Database
-Single migration:
-- Drop & re-add `user_profiles.plan_tier` CHECK to allow `('free','creator','monthly','quarterly','yearly')` (keeps legacy values).
-- Add columns to `public.subscriptions`: `gateway text default 'stripe'`, `razorpay_subscription_id text unique`, `razorpay_plan_id text`. Indexes on both.
-- New table `public.premium_invitation_redemptions(invitation_id, user_id, redeemed_at)` for audit + idempotency.
-- New SECURITY DEFINER trigger on `auth.users` AFTER INSERT: `redeem_premium_invitation_on_signup()` — looks up active `premium_invitations` by lower(email), grants role (creator), bumps `user_profiles.plan_tier='creator'` + storage allowance, marks invitation `redeemed`, inserts redemption log. Idempotent.
-- New SECURITY DEFINER function `grant_creator_role(uid uuid)`: deletes `user_roles` row where role='client' for that uid, inserts ('creator') with ON CONFLICT DO NOTHING, updates `user_profiles.plan_tier='creator'`. Called from edge functions via service role.
+### What each button does
 
-### Stripe recurring (global cards)
-- Create Stripe product+price via the payments tool: `creator_monthly` @ ₹76700 INR, recurring monthly, qty 1–10 (per TB).
-- Update `create-checkout/index.ts`: replace stale `ALLOWED_PRICE_IDS` with `{cloudx_creator, creator_monthly}`; add `subscription_data.metadata.userId`; ensure `customer` resolved via `resolveOrCreateCustomer`.
-- Update `payments-webhook/index.ts`: on `customer.subscription.created` / `.updated` with status active/trialing, call `grant_creator_role(userId)`. On `.deleted` or `status=canceled`, revert to `client` role + `plan_tier='free'`.
+- **View** — slide-over drawer with full profile, all roles, plan, storage usage, referral code, last login, suspended flag, recent audit entries for this user.
+- **Modify role / plan** — dialog with role multi-select and plan dropdown; writes through edge function, logs to audit.
+- **Hold (suspend)** — toggles `user_profiles.is_suspended`; suspended users are blocked at `OnboardingGate` and on auth refresh (signed out client-side next nav). Reversible.
+- **Delete** — confirm-text dialog ("type the email to confirm"); calls `auth.admin.deleteUser` via edge function; cascades to profile/roles via existing FK.
+- **Full access & audit** — opens the audit log filtered to this user; admin already has full RLS bypass on every panel.
 
-### Razorpay recurring (India)
-- New edge function `create-razorpay-subscription`: creates Razorpay Plan (idempotent by id `creator_monthly_inr`) at ₹76700/month if missing, then `subscriptions.create` with `customer_notify=1`, `quantity` = TB count, metadata `{userId, plan:'creator'}`. Returns `subscription_id` + `short_url`. Front-end opens Razorpay Checkout in subscription mode.
-- Update `razorpay-webhook/index.ts`: handle `subscription.activated`, `subscription.charged`, `subscription.halted`, `subscription.cancelled`, `subscription.completed`. Upsert into `subscriptions` (gateway='razorpay'), set status, call `grant_creator_role` on activate/charge and revoke on cancel/halt.
-- Update `MyAccount.tsx` UpgradeSection: replace one-shot Razorpay order call with `create-razorpay-subscription` for the Creator plan; storage top-ups stay on the existing one-shot path.
+### Schema (one migration)
 
-## 3. Role assignment on payment
+- `user_profiles.is_suspended boolean default false`
+- New table `admin_audit_log` (admin_user_id, target_user_id, action, details jsonb, created_at) with admin-only SELECT, service-role INSERT.
 
-Centralized in DB function `grant_creator_role()` above. Both webhooks call it — single source of truth. Removes `client`, adds `creator`, updates `plan_tier`. `RoleGate` and `dashboardForRole` already handle `creator` → `/vault`.
+### Edge function
 
-## 4. Premium invitation redemption
+`supabase/functions/admin-users/index.ts` (verify_jwt off, validates JWT + admin role in code, uses service role for `auth.admin.*`). Endpoints via a single POST + `{ action }` body:
+- `list` (with optional `staffOnly`, `search`)
+- `get` (full detail for one user)
+- `setRolesAndPlan`
+- `setSuspended`
+- `deleteUser`
+- `inviteAdmin` (calls `auth.admin.inviteUserByEmail`, then inserts `user_roles` row on confirmation via a DB trigger that already exists for default roles — extended to honour `app_metadata.invited_role`)
+- `sendRecoveryToSelf`
 
-DB trigger `redeem_premium_invitation_on_signup` (above) fires inside `handle_new_user_profile`'s chain on `auth.users` insert. For each active, non-expired, non-redeemed invite where `lower(email)=lower(NEW.email)`:
-- Mark invite `status='redeemed'`, `redeemed_at=now()`, `redeemed_user_id=NEW.id`.
-- Grant role per invite (`creator` by default; `is_free`/`storage_tb` honored).
-- Set `user_profiles.plan_tier='creator'`, `topup_tb = greatest(coalesce(topup_tb,0), invite.storage_tb-1)`.
-- Insert into `premium_invitation_redemptions` to make replay safe.
+Every mutating call writes an `admin_audit_log` row.
 
-No UI changes — entirely server-side.
+### Front-end files
 
-## 5. Cancellation — explicitly deferred
+- `src/pages/Admin.tsx` — add 5th `DeptTab` "Users & Credentials" + `TabsContent`.
+- `src/components/admin/UsersAndCredentials.tsx` — table, drawer, modify/delete dialogs, suspend toggle, audit list.
+- `src/components/admin/AdminSelfCredentials.tsx` — copy URL, reset-my-password, invite-new-admin form.
+- `src/components/OnboardingGate.tsx` — also block when `is_suspended = true` (redirect to a "Account on hold" notice with sign-out).
 
-No self-serve UI built. `SupportRequestForm` continues to be the only path. Add one helper line in `MyAccount.tsx` under Account tab: *"To cancel or change your subscription, please open a support ticket."* + link to existing form.
+### Guarantees
 
-## Test plan (preview)
+- All DB writes go through the service-role edge function; client never touches `auth.users`.
+- Admin cannot delete or suspend themselves (server-side guard).
+- Audit log is immutable from the client (no UPDATE/DELETE grants).
+- Suspended users are signed out on next route navigation and cannot pass `OnboardingGate`.
 
-1. **Wizard:** clear `localStorage.seen_client_wizard`, sign in as a client → land on `/client` → step through 3 screens → verify final click lands you on the hub view and a refresh keeps you on the hub.
-2. **Premium invite:** create a `premium_invitations` row in admin for a test email → sign up with that email → confirm role='creator', plan_tier='creator', invite row status='redeemed'.
-3. **Stripe recurring (sandbox card 4242 4242 4242 4242, any future expiry, any CVC):** from `/account` → Upgrade → Card → completes Embedded Checkout → webhook fires → reload `/account`, `user_roles` row has `creator`, redirect to `/vault` works.
-4. **Razorpay recurring (Razorpay test card 4111 1111 1111 1111, OTP 1221):** from `/account` → Upgrade → UPI/Card India → subscription created → simulate `subscription.activated` from Razorpay dashboard or trigger via test payment → role upgraded.
-5. **Cancellation:** confirm Account tab shows support-ticket copy and no cancel button exists.
+### Out of scope (deferred)
 
-## Files changed (high level)
-- `src/pages/Client.tsx` — wizard refactor (presentation only).
-- `supabase/migrations/<new>.sql` — plan_tier constraint, subscriptions columns, redemption log, trigger, `grant_creator_role`.
-- `supabase/functions/create-checkout/index.ts` — allow creator price + subscription metadata.
-- `supabase/functions/payments-webhook/index.ts` — role grant/revoke on subscription events.
-- `supabase/functions/create-razorpay-subscription/index.ts` — new.
-- `supabase/functions/razorpay-webhook/index.ts` — subscription event handlers + role grant.
-- `src/components/dashboard/MyAccount.tsx` — call new Razorpay subscription fn; add support-only cancellation copy.
-- `src/integrations/supabase/client.ts` — untouched (auto-gen).
+- Bulk actions.
+- Per-role storage quota overrides (already in plan/billing surface).
+- 2FA enforcement (separate auth setting).

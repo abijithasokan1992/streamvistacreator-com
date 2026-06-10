@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          admin_email: string | null
+          admin_user_id: string
+          created_at: string
+          details: Json
+          id: string
+          target_email: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          admin_email?: string | null
+          admin_user_id: string
+          created_at?: string
+          details?: Json
+          id?: string
+          target_email?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          admin_email?: string | null
+          admin_user_id?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          target_email?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
       admin_divisions: {
         Row: {
           created_at: string
@@ -1082,6 +1115,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           first_name: string | null
+          is_suspended: boolean
           last_name: string | null
           onboarding_step: string
           personal_logo_url: string | null
@@ -1102,6 +1136,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           first_name?: string | null
+          is_suspended?: boolean
           last_name?: string | null
           onboarding_step?: string
           personal_logo_url?: string | null
@@ -1122,6 +1157,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           first_name?: string | null
+          is_suspended?: boolean
           last_name?: string | null
           onboarding_step?: string
           personal_logo_url?: string | null

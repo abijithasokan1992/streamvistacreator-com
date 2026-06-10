@@ -714,6 +714,7 @@ export type Database = {
       recent_uploads: {
         Row: {
           bucket: string
+          client_pending_id: string | null
           created_at: string
           error_message: string | null
           file_name: string
@@ -731,6 +732,7 @@ export type Database = {
         }
         Insert: {
           bucket: string
+          client_pending_id?: string | null
           created_at?: string
           error_message?: string | null
           file_name: string
@@ -748,6 +750,7 @@ export type Database = {
         }
         Update: {
           bucket?: string
+          client_pending_id?: string | null
           created_at?: string
           error_message?: string | null
           file_name?: string

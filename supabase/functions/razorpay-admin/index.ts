@@ -59,15 +59,15 @@ Deno.serve(async (req) => {
     const creds = await loadRazorpayCreds(admin);
     const { data: row } = await admin
       .from("razorpay_config")
-      .select("mode, updated_at, key_id, webhook_secret")
+      .select("mode, updated_at, key_id")
       .eq("id", true)
       .maybeSingle();
     return json(req, {
       configured: !!creds,
       source: creds?.source ?? null,
-      mode: row?.mode ?? "test",
+      mode: row?.mode ?? creds?.mode ?? "test",
       key_id_preview: mask(row?.key_id ?? creds?.keyId ?? null),
-      webhook_set: !!(row?.webhook_secret || Deno.env.get("RAZORPAY_WEBHOOK_SECRET")),
+      webhook_set: !!Deno.env.get("RAZORPAY_WEBHOOK_SECRET"),
       updated_at: row?.updated_at ?? null,
     });
   }

@@ -330,13 +330,20 @@ export default function OracleStorageMonitor() {
     setTesting(false);
     const ok = !error && !!data?.ok;
     setVerified(ok);
-    setVerifyMsg(ok ? `Reached bucket "${data.bucket}" in ${data.region}` : (error?.message ?? data?.error ?? "Unknown error"));
-    if (!silent) {
-      if (ok) toast.success("Oracle connection verified");
-      else toast.error("Oracle verification failed", { description: data?.error ?? error?.message });
+    if (ok) {
+      setVerifyMsg(`Reached bucket "${data.bucket}" in ${data.region}`);
+      setDiagnosis(null);
+      if (!silent) toast.success("Oracle connection verified");
+    } else {
+      const raw = data?.error ?? error?.message ?? "Unknown error";
+      const dx = diagnose(raw, data?.status);
+      setVerifyMsg(raw);
+      setDiagnosis(dx);
+      if (!silent) toast.error(dx.title, { description: dx.fix });
     }
     return ok;
   };
+
 
   useEffect(() => {
     (async () => {

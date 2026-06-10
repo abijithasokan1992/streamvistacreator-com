@@ -6,6 +6,7 @@ import {
   LogOut, Link2, Inbox, ShieldCheck, MessageSquareText, Play,
   CheckCircle2, Sparkles, ArrowRight, ArrowLeft, MailOpen, Clock, Eye, SkipForward,
   Film, Lock, ExternalLink, AlertTriangle, Loader2, RefreshCw, Mail,
+  KeyRound, HardDrive,
 } from "lucide-react";
 import OnboardingCompleteBanner from "@/components/OnboardingCompleteBanner";
 import FirstStepsCard from "@/components/dashboard/FirstStepsCard";
@@ -110,7 +111,7 @@ export default function Client() {
       </header>
 
       {showWizard ? (
-        <SandboxView finish={completeWizard} />
+        <SandboxView finish={completeWizard} userEmail={user?.email ?? null} />
       ) : (
         <HubView
           user={user}
@@ -159,18 +160,22 @@ type PayErrorKind = "sdk" | "order" | "payment" | "verify" | "network";
 
 const SUPPORT_EMAIL = "support@streamvistacreator.com";
 
-function SandboxView({ finish }: { finish: () => void }) {
+function SandboxView({ finish, userEmail }: { finish: () => void; userEmail: string | null }) {
+  const navigate = useNavigate();
   const [phase, setPhase] = useState<PayPhase>("idle");
   const [errorKind, setErrorKind] = useState<PayErrorKind | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [lastPaymentId, setLastPaymentId] = useState<string | null>(null);
   const [attempts, setAttempts] = useState(0);
+  const [pasteLink, setPasteLink] = useState("");
 
   const busy =
     phase === "loading_sdk" ||
     phase === "creating_order" ||
     phase === "awaiting_user" ||
     phase === "verifying";
+
+  const activated = phase === "success";
 
   const failWith = (kind: PayErrorKind, msg: string, paymentId?: string | null) => {
     setErrorKind(kind);
@@ -212,12 +217,6 @@ function SandboxView({ finish }: { finish: () => void }) {
       return failWith("order", error?.message || "Could not start verification. Please retry.");
     }
 
-    let userEmail: string | undefined;
-    try {
-      const { data: u } = await supabase.auth.getUser();
-      userEmail = u?.user?.email ?? undefined;
-    } catch {}
-
     const Razorpay = (window as any).Razorpay;
     if (!Razorpay) {
       return failWith("sdk", "Razorpay SDK unavailable. Reload the page and try again.");
@@ -232,7 +231,7 @@ function SandboxView({ finish }: { finish: () => void }) {
       currency: data.currency,
       name: "StreamVista · Kammattam",
       description: "Workspace Node Verification",
-      prefill: { email: userEmail },
+      prefill: { email: userEmail ?? undefined },
       theme: { color: "#f59e0b" },
       handler: async (resp: any) => {
         setPhase("verifying");
@@ -267,11 +266,9 @@ function SandboxView({ finish }: { finish: () => void }) {
         }
         setPhase("success");
         toast.success("Workspace node activated.");
-        finish();
       },
       modal: {
         ondismiss: () => {
-          // Only treat as error if we hadn't progressed past awaiting_user
           setPhase((cur) => {
             if (cur === "awaiting_user") {
               toast.message("Checkout closed — you can retry anytime.");
@@ -303,7 +300,6 @@ function SandboxView({ finish }: { finish: () => void }) {
     setLastPaymentId(null);
     setErrorKind(null);
     setErrorMsg("");
-    // A fresh activate() call creates a brand-new Razorpay order on the server.
     await activate();
     toast.dismiss("fresh");
   };
@@ -325,106 +321,235 @@ function SandboxView({ finish }: { finish: () => void }) {
     window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
   };
 
-  const phaseLabel: Record<PayPhase, string> = {
-    idle: "Activate Workspace Node (₹1 Verification)",
-    loading_sdk: "Loading checkout…",
-    creating_order: "Provisioning sandbox…",
-    awaiting_user: "Waiting for payment…",
-    verifying: "Verifying payment…",
-    success: "Activated",
-    error: "Retry Activation",
+  const openPastedLink = () => {
+    const raw = pasteLink.trim();
+    if (!raw) return toast.error("Paste the share link your studio sent you.");
+    try {
+      let token = raw;
+      if (raw.startsWith("http")) {
+        const u = new URL(raw);
+        const m = u.pathname.match(/\/s\/([^/?#]+)/);
+        if (m) token = m[1];
+      } else if (raw.startsWith("/s/")) {
+        token = raw.replace(/^\/s\//, "").split(/[?#]/)[0];
+      }
+      navigate(`/s/${token}`);
+    } catch {
+      toast.error("That doesn't look like a valid share link.");
+    }
+  };
+
+  const statusByPhase: Record<PayPhase, string> = {
+    idle: "",
+    loading_sdk: "Loading secure checkout…",
+    creating_order: "Connecting to secure banking gateway…",
+    awaiting_user: "Waiting for payment in Razorpay…",
+    verifying: "Verifying ₹1.00 transaction…",
+    success: "Workspace node active.",
+    error: "",
   };
 
   return (
-    <main className="container py-10 md:py-14 max-w-2xl">
-      <div className="bg-zinc-950 border border-zinc-800 p-6 md:p-8 rounded-2xl shadow-xl space-y-6 text-center animate-fade-in">
-        <div className="space-y-2">
-          <span className="text-xs font-mono font-bold text-amber-500 uppercase tracking-widest">
-            Kammattam Sandbox Node
-          </span>
-          <h3 className="text-xl md:text-2xl font-black text-white">
-            No Project Link From Studio Yet?
-          </h3>
-          <p className="text-xs md:text-sm text-zinc-400 max-w-sm mx-auto">
-            Don't sit tight waiting. Deploy your localized free pipeline inside Nilavara A and
-            experience the full-fidelity review matrix instantly.
-          </p>
+    <main className="p-6 md:p-10 bg-black text-zinc-100 min-h-[calc(100dvh-4rem)] selection:bg-amber-500 selection:text-black animate-fade-in">
+      <div className="max-w-4xl mx-auto space-y-8">
+        {/* Header strip */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-zinc-900 pb-6 gap-4">
+          <div>
+            <h1 className="text-sm font-mono tracking-widest text-zinc-500 uppercase">
+              Client Review Suite
+            </h1>
+            <p className="text-xl font-bold text-zinc-200 mt-1">
+              {activated ? "Workspace ready." : "Workspace awaiting activation."}
+            </p>
+            {userEmail && (
+              <p className="text-xs text-zinc-500 font-mono mt-1 truncate max-w-[260px]">{userEmail}</p>
+            )}
+          </div>
+          <div className="flex items-center gap-3 bg-zinc-950 border border-zinc-900 px-4 py-2 rounded-xl text-xs font-mono">
+            <span
+              className={`w-2 h-2 rounded-full ${
+                activated ? "bg-emerald-400" : "bg-amber-500"
+              } animate-pulse`}
+            />
+            <span className="text-zinc-400">
+              Pipeline Mode: {activated ? "Nilavara A · Live" : "Free Allocations"}
+            </span>
+          </div>
         </div>
 
-        <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl text-left font-mono text-xs text-zinc-400 space-y-1">
-          <p><strong className="text-zinc-200">Vault:</strong> Nilavara A (Free Allocation Tier)</p>
-          <p><strong className="text-zinc-200">Provision Cost:</strong> ₹1 Integration Charge (Refundable verification setup)</p>
-        </div>
+        {!activated ? (
+          /* Activation card */
+          <div className="bg-zinc-950 border border-zinc-900 rounded-2xl p-6 md:p-8 shadow-2xl border-t-2 border-t-amber-500 max-w-xl mx-auto space-y-6">
+            <div className="space-y-2 text-center">
+              <div className="inline-flex p-3 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-full mb-1">
+                <KeyRound className="w-5 h-5" />
+              </div>
+              <h2 className="text-xl font-black text-white tracking-tight">
+                Deploy Local Workspace Engine
+              </h2>
+              <p className="text-xs text-zinc-400 max-w-xs mx-auto">
+                No active studio link shared yet? Authenticate your infrastructure profile to jump
+                directly into the system.
+              </p>
+            </div>
 
-        {phase === "error" && (
-          <div
-            role="alert"
-            className="text-left p-4 bg-red-950/40 border border-red-900/60 rounded-xl space-y-3"
-          >
-            <div className="flex items-start gap-2">
-              <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <p className="text-xs font-mono font-bold text-red-300 uppercase tracking-widest">
-                  {errorKind === "payment" && "Payment failed"}
-                  {errorKind === "verify" && "Verification failed"}
-                  {errorKind === "order" && "Couldn't start order"}
-                  {errorKind === "sdk" && "Checkout unavailable"}
-                  {errorKind === "network" && "Network error"}
-                </p>
-                <p className="text-xs text-red-200/90 leading-relaxed">{errorMsg}</p>
-                {lastPaymentId && (
-                  <p className="text-[10px] font-mono text-red-300/70 break-all">
-                    Razorpay ref: {lastPaymentId}
-                  </p>
+            <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl p-4 font-mono text-xs text-zinc-400 space-y-2">
+              <div className="flex justify-between items-center border-b border-zinc-800 pb-2">
+                <span className="flex items-center gap-1.5">
+                  <HardDrive className="w-3.5 h-3.5 text-amber-500" /> Allocation Node:
+                </span>
+                <span className="text-zinc-100 font-bold">NILAVARA A</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" /> Verification Cost:
+                </span>
+                <span className="text-zinc-100 font-bold">₹1.00</span>
+              </div>
+            </div>
+
+            {phase === "error" && (
+              <div
+                role="alert"
+                className="text-left p-4 bg-red-950/40 border border-red-900/60 rounded-xl"
+              >
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="text-xs font-mono font-bold text-red-300 uppercase tracking-widest">
+                      {errorKind === "payment" && "Payment failed"}
+                      {errorKind === "verify" && "Verification failed"}
+                      {errorKind === "order" && "Couldn't start order"}
+                      {errorKind === "sdk" && "Checkout unavailable"}
+                      {errorKind === "network" && "Network error"}
+                    </p>
+                    <p className="text-xs text-red-200/90 leading-relaxed">{errorMsg}</p>
+                    {lastPaymentId && (
+                      <p className="text-[10px] font-mono text-red-300/70 break-all">
+                        Razorpay ref: {lastPaymentId}
+                      </p>
+                    )}
+                    <p className="text-[10px] text-zinc-500">
+                      Attempt #{attempts}. Your card is only debited once verification succeeds.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {busy ? (
+              <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center gap-3 font-mono text-xs text-amber-500">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>{statusByPhase[phase]}</span>
+              </div>
+            ) : (
+              <button
+                onClick={activate}
+                className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black py-4 rounded-xl font-black text-sm tracking-wide shadow-lg shadow-amber-950/20 transition-all uppercase flex items-center justify-center gap-2"
+              >
+                {phase === "error" ? (
+                  <>
+                    <RefreshCw className="w-4 h-4" /> Retry Activation (₹1)
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 fill-current" /> Initialize Infrastructure & Pay ₹1
+                  </>
                 )}
-                <p className="text-[10px] text-zinc-500">
-                  Attempt #{attempts}. Your card is only debited once verification succeeds.
-                </p>
+              </button>
+            )}
+
+            {phase === "error" && (
+              <div className="flex flex-col sm:flex-row gap-2">
+                <button
+                  onClick={requestFreshVerification}
+                  disabled={busy}
+                  className="flex-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-200 py-3 rounded-xl font-bold text-xs tracking-wider uppercase transition-all disabled:opacity-60 inline-flex items-center justify-center gap-2"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" /> Fresh Verification
+                </button>
+                <button
+                  onClick={mailtoSupport}
+                  className="flex-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-200 py-3 rounded-xl font-bold text-xs tracking-wider uppercase transition-all inline-flex items-center justify-center gap-2"
+                >
+                  <Mail className="w-3.5 h-3.5" /> Contact Support
+                </button>
+              </div>
+            )}
+
+            <div className="flex justify-center">
+              <button
+                onClick={finish}
+                disabled={busy}
+                className="text-[11px] text-zinc-500 hover:text-zinc-300 inline-flex items-center gap-1.5 disabled:opacity-60"
+              >
+                <SkipForward className="w-3 h-3" /> Skip — I have a link from my studio
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* Post-activation grid */
+          <div className="space-y-6 animate-fade-in">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Left: enter the hub */}
+              <div className="bg-zinc-950 border border-zinc-900 p-6 rounded-2xl flex flex-col justify-between space-y-4">
+                <div>
+                  <span className="text-[10px] font-mono tracking-widest text-emerald-400 uppercase font-bold bg-emerald-500/10 px-2 py-0.5 rounded">
+                    Active Vault Node
+                  </span>
+                  <h3 className="text-lg font-bold text-white mt-2">Enter Your Review Hub</h3>
+                  <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                    Your Nilavara A sandbox is live. Jump into the hub to see incoming reviews,
+                    finish the first-60-seconds checklist, and open share links sent by your studio.
+                  </p>
+                </div>
+                <button
+                  onClick={finish}
+                  className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 p-3 rounded-xl flex items-center justify-between text-xs font-mono text-zinc-300 group transition-all"
+                >
+                  <span>Open Review Hub</span>
+                  <ArrowRight className="w-4 h-4 text-amber-500 group-hover:translate-x-0.5 transition-transform" />
+                </button>
+              </div>
+
+              {/* Right: paste existing link */}
+              <div className="bg-zinc-950 border border-zinc-900 p-6 rounded-2xl flex flex-col justify-between space-y-4">
+                <div>
+                  <span className="text-[10px] font-mono tracking-widest text-zinc-500 uppercase font-bold">
+                    Manual Route
+                  </span>
+                  <h3 className="text-lg font-bold text-white mt-2">Connect Existing Link</h3>
+                  <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                    Already have a private project share link dispatched directly from your studio?
+                    Paste the absolute URL or <code className="text-amber-500">/s/token</code> here.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={pasteLink}
+                    onChange={(e) => setPasteLink(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && openPastedLink()}
+                    placeholder="https://streamvistacreator.com/s/token…"
+                    className="bg-zinc-900 border border-zinc-800 text-xs px-3 py-2 rounded-xl flex-grow focus:outline-none focus:border-amber-500 font-mono text-zinc-100 placeholder:text-zinc-600"
+                  />
+                  <button
+                    onClick={openPastedLink}
+                    className="bg-amber-500 hover:bg-amber-600 text-black px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all"
+                  >
+                    Open
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         )}
-
-        <button
-          onClick={activate}
-          disabled={busy}
-          className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black py-4 rounded-xl font-black text-sm tracking-wide shadow-lg shadow-amber-950/20 transition-all uppercase disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
-        >
-          {busy && <Loader2 className="w-4 h-4 animate-spin" />}
-          {phaseLabel[phase]}
-          {!busy && phase !== "error" && <ArrowRight className="w-4 h-4" />}
-          {!busy && phase === "error" && <RefreshCw className="w-4 h-4" />}
-        </button>
-
-        {phase === "error" && (
-          <div className="flex flex-col sm:flex-row gap-2">
-            <button
-              onClick={requestFreshVerification}
-              disabled={busy}
-              className="flex-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-200 py-3 rounded-xl font-bold text-xs tracking-wider uppercase transition-all disabled:opacity-60 inline-flex items-center justify-center gap-2"
-            >
-              <RefreshCw className="w-3.5 h-3.5" /> Request Fresh Verification
-            </button>
-            <button
-              onClick={mailtoSupport}
-              className="flex-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-200 py-3 rounded-xl font-bold text-xs tracking-wider uppercase transition-all inline-flex items-center justify-center gap-2"
-            >
-              <Mail className="w-3.5 h-3.5" /> Contact Support
-            </button>
-          </div>
-        )}
-
-        <button
-          onClick={finish}
-          disabled={busy}
-          className="text-[11px] text-zinc-500 hover:text-zinc-300 inline-flex items-center gap-1.5 disabled:opacity-60"
-        >
-          <SkipForward className="w-3 h-3" /> Skip — I'll wait for the studio link
-        </button>
       </div>
     </main>
   );
 }
+
+
 
 
 

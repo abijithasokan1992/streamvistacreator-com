@@ -817,6 +817,7 @@ export type Database = {
           owner_id: string
           password_hash: string | null
           password_salt: string | null
+          recipient_email: string | null
           revoked: boolean
           share_token: string
           size_bytes: number
@@ -836,6 +837,7 @@ export type Database = {
           owner_id: string
           password_hash?: string | null
           password_salt?: string | null
+          recipient_email?: string | null
           revoked?: boolean
           share_token: string
           size_bytes: number
@@ -855,6 +857,7 @@ export type Database = {
           owner_id?: string
           password_hash?: string | null
           password_salt?: string | null
+          recipient_email?: string | null
           revoked?: boolean
           share_token?: string
           size_bytes?: number

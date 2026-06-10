@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { CheckCircle2, XCircle, Loader2, RefreshCw, AlertTriangle, ShieldCheck, Activity } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, RefreshCw, AlertTriangle, ShieldCheck, Activity, Download } from "lucide-react";
 
 type StatusResp = {
   status?: "connected" | "disconnected";

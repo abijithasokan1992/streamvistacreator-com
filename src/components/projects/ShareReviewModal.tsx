@@ -30,7 +30,7 @@ type ReviewLink = {
   view_count: number;
   revoked: boolean;
   view_only: boolean;
-  password_hash: string | null;
+  requires_password: boolean;
   created_at: string;
 };
 

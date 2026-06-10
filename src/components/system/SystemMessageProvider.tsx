@@ -23,6 +23,13 @@ export interface SystemMessagePayload {
   /** Custom label for the primary button. Defaults to "OK". */
   okLabel?: string;
   onOk?: () => void;
+  /** Optional secondary action button shown between Report and OK (e.g. "Retry upload"). */
+  extraAction?: {
+    label: string;
+    onClick: () => void | Promise<void>;
+    /** If true, closes the modal after onClick resolves. Defaults to true. */
+    closeOnClick?: boolean;
+  };
 }
 
 interface Ctx {

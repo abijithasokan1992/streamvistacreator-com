@@ -95,6 +95,17 @@ export default function AdminCredentials() {
 
         <div className="space-y-2">
           <label className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            <KeyRound className="w-3.5 h-3.5" /> Current password
+          </label>
+          <input
+            type="password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            placeholder="Enter current password"
+            autoComplete="current-password"
+            className="w-full h-11 px-3 rounded-xl bg-secondary/40 border border-border/60 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40"
+          />
+          <label className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 pt-2">
             <KeyRound className="w-3.5 h-3.5" /> New password
           </label>
           <input
@@ -102,6 +113,7 @@ export default function AdminCredentials() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Min 8 characters"
+            autoComplete="new-password"
             className="w-full h-11 px-3 rounded-xl bg-secondary/40 border border-border/60 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40"
           />
           <input

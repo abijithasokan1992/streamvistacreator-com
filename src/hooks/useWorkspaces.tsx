@@ -70,8 +70,20 @@ export function useWorkspaces() {
     return { ...data, role: "owner" };
   }, [user?.id, load, setActiveId]);
 
+  const renameWorkspace = useCallback(async (id: string, name: string): Promise<boolean> => {
+    const trimmed = name.trim();
+    if (!trimmed) return false;
+    const { error } = await (supabase as any)
+      .from("workspaces")
+      .update({ name: trimmed })
+      .eq("id", id);
+    if (error) return false;
+    await load();
+    return true;
+  }, [load]);
+
   const active = workspaces.find((w) => w.id === activeId) ?? null;
   const canWriteActive = !!active && ["owner", "admin", "editor"].includes(active.role ?? "viewer");
 
-  return { workspaces, active, activeId, setActiveId, loading, reload: load, createWorkspace, canWriteActive };
+  return { workspaces, active, activeId, setActiveId, loading, reload: load, createWorkspace, renameWorkspace, canWriteActive };
 }

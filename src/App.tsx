@@ -44,6 +44,7 @@ const AdminRoutes = () => (
   <Routes>
     <Route path="/" element={<Auth />} />
     <Route path="/auth" element={<Auth />} />
+    <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/admin" element={<Admin />} />
     {/* Anything else on the admin host = wrong portal */}
     <Route path="*" element={<WrongPortal expected="public" />} />

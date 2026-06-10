@@ -542,6 +542,62 @@ export type Database = {
         }
         Relationships: []
       }
+      ingest_telemetry: {
+        Row: {
+          bytes: number | null
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          event: string
+          http_status: number | null
+          id: string
+          metadata: Json | null
+          oci_upload_id: string | null
+          part_number: number | null
+          session_id: string | null
+          severity: string
+          user_id: string | null
+        }
+        Insert: {
+          bytes?: number | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          event: string
+          http_status?: number | null
+          id?: string
+          metadata?: Json | null
+          oci_upload_id?: string | null
+          part_number?: number | null
+          session_id?: string | null
+          severity?: string
+          user_id?: string | null
+        }
+        Update: {
+          bytes?: number | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          event?: string
+          http_status?: number | null
+          id?: string
+          metadata?: Json | null
+          oci_upload_id?: string | null
+          part_number?: number | null
+          session_id?: string | null
+          severity?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingest_telemetry_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "upload_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       intro_invite_secrets: {
         Row: {
           created_at: string
@@ -1901,6 +1957,60 @@ export type Database = {
           id?: string
           metadata?: Json | null
           reason?: string
+        }
+        Relationships: []
+      }
+      upload_sessions: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          file_name: string
+          file_sha256: string | null
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          object_key: string | null
+          oci_upload_id: string | null
+          status: string
+          total_chunks: number | null
+          updated_at: string
+          uploaded_parts: Json
+          user_id: string
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          file_name: string
+          file_sha256?: string | null
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          object_key?: string | null
+          oci_upload_id?: string | null
+          status?: string
+          total_chunks?: number | null
+          updated_at?: string
+          uploaded_parts?: Json
+          user_id: string
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          file_name?: string
+          file_sha256?: string | null
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          object_key?: string | null
+          oci_upload_id?: string | null
+          status?: string
+          total_chunks?: number | null
+          updated_at?: string
+          uploaded_parts?: Json
+          user_id?: string
+          workspace_id?: string | null
         }
         Relationships: []
       }

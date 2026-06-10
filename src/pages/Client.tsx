@@ -191,7 +191,6 @@ function WizardView({
   );
 }
 
-const WIZARD_KEY = "sv_seen_client_wizard_v1";
 
 function StepWelcome() {
   return (

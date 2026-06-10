@@ -46,7 +46,8 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: buildCorsHeaders(req) });
 
   try {
-    const { priceId, returnUrl, environment } = await req.json();
+    const { priceId, quantity, returnUrl, environment } = await req.json();
+    const qty = Math.max(1, Math.min(10, Number(quantity ?? 1)));
 
     // Derive userId / email from authenticated session — never trust client.
     let userId: string | undefined;
@@ -129,7 +130,7 @@ Deno.serve(async (req) => {
     }
 
     const session = await stripe.checkout.sessions.create({
-      line_items: [{ price: stripePrice.id, quantity: 1 }],
+      line_items: [{ price: stripePrice.id, quantity: qty }],
       mode: isRecurring ? "subscription" : "payment",
       ui_mode: "embedded_page",
       return_url: returnUrl,

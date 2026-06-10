@@ -483,19 +483,50 @@ export default function OracleStorageMonitor() {
             />
           </div>
 
+          <MissingFieldsChecklist draft={draft} pemPresentOnFile={cfg.oracle_private_key_set} />
+
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                 <KeyRound className="w-3.5 h-3.5" /> Oracle Private Key (PEM, PKCS#8)
               </label>
-              <button type="button" onClick={() => setShowPem(s => !s)}
-                className="text-[11px] uppercase tracking-wider text-accent hover:underline">
-                {showPem ? "Hide" : "Show"}
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const fmt = autoFormatPem(pem);
+                    if (!pem.trim()) {
+                      setPemHint({ tone: "warn", text: "Paste a PEM first, then auto-format." });
+                      return;
+                    }
+                    setPem(fmt.pem);
+                    if (fmt.valid) {
+                      setPemHint({ tone: "ok", text: fmt.changed ? "Key cleaned up and BEGIN/END headers ensured." : "Key already well-formed." });
+                      toast.success("Private key auto-formatted");
+                    } else {
+                      setPemHint({ tone: "err", text: fmt.reason ?? "Unable to parse PEM." });
+                    }
+                  }}
+                  className="text-[11px] uppercase tracking-wider text-accent hover:underline inline-flex items-center gap-1"
+                >
+                  <Wand2 className="w-3 h-3" /> Auto-format key
+                </button>
+                <button type="button" onClick={() => setShowPem(s => !s)}
+                  className="text-[11px] uppercase tracking-wider text-accent hover:underline">
+                  {showPem ? "Hide" : "Show"}
+                </button>
+              </div>
             </div>
             <textarea
               value={pem}
-              onChange={e => setPem(e.target.value)}
+              onChange={e => { setPem(e.target.value); setPemHint(null); }}
+              onBlur={() => {
+                if (!pem.trim()) return;
+                const fmt = autoFormatPem(pem);
+                setPemHint(fmt.valid
+                  ? { tone: "ok", text: "PEM structure looks valid." }
+                  : { tone: "err", text: fmt.reason ?? "Invalid PEM." });
+              }}
               placeholder={cfg.oracle_private_key_set
                 ? "•••••••••• key on file. Paste a new PEM only to rotate."
                 : "-----BEGIN PRIVATE KEY-----\nMIIEv...\n-----END PRIVATE KEY-----"}
@@ -508,10 +539,22 @@ export default function OracleStorageMonitor() {
               )}
               style={showPem ? undefined : ({ WebkitTextSecurity: "disc" } as React.CSSProperties)}
             />
-            <p className="text-[11px] text-muted-foreground">
-              Stored encrypted at rest, readable only by admins and the signing function.
+            {pemHint && (
+              <p className={cn(
+                "text-[11px] inline-flex items-center gap-1.5",
+                pemHint.tone === "ok" && "text-emerald-400",
+                pemHint.tone === "warn" && "text-amber-400",
+                pemHint.tone === "err" && "text-destructive",
+              )}>
+                {pemHint.tone === "ok" ? <CheckCircle2 className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
+                {pemHint.text}
+              </p>
+            )}
+            <p className="text-[11px] text-muted-foreground inline-flex items-center gap-1.5">
+              <Lock className="w-3 h-3" /> Stored as the ORACLE_PRIVATE_KEY backend secret — never written to the database or sent to browsers.
             </p>
           </div>
+
 
           <div className="flex flex-wrap gap-2">
             <button

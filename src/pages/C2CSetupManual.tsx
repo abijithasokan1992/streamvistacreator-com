@@ -348,7 +348,8 @@ function CategoryCard({ cat, ingestHref }: { cat: Category; ingestHref: string }
 /* ─────────────── Page ─────────────── */
 export default function C2CSetupManual() {
   const { active } = useWorkspaces();
-  const token = studioToken(active?.production_banner);
+  const banner = (active as any)?.production_banner as string | null | undefined;
+  const token = studioToken(banner);
   const wsShort = active?.id ? active.id.slice(0, 8) : null;
   const parUrl = useMemo(() => {
     const params = new URLSearchParams({ ws: token });
@@ -361,9 +362,10 @@ export default function C2CSetupManual() {
     return `/ingest-test?${p.toString()}`;
   };
 
-  const bannerLabel = active?.production_banner ?? "Default Studio";
+  const bannerLabel = banner ?? "Default Studio";
 
   return (
+
 
     <div className="min-h-dvh bg-background text-foreground">
       {/* Header */}

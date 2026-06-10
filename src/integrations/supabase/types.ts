@@ -2438,6 +2438,7 @@ export type Database = {
           read_ct: number
         }[]
       }
+      realtime_topic_workspace: { Args: { _topic: string }; Returns: string }
       request_creator_link: {
         Args: { _creator_email: string }
         Returns: boolean

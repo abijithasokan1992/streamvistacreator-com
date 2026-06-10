@@ -161,15 +161,59 @@ export default function MasterArchive() {
 
     const url = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/oci-upload`;
 
-    // Enqueue all files first so the user sees the full batch in "Queued" state
-    const queued: UploadStat[] = Array.from(files).map((f) => ({
+    // ── Duplicate check: same workspace + category (+ project if scoped) + filename ──
+    const incomingNames = Array.from(files).map((f) => f.name);
+    let existingNames = new Set<string>();
+    try {
+      let q = (supabase as any)
+        .from("recent_uploads")
+        .select("file_name")
+        .eq("workspace_id", activeId)
+        .eq("category", currentCategory)
+        .in("file_name", incomingNames)
+        .in("status", ["completed", "uploading", "processing", "queued"]);
+      if (projectId) q = q.eq("project_id", projectId);
+      const { data: existing } = await q;
+      existingNames = new Set((existing ?? []).map((r: any) => r.file_name as string));
+    } catch {
+      existingNames = new Set();
+    }
+
+    // Also dedupe against in-session uploads still active or completed
+    const sessionNames = new Set(
+      uploads
+        .filter((u) => u.category === currentCategory
+          && (u.status === "queued" || u.status === "uploading" || u.status === "processing" || u.status === "completed"))
+        .map((u) => u.name),
+    );
+
+    const filesToUpload: File[] = [];
+    const blockedNames: string[] = [];
+    for (const f of Array.from(files)) {
+      if (existingNames.has(f.name) || sessionNames.has(f.name)) blockedNames.push(f.name);
+      else filesToUpload.push(f);
+    }
+
+    if (blockedNames.length > 0) {
+      const preview = blockedNames.slice(0, 3).join(", ");
+      const more = blockedNames.length > 3 ? ` +${blockedNames.length - 3} more` : "";
+      toast.error("This file already exists in the selected folder.", {
+        description: `Blocked ${blockedNames.length} duplicate${blockedNames.length > 1 ? "s" : ""}: ${preview}${more}`,
+        duration: 6000,
+      });
+    }
+
+    if (filesToUpload.length === 0) return;
+
+    // Enqueue remaining files so the user sees the full batch in "Queued" state
+    const queued: UploadStat[] = filesToUpload.map((f) => ({
       name: f.name, status: "queued", category: currentCategory, progress: 0,
     }));
     setUploads((u) => [...queued, ...u]);
 
     for (let i = 0; i < queued.length; i++) {
       const stat = queued[i];
-      const f = files[i];
+      const f = filesToUpload[i];
       setUploads((u) => u.map((x) => x === stat ? { ...x, status: "uploading" } : x));
       try {
         const fd = new FormData();
@@ -189,7 +233,6 @@ export default function MasterArchive() {
             setUploads((u) => u.map((x) => x === stat ? { ...x, progress: pct } : x));
           };
           xhr.upload.onload = () => {
-            // Bytes finished — server is now processing (storing to OCI, DB record, etc.)
             setUploads((u) => u.map((x) => x === stat ? { ...x, status: "processing", progress: 100 } : x));
           };
           xhr.onload = () => {

@@ -351,6 +351,16 @@ export default function Projects() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {shareProject && (
+        <ShareReviewModal
+          open={!!shareProject}
+          onOpenChange={(v) => !v && setShareProject(null)}
+          projectId={shareProject.id}
+          projectName={shareProject.name}
+          workspaceId={shareProject.workspace_id}
+        />
+      )}
     </main>
   );
 }

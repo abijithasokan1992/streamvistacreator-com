@@ -346,7 +346,102 @@ export default function MasterArchive() {
     return () => { supabase.removeChannel(channel); };
   }, [activeId, projectId, recomputeChecklist]);
 
-  const checkedCount = BRIDGE_CHECKLIST.filter((i) => (satisfiedCounts[i.key] ?? 0) > 0).length;
+  // ── Admin overrides (force-complete / force-incomplete) ──────────────────────
+  // Read by all workspace members so the forced state shows for everyone.
+  // Writes are RLS-restricted to global admins, workspace owners/admins, and
+  // the super admin. The DB-driven auto-sync above is untouched: overrides
+  // simply *win* over the computed counts when present.
+  type OverrideState = "forced_complete" | "forced_incomplete";
+  type OverrideRow = {
+    id: string;
+    checklist_key: string;
+    state: OverrideState;
+    note: string | null;
+    set_by_email: string | null;
+    project_id: string | null;
+  };
+  const [overrides, setOverrides] = useState<Record<string, OverrideRow>>({});
+
+  const loadOverrides = useMemo(() => async () => {
+    if (!activeId) { setOverrides({}); return; }
+    let q = (supabase as any)
+      .from("checklist_overrides")
+      .select("id,checklist_key,state,note,set_by_email,project_id")
+      .eq("workspace_id", activeId);
+    if (projectId) q = q.or(`project_id.eq.${projectId},project_id.is.null`);
+    else q = q.is("project_id", null);
+    const { data } = await q;
+    const map: Record<string, OverrideRow> = {};
+    for (const row of (data ?? []) as OverrideRow[]) {
+      // Project-scoped wins over workspace-wide for the same key.
+      const existing = map[row.checklist_key];
+      if (!existing || (row.project_id && !existing.project_id)) {
+        map[row.checklist_key] = row;
+      }
+    }
+    setOverrides(map);
+  }, [activeId, projectId]);
+
+  useEffect(() => { void loadOverrides(); }, [loadOverrides]);
+
+  useEffect(() => {
+    if (!activeId) return;
+    const ch = supabase
+      .channel(`checklist-overrides-${activeId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "checklist_overrides", filter: `workspace_id=eq.${activeId}` },
+        () => { void loadOverrides(); },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [activeId, loadOverrides]);
+
+  const isItemDone = (key: string): boolean => {
+    const ov = overrides[key];
+    if (ov?.state === "forced_complete") return true;
+    if (ov?.state === "forced_incomplete") return false;
+    return (satisfiedCounts[key] ?? 0) > 0;
+  };
+
+  const setOverride = async (key: string, state: OverrideState) => {
+    if (!activeId || !canManageChecklist) return;
+    const payload = {
+      workspace_id: activeId,
+      project_id: projectId || null,
+      checklist_key: key,
+      state,
+      set_by: user?.id ?? null,
+      set_by_email: user?.email ?? null,
+    };
+    const { error } = await (supabase as any)
+      .from("checklist_overrides")
+      .upsert(payload, { onConflict: "workspace_id,project_id,checklist_key" });
+    if (error) {
+      toast.error("Override failed", { description: error.message });
+      return;
+    }
+    toast.success(state === "forced_complete" ? "Marked complete" : "Marked incomplete");
+    void loadOverrides();
+  };
+
+  const clearOverride = async (key: string) => {
+    if (!activeId || !canManageChecklist) return;
+    const existing = overrides[key];
+    if (!existing) return;
+    const { error } = await (supabase as any)
+      .from("checklist_overrides")
+      .delete()
+      .eq("id", existing.id);
+    if (error) {
+      toast.error("Could not clear override", { description: error.message });
+      return;
+    }
+    toast.success("Override cleared — auto-sync restored");
+    void loadOverrides();
+  };
+
+  const checkedCount = BRIDGE_CHECKLIST.filter((i) => isItemDone(i.key)).length;
 
   // Clicking a checklist row pre-selects its canonical destination so the
   // admin can drop straight into the right folder without hunting for it.
@@ -356,6 +451,7 @@ export default function MasterArchive() {
       description: `Ready to ingest "${item.label}".`,
     });
   };
+
 
   return (
     <main className="min-h-dvh bg-background text-foreground">

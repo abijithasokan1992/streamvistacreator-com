@@ -263,7 +263,7 @@ function StepCard({ step }: { step: Step }) {
   );
 }
 
-function CategoryCard({ cat }: { cat: Category }) {
+function CategoryCard({ cat, ingestHref }: { cat: Category; ingestHref: string }) {
   const [open, setOpen] = useState(false);
   const Icon = cat.icon;
 
@@ -327,11 +327,23 @@ function CategoryCard({ cat }: { cat: Category }) {
               <StepCard key={s.number} step={s} />
             ))}
           </div>
+
+          {/* per-category test link — routes to Ingest Test with category pre-bound
+              so the modal uses the 5MB chunked + SHA-256 pipeline for this path. */}
+          <div className="mt-6 pt-4 border-t border-border/40">
+            <Link
+              to={ingestHref}
+              className="inline-flex items-center gap-1.5 text-[11px] font-mono-tech uppercase tracking-wider text-accent hover:text-accent/80 transition"
+            >
+              Test this path → chunked ingest <ExternalLink className="w-3 h-3" />
+            </Link>
+          </div>
         </div>
       )}
     </article>
   );
 }
+
 
 /* ─────────────── Page ─────────────── */
 export default function C2CSetupManual() {

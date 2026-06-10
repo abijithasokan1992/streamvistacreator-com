@@ -81,7 +81,7 @@ async function logAudit(entry: {
       resource: entry.resource ?? null,
       permission_key: entry.permission_key ?? null,
       allowed: entry.allowed,
-      details: entry.details ?? {},
+      details: (entry.details ?? {}) as never,
     });
   } catch {
     // never let auditing fail the caller

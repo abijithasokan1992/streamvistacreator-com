@@ -27,6 +27,7 @@ import EmailLogMonitor from "@/components/admin/EmailLogMonitor";
 import UsersAndCredentials from "@/components/admin/UsersAndCredentials";
 import KammattamMeter from "@/components/admin/KammattamMeter";
 import MarketingCMS from "@/components/admin/MarketingCMS";
+import AiMcpControlCenter from "@/components/admin/AiMcpControlCenter";
 
 interface Row {
   id: string;
@@ -222,7 +223,8 @@ export default function Admin() {
 
           {/* 3. Development & Software */}
           <TabsContent value="dev" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<Code2 className="w-5 h-5" />} title="Development & Software" desc="Oracle DB, OCI storage & domain deployment." />
+            <DeptHeader icon={<Code2 className="w-5 h-5" />} title="Development & Software" desc="Oracle DB, OCI storage, AI/MCP governance & domain deployment." />
+            <AiMcpControlCenter />
             <DomainHostingPanel />
             <OracleOciStorageCard />
             <OracleStorageMonitor />

@@ -116,13 +116,13 @@ export default function CameraToCloudIngest() {
       const isNet = m.includes("network") || m.includes("failed to fetch");
       showMessage({
         severity: "error",
-        title: isOracle ? "Oracle storage rejected the upload"
+        title: isOracle ? "C CLOUD storage rejected the upload"
               : isAuth ? "Sign-in expired"
               : isNet ? "Network dropped mid-upload"
               : `Couldn't ingest "${p.file.name}"`,
         message:
           (isOracle
-            ? `Camera-to-Cloud reached the StreamVista backend, but Oracle Object Storage returned an error.\n\nReason: ${msg}\n\nThe file is still on your device — retry once Oracle is reachable, or report this so an admin can verify the bucket credentials.`
+            ? `Camera-to-Cloud reached the StreamVista backend, but C CLOUD Object Storage returned an error.\n\nReason: ${msg}\n\nThe file is still on your device — retry once C CLOUD is reachable, or report this so an admin can verify the bucket credentials.`
             : isAuth
             ? `Your session expired before "${p.file.name}" finished ingesting. Sign in again and retry — nothing was lost.`
             : isNet
@@ -173,7 +173,7 @@ export default function CameraToCloudIngest() {
             Camera-to-Cloud Ingest
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Drop footage, audio, RAW or proxies — streamed to Oracle OCI Object Storage with cryptographic integrity.
+            Drop footage, audio, RAW or proxies — streamed to C CLOUD Object Storage with cryptographic integrity.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -202,7 +202,7 @@ export default function CameraToCloudIngest() {
 
       {!activeId && (
         <Card className="p-4 text-sm text-muted-foreground border-amber-500/30 bg-amber-500/5">
-          Pick a workspace above to start routing camera-to-cloud uploads into its isolated OCI prefix.
+          Pick a workspace above to start routing camera-to-cloud uploads into its isolated C CLOUD prefix.
         </Card>
       )}
       {activeId && !canWriteActive && (

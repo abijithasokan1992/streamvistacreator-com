@@ -3,6 +3,7 @@ import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
 import { createHmac } from "node:crypto";
 import { computeFinalPricePaise, type Cycle } from "../_shared/pricing.ts";
 import { loadRazorpayCreds } from "../_shared/razorpay-config.ts";
+import { logPayment, timer } from "../_shared/payment-logger.ts";
 
 function jsonError(req: Request, message: string, status: number) {
   return new Response(JSON.stringify({ error: message }), {
@@ -136,6 +137,13 @@ Deno.serve(async (req) => {
       .update({ plan_tier: row.selected_cycle })
       .eq("user_id", userId);
 
+    await logPayment(supabase, {
+      severity: "INFO", action_type: "verify.complete",
+      user_id: userId,
+      order_id: razorpay_order_id,
+      payment_id: razorpay_payment_id,
+      extra: { onboardingId, planTier: row.selected_cycle, amount_paise: orderData.amount },
+    });
 
     return new Response(JSON.stringify({ verified: true, planTier: row.selected_cycle }), {
       status: 200,

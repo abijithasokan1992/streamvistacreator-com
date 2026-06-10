@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 export default function AdminCredentials() {
   const { user } = useAuth();
   const [email, setEmail] = useState(user?.email ?? "");
+  const [currentPassword, setCurrentPassword] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [savingEmail, setSavingEmail] = useState(false);
@@ -35,14 +36,28 @@ export default function AdminCredentials() {
   };
 
   const updatePassword = async () => {
+    if (!user?.email) return toast.error("No admin email on session");
+    if (!currentPassword) return toast.error("Enter your current password");
     const ok = z.string().min(8, "Min 8 characters").max(72).safeParse(password);
     if (!ok.success) return toast.error(ok.error.issues[0].message);
     if (password !== confirm) return toast.error("Passwords don't match");
+    if (password === currentPassword) return toast.error("New password must differ from current");
+
     setSavingPwd(true);
+    // Strictly verify the current password by re-authenticating against Supabase Auth.
+    // On success the session is refreshed; on failure no rotation happens.
+    const { error: verifyErr } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: currentPassword,
+    });
+    if (verifyErr) {
+      setSavingPwd(false);
+      return toast.error("Current password is incorrect");
+    }
     const { error } = await supabase.auth.updateUser({ password });
     setSavingPwd(false);
     if (error) return toast.error(error.message);
-    setPassword(""); setConfirm("");
+    setCurrentPassword(""); setPassword(""); setConfirm("");
     toast.success("Admin password updated.");
   };
 

@@ -154,7 +154,17 @@ function RowCard({ kind, row, onChange, onSave, onDelete, onUpload, onSetStatus,
   const isPublished = row.status === "published";
   const isNew = row.id.startsWith("new-");
   return (
-    <div className="rounded-xl border border-border/60 bg-secondary/20 p-4 space-y-3">
+    <div className={`rounded-xl border p-4 space-y-3 ${isPublished ? "border-emerald-500/30 bg-emerald-500/[0.03]" : "border-amber-500/30 bg-amber-500/[0.03]"}`}>
+      <div className="flex items-center justify-between gap-2">
+        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${isPublished ? "bg-emerald-500/15 text-emerald-500" : "bg-amber-500/15 text-amber-500"}`}>
+          {isPublished ? <><Globe className="w-3 h-3" /> Published</> : <><FileEdit className="w-3 h-3" /> Draft</>}
+        </span>
+        {!isNew && (
+          isPublished
+            ? <button onClick={() => onSetStatus("draft")} className="h-8 px-3 rounded-md border border-border text-xs inline-flex items-center gap-1.5 hover:bg-secondary"><EyeOff className="w-3.5 h-3.5" /> Unpublish</button>
+            : <button onClick={() => onSetStatus("published")} className="h-8 px-3 rounded-md bg-emerald-500/20 text-emerald-500 border border-emerald-500/40 text-xs inline-flex items-center gap-1.5 hover:bg-emerald-500/30"><Globe className="w-3.5 h-3.5" /> Publish</button>
+        )}
+      </div>
       <div className="grid md:grid-cols-2 gap-3">
         {kind === "hero" && (<>
           <Field label="Headline"><input className={cls} value={row.headline ?? ""} onChange={e => onChange({ headline: e.target.value })} /></Field>

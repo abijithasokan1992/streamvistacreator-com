@@ -105,11 +105,37 @@ function safeName(name: string): string {
   return name.replace(/[^\w.\-]+/g, "_").slice(0, 120);
 }
 
-// ---------- handler ----------
+// ---------- telemetry ----------
+
+async function logIngest(admin: any, evt: {
+  user_id?: string | null; session_id?: string | null; oci_upload_id?: string | null;
+  part_number?: number | null; event: string;
+  severity?: "info" | "warn" | "error";
+  duration_ms?: number | null; bytes?: number | null;
+  http_status?: number | null; error_message?: string | null;
+  metadata?: Record<string, unknown> | null;
+}) {
+  try {
+    await admin.from("ingest_telemetry").insert({
+      user_id: evt.user_id ?? null,
+      session_id: evt.session_id ?? null,
+      oci_upload_id: evt.oci_upload_id ?? null,
+      part_number: evt.part_number ?? null,
+      event: evt.event,
+      severity: evt.severity ?? "info",
+      duration_ms: evt.duration_ms ?? null,
+      bytes: evt.bytes ?? null,
+      http_status: evt.http_status ?? null,
+      error_message: evt.error_message ?? null,
+      metadata: evt.metadata ?? null,
+    });
+  } catch { /* never block the upload on a logging failure */ }
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return handleOptions(req);
   const cors = { ...buildCorsHeaders(req), "Content-Type": "application/json" };
+
 
   try {
     const token = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
@@ -140,6 +166,57 @@ Deno.serve(async (req) => {
     const host = `objectstorage.${region}.oraclecloud.com`;
     const keyId = `${tenancy}/${user}/${fingerprint}`;
     const privateKey = await getPrivateKey();
+
+    // -------- LOOKUP (cross-device resume by SHA-256) --------
+    if (action === "lookup") {
+      const fileSha256 = String(body.fileSha256 || "").trim();
+      if (!fileSha256) return json({ error: "missing fileSha256" }, 400, cors);
+      const { data: sess } = await admin
+        .from("upload_sessions")
+        .select("id, file_name, file_size, mime_type, object_key, oci_upload_id, total_chunks, uploaded_parts, status, workspace_id, updated_at")
+        .eq("user_id", userId)
+        .eq("file_sha256", fileSha256)
+        .in("status", ["pending", "processing"])
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!sess || !sess.oci_upload_id) return json({ found: false }, 200, cors);
+
+      // Confirm with OCI which parts are actually stored.
+      const path = `/n/${ns}/b/${bucket}/u/${encodeURIComponent(sess.object_key)}?uploadId=${encodeURIComponent(sess.oci_upload_id)}`;
+      const sig = await buildOciSignature({ method: "GET", host, path, contentSha256: "", keyId, privateKey });
+      const resp = await fetch(`https://${host}${path}`, {
+        method: "GET", headers: { host, date: sig.date, Authorization: sig.authorization },
+      });
+      const text = await resp.text();
+      let parts: Array<{ partNumber: number; etag: string; size?: number }> = [];
+      if (resp.ok) {
+        try {
+          const arr = JSON.parse(text);
+          if (Array.isArray(arr)) {
+            parts = arr.map((p: any) => ({
+              partNumber: Number(p.partNumber ?? p.uploadPartNum ?? p.part_num),
+              etag: String(p.etag ?? p.ETag ?? "").replace(/^"|"$/g, ""),
+              size: typeof p.size === "number" ? p.size : undefined,
+            })).filter((p) => Number.isInteger(p.partNumber) && p.etag);
+          }
+        } catch { /* ignore */ }
+      }
+      const nextPart = (parts.reduce((m, p) => Math.max(m, p.partNumber), 0) || 0) + 1;
+      await logIngest(admin, {
+        user_id: userId, session_id: sess.id, oci_upload_id: sess.oci_upload_id,
+        event: "session.resumed", severity: "info",
+        metadata: { parts_already_uploaded: parts.length, next_part: nextPart },
+      });
+      return json({
+        found: true,
+        session: sess,
+        bucket, namespace: ns, region,
+        partSize: MAX_PART,
+        partsAlreadyUploaded: parts,
+        nextPartNumber: nextPart,
+      }, 200, cors);
+    }
 
     // -------- INIT --------
     if (action === "init") {
@@ -271,8 +348,31 @@ Deno.serve(async (req) => {
         return json({ error: insErr?.message ?? "insert failed" }, 500, cors);
       }
 
+      // Mirror into upload_sessions for cross-device SHA-256 resume.
+      const fileSha256 = body.fileSha256 ? String(body.fileSha256).slice(0, 128) : null;
+      const totalChunks = Number(body.totalChunks || 0) || null;
+      const { data: sess } = await admin.from("upload_sessions").insert({
+        user_id: userId,
+        workspace_id: workspaceId,
+        file_name: fileName,
+        file_size: fileSize,
+        file_sha256: fileSha256,
+        mime_type: mime,
+        oci_upload_id: uploadId,
+        object_key: objectKey,
+        total_chunks: totalChunks,
+        status: "processing",
+      }).select("id").single();
+
+      await logIngest(admin, {
+        user_id: userId, session_id: sess?.id ?? null, oci_upload_id: uploadId,
+        event: "session.init", severity: "info",
+        bytes: fileSize, metadata: { file_name: fileName, total_chunks: totalChunks },
+      });
+
       return json({
         uploadRowId: inserted.id,
+        sessionId: sess?.id ?? null,
         uploadId,
         objectKey,
         bucket, namespace: ns, region,
@@ -280,6 +380,7 @@ Deno.serve(async (req) => {
         minPart: MIN_PART,
       }, 200, cors);
     }
+
 
     // -------- SIGN PART --------
     if (action === "sign_part") {
@@ -311,6 +412,11 @@ Deno.serve(async (req) => {
         contentLength, keyId, privateKey,
       });
 
+      await logIngest(admin, {
+        user_id: userId, oci_upload_id: uploadId, part_number: partNumber,
+        event: "part.signed", severity: "info", bytes: contentLength,
+      });
+
       return json({
         url: `https://${host}${path}`,
         method: "PUT",
@@ -325,6 +431,27 @@ Deno.serve(async (req) => {
         expires_in: 300,
       }, 200, cors);
     }
+
+    // -------- REPORT PART (client tells us a part finished or failed) --------
+    if (action === "report_part") {
+      const uploadId = String(body.uploadId || "");
+      const partNumber = Number(body.partNumber || 0);
+      const ok = body.ok !== false;
+      const httpStatus = body.httpStatus ? Number(body.httpStatus) : null;
+      const durationMs = body.durationMs ? Number(body.durationMs) : null;
+      const bytes = body.bytes ? Number(body.bytes) : null;
+      const errorMessage = body.error ? String(body.error).slice(0, 500) : null;
+      if (!uploadId || !Number.isInteger(partNumber)) return json({ error: "bad input" }, 400, cors);
+      await logIngest(admin, {
+        user_id: userId, oci_upload_id: uploadId, part_number: partNumber,
+        event: ok ? "part.completed" : "part.failed",
+        severity: ok ? "info" : "error",
+        http_status: httpStatus, duration_ms: durationMs, bytes,
+        error_message: errorMessage,
+      });
+      return json({ ok: true }, 200, cors);
+    }
+
 
     // -------- LIST PARTS --------
     if (action === "list_parts") {
@@ -417,6 +544,14 @@ Deno.serve(async (req) => {
       const { data: updated } = await admin.from("recent_uploads")
         .update({ status: "uploaded", error_message: null })
         .eq("id", uploadRowId).select().single();
+      await admin.from("upload_sessions")
+        .update({ status: "completed", uploaded_parts: partsToCommit })
+        .eq("user_id", userId).eq("oci_upload_id", uploadId);
+      await logIngest(admin, {
+        user_id: userId, oci_upload_id: uploadId,
+        event: "session.completed", severity: "info",
+        metadata: { parts: partsToCommit.length },
+      });
       return json({ upload: updated }, 200, cors);
     }
 
@@ -435,8 +570,16 @@ Deno.serve(async (req) => {
       await admin.from("recent_uploads")
         .update({ status: "failed", error_message: "aborted by user" })
         .eq("id", uploadRowId);
+      await admin.from("upload_sessions")
+        .update({ status: "aborted", error_message: "aborted by user" })
+        .eq("user_id", userId).eq("oci_upload_id", uploadId);
+      await logIngest(admin, {
+        user_id: userId, oci_upload_id: uploadId,
+        event: "session.aborted", severity: "warn", http_status: r.status,
+      });
       return json({ ok: r.ok, status: r.status }, 200, cors);
     }
+
 
     return json({ error: "unknown action" }, 400, cors);
   } catch (e) {

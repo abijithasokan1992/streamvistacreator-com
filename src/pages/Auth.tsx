@@ -201,16 +201,39 @@ export default function Auth() {
     if (!loading && user) continueAfterAuth();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, loading]);
+  // Fire the Welcome (signup) or Login-alert (sign-in) email + SMS/WhatsApp.
+  // Safe to call after any successful auth — the edge function auto-detects
+  // signup vs login from auth.users.created_at when intent is omitted.
+  const fireWelcomeAlert = async (intent: "signup" | "login" | "auto", method?: string) => {
+    try {
+      await supabase.functions.invoke("send-welcome-alert", {
+        body: { intent, method },
+      });
+    } catch (err) {
+      // Non-blocking — auth has already succeeded.
+      console.error("welcome-alert dispatch failed:", err);
+    }
+  };
+
   const handleGoogleSignIn = async () => {
     setSubmitting(true);
+    // Record the intent so the post-redirect handler knows whether to send a
+    // Welcome or a Login alert when Google bounces the user back.
+    try { sessionStorage.setItem("sv_oauth_intent", view === "signup" ? "signup" : "login"); } catch {}
     const result = await lovable.auth.signInWithOAuth("google", {
       redirect_uri: window.location.origin,
+      extraParams: {
+        // Force the account chooser on signup so the user can pick a fresh
+        // Google identity; on login we let Google reuse the last session.
+        prompt: view === "signup" ? "select_account" : "select_account",
+      },
     });
     setSubmitting(false);
     if (result.error) {
       toast.error(result.error.message || "Google sign-in failed.");
     }
   };
+
 
   const handle = async (e: React.FormEvent) => {
     e.preventDefault();

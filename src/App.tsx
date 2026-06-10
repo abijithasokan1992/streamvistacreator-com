@@ -30,8 +30,63 @@ import IngestTest from "./pages/IngestTest.tsx";
 import C2CSetupManual from "./pages/C2CSetupManual.tsx";
 import { PaymentTestModeBanner } from "./components/PaymentTestModeBanner.tsx";
 import ReferralCapture from "./components/ReferralCapture.tsx";
+import WrongPortal from "./components/WrongPortal.tsx";
+import { useHostMode } from "@/hooks/useHostMode";
 
 const queryClient = new QueryClient();
+
+/** Admin subdomain (admin.streamvistacreator.com): only auth + admin console. */
+const AdminRoutes = () => (
+  <Routes>
+    <Route path="/" element={<Auth />} />
+    <Route path="/auth" element={<Auth />} />
+    <Route path="/admin" element={<Admin />} />
+    {/* Anything else on the admin host = wrong portal */}
+    <Route path="*" element={<WrongPortal expected="public" />} />
+  </Routes>
+);
+
+/** Public main domain (streamvistacreator.com): everything except /admin. */
+const PublicRoutes = () => (
+  <Routes>
+    <Route path="/" element={<Index />} />
+    <Route path="/auth" element={<Auth />} />
+
+    {/* Linear onboarding wizard — must come BEFORE the dashboards. */}
+    <Route path="/onboarding" element={<Onboarding />} />
+
+    {/* Role-gated dashboards. RLS at the DB enforces the real boundary;
+        OnboardingGate enforces the linear flow, RoleGate keeps the
+        wrong UI off the screen. */}
+    <Route path="/producer" element={<OnboardingGate><RoleGate allow={["executive_producer", "admin"]}><Producer /></RoleGate></OnboardingGate>} />
+    <Route path="/vault" element={<OnboardingGate><RoleGate allow={["creator", "admin"]}><Vault /></RoleGate></OnboardingGate>} />
+    <Route path="/studio" element={<OnboardingGate><RoleGate allow={["creator", "executive_producer", "admin"]}><Studio /></RoleGate></OnboardingGate>} />
+    <Route path="/client" element={<OnboardingGate><RoleGate allow={["client", "user"]}><Client /></RoleGate></OnboardingGate>} />
+
+    {/* /admin is NOT reachable on the public host */}
+    <Route path="/admin" element={<WrongPortal expected="admin" />} />
+
+    <Route path="/launching-special-plan" element={<LaunchingSpecialPlan />} />
+    <Route path="/checkout/return" element={<CheckoutReturn />} />
+    <Route path="/s/:token" element={<Share />} />
+    <Route path="/terms" element={<Terms />} />
+    <Route path="/privacy" element={<Privacy />} />
+    <Route path="/ip-copyright" element={<IPCopyright />} />
+    <Route path="/dmca" element={<IPCopyright />} />
+    <Route path="/refund" element={<Refund />} />
+    <Route path="/about" element={<About />} />
+    <Route path="/ingest-test" element={<IngestTest />} />
+    <Route path="/c2c-setup" element={<C2CSetupManual />} />
+    <Route path="/support" element={<About />} />
+    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+    <Route path="*" element={<NotFound />} />
+  </Routes>
+);
+
+const HostAwareRoutes = () => {
+  const host = useHostMode();
+  return host === "admin" ? <AdminRoutes /> : <PublicRoutes />;
+};
 
 const App = () => (
   <ErrorBoundary>
@@ -44,37 +99,7 @@ const App = () => (
             <PaymentTestModeBanner />
             <ReferralCapture />
             <ErrorBoundary>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<Auth />} />
-
-                {/* Linear onboarding wizard — must come BEFORE the dashboards. */}
-                <Route path="/onboarding" element={<Onboarding />} />
-
-                {/* Role-gated dashboards. RLS at the DB enforces the real boundary;
-                    OnboardingGate enforces the linear flow, RoleGate keeps the
-                    wrong UI off the screen. */}
-                <Route path="/admin" element={<Admin />} />
-                <Route path="/producer" element={<OnboardingGate><RoleGate allow={["executive_producer", "admin"]}><Producer /></RoleGate></OnboardingGate>} />
-                <Route path="/vault" element={<OnboardingGate><RoleGate allow={["creator", "admin"]}><Vault /></RoleGate></OnboardingGate>} />
-                <Route path="/studio" element={<OnboardingGate><RoleGate allow={["creator", "executive_producer", "admin"]}><Studio /></RoleGate></OnboardingGate>} />
-                <Route path="/client" element={<OnboardingGate><RoleGate allow={["client", "user"]}><Client /></RoleGate></OnboardingGate>} />
-
-                <Route path="/launching-special-plan" element={<LaunchingSpecialPlan />} />
-                <Route path="/checkout/return" element={<CheckoutReturn />} />
-                <Route path="/s/:token" element={<Share />} />
-                <Route path="/terms" element={<Terms />} />
-                <Route path="/privacy" element={<Privacy />} />
-                <Route path="/ip-copyright" element={<IPCopyright />} />
-                <Route path="/dmca" element={<IPCopyright />} />
-                <Route path="/refund" element={<Refund />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/ingest-test" element={<IngestTest />} />
-                <Route path="/c2c-setup" element={<C2CSetupManual />} />
-                <Route path="/support" element={<About />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <HostAwareRoutes />
             </ErrorBoundary>
           </AuthProvider>
         </BrowserRouter>

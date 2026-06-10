@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { planByCycle, type Cycle } from "@/components/streamvista/plans";
 import { CountryCodeSelect } from "@/components/auth/CountryCodeSelect";
 import { COUNTRIES, type Country } from "@/lib/countries";
+import { useHostMode, urlForHost } from "@/hooks/useHostMode";
 
 const LoginSchema = z.object({
   email: z.string().trim().email("Enter a valid email").max(255),
@@ -31,9 +32,12 @@ export default function Auth() {
   const navigate = useNavigate();
   const [search] = useSearchParams();
   const { user, loading } = useAuth();
+  const hostMode = useHostMode();
 
   const nextPath = search.get("next") || "";
-  const isAdminLogin = nextPath.startsWith("/admin");
+  // On the admin subdomain, EVERY visit to /auth is an admin login —
+  // the "next" param is ignored and forced to /admin.
+  const isAdminLogin = hostMode === "admin" || nextPath.startsWith("/admin");
 
   const planParam = search.get("plan") as Cycle | null;
   const planCycle: Cycle | null = planParam && VALID_CYCLES.includes(planParam) ? planParam : null;
@@ -151,17 +155,39 @@ export default function Auth() {
     }
     // Free flow / default: route through the onboarding gate. It decides
     // whether to send the user to the wizard or straight to their dashboard.
-    const nextParam = search.get("next");
-    if (nextParam && nextParam.startsWith("/")) {
-      navigate(nextParam, { replace: true });
-      return;
-    }
-    // Admins skip onboarding entirely.
+
+    // Look up role first so we can enforce the host boundary.
     const { data: roleRow } = await supabase
       .from("user_roles").select("role").eq("user_id", (await supabase.auth.getUser()).data.user?.id || "");
     const roles = (roleRow || []).map((r: any) => r.role);
-    if (roles.includes("admin")) {
+    const isAdmin = roles.includes("admin");
+
+    // ── Host boundary enforcement ──────────────────────────────
+    if (hostMode === "admin") {
+      // Admin subdomain: only admins are allowed past auth.
+      if (!isAdmin) {
+        await supabase.auth.signOut();
+        toast.error("This portal is for administrators only.");
+        // Push them to the public site
+        window.location.replace(urlForHost("public", "/auth"));
+        return;
+      }
       navigate("/admin", { replace: true });
+      return;
+    }
+
+    // Public host: admins should not stay here — bounce to the admin subdomain.
+    if (isAdmin) {
+      await supabase.auth.signOut();
+      toast.message("Redirecting to the admin portal…");
+      window.location.replace(urlForHost("admin", "/auth"));
+      return;
+    }
+
+    // Non-admin on public host → normal flow
+    const nextParam = search.get("next");
+    if (nextParam && nextParam.startsWith("/") && !nextParam.startsWith("/admin")) {
+      navigate(nextParam, { replace: true });
       return;
     }
     navigate("/onboarding", { replace: true });

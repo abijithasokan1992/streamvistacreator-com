@@ -12,6 +12,7 @@ type OracleConfig = {
   oracle_namespace: string;
   oracle_bucket: string;
   oracle_private_key_set: boolean;
+  oracle_capacity_gb: number | null;
 };
 
 const EMPTY: OracleConfig = {
@@ -22,6 +23,7 @@ const EMPTY: OracleConfig = {
   oracle_namespace: "",
   oracle_bucket: "",
   oracle_private_key_set: false,
+  oracle_capacity_gb: null,
 };
 
 function mask(s: string, head = 6, tail = 4) {

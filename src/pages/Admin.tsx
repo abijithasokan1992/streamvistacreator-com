@@ -152,6 +152,24 @@ export default function Admin() {
                 {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
               </button>
             </div>
+
+            {/* Premium Developer Account Profile Button */}
+            <div className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full border border-border/70 bg-gradient-to-r from-secondary/80 to-secondary/40 hover:from-accent/10 hover:to-secondary/60 transition-all group cursor-default">
+              <div className="w-7 h-7 rounded-full bg-gradient-primary grid place-items-center text-[10px] font-bold text-primary-foreground uppercase tracking-wider glow-primary">
+                {(user?.email?.split('@')[0] ?? 'A').slice(0, 2)}
+              </div>
+              <div className="flex flex-col leading-none">
+                <span className="text-xs font-semibold text-foreground group-hover:text-accent transition-colors">
+                  {(() => {
+                    const name = user?.email?.split('@')[0] ?? 'Admin';
+                    return name.charAt(0).toUpperCase() + name.slice(1);
+                  })()}
+                </span>
+                <span className="text-[9px] text-muted-foreground uppercase tracking-wider">Dev Account</span>
+              </div>
+              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-1" />
+            </div>
+
             <Link to="/" className="px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground">Site</Link>
             <button onClick={load} disabled={fetching} className="px-3 py-2 text-sm rounded-md border border-border hover:bg-secondary flex items-center gap-2">
               <RefreshCw className={`w-4 h-4 ${fetching ? "animate-spin" : ""}`} /> Refresh

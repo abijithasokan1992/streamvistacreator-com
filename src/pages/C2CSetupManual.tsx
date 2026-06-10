@@ -347,7 +347,24 @@ function CategoryCard({ cat, ingestHref }: { cat: Category; ingestHref: string }
 
 /* ─────────────── Page ─────────────── */
 export default function C2CSetupManual() {
+  const { active } = useWorkspaces();
+  const token = studioToken(active?.production_banner);
+  const wsShort = active?.id ? active.id.slice(0, 8) : null;
+  const parUrl = useMemo(() => {
+    const params = new URLSearchParams({ ws: token });
+    if (wsShort) params.set("w", wsShort);
+    return `${PAR_BASE_URL}?${params.toString()}`;
+  }, [token, wsShort]);
+  const ingestQuery = (categoryId: string) => {
+    const p = new URLSearchParams({ category: categoryId, ws: token });
+    if (active?.id) p.set("workspace", active.id);
+    return `/ingest-test?${p.toString()}`;
+  };
+
+  const bannerLabel = active?.production_banner ?? "Default Studio";
+
   return (
+
     <div className="min-h-dvh bg-background text-foreground">
       {/* Header */}
       <header className="border-b border-border/50 glass sticky top-0 z-40">

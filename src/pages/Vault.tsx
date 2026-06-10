@@ -68,6 +68,7 @@ function randomToken() {
 
 const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => void> }) => {
   const { user, loading, signOut } = useAuth();
+  useBackGuard(!!user);
   const { enqueue, pickAndEnqueue } = useUploadManager();
   const quota = useStorageQuota();
   const [section, setSection] = useState<SectionId>("files");

@@ -365,6 +365,9 @@ function SandboxView({ finish, userEmail }: { finish: () => void; userEmail: str
     }
 
     const filename = (info as any)?.filename || "your review";
+    const mimeType = (info as any)?.mime_type ?? null;
+    const sizeBytes = (info as any)?.size_bytes ?? null;
+    const expiresAt = (info as any)?.expires_at ?? null;
 
     // 2. Record the manual link association as an onboarding request entry
     //    so admins can see how this client entered the system.
@@ -379,7 +382,19 @@ function SandboxView({ finish, userEmail }: { finish: () => void; userEmail: str
       onboarding_status: "linked",
       payment_status: "free",
       access_code: token,
-    });
+      linked_share_token: token,
+      link_status: "linked",
+      link_source: "manual_paste",
+      linked_at: new Date().toISOString(),
+      link_metadata: {
+        filename,
+        mime_type: mimeType,
+        size_bytes: sizeBytes,
+        expires_at: expiresAt,
+        view_only: !!(info as any)?.view_only,
+        requires_password: !!(info as any)?.requires_password,
+      },
+    } as any);
 
     toast.dismiss("linking");
     setLinking(false);

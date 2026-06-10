@@ -158,7 +158,21 @@ function loadRazorpayScript(): Promise<void> {
 type PayPhase = "idle" | "loading_sdk" | "creating_order" | "awaiting_user" | "verifying" | "success" | "error";
 type PayErrorKind = "sdk" | "order" | "payment" | "verify" | "network";
 
-const SUPPORT_EMAIL = "support@streamvistacreator.com";
+const SUPPORT_EMAIL = "abijithuzhunnumkalayilasokan@gmail.com";
+const ADMIN_EMAIL = "abijithuzhunnumkalayilasokan@gmail.com";
+const BYPASS_KEY = "sv_client_workspace_bypass_v1";
+
+function isPreviewHost(): boolean {
+  if (typeof window === "undefined") return false;
+  const h = window.location.hostname;
+  return (
+    h === "localhost" ||
+    h === "127.0.0.1" ||
+    h.endsWith(".lovableproject.com") ||
+    h.endsWith(".lovable.app") ||
+    h.endsWith(".lovable.dev")
+  );
+}
 
 function SandboxView({ finish, userEmail }: { finish: () => void; userEmail: string | null }) {
   const navigate = useNavigate();

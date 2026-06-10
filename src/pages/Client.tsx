@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import OnboardingCompleteBanner from "@/components/OnboardingCompleteBanner";
 import FirstStepsCard from "@/components/dashboard/FirstStepsCard";
+import TeamMembersPanel from "@/components/dashboard/TeamMembersPanel";
 import { toast } from "sonner";
 
 /**
@@ -21,7 +22,7 @@ import { toast } from "sonner";
 const WIZARD_KEY = "sv_seen_client_wizard_v2";
 
 export default function Client() {
-  const { user, signOut } = useAuth();
+  const { user, role, signOut } = useAuth();
   const navigate = useNavigate();
   const [linkInput, setLinkInput] = useState("");
   const linkInputRef = useRef<HTMLInputElement | null>(null);
@@ -666,6 +667,12 @@ function HubView({
       </section>
 
       {user && <FirstStepsCard userId={user.id} variant="client" onPasteLink={focusLinkInput} />}
+
+      {user && (role === "creator" || role === "executive_producer" || role === "admin") && (
+        <div className="mb-8">
+          <TeamMembersPanel />
+        </div>
+      )}
 
       {/* Incoming reviews — auto-listed shares addressed to this client's email */}
       <IncomingReviews />

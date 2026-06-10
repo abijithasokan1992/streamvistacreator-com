@@ -45,7 +45,7 @@ export const CloudStudioPartners = () => {
     })();
   }, []);
 
-  const aspectStyle = { aspectRatio: settings.aspect_ratio.replace("/", " / "), background: settings.container_bg };
+  const aspectStyle = { aspectRatio: settings.aspect_ratio.replace("/", " / ") };
   const useFallback = loaded && partners.length === 0;
 
   return (
@@ -70,14 +70,14 @@ export const CloudStudioPartners = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
           {useFallback
             ? FALLBACK_ICONS.map((p) => {
                 const Icon = p.icon;
                 return (
                   <article key={p.name}
                     className="group glass rounded-3xl p-7 flex flex-col gap-5 hover:border-accent/40 hover:-translate-y-0.5 transition-all animate-fade-in">
-                    <div className="relative rounded-2xl overflow-hidden border border-border/60 grid place-items-center" style={aspectStyle}>
+                    <div className="relative rounded-2xl flex items-center justify-center bg-transparent" style={aspectStyle}>
                       <Icon className="w-14 h-14 text-foreground/80 drop-shadow-[0_0_16px_hsl(var(--accent)/0.6)]" strokeWidth={1.4} />
                     </div>
                     <PartnerCopy name={p.name} tag={p.tag} description={p.description} />
@@ -87,13 +87,18 @@ export const CloudStudioPartners = () => {
             : partners.map((p) => (
                 <article key={p.id}
                   className="group glass rounded-3xl p-7 flex flex-col gap-5 hover:border-accent/40 hover:-translate-y-0.5 transition-all animate-fade-in">
-                  <div className="rounded-2xl overflow-hidden border border-border/60" style={aspectStyle}>
-                    <img
-                      src={p.logo_url}
-                      alt={`${p.name} logo`}
-                      loading="lazy"
-                      className={`w-full h-full ${settings.object_fit === "cover" ? "object-cover" : "object-contain"} group-hover:scale-[1.02] transition-transform`}
-                    />
+                  <div className="rounded-2xl flex items-center justify-center bg-transparent overflow-hidden" style={aspectStyle}>
+                    {p.logo_url ? (
+                      <img
+                        src={p.logo_url}
+                        alt={`${p.name} logo`}
+                        loading="lazy"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                        className={`max-h-[72%] max-w-[72%] w-auto h-auto ${settings.object_fit === "cover" ? "object-cover" : "object-contain"} bg-transparent grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300`}
+                      />
+                    ) : (
+                      <span className="font-display font-bold text-base tracking-tight text-foreground/70">{p.name}</span>
+                    )}
                   </div>
                   <PartnerCopy name={p.name} tag={p.tag} description={p.description} />
                 </article>

@@ -161,9 +161,16 @@ export default function MasterArchive() {
 
     const url = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/oci-upload`;
 
-    for (const f of Array.from(files)) {
-      const stat: UploadStat = { name: f.name, status: "uploading", category: currentCategory, progress: 0 };
-      setUploads((u) => [stat, ...u]);
+    // Enqueue all files first so the user sees the full batch in "Queued" state
+    const queued: UploadStat[] = Array.from(files).map((f) => ({
+      name: f.name, status: "queued", category: currentCategory, progress: 0,
+    }));
+    setUploads((u) => [...queued, ...u]);
+
+    for (let i = 0; i < queued.length; i++) {
+      const stat = queued[i];
+      const f = files[i];
+      setUploads((u) => u.map((x) => x === stat ? { ...x, status: "uploading" } : x));
       try {
         const fd = new FormData();
         fd.append("file", f);
@@ -181,6 +188,10 @@ export default function MasterArchive() {
             const pct = Math.round((ev.loaded / ev.total) * 100);
             setUploads((u) => u.map((x) => x === stat ? { ...x, progress: pct } : x));
           };
+          xhr.upload.onload = () => {
+            // Bytes finished — server is now processing (storing to OCI, DB record, etc.)
+            setUploads((u) => u.map((x) => x === stat ? { ...x, status: "processing", progress: 100 } : x));
+          };
           xhr.onload = () => {
             try {
               const json = JSON.parse(xhr.responseText || "{}");
@@ -194,7 +205,7 @@ export default function MasterArchive() {
           xhr.send(fd);
         });
 
-        setUploads((u) => u.map((x) => x === stat ? { ...x, status: "done", progress: 100 } : x));
+        setUploads((u) => u.map((x) => x === stat ? { ...x, status: "completed", progress: 100 } : x));
       } catch (e) {
         setUploads((u) => u.map((x) => x === stat ? { ...x, status: "failed", error: (e as Error).message } : x));
       }

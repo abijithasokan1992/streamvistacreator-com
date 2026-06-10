@@ -89,7 +89,7 @@ export default function ShareReviewModal({
         .limit(50),
       (supabase as any)
         .from("review_links")
-        .select("id, token, asset_name, expires_at, max_views, view_count, revoked, view_only, password_hash, created_at")
+        .select("id, token, asset_name, expires_at, max_views, view_count, revoked, view_only, requires_password, created_at")
         .eq("workspace_id", workspaceId)
         .eq("project_id", projectId)
         .order("created_at", { ascending: false }),

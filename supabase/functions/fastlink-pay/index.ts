@@ -80,7 +80,11 @@ Deno.serve(async (req) => {
         .single();
       if (insErr || !row) return json({ error: insErr?.message || "Insert failed" }, 500);
 
-      const auth = btoa(`${creds.keyId}:${creds.keySecret}`);
+      // Razorpay creds occasionally arrive with stray whitespace / unicode
+      // characters from secret entry. Sanitize to ASCII before base64-encoding.
+      const safeKeyId = creds.keyId.trim().replace(/[^\x20-\x7E]/g, "");
+      const safeKeySecret = creds.keySecret.trim().replace(/[^\x20-\x7E]/g, "");
+      const auth = btoa(`${safeKeyId}:${safeKeySecret}`);
       const rzpRes = await fetch("https://api.razorpay.com/v1/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Basic ${auth}` },

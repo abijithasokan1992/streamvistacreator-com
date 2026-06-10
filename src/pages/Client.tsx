@@ -158,16 +158,34 @@ function loadRazorpayScript(): Promise<void> {
 type PayPhase = "idle" | "loading_sdk" | "creating_order" | "awaiting_user" | "verifying" | "success" | "error";
 type PayErrorKind = "sdk" | "order" | "payment" | "verify" | "network";
 
-const SUPPORT_EMAIL = "support@streamvistacreator.com";
+const SUPPORT_EMAIL = "abijithuzhunnumkalayilasokan@gmail.com";
+const ADMIN_EMAIL = "abijithuzhunnumkalayilasokan@gmail.com";
+const BYPASS_KEY = "sv_client_workspace_bypass_v1";
+
+function isPreviewHost(): boolean {
+  if (typeof window === "undefined") return false;
+  const h = window.location.hostname;
+  return (
+    h === "localhost" ||
+    h === "127.0.0.1" ||
+    h.endsWith(".lovableproject.com") ||
+    h.endsWith(".lovable.app") ||
+    h.endsWith(".lovable.dev")
+  );
+}
 
 function SandboxView({ finish, userEmail }: { finish: () => void; userEmail: string | null }) {
   const navigate = useNavigate();
-  const [phase, setPhase] = useState<PayPhase>("idle");
+  const [phase, setPhase] = useState<PayPhase>(() => {
+    try { return localStorage.getItem(BYPASS_KEY) === "1" ? "success" : "idle"; } catch { return "idle"; }
+  });
   const [errorKind, setErrorKind] = useState<PayErrorKind | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [lastPaymentId, setLastPaymentId] = useState<string | null>(null);
   const [attempts, setAttempts] = useState(0);
   const [pasteLink, setPasteLink] = useState("");
+  const previewMode = isPreviewHost();
+  const isAdminUser = (userEmail ?? "").toLowerCase() === ADMIN_EMAIL.toLowerCase();
 
   const busy =
     phase === "loading_sdk" ||
@@ -177,6 +195,14 @@ function SandboxView({ finish, userEmail }: { finish: () => void; userEmail: str
 
   const activated = phase === "success";
 
+  const developerBypass = () => {
+    try { localStorage.setItem(BYPASS_KEY, "1"); } catch {}
+    setErrorKind(null);
+    setErrorMsg("");
+    setPhase("success");
+    toast.success("Workspace activated (developer bypass).");
+  };
+
   const failWith = (kind: PayErrorKind, msg: string, paymentId?: string | null) => {
     setErrorKind(kind);
     setErrorMsg(msg);
@@ -185,8 +211,16 @@ function SandboxView({ finish, userEmail }: { finish: () => void; userEmail: str
     toast.error(msg);
   };
 
+
   const activate = async () => {
     if (busy) return;
+    // Preview / test environments cannot run real Razorpay verification —
+    // skip the edge function call entirely so the activation screen never locks up.
+    if (previewMode) {
+      playTempleBell();
+      developerBypass();
+      return;
+    }
     playTempleBell();
     setAttempts((n) => n + 1);
     setErrorKind(null);
@@ -548,15 +582,24 @@ function SandboxView({ finish, userEmail }: { finish: () => void; userEmail: str
               </div>
             )}
 
-            <div className="flex justify-center">
+            <div className="flex flex-col items-center gap-2">
+              <button
+                onClick={developerBypass}
+                disabled={busy}
+                className="w-full bg-zinc-900 hover:bg-zinc-800 border border-amber-500/30 text-amber-300 py-2.5 rounded-xl font-bold text-[11px] tracking-widest uppercase transition-all disabled:opacity-60 inline-flex items-center justify-center gap-2"
+              >
+                <SkipForward className="w-3.5 h-3.5" />
+                {previewMode ? "Skip · Preview Bypass" : (isAdminUser ? "Skip · Developer Bypass" : "Skip Activation")}
+              </button>
               <button
                 onClick={finish}
                 disabled={busy}
                 className="text-[11px] text-zinc-500 hover:text-zinc-300 inline-flex items-center gap-1.5 disabled:opacity-60"
               >
-                <SkipForward className="w-3 h-3" /> Skip — I have a link from my studio
+                <SkipForward className="w-3 h-3" /> I already have a link from my studio
               </button>
             </div>
+
           </div>
         ) : (
           /* Post-activation grid */

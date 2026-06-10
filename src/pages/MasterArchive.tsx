@@ -155,7 +155,7 @@ function categorySatisfies(category: string | null, item: typeof BRIDGE_CHECKLIS
 }
 
 export default function MasterArchive() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { workspaces, active, activeId, setActiveId, loading: wsLoading } = useWorkspaces();
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectId, setProjectId] = useState<string>("");
@@ -164,6 +164,12 @@ export default function MasterArchive() {
   const [uploads, setUploads] = useState<UploadStat[]>([]);
   const fileInput = useRef<HTMLInputElement>(null);
   const quota = useStorageQuota();
+
+  // Admin = global admin OR workspace owner/admin. UI gate only; RLS enforces server-side.
+  const canManageChecklist = isAdmin
+    || active?.role === "owner"
+    || active?.role === "admin";
+
 
   useEffect(() => {
     if (!user || !activeId) return;

@@ -72,7 +72,17 @@ function slug(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
 
-type UploadStat = { name: string; status: "uploading" | "done" | "failed"; error?: string; category: string };
+type UploadStat = { name: string; status: "uploading" | "done" | "failed"; error?: string; category: string; progress: number };
+
+const BRIDGE_CHECKLIST: { key: string; label: string; hint: string }[] = [
+  { key: "golden_master", label: "Golden Master Video File", hint: "ProRes / High-Res" },
+  { key: "audio_stems", label: "Separated Audio Stems", hint: "Dialogue, Music, Effects" },
+  { key: "subtitles", label: "Subtitles & Closed Captions", hint: "SRT / VTT" },
+  { key: "artwork", label: "High-Res Marketing Artwork & Posters", hint: "Key art, banners" },
+  { key: "trailer", label: "Official Trailer & Promos", hint: "Teasers, BTS" },
+  { key: "metadata", label: "Metadata & Synopsis Form", hint: "Title, logline, cast" },
+  { key: "rights", label: "Rights & Licensing Agreements", hint: "Music, talent, footage" },
+];
 
 export default function MasterArchive() {
   const { user } = useAuth();

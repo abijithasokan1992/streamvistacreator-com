@@ -15,8 +15,14 @@ interface StatusResp {
   updated_at: string | null;
 }
 
-const WEBHOOK_URL = "https://hllgmkfqgeuqlmpcirvn.supabase.co/functions/v1/razorpay-webhook";
-const DASHBOARD_URL = "https://dashboard.razorpay.com/app/keys";
+// Derive the webhook URL from the deployed edge-function host so it always
+// stays in sync with the actual endpoint, regardless of any custom frontend
+// domain. Razorpay webhooks MUST target the backend function URL, not the
+// site's custom domain (the frontend is a static SPA and cannot receive POSTs).
+const SUPABASE_FN_BASE = (import.meta.env.VITE_SUPABASE_URL ?? "").replace(/\/$/, "");
+const WEBHOOK_URL = `${SUPABASE_FN_BASE}/functions/v1/razorpay-webhook`;
+const SITE_ORIGIN = typeof window !== "undefined" ? window.location.origin : "";
+const DASHBOARD_URL = "https://dashboard.razorpay.com/app/webhooks";
 
 export default function RazorpayCredentials() {
   const [loading, setLoading] = useState(true);

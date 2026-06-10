@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
 import { computeFinalPricePaise, type Cycle } from "../_shared/pricing.ts";
 import { loadRazorpayCreds } from "../_shared/razorpay-config.ts";
+import { logPayment, timer } from "../_shared/payment-logger.ts";
 
 function jsonError(req: Request, message: string, status: number) {
   return new Response(JSON.stringify({ error: message }), {

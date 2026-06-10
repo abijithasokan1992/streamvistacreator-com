@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import {
   LogOut, Link2, Inbox, ShieldCheck, MessageSquareText, Play,
   CheckCircle2, Sparkles, ArrowRight, ArrowLeft, MailOpen, Clock, Eye, SkipForward,
+  Film, Lock, ExternalLink,
 } from "lucide-react";
 import OnboardingCompleteBanner from "@/components/OnboardingCompleteBanner";
 import FirstStepsCard from "@/components/dashboard/FirstStepsCard";

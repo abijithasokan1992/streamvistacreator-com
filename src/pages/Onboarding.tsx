@@ -14,6 +14,7 @@ const ROLES = [
 
 /**
  * One-screen, frictionless onboarding.
+ *   • Cinematic intro + terms acceptance gates entry.
  *   • Only the name + role are required.
  *   • Studio + WhatsApp are optional and tucked under a disclosure.
  *   • Plan defaults to Free — users upgrade from the dashboard later.
@@ -22,6 +23,8 @@ const ROLES = [
 export default function Onboarding() {
   const { user, role, loading, refreshRole } = useAuth();
   const navigate = useNavigate();
+
+  const [showCinematic, setShowCinematic] = useState(true);
 
   const [hydrating, setHydrating] = useState(true);
   const [saving, setSaving] = useState(false);

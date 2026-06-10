@@ -81,6 +81,7 @@ const PublicRoutes = () => (
     <Route path="/launching-special-plan" element={<LaunchingSpecialPlan />} />
     <Route path="/checkout/return" element={<CheckoutReturn />} />
     <Route path="/s/:token" element={<Share />} />
+    <Route path="/review/:token" element={<Review />} />
     <Route path="/terms" element={<Terms />} />
     <Route path="/privacy" element={<Privacy />} />
     <Route path="/ip-copyright" element={<IPCopyright />} />

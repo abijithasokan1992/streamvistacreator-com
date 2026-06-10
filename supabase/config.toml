@@ -33,5 +33,11 @@ project_id = "hllgmkfqgeuqlmpcirvn"
     verify_jwt = true
   [functions.fastlink-pay]
     verify_jwt = true
+  [functions.track-usage]
+    verify_jwt = false
+  [functions.charge-overages]
+    verify_jwt = false
+  [functions.reclaim-idle]
+    verify_jwt = false
 
 

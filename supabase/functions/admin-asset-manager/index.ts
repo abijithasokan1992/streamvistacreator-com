@@ -28,7 +28,6 @@ type SiteCfg = {
   oracle_region: string | null;
   oracle_namespace: string | null;
   oracle_bucket: string | null;
-  oracle_private_key: string | null;
 };
 
 function pemToPkcs8(pem: string): ArrayBuffer {
@@ -155,9 +154,9 @@ Deno.serve(async (req) => {
 
     // All remaining actions need OCI config
     const { data: cfg } = await admin.from("site_config")
-      .select("oracle_tenancy_ocid, oracle_user_ocid, oracle_fingerprint, oracle_region, oracle_namespace, oracle_bucket, oracle_private_key")
+      .select("oracle_tenancy_ocid, oracle_user_ocid, oracle_fingerprint, oracle_region, oracle_namespace, oracle_bucket")
       .eq("id", true).maybeSingle<SiteCfg>();
-    const pem = cfg?.oracle_private_key || Deno.env.get("ORACLE_PRIVATE_KEY");
+    const pem = Deno.env.get("ORACLE_PRIVATE_KEY");
     const tenancy = cfg?.oracle_tenancy_ocid || Deno.env.get("OCI_TENANCY_OCID");
     const ociUser = cfg?.oracle_user_ocid || Deno.env.get("OCI_USER_OCID");
     const fp = cfg?.oracle_fingerprint || Deno.env.get("OCI_FINGERPRINT");

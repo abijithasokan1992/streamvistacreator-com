@@ -37,9 +37,15 @@ const TRUST: { icon: LucideIcon; label: string }[] = [
 
 export const Footer = () => {
   const b = useBranding();
-  const logo = b?.footer_logo_url;
+  const logo = b?.footer_logo_url?.trim() || null;
   const location = useLocation();
   const isHome = location.pathname === "/";
+
+  const Wordmark = (
+    <div className="font-display font-bold text-base tracking-tight">
+      StreamVista <span className="gradient-text">Cloud X</span>
+    </div>
+  );
 
   return (
     <footer className="relative mt-24 border-t border-border/40">
@@ -53,13 +59,16 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
           {/* Brand column */}
           <div className="space-y-4">
-            <Link to="/" className="inline-flex items-center gap-2.5">
+            <Link to="/" className="inline-flex items-center gap-3">
               {logo ? (
-                <img src={logo} alt="StreamVista Cloud X" className="h-10 w-auto max-w-[160px] object-contain bg-transparent border-0 outline-none shadow-none p-0 mix-blend-lighten" />
+                <img
+                  src={logo}
+                  alt="StreamVista Cloud X"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                  className="h-10 w-auto max-w-[160px] object-contain bg-transparent border-0 outline-none shadow-none p-0"
+                />
               ) : (
-                <div className="font-display font-bold text-base tracking-tight">
-                  StreamVista <span className="gradient-text">Cloud X</span>
-                </div>
+                Wordmark
               )}
             </Link>
             <p className="text-xs leading-relaxed text-muted-foreground max-w-[260px]">

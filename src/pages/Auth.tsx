@@ -552,12 +552,7 @@ export default function Auth() {
                   </div>
                 )}
 
-                  placeholder="Studio / company name (optional)"
-                  aria-label="Studio or company name"
-                  autoComplete="organization"
-                  maxLength={160}
-                  className="w-full h-12 px-4 rounded-xl bg-input/40 border border-border/60 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-accent/70 focus:bg-input/70 focus:shadow-[0_0_24px_-6px_hsl(var(--accent)/0.5)]"
-                />
+
 
                 <div className="flex">
                   <CountryCodeSelect value={country} onChange={setCountry} />

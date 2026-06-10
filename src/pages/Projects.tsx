@@ -24,6 +24,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import StorageUsageCard from "@/components/dashboard/StorageUsageCard";
+import CreatorPlanCard from "@/components/dashboard/CreatorPlanCard";
 
 type CrewMember = { name: string; email: string; role: string };
 
@@ -299,6 +300,11 @@ export default function Projects() {
                 <Pencil className="w-3.5 h-3.5" />
               </Button>
             )}
+            <Link to="/archive">
+              <Button size="sm" variant="outline" className="gap-2">
+                <FolderTree className="w-4 h-4" /> Master Archive
+              </Button>
+            </Link>
             <Button onClick={openCreate} size="sm" className="gap-2" disabled={writableWorkspaces.length === 0}>
               <Plus className="w-4 h-4" /> New Project
             </Button>
@@ -321,7 +327,10 @@ export default function Projects() {
               </div>
             </div>
           </div>
-          <StorageUsageCard />
+          <div className="grid lg:grid-cols-[1.4fr_1fr] gap-5">
+            <CreatorPlanCard onPurchased={() => window.location.reload()} />
+            <StorageUsageCard />
+          </div>
         </div>
       </section>
 

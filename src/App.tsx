@@ -26,6 +26,7 @@ import Producer from "./pages/Producer.tsx";
 import Client from "./pages/Client.tsx";
 import Share from "./pages/Share.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import IngestTest from "./pages/IngestTest.tsx";
 import { PaymentTestModeBanner } from "./components/PaymentTestModeBanner.tsx";
 import ReferralCapture from "./components/ReferralCapture.tsx";
 
@@ -67,6 +68,7 @@ const App = () => (
                 <Route path="/dmca" element={<IPCopyright />} />
                 <Route path="/refund" element={<Refund />} />
                 <Route path="/about" element={<About />} />
+                <Route path="/ingest-test" element={<IngestTest />} />
                 <Route path="/support" element={<About />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />

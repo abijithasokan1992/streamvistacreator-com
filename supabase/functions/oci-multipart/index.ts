@@ -348,8 +348,31 @@ Deno.serve(async (req) => {
         return json({ error: insErr?.message ?? "insert failed" }, 500, cors);
       }
 
+      // Mirror into upload_sessions for cross-device SHA-256 resume.
+      const fileSha256 = body.fileSha256 ? String(body.fileSha256).slice(0, 128) : null;
+      const totalChunks = Number(body.totalChunks || 0) || null;
+      const { data: sess } = await admin.from("upload_sessions").insert({
+        user_id: userId,
+        workspace_id: workspaceId,
+        file_name: fileName,
+        file_size: fileSize,
+        file_sha256: fileSha256,
+        mime_type: mime,
+        oci_upload_id: uploadId,
+        object_key: objectKey,
+        total_chunks: totalChunks,
+        status: "processing",
+      }).select("id").single();
+
+      await logIngest(admin, {
+        user_id: userId, session_id: sess?.id ?? null, oci_upload_id: uploadId,
+        event: "session.init", severity: "info",
+        bytes: fileSize, metadata: { file_name: fileName, total_chunks: totalChunks },
+      });
+
       return json({
         uploadRowId: inserted.id,
+        sessionId: sess?.id ?? null,
         uploadId,
         objectKey,
         bucket, namespace: ns, region,
@@ -357,6 +380,7 @@ Deno.serve(async (req) => {
         minPart: MIN_PART,
       }, 200, cors);
     }
+
 
     // -------- SIGN PART --------
     if (action === "sign_part") {

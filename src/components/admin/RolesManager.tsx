@@ -91,6 +91,23 @@ export default function RolesManager() {
     load();
   };
 
+  // Admin divisions
+  const divisionsByUser = (uid: string) => divisions.filter((d) => d.user_id === uid).map((d) => d.division);
+  const addDivision = async (uid: string, division: Division) => {
+    if (divisionsByUser(uid).includes(division)) return;
+    const { error } = await (supabase.from("admin_divisions" as any) as any).insert({ user_id: uid, division });
+    if (error) return toast.error(error.message);
+    toast.success(`Division added`);
+    load();
+  };
+  const removeDivision = async (id: string) => {
+    const { error } = await (supabase.from("admin_divisions" as any) as any).delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Division removed");
+    load();
+  };
+  const admins = profiles.filter((p) => rolesByUser(p.user_id).includes("admin"));
+
   const filtered = profiles.filter((p) => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();

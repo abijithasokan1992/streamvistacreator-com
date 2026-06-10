@@ -59,6 +59,7 @@ const AdminRoutes = () => (
 const PublicRoutes = () => (
   <Routes>
     <Route path="/" element={<Index />} />
+    <Route path="/home" element={<Index />} />
     <Route path="/auth" element={<Auth />} />
     <Route path="/reset-password" element={<ResetPassword />} />
 

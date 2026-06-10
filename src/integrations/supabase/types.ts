@@ -218,6 +218,60 @@ export type Database = {
         }
         Relationships: []
       }
+      checklist_overrides: {
+        Row: {
+          checklist_key: string
+          created_at: string
+          id: string
+          note: string | null
+          project_id: string | null
+          set_by: string | null
+          set_by_email: string | null
+          state: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          checklist_key: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          project_id?: string | null
+          set_by?: string | null
+          set_by_email?: string | null
+          state: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          checklist_key?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          project_id?: string | null
+          set_by?: string | null
+          set_by_email?: string | null
+          state?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_overrides_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_overrides_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dmca_requests: {
         Row: {
           accuracy_statement: boolean

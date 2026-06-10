@@ -787,28 +787,64 @@ export type Database = {
       }
       projects: {
         Row: {
+          camera_brand: string | null
+          capture_format: string | null
           created_at: string
+          crew: Json
           description: string | null
+          foldering_mode_archive: string
+          foldering_mode_raw: string
           id: string
+          lens_brand: string | null
           name: string
+          resolution: string | null
+          schedule_artists: string | null
+          schedule_charting: string | null
+          schedule_equipment: string | null
+          script_object_key: string | null
+          script_url: string | null
           updated_at: string
           user_id: string
           workspace_id: string
         }
         Insert: {
+          camera_brand?: string | null
+          capture_format?: string | null
           created_at?: string
+          crew?: Json
           description?: string | null
+          foldering_mode_archive?: string
+          foldering_mode_raw?: string
           id?: string
+          lens_brand?: string | null
           name: string
+          resolution?: string | null
+          schedule_artists?: string | null
+          schedule_charting?: string | null
+          schedule_equipment?: string | null
+          script_object_key?: string | null
+          script_url?: string | null
           updated_at?: string
           user_id: string
           workspace_id: string
         }
         Update: {
+          camera_brand?: string | null
+          capture_format?: string | null
           created_at?: string
+          crew?: Json
           description?: string | null
+          foldering_mode_archive?: string
+          foldering_mode_raw?: string
           id?: string
+          lens_brand?: string | null
           name?: string
+          resolution?: string | null
+          schedule_artists?: string | null
+          schedule_charting?: string | null
+          schedule_equipment?: string | null
+          script_object_key?: string | null
+          script_url?: string | null
           updated_at?: string
           user_id?: string
           workspace_id?: string
@@ -856,6 +892,7 @@ export type Database = {
       recent_uploads: {
         Row: {
           bucket: string
+          category: string | null
           client_pending_id: string | null
           created_at: string
           error_message: string | null
@@ -867,6 +904,7 @@ export type Database = {
           object_key: string
           par_expires_at: string | null
           par_url: string | null
+          project_id: string | null
           region: string
           status: string
           updated_at: string
@@ -875,6 +913,7 @@ export type Database = {
         }
         Insert: {
           bucket: string
+          category?: string | null
           client_pending_id?: string | null
           created_at?: string
           error_message?: string | null
@@ -886,6 +925,7 @@ export type Database = {
           object_key: string
           par_expires_at?: string | null
           par_url?: string | null
+          project_id?: string | null
           region: string
           status?: string
           updated_at?: string
@@ -894,6 +934,7 @@ export type Database = {
         }
         Update: {
           bucket?: string
+          category?: string | null
           client_pending_id?: string | null
           created_at?: string
           error_message?: string | null
@@ -905,6 +946,7 @@ export type Database = {
           object_key?: string
           par_expires_at?: string | null
           par_url?: string | null
+          project_id?: string | null
           region?: string
           status?: string
           updated_at?: string
@@ -912,6 +954,13 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "recent_uploads_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "recent_uploads_workspace_id_fkey"
             columns: ["workspace_id"]

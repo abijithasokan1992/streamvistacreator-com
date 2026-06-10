@@ -24,6 +24,7 @@ import UniversalBroadcast from "@/components/admin/UniversalBroadcast";
 import EmailLogMonitor from "@/components/admin/EmailLogMonitor";
 import UsersAndCredentials from "@/components/admin/UsersAndCredentials";
 import KammattamMeter from "@/components/admin/KammattamMeter";
+import MarketingCMS from "@/components/admin/MarketingCMS";
 
 interface Row {
   id: string;
@@ -208,7 +209,8 @@ export default function Admin() {
 
           {/* 4. Marketing & Research */}
           <TabsContent value="marketing" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<Megaphone className="w-5 h-5" />} title="Marketing & Research" desc="Promo campaigns, premium invites, analytics." />
+            <DeptHeader icon={<Megaphone className="w-5 h-5" />} title="Marketing & Research" desc="Homepage CMS, promo campaigns, premium invites, analytics." />
+            <MarketingCMS />
             <UniversalBroadcast />
             <PremiumInvitations />
             <ResendCredentials />

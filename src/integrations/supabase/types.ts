@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_zones: {
+        Row: {
+          created_at: string
+          ends_at: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          link_url: string | null
+          slot: string
+          sort_order: number
+          starts_at: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          link_url?: string | null
+          slot: string
+          sort_order?: number
+          starts_at?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          link_url?: string | null
+          slot?: string
+          sort_order?: number
+          starts_at?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       admin_audit_log: {
         Row: {
           action: string
@@ -332,6 +374,48 @@ export type Database = {
         }
         Relationships: []
       }
+      featured_films: {
+        Row: {
+          blurb: string | null
+          created_at: string
+          ends_at: string | null
+          id: string
+          is_active: boolean
+          link_url: string | null
+          poster_url: string | null
+          sort_order: number
+          starts_at: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          blurb?: string | null
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          link_url?: string | null
+          poster_url?: string | null
+          sort_order?: number
+          starts_at?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          blurb?: string | null
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          link_url?: string | null
+          poster_url?: string | null
+          sort_order?: number
+          starts_at?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       free_tier_config: {
         Row: {
           amount: number
@@ -377,6 +461,51 @@ export type Database = {
           storage_gb?: number
           updated_at?: string
           updated_by?: string | null
+        }
+        Relationships: []
+      }
+      hero_banners: {
+        Row: {
+          created_at: string
+          cta_label: string | null
+          cta_url: string | null
+          ends_at: string | null
+          headline: string
+          id: string
+          image_url: string | null
+          is_active: boolean
+          sort_order: number
+          starts_at: string | null
+          subheadline: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cta_label?: string | null
+          cta_url?: string | null
+          ends_at?: string | null
+          headline: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          sort_order?: number
+          starts_at?: string | null
+          subheadline?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cta_label?: string | null
+          cta_url?: string | null
+          ends_at?: string | null
+          headline?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          sort_order?: number
+          starts_at?: string | null
+          subheadline?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -447,6 +576,57 @@ export type Database = {
           last_name?: string
           rate?: number
           status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      news_events: {
+        Row: {
+          created_at: string
+          ends_at: string | null
+          event_date: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          kind: string
+          link_url: string | null
+          location: string | null
+          sort_order: number
+          starts_at: string | null
+          summary: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ends_at?: string | null
+          event_date?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          kind: string
+          link_url?: string | null
+          location?: string | null
+          sort_order?: number
+          starts_at?: string | null
+          summary?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string | null
+          event_date?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          kind?: string
+          link_url?: string | null
+          location?: string | null
+          sort_order?: number
+          starts_at?: string | null
+          summary?: string | null
+          title?: string
           updated_at?: string
         }
         Relationships: []

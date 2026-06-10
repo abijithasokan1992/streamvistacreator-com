@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Loader2, ArrowRight, Sparkles, SkipForward } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, dashboardForRole } from "@/hooks/useAuth";
+import CinematicOnboarding from "@/components/CinematicOnboarding";
 
 const ROLES = [
   "Creator", "Editor", "Director", "Cinematographer",
@@ -13,6 +14,7 @@ const ROLES = [
 
 /**
  * One-screen, frictionless onboarding.
+ *   • Cinematic intro + terms acceptance gates entry.
  *   • Only the name + role are required.
  *   • Studio + WhatsApp are optional and tucked under a disclosure.
  *   • Plan defaults to Free — users upgrade from the dashboard later.
@@ -21,6 +23,8 @@ const ROLES = [
 export default function Onboarding() {
   const { user, role, loading, refreshRole } = useAuth();
   const navigate = useNavigate();
+
+  const [showCinematic, setShowCinematic] = useState(true);
 
   const [hydrating, setHydrating] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -119,6 +123,12 @@ export default function Onboarding() {
 
   if (loading || hydrating) {
     return <div className="min-h-dvh grid place-items-center"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>;
+  }
+
+  if (showCinematic) {
+    return (
+      <CinematicOnboarding onComplete={() => setShowCinematic(false)} />
+    );
   }
 
   return (

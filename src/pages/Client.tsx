@@ -6,6 +6,7 @@ import {
   LogOut, Link2, Inbox, ShieldCheck, MessageSquareText, Play,
   CheckCircle2, Sparkles, ArrowRight, ArrowLeft, MailOpen, Clock, Eye, SkipForward,
   Film, Lock, ExternalLink, AlertTriangle, Loader2, RefreshCw, Mail,
+  KeyRound, HardDrive,
 } from "lucide-react";
 import OnboardingCompleteBanner from "@/components/OnboardingCompleteBanner";
 import FirstStepsCard from "@/components/dashboard/FirstStepsCard";

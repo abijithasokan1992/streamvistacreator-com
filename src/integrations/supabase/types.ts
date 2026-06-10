@@ -905,6 +905,7 @@ export type Database = {
           extra_origins: string[]
           id: boolean
           oracle_bucket: string | null
+          oracle_capacity_gb: number | null
           oracle_fingerprint: string | null
           oracle_namespace: string | null
           oracle_private_key: string | null
@@ -920,6 +921,7 @@ export type Database = {
           extra_origins?: string[]
           id?: boolean
           oracle_bucket?: string | null
+          oracle_capacity_gb?: number | null
           oracle_fingerprint?: string | null
           oracle_namespace?: string | null
           oracle_private_key?: string | null
@@ -935,6 +937,7 @@ export type Database = {
           extra_origins?: string[]
           id?: boolean
           oracle_bucket?: string | null
+          oracle_capacity_gb?: number | null
           oracle_fingerprint?: string | null
           oracle_namespace?: string | null
           oracle_private_key?: string | null

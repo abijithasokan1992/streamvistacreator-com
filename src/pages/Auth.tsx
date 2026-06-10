@@ -302,6 +302,14 @@ export default function Auth() {
       const persistProfile = async () => {
         const uid = (await supabase.auth.getUser()).data.user?.id;
         if (!uid) return;
+        // Apply the role the user selected on the signup form. The
+        // `set_initial_role` RPC whitelists creator/executive_producer/client
+        // and refuses 'admin' from the client.
+        try {
+          await supabase.rpc("set_initial_role" as never, { _role: signupRole } as never);
+        } catch (e) {
+          console.warn("set_initial_role failed (non-fatal)", e);
+        }
         // Mark onboarding complete right away — we already have everything we need
         // to drop the user straight into their workspace. No second wizard.
         await supabase.from("user_profiles").upsert({

@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
+import { useSystemMessage } from "@/components/system/SystemMessageProvider";
 
 // ─── IndexedDB persistence for FileSystemFileHandle (auto-resume across refresh/power loss) ───
 const IDB_NAME = "sv_upload_handles";
@@ -175,6 +176,9 @@ export function UploadManagerProvider({
   const filesRef = useRef<Map<string, File>>(new Map());
   const configRef = useRef(config);
   configRef.current = config;
+  const { showMessage } = useSystemMessage();
+  const showMessageRef = useRef(showMessage);
+  showMessageRef.current = showMessage;
 
   // Persist on every change
   useEffect(() => { savePersisted(tasks); }, [tasks]);
@@ -247,7 +251,14 @@ export function UploadManagerProvider({
           toast.success(`${task.filename} uploaded`, { duration: 2500 });
           configRef.current.onUploaded?.();
         } catch (e: any) {
-          update(task.id, { status: "error", error: e?.message || "Post-upload failed" });
+          const errMsg = e?.message || "Post-upload failed";
+          update(task.id, { status: "error", error: errMsg });
+          showMessageRef.current({
+            severity: "error",
+            title: "Upload couldn't be finalised",
+            message: `The bytes for "${task.filename}" reached storage, but we couldn't register the file in your vault.\n\nReason: ${errMsg}\n\nClick OK to dismiss, or Report to Admin so we can recover it for you.`,
+            context: `taskId=${task.id}; storagePath=${task.storagePath}; size=${task.size}`,
+          });
         } finally {
           uploadsRef.current.delete(task.id);
           filesRef.current.delete(task.id);
@@ -339,7 +350,14 @@ export function UploadManagerProvider({
       const task = tasks.find((t) => t.id === taskId);
       if (!task) return;
       if (file.size !== task.size) {
-        update(taskId, { status: "error", error: `File size doesn't match (expected ${fmtBytes(task.size)})` });
+        const msg = `File size doesn't match (expected ${fmtBytes(task.size)})`;
+        update(taskId, { status: "error", error: msg });
+        showMessageRef.current({
+          severity: "warning",
+          title: "Wrong file selected",
+          message: `That file doesn't match the upload we paused for "${task.filename}".\n\n${msg}\n\nPick the exact same file to resume, or start a fresh upload.`,
+          context: `taskId=${taskId}; pickedSize=${file.size}; expected=${task.size}`,
+        });
         return;
       }
       startTus(task, file);

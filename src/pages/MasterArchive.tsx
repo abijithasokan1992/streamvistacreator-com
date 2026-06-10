@@ -118,6 +118,32 @@ const BRIDGE_CHECKLIST: { key: string; label: string; hint: string }[] = [
   { key: "rights", label: "Rights & Licensing Agreements", hint: "Music, talent, footage" },
 ];
 
+/** StreamVista Logic IP — internal auto-matching engine (not exposed to UI copy) */
+const STREAMVISTA_IP: Record<string, string[]> = {
+  srt: ["subtitles"],
+  vtt: ["subtitles"],
+  mov: ["golden_master", "trailer"],
+  mxf: ["golden_master", "trailer"],
+  prores: ["golden_master", "trailer"],
+  mp4: ["golden_master", "trailer"],
+  wav: ["audio_stems"],
+  aiff: ["audio_stems"],
+  aif: ["audio_stems"],
+  jpg: ["artwork"],
+  jpeg: ["artwork"],
+  png: ["artwork"],
+  psd: ["artwork"],
+  tif: ["artwork"],
+  tiff: ["artwork"],
+  pdf: ["metadata", "rights"],
+  docx: ["metadata", "rights"],
+  doc: ["metadata", "rights"],
+};
+function resolveBridgeKeys(fileName: string): string[] {
+  const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
+  return STREAMVISTA_IP[ext] ?? [];
+}
+
 export default function MasterArchive() {
   const { user } = useAuth();
   const { workspaces, active, activeId, setActiveId, loading: wsLoading } = useWorkspaces();
@@ -249,6 +275,17 @@ export default function MasterArchive() {
         });
 
         setUploads((u) => u.map((x) => x === stat ? { ...x, status: "completed", progress: 100 } : x));
+
+        /* ── StreamVista Logic IP: auto-tick checklist by file type ── */
+        const matched = resolveBridgeKeys(f.name);
+        if (matched.length > 0) {
+          setChecklist((prev) => {
+            const next = { ...prev };
+            for (const k of matched) next[k] = true;
+            try { localStorage.setItem(checklistKey, JSON.stringify(next)); } catch {}
+            return next;
+          });
+        }
       } catch (e) {
         setUploads((u) => u.map((x) => x === stat ? { ...x, status: "failed", error: (e as Error).message } : x));
       }

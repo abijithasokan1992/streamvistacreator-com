@@ -26,6 +26,7 @@ import Vault from "./pages/Vault.tsx";
 import Studio from "./pages/Studio.tsx";
 import Producer from "./pages/Producer.tsx";
 import Client from "./pages/Client.tsx";
+import Projects from "./pages/Projects.tsx";
 import Share from "./pages/Share.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import IngestTest from "./pages/IngestTest.tsx";
@@ -70,6 +71,7 @@ const PublicRoutes = () => (
     <Route path="/vault" element={<OnboardingGate><RoleGate allow={["creator", "admin"]}><Vault /></RoleGate></OnboardingGate>} />
     <Route path="/studio" element={<OnboardingGate><RoleGate allow={["creator", "executive_producer", "admin"]}><Studio /></RoleGate></OnboardingGate>} />
     <Route path="/client" element={<OnboardingGate><RoleGate allow={["client", "user"]}><Client /></RoleGate></OnboardingGate>} />
+    <Route path="/projects" element={<OnboardingGate><RoleGate allow={["creator", "executive_producer", "admin"]}><Projects /></RoleGate></OnboardingGate>} />
 
     {/* Admin console is also reachable on the main domain until the admin subdomain DNS is fully configured. */}
     <Route path="/admin" element={<Admin />} />

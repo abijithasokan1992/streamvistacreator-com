@@ -73,12 +73,12 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return handleOptions(req);
   const cors = buildCorsHeaders(req);
   const cronSecret = Deno.env.get("CRON_SECRET");
-  const authHeader = req.headers.get("authorization") ?? req.headers.get("Authorization");
-  const bearer = authHeader?.toLowerCase().startsWith("bearer ")
+  const authHeader = req.headers.get("Authorization");
+  const bearer = authHeader?.startsWith("Bearer ")
     ? authHeader.slice(7).trim()
     : null;
   if (!cronSecret || !bearer || bearer !== cronSecret) {
-    return new Response(JSON.stringify({ ok: false, error: "forbidden" }), {
+    return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
       status: 403, headers: { ...cors, "Content-Type": "application/json" },
     });
   }

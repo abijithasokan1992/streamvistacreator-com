@@ -108,40 +108,49 @@ const STATUS_META: Record<UploadStatus, { label: string; dotClass: string; badge
   },
 };
 
-const BRIDGE_CHECKLIST: { key: string; label: string; hint: string }[] = [
-  { key: "golden_master", label: "Golden Master Video File", hint: "ProRes / High-Res" },
-  { key: "audio_stems", label: "Separated Audio Stems", hint: "Dialogue, Music, Effects" },
-  { key: "subtitles", label: "Subtitles & Closed Captions", hint: "SRT / VTT" },
-  { key: "artwork", label: "High-Res Marketing Artwork & Posters", hint: "Key art, banners" },
-  { key: "trailer", label: "Official Trailer & Promos", hint: "Teasers, BTS" },
-  { key: "metadata", label: "Metadata & Synopsis Form", hint: "Title, logline, cast" },
-  { key: "rights", label: "Rights & Licensing Agreements", hint: "Music, talent, footage" },
+/**
+ * Bridge checklist with its canonical destination folder.
+ * `target` is what we pre-select in the folder picker on click, and
+ * `categoryMatchers` is what we match against `recent_uploads.category`
+ * (which is `archive-<folder>-<sub-slug>-reel-XX`) to auto-tick.
+ */
+const BRIDGE_CHECKLIST: {
+  key: string;
+  label: string;
+  hint: string;
+  target: { folder: string; sub: string };
+  categoryMatchers: { folder: string; subs: string[] }; // any sub-slug counts
+}[] = [
+  { key: "golden_master", label: "Golden Master Video File", hint: "ProRes / High-Res",
+    target: { folder: "video_masters", sub: "ProRes" },
+    categoryMatchers: { folder: "video_masters", subs: ["prores", "dpx", "j2k"] } },
+  { key: "audio_stems", label: "Separated Audio Stems", hint: "Dialogue, Music, Effects",
+    target: { folder: "audio_masters", sub: "STEMS" },
+    categoryMatchers: { folder: "audio_masters", subs: ["stems", "track-by-track", "atmos", "stereo"] } },
+  { key: "subtitles", label: "Subtitles & Closed Captions", hint: "SRT / VTT",
+    target: { folder: "assets_docs", sub: "SUBTITLES" },
+    categoryMatchers: { folder: "assets_docs", subs: ["subtitles"] } },
+  { key: "artwork", label: "High-Res Marketing Artwork & Posters", hint: "Key art, banners",
+    target: { folder: "assets_docs", sub: "STILLS" },
+    categoryMatchers: { folder: "assets_docs", subs: ["stills", "png", "jpg", "tif"] } },
+  { key: "trailer", label: "Official Trailer & Promos", hint: "Teasers, BTS",
+    target: { folder: "video_masters", sub: "Single MOV" },
+    categoryMatchers: { folder: "video_masters", subs: ["single-mov"] } },
+  { key: "metadata", label: "Metadata & Synopsis Form", hint: "Title, logline, cast",
+    target: { folder: "assets_docs", sub: "PDF" },
+    categoryMatchers: { folder: "assets_docs", subs: ["pdf", "doc", "cards"] } },
+  { key: "rights", label: "Rights & Licensing Agreements", hint: "Music, talent, footage",
+    target: { folder: "assets_docs", sub: "CERTIFICATES" },
+    categoryMatchers: { folder: "assets_docs", subs: ["certificates", "doc"] } },
 ];
 
-/** StreamVista Logic IP — internal auto-matching engine (not exposed to UI copy) */
-const STREAMVISTA_IP: Record<string, string[]> = {
-  srt: ["subtitles"],
-  vtt: ["subtitles"],
-  mov: ["golden_master", "trailer"],
-  mxf: ["golden_master", "trailer"],
-  prores: ["golden_master", "trailer"],
-  mp4: ["golden_master", "trailer"],
-  wav: ["audio_stems"],
-  aiff: ["audio_stems"],
-  aif: ["audio_stems"],
-  jpg: ["artwork"],
-  jpeg: ["artwork"],
-  png: ["artwork"],
-  psd: ["artwork"],
-  tif: ["artwork"],
-  tiff: ["artwork"],
-  pdf: ["metadata", "rights"],
-  docx: ["metadata", "rights"],
-  doc: ["metadata", "rights"],
-};
-function resolveBridgeKeys(fileName: string): string[] {
-  const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
-  return STREAMVISTA_IP[ext] ?? [];
+/** Does this `recent_uploads.category` satisfy a checklist item? */
+function categorySatisfies(category: string | null, item: typeof BRIDGE_CHECKLIST[number]): boolean {
+  if (!category) return false;
+  const prefix = `archive-${item.categoryMatchers.folder}-`;
+  if (!category.startsWith(prefix)) return false;
+  const rest = category.slice(prefix.length); // "<sub-slug>-reel-XX"
+  return item.categoryMatchers.subs.some((s) => rest.startsWith(`${s}-reel-`));
 }
 
 export default function MasterArchive() {
@@ -275,17 +284,8 @@ export default function MasterArchive() {
         });
 
         setUploads((u) => u.map((x) => x === stat ? { ...x, status: "completed", progress: 100 } : x));
-
-        /* ── StreamVista Logic IP: auto-tick checklist by file type ── */
-        const matched = resolveBridgeKeys(f.name);
-        if (matched.length > 0) {
-          setChecklist((prev) => {
-            const next = { ...prev };
-            for (const k of matched) next[k] = true;
-            try { localStorage.setItem(checklistKey, JSON.stringify(next)); } catch {}
-            return next;
-          });
-        }
+        // Checklist auto-tick is driven by the recent_uploads realtime
+        // subscription below, so no local state mutation is needed here.
       } catch (e) {
         setUploads((u) => u.map((x) => x === stat ? { ...x, status: "failed", error: (e as Error).message } : x));
       }
@@ -293,23 +293,62 @@ export default function MasterArchive() {
     toast.success("Archive upload complete");
   };
 
-  // Crayons Bridge checklist (per-project, persisted locally)
-  const checklistKey = projectId ? `crayons-bridge-checklist:${projectId}` : "crayons-bridge-checklist:none";
-  const [checklist, setChecklist] = useState<Record<string, boolean>>({});
+  // ── Crayons Bridge checklist (DB-derived, live) ─────────────────────────────
+  // Each item is ticked when at least one `recent_uploads` row exists for this
+  // workspace (+ project, if scoped) whose `category` matches the item's
+  // canonical destination subfolders and whose status is finalised.
+  const [satisfiedCounts, setSatisfiedCounts] = useState<Record<string, number>>({});
+
+  const recomputeChecklist = useMemo(() => async () => {
+    if (!activeId) { setSatisfiedCounts({}); return; }
+    let q = (supabase as any)
+      .from("recent_uploads")
+      .select("category,status")
+      .eq("workspace_id", activeId)
+      .in("status", ["uploaded", "completed"])
+      .like("category", "archive-%")
+      .limit(1000);
+    if (projectId) q = q.eq("project_id", projectId);
+    const { data } = await q;
+    const counts: Record<string, number> = {};
+    for (const row of (data ?? []) as { category: string | null }[]) {
+      for (const item of BRIDGE_CHECKLIST) {
+        if (categorySatisfies(row.category, item)) {
+          counts[item.key] = (counts[item.key] ?? 0) + 1;
+        }
+      }
+    }
+    setSatisfiedCounts(counts);
+  }, [activeId, projectId]);
+
+  useEffect(() => { void recomputeChecklist(); }, [recomputeChecklist]);
+
+  // Live updates: whenever a recent_uploads row for this workspace/project
+  // changes, recompute. We re-query (vs. patching) so deletes drop counts
+  // correctly and the source of truth stays the database.
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(checklistKey);
-      setChecklist(raw ? JSON.parse(raw) : {});
-    } catch { setChecklist({}); }
-  }, [checklistKey]);
-  const toggleCheck = (key: string) => {
-    setChecklist((c) => {
-      const next = { ...c, [key]: !c[key] };
-      try { localStorage.setItem(checklistKey, JSON.stringify(next)); } catch {}
-      return next;
+    if (!activeId) return;
+    const channel = supabase
+      .channel(`bridge-checklist-${activeId}-${projectId || "all"}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "recent_uploads", filter: `workspace_id=eq.${activeId}` },
+        () => { void recomputeChecklist(); },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [activeId, projectId, recomputeChecklist]);
+
+  const checkedCount = BRIDGE_CHECKLIST.filter((i) => (satisfiedCounts[i.key] ?? 0) > 0).length;
+
+  // Clicking a checklist row pre-selects its canonical destination so the
+  // admin can drop straight into the right folder without hunting for it.
+  const selectChecklistTarget = (item: typeof BRIDGE_CHECKLIST[number]) => {
+    setSelected({ folder: item.target.folder, sub: item.target.sub });
+    toast.message(`Destination set → ${item.target.sub}`, {
+      description: `Ready to ingest "${item.label}".`,
     });
   };
-  const checkedCount = BRIDGE_CHECKLIST.filter((i) => checklist[i.key]).length;
 
   return (
     <main className="min-h-dvh bg-background text-foreground">
@@ -554,25 +593,36 @@ export default function MasterArchive() {
           </div>
           <ul className="grid sm:grid-cols-2 gap-2">
             {BRIDGE_CHECKLIST.map((item) => {
-              const done = !!checklist[item.key];
+              const count = satisfiedCounts[item.key] ?? 0;
+              const done = count > 0;
+              const isTargetActive = selected?.folder === item.target.folder && selected?.sub === item.target.sub;
               return (
                 <li key={item.key}>
                   <button
-                    onClick={() => toggleCheck(item.key)}
+                    onClick={() => selectChecklistTarget(item)}
+                    title={done ? `${count} file${count === 1 ? "" : "s"} ingested — click to set destination again` : `Click to pre-select → ${item.target.sub}`}
                     className={cn(
                       "w-full text-left flex items-start gap-3 rounded-xl border px-3.5 py-3 transition-all",
                       "backdrop-blur-sm",
                       done
                         ? "border-accent/50 bg-accent/10 shadow-[inset_0_0_0_1px_hsl(var(--accent)/0.2)]"
                         : "border-border/50 bg-background/30 hover:border-accent/40 hover:bg-accent/5",
+                      isTargetActive && "ring-1 ring-primary/50",
                     )}
                   >
                     {done
                       ? <CheckCircle2 className="w-4 h-4 text-accent shrink-0 mt-0.5" />
                       : <Circle className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />}
-                    <div className="min-w-0">
-                      <p className={cn("text-sm font-medium leading-snug", done && "text-accent")}>{item.label}</p>
-                      <p className="text-[11px] text-muted-foreground font-mono mt-0.5">{item.hint}</p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className={cn("text-sm font-medium leading-snug", done && "text-accent")}>{item.label}</p>
+                        {done && (
+                          <span className="font-mono text-[10px] text-accent tabular-nums shrink-0">×{count}</span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
+                        {item.hint} · → {item.target.sub}
+                      </p>
                     </div>
                   </button>
                 </li>

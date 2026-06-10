@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Loader2, Plus, Trash2, Save, Upload, Image as ImageIcon, Newspaper, Film, Megaphone, Sparkles } from "lucide-react";
+import { Loader2, Plus, Trash2, Save, Upload, Image as ImageIcon, Newspaper, Film, Megaphone, Sparkles, Globe, FileEdit, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -15,10 +15,10 @@ const TABLES = {
 type Kind = keyof typeof TABLES;
 
 const BLANK: Record<Kind, AnyRow> = {
-  hero: { id: "", headline: "", subheadline: "", image_url: "", cta_label: "", cta_url: "", sort_order: 0, is_active: true, starts_at: null, ends_at: null },
-  ad:   { id: "", slot: "top", title: "", image_url: "", link_url: "", sort_order: 0, is_active: true, starts_at: null, ends_at: null },
-  film: { id: "", title: "", blurb: "", poster_url: "", link_url: "", sort_order: 0, is_active: true, starts_at: null, ends_at: null },
-  news: { id: "", kind: "news", title: "", summary: "", image_url: "", link_url: "", event_date: null, location: "", sort_order: 0, is_active: true, starts_at: null, ends_at: null },
+  hero: { id: "", headline: "", subheadline: "", image_url: "", cta_label: "", cta_url: "", sort_order: 0, is_active: true, status: "draft", starts_at: null, ends_at: null },
+  ad:   { id: "", slot: "top", title: "", image_url: "", link_url: "", sort_order: 0, is_active: true, status: "draft", starts_at: null, ends_at: null },
+  film: { id: "", title: "", blurb: "", poster_url: "", link_url: "", sort_order: 0, is_active: true, status: "draft", starts_at: null, ends_at: null },
+  news: { id: "", kind: "news", title: "", summary: "", image_url: "", link_url: "", event_date: null, location: "", sort_order: 0, is_active: true, status: "draft", starts_at: null, ends_at: null },
 };
 
 export default function MarketingCMS() {
@@ -87,6 +87,18 @@ function Section({ kind, title, icon }: { kind: Kind; title: string; icon: React
     setRows(r => r.filter(x => x.id !== id));
   };
 
+  const setStatus = async (row: AnyRow, status: "draft" | "published") => {
+    if (row.id.startsWith("new-")) {
+      update(row.id, { status });
+      toast.message("Save the item first to apply the new status.");
+      return;
+    }
+    const { data, error } = await (supabase as any).from(table).update({ status }).eq("id", row.id).select().single();
+    if (error) return toast.error(error.message);
+    setRows(r => r.map(x => x.id === row.id ? (data as AnyRow) : x));
+    toast.success(status === "published" ? "Published" : "Reverted to draft");
+  };
+
   const uploadImage = async (row: AnyRow, field: string, file: File) => {
     const ext = file.name.split(".").pop() || "png";
     const path = `${kind}/${crypto.randomUUID()}.${ext}`;
@@ -120,6 +132,7 @@ function Section({ kind, title, icon }: { kind: Kind; title: string; icon: React
               onSave={() => save(row)}
               onDelete={() => remove(row.id)}
               onUpload={(field, file) => uploadImage(row, field, file)}
+              onSetStatus={(s) => setStatus(row, s)}
               saving={savingId === row.id}
             />
           ))}
@@ -129,16 +142,29 @@ function Section({ kind, title, icon }: { kind: Kind; title: string; icon: React
   );
 }
 
-function RowCard({ kind, row, onChange, onSave, onDelete, onUpload, saving }: {
+function RowCard({ kind, row, onChange, onSave, onDelete, onUpload, onSetStatus, saving }: {
   kind: Kind; row: AnyRow;
   onChange: (p: Partial<AnyRow>) => void;
   onSave: () => void; onDelete: () => void;
   onUpload: (field: string, file: File) => void;
+  onSetStatus: (s: "draft" | "published") => void;
   saving: boolean;
 }) {
   const imageField = kind === "film" ? "poster_url" : "image_url";
+  const isPublished = row.status === "published";
+  const isNew = row.id.startsWith("new-");
   return (
-    <div className="rounded-xl border border-border/60 bg-secondary/20 p-4 space-y-3">
+    <div className={`rounded-xl border p-4 space-y-3 ${isPublished ? "border-emerald-500/30 bg-emerald-500/[0.03]" : "border-amber-500/30 bg-amber-500/[0.03]"}`}>
+      <div className="flex items-center justify-between gap-2">
+        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${isPublished ? "bg-emerald-500/15 text-emerald-500" : "bg-amber-500/15 text-amber-500"}`}>
+          {isPublished ? <><Globe className="w-3 h-3" /> Published</> : <><FileEdit className="w-3 h-3" /> Draft</>}
+        </span>
+        {!isNew && (
+          isPublished
+            ? <button onClick={() => onSetStatus("draft")} className="h-8 px-3 rounded-md border border-border text-xs inline-flex items-center gap-1.5 hover:bg-secondary"><EyeOff className="w-3.5 h-3.5" /> Unpublish</button>
+            : <button onClick={() => onSetStatus("published")} className="h-8 px-3 rounded-md bg-emerald-500/20 text-emerald-500 border border-emerald-500/40 text-xs inline-flex items-center gap-1.5 hover:bg-emerald-500/30"><Globe className="w-3.5 h-3.5" /> Publish</button>
+        )}
+      </div>
       <div className="grid md:grid-cols-2 gap-3">
         {kind === "hero" && (<>
           <Field label="Headline"><input className={cls} value={row.headline ?? ""} onChange={e => onChange({ headline: e.target.value })} /></Field>

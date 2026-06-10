@@ -25,6 +25,7 @@ export type Database = {
           slot: string
           sort_order: number
           starts_at: string | null
+          status: string
           title: string
           updated_at: string
         }
@@ -38,6 +39,7 @@ export type Database = {
           slot: string
           sort_order?: number
           starts_at?: string | null
+          status?: string
           title: string
           updated_at?: string
         }
@@ -51,6 +53,7 @@ export type Database = {
           slot?: string
           sort_order?: number
           starts_at?: string | null
+          status?: string
           title?: string
           updated_at?: string
         }
@@ -385,6 +388,7 @@ export type Database = {
           poster_url: string | null
           sort_order: number
           starts_at: string | null
+          status: string
           title: string
           updated_at: string
         }
@@ -398,6 +402,7 @@ export type Database = {
           poster_url?: string | null
           sort_order?: number
           starts_at?: string | null
+          status?: string
           title: string
           updated_at?: string
         }
@@ -411,6 +416,7 @@ export type Database = {
           poster_url?: string | null
           sort_order?: number
           starts_at?: string | null
+          status?: string
           title?: string
           updated_at?: string
         }
@@ -476,6 +482,7 @@ export type Database = {
           is_active: boolean
           sort_order: number
           starts_at: string | null
+          status: string
           subheadline: string | null
           updated_at: string
         }
@@ -490,6 +497,7 @@ export type Database = {
           is_active?: boolean
           sort_order?: number
           starts_at?: string | null
+          status?: string
           subheadline?: string | null
           updated_at?: string
         }
@@ -504,6 +512,7 @@ export type Database = {
           is_active?: boolean
           sort_order?: number
           starts_at?: string | null
+          status?: string
           subheadline?: string | null
           updated_at?: string
         }
@@ -593,6 +602,7 @@ export type Database = {
           location: string | null
           sort_order: number
           starts_at: string | null
+          status: string
           summary: string | null
           title: string
           updated_at: string
@@ -609,6 +619,7 @@ export type Database = {
           location?: string | null
           sort_order?: number
           starts_at?: string | null
+          status?: string
           summary?: string | null
           title: string
           updated_at?: string
@@ -625,6 +636,7 @@ export type Database = {
           location?: string | null
           sort_order?: number
           starts_at?: string | null
+          status?: string
           summary?: string | null
           title?: string
           updated_at?: string

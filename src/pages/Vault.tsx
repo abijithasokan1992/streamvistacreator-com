@@ -568,9 +568,7 @@ function FileRow({ file: f, onShare, onRevoke, onRemove }: {
         </div>
       </div>
       <div className="flex gap-1.5">
-        <Button size="sm" variant="outline" className="h-8" onClick={() => onShare(f)} disabled={f.revoked}>
-          <Link2 className="h-3.5 w-3.5 sm:mr-1" /> <span className="hidden sm:inline">Share</span>
-        </Button>
+        {/* Share button temporarily hidden */}
         {!f.revoked && (
           <Button size="sm" variant="ghost" className="h-8" onClick={() => onRevoke(f.id)}>Revoke</Button>
         )}

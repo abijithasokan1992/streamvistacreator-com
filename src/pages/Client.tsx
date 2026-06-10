@@ -731,12 +731,8 @@ function IncomingReviews() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { data, error } = await supabase
-        .from("shared_files")
-        .select("id,filename,share_token,expires_at,revoked,has_password,view_only,created_at")
-        .eq("revoked", false)
-        .order("created_at", { ascending: false })
-        .limit(20);
+      const { data, error } = await (supabase as any)
+        .rpc("list_shares_for_me");
       if (cancelled) return;
       if (error) { setItems([]); return; }
       const now = Date.now();

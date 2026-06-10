@@ -1137,6 +1137,60 @@ export type Database = {
           },
         ]
       }
+      razorpay_audit_log: {
+        Row: {
+          amount_paise: number | null
+          created_at: string
+          currency: string | null
+          error_code: string | null
+          error_description: string | null
+          event_type: string
+          id: string
+          order_id: string | null
+          payload: Json | null
+          payment_id: string | null
+          signature_valid: boolean | null
+          source: string
+          status: string | null
+          subscription_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount_paise?: number | null
+          created_at?: string
+          currency?: string | null
+          error_code?: string | null
+          error_description?: string | null
+          event_type: string
+          id?: string
+          order_id?: string | null
+          payload?: Json | null
+          payment_id?: string | null
+          signature_valid?: boolean | null
+          source?: string
+          status?: string | null
+          subscription_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount_paise?: number | null
+          created_at?: string
+          currency?: string | null
+          error_code?: string | null
+          error_description?: string | null
+          event_type?: string
+          id?: string
+          order_id?: string | null
+          payload?: Json | null
+          payment_id?: string | null
+          signature_valid?: boolean | null
+          source?: string
+          status?: string | null
+          subscription_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       razorpay_config: {
         Row: {
           id: boolean

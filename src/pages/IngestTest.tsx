@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, CloudUpload, FileIcon, Loader2, XCircle } from "lucide-react";
+import { useSystemMessage } from "@/components/system/SystemMessageProvider";
 
 const PAR_BASE =
   "https://objectstorage.ap-mumbai-1.oraclecloud.com/p/JeKB364pUi17Y_pIPaqVDc_M6XMrsCdj0xUXOHkWJT-2sOgzisRkuAB1KzAtfmym/n/bma8wibnommg/b/bucket-20260526-1544/o/";
@@ -37,6 +38,7 @@ export default function IngestTest() {
   const [items, setItems] = useState<UploadItem[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { showMessage } = useSystemMessage();
 
   const uploadOne = useCallback((item: UploadItem) => {
     const url = `${PAR_BASE}${encodeURIComponent(sanitize(item.file.name))}`;
@@ -72,7 +74,21 @@ export default function IngestTest() {
             it.id === item.id ? { ...it, status: "error", error: msg } : it,
           ),
         );
-        toast.error("Upload failed", { description: `${item.file.name} · ${msg}` });
+        showMessage({
+          severity: "error",
+          title: "Oracle PAR rejected the upload",
+          message:
+            `"${item.file.name}" was streamed straight to Oracle Object Storage via the Pre-Authenticated Request (PAR), but Oracle answered with HTTP ${xhr.status}.\n\n` +
+            (xhr.status === 401 || xhr.status === 403
+              ? "The PAR is likely expired or revoked. Generate a fresh PAR in Admin → Oracle Storage and try again."
+              : xhr.status === 404
+              ? "The PAR path no longer points to a valid bucket/prefix. Check Admin → Oracle Storage."
+              : xhr.status >= 500
+              ? "Oracle Object Storage reported a server-side issue. Retry in a few minutes."
+              : "Inspect the PAR validity and bucket CORS rules.") +
+            "\n\nReport this to admin if it keeps happening.",
+          context: `file=${item.file.name}; size=${item.file.size}; status=${xhr.status}`,
+        });
       }
     };
 
@@ -84,8 +100,17 @@ export default function IngestTest() {
             : it,
         ),
       );
-      toast.error("Network error", {
-        description: `${item.file.name} · check PAR validity & CORS`,
+      showMessage({
+        severity: "error",
+        title: "Couldn't reach Oracle Object Storage",
+        message:
+          `The browser couldn't connect to Oracle's PAR endpoint for "${item.file.name}".\n\n` +
+          `This usually means:\n` +
+          `  • The PAR expired (regenerate it in Admin → Oracle Storage)\n` +
+          `  • The bucket's CORS policy doesn't allow this origin\n` +
+          `  • Your network is offline or blocking objectstorage.*.oraclecloud.com\n\n` +
+          `Report this if Oracle Storage is verified green in the admin panel.`,
+        context: `file=${item.file.name}; size=${item.file.size}; origin=${window.location.origin}`,
       });
     };
 

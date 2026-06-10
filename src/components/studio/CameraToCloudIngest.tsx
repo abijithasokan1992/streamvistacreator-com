@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
 import { Cloud, UploadCloud, FileVideo, CheckCircle2, AlertTriangle, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { useSystemMessage } from "@/components/system/SystemMessageProvider";
 import { cn } from "@/lib/utils";
 
 type RecentUpload = {
@@ -42,6 +43,7 @@ export default function CameraToCloudIngest() {
   const [recent, setRecent] = useState<RecentUpload[]>([]);
   const [loadingList, setLoadingList] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { showMessage } = useSystemMessage();
 
   const refresh = useCallback(async () => {
     setLoadingList(true);
@@ -91,9 +93,28 @@ export default function CameraToCloudIngest() {
     } catch (e) {
       const msg = (e as Error).message;
       setPending((cur) => cur.map((x) => x.id === p.id ? { ...x, status: "error", error: msg } : x));
-      toast.error(`Failed: ${p.file.name}`, { description: msg });
+      const m = msg.toLowerCase();
+      const isOracle = m.includes("oracle") || m.includes("oci") || m.includes("objectstorage") || m.includes("bucket") || m.includes("namespace");
+      const isAuth = m.includes("not signed in") || m.includes("401") || m.includes("jwt");
+      const isNet = m.includes("network") || m.includes("failed to fetch");
+      showMessage({
+        severity: "error",
+        title: isOracle ? "Oracle storage rejected the upload"
+              : isAuth ? "Sign-in expired"
+              : isNet ? "Network dropped mid-upload"
+              : `Couldn't ingest "${p.file.name}"`,
+        message:
+          (isOracle
+            ? `Camera-to-Cloud reached the StreamVista backend, but Oracle Object Storage returned an error.\n\nReason: ${msg}\n\nThe file is still on your device — retry once Oracle is reachable, or report this so an admin can verify the bucket credentials.`
+            : isAuth
+            ? `Your session expired before "${p.file.name}" finished ingesting. Sign in again and retry — nothing was lost.`
+            : isNet
+            ? `The network dropped while streaming "${p.file.name}" to the cloud bridge.\n\nReason: ${msg}\n\nReconnect and try again, or report this so we can investigate.`
+            : `The ingest pipeline failed for "${p.file.name}".\n\nReason: ${msg}\n\nRetry, or report this so an admin can take a look.`),
+        context: `file=${p.file.name}; size=${p.file.size}; mime=${p.file.type}; pendingId=${p.id}`,
+      });
     }
-  }, [refresh]);
+  }, [refresh, showMessage]);
 
   const handleFiles = useCallback((files: FileList | File[]) => {
     const arr = Array.from(files);

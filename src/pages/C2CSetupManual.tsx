@@ -57,14 +57,14 @@ const CATEGORIES: Category[] = [
       {
         number: 3,
         title: "Target Configuration",
-        body: "In the encoder dashboard, set the destination to StreamVista’s Oracle OCI PAR endpoint.",
+        body: "In the encoder dashboard, set the destination to StreamVista’s C CLOUD PAR endpoint.",
         details: ["Region: ap-mumbai-1", "Bucket: bucket-20260526-1544"],
         icon: Globe,
       },
       {
         number: 4,
         title: "Auto-Ingest",
-        body: "Press Record / Stream on the encoder. The file segments are written in real time to the 03-RAW-INGEST prefix inside the OCI bucket.",
+        body: "Press Record / Stream on the encoder. The file segments are written in real time to the 03-RAW-INGEST prefix inside the C CLOUD bucket.",
         details: ["Checksum verification on each segment", "Auto-retry on network blip"],
         icon: Cloud,
       },
@@ -95,7 +95,7 @@ const CATEGORIES: Category[] = [
       {
         number: 3,
         title: "Endpoint Setup",
-        body: "Paste the StreamVista OCI PAR URL into the app’s custom RTMP / S3 destination.",
+        body: "Paste the StreamVista C CLOUD PAR URL into the app’s custom RTMP / S3 destination.",
         details: ["Path format: …/o/{filename}", "Use UUID filenames to avoid collisions"],
         icon: Globe,
       },
@@ -133,7 +133,7 @@ const CATEGORIES: Category[] = [
       {
         number: 3,
         title: "Bridge to Cloud",
-        body: "Route the encoded feed into the StreamVista upload agent, pointing at the OCI PAR endpoint.",
+        body: "Route the encoded feed into the StreamVista upload agent, pointing at the C CLOUD PAR endpoint.",
         details: ["Local loop-back (127.0.0.1) if agent is on same machine", "RTMP local relay optional"],
         icon: Globe,
       },
@@ -152,7 +152,7 @@ const CATEGORIES: Category[] = [
     icon: Layers,
     badge: "NEW",
     description:
-      "Software-based encoding stacks (OBS Studio, Streambox, NDI Router) running on macOS, Windows or Linux. Receive camera feeds over Bluetooth, Wi-Fi or Ethernet up to 8K / 12K and push raw audio/video straight to Oracle Cloud.",
+      "Software-based encoding stacks (OBS Studio, Streambox, NDI Router) running on macOS, Windows or Linux. Receive camera feeds over Bluetooth, Wi-Fi or Ethernet up to 8K / 12K and push raw audio/video straight to C CLOUD.",
     tools: ["OBS Studio", "Streambox", "NDI Router", "vMix", "Wirecast", "FFmpeg"],
     steps: [
       {
@@ -182,7 +182,7 @@ const CATEGORIES: Category[] = [
       {
         number: 3,
         title: "PAR URL Target",
-        body: "Set the destination URL to the StreamVista Oracle OCI Pre-Authenticated Request (PAR) endpoint. The app will PUT each segment or complete file directly to the bucket.",
+        body: "Set the destination URL to the StreamVista C CLOUD Pre-Authenticated Request (PAR) endpoint. The app will PUT each segment or complete file directly to the bucket.",
         details: [
           "Use the PAR base URL below and append your filename",
           "Enable chunked transfer for files > 5 GB",
@@ -193,7 +193,7 @@ const CATEGORIES: Category[] = [
       {
         number: 4,
         title: "Auto-Ingest to 03-RAW-INGEST",
-        body: "Start recording / streaming. Raw audio/video is automatically segmented, checksummed and uploaded into the Oracle Cloud ‘03-RAW-INGEST’ folder inside bucket-20260526-1544.",
+        body: "Start recording / streaming. Raw audio/video is automatically segmented, checksummed and uploaded into the C CLOUD ‘03-RAW-INGEST’ folder inside bucket-20260526-1544.",
         details: [
           "Folder prefix: 03-RAW-INGEST/{date}/{filename}",
           "ETag verification on every PUT completes the ingest handshake",
@@ -381,7 +381,7 @@ export default function C2CSetupManual() {
             </h1>
             <p className="text-muted-foreground max-w-xl">
               End-to-end guides for every ingest path — hardware, mobile, NDI and virtual software encoders.
-              All routes land in Oracle OCI bucket <span className="text-accent font-semibold">03-RAW-INGEST</span>.
+              All routes land in C CLOUD bucket <span className="text-accent font-semibold">03-RAW-INGEST</span>.
             </p>
           </div>
         </section>
@@ -390,7 +390,7 @@ export default function C2CSetupManual() {
         <section className="glass rounded-2xl p-5 border border-border/40 flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="flex items-center gap-2 shrink-0">
             <Cloud className="w-4 h-4 text-accent" />
-            <span className="text-xs font-semibold uppercase tracking-wider">Oracle OCI PAR URL</span>
+            <span className="text-xs font-semibold uppercase tracking-wider">C CLOUD PAR URL</span>
           </div>
           <CopyUrlButton />
         </section>

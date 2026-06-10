@@ -7,6 +7,7 @@ import { Testimonials } from "@/components/streamvista/Testimonials";
 import { Pricing } from "@/components/streamvista/Pricing";
 import { CloudStudioPartners } from "@/components/streamvista/CloudStudioPartners";
 import { Footer } from "@/components/streamvista/Footer";
+import { CmsHeroBanners, CmsAdZone, CmsFeaturedFilms, CmsNewsEvents } from "@/components/streamvista/CmsSections";
 import { Seo } from "@/components/Seo";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -41,11 +42,17 @@ const Index = () => {
       />
       <Navbar />
       <Hero />
+      <CmsHeroBanners />
+      <CmsAdZone slot="top" />
       <PlanFeature />
+      <CmsFeaturedFilms />
       <ComparisonTable />
+      <CmsAdZone slot="mid" />
       <Testimonials />
+      <CmsNewsEvents />
       <CloudStudioPartners />
       <Pricing />
+      <CmsAdZone slot="bottom" />
       <Footer />
     </main>
   );

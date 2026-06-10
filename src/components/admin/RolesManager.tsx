@@ -67,6 +67,7 @@ export default function RolesManager() {
   const nameOf = (uid: string) => profiles.find((p) => p.user_id === uid)?.display_name || uid.slice(0, 8);
 
   const addRole = async (uid: string, role: Role) => {
+    if (!guard()) return;
     if (rolesByUser(uid).includes(role)) return;
     const { error } = await supabase.from("user_roles").insert({ user_id: uid, role });
     if (error) return toast.error(error.message);
@@ -74,6 +75,7 @@ export default function RolesManager() {
     load();
   };
   const removeRole = async (uid: string, role: Role) => {
+    if (!guard()) return;
     const { error } = await supabase.from("user_roles").delete().eq("user_id", uid).eq("role", role);
     if (error) return toast.error(error.message);
     toast.success(`Removed ${role}`);
@@ -86,6 +88,7 @@ export default function RolesManager() {
   const eps      = profiles.filter((p) => rolesByUser(p.user_id).includes("executive_producer"));
   const creators = profiles.filter((p) => rolesByUser(p.user_id).includes("creator"));
   const linkPair = async () => {
+    if (!guard()) return;
     if (!epPick || !crPick) return toast.error("Pick both an EP and a Creator");
     const { error } = await supabase.from("producer_assignments").insert({
       ep_user_id: epPick, creator_user_id: crPick,
@@ -95,6 +98,7 @@ export default function RolesManager() {
     setEpPick(""); setCrPick(""); load();
   };
   const unlinkPair = async (id: string) => {
+    if (!guard()) return;
     const { error } = await supabase.from("producer_assignments").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Unlinked");
@@ -104,6 +108,7 @@ export default function RolesManager() {
   // Admin divisions
   const divisionsByUser = (uid: string) => divisions.filter((d) => d.user_id === uid).map((d) => d.division);
   const addDivision = async (uid: string, division: Division) => {
+    if (!guard()) return;
     if (divisionsByUser(uid).includes(division)) return;
     const { error } = await (supabase.from("admin_divisions" as any) as any).insert({ user_id: uid, division });
     if (error) return toast.error(error.message);
@@ -111,6 +116,7 @@ export default function RolesManager() {
     load();
   };
   const removeDivision = async (id: string) => {
+    if (!guard()) return;
     const { error } = await (supabase.from("admin_divisions" as any) as any).delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Division removed");

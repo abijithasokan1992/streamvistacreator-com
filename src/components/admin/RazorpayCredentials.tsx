@@ -15,8 +15,14 @@ interface StatusResp {
   updated_at: string | null;
 }
 
-const WEBHOOK_URL = "https://hllgmkfqgeuqlmpcirvn.supabase.co/functions/v1/razorpay-webhook";
-const DASHBOARD_URL = "https://dashboard.razorpay.com/app/keys";
+// Derive the webhook URL from the deployed edge-function host so it always
+// stays in sync with the actual endpoint, regardless of any custom frontend
+// domain. Razorpay webhooks MUST target the backend function URL, not the
+// site's custom domain (the frontend is a static SPA and cannot receive POSTs).
+const SUPABASE_FN_BASE = (import.meta.env.VITE_SUPABASE_URL ?? "").replace(/\/$/, "");
+const WEBHOOK_URL = `${SUPABASE_FN_BASE}/functions/v1/razorpay-webhook`;
+const SITE_ORIGIN = typeof window !== "undefined" ? window.location.origin : "";
+const DASHBOARD_URL = "https://dashboard.razorpay.com/app/webhooks";
 
 export default function RazorpayCredentials() {
   const [loading, setLoading] = useState(true);
@@ -262,9 +268,19 @@ export default function RazorpayCredentials() {
         </>
       )}
 
-      {/* Webhook helper — always visible */}
+      {/* Webhook helper — always visible, auto-synced with deployed edge function */}
       <div className="rounded-xl border border-border/40 bg-secondary/20 p-4 space-y-2 text-xs">
-        <p className="font-semibold text-foreground">Webhook URL (paste in Razorpay → Settings → Webhooks)</p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="font-semibold text-foreground">Webhook URL (paste in Razorpay → Settings → Webhooks)</p>
+          <a
+            href={DASHBOARD_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 text-[11px] text-accent hover:underline"
+          >
+            Open Razorpay <ExternalLink className="w-3 h-3" />
+          </a>
+        </div>
         <div className="flex items-center gap-2">
           <code className="flex-1 px-3 py-2 rounded-md bg-background/60 border border-border/50 font-mono text-[11px] break-all">
             {WEBHOOK_URL}
@@ -277,8 +293,17 @@ export default function RazorpayCredentials() {
           Subscribe to: <span className="font-mono text-foreground">payment.captured</span>,{" "}
           <span className="font-mono text-foreground">payment.failed</span>,{" "}
           <span className="font-mono text-foreground">order.paid</span>,{" "}
-          <span className="font-mono text-foreground">refund.processed</span>.
+          <span className="font-mono text-foreground">refund.processed</span>,{" "}
+          <span className="font-mono text-foreground">subscription.*</span>.
         </p>
+        {SITE_ORIGIN && (
+          <p className="text-muted-foreground pt-1 border-t border-border/30">
+            Frontend origin: <span className="font-mono text-foreground">{SITE_ORIGIN}</span>
+            <span className="ml-1 opacity-70">
+              — for reference only. The webhook must point at the backend edge function above, never at the site domain.
+            </span>
+          </p>
+        )}
       </div>
     </div>
   );

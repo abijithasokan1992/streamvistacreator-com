@@ -60,6 +60,8 @@ export default function Auth() {
     COUNTRIES.find((c) => c.code === "IN") ?? COUNTRIES[0]
   );
   const [mobile, setMobile] = useState("");
+  type SignupRole = "creator" | "executive_producer" | "client";
+  const [signupRole, setSignupRole] = useState<SignupRole>("creator");
 
   // Real-time validation flags
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());

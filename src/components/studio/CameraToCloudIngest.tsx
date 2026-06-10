@@ -99,15 +99,42 @@ export default function CameraToCloudIngest() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not signed in");
+
+      // Large files → chunked, resumable multipart through oci-multipart.
+      // Small files → keep the existing single-shot oci-upload path untouched.
+      if (p.file.size >= MULTIPART_THRESHOLD) {
+        const stablePendingId = getOrCreatePendingId(p.file);
+        try {
+          await uploadFileMultipart({
+            file: p.file,
+            workspaceId: activeId,
+            pendingId: stablePendingId,
+            onProgress: (loaded, total) => {
+              const pct = Math.max(5, Math.min(99, Math.round((loaded / total) * 100)));
+              setPending((cur) => cur.map((x) => x.id === p.id ? { ...x, progress: pct } : x));
+            },
+          });
+          clearPendingId(p.file);
+          setPending((cur) => cur.map((x) => x.id === p.id ? { ...x, status: "done", progress: 100 } : x));
+          toast.success(`Ingested: ${p.file.name}`);
+          refresh();
+          return;
+        } catch (mpErr) {
+          // Graceful fallback: if multipart fails for a reason the single-shot
+          // path can still handle (small enough to fit), retry there. Anything
+          // bigger than the function payload ceiling re-throws to surface the
+          // real error to the user.
+          if (p.file.size > 25 * 1024 * 1024) throw mpErr;
+          console.warn("[c2c] multipart failed, falling back to single-shot", mpErr);
+        }
+      }
+
       const url = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/oci-upload`;
       const form = new FormData();
       form.append("file", p.file);
-      // Route the upload into this workspace's isolated OCI prefix.
       form.append("workspaceId", activeId);
-      // Idempotency key — same pendingId on retry reuses the server row + OCI object.
       form.append("pendingId", p.id);
 
-      // Simulated progress while server streams to OCI (browser fetch lacks upload progress without XHR)
       const xhr = new XMLHttpRequest();
       const result: { upload?: RecentUpload; error?: string } = await new Promise((resolve, reject) => {
         xhr.open("POST", url);

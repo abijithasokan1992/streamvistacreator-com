@@ -19,6 +19,7 @@ import OnboardingApprovals from "@/components/admin/OnboardingApprovals";
 import PartnerLogos from "@/components/admin/PartnerLogos";
 import RolesManager from "@/components/admin/RolesManager";
 import RazorpayCredentials from "@/components/admin/RazorpayCredentials";
+import RazorpayTestCheckout from "@/components/admin/RazorpayTestCheckout";
 import ResendCredentials from "@/components/admin/ResendCredentials";
 import AdminCredentials from "@/components/admin/AdminCredentials";
 import GlobalAssetManager from "@/components/admin/GlobalAssetManager";

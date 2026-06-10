@@ -137,6 +137,13 @@ Deno.serve(async (req) => {
       .update({ plan_tier: row.selected_cycle })
       .eq("user_id", userId);
 
+    await logPayment(supabase, {
+      severity: "INFO", action_type: "verify.complete",
+      user_id: userId,
+      order_id: razorpay_order_id,
+      payment_id: razorpay_payment_id,
+      extra: { onboardingId, planTier: row.selected_cycle, amount_paise: orderData.amount },
+    });
 
     return new Response(JSON.stringify({ verified: true, planTier: row.selected_cycle }), {
       status: 200,

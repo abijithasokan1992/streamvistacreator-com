@@ -412,6 +412,11 @@ Deno.serve(async (req) => {
         contentLength, keyId, privateKey,
       });
 
+      await logIngest(admin, {
+        user_id: userId, oci_upload_id: uploadId, part_number: partNumber,
+        event: "part.signed", severity: "info", bytes: contentLength,
+      });
+
       return json({
         url: `https://${host}${path}`,
         method: "PUT",
@@ -426,6 +431,27 @@ Deno.serve(async (req) => {
         expires_in: 300,
       }, 200, cors);
     }
+
+    // -------- REPORT PART (client tells us a part finished or failed) --------
+    if (action === "report_part") {
+      const uploadId = String(body.uploadId || "");
+      const partNumber = Number(body.partNumber || 0);
+      const ok = body.ok !== false;
+      const httpStatus = body.httpStatus ? Number(body.httpStatus) : null;
+      const durationMs = body.durationMs ? Number(body.durationMs) : null;
+      const bytes = body.bytes ? Number(body.bytes) : null;
+      const errorMessage = body.error ? String(body.error).slice(0, 500) : null;
+      if (!uploadId || !Number.isInteger(partNumber)) return json({ error: "bad input" }, 400, cors);
+      await logIngest(admin, {
+        user_id: userId, oci_upload_id: uploadId, part_number: partNumber,
+        event: ok ? "part.completed" : "part.failed",
+        severity: ok ? "info" : "error",
+        http_status: httpStatus, duration_ms: durationMs, bytes,
+        error_message: errorMessage,
+      });
+      return json({ ok: true }, 200, cors);
+    }
+
 
     // -------- LIST PARTS --------
     if (action === "list_parts") {

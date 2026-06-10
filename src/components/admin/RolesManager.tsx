@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, UserCog, Plus, Trash2, Crown, Camera, Users, Eye, Link2 } from "lucide-react";
+import { Loader2, UserCog, Plus, Trash2, Crown, Camera, Users, Eye, Link2, Briefcase, Wallet, Code2, Megaphone, LayoutGrid } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

@@ -30,12 +30,12 @@ export const PLANS: Plan[] = [
     price: 0,
     priceLabel: "₹0",
     cadence: "/forever",
-    storageLabel: "128 GB storage",
+    storageLabel: "50 GB storage",
     bandwidthLabel: "500 GB / mo bandwidth",
     badge: "Free for life",
     description: "Get started instantly. Pay only if your monthly bandwidth crosses 500 GB (₹10 / GB).",
     features: [
-      "128 GB cloud storage",
+      "50 GB cloud storage (fair-usage cap)",
       "500 GB / month bandwidth",
       "Secure share links (password + expiry)",
       "Client review portal",
@@ -70,6 +70,7 @@ export const planByCycle = (c: Cycle) => PLANS.find(p => p.cycle === c)!;
 /** Price per extra TB (incl GST) for PAYG top-ups. */
 export const PAYG_TB_INR = 767;
 export const PAYG_TB_BASE_INR = 650;
-export const FREE_STORAGE_GB = 128;
+/** Free-tier hard cap (fair-usage). Soft-locks all uploads when exceeded. */
+export const FREE_STORAGE_GB = 50;
 export const FREE_BANDWIDTH_GB = 500;
 export const FREE_BANDWIDTH_OVERAGE_INR_PER_GB = 10;

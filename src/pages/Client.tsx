@@ -111,7 +111,7 @@ export default function Client() {
       </header>
 
       {showWizard ? (
-        <SandboxView finish={completeWizard} />
+        <SandboxView finish={completeWizard} userEmail={user?.email ?? null} />
       ) : (
         <HubView
           user={user}

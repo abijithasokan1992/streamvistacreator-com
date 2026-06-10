@@ -27,6 +27,7 @@ import Studio from "./pages/Studio.tsx";
 import Producer from "./pages/Producer.tsx";
 import Client from "./pages/Client.tsx";
 import Projects from "./pages/Projects.tsx";
+import Review from "./pages/Review.tsx";
 import Share from "./pages/Share.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import IngestTest from "./pages/IngestTest.tsx";

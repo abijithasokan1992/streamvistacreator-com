@@ -317,6 +317,7 @@ export default function Auth() {
         await persistProfile();
         setSubmitting(false);
         toast.success("Welcome to Cloud X.");
+        void fireWelcomeAlert("signup", "email");
         await continueAfterAuth();
         return;
       }
@@ -333,7 +334,9 @@ export default function Auth() {
         return;
       }
       toast.success("Welcome to Cloud X.");
+      void fireWelcomeAlert("signup", "email");
       await continueAfterAuth();
+
     } else {
       const parsed = LoginSchema.safeParse({ email, password });
       if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }

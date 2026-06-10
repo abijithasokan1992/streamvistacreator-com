@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useBackGuard } from "@/hooks/useBackGuard";
 import { supabase } from "@/integrations/supabase/client";
 import {
   LogOut, Link2, Inbox, ShieldCheck, MessageSquareText, Play,
@@ -24,6 +25,7 @@ const WIZARD_KEY = "sv_seen_client_wizard_v2";
 export default function Client() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  useBackGuard(!!user);
   const [linkInput, setLinkInput] = useState("");
   const linkInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -85,7 +87,7 @@ export default function Client() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Link to="/" className="hidden sm:inline-flex px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground">Site</Link>
+            
             <button onClick={signOut} className="px-3 py-2 text-sm rounded-md border border-border/60 hover:bg-secondary inline-flex items-center gap-2">
               <LogOut className="w-4 h-4" /> <span className="hidden sm:inline">Sign out</span>
             </button>

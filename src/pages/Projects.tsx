@@ -3,12 +3,13 @@ import { Link } from "react-router-dom";
 import {
   Plus, Pencil, Trash2, Loader2, Film, ArrowLeft, Building2, Share2,
   Sparkles, ChevronDown, ChevronUp, Upload, FileText, X, Settings2,
-  Wand2, Mic2, FileSignature, PackageCheck, FolderTree,
+  Wand2, Mic2, FileSignature, PackageCheck, FolderTree, LogOut,
 } from "lucide-react";
 import ShareReviewModal from "@/components/projects/ShareReviewModal";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useBackGuard } from "@/hooks/useBackGuard";
 import { useWorkspaces, type Workspace } from "@/hooks/useWorkspaces";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,7 +78,8 @@ const emptyForm: FormState = {
 };
 
 export default function Projects() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  useBackGuard(!!user);
   const { workspaces, active, activeId, setActiveId, loading: wsLoading, createWorkspace, renameWorkspace } = useWorkspaces();
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameValue, setRenameValue] = useState("");
@@ -273,9 +275,13 @@ export default function Projects() {
       <header className="border-b border-border/50 sticky top-0 z-30 backdrop-blur bg-background/80">
         <div className="container flex items-center justify-between h-16">
           <div className="flex items-center gap-3">
-            <Link to="/" className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm">
-              <ArrowLeft className="w-4 h-4" /> Home
-            </Link>
+            <button
+              onClick={signOut}
+              className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm px-2 py-1 rounded-md border border-border/60 hover:bg-secondary"
+              title="Sign out"
+            >
+              <LogOut className="w-4 h-4" /> Log Out
+            </button>
             <div className="h-6 w-px bg-border" />
             <h1 className="font-display font-bold text-lg">My Projects</h1>
           </div>

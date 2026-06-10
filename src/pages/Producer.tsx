@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { Loader2, Users, FileVideo, LogOut, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useBackGuard } from "@/hooks/useBackGuard";
 
 type CreatorRow = { id: string; user_id: string; email?: string };
 type FileRow = {
@@ -23,6 +23,7 @@ function fmtSize(b: number) {
 
 export default function Producer() {
   const { user, signOut } = useAuth();
+  useBackGuard(!!user);
   const [loading, setLoading] = useState(true);
   const [creators, setCreators] = useState<CreatorRow[]>([]);
   const [files, setFiles] = useState<FileRow[]>([]);
@@ -68,7 +69,7 @@ export default function Producer() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Link to="/" className="hidden sm:inline-flex px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground">Site</Link>
+            
             <button onClick={signOut} className="px-3 py-2 text-sm rounded-md border border-border/60 hover:bg-secondary inline-flex items-center gap-2">
               <LogOut className="w-4 h-4" /> <span className="hidden sm:inline">Sign out</span>
             </button>

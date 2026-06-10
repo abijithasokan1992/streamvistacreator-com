@@ -1083,8 +1083,10 @@ export type Database = {
           id: string
           price_id: string | null
           product_id: string | null
+          razorpay_customer_id: string | null
           razorpay_plan_id: string | null
           razorpay_subscription_id: string | null
+          razorpay_token_id: string | null
           status: string
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
@@ -1102,8 +1104,10 @@ export type Database = {
           id?: string
           price_id?: string | null
           product_id?: string | null
+          razorpay_customer_id?: string | null
           razorpay_plan_id?: string | null
           razorpay_subscription_id?: string | null
+          razorpay_token_id?: string | null
           status?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -1121,8 +1125,10 @@ export type Database = {
           id?: string
           price_id?: string | null
           product_id?: string | null
+          razorpay_customer_id?: string | null
           razorpay_plan_id?: string | null
           razorpay_subscription_id?: string | null
+          razorpay_token_id?: string | null
           status?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -1407,6 +1413,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      invoke_edge_function: { Args: { fn_name: string }; Returns: number }
       is_producer_of: {
         Args: { _creator: string; _ep: string }
         Returns: boolean

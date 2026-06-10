@@ -210,7 +210,26 @@ export default function Projects() {
         </div>
       </header>
 
-      <section className="container py-8">
+      <section className="container pt-8">
+        <div className="rounded-3xl border border-border/50 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 p-5 mb-8">
+          <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-primary grid place-items-center glow-primary shrink-0">
+                <Sparkles className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <div>
+                <h2 className="font-display text-lg font-bold">Billing &amp; Upgrades</h2>
+                <p className="text-xs text-muted-foreground">
+                  Add cloud storage or upgrade your plan. Payments are processed securely via Razorpay and applied instantly.
+                </p>
+              </div>
+            </div>
+          </div>
+          <StorageUsageCard />
+        </div>
+      </section>
+
+      <section className="container pb-8">
         {loading || wsLoading ? (
           <div className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="w-4 h-4 animate-spin" /> Loading projects…

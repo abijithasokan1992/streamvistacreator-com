@@ -22,6 +22,34 @@ async function sha256Hex(input: string): Promise<string> {
     .join("");
 }
 
+// PBKDF2-SHA256 (matches vault-share). New review-link passwords use PBKDF2;
+// legacy sha256 rows remain verifiable via algo branch for backwards compat.
+const PBKDF2_ITERATIONS = 210_000;
+const PBKDF2_HASH = "SHA-256";
+const PBKDF2_KEY_LEN = 32;
+function hexToBytes(hex: string): Uint8Array {
+  const out = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.substr(i * 2, 2), 16);
+  return out;
+}
+async function pbkdf2Hex(pwd: string, saltHex: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(pwd), { name: "PBKDF2" }, false, ["deriveBits"],
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", salt: hexToBytes(saltHex), iterations: PBKDF2_ITERATIONS, hash: PBKDF2_HASH },
+    key, PBKDF2_KEY_LEN * 8,
+  );
+  return Array.from(new Uint8Array(bits))
+    .map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+function timingSafeEqualStr(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let r = 0;
+  for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return r === 0;
+}
+
 function isExpired(row: { expires_at: string | null; max_views: number | null; view_count: number; revoked: boolean }) {
   if (row.revoked) return "revoked";
   if (row.expires_at && new Date(row.expires_at).getTime() <= Date.now()) return "expired";

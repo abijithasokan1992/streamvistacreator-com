@@ -69,7 +69,7 @@ export default function Producer() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Link to="/" className="hidden sm:inline-flex px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground">Site</Link>
+            
             <button onClick={signOut} className="px-3 py-2 text-sm rounded-md border border-border/60 hover:bg-secondary inline-flex items-center gap-2">
               <LogOut className="w-4 h-4" /> <span className="hidden sm:inline">Sign out</span>
             </button>

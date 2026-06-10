@@ -99,11 +99,22 @@ Deno.serve(async (req) => {
         ? new Date(subscription.current_end * 1000).toISOString()
         : null;
 
+      // First successful mandate / recurring charge exposes the customer +
+      // token IDs we need to auto-bill overages against the saved card.
+      // `payment.entity` is present on `subscription.charged`; the customer
+      // id is also on `subscription.entity` from activation onwards.
+      const razorpayCustomerId =
+        subscription.customer_id ?? payment?.customer_id ?? null;
+      const razorpayTokenId = payment?.token_id ?? null;
+
       await supabase.from("subscriptions").upsert(
         {
           user_id: userId,
           razorpay_subscription_id: subscription.id,
           razorpay_plan_id: subscription.plan_id ?? null,
+          razorpay_customer_id: razorpayCustomerId,
+          // Never null-out an existing token on later events that don't carry one
+          ...(razorpayTokenId ? { razorpay_token_id: razorpayTokenId } : {}),
           price_id: "cloudx_creator",
           status,
           current_period_start: currentStart,
@@ -115,6 +126,19 @@ Deno.serve(async (req) => {
         },
         { onConflict: "razorpay_subscription_id" },
       );
+
+      // If the token arrived but the upsert path above couldn't merge it
+      // (e.g. customer_id was null on activation and only filled in later),
+      // make sure both columns are persisted by an explicit update too.
+      if (razorpayCustomerId || razorpayTokenId) {
+        const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+        if (razorpayCustomerId) patch.razorpay_customer_id = razorpayCustomerId;
+        if (razorpayTokenId) patch.razorpay_token_id = razorpayTokenId;
+        await supabase
+          .from("subscriptions")
+          .update(patch)
+          .eq("razorpay_subscription_id", subscription.id);
+      }
 
       if (userId) {
         if (type === "subscription.activated" ||

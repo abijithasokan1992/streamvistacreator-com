@@ -205,6 +205,42 @@ export default function ResetPassword() {
           </p>
         </header>
 
+        {sessionChecked && !sessionReady && (
+          <div className="glass rounded-2xl p-4 border border-amber-500/30 bg-amber-500/5 space-y-3">
+            <div className="flex items-start gap-2.5">
+              <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+              <div className="text-xs text-muted-foreground leading-relaxed">
+                Your recovery link has expired or was already used. Enter your email below to
+                receive a fresh link — both options above will activate once you click it.
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Mail className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="email"
+                  value={recoverEmail}
+                  onChange={(e) => setRecoverEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                  className="w-full h-10 pl-8 pr-3 rounded-lg bg-secondary/40 border border-border/60 text-xs focus:outline-none focus:ring-2 focus:ring-accent/40"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={resendRecovery}
+                disabled={resending}
+                className="h-10 px-3 rounded-lg bg-accent/20 text-accent text-xs font-semibold hover:bg-accent/30 disabled:opacity-60 inline-flex items-center gap-1.5"
+              >
+                {resending && <Loader2 className="w-3 h-3 animate-spin" />}
+                Send link
+              </button>
+            </div>
+          </div>
+        )}
+
+
+
         {/* PRIMARY — new password input at the top */}
         <form onSubmit={submitPassword} className="glass rounded-2xl p-6 space-y-4">
           <label className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">

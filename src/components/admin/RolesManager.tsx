@@ -298,8 +298,9 @@ export default function RolesManager() {
                           <button
                             key={d.id}
                             onClick={() => removeDivision(d.id)}
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold border border-primary/40 bg-primary/10 text-primary hover:bg-destructive/15 hover:border-destructive/40 hover:text-destructive transition"
-                            title="Click to remove"
+                            disabled={!unlocked}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold border border-primary/40 bg-primary/10 text-primary hover:bg-destructive/15 hover:border-destructive/40 hover:text-destructive transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary/10 disabled:hover:border-primary/40 disabled:hover:text-primary"
+                            title={unlocked ? "Click to remove" : "Unlock editing to remove"}
                           >
                             {meta?.icon} {meta?.label || d.division} <Trash2 className="w-3 h-3 ml-0.5" />
                           </button>
@@ -309,9 +310,9 @@ export default function RolesManager() {
                         <span className="text-[11px] text-muted-foreground italic px-1">All divisions</span>
                       )}
                     </div>
-                    <Select onValueChange={(v) => addDivision(p.user_id, v as Division)}>
-                      <SelectTrigger className="h-8 w-[170px] bg-secondary/40 border-border/60 text-xs">
-                        <SelectValue placeholder="+ Add division" />
+                    <Select disabled={!unlocked} onValueChange={(v) => addDivision(p.user_id, v as Division)}>
+                      <SelectTrigger className="h-8 w-[170px] bg-secondary/40 border-border/60 text-xs disabled:opacity-50">
+                        <SelectValue placeholder={unlocked ? "+ Add division" : "🔒 Locked"} />
                       </SelectTrigger>
                       <SelectContent>
                         {DIVISIONS.filter((d) => !userDivValues.includes(d.value)).map((d) => (

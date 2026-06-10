@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import PremiumInvitations from "@/components/admin/PremiumInvitations";
 import CommissionsTracker from "@/components/admin/CommissionsTracker";
 import OracleStorageMonitor from "@/components/admin/OracleStorageMonitor";
+import OracleOciStorageCard from "@/components/admin/OracleOciStorageCard";
 import FreeTierConfig from "@/components/admin/FreeTierConfig";
 import BrandingSettings from "@/components/admin/BrandingSettings";
 import SupportInbox from "@/components/admin/SupportInbox";
@@ -223,6 +224,7 @@ export default function Admin() {
           <TabsContent value="dev" className="space-y-8 mt-0 animate-fade-in">
             <DeptHeader icon={<Code2 className="w-5 h-5" />} title="Development & Software" desc="Oracle DB, OCI storage & domain deployment." />
             <DomainHostingPanel />
+            <OracleOciStorageCard />
             <OracleStorageMonitor />
             <GlobalAssetManager />
           </TabsContent>

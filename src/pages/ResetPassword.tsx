@@ -55,11 +55,15 @@ function loadRazorpayScript(): Promise<void> {
 export default function ResetPassword() {
   const navigate = useNavigate();
   const [sessionReady, setSessionReady] = useState(false);
+  const [sessionChecked, setSessionChecked] = useState(false);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPwd, setShowPwd] = useState(false);
   const [savingPwd, setSavingPwd] = useState(false);
   const [fastSaving, setFastSaving] = useState(false);
+  const [recoverEmail, setRecoverEmail] = useState("");
+  const [resending, setResending] = useState(false);
+
 
   // Wait for the Supabase client to absorb the recovery session from the URL hash.
   useEffect(() => {

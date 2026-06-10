@@ -118,11 +118,9 @@ export const useAuth = () => useContext(Ctx);
 
 /** Default landing route for a given role. */
 export function dashboardForRole(r: AppRole | null): string {
-  switch (r) {
-    case "admin": return "/admin";
-    case "executive_producer": return "/producer";
-    case "creator": return "/projects";
-    case "client": return "/projects";
-    default: return "/projects";
-  }
+  // Admins go to their dedicated console. Every other (regular) user lands on
+  // the shared user dashboard, which then routes them deeper based on role.
+  if (r === "admin") return "/admin";
+  return "/dashboard";
 }
+

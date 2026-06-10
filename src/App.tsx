@@ -36,6 +36,7 @@ import NotFound from "./pages/NotFound.tsx";
 import IngestTest from "./pages/IngestTest.tsx";
 import C2CSetupManual from "./pages/C2CSetupManual.tsx";
 import Unsubscribe from "./pages/Unsubscribe.tsx";
+import Dashboard from "./pages/Dashboard.tsx";
 import { PaymentTestModeBanner } from "./components/PaymentTestModeBanner.tsx";
 import ReferralCapture from "./components/ReferralCapture.tsx";
 import WrongPortal from "./components/WrongPortal.tsx";
@@ -69,6 +70,9 @@ const PublicRoutes = () => (
 
     {/* Linear onboarding wizard — must come BEFORE the dashboards. */}
     <Route path="/onboarding" element={<Onboarding />} />
+
+    {/* Shared post-login landing for regular users. Admins are bounced to /admin inside the page. */}
+    <Route path="/dashboard" element={<Dashboard />} />
 
     {/* Role-gated dashboards. RLS at the DB enforces the real boundary;
         OnboardingGate enforces the linear flow, RoleGate keeps the

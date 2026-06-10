@@ -60,6 +60,8 @@ export default function Auth() {
     COUNTRIES.find((c) => c.code === "IN") ?? COUNTRIES[0]
   );
   const [mobile, setMobile] = useState("");
+  type SignupRole = "creator" | "executive_producer" | "client";
+  const [signupRole, setSignupRole] = useState<SignupRole>("creator");
 
   // Real-time validation flags
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
@@ -300,6 +302,14 @@ export default function Auth() {
       const persistProfile = async () => {
         const uid = (await supabase.auth.getUser()).data.user?.id;
         if (!uid) return;
+        // Apply the role the user selected on the signup form. The
+        // `set_initial_role` RPC whitelists creator/executive_producer/client
+        // and refuses 'admin' from the client.
+        try {
+          await supabase.rpc("set_initial_role" as never, { _role: signupRole } as never);
+        } catch (e) {
+          console.warn("set_initial_role failed (non-fatal)", e);
+        }
         // Mark onboarding complete right away — we already have everything we need
         // to drop the user straight into their workspace. No second wizard.
         await supabase.from("user_profiles").upsert({
@@ -495,6 +505,54 @@ export default function Auth() {
                   maxLength={160}
                   className="w-full h-12 px-4 rounded-xl bg-input/40 border border-border/60 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-accent/70 focus:bg-input/70 focus:shadow-[0_0_24px_-6px_hsl(var(--accent)/0.5)]"
                 />
+
+                {!isAdminLogin && (
+                  <div className="space-y-2">
+                    <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground/70 px-1">
+                      I am a&hellip;
+                    </p>
+                    <div
+                      role="radiogroup"
+                      aria-label="Account role"
+                      className="grid grid-cols-3 gap-2"
+                    >
+                      {(
+                        [
+                          { value: "executive_producer", label: "Executive Producer", hint: "Oversee creators" },
+                          { value: "creator", label: "Creator", hint: "Make & ship work" },
+                          { value: "client", label: "Client", hint: "Review deliveries" },
+                        ] as { value: SignupRole; label: string; hint: string }[]
+                      ).map((opt) => {
+                        const active = signupRole === opt.value;
+                        return (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            role="radio"
+                            aria-checked={active}
+                            onClick={() => setSignupRole(opt.value)}
+                            className={cn(
+                              "rounded-xl border px-3 py-3 text-left transition-all outline-none",
+                              active
+                                ? "border-accent/70 bg-accent/10 shadow-[0_0_24px_-8px_hsl(var(--accent)/0.6)]"
+                                : "border-border/60 bg-input/30 hover:border-accent/40 hover:bg-input/50"
+                            )}
+                          >
+                            <div className={cn("text-[12px] font-semibold", active ? "text-foreground" : "text-foreground/80")}>
+                              {opt.label}
+                            </div>
+                            <div className="text-[10px] text-muted-foreground/70 mt-0.5">{opt.hint}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground/60 px-1">
+                      You can change this later from your profile. Admin access is granted manually.
+                    </p>
+                  </div>
+                )}
+
+
 
                 <div className="flex">
                   <CountryCodeSelect value={country} onChange={setCountry} />

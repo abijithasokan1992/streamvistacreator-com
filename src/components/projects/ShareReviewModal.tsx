@@ -112,16 +112,10 @@ export default function ShareReviewModal({
     const hrs = Number(expiresHours);
     const mv = maxViews.trim() ? Math.max(1, Math.floor(Number(maxViews))) : null;
     const expiresAt = hrs > 0 ? new Date(Date.now() + hrs * 3600 * 1000).toISOString() : null;
-
-    let passwordHash: string | null = null;
-    let passwordSalt: string | null = null;
-    if (password.trim()) {
-      passwordSalt = randomSalt();
-      passwordHash = await sha256Hex(`${passwordSalt}::${password.trim()}`);
-    }
+    const pwd = password.trim();
 
     setCreating(true);
-    const { error } = await (supabase as any).from("review_links").insert({
+    const { data: inserted, error } = await (supabase as any).from("review_links").insert({
       workspace_id: workspaceId,
       project_id: projectId,
       upload_id: upload.id,
@@ -132,15 +126,22 @@ export default function ShareReviewModal({
       asset_object_key: upload.object_key,
       asset_par_url: upload.par_url,
       asset_par_expires_at: upload.par_expires_at,
-      password_hash: passwordHash,
-      password_salt: passwordSalt,
+      requires_password: !!pwd,
       expires_at: expiresAt,
       max_views: mv,
       view_only: viewOnly,
-    });
-    setCreating(false);
-    if (error) return toast.error(error.message);
+    }).select("id").maybeSingle();
 
+    if (error) { setCreating(false); return toast.error(error.message); }
+
+    if (pwd && inserted?.id) {
+      const { error: pErr } = await supabase.functions.invoke("review-link", {
+        body: { action: "set-password", reviewLinkId: inserted.id, password: pwd },
+      });
+      if (pErr) { setCreating(false); return toast.error("Link created but password failed: " + pErr.message); }
+    }
+
+    setCreating(false);
     toast.success("Review link created");
     setPassword("");
     setMaxViews("");

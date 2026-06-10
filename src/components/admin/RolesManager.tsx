@@ -20,6 +20,14 @@ const ROLES: { value: Role; label: string; icon: React.ReactNode }[] = [
 type ProfileRow = { user_id: string; display_name: string | null };
 type RoleRow    = { user_id: string; role: Role };
 type AssignRow  = { id: string; ep_user_id: string; creator_user_id: string; created_at: string };
+type Division   = "ops" | "finance" | "dev" | "marketing";
+type DivisionRow = { id: string; user_id: string; division: Division };
+const DIVISIONS: { value: Division; label: string; icon: React.ReactNode }[] = [
+  { value: "ops",       label: "Business & Ops",   icon: <Briefcase className="w-3.5 h-3.5" /> },
+  { value: "finance",   label: "Finance & Billing",icon: <Wallet className="w-3.5 h-3.5" /> },
+  { value: "dev",       label: "Development",      icon: <Code2 className="w-3.5 h-3.5" /> },
+  { value: "marketing", label: "Marketing",        icon: <Megaphone className="w-3.5 h-3.5" /> },
+];
 
 export default function RolesManager() {
   const [loading, setLoading] = useState(true);

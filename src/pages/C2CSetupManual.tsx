@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   BookOpen, Cpu, Wifi, Bluetooth, Radio, CheckCircle2,
@@ -8,8 +8,17 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { useWorkspaces } from "@/hooks/useWorkspaces";
 
-const PAR_URL = "https://objectstorage.ap-mumbai-1.oraclecloud.com/p/JeKB364pUi17Y_pIPaqVDc_M6XMrsCdj0xUXOHkWJT-2sOgzisRkuAB1KzAtfmym/n/bma8wibnommg/b/bucket-20260526-1544/o/";
+const PAR_BASE_URL = "https://objectstorage.ap-mumbai-1.oraclecloud.com/p/JeKB364pUi17Y_pIPaqVDc_M6XMrsCdj0xUXOHkWJT-2sOgzisRkuAB1KzAtfmym/n/bma8wibnommg/b/bucket-20260526-1544/o/";
+
+/** Stable, URL-safe studio token derived from the workspace's production_banner. */
+function studioToken(banner: string | null | undefined): string {
+  if (banner === "Crayons Pictures") return "crayons-pictures";
+  if (banner === "Abhijith Asokan Productions") return "abhijith-asokan-productions";
+  return "default";
+}
+
 
 /* ─────────────── Types ─────────────── */
 type Step = {

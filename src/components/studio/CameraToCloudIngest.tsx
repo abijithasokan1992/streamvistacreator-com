@@ -11,6 +11,29 @@ import { useWorkspaces } from "@/hooks/useWorkspaces";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useStorageQuota, StorageWarningBanner } from "@/hooks/useStorageQuota";
+import { uploadFileMultipart, MULTIPART_THRESHOLD } from "@/lib/ociMultipartUpload";
+
+// Persisted pendingId per file fingerprint so a retry on the same browser
+// resumes the same OCI multipart upload instead of starting fresh.
+const PENDING_KEY_PREFIX = "c2c.pendingId.";
+function fileFingerprint(f: File): string {
+  return `${f.name}::${f.size}::${f.lastModified}`;
+}
+function getOrCreatePendingId(f: File): string {
+  try {
+    const key = PENDING_KEY_PREFIX + fileFingerprint(f);
+    const existing = localStorage.getItem(key);
+    if (existing) return existing;
+    const fresh = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    localStorage.setItem(key, fresh);
+    return fresh;
+  } catch {
+    return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  }
+}
+function clearPendingId(f: File) {
+  try { localStorage.removeItem(PENDING_KEY_PREFIX + fileFingerprint(f)); } catch { /* ignore */ }
+}
 
 type RecentUpload = {
   id: string;

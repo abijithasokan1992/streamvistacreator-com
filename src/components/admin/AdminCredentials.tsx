@@ -4,6 +4,7 @@ import { Loader2, KeyRound, Mail, ShieldCheck } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { getAppOrigin } from "@/lib/site";
 
 /**
  * Admin self-service credentials. Lets the signed-in admin rotate the email
@@ -28,7 +29,7 @@ export default function AdminCredentials() {
     setSavingEmail(true);
     const { error } = await supabase.auth.updateUser(
       { email: parsed.data },
-      { emailRedirectTo: `${window.location.origin}/admin` },
+      { emailRedirectTo: `${getAppOrigin()}/admin` },
     );
     setSavingEmail(false);
     if (error) return toast.error(error.message);

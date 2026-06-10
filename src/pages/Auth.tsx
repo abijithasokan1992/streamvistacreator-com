@@ -11,6 +11,7 @@ import { planByCycle, type Cycle } from "@/components/streamvista/plans";
 import { CountryCodeSelect } from "@/components/auth/CountryCodeSelect";
 import { COUNTRIES, type Country } from "@/lib/countries";
 import { useHostMode, urlForHost } from "@/hooks/useHostMode";
+import { getAppOrigin } from "@/lib/site";
 
 const LoginSchema = z.object({
   email: z.string().trim().email("Enter a valid email").max(255),
@@ -232,7 +233,7 @@ export default function Auth() {
     // Welcome or a Login alert when Google bounces the user back.
     try { sessionStorage.setItem("sv_oauth_intent", view === "signup" ? "signup" : "login"); } catch {}
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+      redirect_uri: `${getAppOrigin()}/auth`,
       extraParams: {
         // Force the account chooser on signup so the user can pick a fresh
         // Google identity; on login we let Google reuse the last session.
@@ -254,7 +255,7 @@ export default function Auth() {
       if (!emailOk.success) return toast.error("Enter a valid email");
       setSubmitting(true);
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${getAppOrigin()}/reset-password`,
       });
       setSubmitting(false);
       if (error) return toast.error(error.message);
@@ -282,7 +283,7 @@ export default function Auth() {
         email: parsed.data.email,
         password: parsed.data.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/vault`,
+          emailRedirectTo: `${getAppOrigin()}/vault`,
           data: {
             display_name: displayName,
             first_name: parsed.data.firstName,

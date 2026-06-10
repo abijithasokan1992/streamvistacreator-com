@@ -6,6 +6,7 @@ import { Loader2, Eye, EyeOff, Zap, KeyRound, CheckCircle2, Sparkles, Mail, Aler
 import { supabase } from "@/integrations/supabase/client";
 import { dashboardForRole, type AppRole } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
+import { getAppOrigin } from "@/lib/site";
 
 /**
  * Password recovery landing page.
@@ -93,7 +94,7 @@ export default function ResetPassword() {
     if (!email || !/.+@.+\..+/.test(email)) return toast.error("Enter a valid email");
     setResending(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${getAppOrigin()}/reset-password`,
     });
     setResending(false);
     if (error) return toast.error(error.message);

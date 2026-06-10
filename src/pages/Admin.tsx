@@ -307,8 +307,9 @@ function MetricCard({ label, value }: { label: string; value: string }) {
 }
 
 function DomainHostingPanel() {
+  const DEFAULT_PRIMARY = "https://app.crayonspictures.com";
   const currentOrigin = typeof window !== "undefined" ? window.location.origin : "";
-  const [primary, setPrimary] = useState("");
+  const [primary, setPrimary] = useState(DEFAULT_PRIMARY);
   const [extra, setExtra] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -321,7 +322,7 @@ function DomainHostingPanel() {
         .eq("id", true)
         .maybeSingle();
       if (!error && data) {
-        setPrimary(data.primary_domain ?? "");
+        setPrimary(data.primary_domain?.trim() || DEFAULT_PRIMARY);
         setExtra((data.extra_origins ?? []).join(", "));
       }
       setLoading(false);
@@ -360,11 +361,11 @@ function DomainHostingPanel() {
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs uppercase tracking-wider text-muted-foreground">Primary domain</label>
-              <input value={primary} onChange={e => setPrimary(e.target.value)} placeholder="https://example.com" className="w-full h-11 px-3 rounded-xl bg-secondary/40 border border-border/60 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" />
+              <input value={primary} onChange={e => setPrimary(e.target.value)} placeholder="https://app.crayonspictures.com" className="w-full h-11 px-3 rounded-xl bg-secondary/40 border border-border/60 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs uppercase tracking-wider text-muted-foreground">Additional origins (comma-separated)</label>
-              <input value={extra} onChange={e => setExtra(e.target.value)} placeholder="https://www.example.com" className="w-full h-11 px-3 rounded-xl bg-secondary/40 border border-border/60 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" />
+              <input value={extra} onChange={e => setExtra(e.target.value)} placeholder="https://www.crayonspictures.com" className="w-full h-11 px-3 rounded-xl bg-secondary/40 border border-border/60 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" />
             </div>
           </div>
           <button

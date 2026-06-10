@@ -98,12 +98,34 @@ Deno.serve(async (req) => {
   if (ct.includes("application/json")) {
     const body = await req.json().catch(() => ({}));
     if (body.action === "list") {
-      const { data, error } = await admin
+      // RLS scopes to workspaces the caller belongs to; service-role bypasses,
+      // so we filter explicitly via the user's memberships.
+      const { data: memberships } = await admin
+        .from("workspace_members")
+        .select("workspace_id")
+        .eq("user_id", userId);
+      const wsIds = (memberships ?? []).map((m: any) => m.workspace_id);
+      if (wsIds.length === 0) {
+        return new Response(JSON.stringify({ uploads: [] }), { headers: cors });
+      }
+      let q = admin
         .from("recent_uploads")
         .select("*")
-        .eq("user_id", userId)
+        .in("workspace_id", wsIds)
         .order("created_at", { ascending: false })
         .limit(50);
+      if (typeof body.workspaceId === "string" && body.workspaceId) {
+        if (!wsIds.includes(body.workspaceId)) {
+          return new Response(JSON.stringify({ error: "forbidden_workspace" }), { status: 403, headers: cors });
+        }
+        q = admin
+          .from("recent_uploads")
+          .select("*")
+          .eq("workspace_id", body.workspaceId)
+          .order("created_at", { ascending: false })
+          .limit(50);
+      }
+      const { data, error } = await q;
       if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: cors });
       return new Response(JSON.stringify({ uploads: data ?? [] }), { headers: cors });
     }
@@ -145,6 +167,25 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: `file exceeds ${MAX_BYTES} bytes` }), { status: 413, headers: cors });
   }
 
+  // Workspace routing: the caller must specify which workspace this asset belongs
+  // to, and they must be a writer (owner/admin/editor) in that workspace. The
+  // object key is then scoped to /workspaces/{workspace_id}/... so OCI assets
+  // are physically isolated per tenant.
+  const workspaceIdRaw = form.get("workspaceId");
+  const workspaceId = typeof workspaceIdRaw === "string" ? workspaceIdRaw.trim() : "";
+  if (!workspaceId) {
+    return new Response(JSON.stringify({ error: "missing workspaceId" }), { status: 400, headers: cors });
+  }
+  const { data: membership } = await admin
+    .from("workspace_members")
+    .select("role")
+    .eq("workspace_id", workspaceId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!membership || !["owner", "admin", "editor"].includes(membership.role)) {
+    return new Response(JSON.stringify({ error: "forbidden_workspace" }), { status: 403, headers: cors });
+  }
+
   // Idempotency: clients pass a stable pendingId so retrying the same upload
   // reuses the existing row + objectKey instead of creating a duplicate.
   const pendingIdRaw = form.get("pendingId");
@@ -158,6 +199,7 @@ Deno.serve(async (req) => {
       .from("recent_uploads")
       .select("id, object_key, status")
       .eq("user_id", userId)
+      .eq("workspace_id", workspaceId)
       .eq("client_pending_id", pendingId)
       .maybeSingle();
     if (existing) {
@@ -176,11 +218,13 @@ Deno.serve(async (req) => {
   }
 
   if (!row) {
-    const objectKey = `uploads/${userId}/${Date.now()}-${crypto.randomUUID()}-${safeName(file.name)}`;
+    // Direct ingest path: workspaces/{workspace_id}/users/{user_id}/{timestamp}-{uuid}-{name}
+    const objectKey = `workspaces/${workspaceId}/users/${userId}/${Date.now()}-${crypto.randomUUID()}-${safeName(file.name)}`;
     const { data: inserted, error: insErr } = await admin
       .from("recent_uploads")
       .insert({
         user_id: userId,
+        workspace_id: workspaceId,
         file_name: file.name,
         file_size: file.size,
         mime_type: mime,
@@ -197,6 +241,7 @@ Deno.serve(async (req) => {
           .from("recent_uploads")
           .select("id, object_key, status")
           .eq("user_id", userId)
+          .eq("workspace_id", workspaceId)
           .eq("client_pending_id", pendingId)
           .maybeSingle();
         if (again) {

@@ -2,7 +2,12 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
 import { type StripeEnv, createStripeClient } from "../_shared/stripe.ts";
 
-const ALLOWED_PRICE_IDS = new Set(["cloudx_monthly", "cloudx_quarterly", "cloudx_yearly"]);
+const ALLOWED_PRICE_IDS = new Set([
+  "cloudx_creator",
+  "cloudx_monthly",
+  "cloudx_quarterly",
+  "cloudx_yearly",
+]);
 
 async function resolveOrCreateCustomer(
   stripe: ReturnType<typeof createStripeClient>,

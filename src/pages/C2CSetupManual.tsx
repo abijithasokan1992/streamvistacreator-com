@@ -427,13 +427,16 @@ export default function C2CSetupManual() {
           </div>
         </section>
 
-        {/* PAR URL strip */}
+        {/* PAR URL strip — workspace-parameterized for studio isolation */}
         <section className="glass rounded-2xl p-5 border border-border/40 flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="flex items-center gap-2 shrink-0">
             <Cloud className="w-4 h-4 text-accent" />
             <span className="text-xs font-semibold uppercase tracking-wider">C CLOUD PAR URL</span>
+            <Badge variant="outline" className="text-[10px] uppercase tracking-wider border-accent/40 text-accent">
+              {bannerLabel}
+            </Badge>
           </div>
-          <CopyUrlButton />
+          <CopyUrlButton url={parUrl} />
         </section>
 
         {/* Categories */}
@@ -445,9 +448,10 @@ export default function C2CSetupManual() {
             </span>
           </div>
           {CATEGORIES.map((cat) => (
-            <CategoryCard key={cat.id} cat={cat} />
+            <CategoryCard key={cat.id} cat={cat} ingestHref={ingestQuery(cat.id)} />
           ))}
         </section>
+
 
         {/* CTA */}
         <section className="glass rounded-2xl p-6 border border-border/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

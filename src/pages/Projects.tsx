@@ -195,6 +195,11 @@ export default function Projects() {
                 </SelectContent>
               </Select>
             )}
+            {active && canRenameActive && (
+              <Button onClick={openRename} size="sm" variant="outline" className="h-9 px-2" title="Rename workspace">
+                <Pencil className="w-3.5 h-3.5" />
+              </Button>
+            )}
             <Button onClick={openCreate} size="sm" className="gap-2" disabled={writableWorkspaces.length === 0}>
               <Plus className="w-4 h-4" /> New Project
             </Button>

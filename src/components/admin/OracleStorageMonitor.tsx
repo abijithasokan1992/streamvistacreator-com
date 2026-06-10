@@ -231,6 +231,12 @@ export default function OracleStorageMonitor() {
             <Field label="Region" value={draft.oracle_region} onChange={v => setDraft({ ...draft, oracle_region: v })} placeholder="ap-mumbai-1" />
             <Field label="Namespace" value={draft.oracle_namespace} onChange={v => setDraft({ ...draft, oracle_namespace: v })} placeholder="axxxxxxxxxx" />
             <Field label="Bucket" value={draft.oracle_bucket} onChange={v => setDraft({ ...draft, oracle_bucket: v })} placeholder="streamvista-media" />
+            <Field
+              label="Bucket Capacity (GB) — for usage gauge"
+              value={draft.oracle_capacity_gb != null ? String(draft.oracle_capacity_gb) : ""}
+              onChange={v => setDraft({ ...draft, oracle_capacity_gb: v.trim() === "" ? null : Number(v) })}
+              placeholder="e.g. 1024"
+            />
           </div>
 
           <div className="space-y-1.5">

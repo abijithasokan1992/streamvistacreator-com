@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft, Archive, Film, Music2, FileText, Upload, Loader2, Building2,
-  CheckCircle2, FolderOpen, Layers, Sparkles,
+  CheckCircle2, FolderOpen, Layers, Sparkles, ClipboardCheck, Circle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -72,7 +72,17 @@ function slug(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
 
-type UploadStat = { name: string; status: "uploading" | "done" | "failed"; error?: string; category: string };
+type UploadStat = { name: string; status: "uploading" | "done" | "failed"; error?: string; category: string; progress: number };
+
+const BRIDGE_CHECKLIST: { key: string; label: string; hint: string }[] = [
+  { key: "golden_master", label: "Golden Master Video File", hint: "ProRes / High-Res" },
+  { key: "audio_stems", label: "Separated Audio Stems", hint: "Dialogue, Music, Effects" },
+  { key: "subtitles", label: "Subtitles & Closed Captions", hint: "SRT / VTT" },
+  { key: "artwork", label: "High-Res Marketing Artwork & Posters", hint: "Key art, banners" },
+  { key: "trailer", label: "Official Trailer & Promos", hint: "Teasers, BTS" },
+  { key: "metadata", label: "Metadata & Synopsis Form", hint: "Title, logline, cast" },
+  { key: "rights", label: "Rights & Licensing Agreements", hint: "Music, talent, footage" },
+];
 
 export default function MasterArchive() {
   const { user } = useAuth();
@@ -118,7 +128,7 @@ export default function MasterArchive() {
     const url = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/oci-upload`;
 
     for (const f of Array.from(files)) {
-      const stat: UploadStat = { name: f.name, status: "uploading", category: currentCategory };
+      const stat: UploadStat = { name: f.name, status: "uploading", category: currentCategory, progress: 0 };
       setUploads((u) => [stat, ...u]);
       try {
         const fd = new FormData();
@@ -127,20 +137,54 @@ export default function MasterArchive() {
         fd.append("category", currentCategory);
         if (projectId) fd.append("projectId", projectId);
         fd.append("pendingId", `archive-${currentCategory}-${Date.now()}-${f.name}`);
-        const res = await fetch(url, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${session.access_token}` },
-          body: fd,
+
+        await new Promise<void>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("POST", url);
+          xhr.setRequestHeader("Authorization", `Bearer ${session.access_token}`);
+          xhr.upload.onprogress = (ev) => {
+            if (!ev.lengthComputable) return;
+            const pct = Math.round((ev.loaded / ev.total) * 100);
+            setUploads((u) => u.map((x) => x === stat ? { ...x, progress: pct } : x));
+          };
+          xhr.onload = () => {
+            try {
+              const json = JSON.parse(xhr.responseText || "{}");
+              if (xhr.status < 200 || xhr.status >= 300 || json?.error) {
+                return reject(new Error(json?.error ?? `HTTP ${xhr.status}`));
+              }
+              resolve();
+            } catch (e) { reject(e as Error); }
+          };
+          xhr.onerror = () => reject(new Error("Network error"));
+          xhr.send(fd);
         });
-        const json = await res.json().catch(() => ({}));
-        if (!res.ok || json?.error) throw new Error(json?.error ?? `HTTP ${res.status}`);
-        setUploads((u) => u.map((x) => x === stat ? { ...x, status: "done" } : x));
+
+        setUploads((u) => u.map((x) => x === stat ? { ...x, status: "done", progress: 100 } : x));
       } catch (e) {
         setUploads((u) => u.map((x) => x === stat ? { ...x, status: "failed", error: (e as Error).message } : x));
       }
     }
     toast.success("Archive upload complete");
   };
+
+  // Crayons Bridge checklist (per-project, persisted locally)
+  const checklistKey = projectId ? `crayons-bridge-checklist:${projectId}` : "crayons-bridge-checklist:none";
+  const [checklist, setChecklist] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(checklistKey);
+      setChecklist(raw ? JSON.parse(raw) : {});
+    } catch { setChecklist({}); }
+  }, [checklistKey]);
+  const toggleCheck = (key: string) => {
+    setChecklist((c) => {
+      const next = { ...c, [key]: !c[key] };
+      try { localStorage.setItem(checklistKey, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
+  const checkedCount = BRIDGE_CHECKLIST.filter((i) => checklist[i.key]).length;
 
   return (
     <main className="min-h-dvh bg-background text-foreground">
@@ -296,23 +340,109 @@ export default function MasterArchive() {
         {uploads.length > 0 && (
           <div className="mt-6">
             <h3 className="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-2">This session</h3>
-            <div className="rounded-xl border border-border/50 divide-y divide-border/50">
-              {uploads.map((u, i) => (
-                <div key={i} className="px-4 py-2.5 flex items-center justify-between gap-3 text-sm">
-                  <div className="flex items-center gap-2 min-w-0">
-                    {u.status === "uploading" ? <Loader2 className="w-3.5 h-3.5 animate-spin text-accent" />
-                      : u.status === "done" ? <CheckCircle2 className="w-3.5 h-3.5 text-accent" />
-                      : <span className="w-3.5 h-3.5 rounded-full bg-destructive" />}
-                    <span className="truncate">{u.name}</span>
+            <div className="space-y-2">
+              {uploads.map((u, i) => {
+                const isUp = u.status === "uploading";
+                return (
+                  <div
+                    key={i}
+                    className={cn(
+                      "relative overflow-hidden rounded-xl border backdrop-blur-md transition-all",
+                      "border-border/50 bg-card/40",
+                      isUp && "opacity-50 border-accent/40",
+                      u.status === "done" && "border-accent/30",
+                      u.status === "failed" && "border-destructive/40",
+                    )}
+                  >
+                    <div className="px-4 py-3 flex items-center justify-between gap-3 text-sm relative z-10">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        {isUp ? <Loader2 className="w-3.5 h-3.5 animate-spin text-accent shrink-0" />
+                          : u.status === "done" ? <CheckCircle2 className="w-3.5 h-3.5 text-accent shrink-0" />
+                          : <span className="w-3.5 h-3.5 rounded-full bg-destructive shrink-0" />}
+                        <span className="truncate font-medium">{u.name}</span>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        {isUp && (
+                          <span className="font-mono text-xs tabular-nums text-accent tracking-wider">
+                            {u.progress.toString().padStart(2, "0")}%
+                          </span>
+                        )}
+                        <span className="text-[10px] font-mono text-muted-foreground truncate max-w-[180px] hidden sm:inline">
+                          {u.error ?? u.category}
+                        </span>
+                      </div>
+                    </div>
+                    {/* Cinematic scoreboard progress bar */}
+                    <div className="h-1 w-full bg-muted/40">
+                      <div
+                        className={cn(
+                          "h-full transition-all duration-200 ease-out",
+                          isUp && "bg-gradient-to-r from-accent via-primary to-accent shadow-[0_0_12px_hsl(var(--accent)/0.7)]",
+                          u.status === "done" && "bg-accent",
+                          u.status === "failed" && "bg-destructive",
+                        )}
+                        style={{ width: `${u.status === "failed" ? 100 : u.progress}%` }}
+                      />
+                    </div>
                   </div>
-                  <span className="text-[10px] font-mono text-muted-foreground truncate max-w-[40%]">
-                    {u.error ?? u.category}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
+
+        {/* Crayons Bridge — Master Files Checklist */}
+        <div className="mt-8 rounded-2xl border border-accent/30 bg-card/40 backdrop-blur-xl p-5 shadow-[0_8px_32px_-12px_hsl(var(--accent)/0.3)]">
+          <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent/30 to-primary/20 grid place-items-center border border-accent/40">
+                <ClipboardCheck className="w-4 h-4 text-accent" />
+              </div>
+              <div>
+                <h3 className="font-display font-bold text-sm">Crayons Bridge — Master Files Checklist</h3>
+                <p className="text-[11px] text-muted-foreground">Business deliverables required before handoff</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-xs tabular-nums text-accent">
+                {checkedCount.toString().padStart(2, "0")}/{BRIDGE_CHECKLIST.length.toString().padStart(2, "0")}
+              </span>
+              <div className="w-24 h-1.5 rounded-full bg-muted/40 overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-accent to-primary transition-all"
+                  style={{ width: `${(checkedCount / BRIDGE_CHECKLIST.length) * 100}%` }}
+                />
+              </div>
+            </div>
+          </div>
+          <ul className="grid sm:grid-cols-2 gap-2">
+            {BRIDGE_CHECKLIST.map((item) => {
+              const done = !!checklist[item.key];
+              return (
+                <li key={item.key}>
+                  <button
+                    onClick={() => toggleCheck(item.key)}
+                    className={cn(
+                      "w-full text-left flex items-start gap-3 rounded-xl border px-3.5 py-3 transition-all",
+                      "backdrop-blur-sm",
+                      done
+                        ? "border-accent/50 bg-accent/10 shadow-[inset_0_0_0_1px_hsl(var(--accent)/0.2)]"
+                        : "border-border/50 bg-background/30 hover:border-accent/40 hover:bg-accent/5",
+                    )}
+                  >
+                    {done
+                      ? <CheckCircle2 className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+                      : <Circle className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />}
+                    <div className="min-w-0">
+                      <p className={cn("text-sm font-medium leading-snug", done && "text-accent")}>{item.label}</p>
+                      <p className="text-[11px] text-muted-foreground font-mono mt-0.5">{item.hint}</p>
+                    </div>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       </section>
     </main>
   );

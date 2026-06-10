@@ -58,11 +58,24 @@ Deno.serve(async (req) => {
     // Look up the onboarding row and verify the order belongs to it.
     const { data: row, error: rowErr } = await supabase
       .from("onboarding_requests")
-      .select("id, selected_cycle, promo_code, razorpay_order_id")
+      .select("id, selected_cycle, promo_code, razorpay_order_id, submitter_user_id, payment_status")
       .eq("id", onboardingId)
       .single();
     if (rowErr || !row || row.razorpay_order_id !== razorpay_order_id) {
       return jsonError(req, "Payment verification failed", 400);
+    }
+
+    // Ownership bind: the caller must own the onboarding row (when bound to a user).
+    if (row.submitter_user_id && row.submitter_user_id !== userId) {
+      return jsonError(req, "Forbidden", 403);
+    }
+
+    // Idempotency: don't re-grant a plan upgrade for an already-paid row.
+    if (row.payment_status === "paid") {
+      return new Response(JSON.stringify({ verified: true, already: true, planTier: row.selected_cycle }), {
+        status: 200,
+        headers: { ...buildCorsHeaders(req), "Content-Type": "application/json" },
+      });
     }
 
     // Recompute expected amount server-side.

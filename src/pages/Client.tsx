@@ -349,6 +349,11 @@ function HubView({
 
       {user && <FirstStepsCard userId={user.id} variant="client" onPasteLink={focusLinkInput} />}
 
+      {/* Incoming reviews — auto-listed shares addressed to this client's email */}
+      <IncomingReviews />
+
+
+
       {/* Open-a-link panel */}
       <section className="glass-strong rounded-3xl p-6 md:p-7 border border-border/40 mb-8 animate-fade-in">
         <div className="flex items-center gap-2 mb-4">

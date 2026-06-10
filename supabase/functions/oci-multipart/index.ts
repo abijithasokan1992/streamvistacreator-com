@@ -584,7 +584,8 @@ Deno.serve(async (req) => {
 
     return json({ error: "unknown action" }, 400, cors);
   } catch (e) {
-    return json({ error: (e as Error).message }, 500, cors);
+    console.error("oci-multipart unhandled error:", e);
+    return json({ error: "INTERNAL_SERVER_ERROR", code: 500 }, 500, cors);
   }
 });
 

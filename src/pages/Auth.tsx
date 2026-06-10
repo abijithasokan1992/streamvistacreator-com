@@ -32,12 +32,15 @@ export default function Auth() {
   const [search] = useSearchParams();
   const { user, loading } = useAuth();
 
+  const nextPath = search.get("next") || "";
+  const isAdminLogin = nextPath.startsWith("/admin");
+
   const planParam = search.get("plan") as Cycle | null;
   const planCycle: Cycle | null = planParam && VALID_CYCLES.includes(planParam) ? planParam : null;
   const plan = planCycle ? planByCycle(planCycle) : null;
   const isPaidPlan = !!plan && plan.cycle !== "free";
 
-  const [view, setView] = useState<View>(planCycle ? "signup" : "login");
+  const [view, setView] = useState<View>(isAdminLogin ? "login" : (planCycle ? "signup" : "login"));
   const [email, setEmail] = useState(search.get("email") ?? "");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);

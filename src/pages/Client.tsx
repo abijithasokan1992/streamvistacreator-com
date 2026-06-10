@@ -395,3 +395,94 @@ function HubView({
     </main>
   );
 }
+
+/* ───────────────────────── Incoming reviews ───────────────────────── */
+type IncomingReview = {
+  id: string;
+  filename: string;
+  share_token: string;
+  expires_at: string | null;
+  revoked: boolean;
+  has_password: boolean | null;
+  view_only: boolean;
+  created_at: string;
+};
+
+function IncomingReviews() {
+  const navigate = useNavigate();
+  const [items, setItems] = useState<IncomingReview[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("shared_files")
+        .select("id,filename,share_token,expires_at,revoked,has_password,view_only,created_at")
+        .eq("revoked", false)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (cancelled) return;
+      if (error) { setItems([]); return; }
+      const now = Date.now();
+      const active = (data || []).filter(
+        (r: any) => !r.expires_at || new Date(r.expires_at).getTime() > now,
+      );
+      setItems(active as IncomingReview[]);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  if (items === null) return null;
+  if (items.length === 0) return null;
+
+  return (
+    <section className="glass-strong rounded-3xl p-6 md:p-7 border border-border/40 mb-8 animate-fade-in">
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <div className="flex items-center gap-2">
+          <Inbox className="w-4 h-4 text-accent" />
+          <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">Incoming reviews</span>
+        </div>
+        <span className="text-[11px] text-muted-foreground">{items.length} waiting</span>
+      </div>
+      <h2 className="font-display text-xl font-bold mb-1">Reviews sent directly to you</h2>
+      <p className="text-sm text-muted-foreground mb-4">
+        Your studio addressed these share links to your email. Tap any one to open the review player.
+      </p>
+      <ul className="space-y-2.5">
+        {items.map((it) => (
+          <li
+            key={it.id}
+            className="group flex items-center gap-3 rounded-2xl border border-border/40 bg-background/40 hover:bg-background/70 hover:border-accent/40 transition p-3"
+          >
+            <div className="w-10 h-10 rounded-xl bg-gradient-primary grid place-items-center glow-primary shrink-0">
+              <Film className="w-4 h-4 text-primary-foreground" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold truncate">{it.filename}</div>
+              <div className="flex items-center gap-3 text-[11px] text-muted-foreground mt-0.5">
+                <span className="inline-flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  {it.expires_at
+                    ? `Expires ${new Date(it.expires_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}`
+                    : "No expiry"}
+                </span>
+                {it.has_password && (
+                  <span className="inline-flex items-center gap-1"><Lock className="w-3 h-3" /> Password</span>
+                )}
+                {it.view_only && (
+                  <span className="inline-flex items-center gap-1"><Eye className="w-3 h-3" /> View only</span>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={() => navigate(`/s/${it.share_token}`)}
+              className="h-9 px-4 rounded-xl bg-gradient-primary text-primary-foreground text-xs font-semibold uppercase tracking-[0.18em] glow-primary inline-flex items-center gap-1.5"
+            >
+              Open <ExternalLink className="w-3.5 h-3.5" />
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}

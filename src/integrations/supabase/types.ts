@@ -2137,6 +2137,7 @@ export type Database = {
         Returns: boolean
       }
       revoke_creator_role: { Args: { _user_id: string }; Returns: undefined }
+      set_initial_role: { Args: { _role: string }; Returns: boolean }
     }
     Enums: {
       admin_division: "ops" | "finance" | "dev" | "marketing"

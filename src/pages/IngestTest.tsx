@@ -1,4 +1,5 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,9 +7,55 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, CloudUpload, FileIcon, Loader2, XCircle } from "lucide-react";
 import { useSystemMessage } from "@/components/system/SystemMessageProvider";
+import { useWorkspaces } from "@/hooks/useWorkspaces";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  uploadFileMultipart,
+  MULTIPART_THRESHOLD,
+  ResumableUploadInterrupted,
+} from "@/lib/ociMultipartUpload";
 
 const PAR_BASE =
   "https://objectstorage.ap-mumbai-1.oraclecloud.com/p/JeKB364pUi17Y_pIPaqVDc_M6XMrsCdj0xUXOHkWJT-2sOgzisRkuAB1KzAtfmym/n/bma8wibnommg/b/bucket-20260526-1544/o/";
+
+/** Map the manual's 4 category IDs onto the canonical 03-RAW-INGEST category tag. */
+const INGEST_CATEGORY_LABEL: Record<string, string> = {
+  hardware: "Dedicated Hardware",
+  mobile: "Mobile Ingest",
+  ndi: "NDI / IP Workflow",
+  virtual: "Virtual / Software Encoders",
+};
+
+function ingestCategoryTag(catId: string | null): string {
+  const id = (catId && INGEST_CATEGORY_LABEL[catId]) ? catId : "hardware";
+  return `c2c-${id}-raw-ingest`;
+}
+
+async function sha256Hex(file: File): Promise<string | null> {
+  // Skip very large files to keep the test snappy; the multipart engine still
+  // hashes them internally for cross-device resume.
+  if (file.size > 256 * 1024 * 1024) return null;
+  try {
+    const buf = await file.arrayBuffer();
+    const digest = await crypto.subtle.digest("SHA-256", buf);
+    return Array.from(new Uint8Array(digest))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  } catch {
+    return null;
+  }
+}
+
+async function reportIngest(payload: Record<string, unknown>) {
+  // Fire-and-forget; the c2c-ingest-webhook writes to payment_debug_logs.
+  try {
+    await supabase.functions.invoke("c2c-ingest-webhook", { body: payload });
+  } catch (e) {
+    // Telemetry must never block a user-visible upload.
+    console.warn("c2c telemetry failed", e);
+  }
+}
+
 
 type Status = "idle" | "uploading" | "success" | "error";
 

@@ -66,6 +66,8 @@ export default function CameraToCloudIngest() {
       const url = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/oci-upload`;
       const form = new FormData();
       form.append("file", p.file);
+      // Idempotency key — same pendingId on retry reuses the server row + OCI object.
+      form.append("pendingId", p.id);
 
       // Simulated progress while server streams to OCI (browser fetch lacks upload progress without XHR)
       const xhr = new XMLHttpRequest();

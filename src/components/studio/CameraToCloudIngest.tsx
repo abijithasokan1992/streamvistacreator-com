@@ -11,7 +11,7 @@ import { useWorkspaces } from "@/hooks/useWorkspaces";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useStorageQuota, StorageWarningBanner } from "@/hooks/useStorageQuota";
-import { uploadFileMultipart, MULTIPART_THRESHOLD } from "@/lib/ociMultipartUpload";
+import { uploadFileMultipart, MULTIPART_THRESHOLD, ResumableUploadInterrupted } from "@/lib/ociMultipartUpload";
 
 // Persisted pendingId per file fingerprint so a retry on the same browser
 // resumes the same OCI multipart upload instead of starting fresh.
@@ -102,7 +102,7 @@ export default function CameraToCloudIngest() {
 
       // Large files → chunked, resumable multipart through oci-multipart.
       // Small files → keep the existing single-shot oci-upload path untouched.
-      if (p.file.size >= MULTIPART_THRESHOLD) {
+      if (p.file.size > MULTIPART_THRESHOLD) {
         const stablePendingId = getOrCreatePendingId(p.file);
         try {
           await uploadFileMultipart({
@@ -116,14 +116,27 @@ export default function CameraToCloudIngest() {
           });
           clearPendingId(p.file);
           setPending((cur) => cur.map((x) => x.id === p.id ? { ...x, status: "done", progress: 100 } : x));
-          toast.success(`Ingested: ${p.file.name}`);
+          toast.success(`${p.file.name} successfully streamed with cryptographic integrity`);
           refresh();
           return;
         } catch (mpErr) {
-          // Graceful fallback: if multipart fails for a reason the single-shot
-          // path can still handle (small enough to fit), retry there. Anything
-          // bigger than the function payload ceiling re-throws to surface the
-          // real error to the user.
+          if (mpErr instanceof ResumableUploadInterrupted) {
+            const completedPct = Math.round(((mpErr.partNumber - 1) / mpErr.totalChunks) * 100);
+            setPending((cur) => cur.map((x) => x.id === p.id ? {
+              ...x, status: "error", progress: completedPct,
+              error: "Network paused — upload is saved and will resume from any device on the next drop.",
+            } : x));
+            showMessage({
+              severity: "warning",
+              title: "Upload paused — safely resumable",
+              message:
+                `The connection dropped while streaming "${p.file.name}" (part ${mpErr.partNumber} of ${mpErr.totalChunks}).\n\n` +
+                `Your progress is checkpointed in C CLOUD. Drop the same file again — on this device or any other — and ingest will resume from the exact missing block with cryptographic integrity.`,
+              context: `file=${p.file.name}; size=${p.file.size}; part=${mpErr.partNumber}/${mpErr.totalChunks}`,
+              extraAction: { label: "Resume now", onClick: () => { void uploadOne(p); } },
+            });
+            return;
+          }
           if (p.file.size > 25 * 1024 * 1024) throw mpErr;
           console.warn("[c2c] multipart failed, falling back to single-shot", mpErr);
         }

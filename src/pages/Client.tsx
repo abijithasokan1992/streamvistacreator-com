@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import {
   LogOut, Link2, Inbox, ShieldCheck, MessageSquareText, Play,
-  CheckCircle2, Sparkles, ArrowRight, ArrowLeft, Lock, Clock, Eye,
+  CheckCircle2, Sparkles, ArrowRight, ArrowLeft, MailOpen, Clock, Eye, SkipForward,
 } from "lucide-react";
 import OnboardingCompleteBanner from "@/components/OnboardingCompleteBanner";
 import FirstStepsCard from "@/components/dashboard/FirstStepsCard";
@@ -11,10 +11,11 @@ import { toast } from "sonner";
 
 /**
  * Client review hub.
- * First-time visitors see a 3-step wizard (Welcome → Open Link → How It Works).
- * Returning visitors land directly on the full hub.
+ * First-time visitors see a paginated 3-step wizard
+ * (Wait for link → Review → Approve). Shown ONCE per browser,
+ * dismissible via Skip Tour. Returning visitors land on the hub directly.
  */
-const WIZARD_KEY = "sv_seen_client_wizard_v1";
+const WIZARD_KEY = "sv_seen_client_wizard_v2";
 
 export default function Client() {
   const { user, signOut } = useAuth();
@@ -62,6 +63,7 @@ export default function Client() {
   const completeWizard = () => {
     try { localStorage.setItem(WIZARD_KEY, "1"); } catch {}
     setShowWizard(false);
+    setStep(1);
   };
 
   return (
@@ -79,7 +81,17 @@ export default function Client() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {!showWizard && (
+            {showWizard ? (
+              <button
+                onClick={completeWizard}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs uppercase tracking-wider rounded-lg border border-accent/40 text-accent hover:bg-accent/10"
+                aria-label="Skip tour and go to dashboard"
+              >
+                <SkipForward className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Skip Tour</span>
+                <span className="sm:hidden">Skip</span>
+              </button>
+            ) : (
               <button
                 onClick={() => { setStep(1); setShowWizard(true); }}
                 className="hidden sm:inline-flex px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
@@ -96,14 +108,7 @@ export default function Client() {
       </header>
 
       {showWizard ? (
-        <WizardView
-          step={step}
-          setStep={setStep}
-          linkInput={linkInput}
-          setLinkInput={setLinkInput}
-          openLink={openLink}
-          finish={completeWizard}
-        />
+        <WizardView step={step} setStep={setStep} finish={completeWizard} />
       ) : (
         <HubView
           user={user}
@@ -119,40 +124,67 @@ export default function Client() {
 }
 
 /* ───────────────────────── Wizard ───────────────────────── */
+const STEPS = [
+  { n: 1 as const, label: "Wait for link" },
+  { n: 2 as const, label: "Review" },
+  { n: 3 as const, label: "Approve" },
+];
+
 function WizardView({
-  step, setStep, linkInput, setLinkInput, openLink, finish,
+  step, setStep, finish,
 }: {
   step: 1 | 2 | 3;
   setStep: (s: 1 | 2 | 3) => void;
-  linkInput: string;
-  setLinkInput: (v: string) => void;
-  openLink: () => void;
   finish: () => void;
 }) {
   const next = () => setStep(step === 1 ? 2 : 3);
   const back = () => setStep(step === 3 ? 2 : 1);
-  const totalSteps = 3;
 
   return (
-    <main className="container py-10 max-w-2xl">
-      {/* Progress */}
-      <div className="flex items-center justify-center gap-3 mb-8" aria-label={`Step ${step} of ${totalSteps}`}>
-        {[1, 2, 3].map((n) => (
-          <div
-            key={n}
-            className={`h-1.5 rounded-full transition-all ${
-              n === step ? "w-12 bg-gradient-primary glow-primary" : n < step ? "w-8 bg-accent/70" : "w-8 bg-border/60"
-            }`}
-          />
-        ))}
-        <span className="ml-3 text-[11px] font-mono-tech uppercase tracking-[0.25em] text-muted-foreground">
-          Step {step} / {totalSteps}
-        </span>
+    <main className="container py-8 md:py-12 max-w-2xl">
+      {/* Intro banner */}
+      <div className="text-center mb-7">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-accent/40 bg-accent/5 mb-3">
+          <Sparkles className="w-3 h-3 text-accent" />
+          <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">Quick guide · 30 seconds</span>
+        </div>
+        <p className="text-sm text-muted-foreground max-w-md mx-auto">
+          A 3-step walkthrough of how to use the <span className="text-foreground font-semibold">share link</span> your
+          studio sends. No uploads here — you only watch, comment, and approve.
+        </p>
       </div>
 
-      {step === 1 && <StepWelcome />}
-      {step === 2 && <StepOpenReview linkInput={linkInput} setLinkInput={setLinkInput} openLink={openLink} />}
-      {step === 3 && <StepHowItWorks />}
+      {/* Stepper */}
+      <div className="flex items-center justify-center gap-2 mb-7" aria-label={`Step ${step} of 3`}>
+        {STEPS.map(({ n, label }) => {
+          const state = n === step ? "active" : n < step ? "done" : "todo";
+          return (
+            <div key={n} className="flex items-center gap-2">
+              <div
+                className={`flex items-center gap-2 px-3 h-9 rounded-full border text-[11px] font-mono-tech uppercase tracking-[0.18em] transition-all ${
+                  state === "active"
+                    ? "border-accent/60 bg-accent/10 text-accent glow-primary"
+                    : state === "done"
+                    ? "border-accent/30 bg-accent/5 text-accent/80"
+                    : "border-border/50 text-muted-foreground/70"
+                }`}
+              >
+                <span className={`w-5 h-5 rounded-full grid place-items-center text-[10px] ${
+                  state === "done" ? "bg-accent text-background" : state === "active" ? "bg-gradient-primary text-primary-foreground" : "bg-border/40"
+                }`}>
+                  {state === "done" ? <CheckCircle2 className="w-3 h-3" /> : n}
+                </span>
+                <span className="hidden sm:inline">{label}</span>
+              </div>
+              {n < 3 && <div className={`h-px w-4 sm:w-6 ${n < step ? "bg-accent/50" : "bg-border/40"}`} />}
+            </div>
+          );
+        })}
+      </div>
+
+      {step === 1 && <StepWaitForLink />}
+      {step === 2 && <StepReview />}
+      {step === 3 && <StepApprove />}
 
       {/* Nav */}
       <div className="mt-8 flex items-center justify-between gap-3">
@@ -165,10 +197,10 @@ function WizardView({
         </button>
 
         <button
-          onClick={() => { try { localStorage.setItem(WIZARD_KEY, "1"); } catch {} finish(); }}
-          className="text-xs text-muted-foreground hover:text-foreground"
+          onClick={finish}
+          className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5"
         >
-          Skip tour
+          <SkipForward className="w-3.5 h-3.5" /> Skip & go to dashboard
         </button>
 
         {step < 3 ? (
@@ -183,7 +215,7 @@ function WizardView({
             onClick={finish}
             className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-gradient-primary text-primary-foreground text-sm font-semibold glow-primary"
           >
-            Enter Review Suite <ArrowRight className="w-4 h-4" />
+            Finish <ArrowRight className="w-4 h-4" />
           </button>
         )}
       </div>
@@ -191,109 +223,91 @@ function WizardView({
   );
 }
 
-
-function StepWelcome() {
+/* ── Step cards ─────────────────────────────────────────── */
+function StepShell({
+  badge, icon: Icon, title, children,
+}: { badge: string; icon: any; title: string; children: React.ReactNode }) {
   return (
-    <section className="relative glass-strong rounded-3xl p-8 md:p-10 overflow-hidden border border-border/40 animate-fade-in">
+    <section className="relative glass-strong rounded-3xl p-7 md:p-9 overflow-hidden border border-border/40 animate-fade-in">
       <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-primary/20 blur-3xl pointer-events-none" />
       <div className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full bg-accent/10 blur-3xl pointer-events-none" />
-      <div className="relative text-center">
+      <div className="relative">
         <div className="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full border border-accent/40 bg-accent/5">
-          <Sparkles className="w-3 h-3 text-accent" />
-          <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">Welcome</span>
+          <Icon className="w-3 h-3 text-accent" />
+          <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">{badge}</span>
         </div>
-        <h1 className="font-display text-3xl md:text-5xl font-black uppercase tracking-tight leading-[0.95] mb-4">
-          Watch. Comment.
-          <br />
-          <span className="gradient-text">Approve.</span>
-        </h1>
-        <p className="text-muted-foreground max-w-md mx-auto">
-          You're set up as a <span className="text-accent font-semibold">Client</span>. In 30 seconds we'll show you how
-          to review your studio's work — no software to install.
-        </p>
+        <h2 className="font-display text-2xl md:text-4xl font-black uppercase tracking-tight leading-[0.95] mb-4">
+          {title}
+        </h2>
+        <div className="text-sm md:text-[15px] text-muted-foreground leading-relaxed space-y-3">
+          {children}
+        </div>
       </div>
     </section>
   );
 }
 
-function StepOpenReview({
-  linkInput, setLinkInput, openLink,
-}: { linkInput: string; setLinkInput: (v: string) => void; openLink: () => void }) {
+function StepWaitForLink() {
   return (
-    <section className="glass-strong rounded-3xl p-7 md:p-9 border border-border/40 animate-fade-in">
-      <div className="flex items-center gap-2 mb-4">
-        <Link2 className="w-4 h-4 text-accent" />
-        <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">Step 2 — Open a review</span>
-      </div>
-      <h2 className="font-display text-2xl md:text-3xl font-bold mb-2">Paste the link your studio sent.</h2>
-      <p className="text-sm text-muted-foreground mb-5">
-        Accepts the full URL, the <code className="text-accent">/s/token</code> path, or just the token. The link arrives
-        directly from your studio via WhatsApp, email, or SMS — never from this page.
+    <StepShell badge="Step 1 of 3" icon={MailOpen} title={<>Your studio sends you a <span className="gradient-text">share link</span>.</> as any}>
+      <p>
+        Reviews always start <span className="text-foreground font-semibold">outside this app</span>. Your studio will
+        send you a private link via <span className="text-accent">WhatsApp, email, or SMS</span> — something like{" "}
+        <code className="text-accent">streamvistacreator.com/s/abc123</code>.
       </p>
-      <div className="flex flex-col sm:flex-row gap-3">
-        <input
-          value={linkInput}
-          onChange={(e) => setLinkInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && openLink()}
-          placeholder="https://streamvistacreator.com/s/abc123…"
-          className="flex-1 h-12 px-4 rounded-xl bg-input/40 border border-border/60 text-sm placeholder:text-muted-foreground/60 outline-none focus:border-accent/70 focus:bg-input/70"
-        />
-        <button
-          onClick={openLink}
-          className="h-12 px-6 rounded-xl bg-gradient-primary text-primary-foreground font-semibold uppercase tracking-[0.18em] text-xs glow-primary inline-flex items-center justify-center gap-2"
-        >
-          Open Review <ArrowRight className="w-4 h-4" />
-        </button>
-      </div>
-      <p className="mt-4 text-[11px] text-muted-foreground/70">
-        No link yet? You can finish the tour and paste it later from the dashboard.
+      <p>
+        When it arrives, just tap it. You'll land straight on the review player — no app to install, no account juggling.
       </p>
-    </section>
+      <div className="flex items-start gap-3 rounded-xl border border-border/50 bg-background/40 p-3 mt-4">
+        <Clock className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+        <div className="text-xs">
+          <div className="font-semibold text-foreground">Don't see a link yet?</div>
+          <div className="text-muted-foreground">Skip the tour and ping your studio. They'll send one as soon as a cut is ready.</div>
+        </div>
+      </div>
+    </StepShell>
   );
 }
 
-function StepHowItWorks() {
+function StepReview() {
   return (
-    <section className="space-y-5 animate-fade-in">
-      <div className="text-center">
-        <div className="inline-flex items-center gap-2 mb-3 px-3 py-1 rounded-full border border-accent/40 bg-accent/5">
-          <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">Step 3 — How it works</span>
-        </div>
-        <h2 className="font-display text-2xl md:text-3xl font-bold">Three things you can do.</h2>
+    <StepShell badge="Step 2 of 3" icon={MessageSquareText} title={<>Watch, then drop <span className="gradient-text">timecoded notes</span>.</> as any}>
+      <p>
+        The player is frame-accurate on phone, tablet, and desktop. Pause anywhere, type a note, and it gets pinned to
+        that exact frame — your studio sees comments the moment you post them.
+      </p>
+      <div className="grid sm:grid-cols-2 gap-3 pt-2">
+        <Tile icon={Play} title="Cinematic player" body="Scrub, loop, fullscreen — all without losing quality." />
+        <Tile icon={Eye} title="Watermarked preview" body="Your email may appear on-screen to keep the cut private." />
       </div>
+    </StepShell>
+  );
+}
 
-      <div className="grid sm:grid-cols-3 gap-3">
-        {[
-          { icon: Play, title: "Cinematic player", body: "Frame-accurate scrubbing & full-screen on any device." },
-          { icon: MessageSquareText, title: "Timecoded notes", body: "Drop comments at exact frames; studio sees them live." },
-          { icon: CheckCircle2, title: "One-click approval", body: "Sign off on a cut and your studio is notified instantly." },
-        ].map(({ icon: Icon, title, body }) => (
-          <article key={title} className="glass rounded-2xl p-5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-primary grid place-items-center mb-3 glow-primary">
-              <Icon className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <h3 className="font-display text-base font-bold mb-1">{title}</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">{body}</p>
-          </article>
-        ))}
+function StepApprove() {
+  return (
+    <StepShell badge="Step 3 of 3" icon={CheckCircle2} title={<>One click to <span className="gradient-text">approve the cut</span>.</> as any}>
+      <p>
+        When you're happy, hit <span className="text-accent font-semibold">Approve</span>. Your studio is notified
+        instantly and the version is locked. Need changes? Leave notes instead and they'll send a new cut with a fresh link.
+      </p>
+      <div className="rounded-xl border border-accent/30 bg-accent/5 p-4 mt-2">
+        <div className="text-xs font-mono-tech uppercase tracking-[0.2em] text-accent mb-1">That's the whole flow</div>
+        <div className="text-sm text-foreground">Wait for the link → review with notes → approve. You're ready.</div>
       </div>
+    </StepShell>
+  );
+}
 
-      <div className="grid sm:grid-cols-3 gap-3">
-        {[
-          { icon: Lock, title: "Encrypted in transit", body: "Every byte protected by AES + TLS." },
-          { icon: Clock, title: "Link expiry & limits", body: "Studios control how long you can access." },
-          { icon: Eye, title: "Watermarked previews", body: "Your email may be stamped on screens." },
-        ].map(({ icon: Icon, title, body }) => (
-          <div key={title} className="rounded-2xl border border-border/40 bg-background/40 p-4 flex gap-3">
-            <Icon className="w-4 h-4 text-accent shrink-0 mt-0.5" />
-            <div>
-              <div className="text-xs font-semibold uppercase tracking-wider">{title}</div>
-              <div className="text-[11px] text-muted-foreground">{body}</div>
-            </div>
-          </div>
-        ))}
+function Tile({ icon: Icon, title, body }: { icon: any; title: string; body: string }) {
+  return (
+    <div className="rounded-2xl border border-border/40 bg-background/40 p-4">
+      <div className="w-9 h-9 rounded-xl bg-gradient-primary grid place-items-center mb-2 glow-primary">
+        <Icon className="w-4 h-4 text-primary-foreground" />
       </div>
-    </section>
+      <div className="text-sm font-semibold">{title}</div>
+      <div className="text-[12px] text-muted-foreground leading-relaxed">{body}</div>
+    </div>
   );
 }
 

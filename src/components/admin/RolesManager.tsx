@@ -37,8 +37,15 @@ export default function RolesManager() {
   const [assignments, setAssignments] = useState<AssignRow[]>([]);
   const [divisions, setDivisions] = useState<DivisionRow[]>([]);
   const [search, setSearch] = useState("");
+  const [unlocked, setUnlocked] = useState(false);
 
-  const load = async () => {
+  const guard = () => {
+    if (!unlocked) {
+      toast.error("Editing is locked. Unlock at the top to make changes.");
+      return false;
+    }
+    return true;
+  };
     setLoading(true);
     const [{ data: p }, { data: r }, { data: a }, { data: d }] = await Promise.all([
       supabase.from("user_profiles").select("user_id, display_name"),

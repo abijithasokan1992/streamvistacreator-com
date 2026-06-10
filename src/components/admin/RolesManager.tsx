@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, UserCog, Plus, Trash2, Crown, Camera, Users, Eye, Link2, Briefcase, Wallet, Code2, Megaphone, LayoutGrid } from "lucide-react";
+import { Loader2, UserCog, Plus, Trash2, Crown, Camera, Users, Eye, Link2, Briefcase, Wallet, Code2, Megaphone, LayoutGrid, Lock, Unlock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -36,6 +37,15 @@ export default function RolesManager() {
   const [assignments, setAssignments] = useState<AssignRow[]>([]);
   const [divisions, setDivisions] = useState<DivisionRow[]>([]);
   const [search, setSearch] = useState("");
+  const [unlocked, setUnlocked] = useState(false);
+
+  const guard = () => {
+    if (!unlocked) {
+      toast.error("Editing is locked. Unlock at the top to make changes.");
+      return false;
+    }
+    return true;
+  };
 
   const load = async () => {
     setLoading(true);
@@ -57,6 +67,7 @@ export default function RolesManager() {
   const nameOf = (uid: string) => profiles.find((p) => p.user_id === uid)?.display_name || uid.slice(0, 8);
 
   const addRole = async (uid: string, role: Role) => {
+    if (!guard()) return;
     if (rolesByUser(uid).includes(role)) return;
     const { error } = await supabase.from("user_roles").insert({ user_id: uid, role });
     if (error) return toast.error(error.message);
@@ -64,6 +75,7 @@ export default function RolesManager() {
     load();
   };
   const removeRole = async (uid: string, role: Role) => {
+    if (!guard()) return;
     const { error } = await supabase.from("user_roles").delete().eq("user_id", uid).eq("role", role);
     if (error) return toast.error(error.message);
     toast.success(`Removed ${role}`);
@@ -76,6 +88,7 @@ export default function RolesManager() {
   const eps      = profiles.filter((p) => rolesByUser(p.user_id).includes("executive_producer"));
   const creators = profiles.filter((p) => rolesByUser(p.user_id).includes("creator"));
   const linkPair = async () => {
+    if (!guard()) return;
     if (!epPick || !crPick) return toast.error("Pick both an EP and a Creator");
     const { error } = await supabase.from("producer_assignments").insert({
       ep_user_id: epPick, creator_user_id: crPick,
@@ -85,6 +98,7 @@ export default function RolesManager() {
     setEpPick(""); setCrPick(""); load();
   };
   const unlinkPair = async (id: string) => {
+    if (!guard()) return;
     const { error } = await supabase.from("producer_assignments").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Unlinked");
@@ -94,6 +108,7 @@ export default function RolesManager() {
   // Admin divisions
   const divisionsByUser = (uid: string) => divisions.filter((d) => d.user_id === uid).map((d) => d.division);
   const addDivision = async (uid: string, division: Division) => {
+    if (!guard()) return;
     if (divisionsByUser(uid).includes(division)) return;
     const { error } = await (supabase.from("admin_divisions" as any) as any).insert({ user_id: uid, division });
     if (error) return toast.error(error.message);
@@ -101,6 +116,7 @@ export default function RolesManager() {
     load();
   };
   const removeDivision = async (id: string) => {
+    if (!guard()) return;
     const { error } = await (supabase.from("admin_divisions" as any) as any).delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Division removed");
@@ -126,6 +142,27 @@ export default function RolesManager() {
             Assign roles and link Executive Producers to the Creators they oversee. All changes
             are enforced at the database via RLS — clients cannot escalate themselves.
           </p>
+        </div>
+      </div>
+
+      {/* Lock toggle */}
+      <div className={`flex items-center justify-between gap-3 rounded-2xl border p-3 ${unlocked ? "border-destructive/40 bg-destructive/5" : "border-accent/30 bg-accent/5"}`}>
+        <div className="flex items-center gap-2 min-w-0">
+          {unlocked ? <Unlock className="w-4 h-4 text-destructive shrink-0" /> : <Lock className="w-4 h-4 text-accent shrink-0" />}
+          <div className="min-w-0">
+            <div className="text-sm font-semibold">
+              Editing is {unlocked ? "Unlocked" : "Locked"}
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              {unlocked
+                ? "All role, assignment, and division controls are active. Re-lock when done."
+                : "All add / remove controls are disabled to prevent accidental changes."}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-[11px] uppercase tracking-wider text-muted-foreground">{unlocked ? "Unlock" : "Lock"}</span>
+          <Switch checked={unlocked} onCheckedChange={setUnlocked} />
         </div>
       </div>
 
@@ -162,17 +199,18 @@ export default function RolesManager() {
                           <button
                             key={r}
                             onClick={() => removeRole(p.user_id, r)}
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold border border-accent/40 bg-accent/10 text-accent hover:bg-destructive/15 hover:border-destructive/40 hover:text-destructive transition"
-                            title="Click to remove"
+                            disabled={!unlocked}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold border border-accent/40 bg-accent/10 text-accent hover:bg-destructive/15 hover:border-destructive/40 hover:text-destructive transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-accent/10 disabled:hover:border-accent/40 disabled:hover:text-accent"
+                            title={unlocked ? "Click to remove" : "Unlock editing to remove"}
                           >
                             {meta?.icon} {meta?.label || r} <Trash2 className="w-3 h-3 ml-0.5" />
                           </button>
                         );
                       })}
                     </div>
-                    <Select onValueChange={(v) => addRole(p.user_id, v as Role)}>
-                      <SelectTrigger className="h-8 w-[150px] bg-secondary/40 border-border/60 text-xs">
-                        <SelectValue placeholder="+ Add role" />
+                    <Select disabled={!unlocked} onValueChange={(v) => addRole(p.user_id, v as Role)}>
+                      <SelectTrigger className="h-8 w-[150px] bg-secondary/40 border-border/60 text-xs disabled:opacity-50">
+                        <SelectValue placeholder={unlocked ? "+ Add role" : "🔒 Locked"} />
                       </SelectTrigger>
                       <SelectContent>
                         {ROLES.filter((r) => !userRoles.includes(r.value)).map((r) => (
@@ -192,21 +230,21 @@ export default function RolesManager() {
           <div className="space-y-3">
             <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Executive Producer → Creator</Label>
             <div className="grid sm:grid-cols-[1fr_1fr_auto] gap-2">
-              <Select value={epPick} onValueChange={setEpPick}>
-                <SelectTrigger className="bg-secondary/40 border-border/60"><SelectValue placeholder="Pick an EP" /></SelectTrigger>
+              <Select value={epPick} onValueChange={setEpPick} disabled={!unlocked}>
+                <SelectTrigger className="bg-secondary/40 border-border/60 disabled:opacity-50"><SelectValue placeholder={unlocked ? "Pick an EP" : "🔒 Locked"} /></SelectTrigger>
                 <SelectContent>
                   {eps.length === 0 && <div className="px-3 py-2 text-xs text-muted-foreground">No users have the EP role yet</div>}
                   {eps.map((p) => <SelectItem key={p.user_id} value={p.user_id}>{p.display_name || p.user_id.slice(0,8)}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <Select value={crPick} onValueChange={setCrPick}>
-                <SelectTrigger className="bg-secondary/40 border-border/60"><SelectValue placeholder="Pick a Creator" /></SelectTrigger>
+              <Select value={crPick} onValueChange={setCrPick} disabled={!unlocked}>
+                <SelectTrigger className="bg-secondary/40 border-border/60 disabled:opacity-50"><SelectValue placeholder={unlocked ? "Pick a Creator" : "🔒 Locked"} /></SelectTrigger>
                 <SelectContent>
                   {creators.length === 0 && <div className="px-3 py-2 text-xs text-muted-foreground">No users have the Creator role yet</div>}
                   {creators.map((p) => <SelectItem key={p.user_id} value={p.user_id}>{p.display_name || p.user_id.slice(0,8)}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <Button onClick={linkPair} className="bg-gradient-primary text-primary-foreground">
+              <Button onClick={linkPair} disabled={!unlocked} className="bg-gradient-primary text-primary-foreground">
                 <Plus className="w-4 h-4 mr-1" /> Link
               </Button>
             </div>
@@ -221,7 +259,7 @@ export default function RolesManager() {
                   <span className="text-muted-foreground">→</span>
                   <span className="font-medium">{nameOf(a.creator_user_id)}</span>
                   <div className="flex-1" />
-                  <button onClick={() => unlinkPair(a.id)} className="h-7 w-7 grid place-items-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+                  <button onClick={() => unlinkPair(a.id)} disabled={!unlocked} className="h-7 w-7 grid place-items-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-muted-foreground" title={unlocked ? "Unlink" : "Unlock editing to unlink"}>
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -260,8 +298,9 @@ export default function RolesManager() {
                           <button
                             key={d.id}
                             onClick={() => removeDivision(d.id)}
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold border border-primary/40 bg-primary/10 text-primary hover:bg-destructive/15 hover:border-destructive/40 hover:text-destructive transition"
-                            title="Click to remove"
+                            disabled={!unlocked}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold border border-primary/40 bg-primary/10 text-primary hover:bg-destructive/15 hover:border-destructive/40 hover:text-destructive transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary/10 disabled:hover:border-primary/40 disabled:hover:text-primary"
+                            title={unlocked ? "Click to remove" : "Unlock editing to remove"}
                           >
                             {meta?.icon} {meta?.label || d.division} <Trash2 className="w-3 h-3 ml-0.5" />
                           </button>
@@ -271,9 +310,9 @@ export default function RolesManager() {
                         <span className="text-[11px] text-muted-foreground italic px-1">All divisions</span>
                       )}
                     </div>
-                    <Select onValueChange={(v) => addDivision(p.user_id, v as Division)}>
-                      <SelectTrigger className="h-8 w-[170px] bg-secondary/40 border-border/60 text-xs">
-                        <SelectValue placeholder="+ Add division" />
+                    <Select disabled={!unlocked} onValueChange={(v) => addDivision(p.user_id, v as Division)}>
+                      <SelectTrigger className="h-8 w-[170px] bg-secondary/40 border-border/60 text-xs disabled:opacity-50">
+                        <SelectValue placeholder={unlocked ? "+ Add division" : "🔒 Locked"} />
                       </SelectTrigger>
                       <SelectContent>
                         {DIVISIONS.filter((d) => !userDivValues.includes(d.value)).map((d) => (

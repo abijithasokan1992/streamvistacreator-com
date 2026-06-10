@@ -348,28 +348,23 @@ function SandboxView({ finish, userEmail }: { finish: () => void; userEmail: str
     setLinking(true);
     toast.loading("Verifying share link…", { id: "linking" });
 
-    // 1. Confirm the share token actually exists and is reachable.
-    const { data: share, error: shareErr } = await supabase
-      .from("shared_files")
-      .select("id, filename, share_token, revoked, expires_at")
-      .eq("share_token", token)
-      .maybeSingle();
+    // 1. Confirm the share token actually exists via the public vault-share
+    //    edge function (RLS hides shares from clients who aren't the
+    //    addressed recipient, so a direct table SELECT can't validate).
+    const { data: info, error: infoErr } = await supabase.functions.invoke("vault-share", {
+      body: { action: "info", token },
+    });
 
-    if (shareErr || !share) {
+    if (infoErr || !info || (info as any)?.error) {
       toast.dismiss("linking");
       setLinking(false);
+      const msg = (info as any)?.error || infoErr?.message || "";
+      if (/revoked/i.test(msg)) return toast.error("This share link has been revoked by your studio.");
+      if (/expired/i.test(msg)) return toast.error("This share link has expired. Ask your studio to resend it.");
       return toast.error("We couldn't find that share link. Double-check the URL or token.");
     }
-    if (share.revoked) {
-      toast.dismiss("linking");
-      setLinking(false);
-      return toast.error("This share link has been revoked by your studio.");
-    }
-    if (share.expires_at && new Date(share.expires_at) < new Date()) {
-      toast.dismiss("linking");
-      setLinking(false);
-      return toast.error("This share link has expired. Ask your studio to resend it.");
-    }
+
+    const filename = (info as any)?.filename || "your review";
 
     // 2. Record the manual link association as an onboarding request entry
     //    so admins can see how this client entered the system.
@@ -396,7 +391,7 @@ function SandboxView({ finish, userEmail }: { finish: () => void; userEmail: str
       return;
     }
 
-    toast.success(`Link associated — opening "${share.filename}".`);
+    toast.success(`Link associated — opening "${filename}".`);
     navigate(`/s/${token}`);
   };
 

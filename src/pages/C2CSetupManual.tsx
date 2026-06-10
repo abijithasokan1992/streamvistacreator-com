@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  BookOpen, Cpu, Wifi, Bluetooth, Ethernet, Radio, CheckCircle2,
+  BookOpen, Cpu, Wifi, Bluetooth, Radio, CheckCircle2,
   ArrowRight, Monitor, Video, Settings2, Cloud, Layers, Cable,
   Smartphone, Globe, ShieldCheck, Copy, ChevronDown, ChevronUp,
   ExternalLink

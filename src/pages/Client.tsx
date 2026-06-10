@@ -85,24 +85,6 @@ export default function Client() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {showWizard ? (
-              <button
-                onClick={completeWizard}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs uppercase tracking-wider rounded-lg border border-accent/40 text-accent hover:bg-accent/10"
-                aria-label="Skip tour and go to dashboard"
-              >
-                <SkipForward className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Skip Tour</span>
-                <span className="sm:hidden">Skip</span>
-              </button>
-            ) : (
-              <button
-                onClick={() => { setStep(1); setShowWizard(true); }}
-                className="hidden sm:inline-flex px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
-              >
-                Re-take tour
-              </button>
-            )}
             <Link to="/" className="hidden sm:inline-flex px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground">Site</Link>
             <button onClick={signOut} className="px-3 py-2 text-sm rounded-md border border-border/60 hover:bg-secondary inline-flex items-center gap-2">
               <LogOut className="w-4 h-4" /> <span className="hidden sm:inline">Sign out</span>

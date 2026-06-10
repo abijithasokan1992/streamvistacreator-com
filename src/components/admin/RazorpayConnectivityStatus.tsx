@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { CheckCircle2, XCircle, Loader2, RefreshCw, AlertTriangle, ShieldCheck, Activity } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, RefreshCw, AlertTriangle, ShieldCheck, Activity, Download } from "lucide-react";
 
 type StatusResp = {
   status?: "connected" | "disconnected";
@@ -49,6 +49,22 @@ export default function RazorpayConnectivityStatus() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin]);
 
+  const exportJson = () => {
+    const payload = {
+      checked_at: (lastChecked ?? new Date()).toISOString(),
+      result: data ?? null,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `razorpay-status-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
   if (!isAdmin) return null;
 
   const connected = data?.status === "connected";
@@ -75,6 +91,10 @@ export default function RazorpayConnectivityStatus() {
               </Badge>
             )
           )}
+          <Button size="sm" variant="outline" onClick={exportJson} disabled={!data}>
+            <Download className="w-3.5 h-3.5" />
+            <span className="ml-1.5">Export JSON</span>
+          </Button>
           <Button size="sm" variant="outline" onClick={run} disabled={loading}>
             {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
             <span className="ml-1.5">Re-check</span>

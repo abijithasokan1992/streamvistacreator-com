@@ -255,7 +255,7 @@ export default function Auth() {
       if (!emailOk.success) return toast.error("Enter a valid email");
       setSubmitting(true);
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${getAppOrigin()}/reset-password`,
       });
       setSubmitting(false);
       if (error) return toast.error(error.message);

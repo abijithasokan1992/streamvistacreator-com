@@ -34,18 +34,21 @@ export default function RolesManager() {
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
   const [roles, setRoles] = useState<RoleRow[]>([]);
   const [assignments, setAssignments] = useState<AssignRow[]>([]);
+  const [divisions, setDivisions] = useState<DivisionRow[]>([]);
   const [search, setSearch] = useState("");
 
   const load = async () => {
     setLoading(true);
-    const [{ data: p }, { data: r }, { data: a }] = await Promise.all([
+    const [{ data: p }, { data: r }, { data: a }, { data: d }] = await Promise.all([
       supabase.from("user_profiles").select("user_id, display_name"),
       supabase.from("user_roles").select("user_id, role"),
       supabase.from("producer_assignments").select("id, ep_user_id, creator_user_id, created_at"),
+      supabase.from("admin_divisions" as any).select("id, user_id, division"),
     ]);
     setProfiles((p || []) as ProfileRow[]);
     setRoles((r || []) as RoleRow[]);
     setAssignments((a || []) as AssignRow[]);
+    setDivisions(((d as any) || []) as DivisionRow[]);
     setLoading(false);
   };
   useEffect(() => { load(); }, []);

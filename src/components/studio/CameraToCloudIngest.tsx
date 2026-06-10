@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
-import { Cloud, UploadCloud, FileVideo, CheckCircle2, AlertTriangle, Loader2, RefreshCw } from "lucide-react";
+import { Cloud, UploadCloud, FileVideo, CheckCircle2, AlertTriangle, Loader2, RefreshCw, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { useSystemMessage } from "@/components/system/SystemMessageProvider";
+import { useWorkspaces } from "@/hooks/useWorkspaces";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 type RecentUpload = {
@@ -44,21 +46,30 @@ export default function CameraToCloudIngest() {
   const [loadingList, setLoadingList] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { showMessage } = useSystemMessage();
+  const { workspaces, activeId, setActiveId, canWriteActive } = useWorkspaces();
 
   const refresh = useCallback(async () => {
+    if (!activeId) { setRecent([]); return; }
     setLoadingList(true);
+    // RLS already isolates rows to workspaces the user belongs to; we filter
+    // by the active workspace so the panel reflects only that tenant's assets.
     const { data, error } = await supabase
       .from("recent_uploads")
       .select("*")
+      .eq("workspace_id", activeId)
       .order("created_at", { ascending: false })
       .limit(20);
     if (!error && data) setRecent(data as RecentUpload[]);
     setLoadingList(false);
-  }, []);
+  }, [activeId]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
   const uploadOne = useCallback(async (p: Pending) => {
+    if (!activeId) {
+      toast.error("Pick a workspace before uploading");
+      return;
+    }
     setPending((cur) => cur.map((x) => x.id === p.id ? { ...x, status: "uploading", progress: 5 } : x));
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -66,6 +77,8 @@ export default function CameraToCloudIngest() {
       const url = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/oci-upload`;
       const form = new FormData();
       form.append("file", p.file);
+      // Route the upload into this workspace's isolated OCI prefix.
+      form.append("workspaceId", activeId);
       // Idempotency key — same pendingId on retry reuses the server row + OCI object.
       form.append("pendingId", p.id);
 
@@ -122,9 +135,17 @@ export default function CameraToCloudIngest() {
         },
       });
     }
-  }, [refresh, showMessage]);
+  }, [refresh, showMessage, activeId]);
 
   const handleFiles = useCallback((files: FileList | File[]) => {
+    if (!activeId) {
+      toast.error("Pick a workspace before uploading");
+      return;
+    }
+    if (!canWriteActive) {
+      toast.error("You only have viewer access to this workspace");
+      return;
+    }
     const arr = Array.from(files);
     if (arr.length === 0) return;
     const items: Pending[] = arr.map((f) => ({
@@ -133,7 +154,7 @@ export default function CameraToCloudIngest() {
     }));
     setPending((cur) => [...items, ...cur].slice(0, 30));
     items.forEach((it) => uploadOne(it));
-  }, [uploadOne]);
+  }, [uploadOne, activeId, canWriteActive]);
 
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault(); setDragOver(false);
@@ -152,11 +173,40 @@ export default function CameraToCloudIngest() {
             Drop footage, audio, RAW or proxies — streamed to Oracle OCI Object Storage with cryptographic integrity.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={refresh} disabled={loadingList}>
-          <RefreshCw className={cn("h-4 w-4 mr-2", loadingList && "animate-spin")} />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          {workspaces.length > 0 && (
+            <Select value={activeId ?? ""} onValueChange={(v) => setActiveId(v)}>
+              <SelectTrigger className="h-9 w-[220px] text-xs">
+                <Building2 className="w-3.5 h-3.5 mr-1" />
+                <SelectValue placeholder="Pick a workspace…" />
+              </SelectTrigger>
+              <SelectContent>
+                {workspaces.map((w) => (
+                  <SelectItem key={w.id} value={w.id}>
+                    {w.name}
+                    <span className="ml-2 text-[10px] uppercase text-muted-foreground">{w.role}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <Button variant="outline" size="sm" onClick={refresh} disabled={loadingList || !activeId}>
+            <RefreshCw className={cn("h-4 w-4 mr-2", loadingList && "animate-spin")} />
+            Refresh
+          </Button>
+        </div>
       </div>
+
+      {!activeId && (
+        <Card className="p-4 text-sm text-muted-foreground border-amber-500/30 bg-amber-500/5">
+          Pick a workspace above to start routing camera-to-cloud uploads into its isolated OCI prefix.
+        </Card>
+      )}
+      {activeId && !canWriteActive && (
+        <Card className="p-4 text-sm text-muted-foreground border-destructive/30 bg-destructive/5">
+          You only have viewer access to this workspace. Switch to one where you are owner, admin, or editor to upload.
+        </Card>
+      )}
 
       <Card
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}

@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Pencil, Trash2, Loader2, Film, ArrowLeft } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Film, ArrowLeft, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useWorkspaces, type Workspace } from "@/hooks/useWorkspaces";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,21 +18,11 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-/** Production banner ENUM values that match `production_house_type` in Postgres. */
-export const PRODUCTION_BANNERS = [
-  { value: "CRAYONS_PICTURES", label: "Crayons Pictures" },
-  { value: "ABHIJITH_ASOKAN_PRODUCTIONS", label: "Abhijith Asokan Productions" },
-] as const;
-export type ProductionBanner = (typeof PRODUCTION_BANNERS)[number]["value"];
-
-const bannerLabel = (v: string) =>
-  PRODUCTION_BANNERS.find((b) => b.value === v)?.label ?? v;
-
 type Project = {
   id: string;
   name: string;
   description: string | null;
-  production_banner: ProductionBanner;
+  workspace_id: string;
   created_at: string;
   updated_at: string;
 };
@@ -39,13 +30,15 @@ type Project = {
 type FormState = {
   name: string;
   description: string;
-  production_banner: ProductionBanner | "";
+  workspace_id: string;
 };
 
-const emptyForm: FormState = { name: "", description: "", production_banner: "" };
+const emptyForm: FormState = { name: "", description: "", workspace_id: "" };
 
 export default function Projects() {
   const { user } = useAuth();
+  const { workspaces, activeId, setActiveId, loading: wsLoading, createWorkspace } = useWorkspaces();
+
   const [rows, setRows] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -54,27 +47,41 @@ export default function Projects() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  // Create-workspace inline UI
+  const [newWsName, setNewWsName] = useState("");
+  const [creatingWs, setCreatingWs] = useState(false);
+
+  const workspaceName = (id: string) =>
+    workspaces.find((w) => w.id === id)?.name ?? "Unknown workspace";
+
+  const writableWorkspaces: Workspace[] = workspaces.filter(
+    (w) => w.role === "owner" || w.role === "admin" || w.role === "editor",
+  );
+
   const load = async () => {
     if (!user) return;
     setLoading(true);
-    const { data, error } = await supabase
+    // RLS already scopes results to workspaces the user belongs to.
+    const { data, error } = await (supabase as any)
       .from("projects")
-      .select("id, name, description, production_banner, created_at, updated_at")
-      .eq("user_id", user.id)
+      .select("id, name, description, workspace_id, created_at, updated_at")
       .order("created_at", { ascending: false });
     setLoading(false);
     if (error) {
       toast.error(error.message);
       return;
     }
-    setRows((data ?? []) as Project[]);
+    setRows(((data ?? []) as unknown) as Project[]);
   };
 
   useEffect(() => { load(); }, [user?.id]);
 
   const openCreate = () => {
     setEditing(null);
-    setForm(emptyForm);
+    const defaultWs = activeId && writableWorkspaces.some((w) => w.id === activeId)
+      ? activeId
+      : writableWorkspaces[0]?.id ?? "";
+    setForm({ ...emptyForm, workspace_id: defaultWs });
     setDialogOpen(true);
   };
 
@@ -83,7 +90,7 @@ export default function Projects() {
     setForm({
       name: p.name,
       description: p.description ?? "",
-      production_banner: p.production_banner,
+      workspace_id: p.workspace_id,
     });
     setDialogOpen(true);
   };
@@ -92,23 +99,23 @@ export default function Projects() {
     if (!user) return;
     const name = form.name.trim();
     if (!name) return toast.error("Project name is required");
-    if (!form.production_banner) return toast.error("Production banner is required");
+    if (!form.workspace_id) return toast.error("Production banner (workspace) is required");
 
     setSaving(true);
     const payload = {
       name,
       description: form.description.trim() || null,
-      production_banner: form.production_banner as ProductionBanner,
+      workspace_id: form.workspace_id,
     };
 
     let error;
     if (editing) {
-      ({ error } = await supabase
+      ({ error } = await (supabase as any)
         .from("projects")
         .update(payload)
         .eq("id", editing.id));
     } else {
-      ({ error } = await supabase
+      ({ error } = await (supabase as any)
         .from("projects")
         .insert({ ...payload, user_id: user.id }));
     }
@@ -125,11 +132,23 @@ export default function Projects() {
   const remove = async (p: Project) => {
     if (!confirm(`Delete project "${p.name}"? This cannot be undone.`)) return;
     setDeletingId(p.id);
-    const { error } = await supabase.from("projects").delete().eq("id", p.id);
+    const { error } = await (supabase as any).from("projects").delete().eq("id", p.id);
     setDeletingId(null);
     if (error) return toast.error(error.message);
     toast.success("Project deleted");
     setRows((r) => r.filter((x) => x.id !== p.id));
+  };
+
+  const handleCreateWorkspace = async () => {
+    const name = newWsName.trim();
+    if (!name) return toast.error("Workspace name is required");
+    setCreatingWs(true);
+    const ws = await createWorkspace(name);
+    setCreatingWs(false);
+    if (!ws) return toast.error("Failed to create workspace");
+    toast.success(`Workspace "${ws.name}" created`);
+    setNewWsName("");
+    setForm((f) => ({ ...f, workspace_id: ws.id }));
   };
 
   return (
@@ -143,14 +162,32 @@ export default function Projects() {
             <div className="h-6 w-px bg-border" />
             <h1 className="font-display font-bold text-lg">My Projects</h1>
           </div>
-          <Button onClick={openCreate} size="sm" className="gap-2">
-            <Plus className="w-4 h-4" /> New Project
-          </Button>
+          <div className="flex items-center gap-2">
+            {workspaces.length > 0 && (
+              <Select value={activeId ?? ""} onValueChange={(v) => setActiveId(v)}>
+                <SelectTrigger className="h-9 w-[200px] text-xs">
+                  <Building2 className="w-3.5 h-3.5 mr-1" />
+                  <SelectValue placeholder="Active workspace" />
+                </SelectTrigger>
+                <SelectContent>
+                  {workspaces.map((w) => (
+                    <SelectItem key={w.id} value={w.id}>
+                      {w.name}
+                      <span className="ml-2 text-[10px] uppercase text-muted-foreground">{w.role}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <Button onClick={openCreate} size="sm" className="gap-2" disabled={writableWorkspaces.length === 0}>
+              <Plus className="w-4 h-4" /> New Project
+            </Button>
+          </div>
         </div>
       </header>
 
       <section className="container py-8">
-        {loading ? (
+        {loading || wsLoading ? (
           <div className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="w-4 h-4 animate-spin" /> Loading projects…
           </div>
@@ -160,7 +197,7 @@ export default function Projects() {
             <p className="text-sm text-muted-foreground mb-4">
               No projects yet. Create your first one to start routing assets.
             </p>
-            <Button onClick={openCreate} className="gap-2">
+            <Button onClick={openCreate} className="gap-2" disabled={writableWorkspaces.length === 0}>
               <Plus className="w-4 h-4" /> New Project
             </Button>
           </div>
@@ -189,8 +226,8 @@ export default function Projects() {
                     </div>
                   </div>
                   <Badge variant="secondary" className="w-fit gap-1 text-[10px] font-mono uppercase tracking-wider">
-                    <Film className="w-3 h-3" />
-                    {bannerLabel(p.production_banner)}
+                    <Building2 className="w-3 h-3" />
+                    {workspaceName(p.workspace_id)}
                   </Badge>
                 </CardHeader>
                 <CardContent>
@@ -212,7 +249,7 @@ export default function Projects() {
           <DialogHeader>
             <DialogTitle>{editing ? "Edit Project" : "Create Project"}</DialogTitle>
             <DialogDescription>
-              Route each project's assets to the correct production banner.
+              Pick the production banner (workspace) this project's assets should route to.
             </DialogDescription>
           </DialogHeader>
 
@@ -235,22 +272,49 @@ export default function Projects() {
                 Production Banner <span className="text-destructive">*</span>
               </Label>
               <Select
-                value={form.production_banner}
-                onValueChange={(v) => setForm((f) => ({ ...f, production_banner: v as ProductionBanner }))}
+                value={form.workspace_id}
+                onValueChange={(v) => setForm((f) => ({ ...f, workspace_id: v }))}
+                disabled={writableWorkspaces.length === 0}
               >
                 <SelectTrigger id="proj-banner">
-                  <SelectValue placeholder="Select a banner…" />
+                  <SelectValue placeholder={writableWorkspaces.length ? "Select a banner…" : "No workspaces with write access"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {PRODUCTION_BANNERS.map((b) => (
-                    <SelectItem key={b.value} value={b.value}>{b.label}</SelectItem>
+                  {writableWorkspaces.map((w) => (
+                    <SelectItem key={w.id} value={w.id}>
+                      {w.name}
+                      <span className="ml-2 text-[10px] uppercase text-muted-foreground">{w.role}</span>
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <p className="text-[11px] text-muted-foreground">
-                Assets uploaded against this project will be routed under the selected banner.
+                Only workspaces where you are owner, admin, or editor are shown.
               </p>
             </div>
+
+            {/* Inline create-workspace */}
+            {!editing && (
+              <div className="rounded-lg border border-border/60 p-3 space-y-2">
+                <Label className="text-xs text-muted-foreground">Need a new banner?</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={newWsName}
+                    onChange={(e) => setNewWsName(e.target.value)}
+                    placeholder="New workspace name"
+                    maxLength={80}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCreateWorkspace}
+                    disabled={creatingWs || !newWsName.trim()}
+                  >
+                    {creatingWs ? <Loader2 className="w-4 h-4 animate-spin" /> : "Add"}
+                  </Button>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="proj-desc">Description</Label>

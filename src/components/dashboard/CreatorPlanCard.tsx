@@ -53,8 +53,17 @@ export default function CreatorPlanCard({ onPurchased }: { onPurchased?: () => v
         if ((window as any).Razorpay) return resolve();
         const s = document.createElement("script");
         s.src = "https://checkout.razorpay.com/v1/checkout.js";
-        s.onload = () => resolve();
+        s.onload = () => {
+          logCheckoutTelemetry({ action_type: "checkout.sdk_loaded", order_id: data.orderId });
+          resolve();
+        };
         document.body.appendChild(s);
+      });
+
+      logCheckoutTelemetry({
+        action_type: "checkout.modal_init",
+        order_id: data.orderId,
+        extra: { product: "creator_plan_1tb", amount: data.amount },
       });
 
       const rzp = new (window as any).Razorpay({
@@ -66,6 +75,15 @@ export default function CreatorPlanCard({ onPurchased }: { onPurchased?: () => v
         description: "Creator Plan · 1 TB / month",
         prefill: { email: user.email },
         theme: { color: "#a855f7" },
+        modal: {
+          ondismiss: () => {
+            logCheckoutTelemetry({
+              action_type: "checkout.modal_dismissed",
+              severity: "WARN",
+              order_id: data.orderId,
+            });
+          },
+        },
         handler: async (resp: any) => {
           const v = await supabase.functions.invoke("verify-storage-topup", {
             body: {
@@ -77,16 +95,34 @@ export default function CreatorPlanCard({ onPurchased }: { onPurchased?: () => v
           });
           if (v.error || (v.data as any)?.error) {
             toast.error("Payment verification failed");
+            logCheckoutTelemetry({
+              action_type: "checkout.handler_error",
+              severity: "ERROR",
+              order_id: resp.razorpay_order_id,
+              payment_id: resp.razorpay_payment_id,
+              error_message: v.error?.message ?? (v.data as any)?.error ?? "verify failed",
+            });
           } else {
             toast.success("Creator Plan activated — 1 TB added 🎉");
+            logCheckoutTelemetry({
+              action_type: "checkout.handler_success",
+              order_id: resp.razorpay_order_id,
+              payment_id: resp.razorpay_payment_id,
+            });
             onPurchased?.();
           }
         },
       });
       toast.dismiss(t);
       rzp.open();
+      logCheckoutTelemetry({ action_type: "checkout.modal_opened", order_id: data.orderId });
     } catch (e: any) {
       toast.error(e?.message || "Checkout failed", { id: t });
+      logCheckoutTelemetry({
+        action_type: "checkout.network_error",
+        severity: "ERROR",
+        error_message: e?.message ?? String(e),
+      });
     } finally {
       setBusy(false);
     }

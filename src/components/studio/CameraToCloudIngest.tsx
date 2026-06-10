@@ -112,6 +112,12 @@ export default function CameraToCloudIngest() {
             ? `The network dropped while streaming "${p.file.name}" to the cloud bridge.\n\nReason: ${msg}\n\nReconnect and try again, or report this so we can investigate.`
             : `The ingest pipeline failed for "${p.file.name}".\n\nReason: ${msg}\n\nRetry, or report this so an admin can take a look.`),
         context: `file=${p.file.name}; size=${p.file.size}; mime=${p.file.type}; pendingId=${p.id}`,
+        // Re-attempt the same pendingId with the same File handle. Skip for auth errors
+        // (user must sign in again first) — the modal still surfaces the issue.
+        extraAction: isAuth ? undefined : {
+          label: "Retry upload",
+          onClick: () => { void uploadOne(p); },
+        },
       });
     }
   }, [refresh, showMessage]);

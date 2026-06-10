@@ -1,8 +1,154 @@
-import { useEffect, useState } from "react";
-import { Cloud, Loader2, KeyRound, CheckCircle2, XCircle, Link as LinkIcon, Copy, Pencil, ShieldCheck, ShieldAlert } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Cloud, Loader2, KeyRound, CheckCircle2, XCircle, Link as LinkIcon, Copy, Pencil, ShieldCheck, ShieldAlert, AlertTriangle, Wand2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+
+// ---------------- Self-diagnostic helpers ----------------
+
+type Diagnosis = {
+  code:
+    | "ok"
+    | "pem_missing_headers"
+    | "pem_bad_base64"
+    | "pem_wrong_type"
+    | "auth_failed"
+    | "not_found"
+    | "network_cors"
+    | "server_error"
+    | "rate_limited"
+    | "unknown";
+  title: string;
+  detail: string;
+  fix: string;
+};
+
+function diagnose(raw: string | undefined, httpHint?: number): Diagnosis {
+  const msg = (raw ?? "").toString();
+  const m = msg.toLowerCase();
+  const statusMatch = msg.match(/\b(4\d\d|5\d\d)\b/);
+  const status = httpHint ?? (statusMatch ? Number(statusMatch[1]) : undefined);
+
+  if (m.includes("pem") && (m.includes("header") || m.includes("begin") || m.includes("end"))) {
+    return {
+      code: "pem_missing_headers",
+      title: "Invalid PEM format · missing BEGIN/END headers",
+      detail: "The private key is missing the -----BEGIN PRIVATE KEY----- / -----END PRIVATE KEY----- boundary lines.",
+      fix: "Click Auto-format key, or repaste the full PEM block from OCI exactly as downloaded.",
+    };
+  }
+  if (m.includes("pkcs1") || m.includes("rsa private key")) {
+    return {
+      code: "pem_wrong_type",
+      title: "Wrong key format · expected PKCS#8",
+      detail: "OCI requires a PKCS#8 PEM. You appear to have pasted a PKCS#1 (BEGIN RSA PRIVATE KEY) key.",
+      fix: "Convert it: openssl pkcs8 -topk8 -nocrypt -in key.pem -out key-pkcs8.pem and paste the new file.",
+    };
+  }
+  if (m.includes("base64") || m.includes("decode") || m.includes("invalid key")) {
+    return {
+      code: "pem_bad_base64",
+      title: "PEM body could not be decoded",
+      detail: "The key body contains stray characters or was truncated during copy/paste.",
+      fix: "Re-download the key from OCI and paste the entire file — including the header and footer lines.",
+    };
+  }
+  if (status === 401 || status === 403 || m.includes("unauthor") || m.includes("not author") || m.includes("forbidden") || m.includes("signature")) {
+    return {
+      code: "auth_failed",
+      title: "Authentication failed · check Fingerprint / OCIDs",
+      detail: `OCI rejected the signed request${status ? ` (HTTP ${status})` : ""}. The Tenancy OCID, User OCID, or Fingerprint likely does not match the uploaded public key.`,
+      fix: "Open the OCI console → User → API Keys. Confirm the fingerprint matches and the public key is active.",
+    };
+  }
+  if (status === 404 || m.includes("not found") || m.includes("notfound") || (m.includes("bucket") && m.includes("does not exist"))) {
+    return {
+      code: "not_found",
+      title: "Bucket or namespace not found",
+      detail: "OCI returned 404 — the bucket name or namespace is wrong, or the bucket lives in a different region.",
+      fix: "Verify Namespace (Tenancy → Object Storage Namespace) and Bucket name. Check the Region matches the bucket.",
+    };
+  }
+  if (status === 429 || m.includes("rate") || m.includes("throttl")) {
+    return {
+      code: "rate_limited",
+      title: "OCI rate-limited the request",
+      detail: "Too many calls in a short window.",
+      fix: "Wait 30–60 seconds and re-test.",
+    };
+  }
+  if (m.includes("network") || m.includes("cors") || m.includes("fetch") || m.includes("failed to fetch") || m.includes("dns")) {
+    return {
+      code: "network_cors",
+      title: "Network / CORS blocked",
+      detail: "The browser or edge function could not reach objectstorage.<region>.oraclecloud.com.",
+      fix: "Check connectivity, then confirm the bucket CORS rules allow this origin. If the edge function failed, retry — it may be cold-starting.",
+    };
+  }
+  if (status && status >= 500) {
+    return {
+      code: "server_error",
+      title: `OCI server error (HTTP ${status})`,
+      detail: "Oracle Object Storage reported a transient server-side issue.",
+      fix: "Retry in a minute. If it persists, check the OCI status page.",
+    };
+  }
+  if (m && m !== "unknown error") {
+    return {
+      code: "unknown",
+      title: "Verification failed",
+      detail: msg,
+      fix: "Re-check every field, then click Re-test connection. Use Edit credentials if anything looks off.",
+    };
+  }
+  return {
+    code: "unknown",
+    title: "Verification failed",
+    detail: "No additional detail returned by the proxy.",
+    fix: "Open browser devtools → Network → oracle-proxy to inspect the response, then retry.",
+  };
+}
+
+/**
+ * Tidies a pasted OCI private key:
+ *  - strips zero-width chars, BOMs, smart quotes
+ *  - normalises CRLF → LF
+ *  - re-wraps base64 body to 64-char lines
+ *  - guarantees -----BEGIN/END PRIVATE KEY----- boundaries
+ */
+function autoFormatPem(input: string): { pem: string; changed: boolean; valid: boolean; reason?: string } {
+  const original = input ?? "";
+  if (!original.trim()) return { pem: "", changed: false, valid: false, reason: "Empty input" };
+
+  let s = original
+    .replace(/\uFEFF/g, "")
+    .replace(/[\u200B-\u200D]/g, "")
+    .replace(/[\u2018\u2019\u201C\u201D]/g, "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .trim();
+
+  if (/-----BEGIN RSA PRIVATE KEY-----/i.test(s)) {
+    return { pem: s, changed: s !== original, valid: false, reason: "PKCS#1 key detected — convert to PKCS#8" };
+  }
+
+  const headerRe = /-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----/i;
+  const footerRe = /-----END [A-Z0-9 ]*PRIVATE KEY-----/i;
+  let body: string;
+  if (headerRe.test(s) && footerRe.test(s)) {
+    body = s.replace(headerRe, "").replace(footerRe, "");
+  } else {
+    body = s;
+  }
+  body = body.replace(/[^A-Za-z0-9+/=]/g, "");
+  if (body.length < 200) {
+    return { pem: original, changed: false, valid: false, reason: "Key body looks too short — re-paste full PEM" };
+  }
+  const wrapped = body.match(/.{1,64}/g)!.join("\n");
+  const pem = `-----BEGIN PRIVATE KEY-----\n${wrapped}\n-----END PRIVATE KEY-----\n`;
+  return { pem, changed: pem !== original, valid: true };
+}
+
 
 type OracleConfig = {
   oracle_tenancy_ocid: string;

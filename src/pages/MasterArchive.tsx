@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { useStorageQuota, StorageWarningBanner } from "@/hooks/useStorageQuota";
 
 /**
  * Master Archive Vault
@@ -82,6 +83,7 @@ export default function MasterArchive() {
   const [selected, setSelected] = useState<{ folder: string; sub: string } | null>(null);
   const [uploads, setUploads] = useState<UploadStat[]>([]);
   const fileInput = useRef<HTMLInputElement>(null);
+  const quota = useStorageQuota();
 
   useEffect(() => {
     if (!user || !activeId) return;
@@ -102,10 +104,11 @@ export default function MasterArchive() {
     return `archive-${selected.folder}-${slug(selected.sub)}-${reelTag}`;
   }, [selected, reel]);
 
-  const pickFiles = () => fileInput.current?.click();
+  const pickFiles = () => { if (quota.checkOrPaywall()) fileInput.current?.click(); };
 
   const uploadFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
+    if (!quota.checkOrPaywall()) return;
     if (!activeId) return toast.error("Pick a workspace first");
     if (!selected) return toast.error("Pick a destination folder first");
 
@@ -187,6 +190,9 @@ export default function MasterArchive() {
           </div>
         </div>
 
+        <div className="mb-6"><StorageWarningBanner /></div>
+
+
         {/* Project + Reel selector */}
         <div className="grid sm:grid-cols-2 gap-4 mb-6">
           <div>
@@ -265,8 +271,8 @@ export default function MasterArchive() {
                 <Badge variant="outline" className="mr-1">{selected.sub}</Badge>
                 <Badge variant="outline">reel-{reel.padStart(2, "0")}</Badge>
               </p>
-              <Button onClick={pickFiles} size="lg" className="gap-2" disabled={!activeId || wsLoading}>
-                <Upload className="w-4 h-4" /> Upload to this folder
+              <Button onClick={pickFiles} size="lg" className="gap-2" disabled={!activeId || wsLoading || quota.locked}>
+                <Upload className="w-4 h-4" /> {quota.locked ? "Storage full — upgrade to upload" : "Upload to this folder"}
               </Button>
               <input
                 ref={fileInput}

@@ -10,6 +10,7 @@ import { useSystemMessage } from "@/components/system/SystemMessageProvider";
 import { useWorkspaces } from "@/hooks/useWorkspaces";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { useStorageQuota, StorageWarningBanner } from "@/hooks/useStorageQuota";
 
 type RecentUpload = {
   id: string;
@@ -47,6 +48,7 @@ export default function CameraToCloudIngest() {
   const inputRef = useRef<HTMLInputElement>(null);
   const { showMessage } = useSystemMessage();
   const { workspaces, activeId, setActiveId, canWriteActive } = useWorkspaces();
+  const quota = useStorageQuota();
 
   const refresh = useCallback(async () => {
     if (!activeId) { setRecent([]); return; }
@@ -146,6 +148,7 @@ export default function CameraToCloudIngest() {
       toast.error("You only have viewer access to this workspace");
       return;
     }
+    if (!quota.checkOrPaywall()) return;
     const arr = Array.from(files);
     if (arr.length === 0) return;
     const items: Pending[] = arr.map((f) => ({
@@ -154,7 +157,7 @@ export default function CameraToCloudIngest() {
     }));
     setPending((cur) => [...items, ...cur].slice(0, 30));
     items.forEach((it) => uploadOne(it));
-  }, [uploadOne, activeId, canWriteActive]);
+  }, [uploadOne, activeId, canWriteActive, quota]);
 
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault(); setDragOver(false);
@@ -208,11 +211,28 @@ export default function CameraToCloudIngest() {
         </Card>
       )}
 
+      <StorageWarningBanner />
+
+      {quota.locked ? (
+        <Card
+          onClick={() => quota.openPaywall()}
+          className="relative cursor-pointer overflow-hidden border-2 border-dashed p-12 text-center border-destructive/50 bg-destructive/5 hover:bg-destructive/10 transition"
+        >
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 ring-1 ring-destructive/30">
+            <AlertTriangle className="h-8 w-8 text-destructive" />
+          </div>
+          <h3 className="mt-4 text-xl font-semibold">Storage full — uploads paused</h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Upgrade to the Creator Plan to keep ingesting. Existing footage stays viewable.
+          </p>
+          <Button variant="default" className="mt-4">Upgrade · ₹767 / mo</Button>
+        </Card>
+      ) : (
       <Card
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onDrop={onDrop}
-        onClick={() => inputRef.current?.click()}
+        onClick={() => { if (quota.checkOrPaywall()) inputRef.current?.click(); }}
         className={cn(
           "relative cursor-pointer overflow-hidden border-2 border-dashed transition-all",
           "bg-gradient-to-br from-background via-background to-primary/5",
@@ -239,6 +259,7 @@ export default function CameraToCloudIngest() {
           <Badge variant="outline">SHA-256 verified</Badge>
         </div>
       </Card>
+      )}
 
       {pending.length > 0 && (
         <div className="space-y-2">

@@ -40,6 +40,7 @@ import ReferralCapture from "./components/ReferralCapture.tsx";
 import WrongPortal from "./components/WrongPortal.tsx";
 import { SystemMessageProvider } from "./components/system/SystemMessageProvider.tsx";
 import GlobalErrorListener from "./components/system/GlobalErrorListener.tsx";
+import { StorageQuotaProvider } from "@/hooks/useStorageQuota";
 import { useHostMode } from "@/hooks/useHostMode";
 
 const queryClient = new QueryClient();
@@ -116,12 +117,14 @@ const App = () => (
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <AuthProvider>
             <SystemMessageProvider>
-              <GlobalErrorListener />
-              <PaymentTestModeBanner />
-              <ReferralCapture />
-              <ErrorBoundary>
-                <HostAwareRoutes />
-              </ErrorBoundary>
+              <StorageQuotaProvider>
+                <GlobalErrorListener />
+                <PaymentTestModeBanner />
+                <ReferralCapture />
+                <ErrorBoundary>
+                  <HostAwareRoutes />
+                </ErrorBoundary>
+              </StorageQuotaProvider>
             </SystemMessageProvider>
           </AuthProvider>
         </BrowserRouter>

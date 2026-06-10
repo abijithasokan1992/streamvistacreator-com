@@ -24,6 +24,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import StorageUsageCard from "@/components/dashboard/StorageUsageCard";
+import { StorageWarningBanner } from "@/hooks/useStorageQuota";
 import CreatorPlanCard from "@/components/dashboard/CreatorPlanCard";
 
 type CrewMember = { name: string; email: string; role: string };
@@ -331,6 +332,7 @@ export default function Projects() {
             <CreatorPlanCard onPurchased={() => window.location.reload()} />
             <StorageUsageCard />
           </div>
+          <div className="mt-4"><StorageWarningBanner /></div>
         </div>
       </section>
 

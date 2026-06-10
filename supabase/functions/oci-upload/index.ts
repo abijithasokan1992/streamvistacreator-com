@@ -139,11 +139,12 @@ Deno.serve(async (req) => {
   // Load OCI config
   const { data: cfg } = await admin
     .from("site_config")
-    .select("oracle_tenancy_ocid, oracle_user_ocid, oracle_fingerprint, oracle_region, oracle_namespace, oracle_bucket, oracle_private_key")
+    .select("oracle_tenancy_ocid, oracle_user_ocid, oracle_fingerprint, oracle_region, oracle_namespace, oracle_bucket")
     .eq("id", true)
     .maybeSingle();
 
-  const pem = cfg?.oracle_private_key || Deno.env.get("ORACLE_PRIVATE_KEY");
+  // Private key only lives in the encrypted backend secret — never in the DB.
+  const pem = Deno.env.get("ORACLE_PRIVATE_KEY");
   const tenancy = cfg?.oracle_tenancy_ocid || Deno.env.get("OCI_TENANCY_OCID");
   const user = cfg?.oracle_user_ocid || Deno.env.get("OCI_USER_OCID");
   const fingerprint = cfg?.oracle_fingerprint || Deno.env.get("OCI_FINGERPRINT");

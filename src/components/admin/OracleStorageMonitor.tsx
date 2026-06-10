@@ -145,7 +145,7 @@ export default function OracleStorageMonitor() {
   const load = async () => {
     const { data } = await supabase
       .from("site_config")
-      .select("oracle_tenancy_ocid, oracle_user_ocid, oracle_fingerprint, oracle_region, oracle_namespace, oracle_bucket, oracle_private_key_set, oracle_private_key, oracle_capacity_gb")
+      .select("oracle_tenancy_ocid, oracle_user_ocid, oracle_fingerprint, oracle_region, oracle_namespace, oracle_bucket, oracle_private_key_set, oracle_capacity_gb")
       .eq("id", true)
       .maybeSingle();
     const next: OracleConfig = data ? {
@@ -155,7 +155,7 @@ export default function OracleStorageMonitor() {
       oracle_region: data.oracle_region ?? "ap-mumbai-1",
       oracle_namespace: data.oracle_namespace ?? "",
       oracle_bucket: data.oracle_bucket ?? "",
-      oracle_private_key_set: !!data.oracle_private_key_set || !!data.oracle_private_key,
+      oracle_private_key_set: !!data.oracle_private_key_set,
       oracle_capacity_gb: data.oracle_capacity_gb != null ? Number(data.oracle_capacity_gb) : null,
     } : EMPTY;
     setCfg(next);
@@ -228,21 +228,13 @@ export default function OracleStorageMonitor() {
       }
     }
     const trimmedPem = pem.trim();
-    if (!cfg.oracle_private_key_set && !trimmedPem) {
-      toast.error("Paste the Oracle private key (PEM) to complete setup.");
-      return;
-    }
-    if (trimmedPem && !/-----BEGIN [A-Z ]*PRIVATE KEY-----/.test(trimmedPem)) {
-      toast.error("Private key must be a PEM-encoded block (BEGIN/END headers).");
+    if (trimmedPem) {
+      toast.error("Private key is now managed as the ORACLE_PRIVATE_KEY backend secret. Set it in Backend → Secrets — it cannot be stored in this table for security reasons.");
       return;
     }
 
     setSaving(true);
     const payload: Record<string, unknown> = { id: true, ...draft };
-    if (trimmedPem) {
-      payload.oracle_private_key = trimmedPem;
-      payload.oracle_private_key_set = true;
-    }
     const { error } = await supabase.from("site_config").upsert(payload, { onConflict: "id" });
     if (error) { setSaving(false); toast.error(error.message); return; }
     setPem(""); setShowPem(false);

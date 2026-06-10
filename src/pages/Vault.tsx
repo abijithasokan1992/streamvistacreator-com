@@ -19,8 +19,10 @@ import ReferralRewards from "@/components/dashboard/ReferralRewards";
 import FirstStepsCard from "@/components/dashboard/FirstStepsCard";
 import StorageUsageCard from "@/components/dashboard/StorageUsageCard";
 import { UploadManagerProvider, useUploadManager } from "@/components/vault/UploadManager";
+import { useStorageQuota, StorageWarningBanner } from "@/hooks/useStorageQuota";
 import ShareLinkModal, { ShareLinkFile } from "@/components/vault/ShareLinkModal";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 
 type Tier = "lite" | "sovereign";
@@ -66,6 +68,7 @@ function randomToken() {
 const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => void> }) => {
   const { user, loading, signOut } = useAuth();
   const { enqueue, pickAndEnqueue } = useUploadManager();
+  const quota = useStorageQuota();
   const [section, setSection] = useState<SectionId>("files");
   const [files, setFiles] = useState<SharedFile[]>([]);
   const [tier, setTier] = useState<Tier>("lite");
@@ -118,6 +121,7 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
 
   const handleUpload = (file: File) => {
     if (file.size > MAX_BYTES) { toast.error("File exceeds 2.5 GB limit"); return; }
+    if (!quota.checkOrPaywall()) return;
     enqueue(file, {
       tier,
       password: password || undefined,
@@ -153,18 +157,26 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
 
 
   const UploadDialog = (
-    <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
+    <Dialog open={uploadOpen} onOpenChange={(v) => { if (v && !quota.checkOrPaywall()) return; setUploadOpen(v); }}>
       <Tooltip>
         <TooltipTrigger asChild>
           <DialogTrigger asChild>
-            <button className="relative h-11 px-5 rounded-xl bg-gradient-primary text-primary-foreground font-semibold glow-primary text-sm inline-flex items-center gap-2 transition hover:scale-[1.02] hover:shadow-[0_0_40px_-6px_hsl(var(--accent)/0.7)]">
-              <Upload className="w-4 h-4" /> Upload File
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-accent animate-ping opacity-60" />
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-accent" />
+            <button
+              onClick={(e) => { if (!quota.checkOrPaywall()) { e.preventDefault(); e.stopPropagation(); } }}
+              className={cn(
+                "relative h-11 px-5 rounded-xl font-semibold text-sm inline-flex items-center gap-2 transition",
+                quota.locked
+                  ? "bg-muted text-muted-foreground border border-destructive/40 cursor-not-allowed"
+                  : "bg-gradient-primary text-primary-foreground glow-primary hover:scale-[1.02] hover:shadow-[0_0_40px_-6px_hsl(var(--accent)/0.7)]",
+              )}
+            >
+              <Upload className="w-4 h-4" /> {quota.locked ? "Storage full — Upgrade" : "Upload File"}
+              {!quota.locked && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-accent animate-ping opacity-60" />}
+              {!quota.locked && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-accent" />}
             </button>
           </DialogTrigger>
         </TooltipTrigger>
-        <TooltipContent side="bottom">Drop a file, paste from clipboard, or ingest from a card — uploads run in the background.</TooltipContent>
+        <TooltipContent side="bottom">{quota.locked ? "You've hit the 50 GB free cap. Upgrade to keep uploading." : "Drop a file, paste from clipboard, or ingest from a card — uploads run in the background."}</TooltipContent>
       </Tooltip>
 
       <DialogContent className="max-w-xl glass-strong border-border/60">
@@ -176,6 +188,7 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
           onDragLeave={() => setDrag(false)}
           onDrop={(e) => { e.preventDefault(); setDrag(false); const dropped = Array.from(e.dataTransfer.files || []); dropped.forEach(handleUpload); }}
           onClick={async () => {
+            if (!quota.checkOrPaywall()) return;
             // Prefer FS Access API so we can auto-resume across refresh / power loss.
             const id = await pickAndEnqueue({
               tier, password: password || undefined, expiryDays, maxDownloads,
@@ -310,6 +323,7 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
                   />
                 )}
                 <StorageUsageCard />
+                <StorageWarningBanner />
                 <SectionHeader
                   title="My Vault"
                   desc="Securely store and share files with one-click links, passwords and expiries."

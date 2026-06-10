@@ -259,7 +259,7 @@ export default function RolesManager() {
                   <span className="text-muted-foreground">→</span>
                   <span className="font-medium">{nameOf(a.creator_user_id)}</span>
                   <div className="flex-1" />
-                  <button onClick={() => unlinkPair(a.id)} className="h-7 w-7 grid place-items-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+                  <button onClick={() => unlinkPair(a.id)} disabled={!unlocked} className="h-7 w-7 grid place-items-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-muted-foreground" title={unlocked ? "Unlink" : "Unlock editing to unlink"}>
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>

@@ -1,19 +1,6 @@
 /**
  * review-link — public review token resolver.
- *
- * Actions (POST body):
- *   - { action: "info", token }
- *       → returns { filename, mime, size, requires_password, view_only,
- *                   expires_at, max_views, view_count }
- *       Never reveals the playback URL.
- *
- *   - { action: "unlock", token, password? }
- *       → verifies password if set, increments view_count, returns
- *         { filename, mime, size, playback_url, expires_at, view_only }.
- *       Returns 401 on bad password, 403 on revoked / 410 on expired/exhausted.
- *
- * The function uses the service role so the public visitor never queries
- * `review_links` directly. RLS on the table blocks public reads.
+ * Reads password hash/salt from review_link_secrets (service-role only).
  */
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
@@ -55,7 +42,7 @@ Deno.serve(async (req) => {
     const { data: row, error } = await admin
       .from("review_links")
       .select(
-        "id, asset_name, asset_mime, asset_size_bytes, asset_par_url, asset_par_expires_at, password_hash, password_salt, view_only, expires_at, max_views, view_count, revoked",
+        "id, asset_name, asset_mime, asset_size_bytes, asset_par_url, asset_par_expires_at, requires_password, view_only, expires_at, max_views, view_count, revoked",
       )
       .eq("token", token)
       .maybeSingle();
@@ -73,7 +60,7 @@ Deno.serve(async (req) => {
         filename: row.asset_name,
         mime: row.asset_mime,
         size: row.asset_size_bytes,
-        requires_password: !!row.password_hash,
+        requires_password: !!row.requires_password,
         view_only: row.view_only,
         expires_at: row.expires_at,
         max_views: row.max_views,
@@ -82,16 +69,21 @@ Deno.serve(async (req) => {
     }
 
     if (action === "unlock") {
-      if (row.password_hash) {
+      if (row.requires_password) {
         const pwd = String(body?.password ?? "");
         if (!pwd) return json({ error: "Password required" }, 401);
-        const candidate = await sha256Hex(`${row.password_salt ?? ""}::${pwd}`);
-        if (candidate !== row.password_hash) {
+        const { data: secret } = await admin
+          .from("review_link_secrets")
+          .select("password_hash, password_salt")
+          .eq("review_link_id", row.id)
+          .maybeSingle();
+        if (!secret) return json({ error: "Incorrect password" }, 401);
+        const candidate = await sha256Hex(`${secret.password_salt ?? ""}::${pwd}`);
+        if (candidate !== secret.password_hash) {
           return json({ error: "Incorrect password" }, 401);
         }
       }
 
-      // Bump view counter (best-effort; ignore conflict)
       await admin
         .from("review_links")
         .update({

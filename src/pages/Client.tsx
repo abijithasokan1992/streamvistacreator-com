@@ -321,11 +321,15 @@ function SandboxView({ finish, userEmail }: { finish: () => void; userEmail: str
     window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
   };
 
-  const openPastedLink = () => {
+  const [linking, setLinking] = useState(false);
+
+  const openPastedLink = async () => {
+    if (linking) return;
     const raw = pasteLink.trim();
     if (!raw) return toast.error("Paste the share link your studio sent you.");
+
+    let token = raw;
     try {
-      let token = raw;
       if (raw.startsWith("http")) {
         const u = new URL(raw);
         const m = u.pathname.match(/\/s\/([^/?#]+)/);
@@ -333,10 +337,62 @@ function SandboxView({ finish, userEmail }: { finish: () => void; userEmail: str
       } else if (raw.startsWith("/s/")) {
         token = raw.replace(/^\/s\//, "").split(/[?#]/)[0];
       }
-      navigate(`/s/${token}`);
     } catch {
-      toast.error("That doesn't look like a valid share link.");
+      return toast.error("That doesn't look like a valid share link.");
     }
+    token = token.trim();
+    if (!token || token.length < 8) {
+      return toast.error("That doesn't look like a valid share link.");
+    }
+
+    setLinking(true);
+    toast.loading("Verifying share link…", { id: "linking" });
+
+    // 1. Confirm the share token actually exists via the public vault-share
+    //    edge function (RLS hides shares from clients who aren't the
+    //    addressed recipient, so a direct table SELECT can't validate).
+    const { data: info, error: infoErr } = await supabase.functions.invoke("vault-share", {
+      body: { action: "info", token },
+    });
+
+    if (infoErr || !info || (info as any)?.error) {
+      toast.dismiss("linking");
+      setLinking(false);
+      const msg = (info as any)?.error || infoErr?.message || "";
+      if (/revoked/i.test(msg)) return toast.error("This share link has been revoked by your studio.");
+      if (/expired/i.test(msg)) return toast.error("This share link has expired. Ask your studio to resend it.");
+      return toast.error("We couldn't find that share link. Double-check the URL or token.");
+    }
+
+    const filename = (info as any)?.filename || "your review";
+
+    // 2. Record the manual link association as an onboarding request entry
+    //    so admins can see how this client entered the system.
+    const { error: insertErr } = await supabase.from("onboarding_requests").insert({
+      client_name: userEmail ? userEmail.split("@")[0] : "Client (link)",
+      professional_role: "Client",
+      business_email: userEmail ?? null,
+      selected_cycle: "manual",
+      base_price: 0,
+      final_price: 0,
+      plan_type: "link_connect",
+      onboarding_status: "linked",
+      payment_status: "free",
+      access_code: token,
+    });
+
+    toast.dismiss("linking");
+    setLinking(false);
+
+    if (insertErr) {
+      console.error("[client] link onboarding insert failed:", insertErr);
+      toast.error("Couldn't record the link association. Opening the review anyway.");
+      navigate(`/s/${token}`);
+      return;
+    }
+
+    toast.success(`Link associated — opening "${filename}".`);
+    navigate(`/s/${token}`);
   };
 
   const statusByPhase: Record<PayPhase, string> = {
@@ -531,13 +587,16 @@ function SandboxView({ finish, userEmail }: { finish: () => void; userEmail: str
                     onChange={(e) => setPasteLink(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && openPastedLink()}
                     placeholder="https://streamvistacreator.com/s/token…"
-                    className="bg-zinc-900 border border-zinc-800 text-xs px-3 py-2 rounded-xl flex-grow focus:outline-none focus:border-amber-500 font-mono text-zinc-100 placeholder:text-zinc-600"
+                    disabled={linking}
+                    className="bg-zinc-900 border border-zinc-800 text-xs px-3 py-2 rounded-xl flex-grow focus:outline-none focus:border-amber-500 font-mono text-zinc-100 placeholder:text-zinc-600 disabled:opacity-60"
                   />
                   <button
                     onClick={openPastedLink}
-                    className="bg-amber-500 hover:bg-amber-600 text-black px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all"
+                    disabled={linking}
+                    className="bg-amber-500 hover:bg-amber-600 text-black px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all disabled:opacity-60 inline-flex items-center gap-1.5"
                   >
-                    Open
+                    {linking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                    {linking ? "Linking…" : "Open"}
                   </button>
                 </div>
               </div>

@@ -171,7 +171,7 @@ export default function Admin() {
               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-1" />
             </div>
 
-            <Link to="/" className="px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground">Site</Link>
+            
             <button onClick={load} disabled={fetching} className="px-3 py-2 text-sm rounded-md border border-border hover:bg-secondary flex items-center gap-2">
               <RefreshCw className={`w-4 h-4 ${fetching ? "animate-spin" : ""}`} /> Refresh
             </button>

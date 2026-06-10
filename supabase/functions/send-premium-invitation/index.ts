@@ -3,8 +3,8 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const RESEND_FROM = Deno.env.get("RESEND_FROM") || "StreamVista Cloud X <onboarding@resend.dev>";
+import { sendGmail } from "../_shared/gmail.ts";
+const MAIL_FROM = Deno.env.get("MAIL_FROM") || "StreamVista Cloud X <abijithasokan@crayonspictures.com>";
 // Always use the live primary domain for invite links, regardless of where the admin sends from.
 const PRIMARY_DOMAIN = "https://streamvistacreator.com";
 const CC_EMAILS = ["picturecrayons@gmail.com", "abijithasokan1992@gmail.com"];
@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    if (!RESEND_API_KEY) return json({ error: "RESEND_API_KEY not configured" }, 500);
+    // Gmail credentials checked inside sendGmail()
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
@@ -133,26 +133,18 @@ Deno.serve(async (req) => {
       accountType,
     });
 
-    const resp = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: RESEND_FROM,
-        to: [inv.invitee_email],
-        cc: CC_EMAILS,
-        subject: `Your StreamVista Cloud X invite · ${inv.storage_tb} TB FREE`,
-        html,
-        reply_to: "hello@streamvistacreator.com",
-      }),
+    const out = await sendGmail({
+      from: MAIL_FROM,
+      to: inv.invitee_email,
+      cc: CC_EMAILS,
+      subject: `Your StreamVista Cloud X invite · ${inv.storage_tb} TB FREE`,
+      html,
+      replyTo: "hello@streamvistacreator.com",
     });
 
-    const out = await resp.json().catch(() => ({}));
-    if (!resp.ok) {
-      console.error("Resend error", resp.status, out);
-      return json({ error: out?.message || "Resend send failed", status: resp.status }, 502);
+    if (!out.ok) {
+      console.error("Gmail send error", out.status, out.error);
+      return json({ error: out.error || "Email send failed", status: out.status }, 502);
     }
 
     const channels = Array.from(new Set([...(inv.sent_channels ?? []), "email"]));

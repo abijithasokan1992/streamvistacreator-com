@@ -11,8 +11,8 @@ import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const RESEND_FROM = Deno.env.get("RESEND_FROM") || "StreamVista <onboarding@resend.dev>";
+import { sendGmail } from "../_shared/gmail.ts";
+const MAIL_FROM = Deno.env.get("MAIL_FROM") || "StreamVista <abijithasokan@crayonspictures.com>";
 const PRIMARY_DOMAIN = "https://streamvistacreator.com";
 
 function json(o: unknown, s = 200, cors: HeadersInit = {}) {
@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return handleOptions(req);
   const cors = buildCorsHeaders(req);
   try {
-    if (!RESEND_API_KEY) return json({ error: "RESEND_API_KEY not configured" }, 500, cors);
+    // Gmail credentials checked inside sendGmail()
     const token = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
     if (!token) return json({ error: "unauthenticated" }, 401, cors);
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
@@ -163,24 +163,16 @@ Deno.serve(async (req) => {
         });
         const inviteUrl = `${PRIMARY_DOMAIN}/auth?invite=${encodeURIComponent(inviteToken)}`;
         const html = renderInviteHtml({ name: first, inviteUrl, message, ctaLabel });
-        const resp = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${RESEND_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            from: RESEND_FROM,
-            to: [r.email],
-            subject,
-            html,
-            reply_to: "hello@streamvistacreator.com",
-          }),
+        const out = await sendGmail({
+          from: MAIL_FROM,
+          to: r.email,
+          subject,
+          html,
+          replyTo: "hello@streamvistacreator.com",
         });
-        if (!resp.ok) {
-          const out = await resp.json().catch(() => ({}));
+        if (!out.ok) {
           failed++;
-          errors.push({ email: r.email, error: out?.message ?? `Resend ${resp.status}` });
+          errors.push({ email: r.email, error: out.error ?? `Gmail ${out.status}` });
         } else {
           sent++;
         }

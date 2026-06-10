@@ -284,18 +284,14 @@ export default function MasterArchive() {
         });
 
         setUploads((u) => u.map((x) => x === stat ? { ...x, status: "completed", progress: 100 } : x));
-
-        /* ── StreamVista Logic IP: auto-tick checklist by file type ── */
-        const matched = resolveBridgeKeys(f.name);
-        if (matched.length > 0) {
-          setChecklist((prev) => {
-            const next = { ...prev };
-            for (const k of matched) next[k] = true;
-            try { localStorage.setItem(checklistKey, JSON.stringify(next)); } catch {}
-            return next;
-          });
-        }
+        // Checklist auto-tick is driven by the recent_uploads realtime
+        // subscription below, so no local state mutation is needed here.
       } catch (e) {
+        setUploads((u) => u.map((x) => x === stat ? { ...x, status: "failed", error: (e as Error).message } : x));
+      }
+    }
+    toast.success("Archive upload complete");
+  };
         setUploads((u) => u.map((x) => x === stat ? { ...x, status: "failed", error: (e as Error).message } : x));
       }
     }

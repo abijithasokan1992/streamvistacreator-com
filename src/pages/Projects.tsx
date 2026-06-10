@@ -38,7 +38,21 @@ const emptyForm: FormState = { name: "", description: "", workspace_id: "" };
 
 export default function Projects() {
   const { user } = useAuth();
-  const { workspaces, activeId, setActiveId, loading: wsLoading, createWorkspace } = useWorkspaces();
+  const { workspaces, active, activeId, setActiveId, loading: wsLoading, createWorkspace, renameWorkspace } = useWorkspaces();
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
+  const [renaming, setRenaming] = useState(false);
+  const canRenameActive = !!active && (active.role === "owner" || active.role === "admin");
+  const openRename = () => { if (!active) return; setRenameValue(active.name); setRenameOpen(true); };
+  const submitRename = async () => {
+    if (!active) return;
+    setRenaming(true);
+    const ok = await renameWorkspace(active.id, renameValue);
+    setRenaming(false);
+    if (!ok) return toast.error("Couldn't rename workspace");
+    toast.success("Workspace renamed");
+    setRenameOpen(false);
+  };
 
   const [rows, setRows] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -180,6 +194,11 @@ export default function Projects() {
                   ))}
                 </SelectContent>
               </Select>
+            )}
+            {active && canRenameActive && (
+              <Button onClick={openRename} size="sm" variant="outline" className="h-9 px-2" title="Rename workspace">
+                <Pencil className="w-3.5 h-3.5" />
+              </Button>
             )}
             <Button onClick={openCreate} size="sm" className="gap-2" disabled={writableWorkspaces.length === 0}>
               <Plus className="w-4 h-4" /> New Project
@@ -361,6 +380,34 @@ export default function Projects() {
           workspaceId={shareProject.workspace_id}
         />
       )}
+
+      <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Rename workspace</DialogTitle>
+            <DialogDescription>
+              Set the studio / production company name shown across projects and uploads.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="ws-rename">Company / studio name</Label>
+            <Input
+              id="ws-rename"
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              placeholder="e.g. Northlight Studios"
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRenameOpen(false)} disabled={renaming}>Cancel</Button>
+            <Button onClick={submitRename} disabled={renaming || !renameValue.trim()} className="gap-2">
+              {renaming && <Loader2 className="w-4 h-4 animate-spin" />}
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }

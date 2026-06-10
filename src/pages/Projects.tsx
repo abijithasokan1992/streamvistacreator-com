@@ -331,6 +331,7 @@ export default function Projects() {
             <CreatorPlanCard onPurchased={() => window.location.reload()} />
             <StorageUsageCard />
           </div>
+          <div className="mt-4"><StorageWarningBanner /></div>
         </div>
       </section>
 

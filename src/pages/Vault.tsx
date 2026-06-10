@@ -323,6 +323,7 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
                   />
                 )}
                 <StorageUsageCard />
+                <StorageWarningBanner />
                 <SectionHeader
                   title="My Vault"
                   desc="Securely store and share files with one-click links, passwords and expiries."

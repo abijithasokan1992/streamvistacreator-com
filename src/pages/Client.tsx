@@ -592,13 +592,16 @@ function SandboxView({ finish, userEmail }: { finish: () => void; userEmail: str
                     onChange={(e) => setPasteLink(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && openPastedLink()}
                     placeholder="https://streamvistacreator.com/s/token…"
-                    className="bg-zinc-900 border border-zinc-800 text-xs px-3 py-2 rounded-xl flex-grow focus:outline-none focus:border-amber-500 font-mono text-zinc-100 placeholder:text-zinc-600"
+                    disabled={linking}
+                    className="bg-zinc-900 border border-zinc-800 text-xs px-3 py-2 rounded-xl flex-grow focus:outline-none focus:border-amber-500 font-mono text-zinc-100 placeholder:text-zinc-600 disabled:opacity-60"
                   />
                   <button
                     onClick={openPastedLink}
-                    className="bg-amber-500 hover:bg-amber-600 text-black px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all"
+                    disabled={linking}
+                    className="bg-amber-500 hover:bg-amber-600 text-black px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all disabled:opacity-60 inline-flex items-center gap-1.5"
                   >
-                    Open
+                    {linking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                    {linking ? "Linking…" : "Open"}
                   </button>
                 </div>
               </div>

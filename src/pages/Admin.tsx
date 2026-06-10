@@ -219,6 +219,7 @@ export default function Admin() {
             <KammattamMeter />
             <FinanceOverview rows={rows} />
             <RazorpayCredentials />
+            <RazorpayTestCheckout />
             <CommissionsTracker />
           </TabsContent>
 

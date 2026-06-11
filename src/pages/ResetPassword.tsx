@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { dashboardForRole, type AppRole } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { getAppOrigin } from "@/lib/site";
+import crayonsLogo from "@/assets/partner-crayons-pictures.png";
 
 /**
  * Password recovery landing page.
@@ -196,14 +197,23 @@ export default function ResetPassword() {
   return (
     <main className="min-h-screen bg-background text-foreground grid place-items-center px-4 py-10">
       <div className="w-full max-w-md space-y-6">
-        <header className="text-center space-y-2">
-          <div className="inline-flex items-center gap-1.5 text-xs uppercase tracking-wider text-accent">
-            <Sparkles className="w-3.5 h-3.5" /> Account recovery
+        <header className="text-center space-y-4">
+          <Link to="/" className="block">
+            <img
+              src={crayonsLogo}
+              alt="Crayons Pictures"
+              className="mx-auto h-16 w-auto object-contain drop-shadow-lg"
+            />
+          </Link>
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-1.5 text-xs uppercase tracking-wider text-accent">
+              <Sparkles className="w-3.5 h-3.5" /> Account recovery
+            </div>
+            <h1 className="font-display text-3xl font-bold">Choose a new password</h1>
+            <p className="text-sm text-muted-foreground">
+              Set a new password below, or use the Fast Link option to jump straight back in.
+            </p>
           </div>
-          <h1 className="font-display text-3xl font-bold">Choose a new password</h1>
-          <p className="text-sm text-muted-foreground">
-            Set a new password below, or use the Fast Link option to jump straight back in.
-          </p>
         </header>
 
         {sessionChecked && !sessionReady && (

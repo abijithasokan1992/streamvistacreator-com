@@ -28,8 +28,18 @@ const Index = () => {
         description="Secure cloud workspace for filmmakers, studios and creators — C CLOUD-backed storage, controlled sharing, DMCA protection, and pricing that scales from free to full production."
         path="/"
         jsonLd={[
-          { "@context": "https://schema.org", "@type": "Organization", name: "StreamVista", url: "https://streamvistacreator.com/" },
-          { "@context": "https://schema.org", "@type": "WebSite", name: "StreamVista Cloud X", url: "https://streamvistacreator.com/" },
+          {
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            name: "StreamVista",
+            url: "https://streamvistacreator.com/",
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            name: "StreamVista Cloud X",
+            url: "https://streamvistacreator.com/",
+          },
           {
             "@context": "https://schema.org",
             "@type": "Service",

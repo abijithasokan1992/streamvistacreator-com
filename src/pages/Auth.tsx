@@ -12,6 +12,7 @@ import { CountryCodeSelect } from "@/components/auth/CountryCodeSelect";
 import { COUNTRIES, type Country } from "@/lib/countries";
 import { useHostMode, urlForHost } from "@/hooks/useHostMode";
 import { getAppOrigin } from "@/lib/site";
+import crayonsLogo from "@/assets/partner-crayons-pictures.png";
 
 const LoginSchema = z.object({
   email: z.string().trim().email("Enter a valid email").max(255),
@@ -382,8 +383,12 @@ export default function Auth() {
       </div>
 
       <div className="relative w-full max-w-sm">
-        <Link to="/" className="block text-center text-[11px] uppercase tracking-[0.45em] text-muted-foreground/80 mb-8 hover:text-foreground transition-colors">
-          StreamVista <span className="text-accent">·</span> Cloud X
+        <Link to="/" className="block text-center mb-8">
+          <img
+            src={crayonsLogo}
+            alt="Crayons Pictures"
+            className="mx-auto h-16 w-auto object-contain drop-shadow-lg"
+          />
         </Link>
 
         <div className="glass-strong rounded-3xl p-9 animate-fade-in border border-white/5">

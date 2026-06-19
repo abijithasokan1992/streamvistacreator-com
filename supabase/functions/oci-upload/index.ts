@@ -9,7 +9,41 @@ import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const MAX_BYTES = 5 * 1024 * 1024 * 1024; // 5 GB per file
+const MAX_BYTES = 5 * 1024 * 1024 * 1024; // 5 GB per file (single-shot)
+
+// Phase 3 / 4 / 7 — mirrors oci-multipart caps & prefix rules.
+const GB = 1024 * 1024 * 1024;
+const MB = 1024 * 1024;
+const TB = 1024 * GB;
+const CATEGORY_LIMITS: Record<string, number> = {
+  trailer: 5 * GB, feature_film: 5 * GB, master: 5 * GB,
+  prores: 5 * GB, dcp: 5 * GB,
+  poster: 500 * MB, artwork: 500 * MB,
+  subtitle: 50 * MB, captions: 50 * MB,
+  censor_certificate: 200 * MB, censor_cert: 200 * MB,
+  ownership_documents: 500 * MB, ownership: 500 * MB,
+  legal: 200 * MB, sales: 500 * MB,
+  audio: 5 * GB, audio_tracks: 5 * GB,
+};
+const CATEGORY_PREFIX: Record<string, string> = {
+  trailer: "trailers",
+  feature_film: "masters", master: "masters",
+  prores: "prores", dcp: "dcp",
+  poster: "artwork", artwork: "artwork",
+  subtitle: "subtitles", captions: "subtitles",
+  censor_certificate: "documents", censor_cert: "documents",
+  ownership_documents: "documents", ownership: "documents",
+  legal: "documents", sales: "documents",
+  audio: "documents", audio_tracks: "documents",
+};
+const PLAN_QUOTA: Record<string, number> = {
+  free: 100 * GB, creator: 1 * TB,
+  monthly: 5 * TB, quarterly: 5 * TB, yearly: 5 * TB,
+};
+function planQuotaBytes(planTier: string | null | undefined, topupTb: number | null | undefined): number {
+  const base = PLAN_QUOTA[String(planTier || "free").toLowerCase()] ?? PLAN_QUOTA.free;
+  return base + Math.max(0, Number(topupTb || 0)) * TB;
+}
 
 function pemToPkcs8(pem: string): ArrayBuffer {
   const b64 = pem.replace(/-----BEGIN [^-]+-----/g, "")

@@ -2,15 +2,13 @@
 // Creates a support_requests ticket (visible in admin Support Inbox) AND emails
 // every admin via the send-transactional-email function.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
-
-const cors = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: cors });
+  const cors = buildCorsHeaders(req);
+  const json = (b: unknown, status = 200) =>
+    new Response(JSON.stringify(b), { status, headers: { ...cors, "content-type": "application/json" } });
+  if (req.method === "OPTIONS") return handleOptions(req);
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405, headers: cors });
 
   try {
@@ -98,10 +96,3 @@ Deno.serve(async (req) => {
     return json({ error: "Internal server error" }, 500);
   }
 });
-
-function json(b: unknown, status = 200) {
-  return new Response(JSON.stringify(b), {
-    status,
-    headers: { ...cors, "content-type": "application/json" },
-  });
-}

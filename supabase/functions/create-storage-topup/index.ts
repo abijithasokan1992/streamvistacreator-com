@@ -6,22 +6,25 @@
  * Razorpay Checkout.
  */
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
 import { computeFinalPricePaise } from "../_shared/pricing.ts";
 import { loadRazorpayCreds } from "../_shared/razorpay-config.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+function jsonWith(req: Request) {
+  const cors = buildCorsHeaders(req);
+  return (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") return handleOptions(req);
+  const json = jsonWith(req);
 
   try {
     const authHeader = req.headers.get("Authorization");

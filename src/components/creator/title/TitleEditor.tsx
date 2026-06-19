@@ -244,13 +244,124 @@ export function TitleEditor({
 
 /* ---------------- Sub-tabs ---------------- */
 
+const JOURNEY_STAGES: { key: ContentStatus; label: string }[] = [
+  { key: "draft", label: "Created" },
+  { key: "submitted", label: "Submitted" },
+  { key: "in_review", label: "In Review" },
+  { key: "qc_review", label: "QC Review" },
+  { key: "legal_review", label: "Legal Review" },
+  { key: "approved", label: "Approved" },
+  { key: "ready_for_distribution", label: "Ready For Distribution" },
+];
+
+const NEXT_STEP: Record<string, { next: string; eta: string }> = {
+  draft:                  { next: "Complete metadata and upload assets, then Submit.", eta: "Self-paced" },
+  incomplete:             { next: "Complete missing requirements and Submit.", eta: "Self-paced" },
+  submitted:              { next: "Review team assignment.", eta: "1–3 business days" },
+  in_review:              { next: "Quality Control review.", eta: "1–2 business days" },
+  qc_review:              { next: "Legal review.", eta: "1–2 business days" },
+  legal_review:           { next: "Final approval decision.", eta: "1–2 business days" },
+  approved:               { next: "Marked Ready for Distribution.", eta: "Within 1 business day" },
+  ready_for_distribution: { next: "Distribution & publishing.", eta: "Scheduled by ops" },
+  changes_requested:      { next: "Apply changes and re-submit.", eta: "Self-paced" },
+  hold:                   { next: "Awaiting review team follow-up.", eta: "Variable" },
+  rejected:               { next: "See review note for details.", eta: "—" },
+  published:              { next: "Live on the platform.", eta: "—" },
+  archived:               { next: "Archived.", eta: "—" },
+};
+
+function FilmJourney({ status, timeline }: { status: ContentStatus; timeline: TitleTimelineEntry[] }) {
+  const visitedSet = new Set<string>(["draft", ...timeline.map(t => t.to_status)]);
+  const stages = JOURNEY_STAGES;
+  const currentIdx = (() => {
+    const i = stages.findIndex(s => s.key === status);
+    return i === -1 ? 0 : i;
+  })();
+  return (
+    <div className="rounded-lg border border-border/40 p-4 bg-card/30">
+      <div className="text-xs font-semibold mb-3 text-foreground/90">Film Journey</div>
+      <ol className="flex flex-wrap items-center gap-2">
+        {stages.map((s, i) => {
+          const done = visitedSet.has(s.key) || i < currentIdx;
+          const current = s.key === status;
+          return (
+            <li key={s.key} className="flex items-center gap-2">
+              <span className={cn(
+                "inline-flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-md border",
+                current ? "bg-accent/15 border-accent/40 text-accent-foreground font-medium"
+                : done ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
+                       : "bg-secondary/20 border-border/40 text-muted-foreground"
+              )}>
+                {done ? <CheckCircle2 className="w-3 h-3" /> : <Circle className="w-3 h-3" />}
+                {s.label}
+              </span>
+              {i < stages.length - 1 && <ArrowRight className="w-3 h-3 text-muted-foreground" />}
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
+
+function readinessScore(local: ReturnType<typeof evaluateChecklist>, readiness: ServerReadiness | null) {
+  const has = readiness?.has ?? {};
+  const items = [
+    !!local.hasTitle,
+    !!local.hasSynopsis,
+    !!(has.feature_film ?? local.hasFilm),
+    !!(has.trailer ?? local.hasTrailer),
+    !!(has.poster ?? local.hasPoster),
+    !!(has.censor_certificate ?? local.hasCensor),
+    !!(has.ownership_documents ?? local.hasOwnership),
+  ];
+  const done = items.filter(Boolean).length;
+  return Math.round((done / items.length) * 100);
+}
+
+function metadataQuality(meta: TitleMetadata | null) {
+  if (!meta) return 0;
+  const checks = [
+    !!meta.synopsis?.trim(),
+    (meta.genres?.length ?? 0) > 0,
+    !!meta.original_language?.trim(),
+    !!meta.country_of_origin?.trim(),
+    (meta.runtime_minutes ?? 0) > 0,
+    !!meta.rights_owner?.trim(),
+    !!meta.production_company?.trim(),
+    (meta.cast?.length ?? 0) > 0,
+    (meta.crew?.length ?? 0) > 0,
+    !!meta.production_year,
+  ];
+  return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+}
+
+function ScoreCard({ label, value, hint }: { label: string; value: number; hint?: string }) {
+  const tone = value >= 90 ? "text-emerald-300" : value >= 60 ? "text-sky-300" : "text-amber-300";
+  return (
+    <div className="rounded-lg border border-border/40 p-3 bg-card/30">
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className={cn("text-2xl font-semibold mt-1", tone)}>{value}%</div>
+      {hint && <div className="text-[11px] text-muted-foreground mt-0.5">{hint}</div>}
+      <div className="mt-2 h-1.5 rounded-full bg-secondary/40 overflow-hidden">
+        <div className={cn(
+          "h-full transition-all",
+          value >= 90 ? "bg-emerald-400" : value >= 60 ? "bg-sky-400" : "bg-amber-400"
+        )} style={{ width: `${value}%` }} />
+      </div>
+    </div>
+  );
+}
+
 function OverviewTab({
-  title, readiness, local, assets,
+  title, readiness, local, assets, meta, timeline,
 }: {
   title: TitleRow;
   readiness: ServerReadiness | null;
   local: ReturnType<typeof evaluateChecklist>;
   assets: TitleAsset[];
+  meta: TitleMetadata | null;
+  timeline: TitleTimelineEntry[];
 }) {
   const has = readiness?.has ?? {
     feature_film: local.hasFilm,
@@ -278,8 +389,48 @@ function OverviewTab({
     return { uploaded: !!has[r.key], verified: verified(r.key) };
   };
 
+  const score = readinessScore(local, readiness);
+  const metaScore = metadataQuality(meta);
+  const verifiedCount = ["feature_film","trailer","poster","censor_certificate","ownership_documents"]
+    .filter(verified).length;
+  const deliveryScore = Math.round((verifiedCount / 5) * 100);
+  const rightsScore = Math.round(
+    ([!!meta?.rights_owner?.trim(), !!meta?.production_company?.trim(), has.ownership_documents, has.censor_certificate]
+      .filter(Boolean).length / 4) * 100
+  );
+  const next = NEXT_STEP[title.status] ?? { next: "—", eta: "—" };
+
   return (
     <div className="space-y-5">
+      <FilmJourney status={title.status} timeline={timeline} />
+
+      <section>
+        <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-3">
+          <ScoreCard label="Submission Readiness" value={score} hint={score === 100 ? "Ready to submit" : `${local.missing.length} missing`} />
+          <ScoreCard label="Metadata Quality" value={metaScore} />
+          <ScoreCard label="Rights Information" value={rightsScore} />
+          <ScoreCard label="Delivery Readiness" value={deliveryScore} hint={`${verifiedCount}/5 verified`} />
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-sky-500/20 bg-sky-500/5 p-4">
+        <div className="text-[10px] uppercase tracking-wider text-sky-300 font-semibold">What Happens Next</div>
+        <div className="mt-2 grid sm:grid-cols-3 gap-3 text-xs">
+          <div>
+            <div className="text-muted-foreground">Current Status</div>
+            <div className="mt-1"><StatusBadge status={title.status} /></div>
+          </div>
+          <div>
+            <div className="text-muted-foreground">Next Step</div>
+            <div className="mt-1 text-foreground/90">{next.next}</div>
+          </div>
+          <div>
+            <div className="text-muted-foreground">Expected Time</div>
+            <div className="mt-1 text-foreground/90">{next.eta}</div>
+          </div>
+        </div>
+      </section>
+
       <section>
         <h3 className="text-sm font-semibold">Submission readiness</h3>
         <p className="text-[11px] text-muted-foreground mt-1">

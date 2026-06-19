@@ -463,8 +463,8 @@ Deno.serve(async (req) => {
         object_key: objectKey,
         status: "uploading",
         client_pending_id: pendingId,
-        project_id: projectSegment ? projectIdRaw : null,
-        category: projectSegment ? categorySegment : null,
+        project_id: titleIdRaw ? null : (projectSegment ? projectIdRaw : null),
+        category: titleIdRaw ? catKey : (projectSegment ? categorySegment : null),
         oci_upload_id: uploadId,
       };
       const { data: inserted, error: insErr } = await admin

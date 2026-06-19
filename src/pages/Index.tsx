@@ -9,16 +9,16 @@ import { CloudStudioPartners } from "@/components/streamvista/CloudStudioPartner
 import { Footer } from "@/components/streamvista/Footer";
 import { CmsHeroBanners, CmsAdZone, CmsFeaturedFilms, CmsNewsEvents } from "@/components/streamvista/CmsSections";
 import { Seo } from "@/components/Seo";
-import { useAuth } from "@/hooks/useAuth";
+import { dashboardForRole, useAuth } from "@/hooks/useAuth";
 
 const Index = () => {
-  const { user, loading } = useAuth();
+  const { user, role, loading } = useAuth();
 
   // While auth is initializing, render nothing (avoids flash of landing page)
   if (loading) return null;
 
   // Authenticated users go straight to their dashboard
-  if (user) return <Navigate to="/projects" replace />;
+  if (user) return <Navigate to={dashboardForRole(role)} replace />;
 
   // Public landing page for guests
   return (

@@ -118,6 +118,7 @@ export type MultipartParams = {
   workspaceId: string;
   pendingId: string;
   projectId?: string | null;
+  titleId?: string | null;
   category?: string | null;
   subpath?: string | null;
   onProgress?: MultipartProgress;

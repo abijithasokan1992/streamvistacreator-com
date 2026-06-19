@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Loader2, Pencil, Eye, Send, Lock } from "lucide-react";
+import { Plus, Loader2, Pencil, Eye, Lock } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspaces } from "@/hooks/useWorkspaces";
 import { createTitle, listTitles, type TitleRow } from "@/lib/creator/titleApi";

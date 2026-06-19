@@ -3443,19 +3443,23 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          avatar_url: string | null
           bandwidth_overage_inr_per_gb: number
           bandwidth_quota_gb: number
           bandwidth_used_mb: number
           created_at: string
           display_name: string | null
           first_name: string | null
+          full_name: string | null
           idle_flagged_at: string | null
           idle_frozen_at: string | null
           idle_status: string
           is_suspended: boolean
+          job_title: string | null
           last_active_at: string
           last_name: string | null
           onboarding_step: string
+          organization_name: string | null
           personal_logo_url: string | null
           plan_tier: string
           professional_role: string | null
@@ -3468,19 +3472,23 @@ export type Database = {
           whatsapp: string | null
         }
         Insert: {
+          avatar_url?: string | null
           bandwidth_overage_inr_per_gb?: number
           bandwidth_quota_gb?: number
           bandwidth_used_mb?: number
           created_at?: string
           display_name?: string | null
           first_name?: string | null
+          full_name?: string | null
           idle_flagged_at?: string | null
           idle_frozen_at?: string | null
           idle_status?: string
           is_suspended?: boolean
+          job_title?: string | null
           last_active_at?: string
           last_name?: string | null
           onboarding_step?: string
+          organization_name?: string | null
           personal_logo_url?: string | null
           plan_tier?: string
           professional_role?: string | null
@@ -3493,19 +3501,23 @@ export type Database = {
           whatsapp?: string | null
         }
         Update: {
+          avatar_url?: string | null
           bandwidth_overage_inr_per_gb?: number
           bandwidth_quota_gb?: number
           bandwidth_used_mb?: number
           created_at?: string
           display_name?: string | null
           first_name?: string | null
+          full_name?: string | null
           idle_flagged_at?: string | null
           idle_frozen_at?: string | null
           idle_status?: string
           is_suspended?: boolean
+          job_title?: string | null
           last_active_at?: string
           last_name?: string | null
           onboarding_step?: string
+          organization_name?: string | null
           personal_logo_url?: string | null
           plan_tier?: string
           professional_role?: string | null

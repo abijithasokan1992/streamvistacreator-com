@@ -23,32 +23,32 @@ export default function StatementsSection() {
       for (const p of payments.data ?? []) {
         out.push({
           id: `p-${p.id}`, kind: "Invoice",
-          description: p.description || `Payment ${p.razorpay_payment_id ?? ""}`.trim(),
-          amount: p.amount != null ? `₹${(Number(p.amount) / 100).toFixed(2)}` : "—",
+          description: `Payment ${p.razorpay_payment_id ?? p.razorpay_order_id ?? ""}`.trim(),
+          amount: p.amount_inr != null ? `₹${Number(p.amount_inr).toFixed(2)}` : "—",
           at: p.created_at,
         });
       }
       for (const s of subs.data ?? []) {
         out.push({
           id: `s-${s.id}`, kind: "Subscription",
-          description: `${s.plan_id || "Plan"} · ${s.status}`,
-          amount: s.amount != null ? `₹${(Number(s.amount) / 100).toFixed(2)}` : "—",
+          description: `${s.product_id || s.price_id || "Subscription"} · ${s.status ?? ""}`,
+          amount: "—",
           at: s.created_at,
         });
       }
       for (const t of topups.data ?? []) {
         out.push({
           id: `t-${t.id}`, kind: "Storage",
-          description: `Top-up ${t.gb ?? t.tb ?? ""}`,
-          amount: t.amount != null ? `₹${(Number(t.amount) / 100).toFixed(2)}` : "—",
+          description: `Top-up ${t.tb_added ? `${t.tb_added} TB` : ""}`.trim(),
+          amount: t.amount_inr != null ? `₹${Number(t.amount_inr).toFixed(2)}` : "—",
           at: t.created_at,
         });
       }
       for (const a of audit.data ?? []) {
         out.push({
           id: `a-${a.id}`, kind: "Razorpay",
-          description: a.event || a.action || "Event",
-          amount: "—",
+          description: `${a.event_type ?? "Event"} · ${a.status ?? ""}`,
+          amount: a.amount_paise != null ? `₹${(Number(a.amount_paise) / 100).toFixed(2)}` : "—",
           at: a.created_at,
         });
       }

@@ -41,14 +41,14 @@ export default function UpdatesSection() {
       // (b) notifications
       const { data: notes } = await (supabase as any)
         .from("notifications")
-        .select("id, title, body, created_at")
+        .select("id, title, message, created_at")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(40);
       for (const n of notes ?? []) {
         collected.push({
           id: `n-${n.id}`, kind: "System",
-          title: n.title || "Update", body: n.body || "", at: n.created_at,
+          title: n.title || "Update", body: n.message || "", at: n.created_at,
         });
       }
 

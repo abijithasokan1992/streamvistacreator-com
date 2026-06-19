@@ -33,7 +33,7 @@ export default function UpgradeSection() {
     try {
       const { error } = await (supabase as any).from("support_requests").insert({
         user_id: user.id,
-        category: "upgrade",
+        request_type: "upgrade",
         subject: "Plan upgrade request",
         message: note || "Please contact me about upgrading my plan.",
         status: "open",
@@ -59,8 +59,8 @@ export default function UpgradeSection() {
         <div className="rounded-xl border border-border/40 bg-secondary/5 p-5">
           <div className="flex items-center gap-2 text-xs text-muted-foreground"><Database className="w-3.5 h-3.5" /> Storage Allocation</div>
           <div className="text-xl font-semibold font-display mt-2">
-            {allocation?.granted_gb != null
-              ? `${allocation.granted_gb} GB`
+            {allocation?.allocated_gb != null
+              ? `${allocation.allocated_gb} GB`
               : profile?.topup_tb
                 ? `${(profile.topup_tb + 1)} TB`
                 : "Default"}

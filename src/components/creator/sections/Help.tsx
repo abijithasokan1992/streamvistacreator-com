@@ -17,7 +17,7 @@ export default function HelpSection() {
     try {
       const { error } = await (supabase as any).from("support_requests").insert({
         user_id: user.id,
-        category: "general",
+        request_type: "general",
         subject: subject.trim().slice(0, 200),
         message: body.trim().slice(0, 5000),
         status: "open",

@@ -35,6 +35,7 @@ function generateToken(): string {
 //   - anon JWT          -> denied (403)
 
 Deno.serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req)
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })

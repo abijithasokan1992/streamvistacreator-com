@@ -118,6 +118,7 @@ export type MultipartParams = {
   workspaceId: string;
   pendingId: string;
   projectId?: string | null;
+  titleId?: string | null;
   category?: string | null;
   subpath?: string | null;
   onProgress?: MultipartProgress;
@@ -175,8 +176,9 @@ export async function uploadFileMultipart(p: MultipartParams): Promise<Multipart
       workspaceId,
       pendingId,
       projectId: p.projectId ?? undefined,
+      titleId: p.titleId ?? undefined,
       category: p.category ?? undefined,
-      subpath: p.subpath ?? undefined,
+      subpath: p.titleId ? undefined : (p.subpath ?? undefined),
       fileSha256: shaHex ?? undefined,
       totalChunks,
     }, { signal });

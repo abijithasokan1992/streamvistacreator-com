@@ -72,6 +72,41 @@ export default function Admin() {
   const [rows, setRows] = useState<Row[]>([]);
   const [fetching, setFetching] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [profile, setProfile] = useState<{
+    full_name: string | null;
+    display_name: string | null;
+    job_title: string | null;
+    organization_name: string | null;
+    avatar_url: string | null;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!user?.id) { setProfile(null); return; }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("user_profiles")
+        .select("full_name, display_name, job_title, organization_name, avatar_url")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!cancelled) setProfile((data as any) ?? null);
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
+  const identityName =
+    profile?.full_name?.trim() ||
+    profile?.display_name?.trim() ||
+    user?.email ||
+    "Admin";
+  const initials =
+    (profile?.full_name || profile?.display_name || user?.email || "A")
+      .split(/\s+|@|\./)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map(s => s[0]?.toUpperCase())
+      .join("") || "A";
+
 
   const adminUrl = typeof window !== "undefined" ? `${window.location.origin}/admin` : "/admin";
   const copyAdmin = async () => {

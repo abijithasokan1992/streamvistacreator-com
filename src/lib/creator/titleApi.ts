@@ -179,6 +179,7 @@ export type UploadAssetParams = {
   titleId: string;
   workspaceId: string;
   onProgress?: (loaded: number, total: number) => void;
+  onTelemetry?: (t: import("@/lib/ociMultipartUpload").UploadTelemetry) => void;
   signal?: AbortSignal;
 };
 

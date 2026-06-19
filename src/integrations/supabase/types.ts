@@ -3772,6 +3772,15 @@ export type Database = {
         Returns: boolean
       }
       claim_admin_if_none: { Args: never; Returns: boolean }
+      complete_title_asset_upload: {
+        Args: {
+          _category: string
+          _is_primary?: boolean
+          _title_id: string
+          _upload_id: string
+        }
+        Returns: string
+      }
       current_dashboard_role: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"]
@@ -3857,6 +3866,11 @@ export type Database = {
       }
       revoke_creator_role: { Args: { _user_id: string }; Returns: undefined }
       set_initial_role: { Args: { _role: string }; Returns: boolean }
+      submit_title_to_admin: {
+        Args: { _note?: string; _title_id: string }
+        Returns: undefined
+      }
+      title_submission_readiness: { Args: { _title_id: string }; Returns: Json }
       user_in_banner: {
         Args: {
           _banner: Database["public"]["Enums"]["production_banner"]

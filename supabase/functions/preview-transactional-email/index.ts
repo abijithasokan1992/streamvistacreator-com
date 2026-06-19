@@ -7,6 +7,7 @@ import { TEMPLATES } from '../_shared/transactional-email-templates/registry.ts'
 // Gated by LOVABLE_API_KEY — only the Go API calls this.
 
 Deno.serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req)
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }

@@ -290,6 +290,7 @@ Deno.serve(async (req) => {
       const projectIdRaw = body.projectId ? String(body.projectId) : "";
       const categoryRaw = body.category ? String(body.category) : "";
       const subpathRaw = body.subpath ? String(body.subpath) : "";
+      const titleIdRaw = body.titleId ? String(body.titleId).trim() : "";
 
       if (!fileName) return json({ error: "missing fileName" }, 400, cors);
       if (!workspaceId) return json({ error: "missing workspaceId" }, 400, cors);
@@ -301,6 +302,50 @@ Deno.serve(async (req) => {
         .eq("workspace_id", workspaceId).eq("user_id", userId).maybeSingle();
       if (!membership || !["owner", "admin", "editor"].includes(membership.role)) {
         return json({ error: "forbidden_workspace" }, 403, cors);
+      }
+
+      // ---------- Phase 3: per-category limit ----------
+      const catKey = categoryRaw.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "");
+      if (titleIdRaw) {
+        if (!catKey || !(catKey in CATEGORY_LIMITS)) {
+          return json({ error: `invalid category '${categoryRaw}'` }, 400, cors);
+        }
+        const catLimit = CATEGORY_LIMITS[catKey];
+        if (fileSize > catLimit) {
+          return json({
+            error: `Upload Failed — ${catKey} exceeds category limit (${Math.round(catLimit / GB * 10) / 10} GB)`,
+            limitBytes: catLimit,
+          }, 413, cors);
+        }
+      } else if (catKey && CATEGORY_LIMITS[catKey] && fileSize > CATEGORY_LIMITS[catKey]) {
+        return json({
+          error: `Upload Failed — ${catKey} exceeds category limit`,
+          limitBytes: CATEGORY_LIMITS[catKey],
+        }, 413, cors);
+      }
+
+      // ---------- Phase 7: total storage quota ----------
+      const { data: prof } = await admin
+        .from("user_profiles")
+        .select("plan_tier, topup_tb")
+        .eq("user_id", userId)
+        .maybeSingle();
+      const quota = planQuotaBytes(prof?.plan_tier, prof?.topup_tb);
+      const { data: usedRows } = await admin
+        .from("recent_uploads")
+        .select("file_size")
+        .eq("user_id", userId)
+        .in("status", ["uploading", "uploaded", "verified", "ready", "completed", "done"]);
+      const usedBytes = (usedRows ?? []).reduce(
+        (sum: number, r: any) => sum + (Number(r.file_size) || 0),
+        0,
+      );
+      if (usedBytes + fileSize > quota) {
+        return json({
+          error: `Upload Failed — storage quota exceeded (${Math.round(quota / GB)} GB total)`,
+          quotaBytes: quota,
+          usedBytes,
+        }, 413, cors);
       }
 
       // Idempotent resume: if a prior row exists for the same pendingId and it
@@ -333,27 +378,48 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Compute object key (mirrors oci-upload routing)
-      let projectSegment = "";
+      // ---------- Phase 4: server-derived object key ----------
+      // Title uploads: users/{userId}/titles/{titleId}/{prefix}/...
+      // Legacy non-title uploads keep the previous workspace/project layout.
+      let objectKey: string;
       let categorySegment = "ingest";
-      if (projectIdRaw) {
-        const { data: proj } = await admin.from("projects")
-          .select("id, workspace_id, foldering_mode_archive, foldering_mode_raw")
-          .eq("id", projectIdRaw).maybeSingle();
-        if (proj && proj.workspace_id === workspaceId) {
-          projectSegment = `projects/${proj.id}/`;
-          const cat = categoryRaw.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "");
-          if (cat) categorySegment = cat;
-          const manual =
-            (cat === "raw" && proj.foldering_mode_raw === "manual") ||
-            (cat === "archive" && proj.foldering_mode_archive === "manual");
-          if (manual && subpathRaw.trim()) {
-            const clean = subpathRaw.trim().replace(/^\/+|\/+$/g, "").replace(/[^\w./-]+/g, "_").slice(0, 200);
-            if (clean) categorySegment = clean;
+      let projectSegment = "";
+
+      if (titleIdRaw) {
+        // Verify title ownership (server-side; never trust client subpath).
+        const { data: t } = await admin
+          .from("content_titles")
+          .select("id, owner_user_id, workspace_id")
+          .eq("id", titleIdRaw)
+          .maybeSingle();
+        if (!t || (t.owner_user_id !== userId)) {
+          return json({ error: "forbidden_title" }, 403, cors);
+        }
+        const prefix = CATEGORY_PREFIX[catKey] ?? "documents";
+        objectKey = `users/${userId}/titles/${titleIdRaw}/${prefix}/${Date.now()}-${crypto.randomUUID()}-${safeName(fileName)}`;
+        categorySegment = catKey;
+      } else {
+        // Legacy path (unchanged) for non-title workflows.
+        if (projectIdRaw) {
+          const { data: proj } = await admin.from("projects")
+            .select("id, workspace_id, foldering_mode_archive, foldering_mode_raw")
+            .eq("id", projectIdRaw).maybeSingle();
+          if (proj && proj.workspace_id === workspaceId) {
+            projectSegment = `projects/${proj.id}/`;
+            if (catKey) categorySegment = catKey;
+            const manual =
+              (catKey === "raw" && proj.foldering_mode_raw === "manual") ||
+              (catKey === "archive" && proj.foldering_mode_archive === "manual");
+            if (manual && subpathRaw.trim()) {
+              const clean = subpathRaw.trim().replace(/^\/+|\/+$/g, "").replace(/[^\w./-]+/g, "_").slice(0, 200);
+              if (clean) categorySegment = clean;
+            }
           }
         }
+        objectKey = `workspaces/${workspaceId}/${projectSegment}${categorySegment}/users/${userId}/${Date.now()}-${crypto.randomUUID()}-${safeName(fileName)}`;
       }
-      const objectKey = `workspaces/${workspaceId}/${projectSegment}${categorySegment}/users/${userId}/${Date.now()}-${crypto.randomUUID()}-${safeName(fileName)}`;
+
+
 
       // Create multipart upload on OCI:
       //   POST /n/{ns}/b/{bucket}/u  body: {"object":"...","contentType":"..."}

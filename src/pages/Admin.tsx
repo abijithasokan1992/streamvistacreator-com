@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Loader2, LogOut, ShieldCheck, Crown, RefreshCw, Mail, Phone, Tag, History, Copy, Check, Briefcase, Wallet, Code2, Megaphone, Inbox, Users as UsersIcon } from "lucide-react";
+import PlatformOwnerConsole from "@/components/admin/PlatformOwnerConsole";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -50,9 +51,23 @@ interface Row {
 
 const STATUSES = ["pending", "contacted", "activated", "rejected"];
 
+function pathToTab(path: string, isSuperAdmin: boolean): string {
+  const p = path.toLowerCase();
+  if (p.startsWith("/admin/super")) return isSuperAdmin ? "platform" : "ops";
+  if (p.startsWith("/admin/users")) return "users";
+  if (p.startsWith("/admin/storage")) return "dev";
+  if (p.startsWith("/admin/billing")) return "finance";
+  if (p.startsWith("/admin/settings")) return "ops";
+  if (p.startsWith("/admin/security") || p.startsWith("/admin/legal") || p.startsWith("/admin/qc") || p.startsWith("/admin/rights") || p.startsWith("/admin/audit")) {
+    return isSuperAdmin ? "platform" : "ops";
+  }
+  return "ops";
+}
+
 export default function Admin() {
-  const { user, isAdmin, loading, signOut } = useAuth();
+  const { user, isAdmin, isSuperAdmin, loading, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   useBackGuard(!!user);
   const [rows, setRows] = useState<Row[]>([]);
   const [fetching, setFetching] = useState(false);
@@ -194,14 +209,22 @@ export default function Admin() {
           <p className="text-sm text-muted-foreground mt-1">Switch between department windows · all controls are no-code.</p>
         </div>
 
-        <Tabs defaultValue="ops" className="w-full">
-          <TabsList className="grid grid-cols-2 md:grid-cols-5 gap-2 h-auto p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-8">
+        <Tabs key={location.pathname} defaultValue={pathToTab(location.pathname, isSuperAdmin)} className="w-full">
+          <TabsList className={`grid grid-cols-2 ${isSuperAdmin ? "md:grid-cols-6" : "md:grid-cols-5"} gap-2 h-auto p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-8`}>
+            {isSuperAdmin && <DeptTab value="platform" icon={<Crown className="w-4 h-4" />} label="Platform Owner" />}
             <DeptTab value="ops" icon={<Briefcase className="w-4 h-4" />} label="Business & Ops" />
             <DeptTab value="finance" icon={<Wallet className="w-4 h-4" />} label="Finance & Billing" />
             <DeptTab value="dev" icon={<Code2 className="w-4 h-4" />} label="Development" />
             <DeptTab value="marketing" icon={<Megaphone className="w-4 h-4" />} label="Marketing" />
             <DeptTab value="users" icon={<UsersIcon className="w-4 h-4" />} label="Users & Credentials" />
           </TabsList>
+
+          {isSuperAdmin && (
+            <TabsContent value="platform" className="space-y-8 mt-0 animate-fade-in">
+              <PlatformOwnerConsole />
+            </TabsContent>
+          )}
+
 
           {/* 1. Business & Operations */}
           <TabsContent value="ops" className="space-y-8 mt-0 animate-fade-in">

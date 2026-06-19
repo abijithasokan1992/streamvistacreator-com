@@ -72,6 +72,16 @@ const AdminRoutes = () => (
     <Route path="/auth/callback" element={<AuthCallback />} />
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/admin" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/super" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/users" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/storage" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/security" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/billing" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/settings" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/legal" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/qc" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/rights" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/audit" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/kammattam" element={<KammattamPopout />} />
     {/* Anything else on the admin host = wrong portal */}
     <Route path="*" element={<WrongPortal expected="public" />} />
@@ -115,6 +125,16 @@ const PublicRoutes = () => (
 
     {/* Admin console is also reachable on the main domain until the admin subdomain DNS is fully configured. */}
     <Route path="/admin" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/super" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/users" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/storage" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/security" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/billing" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/settings" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/legal" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/qc" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/rights" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/audit" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/kammattam" element={<KammattamPopout />} />
 
     <Route path="/launching-special-plan" element={<LaunchingSpecialPlan />} />

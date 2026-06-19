@@ -10,8 +10,14 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import Onboarding from "./pages/Onboarding.tsx";
 import Index from "./pages/Index.tsx";
 import Auth from "./pages/Auth.tsx";
+import AuthCallback from "./pages/AuthCallback.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import Admin from "./pages/Admin.tsx";
+import ContentOwnerDashboard from "./pages/dashboards/ContentOwner.tsx";
+import StudioDashboard from "./pages/dashboards/StudioDash.tsx";
+import BuyerDashboard from "./pages/dashboards/Buyer.tsx";
+import LocalizationDashboard from "./pages/dashboards/Localization.tsx";
+import DistributionDashboard from "./pages/dashboards/Distribution.tsx";
 import AdminErrorBoundary from "./components/admin/AdminErrorBoundary";
 import KammattamPopout from "./pages/KammattamPopout.tsx";
 import Terms from "./pages/Terms.tsx";
@@ -52,6 +58,7 @@ const AdminRoutes = () => (
   <Routes>
     <Route path="/" element={<Auth />} />
     <Route path="/auth" element={<Auth />} />
+    <Route path="/auth/callback" element={<AuthCallback />} />
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/admin" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/kammattam" element={<KammattamPopout />} />
@@ -66,13 +73,23 @@ const PublicRoutes = () => (
     <Route path="/" element={<Index />} />
     <Route path="/home" element={<Index />} />
     <Route path="/auth" element={<Auth />} />
+    <Route path="/auth/callback" element={<AuthCallback />} />
     <Route path="/reset-password" element={<ResetPassword />} />
 
-    {/* Linear onboarding wizard — must come BEFORE the dashboards. */}
+    {/* Linear onboarding wizard — kept for legacy accounts only. */}
     <Route path="/onboarding" element={<Onboarding />} />
 
-    {/* Shared post-login landing for regular users. Admins are bounced to /admin inside the page. */}
+    {/* New role-based dashboards (Phase 2 — empty states, no fake cards). */}
+    <Route path="/dashboard/content" element={<ContentOwnerDashboard />} />
+    <Route path="/dashboard/studio" element={<StudioDashboard />} />
+    <Route path="/dashboard/buyer" element={<BuyerDashboard />} />
+    <Route path="/dashboard/localization" element={<LocalizationDashboard />} />
+    <Route path="/dashboard/distribution" element={<DistributionDashboard />} />
+
+    {/* Legacy shared dashboard — admins bounce to /admin inside the page. */}
     <Route path="/dashboard" element={<Dashboard />} />
+
+
 
     {/* Role-gated dashboards. RLS at the DB enforces the real boundary;
         OnboardingGate enforces the linear flow, RoleGate keeps the

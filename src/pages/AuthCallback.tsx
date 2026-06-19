@@ -1,0 +1,101 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth, dashboardForRole } from "@/hooks/useAuth";
+
+/**
+ * Magic-link / OAuth callback target.
+ *   1. Wait for the session to materialise.
+ *   2. If the user has no role yet, apply the role they chose at signup
+ *      via the server-side `set_initial_role` whitelist.
+ *   3. Make sure a `user_profiles` row exists.
+ *   4. Redirect to the canonical dashboard for that role.
+ */
+export default function AuthCallback() {
+  const navigate = useNavigate();
+  const { user, role, loading, refreshRole } = useAuth();
+  const [message, setMessage] = useState("Signing you in…");
+
+  useEffect(() => {
+    if (loading) return;
+    if (!user) {
+      // Could be an invalid / expired link — bounce to login.
+      const params = new URLSearchParams(window.location.hash.slice(1));
+      const err = params.get("error_description") || params.get("error");
+      if (err) toast.error(decodeURIComponent(err));
+      navigate("/auth", { replace: true });
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        // 1. Apply pending role if needed.
+        if (!role) {
+          const stashed = (() => {
+            try { return sessionStorage.getItem("sv_pending_role"); } catch { return null; }
+          })();
+          const metaRole = (user.user_metadata as Record<string, unknown> | undefined)?.requested_role;
+          const chosen = (stashed || metaRole) as string | null;
+          if (chosen) {
+            await supabase.rpc("set_initial_role" as never, { _role: chosen } as never);
+          }
+          try { sessionStorage.removeItem("sv_pending_role"); } catch { /* noop */ }
+        }
+
+        // 2. Ensure profile row.
+        const displayName =
+          (user.user_metadata as Record<string, unknown> | undefined)?.full_name as string | undefined
+          ?? (user.user_metadata as Record<string, unknown> | undefined)?.display_name as string | undefined
+          ?? (() => { try { return sessionStorage.getItem("sv_pending_name") || undefined; } catch { return undefined; } })()
+          ?? user.email?.split("@")[0]
+          ?? "Member";
+
+        await supabase.from("user_profiles").upsert(
+          {
+            user_id: user.id,
+            display_name: displayName,
+            first_name: displayName.split(" ")[0],
+            last_name: displayName.split(" ").slice(1).join(" ") || null,
+            onboarding_step: "done",
+          },
+          { onConflict: "user_id" }
+        );
+        try { sessionStorage.removeItem("sv_pending_name"); } catch { /* noop */ }
+
+        // 3. Refresh role + redirect.
+        await refreshRole();
+        if (cancelled) return;
+        setMessage("Opening your workspace…");
+
+        // Re-read role after the RPC took effect.
+        const { data: rows } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id);
+        const roles = (rows || []).map((r: any) => r.role);
+        const primary =
+          ["super_admin","admin","content_owner","studio","distributor","localization_partner","buyer","executive_producer","creator","client"]
+            .find((r) => roles.includes(r)) as any || null;
+
+        navigate(dashboardForRole(primary), { replace: true });
+      } catch (err) {
+        console.error("auth callback failed", err);
+        toast.error("Couldn't complete sign-in. Please try again.");
+        navigate("/auth", { replace: true });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user, role, loading, navigate, refreshRole]);
+
+  return (
+    <main className="min-h-dvh grid place-items-center bg-background text-foreground">
+      <div className="text-center">
+        <Loader2 className="w-6 h-6 animate-spin text-accent mx-auto" />
+        <p className="mt-3 text-sm text-muted-foreground">{message}</p>
+      </div>
+    </main>
+  );
+}

@@ -157,9 +157,5 @@ function maskKey(k: string) {
   return `${k.slice(0, 8)}…${k.slice(-4)}`;
 }
 
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
-}
+
+

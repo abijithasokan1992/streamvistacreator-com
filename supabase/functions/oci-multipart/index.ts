@@ -40,8 +40,8 @@ function pemToPkcs8(pem: string): ArrayBuffer {
 let cachedKey: CryptoKey | null = null;
 async function getPrivateKey(): Promise<CryptoKey> {
   if (cachedKey) return cachedKey;
-  const pem = Deno.env.get("ORACLE_PRIVATE_KEY");
-  if (!pem) throw new Error("ORACLE_PRIVATE_KEY missing");
+  const pem = Deno.env.get("ORACLE_PRIVATE_KEY") || Deno.env.get("OCI_PRIVATE_KEY");
+  if (!pem) throw new Error("ORACLE_PRIVATE_KEY/OCI_PRIVATE_KEY missing");
   cachedKey = await crypto.subtle.importKey(
     "pkcs8", pemToPkcs8(pem),
     { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
@@ -70,17 +70,19 @@ async function buildOciSignature(opts: {
   contentLength?: number;
   keyId: string;
   privateKey: CryptoKey;
+  dateHeader?: "date" | "x-date";
 }): Promise<{ authorization: string; headers: Record<string, string>; date: string }> {
   const { method, host, path, contentSha256, contentType, contentLength, keyId, privateKey } = opts;
+  const dateHeader = opts.dateHeader ?? "date";
   const date = new Date().toUTCString();
   const isBodyMethod = method === "PUT" || method === "POST";
 
   const headers: Record<string, string> = {
     "(request-target)": `${method.toLowerCase()} ${path}`,
     host,
-    date,
+    [dateHeader]: date,
   };
-  const names = ["(request-target)", "host", "date"];
+  const names = ["(request-target)", "host", dateHeader];
 
   if (isBodyMethod) {
     headers["x-content-sha256"] = contentSha256;
@@ -159,7 +161,7 @@ Deno.serve(async (req) => {
     const fingerprint = cfg?.oracle_fingerprint || Deno.env.get("OCI_FINGERPRINT");
     const region = cfg?.oracle_region || Deno.env.get("OCI_REGION");
     const ns = cfg?.oracle_namespace || Deno.env.get("OCI_NAMESPACE");
-    const bucket = cfg?.oracle_bucket || Deno.env.get("OCI_BUCKET");
+    const bucket = cfg?.oracle_bucket || Deno.env.get("OCI_BUCKET") || Deno.env.get("OCI_BUCKET_NAME");
     if (!tenancy || !user || !fingerprint || !region || !ns || !bucket) {
       return json({ error: "OCI not fully configured" }, 500, cors);
     }
@@ -411,6 +413,7 @@ Deno.serve(async (req) => {
         method: "PUT", host, path,
         contentSha256, contentType: "application/octet-stream",
         contentLength, keyId, privateKey,
+        dateHeader: "x-date",
       });
 
       await logIngest(admin, {
@@ -423,11 +426,10 @@ Deno.serve(async (req) => {
         method: "PUT",
         headers: {
           host,
-          date: sig.date,
+          "x-date": sig.date,
           Authorization: sig.authorization,
           "x-content-sha256": contentSha256,
           "content-type": "application/octet-stream",
-          "content-length": String(contentLength),
         },
         expires_in: 300,
       }, 200, cors);

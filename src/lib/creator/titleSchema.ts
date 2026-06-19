@@ -26,6 +26,11 @@ export const TitleMetadataSchema = z.object({
   runtime_minutes: z.number().int().min(0).max(100000).default(0),
   production_company: z.string().max(200).default(""),
   owner: z.string().max(200).default(""),
+  // Crayons Bridge future-readiness fields (stored in metadata JSON, no migrations needed).
+  original_language: z.string().max(60).default(""),
+  production_year: z.number().int().min(1900).max(2100).nullable().default(null),
+  country_of_origin: z.string().max(60).default(""),
+  rights_owner: z.string().max(200).default(""),
   countries: z.array(z.string().trim().max(60)).default([]),
   cast: z.array(PersonSchema).default([]),
   crew: z.array(PersonSchema).default([]),
@@ -54,11 +59,17 @@ export type TitleMetadata = z.infer<typeof TitleMetadataSchema>;
 export const emptyMetadata = (): TitleMetadata => TitleMetadataSchema.parse({});
 
 export const ASSET_CATEGORIES = [
+  // MVP categories — match DB title_assets_category_check + RPC names.
   "feature_film",
   "trailer",
   "poster",
-  "artwork",
+  "censor_certificate",
+  "ownership_documents",
+  // Future / non-MVP — still allowed by DB constraint, surfaced as "Coming Soon" in UI.
   "captions",
+  "audio_tracks",
+  "artwork",
+  // Legacy aliases retained for backwards compatibility with older rows.
   "subtitle",
   "audio",
   "censor_cert",
@@ -68,12 +79,24 @@ export const ASSET_CATEGORIES = [
 ] as const;
 export type AssetCategory = (typeof ASSET_CATEGORIES)[number];
 
+/** Categories required for MVP submission (server-enforced by submit_title_to_admin). */
+export const MVP_CATEGORIES = [
+  "feature_film",
+  "trailer",
+  "poster",
+  "censor_certificate",
+  "ownership_documents",
+] as const satisfies ReadonlyArray<AssetCategory>;
+
 export const CATEGORY_LABEL: Record<AssetCategory, string> = {
   feature_film: "Feature Film",
   trailer: "Trailer",
   poster: "Poster",
-  artwork: "Artwork",
+  censor_certificate: "Censor Certificate",
+  ownership_documents: "Ownership Documents",
   captions: "Captions",
+  audio_tracks: "Audio Tracks",
+  artwork: "Artwork",
   subtitle: "Subtitle Files",
   audio: "Audio Tracks",
   censor_cert: "Censor Certificate",

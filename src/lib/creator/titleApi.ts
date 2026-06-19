@@ -259,34 +259,19 @@ export async function uploadTitleAsset(p: UploadAssetParams): Promise<TitleAsset
     }
   }
 
-  // (3) title_assets row
-  const { data: assetRow, error: linkErr } = await (supabase as any)
-    .from("title_assets")
-    .insert({
-      title_id: p.titleId,
-      upload_id: uploadRow.id,
-      category: p.category,
-      is_primary: true,
-    })
-    .select("*")
-    .single();
-  if (linkErr || !assetRow) throw new UploadValidationError("title_assets link row", linkErr);
-
-  // Demote any other primary in the same category.
-  await (supabase as any)
-    .from("title_assets")
-    .update({ is_primary: false })
-    .eq("title_id", p.titleId)
-    .eq("category", p.category)
-    .neq("id", assetRow.id);
-
-  // (4) audit
-  await audit("title_asset_uploaded", {
-    title_id: p.titleId,
-    category: p.category,
-    upload_id: uploadRow.id,
-    file_name: uploadRow.file_name,
-  });
+  // (3) title_assets row — use server RPC for atomic ownership/lock/Oracle validation + audit.
+  const { data: newAssetId, error: linkErr } = await (supabase as any).rpc(
+    "complete_title_asset_upload",
+    {
+      _title_id: p.titleId,
+      _upload_id: uploadRow.id,
+      _category: p.category,
+      _is_primary: true,
+    },
+  );
+  if (linkErr || !newAssetId) {
+    throw new UploadValidationError("title_assets link row", linkErr);
+  }
 
   // (5) storage usage refresh — recent_uploads inserts are already counted
   // by the existing storage triggers; we verify by re-reading the user's
@@ -297,73 +282,83 @@ export async function uploadTitleAsset(p: UploadAssetParams): Promise<TitleAsset
     .eq("user_id", verify.user_id);
   if (usageErr) throw new UploadValidationError("Storage usage refresh", usageErr);
 
-  return { ...assetRow, upload: uploadRow as any };
+  return {
+    id: String(newAssetId),
+    title_id: p.titleId,
+    upload_id: uploadRow.id,
+    category: p.category,
+    is_primary: true,
+    created_at: new Date().toISOString(),
+    upload: uploadRow as any,
+  };
 }
 
 export type SubmitChecklist = {
   hasTitle: boolean;
   hasSynopsis: boolean;
   hasFilm: boolean;
+  hasTrailer: boolean;
   hasPoster: boolean;
   hasCensor: boolean;
+  hasOwnership: boolean;
   censorRequired: boolean;
   ready: boolean;
   missing: string[];
 };
 
+const MVP_PRIMARY = (assets: TitleAsset[], names: string[]) =>
+  assets.some((a) => names.includes(a.category) && a.is_primary);
+
+/** Client-side mirror of title_submission_readiness(). Server is the source of truth. */
 export function evaluateChecklist(title: TitleRow, assets: TitleAsset[]): SubmitChecklist {
-  const has = (c: AssetCategory) => assets.some((a) => a.category === c);
   const censorRequired = REQUIRES_CENSOR.includes(title.metadata.format);
   const c: SubmitChecklist = {
     hasTitle: !!title.title.trim(),
     hasSynopsis: !!title.metadata.synopsis.trim(),
-    hasFilm: has("feature_film"),
-    hasPoster: has("poster"),
-    hasCensor: !censorRequired || has("censor_cert"),
+    hasFilm: MVP_PRIMARY(assets, ["feature_film"]),
+    hasTrailer: MVP_PRIMARY(assets, ["trailer"]),
+    hasPoster: MVP_PRIMARY(assets, ["poster"]),
+    hasCensor: !censorRequired || MVP_PRIMARY(assets, ["censor_certificate", "censor_cert"]),
+    hasOwnership: MVP_PRIMARY(assets, ["ownership_documents", "ownership"]),
     censorRequired,
     ready: false,
     missing: [],
   };
   if (!c.hasTitle) c.missing.push("Title name");
   if (!c.hasSynopsis) c.missing.push("Synopsis");
-  if (!c.hasFilm) c.missing.push("Feature Film upload");
-  if (!c.hasPoster) c.missing.push("Poster upload");
-  if (!c.hasCensor) c.missing.push("Censor Certificate (required for feature films — Admin can waive)");
+  if (!c.hasFilm) c.missing.push("Feature Film");
+  if (!c.hasTrailer) c.missing.push("Trailer");
+  if (!c.hasPoster) c.missing.push("Poster");
+  if (!c.hasCensor) c.missing.push("Censor Certificate");
+  if (!c.hasOwnership) c.missing.push("Ownership Documents");
   c.ready = c.missing.length === 0;
   return c;
 }
 
+export type ServerReadiness = {
+  ready: boolean;
+  missing: string[];
+  has: Record<string, boolean>;
+};
+
+/** Live submission checklist from the server (title_submission_readiness). */
+export async function fetchReadiness(titleId: string): Promise<ServerReadiness | null> {
+  const { data, error } = await (supabase as any).rpc("title_submission_readiness", { _title_id: titleId });
+  if (error) return null;
+  if (!data) return null;
+  return {
+    ready: !!data.ready,
+    missing: Array.isArray(data.missing) ? data.missing : [],
+    has: (data.has ?? {}) as Record<string, boolean>,
+  };
+}
+
 export async function submitTitle(id: string, note?: string): Promise<void> {
-  const { data: t, error } = await (supabase as any)
-    .from("content_titles")
-    .select("status, owner_user_id")
-    .eq("id", id)
-    .maybeSingle();
-  if (error || !t) throw new Error("Title not found");
-  if (t.status !== "draft" && t.status !== "incomplete" && t.status !== "changes_requested") {
-    throw new Error("Only drafts can be submitted");
-  }
-  const nowIso = new Date().toISOString();
-  const { data: { user } } = await supabase.auth.getUser();
-  const { error: upErr } = await (supabase as any)
-    .from("content_titles")
-    .update({
-      status: "submitted",
-      submitted_at: nowIso,
-      locked: true,
-      locked_at: nowIso,
-      locked_by: user?.id ?? null,
-    })
-    .eq("id", id);
-  if (upErr) throw upErr;
-  await (supabase as any).from("content_approvals").insert({
-    title_id: id,
-    actor_user_id: user?.id,
-    from_status: t.status,
-    to_status: "submitted",
-    note: note ?? null,
+  const { error } = await (supabase as any).rpc("submit_title_to_admin", {
+    _title_id: id,
+    _note: note ?? null,
   });
-  await audit("title_submitted", { title_id: id });
+  if (error) throw new Error(error.message ?? "Submit failed");
 }
 
 export { ASSET_CATEGORIES };

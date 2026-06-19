@@ -16,15 +16,15 @@ export function ComingSoon({ title, body }: { title: string; body?: string }) {
 }
 
 const FUTURE = [
-  { title: "Buyer Marketplace",  body: "Discoverable catalog for buyers and aggregators." },
-  { title: "Licensing",          body: "Issue and track licenses with territory + term controls." },
-  { title: "Distribution",       body: "Push titles to distribution partners and platforms." },
-  { title: "Syndication",        body: "Multi-region syndication windows and rights." },
-  { title: "Localization",       body: "Dub, subtitle and metadata localization workflows." },
-  { title: "Revenue Share",      body: "Per-title revenue splits across stakeholders." },
-  { title: "FAST Channels",      body: "Programmed FAST channels powered by your catalog." },
-  { title: "OTT Delivery",       body: "Direct delivery into OTT platforms via Oracle." },
-  { title: "Partner Network",    body: "Connect with verified creators and studios." },
+  { title: "Buyer Marketplace",      body: "Discoverable catalog for buyers and aggregators." },
+  { title: "Licensing Marketplace",  body: "Issue and track licenses with territory + term controls." },
+  { title: "Distribution Marketplace", body: "Push titles to distribution partners and platforms." },
+  { title: "Revenue Share",          body: "Per-title revenue splits across stakeholders." },
+  { title: "Partner Network",        body: "Connect with verified creators and studios." },
+  { title: "Localization Workflows", body: "Dub, subtitle and metadata localization workflows." },
+  { title: "FAST Channels",          body: "Programmed FAST channels powered by your catalog." },
+  { title: "OTT Delivery",           body: "Direct delivery into OTT platforms via Oracle." },
+  { title: "Advanced Analytics",     body: "Deeper performance, viewership and revenue analytics." },
 ];
 
 export function ComingSoonGrid() {

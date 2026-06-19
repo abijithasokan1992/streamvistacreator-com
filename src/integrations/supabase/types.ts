@@ -137,6 +137,274 @@ export type Database = {
         }
         Relationships: []
       }
+      advertisements: {
+        Row: {
+          ad_type: string | null
+          carousel_fee: number | null
+          contact_number: string | null
+          created_at: string | null
+          duration_seconds: number | null
+          id: string
+          media_url: string | null
+          organization_id: string | null
+          price: number | null
+          promote_to_carousel: boolean | null
+          status: string | null
+          title: string
+          website_url: string | null
+        }
+        Insert: {
+          ad_type?: string | null
+          carousel_fee?: number | null
+          contact_number?: string | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          id?: string
+          media_url?: string | null
+          organization_id?: string | null
+          price?: number | null
+          promote_to_carousel?: boolean | null
+          status?: string | null
+          title: string
+          website_url?: string | null
+        }
+        Update: {
+          ad_type?: string | null
+          carousel_fee?: number | null
+          contact_number?: string | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          id?: string
+          media_url?: string | null
+          organization_id?: string | null
+          price?: number | null
+          promote_to_carousel?: boolean | null
+          status?: string | null
+          title?: string
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "advertisements_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      alumni: {
+        Row: {
+          converted_at: string | null
+          id: string
+          member_id: string | null
+          notes: string | null
+          organization_id: string | null
+        }
+        Insert: {
+          converted_at?: string | null
+          id?: string
+          member_id?: string | null
+          notes?: string | null
+          organization_id?: string | null
+        }
+        Update: {
+          converted_at?: string | null
+          id?: string
+          member_id?: string | null
+          notes?: string | null
+          organization_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alumni_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alumni_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_keys: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          key_hash: string | null
+          key_name: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          key_hash?: string | null
+          key_name?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          key_hash?: string | null
+          key_name?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_keys_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asset_metadata: {
+        Row: {
+          asset_id: string | null
+          camera_make: string | null
+          camera_model: string | null
+          codec: string | null
+          created_at: string | null
+          fps: number | null
+          id: string
+          lens: string | null
+          location: string | null
+          metadata: Json | null
+          resolution: string | null
+          shoot_date: string | null
+        }
+        Insert: {
+          asset_id?: string | null
+          camera_make?: string | null
+          camera_model?: string | null
+          codec?: string | null
+          created_at?: string | null
+          fps?: number | null
+          id?: string
+          lens?: string | null
+          location?: string | null
+          metadata?: Json | null
+          resolution?: string | null
+          shoot_date?: string | null
+        }
+        Update: {
+          asset_id?: string | null
+          camera_make?: string | null
+          camera_model?: string | null
+          codec?: string | null
+          created_at?: string | null
+          fps?: number | null
+          id?: string
+          lens?: string | null
+          location?: string | null
+          metadata?: Json | null
+          resolution?: string | null
+          shoot_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_metadata_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asset_versions: {
+        Row: {
+          asset_id: string | null
+          checksum: string | null
+          created_at: string | null
+          created_by: string | null
+          file_url: string | null
+          id: string
+          version_number: number
+        }
+        Insert: {
+          asset_id?: string | null
+          checksum?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          file_url?: string | null
+          id?: string
+          version_number: number
+        }
+        Update: {
+          asset_id?: string | null
+          checksum?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          file_url?: string | null
+          id?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_versions_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assets: {
+        Row: {
+          asset_name: string | null
+          asset_type: string | null
+          checksum: string | null
+          created_at: string | null
+          file_url: string | null
+          id: string
+          production_id: string | null
+          proxy_url: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          asset_name?: string | null
+          asset_type?: string | null
+          checksum?: string | null
+          created_at?: string | null
+          file_url?: string | null
+          id?: string
+          production_id?: string | null
+          proxy_url?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          asset_name?: string | null
+          asset_type?: string | null
+          checksum?: string | null
+          created_at?: string | null
+          file_url?: string | null
+          id?: string
+          production_id?: string | null
+          proxy_url?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assets_production_id_fkey"
+            columns: ["production_id"]
+            isOneToOne: false
+            referencedRelation: "productions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       billing_config: {
         Row: {
           api_rate_paise_per_1k: number
@@ -218,6 +486,50 @@ export type Database = {
         }
         Relationships: []
       }
+      carousel_slides: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          id: string
+          is_published: boolean | null
+          media_type: string | null
+          media_url: string | null
+          organization_id: string | null
+          title: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_published?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
+          organization_id?: string | null
+          title?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_published?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
+          organization_id?: string | null
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carousel_slides_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checklist_overrides: {
         Row: {
           checklist_key: string
@@ -268,6 +580,54 @@ export type Database = {
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deliverables: {
+        Row: {
+          created_at: string | null
+          delivery_date: string | null
+          id: string
+          notes: string | null
+          production_id: string | null
+          project_id: string | null
+          status: string | null
+          title: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          delivery_date?: string | null
+          id?: string
+          notes?: string | null
+          production_id?: string | null
+          project_id?: string | null
+          status?: string | null
+          title?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          delivery_date?: string | null
+          id?: string
+          notes?: string | null
+          production_id?: string | null
+          project_id?: string | null
+          status?: string | null
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deliverables_production_id_fkey"
+            columns: ["production_id"]
+            isOneToOne: false
+            referencedRelation: "productions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deliverables_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -759,6 +1119,156 @@ export type Database = {
         }
         Relationships: []
       }
+      media_assets: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          file_url: string | null
+          id: string
+          language: string | null
+          media_type: string | null
+          ocr_text_en: string | null
+          ocr_text_ml: string | null
+          organization_id: string | null
+          tags: string[] | null
+          title: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          file_url?: string | null
+          id?: string
+          language?: string | null
+          media_type?: string | null
+          ocr_text_en?: string | null
+          ocr_text_ml?: string | null
+          organization_id?: string | null
+          tags?: string[] | null
+          title?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          file_url?: string | null
+          id?: string
+          language?: string | null
+          media_type?: string | null
+          ocr_text_en?: string | null
+          ocr_text_ml?: string | null
+          organization_id?: string | null
+          tags?: string[] | null
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_assets_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      members: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          date_of_birth: string | null
+          email: string | null
+          full_name: string
+          id: string
+          member_number: string | null
+          membership_end: string | null
+          membership_start: string | null
+          organization_id: string | null
+          phone: string | null
+          status: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          email?: string | null
+          full_name: string
+          id?: string
+          member_number?: string | null
+          membership_end?: string | null
+          membership_start?: string | null
+          organization_id?: string | null
+          phone?: string | null
+          status?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          member_number?: string | null
+          membership_end?: string | null
+          membership_start?: string | null
+          organization_id?: string | null
+          phone?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      news_articles: {
+        Row: {
+          category: string | null
+          content: string | null
+          content_ml: string | null
+          created_at: string | null
+          id: string
+          image_url: string | null
+          organization_id: string | null
+          published: boolean | null
+          title: string | null
+          title_ml: string | null
+        }
+        Insert: {
+          category?: string | null
+          content?: string | null
+          content_ml?: string | null
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          organization_id?: string | null
+          published?: boolean | null
+          title?: string | null
+          title_ml?: string | null
+        }
+        Update: {
+          category?: string | null
+          content?: string | null
+          content_ml?: string | null
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          organization_id?: string | null
+          published?: boolean | null
+          title?: string | null
+          title_ml?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "news_articles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       news_events: {
         Row: {
           created_at: string
@@ -810,6 +1320,33 @@ export type Database = {
           summary?: string | null
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string | null
+          title: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          title?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          title?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -990,6 +1527,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      organizations: {
+        Row: {
+          created_at: string | null
+          domain_name: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          primary_color: string | null
+          subscription_plan: string | null
+          subscription_status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          domain_name?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          primary_color?: string | null
+          subscription_plan?: string | null
+          subscription_status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          domain_name?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          primary_color?: string | null
+          subscription_plan?: string | null
+          subscription_status?: string | null
+        }
+        Relationships: []
       }
       partner_logos: {
         Row: {
@@ -1218,6 +1788,39 @@ export type Database = {
           creator_user_id?: string
           ep_user_id?: string
           id?: string
+        }
+        Relationships: []
+      }
+      productions: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          start_date: string | null
+          status: string | null
+          title: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          start_date?: string | null
+          status?: string | null
+          title?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          start_date?: string | null
+          status?: string | null
+          title?: string | null
+          workspace_id?: string | null
         }
         Relationships: []
       }
@@ -1601,6 +2204,76 @@ export type Database = {
         }
         Relationships: []
       }
+      revenue_transactions: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          description: string | null
+          id: string
+          organization_id: string | null
+          revenue_type: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          organization_id?: string | null
+          revenue_type?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          organization_id?: string | null
+          revenue_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revenue_transactions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      review_comments: {
+        Row: {
+          comment: string | null
+          created_at: string | null
+          id: string
+          review_link_id: string | null
+          timestamp_seconds: number | null
+          user_id: string | null
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          review_link_id?: string | null
+          timestamp_seconds?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          review_link_id?: string | null
+          timestamp_seconds?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_comments_review_link_id_fkey"
+            columns: ["review_link_id"]
+            isOneToOne: false
+            referencedRelation: "review_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       review_link_secrets: {
         Row: {
           created_at: string
@@ -1726,6 +2399,47 @@ export type Database = {
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scholarships: {
+        Row: {
+          amount: number | null
+          application_deadline: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          organization_id: string | null
+          status: string | null
+          title: string | null
+        }
+        Insert: {
+          amount?: number | null
+          application_deadline?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          organization_id?: string | null
+          status?: string | null
+          title?: string | null
+        }
+        Update: {
+          amount?: number | null
+          application_deadline?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          organization_id?: string | null
+          status?: string | null
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scholarships_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1905,6 +2619,56 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      students: {
+        Row: {
+          attendance: number | null
+          created_at: string | null
+          full_name: string | null
+          id: string
+          leadership_score: number | null
+          marks: number | null
+          organization_id: string | null
+          school_name: string | null
+          sports_score: number | null
+          total_score: number | null
+          volunteer_score: number | null
+        }
+        Insert: {
+          attendance?: number | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          leadership_score?: number | null
+          marks?: number | null
+          organization_id?: string | null
+          school_name?: string | null
+          sports_score?: number | null
+          total_score?: number | null
+          volunteer_score?: number | null
+        }
+        Update: {
+          attendance?: number | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          leadership_score?: number | null
+          marks?: number | null
+          organization_id?: string | null
+          school_name?: string | null
+          sports_score?: number | null
+          total_score?: number | null
+          volunteer_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "students_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subscriptions: {
         Row: {
@@ -2277,6 +3041,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      welfare_beneficiaries: {
+        Row: {
+          assistance_amount: number | null
+          beneficiary_name: string | null
+          category: string | null
+          created_at: string | null
+          id: string
+          organization_id: string | null
+          status: string | null
+        }
+        Insert: {
+          assistance_amount?: number | null
+          beneficiary_name?: string | null
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          organization_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          assistance_amount?: number | null
+          beneficiary_name?: string | null
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          organization_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "welfare_beneficiaries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       workspace_members: {
         Row: {

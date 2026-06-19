@@ -25,10 +25,30 @@ export type ContentStatus =
   | "legal_review"
   | "changes_requested"
   | "approved"
+  | "ready_for_distribution"
   | "rejected"
   | "hold"
   | "published"
   | "archived";
+
+export type TitleTimelineEntry = {
+  id: string;
+  from_status: ContentStatus | null;
+  to_status: ContentStatus;
+  note: string | null;
+  created_at: string;
+  actor_user_id: string | null;
+};
+
+export async function fetchTitleTimeline(titleId: string): Promise<TitleTimelineEntry[]> {
+  const { data, error } = await (supabase as any)
+    .from("content_approvals")
+    .select("id,from_status,to_status,note,created_at,actor_user_id")
+    .eq("title_id", titleId)
+    .order("created_at", { ascending: true });
+  if (error) return [];
+  return (data ?? []) as TitleTimelineEntry[];
+}
 
 export type TitleRow = {
   id: string;

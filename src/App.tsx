@@ -105,12 +105,12 @@ const PublicRoutes = () => (
         OnboardingGate enforces the linear flow, RoleGate keeps the
         wrong UI off the screen. */}
     <Route path="/producer" element={<CanonicalDashboardRedirect />} />
-    <Route path="/vault" element={<OnboardingGate><RoleGate allow={["creator", "admin"]}><Vault /></RoleGate></OnboardingGate>} />
-    <Route path="/studio" element={<OnboardingGate><RoleGate allow={["creator", "executive_producer", "admin"]}><Studio /></RoleGate></OnboardingGate>} />
+    <Route path="/vault" element={<OnboardingGate><RoleGate allow={["creator", "content_owner", "admin"]}><Vault /></RoleGate></OnboardingGate>} />
+    <Route path="/studio" element={<OnboardingGate><RoleGate allow={["creator", "content_owner", "executive_producer", "studio", "admin"]}><Studio /></RoleGate></OnboardingGate>} />
     <Route path="/client" element={<CanonicalDashboardRedirect />} />
     <Route path="/projects" element={<CanonicalDashboardRedirect />} />
-    <Route path="/archive" element={<OnboardingGate><RoleGate allow={["creator", "executive_producer", "admin"]}><MasterArchive /></RoleGate></OnboardingGate>} />
-    <Route path="/team" element={<OnboardingGate><RoleGate allow={["creator", "executive_producer", "admin"]}><Team /></RoleGate></OnboardingGate>} />
+    <Route path="/archive" element={<OnboardingGate><RoleGate allow={["creator", "content_owner", "executive_producer", "studio", "admin"]}><MasterArchive /></RoleGate></OnboardingGate>} />
+    <Route path="/team" element={<OnboardingGate><RoleGate allow={["creator", "content_owner", "executive_producer", "studio", "admin"]}><Team /></RoleGate></OnboardingGate>} />
 
     {/* Admin console is also reachable on the main domain until the admin subdomain DNS is fully configured. */}
     <Route path="/admin" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />

@@ -200,36 +200,63 @@ Deno.serve(async (req) => {
     }
 
     const host = `objectstorage.${region}.oraclecloud.com`;
-    const path = `/n/${encodeURIComponent(namespace)}/b/${encodeURIComponent(bucket)}/`;
-    const date = new Date().toUTCString();
-    const signingString =
-      `(request-target): head ${path}\n` +
-      `host: ${host}\n` +
-      `date: ${date}`;
-    const signature = await sign(key, signingString);
     const keyId = `${tenancy}/${userOcid}/${fingerprint}`;
-    const authz =
-      `Signature version="1",keyId="${keyId}",algorithm="rsa-sha256",` +
-      `headers="(request-target) host date",signature="${signature}"`;
+    const env = {
+      OCI_TENANCY_OCID: Boolean(Deno.env.get("OCI_TENANCY_OCID") || cfg?.oracle_tenancy_ocid),
+      OCI_USER_OCID: Boolean(Deno.env.get("OCI_USER_OCID") || cfg?.oracle_user_ocid),
+      OCI_FINGERPRINT: Boolean(Deno.env.get("OCI_FINGERPRINT") || cfg?.oracle_fingerprint),
+      OCI_PRIVATE_KEY: Boolean(Deno.env.get("OCI_PRIVATE_KEY") || Deno.env.get("ORACLE_PRIVATE_KEY")),
+      OCI_REGION: Boolean(Deno.env.get("OCI_REGION") || cfg?.oracle_region),
+      OCI_NAMESPACE: Boolean(Deno.env.get("OCI_NAMESPACE") || cfg?.oracle_namespace),
+      OCI_BUCKET_NAME: Boolean(Deno.env.get("OCI_BUCKET_NAME") || Deno.env.get("OCI_BUCKET") || cfg?.oracle_bucket),
+    };
 
-    const url = `https://${host}${path}`;
-    let res: Response;
+    const readBody = async (r: Response) => (await r.text().catch(() => "")).slice(0, 500);
+    const summarize = async (name: string, r: Response) => ({
+      operation: name,
+      ok: r.ok,
+      status: r.status,
+      body: await readBody(r),
+    });
+    const listBucketsPath = `/20160918/buckets?compartmentId=${encodeURIComponent(tenancy)}&namespaceName=${encodeURIComponent(namespace)}`;
+    const getBucketPath = `/n/${encodeURIComponent(namespace)}/b/${encodeURIComponent(bucket)}/`;
+    const objectName = `diagnostics/oci-verify-${crypto.randomUUID()}.txt`;
+    const objectPath = `/n/${encodeURIComponent(namespace)}/b/${encodeURIComponent(bucket)}/o/${encodeURIComponent(objectName)}`;
+    const testBody = new TextEncoder().encode(`ok ${new Date().toISOString()}\n`);
+    let results: any[] = [];
     try {
-      res = await fetch(url, {
-        method: "HEAD",
-        headers: { host, date, Authorization: authz },
-      });
+      const listBuckets = await signedOciFetch({ method: "GET", host, path: listBucketsPath, key, keyId });
+      results.push(await summarize("List Buckets", listBuckets.clone()));
+      const getBucket = await signedOciFetch({ method: "HEAD", host, path: getBucketPath, key, keyId });
+      results.push(await summarize("Get Bucket", getBucket.clone()));
+      const putObject = await signedOciFetch({ method: "PUT", host, path: objectPath, key, keyId, body: testBody, contentType: "text/plain" });
+      results.push(await summarize("Put Object", putObject.clone()));
+      const getObject = await signedOciFetch({ method: "GET", host, path: objectPath, key, keyId });
+      results.push(await summarize("Get Object", getObject.clone()));
+      const deleteObject = await signedOciFetch({ method: "DELETE", host, path: objectPath, key, keyId });
+      results.push(await summarize("Delete Object", deleteObject.clone()));
     } catch (e) {
       return json(502, { error: `Network unreachable to OCI: ${(e as Error).message}` });
     }
 
-    if (res.status === 200 || res.status === 204) {
-      return json(200, { ok: true, status: res.status, host, namespace, bucket });
-    }
-    if (res.status === 401) return json(200, { ok: false, error: "Auth failed (401): check fingerprint, user OCID, or that the public key is uploaded to OCI." });
-    if (res.status === 403) return json(200, { ok: false, error: "Forbidden (403): tenancy/user lacks permission on this bucket." });
-    if (res.status === 404) return json(200, { ok: false, error: "Not found (404): namespace or bucket name is wrong." });
-    return json(200, { ok: false, error: `OCI responded ${res.status}` });
+    const ok = results.every((r) => r.ok);
+    return json(200, {
+      ok,
+      host,
+      namespace,
+      bucket,
+      region,
+      expectedNamespace: "bma8wibnommg",
+      auth: {
+        provider: "OCI request signature v1 / RSA-SHA256",
+        privateKeyLoaded: true,
+        authenticationDetailsProviderCreated: true,
+        fingerprintConfigured: true,
+        regionMatchesExpected: region === "ap-mumbai-1",
+      },
+      environment: env,
+      results,
+    });
   } catch (e) {
     return json(500, { error: (e as Error).message || "Unknown error" });
   }

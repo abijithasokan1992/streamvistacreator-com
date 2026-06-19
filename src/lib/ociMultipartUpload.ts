@@ -16,20 +16,23 @@ import { supabase } from "@/integrations/supabase/client";
 const SUPABASE_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co`;
 const FN_URL = `${SUPABASE_URL}/functions/v1/oci-multipart`;
 
-// Phase 11: adaptive part size. OCI caps at 10,000 parts per upload.
-//   5 MB  → 50 GB max  (legacy)
-//   64 MB → 640 GB max (default)
-//  128 MB → 1.28 TB max (enterprise tier, files > 500 GB)
-const PART_SIZE_DEFAULT = 64 * 1024 * 1024;
-const PART_SIZE_LARGE   = 128 * 1024 * 1024;
-const LARGE_FILE_THRESHOLD = 500 * 1024 * 1024 * 1024; // 500 GB
-function pickPartSize(fileSize: number): number {
-  return fileSize > LARGE_FILE_THRESHOLD ? PART_SIZE_LARGE : PART_SIZE_DEFAULT;
+// Phase 11/Stream 5C: adaptive part size. Server is source of truth; client
+// recommends a size based on file size and clamps to whatever the server says.
+//   < 500 MB   →  16 MB chunks
+//   500 MB-5 GB →  32 MB chunks
+//   5-50 GB    →  64 MB chunks
+//   ≥ 50 GB    → 128 MB chunks
+const PART_SIZE_LARGE = 128 * 1024 * 1024;
+function recommendPartSize(fileSize: number): number {
+  if (fileSize < 500 * 1024 * 1024) return 16 * 1024 * 1024;
+  if (fileSize < 5 * 1024 * 1024 * 1024) return 32 * 1024 * 1024;
+  if (fileSize < 50 * 1024 * 1024 * 1024) return 64 * 1024 * 1024;
+  return PART_SIZE_LARGE;
 }
 // Files at/above this go through multipart; smaller stay on single-shot.
 export const MULTIPART_THRESHOLD = 5 * 1024 * 1024;
-// Phase 11: 4-way concurrent chunk workers.
-const UPLOAD_CONCURRENCY = 4;
+// Phase 11: 4-way concurrent chunk workers (default; server may override).
+const UPLOAD_CONCURRENCY_DEFAULT = 4;
 // Skip whole-file SHA for very large files to avoid loading them into memory.
 const SHA_MAX_BYTES = 1.5 * 1024 * 1024 * 1024;
 

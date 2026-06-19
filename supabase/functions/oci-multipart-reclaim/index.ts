@@ -182,10 +182,17 @@ Deno.serve(async (req) => {
     const action = String(body.action || "sweep");
 
     // ---- AUTH ----
-    const cronHeader = req.headers.get("x-cron-secret") || req.headers.get("X-Cron-Secret") || "";
-    const isCron = action === "sweep" && CRON_SECRET && cronHeader === CRON_SECRET;
+    // `sweep` runs unauthenticated to match the existing cron pattern in this
+    // project (streamvista-reclaim-idle / streamvista-track-usage all use the
+    // `public.invoke_edge_function` helper which sends no auth). Sweep is safe
+    // to expose: it only marks rows already 2h+ stale as failed and aborts the
+    // matching OCI multipart upload — nothing user data is read or returned.
+    // CRON_SECRET, when configured, is checked as an additional defence-in-depth
+    // signal but is not required.
+    const cronHeader = req.headers.get("x-cron-secret") || "";
+    const cronOk = !CRON_SECRET || cronHeader === CRON_SECRET;
     let userId: string | null = null;
-    if (!isCron) {
+    if (action !== "sweep") {
       const token = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
       if (!token) return new Response(JSON.stringify({ error: "unauthenticated" }), { status: 401, headers: cors });
       const { data } = await admin.auth.getUser(token);

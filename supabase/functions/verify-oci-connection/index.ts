@@ -154,7 +154,7 @@ Deno.serve(async (req) => {
     const admin = createClient(supaUrl, svc, { auth: { persistSession: false } });
     const { data: roles } = await admin
       .from("user_roles").select("role").eq("user_id", user.id);
-    if (!(roles ?? []).some((r: any) => r.role === "admin")) {
+    if (!(roles ?? []).some((r: any) => r.role === "admin" || r.role === "super_admin")) {
       return json(403, { error: "admin_required" });
     }
 

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   Upload, Loader2, FileCheck2, AlertTriangle, CheckCircle2, ShieldCheck, FileWarning,
@@ -144,6 +144,20 @@ export function AssetUploader({
       if (inputRef.current) inputRef.current.value = "";
     }
   }, [stagedFile, stagedPreflight, active, category, titleId, onUploaded]);
+
+  // Warn the user before they navigate away or close the tab during an active upload.
+  // Without this, abandoned uploads leak as "uploading" rows + OCI multipart parts
+  // until the reclaim sweeper runs.
+  useEffect(() => {
+    if (!busy) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "An upload is still in progress. Leaving now will interrupt it.";
+      return e.returnValue;
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [busy]);
 
   const cfg = ACCEPT_MAP[category as keyof typeof ACCEPT_MAP];
   const acceptAttr = accept ?? (cfg ? cfg.exts.map((e) => `.${e}`).join(",") : undefined);

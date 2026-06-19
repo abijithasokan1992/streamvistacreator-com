@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { listTitles, type TitleRow } from "@/lib/creator/titleApi";
 import { StatusBadge } from "@/components/creator/title/StatusBadge";
 import { ComingSoonGrid } from "./ComingSoonGrid";
+import { UploadDiagnostics } from "@/components/creator/UploadDiagnostics";
 import type { SectionId } from "@/components/creator/CreatorSidebar";
 
 function Stat({ icon: Icon, label, value, hint }: { icon: any; label: string; value: string; hint?: string }) {
@@ -74,6 +75,11 @@ export default function HomeSection({ onNavigate }: { onNavigate: (s: SectionId)
         <Stat icon={Database} label="Storage Usage" value={`${gbUsed} GB`}
           hint="Across all uploads to Oracle Object Storage." />
       </div>
+
+      {/* In-flight / stuck upload diagnostics */}
+      <UploadDiagnostics />
+
+
 
       {/* Recent Updates */}
       <div className="rounded-xl border border-border/40 bg-secondary/5">

@@ -235,6 +235,7 @@ export async function uploadTitleAsset(p: UploadAssetParams): Promise<TitleAsset
         titleId: p.titleId,
         category: p.category,
         onProgress: p.onProgress,
+        onTelemetry: p.onTelemetry,
         signal: p.signal,
       });
       uploadRow = res.upload;

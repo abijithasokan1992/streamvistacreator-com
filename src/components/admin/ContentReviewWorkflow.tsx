@@ -11,7 +11,8 @@ import { toast } from "sonner";
 
 type Status =
   | "submitted" | "in_review" | "qc_review" | "legal_review"
-  | "approved" | "published" | "changes_requested" | "hold" | "rejected" | "archived"
+  | "approved" | "ready_for_distribution" | "published"
+  | "changes_requested" | "hold" | "rejected" | "archived"
   | "draft" | "incomplete" | "locked";
 
 interface QueueRow {
@@ -48,6 +49,7 @@ const QUEUES: { value: Status; label: string }[] = [
   { value: "qc_review", label: "QC Review" },
   { value: "legal_review", label: "Legal Review" },
   { value: "approved", label: "Approved" },
+  { value: "ready_for_distribution", label: "Ready For Distribution" },
   { value: "published", label: "Published" },
   { value: "changes_requested", label: "Changes Requested" },
   { value: "hold", label: "Hold" },
@@ -81,8 +83,14 @@ const TRANSITIONS: Record<string, { value: Status; label: string; variant?: any 
     { value: "rejected", label: "Reject", variant: "destructive" },
   ],
   approved: [
+    { value: "ready_for_distribution", label: "Mark Ready For Distribution" },
     { value: "published", label: "Publish" },
     { value: "hold", label: "Hold" },
+  ],
+  ready_for_distribution: [
+    { value: "published", label: "Publish" },
+    { value: "hold", label: "Hold" },
+    { value: "archived", label: "Archive" },
   ],
   published: [
     { value: "archived", label: "Archive" },
@@ -93,6 +101,7 @@ const TRANSITIONS: Record<string, { value: Status; label: string; variant?: any 
     { value: "qc_review", label: "Resume → QC" },
     { value: "legal_review", label: "Resume → Legal" },
     { value: "approved", label: "Resume → Approved" },
+    { value: "ready_for_distribution", label: "Resume → Ready For Distribution" },
     { value: "rejected", label: "Reject", variant: "destructive" },
   ],
 };

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth, dashboardForRole } from "@/hooks/useAuth";
+import { useAuth, dashboardForRole, pickPrimaryRole, type AppRole } from "@/hooks/useAuth";
 
 /**
  * Magic-link / OAuth callback target.
@@ -76,10 +76,8 @@ export default function AuthCallback() {
           .from("user_roles")
           .select("role")
           .eq("user_id", user.id);
-        const roles = (rows || []).map((r: any) => r.role);
-        const primary =
-          ["super_admin","admin","content_owner","studio","distributor","localization_partner","buyer","executive_producer","creator","client"]
-            .find((r) => roles.includes(r)) as any || null;
+        const roles = (rows || []).map((r: any) => r.role as AppRole);
+        const primary = pickPrimaryRole(roles);
 
         navigate(dashboardForRole(primary), { replace: true });
       } catch (err) {

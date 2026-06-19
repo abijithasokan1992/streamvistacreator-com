@@ -202,12 +202,12 @@ export function TitleEditor({
           ) : (
             <>
               {tab === "overview" && (
-                <OverviewTab title={title} readiness={readiness} local={localChecklist!} assets={assets} />
+                <OverviewTab title={title} readiness={readiness} local={localChecklist!} assets={assets} meta={meta} timeline={timeline} />
               )}
               {tab === "metadata" && (
                 <MetadataTab meta={meta} setMeta={setMeta} readOnly={readOnly} />
               )}
-              {tab === "status" && <StatusTab title={title} />}
+              {tab === "status" && <StatusTab title={title} timeline={timeline} />}
 
               {tab === "film" && (
                 <AssetTab cat="feature_film" label="Feature Film"

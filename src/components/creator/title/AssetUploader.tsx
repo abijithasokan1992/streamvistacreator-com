@@ -204,7 +204,7 @@ export function AssetUploader({
             {cfg && <><dt>Maximum</dt><dd className="text-foreground">{humanBytes(cfg.maxBytes)}</dd></>}
           </dl>
           {!stagedPreflight.ok && (
-            <p className="text-rose-400">{stagedPreflight.reason}</p>
+            <p className="text-rose-400">{(stagedPreflight as { ok: false; reason: string }).reason}</p>
           )}
           <div className="flex gap-2 pt-1">
             <button

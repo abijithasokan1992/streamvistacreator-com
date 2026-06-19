@@ -69,6 +69,50 @@ async function sign(key: CryptoKey, data: string) {
   return btoa(String.fromCharCode(...new Uint8Array(sig)));
 }
 
+async function sha256B64(body: Uint8Array): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", body);
+  return btoa(String.fromCharCode(...new Uint8Array(digest)));
+}
+
+async function signedOciFetch(opts: {
+  method: "GET" | "HEAD" | "PUT" | "DELETE";
+  host: string;
+  path: string;
+  key: CryptoKey;
+  keyId: string;
+  body?: Uint8Array;
+  contentType?: string;
+}): Promise<Response> {
+  const date = new Date().toUTCString();
+  const headersToSign: Record<string, string> = {
+    "(request-target)": `${opts.method.toLowerCase()} ${opts.path}`,
+    host: opts.host,
+    date,
+  };
+  const names = ["(request-target)", "host", "date"];
+  const fetchHeaders: Record<string, string> = { host: opts.host, date };
+  if (opts.body) {
+    const xSha = await sha256B64(opts.body);
+    headersToSign["x-content-sha256"] = xSha;
+    headersToSign["content-type"] = opts.contentType ?? "application/octet-stream";
+    headersToSign["content-length"] = String(opts.body.byteLength);
+    names.push("x-content-sha256", "content-type", "content-length");
+    fetchHeaders["x-content-sha256"] = xSha;
+    fetchHeaders["content-type"] = headersToSign["content-type"];
+    fetchHeaders["content-length"] = headersToSign["content-length"];
+  }
+  const signingString = names.map((h) => `${h}: ${headersToSign[h]}`).join("\n");
+  const signature = await sign(opts.key, signingString);
+  fetchHeaders.Authorization =
+    `Signature version="1",keyId="${opts.keyId}",algorithm="rsa-sha256",` +
+    `headers="${names.join(" ")}",signature="${signature}"`;
+  return await fetch(`https://${opts.host}${opts.path}`, {
+    method: opts.method,
+    headers: fetchHeaders,
+    body: opts.body,
+  });
+}
+
 interface Body {
   tenancyOcid?: string;
   userOcid?: string;

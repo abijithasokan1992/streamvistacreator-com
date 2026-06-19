@@ -342,6 +342,8 @@ export async function uploadFileMultipart(p: MultipartParams): Promise<Multipart
     .map(([partNumber, etag]) => ({ partNumber, etag }));
   const done = await invoke<{ upload: any }>("complete", { uploadRowId, uploadId, parts }, { signal });
   onProgress?.(file.size, file.size);
+  // Clear the persistent resume entry — upload is finalized on OCI + DB.
+  clearResumeEntry(file);
   return { upload: done.upload, resumed: resumedFromLookup };
 }
 

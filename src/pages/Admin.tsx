@@ -192,16 +192,22 @@ export default function Admin() {
   return (
     <main className="min-h-dvh">
       <header className="border-b border-border/50 glass sticky top-0 z-40">
-        <div className="container flex items-center justify-between h-16">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-primary grid place-items-center glow-primary">
+        <div className="container flex items-center justify-between gap-4 h-20">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-gradient-primary grid place-items-center glow-primary shrink-0">
               <ShieldCheck className="w-5 h-5 text-primary-foreground" />
             </div>
-            <div title="Crayons Creator Portal">
-              <div className="font-display font-bold text-sm">Admin</div>
-              <div className="text-[11px] text-muted-foreground">{user?.email}</div>
+            <div className="min-w-0">
+              <div className="font-display font-bold text-sm leading-tight truncate">{identityName}</div>
+              {profile?.job_title && (
+                <div className="text-[11px] text-muted-foreground leading-tight truncate">{profile.job_title}</div>
+              )}
+              {profile?.organization_name && (
+                <div className="text-[10px] text-muted-foreground/80 leading-tight truncate">{profile.organization_name}</div>
+              )}
             </div>
           </div>
+
           <div className="flex items-center gap-2">
             <div className="hidden sm:flex items-center gap-2 px-2 py-1 rounded-md border border-border/70 bg-secondary/40 text-xs">
               <span className="font-mono text-foreground">/admin</span>
@@ -210,24 +216,37 @@ export default function Admin() {
               </button>
             </div>
 
-            {/* Premium Developer Account Profile Button */}
-            <div className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full border border-border/70 bg-gradient-to-r from-secondary/80 to-secondary/40 hover:from-accent/10 hover:to-secondary/60 transition-all group cursor-default">
-              <div className="w-7 h-7 rounded-full bg-gradient-primary grid place-items-center text-[10px] font-bold text-primary-foreground uppercase tracking-wider glow-primary">
-                {(user?.email?.split('@')[0] ?? 'A').slice(0, 2)}
-              </div>
-              <div className="flex flex-col leading-none">
-                <span className="text-xs font-semibold text-foreground group-hover:text-accent transition-colors">
-                  {(() => {
-                    const name = user?.email?.split('@')[0] ?? 'Admin';
-                    return name.charAt(0).toUpperCase() + name.slice(1);
-                  })()}
+            {isSuperAdmin && (
+              <div className="hidden md:flex items-center gap-1.5">
+                <span className="px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r from-amber-500/20 to-amber-300/10 text-amber-300 border border-amber-400/40">
+                  <Crown className="inline w-3 h-3 mr-1 -mt-0.5" />Platform Owner
                 </span>
-                <span className="text-[9px] text-muted-foreground uppercase tracking-wider">Dev Account</span>
+                <span className="px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r from-fuchsia-500/20 to-purple-400/10 text-fuchsia-300 border border-fuchsia-400/40">
+                  Super Admin
+                </span>
+              </div>
+            )}
+
+            {/* Profile chip */}
+            <div className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full border border-border/70 bg-gradient-to-r from-secondary/80 to-secondary/40 hover:from-accent/10 hover:to-secondary/60 transition-all group">
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt={identityName} className="w-7 h-7 rounded-full object-cover" />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-gradient-primary grid place-items-center text-[10px] font-bold text-primary-foreground uppercase tracking-wider glow-primary">
+                  {initials}
+                </div>
+              )}
+              <div className="flex flex-col leading-none">
+                <span className="text-xs font-semibold text-foreground group-hover:text-accent transition-colors truncate max-w-[160px]">
+                  {identityName}
+                </span>
+                <span className="text-[9px] text-muted-foreground uppercase tracking-wider truncate max-w-[160px]" title={user?.email ?? undefined}>
+                  {isSuperAdmin ? "Super Admin" : isAdmin ? "Administrator" : "Member"}
+                </span>
               </div>
               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-1" />
             </div>
 
-            
             <button onClick={load} disabled={fetching} className="px-3 py-2 text-sm rounded-md border border-border hover:bg-secondary flex items-center gap-2">
               <RefreshCw className={`w-4 h-4 ${fetching ? "animate-spin" : ""}`} /> Refresh
             </button>
@@ -237,6 +256,7 @@ export default function Admin() {
           </div>
         </div>
       </header>
+
 
       <section className="container py-10">
         <div className="mb-8">

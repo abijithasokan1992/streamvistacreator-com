@@ -52,8 +52,9 @@ interface Row {
 const STATUSES = ["pending", "contacted", "activated", "rejected"];
 
 export default function Admin() {
-  const { user, isAdmin, loading, signOut } = useAuth();
+  const { user, isAdmin, isSuperAdmin, loading, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   useBackGuard(!!user);
   const [rows, setRows] = useState<Row[]>([]);
   const [fetching, setFetching] = useState(false);

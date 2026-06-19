@@ -132,33 +132,49 @@ Deno.serve(async (req) => {
   if (ct.includes("application/json")) {
     const body = await req.json().catch(() => ({}));
     if (body.action === "list") {
-      // RLS scopes to workspaces the caller belongs to; service-role bypasses,
-      // so we filter explicitly via the user's memberships.
+      // Security invariant: recent_uploads rows (including par_url signed Oracle
+      // URLs and object_key) must only be readable by the uploader OR a workspace
+      // admin. Service-role bypasses RLS, so enforce the same predicate here.
       const { data: memberships } = await admin
         .from("workspace_members")
-        .select("workspace_id")
+        .select("workspace_id, role")
         .eq("user_id", userId);
       const wsIds = (memberships ?? []).map((m: any) => m.workspace_id);
-      if (wsIds.length === 0) {
-        return new Response(JSON.stringify({ uploads: [] }), { headers: cors });
+      const adminWsIds = (memberships ?? [])
+        .filter((m: any) => m.role === "owner" || m.role === "admin")
+        .map((m: any) => m.workspace_id);
+      const { data: platformAdminRow } = await admin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .eq("role", "admin")
+        .maybeSingle();
+      const isPlatformAdmin = !!platformAdminRow;
+
+      const requestedWs = typeof body.workspaceId === "string" ? body.workspaceId.trim() : "";
+      if (requestedWs && !wsIds.includes(requestedWs) && !isPlatformAdmin) {
+        return new Response(JSON.stringify({ error: "forbidden_workspace" }), { status: 403, headers: cors });
       }
+
       let q = admin
         .from("recent_uploads")
         .select("*")
-        .in("workspace_id", wsIds)
         .order("created_at", { ascending: false })
         .limit(50);
-      if (typeof body.workspaceId === "string" && body.workspaceId) {
-        if (!wsIds.includes(body.workspaceId)) {
-          return new Response(JSON.stringify({ error: "forbidden_workspace" }), { status: 403, headers: cors });
+
+      if (isPlatformAdmin) {
+        if (requestedWs) q = q.eq("workspace_id", requestedWs);
+      } else {
+        // Caller sees only their own uploads, plus all uploads in workspaces
+        // where they are workspace owner/admin.
+        const orParts: string[] = [`user_id.eq.${userId}`];
+        if (adminWsIds.length > 0) {
+          orParts.push(`workspace_id.in.(${adminWsIds.join(",")})`);
         }
-        q = admin
-          .from("recent_uploads")
-          .select("*")
-          .eq("workspace_id", body.workspaceId)
-          .order("created_at", { ascending: false })
-          .limit(50);
+        q = q.or(orParts.join(","));
+        if (requestedWs) q = q.eq("workspace_id", requestedWs);
       }
+
       const { data, error } = await q;
       if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: cors });
       return new Response(JSON.stringify({ uploads: data ?? [] }), { headers: cors });

@@ -210,6 +210,7 @@ export default function Admin() {
             <BrandingSettings />
             <PartnerLogos />
             <FreeTierConfig />
+            <ContactInbox />
             <SupportInbox />
             <OnboardingApprovals />
             <AdminCredentials />

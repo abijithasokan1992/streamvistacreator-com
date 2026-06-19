@@ -22,9 +22,69 @@ import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const MAX_BYTES = 50 * 1024 * 1024 * 1024;        // 50 GB hard ceiling
+const MAX_BYTES = 50 * 1024 * 1024 * 1024;        // 50 GB hard ceiling (global safety)
 const MIN_PART  = 5  * 1024 * 1024;                // OCI minimum 5 MB (last part exempt)
 const MAX_PART  = 50 * 1024 * 1024;                // 50 MB per part recommended
+
+// ---------- Phase 3: Server-side category limits (bytes) ----------
+// Caps stay <= MAX_BYTES until the global ceiling is intentionally raised.
+const GB = 1024 * 1024 * 1024;
+const MB = 1024 * 1024;
+const CATEGORY_LIMITS: Record<string, number> = {
+  trailer: 5 * GB,
+  feature_film: 50 * GB,
+  master: 50 * GB,         // target 250GB after global lift
+  prores: 50 * GB,         // target 500GB after global lift
+  dcp: 50 * GB,            // target 500GB after global lift
+  poster: 500 * MB,
+  artwork: 500 * MB,
+  subtitle: 50 * MB,
+  captions: 50 * MB,
+  censor_certificate: 200 * MB,
+  censor_cert: 200 * MB,
+  ownership_documents: 500 * MB,
+  ownership: 500 * MB,
+  legal: 200 * MB,
+  sales: 500 * MB,
+  audio: 5 * GB,
+  audio_tracks: 5 * GB,
+};
+
+// ---------- Phase 4: Server-derived prefix map (no client trust) ----------
+const CATEGORY_PREFIX: Record<string, string> = {
+  trailer: "trailers",
+  feature_film: "masters",
+  master: "masters",
+  prores: "prores",
+  dcp: "dcp",
+  poster: "artwork",
+  artwork: "artwork",
+  subtitle: "subtitles",
+  captions: "subtitles",
+  censor_certificate: "documents",
+  censor_cert: "documents",
+  ownership_documents: "documents",
+  ownership: "documents",
+  legal: "documents",
+  sales: "documents",
+  audio: "documents",
+  audio_tracks: "documents",
+};
+
+// ---------- Phase 7: Plan-level total storage quotas (bytes) ----------
+const TB = 1024 * GB;
+const PLAN_QUOTA: Record<string, number> = {
+  free: 100 * GB,
+  creator: 1 * TB,
+  monthly: 5 * TB,
+  quarterly: 5 * TB,
+  yearly: 5 * TB,
+};
+function planQuotaBytes(planTier: string | null | undefined, topupTb: number | null | undefined): number {
+  const base = PLAN_QUOTA[String(planTier || "free").toLowerCase()] ?? PLAN_QUOTA.free;
+  const topup = Math.max(0, Number(topupTb || 0)) * TB;
+  return base + topup;
+}
 
 // ---------- OCI signing helpers ----------
 

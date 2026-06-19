@@ -14,6 +14,71 @@ export type Database = {
   }
   public: {
     Tables: {
+      acquisition_requests: {
+        Row: {
+          buyer_user_id: string
+          counter_amount: number | null
+          counter_terms: Json | null
+          created_at: string
+          id: string
+          message: string | null
+          offer_amount: number | null
+          offer_currency: string | null
+          owner_user_id: string
+          responded_at: string | null
+          responded_by: string | null
+          rights: Json
+          status: Database["public"]["Enums"]["acquisition_status"]
+          territories: string[]
+          title_id: string
+          updated_at: string
+        }
+        Insert: {
+          buyer_user_id: string
+          counter_amount?: number | null
+          counter_terms?: Json | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          offer_amount?: number | null
+          offer_currency?: string | null
+          owner_user_id: string
+          responded_at?: string | null
+          responded_by?: string | null
+          rights?: Json
+          status?: Database["public"]["Enums"]["acquisition_status"]
+          territories?: string[]
+          title_id: string
+          updated_at?: string
+        }
+        Update: {
+          buyer_user_id?: string
+          counter_amount?: number | null
+          counter_terms?: Json | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          offer_amount?: number | null
+          offer_currency?: string | null
+          owner_user_id?: string
+          responded_at?: string | null
+          responded_by?: string | null
+          rights?: Json
+          status?: Database["public"]["Enums"]["acquisition_status"]
+          territories?: string[]
+          title_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acquisition_requests_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ad_zones: {
         Row: {
           created_at: string
@@ -583,6 +648,110 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      content_approvals: {
+        Row: {
+          actor_user_id: string
+          created_at: string
+          from_status: Database["public"]["Enums"]["content_status"] | null
+          id: string
+          note: string | null
+          title_id: string
+          to_status: Database["public"]["Enums"]["content_status"]
+        }
+        Insert: {
+          actor_user_id: string
+          created_at?: string
+          from_status?: Database["public"]["Enums"]["content_status"] | null
+          id?: string
+          note?: string | null
+          title_id: string
+          to_status: Database["public"]["Enums"]["content_status"]
+        }
+        Update: {
+          actor_user_id?: string
+          created_at?: string
+          from_status?: Database["public"]["Enums"]["content_status"] | null
+          id?: string
+          note?: string | null
+          title_id?: string
+          to_status?: Database["public"]["Enums"]["content_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_approvals_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_titles: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          duration_minutes: number | null
+          genre: string | null
+          id: string
+          language: string | null
+          locked: boolean
+          locked_at: string | null
+          locked_by: string | null
+          metadata: Json
+          owner_user_id: string
+          published_at: string | null
+          status: Database["public"]["Enums"]["content_status"]
+          submitted_at: string | null
+          synopsis: string | null
+          title: string
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          duration_minutes?: number | null
+          genre?: string | null
+          id?: string
+          language?: string | null
+          locked?: boolean
+          locked_at?: string | null
+          locked_by?: string | null
+          metadata?: Json
+          owner_user_id: string
+          published_at?: string | null
+          status?: Database["public"]["Enums"]["content_status"]
+          submitted_at?: string | null
+          synopsis?: string | null
+          title: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          duration_minutes?: number | null
+          genre?: string | null
+          id?: string
+          language?: string | null
+          locked?: boolean
+          locked_at?: string | null
+          locked_by?: string | null
+          metadata?: Json
+          owner_user_id?: string
+          published_at?: string | null
+          status?: Database["public"]["Enums"]["content_status"]
+          submitted_at?: string | null
+          synopsis?: string | null
+          title?: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: []
       }
       deliverables: {
         Row: {
@@ -1669,6 +1838,161 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_assignments: {
+        Row: {
+          created_at: string
+          ends_at: string | null
+          granted_by: string | null
+          id: string
+          is_lifetime: boolean
+          is_promotional: boolean
+          notes: string | null
+          org_id: string | null
+          plan_id: string
+          starts_at: string
+          status: Database["public"]["Enums"]["plan_assignment_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ends_at?: string | null
+          granted_by?: string | null
+          id?: string
+          is_lifetime?: boolean
+          is_promotional?: boolean
+          notes?: string | null
+          org_id?: string | null
+          plan_id: string
+          starts_at?: string
+          status?: Database["public"]["Enums"]["plan_assignment_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string | null
+          granted_by?: string | null
+          id?: string
+          is_lifetime?: boolean
+          is_promotional?: boolean
+          notes?: string | null
+          org_id?: string | null
+          plan_id?: string
+          starts_at?: string
+          status?: Database["public"]["Enums"]["plan_assignment_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_assignments_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plans: {
+        Row: {
+          bandwidth_gb: number
+          billing_cycle: string
+          code: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string | null
+          features: Json
+          gst_percent: number
+          id: string
+          is_active: boolean
+          is_archived: boolean
+          name: string
+          price_amount: number
+          role: Database["public"]["Enums"]["app_role"]
+          sort_order: number
+          storage_gb: number
+          trial_days: number
+          updated_at: string
+          user_limit: number
+          visibility: string
+        }
+        Insert: {
+          bandwidth_gb?: number
+          billing_cycle?: string
+          code: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          features?: Json
+          gst_percent?: number
+          id?: string
+          is_active?: boolean
+          is_archived?: boolean
+          name: string
+          price_amount?: number
+          role: Database["public"]["Enums"]["app_role"]
+          sort_order?: number
+          storage_gb?: number
+          trial_days?: number
+          updated_at?: string
+          user_limit?: number
+          visibility?: string
+        }
+        Update: {
+          bandwidth_gb?: number
+          billing_cycle?: string
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          features?: Json
+          gst_percent?: number
+          id?: string
+          is_active?: boolean
+          is_archived?: boolean
+          name?: string
+          price_amount?: number
+          role?: Database["public"]["Enums"]["app_role"]
+          sort_order?: number
+          storage_gb?: number
+          trial_days?: number
+          updated_at?: string
+          user_limit?: number
+          visibility?: string
+        }
+        Relationships: []
+      }
+      platform_settings: {
+        Row: {
+          category: string
+          description: string | null
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          category?: string
+          description?: string | null
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          category?: string
+          description?: string | null
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       premium_invitation_redemptions: {
         Row: {
           id: string
@@ -2403,6 +2727,51 @@ export type Database = {
           },
         ]
       }
+      role_invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_user_id: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          notes: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          status: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_user_id?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          notes?: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          status?: string
+          token?: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_user_id?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          notes?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          status?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       scholarships: {
         Row: {
           amount: number | null
@@ -2578,6 +2947,48 @@ export type Database = {
           primary_domain?: string
           updated_at?: string
           updated_by?: string | null
+        }
+        Relationships: []
+      }
+      storage_allocations: {
+        Row: {
+          allocated_gb: number
+          created_at: string
+          expires_at: string | null
+          granted_by: string | null
+          id: string
+          notes: string | null
+          org_id: string | null
+          source: string
+          updated_at: string
+          used_gb: number
+          user_id: string | null
+        }
+        Insert: {
+          allocated_gb?: number
+          created_at?: string
+          expires_at?: string | null
+          granted_by?: string | null
+          id?: string
+          notes?: string | null
+          org_id?: string | null
+          source?: string
+          updated_at?: string
+          used_gb?: number
+          user_id?: string | null
+        }
+        Update: {
+          allocated_gb?: number
+          created_at?: string
+          expires_at?: string | null
+          granted_by?: string | null
+          id?: string
+          notes?: string | null
+          org_id?: string | null
+          source?: string
+          updated_at?: string
+          used_gb?: number
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -3042,6 +3453,113 @@ export type Database = {
         }
         Relationships: []
       }
+      voucher_redemptions: {
+        Row: {
+          amount_off: number | null
+          created_at: string
+          id: string
+          plan_assignment_id: string | null
+          user_id: string
+          voucher_id: string
+        }
+        Insert: {
+          amount_off?: number | null
+          created_at?: string
+          id?: string
+          plan_assignment_id?: string | null
+          user_id: string
+          voucher_id: string
+        }
+        Update: {
+          amount_off?: number | null
+          created_at?: string
+          id?: string
+          plan_assignment_id?: string | null
+          user_id?: string
+          voucher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voucher_redemptions_plan_assignment_id_fkey"
+            columns: ["plan_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "plan_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voucher_redemptions_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vouchers: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          currency: string | null
+          discount_amount: number | null
+          discount_percent: number | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_redemptions: number | null
+          plan_id: string | null
+          redemptions_count: number
+          scope: string
+          target_org_id: string | null
+          target_user_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          discount_amount?: number | null
+          discount_percent?: number | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_redemptions?: number | null
+          plan_id?: string | null
+          redemptions_count?: number
+          scope?: string
+          target_org_id?: string | null
+          target_user_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          discount_amount?: number | null
+          discount_percent?: number | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_redemptions?: number | null
+          plan_id?: string | null
+          redemptions_count?: number
+          scope?: string
+          target_org_id?: string | null
+          target_user_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vouchers_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       welfare_beneficiaries: {
         Row: {
           assistance_amount: number | null
@@ -3161,11 +3679,16 @@ export type Database = {
         Args: { _code: string; _email?: string }
         Returns: string
       }
+      can_signup_as: { Args: { _role: string }; Returns: boolean }
       can_write_workspace: {
         Args: { _user_id: string; _workspace_id: string }
         Returns: boolean
       }
       claim_admin_if_none: { Args: never; Returns: boolean }
+      current_dashboard_role: {
+        Args: never
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -3260,6 +3783,12 @@ export type Database = {
       }
     }
     Enums: {
+      acquisition_status:
+        | "pending"
+        | "accepted"
+        | "declined"
+        | "countered"
+        | "withdrawn"
       admin_division: "ops" | "finance" | "dev" | "marketing"
       app_role:
         | "admin"
@@ -3268,6 +3797,22 @@ export type Database = {
         | "executive_producer"
         | "creator"
         | "client"
+        | "content_owner"
+        | "studio"
+        | "buyer"
+        | "localization_partner"
+        | "distributor"
+        | "super_admin"
+      content_status:
+        | "draft"
+        | "submitted"
+        | "in_review"
+        | "changes_requested"
+        | "approved"
+        | "locked"
+        | "published"
+        | "archived"
+      plan_assignment_status: "active" | "suspended" | "expired" | "cancelled"
       production_banner: "Crayons Pictures" | "Abhijith Asokan Productions"
       studio_slug:
         | "crayons_pictures"
@@ -3401,6 +3946,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      acquisition_status: [
+        "pending",
+        "accepted",
+        "declined",
+        "countered",
+        "withdrawn",
+      ],
       admin_division: ["ops", "finance", "dev", "marketing"],
       app_role: [
         "admin",
@@ -3409,7 +3961,24 @@ export const Constants = {
         "executive_producer",
         "creator",
         "client",
+        "content_owner",
+        "studio",
+        "buyer",
+        "localization_partner",
+        "distributor",
+        "super_admin",
       ],
+      content_status: [
+        "draft",
+        "submitted",
+        "in_review",
+        "changes_requested",
+        "approved",
+        "locked",
+        "published",
+        "archived",
+      ],
+      plan_assignment_status: ["active", "suspended", "expired", "cancelled"],
       production_banner: ["Crayons Pictures", "Abhijith Asokan Productions"],
       studio_slug: [
         "crayons_pictures",

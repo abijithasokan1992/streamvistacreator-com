@@ -3961,6 +3961,7 @@ export type Database = {
         | "in_review"
         | "changes_requested"
         | "approved"
+        | "ready_for_distribution"
         | "locked"
         | "published"
         | "archived"
@@ -4131,6 +4132,7 @@ export const Constants = {
         "in_review",
         "changes_requested",
         "approved",
+        "ready_for_distribution",
         "locked",
         "published",
         "archived",

@@ -276,17 +276,17 @@ Deno.serve(async (req) => {
         const { error } = await admin.auth.admin.deleteUser(target);
         if (error) {
           await writeAudit(target, targetEmail, "delete_failed", {
-            error: error.message, razorpay, stripe, storage, cleanupErrors,
+            error: error.message, razorpay, storage, cleanupErrors,
           });
           return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
         }
 
         await writeAudit(target, targetEmail, "delete", {
-          razorpay, stripe, storage, cleanupErrors,
+          razorpay, storage, cleanupErrors,
         });
         return new Response(JSON.stringify({
           ok: true,
-          billing: { razorpay, stripe },
+          billing: { razorpay },
           storage,
           cleanupErrors,
         }), { headers: { ...cors, "Content-Type": "application/json" } });

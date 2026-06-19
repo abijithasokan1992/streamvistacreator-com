@@ -3,7 +3,15 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
 export type AppRole =
+  // New role set
+  | "super_admin"
   | "admin"
+  | "content_owner"
+  | "studio"
+  | "buyer"
+  | "localization_partner"
+  | "distributor"
+  // Legacy roles (still in DB, auto-mapped to new dashboards)
   | "executive_producer"
   | "creator"
   | "client"
@@ -14,10 +22,10 @@ interface AuthCtx {
   user: User | null;
   session: Session | null;
   role: AppRole | null;
+  /** Canonical dashboard role: legacy roles are mapped to the new ones. */
+  dashboardRole: AppRole | null;
   isAdmin: boolean;
-  isExecutiveProducer: boolean;
-  isCreator: boolean;
-  isClient: boolean;
+  isSuperAdmin: boolean;
   loading: boolean;
   signOut: () => Promise<void>;
   refreshRole: () => Promise<void>;
@@ -25,11 +33,42 @@ interface AuthCtx {
 
 const Ctx = createContext<AuthCtx>({} as AuthCtx);
 
-/** Highest-precedence role (matches DB `public.primary_role`). */
+/** Highest-precedence role across new + legacy enums. */
 function pickPrimary(roles: AppRole[]): AppRole | null {
-  const order: AppRole[] = ["admin", "executive_producer", "creator", "moderator", "client", "user"];
+  const order: AppRole[] = [
+    "super_admin",
+    "admin",
+    "content_owner",
+    "studio",
+    "distributor",
+    "localization_partner",
+    "buyer",
+    // Legacy fall-through
+    "executive_producer",
+    "creator",
+    "moderator",
+    "client",
+    "user",
+  ];
   for (const r of order) if (roles.includes(r)) return r;
   return null;
+}
+
+/** Map legacy roles to their new-world equivalents for routing. */
+function toDashboardRole(r: AppRole | null): AppRole | null {
+  if (!r) return null;
+  switch (r) {
+    case "executive_producer":
+    case "creator":
+      return "content_owner";
+    case "client":
+      return "buyer";
+    case "moderator":
+    case "user":
+      return "buyer";
+    default:
+      return r;
+  }
 }
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -53,7 +92,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(s);
       setUser(s?.user ?? null);
       setTimeout(() => checkRole(s?.user?.id), 0);
-      // Idle-tracker: keep last_active_at fresh + auto-unfreeze on real sign-in
       if ((evt === "SIGNED_IN" || evt === "TOKEN_REFRESHED") && s?.user?.id) {
         setTimeout(() => {
           supabase.from("user_profiles").update({
@@ -76,7 +114,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = async () => {
     try { await supabase.auth.signOut(); } catch { /* ignore */ }
     try {
-      // Belt-and-braces: wipe any cached supabase tokens before redirect.
       Object.keys(localStorage)
         .filter((k) => k.startsWith("sb-") || k.includes("supabase.auth"))
         .forEach((k) => localStorage.removeItem(k));
@@ -87,12 +124,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setSession(null);
     setUser(null);
     setRole(null);
-    // Hard-replace so the dashboard cannot be reached via the back button.
     if (typeof window !== "undefined") {
       window.location.replace("/auth");
     }
   };
   const refreshRole = async () => { await checkRole(user?.id); };
+
+  const dashboardRole = toDashboardRole(role);
 
   return (
     <Ctx.Provider
@@ -100,10 +138,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         user,
         session,
         role,
-        isAdmin: role === "admin",
-        isExecutiveProducer: role === "executive_producer",
-        isCreator: role === "creator",
-        isClient: role === "client",
+        dashboardRole,
+        isAdmin: role === "admin" || role === "super_admin",
+        isSuperAdmin: role === "super_admin",
         loading,
         signOut,
         refreshRole,
@@ -116,11 +153,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 export const useAuth = () => useContext(Ctx);
 
-/** Default landing route for a given role. */
+/** Canonical landing route for a given role (legacy roles supported). */
 export function dashboardForRole(r: AppRole | null): string {
-  // Admins go to their dedicated console. Every other (regular) user lands on
-  // the shared user dashboard, which then routes them deeper based on role.
-  if (r === "admin") return "/admin";
-  return "/dashboard";
+  const d = toDashboardRole(r);
+  switch (d) {
+    case "super_admin": return "/admin/super";
+    case "admin": return "/admin";
+    case "content_owner": return "/dashboard/content";
+    case "studio": return "/dashboard/studio";
+    case "buyer": return "/dashboard/buyer";
+    case "localization_partner": return "/dashboard/localization";
+    case "distributor": return "/dashboard/distribution";
+    default: return "/dashboard/content";
+  }
 }
-

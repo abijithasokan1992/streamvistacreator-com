@@ -1,9 +1,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from "@/hooks/useAuth";
+import { AuthProvider, dashboardForRole, useAuth } from "@/hooks/useAuth";
 import RoleGate from "@/components/RoleGate";
 import OnboardingGate from "@/components/OnboardingGate";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -31,9 +32,6 @@ import LaunchingSpecialPlan from "./pages/LaunchingSpecialPlan.tsx";
 import CheckoutReturn from "./pages/CheckoutReturn.tsx";
 import Vault from "./pages/Vault.tsx";
 import Studio from "./pages/Studio.tsx";
-import Producer from "./pages/Producer.tsx";
-import Client from "./pages/Client.tsx";
-import Projects from "./pages/Projects.tsx";
 import MasterArchive from "./pages/MasterArchive.tsx";
 import Team from "./pages/Team.tsx";
 import Review from "./pages/Review.tsx";
@@ -42,7 +40,6 @@ import NotFound from "./pages/NotFound.tsx";
 import IngestTest from "./pages/IngestTest.tsx";
 import C2CSetupManual from "./pages/C2CSetupManual.tsx";
 import Unsubscribe from "./pages/Unsubscribe.tsx";
-import Dashboard from "./pages/Dashboard.tsx";
 
 import ReferralCapture from "./components/ReferralCapture.tsx";
 import WrongPortal from "./components/WrongPortal.tsx";
@@ -52,6 +49,19 @@ import { StorageQuotaProvider } from "@/hooks/useStorageQuota";
 import { useHostMode } from "@/hooks/useHostMode";
 
 const queryClient = new QueryClient();
+
+const CanonicalDashboardRedirect = () => {
+  const { user, role, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="min-h-dvh grid place-items-center text-muted-foreground">
+        <Loader2 className="w-5 h-5 animate-spin" />
+      </div>
+    );
+  }
+  if (!user) return <Navigate to="/auth" replace />;
+  return <Navigate to={dashboardForRole(role)} replace />;
+};
 
 /** Admin subdomain (admin.streamvistacreator.com): only auth + admin console. */
 const AdminRoutes = () => (
@@ -86,19 +96,19 @@ const PublicRoutes = () => (
     <Route path="/dashboard/localization" element={<LocalizationDashboard />} />
     <Route path="/dashboard/distribution" element={<DistributionDashboard />} />
 
-    {/* Legacy shared dashboard — admins bounce to /admin inside the page. */}
-    <Route path="/dashboard" element={<Dashboard />} />
+    {/* Legacy shared dashboard entry — always normalize to the role dashboard. */}
+    <Route path="/dashboard" element={<CanonicalDashboardRedirect />} />
 
 
 
     {/* Role-gated dashboards. RLS at the DB enforces the real boundary;
         OnboardingGate enforces the linear flow, RoleGate keeps the
         wrong UI off the screen. */}
-    <Route path="/producer" element={<OnboardingGate><RoleGate allow={["executive_producer", "admin"]}><Producer /></RoleGate></OnboardingGate>} />
+    <Route path="/producer" element={<CanonicalDashboardRedirect />} />
     <Route path="/vault" element={<OnboardingGate><RoleGate allow={["creator", "admin"]}><Vault /></RoleGate></OnboardingGate>} />
     <Route path="/studio" element={<OnboardingGate><RoleGate allow={["creator", "executive_producer", "admin"]}><Studio /></RoleGate></OnboardingGate>} />
-    <Route path="/client" element={<OnboardingGate><RoleGate allow={["client", "creator", "executive_producer", "admin"]}><Client /></RoleGate></OnboardingGate>} />
-    <Route path="/projects" element={<OnboardingGate><RoleGate allow={["creator", "executive_producer", "admin"]}><Projects /></RoleGate></OnboardingGate>} />
+    <Route path="/client" element={<CanonicalDashboardRedirect />} />
+    <Route path="/projects" element={<CanonicalDashboardRedirect />} />
     <Route path="/archive" element={<OnboardingGate><RoleGate allow={["creator", "executive_producer", "admin"]}><MasterArchive /></RoleGate></OnboardingGate>} />
     <Route path="/team" element={<OnboardingGate><RoleGate allow={["creator", "executive_producer", "admin"]}><Team /></RoleGate></OnboardingGate>} />
 

@@ -18,6 +18,22 @@ export type AppRole =
   | "moderator"
   | "user";
 
+const ROLE_ORDER: AppRole[] = [
+  "super_admin",
+  "admin",
+  "content_owner",
+  "studio",
+  "distributor",
+  "localization_partner",
+  "buyer",
+  // Legacy fall-through
+  "executive_producer",
+  "creator",
+  "moderator",
+  "client",
+  "user",
+];
+
 interface AuthCtx {
   user: User | null;
   session: Session | null;
@@ -35,23 +51,12 @@ const Ctx = createContext<AuthCtx>({} as AuthCtx);
 
 /** Highest-precedence role across new + legacy enums. */
 function pickPrimary(roles: AppRole[]): AppRole | null {
-  const order: AppRole[] = [
-    "super_admin",
-    "admin",
-    "content_owner",
-    "studio",
-    "distributor",
-    "localization_partner",
-    "buyer",
-    // Legacy fall-through
-    "executive_producer",
-    "creator",
-    "moderator",
-    "client",
-    "user",
-  ];
-  for (const r of order) if (roles.includes(r)) return r;
+  for (const r of ROLE_ORDER) if (roles.includes(r)) return r;
   return null;
+}
+
+export function pickPrimaryRole(roles: AppRole[]): AppRole | null {
+  return pickPrimary(roles);
 }
 
 /** Map legacy roles to their new-world equivalents for routing. */

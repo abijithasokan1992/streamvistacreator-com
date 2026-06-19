@@ -223,9 +223,8 @@ Deno.serve(async (req) => {
         const targetEmail = u?.user?.email ?? null;
 
         // 1. Cancel billing FIRST so we stop charging the user even if a later
-        //    step fails. Both helpers are best-effort and never throw.
+        //    step fails. Helper is best-effort and never throws.
         const razorpay = await cancelRazorpaySubscriptionsForUser(admin, target);
-        const stripe = await cancelStripeSubscriptionsForUser(admin, target);
 
         // 2. Purge OCI Object Storage to free the storage quota.
         let storage: { deleted: number; failed: number; total: number; skipped?: string } =

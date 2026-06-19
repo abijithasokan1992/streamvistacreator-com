@@ -1,12 +1,9 @@
-// Auto-bills pending usage_overages.
-//   • Stripe customers → off_session PaymentIntent against their saved card.
-//   • Razorpay customers → recurring payment against their stored token
-//     (subscriptions.razorpay_customer_id + razorpay_token_id, populated
-//      when the user authorised the original mandate).
+// Auto-bills pending usage_overages via Razorpay recurring tokens
+// (subscriptions.razorpay_customer_id + razorpay_token_id, populated when the
+// user authorised the original mandate).
 // Master switch lives in billing_config.auto_charge_enabled.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
-import { createStripeClient } from "../_shared/stripe.ts";
 import { loadRazorpayCreds } from "../_shared/razorpay-config.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;

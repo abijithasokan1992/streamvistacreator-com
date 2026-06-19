@@ -26,30 +26,49 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
-    const body = await req.json().catch(() => ({}));
-    const {
-      file_name,
-      size_bytes,
-      sha256,
-      etag,
-      duration_ms,
-      workspace_id,
-      production_banner,
-      category,
-      ingest_path,        // 'hardware' | 'mobile' | 'ndi' | 'virtual'
-      par_status,         // HTTP status of the PAR PUT (or 'multipart')
-      transport,          // 'par' | 'multipart' | 'webhook'
-    } = body ?? {};
-
-    if (!file_name || typeof file_name !== "string") {
-      return json({ error: "file_name required" }, 400);
+    // Reject obviously oversized payloads (log flooding / abuse defence).
+    const rawText = await req.text();
+    if (rawText.length > 8 * 1024) {
+      return json({ error: "Payload too large" }, 413);
+    }
+    let body: any = {};
+    try { body = rawText ? JSON.parse(rawText) : {}; } catch {
+      return json({ error: "Invalid JSON" }, 400);
     }
 
-    // ETag handshake: if both sha256 and etag are present, they should agree
-    // (OCI returns the MD5 of the object body for single-part PUTs, and a
-    // multipart-style etag for chunked). We only flag a mismatch, never fail.
+    const clip = (v: unknown, n: number): string | null => {
+      if (typeof v !== "string") return null;
+      const t = v.trim();
+      return t.length === 0 ? null : t.slice(0, n);
+    };
+    const isUuid = (v: unknown): string | null => {
+      if (typeof v !== "string") return null;
+      return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v) ? v : null;
+    };
+
+    const file_name = clip(body?.file_name, 256);
+    if (!file_name) return json({ error: "file_name required" }, 400);
+
+    const size_bytes_n = Number(body?.size_bytes);
+    const size_bytes = Number.isFinite(size_bytes_n) && size_bytes_n >= 0 && size_bytes_n < 1e15
+      ? size_bytes_n : null;
+    const duration_ms_n = Number(body?.duration_ms);
+    const duration_ms = Number.isFinite(duration_ms_n) && duration_ms_n >= 0 && duration_ms_n < 24 * 3600 * 1000
+      ? duration_ms_n : null;
+
+    const sha256 = clip(body?.sha256, 128);
+    const etag = clip(body?.etag, 128);
+    const workspace_id = isUuid(body?.workspace_id);
+    const production_banner = clip(body?.production_banner, 64);
+    const category = clip(body?.category, 64);
+    const ingest_path = clip(body?.ingest_path, 32);
+    const transport = clip(body?.transport, 32);
+    const par_status = clip(body?.par_status, 16);
+    const par_status_num = par_status ? Number(par_status) : NaN;
+
+    // ETag handshake: if both sha256 and etag are present, they should agree.
     const etag_matches = sha256 && etag
-      ? String(etag).replace(/"/g, "").toLowerCase().includes(String(sha256).slice(0, 16).toLowerCase())
+      ? etag.replace(/"/g, "").toLowerCase().includes(sha256.slice(0, 16).toLowerCase())
       : null;
 
     const supa = createClient(SUPABASE_URL, SERVICE_ROLE, {
@@ -64,25 +83,25 @@ Deno.serve(async (req) => {
     }
 
     const { error } = await supa.from("payment_debug_logs").insert({
-      severity: par_status && Number(par_status) >= 400 ? "error" : "info",
+      severity: Number.isFinite(par_status_num) && par_status_num >= 400 ? "error" : "info",
       action_type: "c2c.ingest_verified",
       source: "edge",
       user_id,
-      duration_ms: Number.isFinite(Number(duration_ms)) ? Number(duration_ms) : null,
-      error_message: par_status && Number(par_status) >= 400 ? `PAR HTTP ${par_status}` : null,
+      duration_ms,
+      error_message: Number.isFinite(par_status_num) && par_status_num >= 400 ? `PAR HTTP ${par_status}` : null,
       extra: {
         file_name,
-        size_bytes: Number(size_bytes) || null,
-        sha256: sha256 ?? null,
-        etag: etag ?? null,
+        size_bytes,
+        sha256,
+        etag,
         etag_matches,
-        workspace_id: workspace_id ?? null,
-        production_banner: production_banner ?? null,
-        category: category ?? null,
-        ingest_path: ingest_path ?? null,
-        transport: transport ?? null,
-        par_status: par_status ?? null,
-        ua: req.headers.get("user-agent") ?? null,
+        workspace_id,
+        production_banner,
+        category,
+        ingest_path,
+        transport,
+        par_status,
+        ua: (req.headers.get("user-agent") ?? "").slice(0, 256),
       },
     });
 

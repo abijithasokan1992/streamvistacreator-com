@@ -51,6 +51,19 @@ interface Row {
 
 const STATUSES = ["pending", "contacted", "activated", "rejected"];
 
+function pathToTab(path: string, isSuperAdmin: boolean): string {
+  const p = path.toLowerCase();
+  if (p.startsWith("/admin/super")) return isSuperAdmin ? "platform" : "ops";
+  if (p.startsWith("/admin/users")) return "users";
+  if (p.startsWith("/admin/storage")) return "dev";
+  if (p.startsWith("/admin/billing")) return "finance";
+  if (p.startsWith("/admin/settings")) return "ops";
+  if (p.startsWith("/admin/security") || p.startsWith("/admin/legal") || p.startsWith("/admin/qc") || p.startsWith("/admin/rights") || p.startsWith("/admin/audit")) {
+    return isSuperAdmin ? "platform" : "ops";
+  }
+  return "ops";
+}
+
 export default function Admin() {
   const { user, isAdmin, isSuperAdmin, loading, signOut } = useAuth();
   const navigate = useNavigate();

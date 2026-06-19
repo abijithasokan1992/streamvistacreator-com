@@ -59,7 +59,9 @@ function isExpired(row: { expires_at: string | null; max_views: number | null; v
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const cors = buildCorsHeaders(req);
+  const json = makeJson(cors);
+  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
 
   try {
     const body = await req.json().catch(() => ({}));

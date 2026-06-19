@@ -196,14 +196,22 @@ export default function Admin() {
           <p className="text-sm text-muted-foreground mt-1">Switch between department windows · all controls are no-code.</p>
         </div>
 
-        <Tabs defaultValue="ops" className="w-full">
-          <TabsList className="grid grid-cols-2 md:grid-cols-5 gap-2 h-auto p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-8">
+        <Tabs key={location.pathname} defaultValue={pathToTab(location.pathname, isSuperAdmin)} className="w-full">
+          <TabsList className={`grid grid-cols-2 ${isSuperAdmin ? "md:grid-cols-6" : "md:grid-cols-5"} gap-2 h-auto p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-8`}>
+            {isSuperAdmin && <DeptTab value="platform" icon={<Crown className="w-4 h-4" />} label="Platform Owner" />}
             <DeptTab value="ops" icon={<Briefcase className="w-4 h-4" />} label="Business & Ops" />
             <DeptTab value="finance" icon={<Wallet className="w-4 h-4" />} label="Finance & Billing" />
             <DeptTab value="dev" icon={<Code2 className="w-4 h-4" />} label="Development" />
             <DeptTab value="marketing" icon={<Megaphone className="w-4 h-4" />} label="Marketing" />
             <DeptTab value="users" icon={<UsersIcon className="w-4 h-4" />} label="Users & Credentials" />
           </TabsList>
+
+          {isSuperAdmin && (
+            <TabsContent value="platform" className="space-y-8 mt-0 animate-fade-in">
+              <PlatformOwnerConsole />
+            </TabsContent>
+          )}
+
 
           {/* 1. Business & Operations */}
           <TabsContent value="ops" className="space-y-8 mt-0 animate-fade-in">

@@ -509,6 +509,9 @@ Deno.serve(async (req) => {
         bucket, namespace: ns, region,
         partSize: MAX_PART,
         minPart: MIN_PART,
+        maxBytes: MAX_BYTES,
+        multipartThreshold: MULTIPART_THRESHOLD,
+        concurrency: UPLOAD_CONCURRENCY,
       }, 200, cors);
     }
 

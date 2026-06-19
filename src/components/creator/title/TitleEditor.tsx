@@ -40,6 +40,7 @@ export function TitleEditor({
   const [title, setTitle] = useState<TitleRow | null>(null);
   const [assets, setAssets] = useState<TitleAsset[]>([]);
   const [readiness, setReadiness] = useState<ServerReadiness | null>(null);
+  const [timeline, setTimeline] = useState<TitleTimelineEntry[]>([]);
   const [tab, setTab] = useState<TabId>("overview");
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -49,14 +50,16 @@ export function TitleEditor({
   const readOnly = mode === "view" || !!title?.locked;
 
   const reload = useCallback(async () => {
-    const [t, a, r] = await Promise.all([
+    const [t, a, r, tl] = await Promise.all([
       getTitle(titleId),
       listAssets(titleId),
       fetchReadiness(titleId),
+      fetchTitleTimeline(titleId),
     ]);
     setTitle(t);
     setAssets(a);
     setReadiness(r);
+    setTimeline(tl);
     if (t) {
       setName(t.title);
       setMeta(t.metadata);

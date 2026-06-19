@@ -629,9 +629,9 @@ function MetadataTab({
   );
 }
 
-function StatusTab({ title }: { title: TitleRow }) {
+function StatusTab({ title, timeline }: { title: TitleRow; timeline: TitleTimelineEntry[] }) {
   return (
-    <div className="space-y-3 text-sm">
+    <div className="space-y-4 text-sm">
       <div className="flex items-center gap-2">
         <span className="text-muted-foreground text-xs">Current status:</span>
         <StatusBadge status={title.status} />
@@ -644,9 +644,26 @@ function StatusTab({ title }: { title: TitleRow }) {
         {title.published_at && <li>Published: {new Date(title.published_at).toLocaleString()}</li>}
         {title.locked && <li className="text-amber-300">Locked — content, metadata, documents and rights are read-only.</li>}
       </ul>
-      <p className="text-xs text-muted-foreground">
-        Statuses: Draft · Incomplete · Submitted · Under Review · QC Review · Legal Review · Changes Requested · Approved · Rejected · Hold · Published · Archived.
-      </p>
+      <div>
+        <div className="text-xs font-semibold mb-2">Review History</div>
+        {timeline.length === 0 ? (
+          <div className="text-xs text-muted-foreground">No status changes yet.</div>
+        ) : (
+          <ol className="space-y-2">
+            {timeline.slice().reverse().map((t) => (
+              <li key={t.id} className="rounded-md border border-border/40 p-2 text-xs">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-medium">
+                    {(t.from_status ?? "—").replace(/_/g," ")} → {t.to_status.replace(/_/g," ")}
+                  </span>
+                  <span className="text-muted-foreground">{new Date(t.created_at).toLocaleString()}</span>
+                </div>
+                {t.note && <div className="text-muted-foreground mt-1">{t.note}</div>}
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
     </div>
   );
 }

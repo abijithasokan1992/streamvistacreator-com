@@ -26,6 +26,11 @@ export const TitleMetadataSchema = z.object({
   runtime_minutes: z.number().int().min(0).max(100000).default(0),
   production_company: z.string().max(200).default(""),
   owner: z.string().max(200).default(""),
+  // Crayons Bridge future-readiness fields (stored in metadata JSON, no migrations needed).
+  original_language: z.string().max(60).default(""),
+  production_year: z.number().int().min(1900).max(2100).nullable().default(null),
+  country_of_origin: z.string().max(60).default(""),
+  rights_owner: z.string().max(200).default(""),
   countries: z.array(z.string().trim().max(60)).default([]),
   cast: z.array(PersonSchema).default([]),
   crew: z.array(PersonSchema).default([]),

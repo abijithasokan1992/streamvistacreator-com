@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Loader2, User, CreditCard, FileText, BarChart3, Wallet, Globe, ImagePlus, LifeBuoy, Send } from "lucide-react";
+import { Loader2, User, CreditCard, FileText, BarChart3, Wallet, ImagePlus, LifeBuoy, Send } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,7 +13,6 @@ import { Badge } from "@/components/ui/badge";
 import { useBranding, uploadBrandingFile, fetchBranding } from "@/lib/branding";
 import { cn } from "@/lib/utils";
 import { PLANS, planByCycle, type Cycle } from "@/components/streamvista/plans";
-import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
 
 interface Profile {
   user_id: string;
@@ -269,18 +268,13 @@ function SupportRequestForm() {
 /* ---------------- Upgrade / Payment ---------------- */
 function UpgradeSection({ currentTier, email, name, userId, onUpgraded }: { currentTier: string; email?: string; name?: string; userId: string; onUpgraded: (tier: Profile["plan_tier"]) => void; }) {
   const [selected, setSelected] = useState<Cycle>("creator");
-  const [provider, setProvider] = useState<"razorpay" | "card">("razorpay");
   const [tbCount, setTbCount] = useState<number>(1);
   const [busy, setBusy] = useState(false);
-  const [stripeOpen, setStripeOpen] = useState(false);
 
   const plan = planByCycle(selected);
   const subtotal = plan.price * tbCount; // ₹650 per TB pre-GST × TB
   const gst = Math.round(subtotal * GST_RATE);
   const total = subtotal + gst;
-
-  // Stripe price-id for the Creator plan (recurring monthly, ₹767/TB inc. GST)
-  const stripePriceId = "cloudx_creator";
 
   const loadRazorpay = () => new Promise<boolean>((resolve) => {
     if ((window as any).Razorpay) return resolve(true);
@@ -293,8 +287,6 @@ function UpgradeSection({ currentTier, email, name, userId, onUpgraded }: { curr
   const startUpgrade = async () => {
     if (selected === "free") { toast.info("You're already on the Free plan"); return; }
     setBusy(true);
-
-    if (provider === "card") { setBusy(false); setStripeOpen(true); return; }
 
     // Razorpay recurring subscription path
     const loaded = await loadRazorpay();
@@ -318,7 +310,6 @@ function UpgradeSection({ currentTier, email, name, userId, onUpgraded }: { curr
       theme: { color: "#6366f1" },
       handler: async () => {
         setBusy(false);
-        // Webhook flips the role; reflect optimistically here.
         onUpgraded(selected as Profile["plan_tier"]);
         toast.success("Subscription activated — welcome to the Creator plan!");
       },
@@ -364,17 +355,8 @@ function UpgradeSection({ currentTier, email, name, userId, onUpgraded }: { curr
 
           <div>
             <div className="text-sm font-medium mb-2">Payment method</div>
-            <div className="grid grid-cols-2 gap-3">
-              <button type="button" onClick={() => setProvider("razorpay")}
-                className={cn("h-14 rounded-xl border-2 flex items-center justify-center gap-2 text-sm font-semibold",
-                  provider === "razorpay" ? "border-primary bg-primary/10" : "border-border")}>
-                <Wallet className="w-4 h-4" /> UPI / Netbanking <span className="text-[10px] opacity-70">(India)</span>
-              </button>
-              <button type="button" onClick={() => setProvider("card")}
-                className={cn("h-14 rounded-xl border-2 flex items-center justify-center gap-2 text-sm font-semibold",
-                  provider === "card" ? "border-primary bg-primary/10" : "border-border")}>
-                <Globe className="w-4 h-4" /> Card <span className="text-[10px] opacity-70">(Global)</span>
-              </button>
+            <div className="h-14 rounded-xl border-2 border-primary bg-primary/10 flex items-center justify-center gap-2 text-sm font-semibold">
+              <Wallet className="w-4 h-4" /> UPI / Netbanking / Cards via Razorpay
             </div>
           </div>
 
@@ -395,17 +377,6 @@ function UpgradeSection({ currentTier, email, name, userId, onUpgraded }: { curr
               className="text-accent underline-offset-2 hover:underline">open a support ticket</a>{" "}
             — self-serve cancellation is coming soon.
           </div>
-
-          {stripeOpen && (
-            <div className="mt-3 rounded-xl border p-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs uppercase tracking-wider text-accent">Secure card checkout</span>
-                <button onClick={() => setStripeOpen(false)} className="text-xs text-muted-foreground hover:text-foreground">Cancel</button>
-              </div>
-              <StripeEmbeddedCheckout priceId={stripePriceId} quantity={tbCount} customerEmail={email} userId={userId}
-                returnUrl={`${window.location.origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`} />
-            </div>
-          )}
         </>
       )}
     </div>

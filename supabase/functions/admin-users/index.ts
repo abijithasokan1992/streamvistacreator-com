@@ -6,7 +6,6 @@ import { buildCorsHeaders, handleOptions, resolveSiteOrigin } from "../_shared/c
 import { loadOciConfig, deleteUserObjects } from "../_shared/oci.ts";
 import {
   cancelRazorpaySubscriptionsForUser,
-  cancelStripeSubscriptionsForUser,
 } from "../_shared/billing-cancel.ts";
 
 type Action =
@@ -224,9 +223,8 @@ Deno.serve(async (req) => {
         const targetEmail = u?.user?.email ?? null;
 
         // 1. Cancel billing FIRST so we stop charging the user even if a later
-        //    step fails. Both helpers are best-effort and never throw.
+        //    step fails. Helper is best-effort and never throws.
         const razorpay = await cancelRazorpaySubscriptionsForUser(admin, target);
-        const stripe = await cancelStripeSubscriptionsForUser(admin, target);
 
         // 2. Purge OCI Object Storage to free the storage quota.
         let storage: { deleted: number; failed: number; total: number; skipped?: string } =
@@ -278,17 +276,17 @@ Deno.serve(async (req) => {
         const { error } = await admin.auth.admin.deleteUser(target);
         if (error) {
           await writeAudit(target, targetEmail, "delete_failed", {
-            error: error.message, razorpay, stripe, storage, cleanupErrors,
+            error: error.message, razorpay, storage, cleanupErrors,
           });
           return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
         }
 
         await writeAudit(target, targetEmail, "delete", {
-          razorpay, stripe, storage, cleanupErrors,
+          razorpay, storage, cleanupErrors,
         });
         return new Response(JSON.stringify({
           ok: true,
-          billing: { razorpay, stripe },
+          billing: { razorpay },
           storage,
           cleanupErrors,
         }), { headers: { ...cors, "Content-Type": "application/json" } });

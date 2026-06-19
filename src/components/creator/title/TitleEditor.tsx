@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { X, Loader2, Send, Lock } from "lucide-react";
+import { X, Loader2, Send, Lock, ShieldCheck, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  getTitle, listAssets, saveTitleMetadata, submitTitle, evaluateChecklist,
-  type TitleRow, type TitleAsset,
+  getTitle, listAssets, saveTitleMetadata, submitTitle,
+  evaluateChecklist, fetchReadiness,
+  type TitleRow, type TitleAsset, type ServerReadiness,
 } from "@/lib/creator/titleApi";
 import {
   type TitleMetadata, type AssetCategory, CATEGORY_LABEL,
@@ -13,22 +14,18 @@ import { AssetUploader, AssetList } from "./AssetUploader";
 import { StatusBadge } from "./StatusBadge";
 
 type TabId =
-  | "overview" | "film" | "trailer" | "poster" | "metadata"
-  | "artwork" | "captions" | "documents" | "licenses" | "rights"
-  | "sales" | "status";
+  | "overview" | "metadata"
+  | "film" | "trailer" | "poster" | "censor" | "ownership"
+  | "status";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "overview",  label: "Overview" },
-  { id: "film",      label: "Film File" },
+  { id: "metadata",  label: "Metadata" },
+  { id: "film",      label: "Feature Film" },
   { id: "trailer",   label: "Trailer" },
   { id: "poster",    label: "Poster" },
-  { id: "metadata",  label: "Metadata" },
-  { id: "artwork",   label: "Artwork" },
-  { id: "captions",  label: "Captions" },
-  { id: "documents", label: "Documents" },
-  { id: "licenses",  label: "Licenses" },
-  { id: "rights",    label: "Rights" },
-  { id: "sales",     label: "Sales Pitch" },
+  { id: "censor",    label: "Censor Certificate" },
+  { id: "ownership", label: "Ownership Documents" },
   { id: "status",    label: "Status" },
 ];
 
@@ -42,6 +39,7 @@ export function TitleEditor({
 }) {
   const [title, setTitle] = useState<TitleRow | null>(null);
   const [assets, setAssets] = useState<TitleAsset[]>([]);
+  const [readiness, setReadiness] = useState<ServerReadiness | null>(null);
   const [tab, setTab] = useState<TabId>("overview");
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -51,9 +49,14 @@ export function TitleEditor({
   const readOnly = mode === "view" || !!title?.locked;
 
   const reload = useCallback(async () => {
-    const [t, a] = await Promise.all([getTitle(titleId), listAssets(titleId)]);
+    const [t, a, r] = await Promise.all([
+      getTitle(titleId),
+      listAssets(titleId),
+      fetchReadiness(titleId),
+    ]);
     setTitle(t);
     setAssets(a);
+    setReadiness(r);
     if (t) {
       setName(t.title);
       setMeta(t.metadata);
@@ -74,12 +77,17 @@ export function TitleEditor({
     } finally { setSaving(false); }
   };
 
-  const checklist = useMemo(() => (title ? evaluateChecklist(title, assets) : null), [title, assets]);
+  const localChecklist = useMemo(
+    () => (title ? evaluateChecklist(title, assets) : null),
+    [title, assets],
+  );
+  const ready = readiness?.ready ?? localChecklist?.ready ?? false;
+  const missing = readiness?.missing ?? localChecklist?.missing ?? [];
 
   const handleSubmit = async () => {
     if (!title) return;
-    if (!checklist?.ready) {
-      toast.error(`Missing: ${checklist?.missing.join(", ")}`);
+    if (!ready) {
+      toast.error(`Missing: ${missing.join(", ")}`);
       return;
     }
     setSubmitting(true);
@@ -91,7 +99,7 @@ export function TitleEditor({
     } finally { setSubmitting(false); }
   };
 
-  const byCat = (c: AssetCategory) => assets.filter((a) => a.category === c);
+  const byCat = (cats: AssetCategory[]) => assets.filter((a) => cats.includes(a.category));
 
   return (
     <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm grid place-items-stretch">
@@ -135,9 +143,9 @@ export function TitleEditor({
             {!readOnly && (
               <button
                 onClick={handleSubmit}
-                disabled={submitting || !checklist?.ready}
+                disabled={submitting || !ready}
                 className="inline-flex items-center gap-1.5 rounded-md bg-accent text-accent-foreground text-xs px-3 py-1.5 disabled:opacity-40"
-                title={checklist?.ready ? "Submit for review" : `Missing: ${checklist?.missing.join(", ")}`}
+                title={ready ? "Submit for review" : `Missing: ${missing.join(", ")}`}
               >
                 {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                 Submit to Admin
@@ -145,6 +153,24 @@ export function TitleEditor({
             )}
           </div>
         </div>
+
+        {/* Locked banner */}
+        {title?.locked && (
+          <div className="px-5 py-3 border-b border-border/40 bg-amber-500/5">
+            <div className="flex items-center gap-2 text-sm">
+              <ShieldCheck className="w-4 h-4 text-amber-300" />
+              <span className="font-medium">Submitted For Review</span>
+              <span className="text-muted-foreground">·</span>
+              <span className="text-muted-foreground inline-flex items-center gap-1">
+                <Lock className="w-3 h-3" /> Content Locked
+              </span>
+              <span className="text-muted-foreground">·</span>
+              <span className="text-muted-foreground inline-flex items-center gap-1">
+                <Clock className="w-3 h-3" /> Awaiting Admin Review
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="border-b border-border/40 overflow-x-auto">
@@ -173,48 +199,37 @@ export function TitleEditor({
           ) : (
             <>
               {tab === "overview" && (
-                <OverviewTab title={title} checklist={checklist!} assets={assets} />
+                <OverviewTab title={title} readiness={readiness} local={localChecklist!} assets={assets} />
               )}
               {tab === "metadata" && (
                 <MetadataTab meta={meta} setMeta={setMeta} readOnly={readOnly} />
               )}
-              {tab === "rights" && (
-                <RightsTab meta={meta} setMeta={setMeta} readOnly={readOnly} />
-              )}
               {tab === "status" && <StatusTab title={title} />}
 
-              {/* Asset-tab pattern */}
               {tab === "film" && (
-                <AssetTab cat="feature_film" label="Feature Film" assets={byCat("feature_film")} titleId={title.id} locked={readOnly} onUploaded={reload} accept="video/*" />
+                <AssetTab cat="feature_film" label="Feature Film"
+                  assets={byCat(["feature_film"])} titleId={title.id}
+                  locked={readOnly} onUploaded={reload} accept="video/*" />
               )}
               {tab === "trailer" && (
-                <AssetTab cat="trailer" label="Trailer" assets={byCat("trailer")} titleId={title.id} locked={readOnly} onUploaded={reload} accept="video/*" />
+                <AssetTab cat="trailer" label="Trailer"
+                  assets={byCat(["trailer"])} titleId={title.id}
+                  locked={readOnly} onUploaded={reload} accept="video/*" />
               )}
               {tab === "poster" && (
-                <AssetTab cat="poster" label="Poster" assets={byCat("poster")} titleId={title.id} locked={readOnly} onUploaded={reload} accept="image/*" />
+                <AssetTab cat="poster" label="Poster"
+                  assets={byCat(["poster"])} titleId={title.id}
+                  locked={readOnly} onUploaded={reload} accept="image/*" />
               )}
-              {tab === "artwork" && (
-                <AssetTab cat="artwork" label="Artwork" assets={byCat("artwork")} titleId={title.id} locked={readOnly} onUploaded={reload} accept="image/*" />
+              {tab === "censor" && (
+                <AssetTab cat="censor_certificate" label="Censor Certificate"
+                  assets={byCat(["censor_certificate", "censor_cert"])} titleId={title.id}
+                  locked={readOnly} onUploaded={reload} accept="application/pdf,image/*" />
               )}
-              {tab === "captions" && (
-                <div className="space-y-6">
-                  <AssetTab cat="captions" label="Captions" assets={byCat("captions")} titleId={title.id} locked={readOnly} onUploaded={reload} accept=".srt,.vtt,.scc,.ttml,.xml" />
-                  <AssetTab cat="subtitle" label="Subtitle Files" assets={byCat("subtitle")} titleId={title.id} locked={readOnly} onUploaded={reload} accept=".srt,.vtt,.ass,.idx,.sub" />
-                  <AssetTab cat="audio" label="Audio Tracks" assets={byCat("audio")} titleId={title.id} locked={readOnly} onUploaded={reload} accept="audio/*" />
-                </div>
-              )}
-              {tab === "documents" && (
-                <div className="space-y-6">
-                  <AssetTab cat="censor_cert" label="Censor Certificate" assets={byCat("censor_cert")} titleId={title.id} locked={readOnly} onUploaded={reload} accept="application/pdf,image/*" />
-                  <AssetTab cat="legal" label="Legal Documents" assets={byCat("legal")} titleId={title.id} locked={readOnly} onUploaded={reload} accept="application/pdf" />
-                  <AssetTab cat="ownership" label="Ownership Documents" assets={byCat("ownership")} titleId={title.id} locked={readOnly} onUploaded={reload} accept="application/pdf" />
-                </div>
-              )}
-              {tab === "licenses" && (
-                <AssetTab cat="legal" label="License Agreements" assets={byCat("legal")} titleId={title.id} locked={readOnly} onUploaded={reload} accept="application/pdf" />
-              )}
-              {tab === "sales" && (
-                <AssetTab cat="sales" label="Sales Materials" assets={byCat("sales")} titleId={title.id} locked={readOnly} onUploaded={reload} />
+              {tab === "ownership" && (
+                <AssetTab cat="ownership_documents" label="Ownership Documents"
+                  assets={byCat(["ownership_documents", "ownership"])} titleId={title.id}
+                  locked={readOnly} onUploaded={reload} accept="application/pdf,image/*" />
               )}
             </>
           )}
@@ -226,26 +241,84 @@ export function TitleEditor({
 
 /* ---------------- Sub-tabs ---------------- */
 
-function OverviewTab({ title, checklist, assets }: { title: TitleRow; checklist: ReturnType<typeof evaluateChecklist>; assets: TitleAsset[] }) {
+function OverviewTab({
+  title, readiness, local, assets,
+}: {
+  title: TitleRow;
+  readiness: ServerReadiness | null;
+  local: ReturnType<typeof evaluateChecklist>;
+  assets: TitleAsset[];
+}) {
+  const has = readiness?.has ?? {
+    feature_film: local.hasFilm,
+    trailer: local.hasTrailer,
+    poster: local.hasPoster,
+    censor_certificate: local.hasCensor,
+    ownership_documents: local.hasOwnership,
+  };
+  const verified = (cat: string) =>
+    assets.some((a) => a.category === cat && a.is_primary && a.upload?.status === "verified");
+
+  const rows: { key: string; label: string }[] = [
+    { key: "title", label: "Title name" },
+    { key: "synopsis", label: "Synopsis" },
+    { key: "feature_film", label: "Feature Film" },
+    { key: "trailer", label: "Trailer" },
+    { key: "poster", label: "Poster" },
+    { key: "censor_certificate", label: "Censor Certificate" },
+    { key: "ownership_documents", label: "Ownership Documents" },
+  ];
+
+  const state = (r: { key: string; label: string }) => {
+    if (r.key === "title") return { uploaded: local.hasTitle, verified: local.hasTitle };
+    if (r.key === "synopsis") return { uploaded: local.hasSynopsis, verified: local.hasSynopsis };
+    return { uploaded: !!has[r.key], verified: verified(r.key) };
+  };
+
   return (
     <div className="space-y-5">
       <section>
-        <h3 className="text-sm font-semibold">Submission checklist</h3>
-        <ul className="mt-2 text-xs space-y-1">
-          <CheckItem ok={checklist.hasTitle} label="Title name" />
-          <CheckItem ok={checklist.hasSynopsis} label="Synopsis" />
-          <CheckItem ok={checklist.hasFilm} label="Feature Film uploaded" />
-          <CheckItem ok={checklist.hasPoster} label="Poster uploaded" />
-          <CheckItem
-            ok={checklist.hasCensor}
-            label={checklist.censorRequired ? "Censor Certificate (required for feature films)" : "Censor Certificate (not required for this format)"}
-          />
-        </ul>
-        {!checklist.censorRequired && (
-          <p className="text-[11px] text-muted-foreground mt-2">
-            Trailers, shorts, teasers and work-in-progress formats do not require a censor certificate. Admin may waive on a case-by-case basis.
-          </p>
-        )}
+        <h3 className="text-sm font-semibold">Submission readiness</h3>
+        <p className="text-[11px] text-muted-foreground mt-1">
+          Live checklist from <code className="text-[10px]">title_submission_readiness()</code>.
+        </p>
+        <div className="mt-3 rounded-lg border border-border/40 overflow-hidden">
+          <table className="w-full text-xs">
+            <thead className="bg-secondary/10 text-muted-foreground">
+              <tr>
+                <th className="text-left font-normal px-3 py-2">Requirement</th>
+                <th className="text-left font-normal px-3 py-2">Uploaded</th>
+                <th className="text-left font-normal px-3 py-2">Verified</th>
+                <th className="text-left font-normal px-3 py-2">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => {
+                const s = state(r);
+                return (
+                  <tr key={r.key} className="border-t border-border/30">
+                    <td className="px-3 py-2">{r.label}</td>
+                    <td className="px-3 py-2">{s.uploaded ? "✓" : "—"}</td>
+                    <td className="px-3 py-2">{s.verified ? "✓" : "—"}</td>
+                    <td className="px-3 py-2">
+                      {title.locked ? (
+                        <span className="inline-flex items-center gap-1 text-amber-300">
+                          <Lock className="w-3 h-3" /> Locked
+                        </span>
+                      ) : s.verified ? (
+                        <span className="text-emerald-300">Ready</span>
+                      ) : s.uploaded ? (
+                        <span className="text-sky-300">Pending verification</span>
+                      ) : (
+                        <span className="text-muted-foreground">Missing</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section>
@@ -259,15 +332,6 @@ function OverviewTab({ title, checklist, assets }: { title: TitleRow; checklist:
         </dl>
       </section>
     </div>
-  );
-}
-
-function CheckItem({ ok, label }: { ok: boolean; label: string }) {
-  return (
-    <li className="flex items-center gap-2">
-      <span className={cn("inline-block w-1.5 h-1.5 rounded-full", ok ? "bg-emerald-400" : "bg-amber-400")} />
-      <span className={cn(ok ? "text-foreground" : "text-muted-foreground")}>{label}</span>
-    </li>
   );
 }
 
@@ -297,7 +361,7 @@ function AssetTab({
   );
 }
 
-/* ----- Metadata tab: kept compact; full structured input ----- */
+/* ----- Metadata tab ----- */
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -336,43 +400,42 @@ function MetadataTab({
       <Field label="Notes">
         <TextArea rows={5} value={meta.notes} disabled={readOnly} onChange={(e) => upd("notes", e.target.value)} />
       </Field>
-      <Field label="Genres">
+      <Field label="Genre (comma separated)">
         <CSVInput value={meta.genres} disabled={readOnly} onChange={(v) => upd("genres", v)} />
       </Field>
       <Field label="Keywords">
         <CSVInput value={meta.keywords} disabled={readOnly} onChange={(v) => upd("keywords", v)} />
       </Field>
-      <Field label="Format">
-        <select
-          disabled={readOnly}
-          value={meta.format}
-          onChange={(e) => upd("format", e.target.value as TitleMetadata["format"])}
-          className="w-full bg-background border border-border/40 rounded-md px-3 py-1.5 text-sm"
-        >
-          <option value="feature_film">Feature Film</option>
-          <option value="trailer">Trailer</option>
-          <option value="short">Short</option>
-          <option value="teaser">Teaser</option>
-          <option value="wip">Work in Progress</option>
-          <option value="series">Series</option>
-          <option value="other">Other</option>
-        </select>
+      <Field label="Original Language">
+        <TextInput value={meta.original_language} disabled={readOnly}
+          placeholder="e.g. Malayalam, Tamil, English"
+          onChange={(e) => upd("original_language", e.target.value)} />
+      </Field>
+      <Field label="Production Year">
+        <TextInput type="number" min={1900} max={2100} value={meta.production_year ?? ""} disabled={readOnly}
+          onChange={(e) => upd("production_year", e.target.value ? Number(e.target.value) : null)} />
+      </Field>
+      <Field label="Country Of Origin">
+        <TextInput value={meta.country_of_origin} disabled={readOnly}
+          placeholder="e.g. India"
+          onChange={(e) => upd("country_of_origin", e.target.value)} />
       </Field>
       <Field label="Runtime (minutes)">
         <TextInput type="number" min={0} value={meta.runtime_minutes} disabled={readOnly}
           onChange={(e) => upd("runtime_minutes", Number(e.target.value || 0))} />
       </Field>
+      <Field label="Rights Owner">
+        <TextInput value={meta.rights_owner} disabled={readOnly}
+          onChange={(e) => upd("rights_owner", e.target.value)} />
+      </Field>
       <Field label="Production Company">
         <TextInput value={meta.production_company} disabled={readOnly} onChange={(e) => upd("production_company", e.target.value)} />
       </Field>
-      <Field label="Owner">
-        <TextInput value={meta.owner} disabled={readOnly} onChange={(e) => upd("owner", e.target.value)} />
+      <Field label="IMDb ID">
+        <TextInput value={meta.imdb_id} disabled={readOnly} onChange={(e) => upd("imdb_id", e.target.value)} />
       </Field>
-      <Field label="Countries">
-        <CSVInput value={meta.countries} disabled={readOnly} onChange={(v) => upd("countries", v)} />
-      </Field>
-      <Field label="Tags">
-        <CSVInput value={meta.tags} disabled={readOnly} onChange={(v) => upd("tags", v)} />
+      <Field label="TMDb ID">
+        <TextInput value={meta.tmdb_id} disabled={readOnly} onChange={(e) => upd("tmdb_id", e.target.value)} />
       </Field>
       <Field label="Cast (comma separated names)">
         <CSVInput
@@ -387,12 +450,6 @@ function MetadataTab({
           disabled={readOnly}
           onChange={(v) => upd("crew", v.map((name) => ({ name, role: "" })))}
         />
-      </Field>
-      <Field label="IMDb ID">
-        <TextInput value={meta.imdb_id} disabled={readOnly} onChange={(e) => upd("imdb_id", e.target.value)} />
-      </Field>
-      <Field label="TMDb ID">
-        <TextInput value={meta.tmdb_id} disabled={readOnly} onChange={(e) => upd("tmdb_id", e.target.value)} />
       </Field>
       <Field label="Festival Information">
         <TextArea
@@ -413,53 +470,6 @@ function MetadataTab({
             e.target.value.split("\n").map((s) => s.trim()).filter(Boolean).map((line) => ({ name: line, year: null })),
           )}
         />
-      </Field>
-      <Field label="Ratings system">
-        <TextInput value={meta.ratings.system} disabled={readOnly}
-          onChange={(e) => upd("ratings", { ...meta.ratings, system: e.target.value })} />
-      </Field>
-      <Field label="Advisory">
-        <TextArea rows={2} value={meta.advisory} disabled={readOnly} onChange={(e) => upd("advisory", e.target.value)} />
-      </Field>
-      <Field label="Copyright">
-        <TextInput value={meta.copyright} disabled={readOnly} onChange={(e) => upd("copyright", e.target.value)} />
-      </Field>
-    </div>
-  );
-}
-
-function RightsTab({
-  meta, setMeta, readOnly,
-}: { meta: TitleMetadata; setMeta: (m: TitleMetadata) => void; readOnly: boolean }) {
-  const upd = (patch: Partial<TitleMetadata["rights"]>) =>
-    setMeta({ ...meta, rights: { ...meta.rights, ...patch } });
-  return (
-    <div className="grid sm:grid-cols-2 gap-4">
-      <Field label="Territories">
-        <CSVInput
-          value={meta.rights.territories}
-          disabled={readOnly}
-          onChange={(v) => upd({ territories: v })}
-          placeholder="IN, US, EU…"
-        />
-      </Field>
-      <Field label="Exclusivity">
-        <select
-          disabled={readOnly}
-          value={meta.rights.exclusivity}
-          onChange={(e) => upd({ exclusivity: e.target.value as TitleMetadata["rights"]["exclusivity"] })}
-          className="w-full bg-background border border-border/40 rounded-md px-3 py-1.5 text-sm"
-        >
-          <option value="unspecified">Unspecified</option>
-          <option value="exclusive">Exclusive</option>
-          <option value="non_exclusive">Non-exclusive</option>
-        </select>
-      </Field>
-      <Field label="Windows">
-        <TextArea rows={4} value={meta.rights.windows} disabled={readOnly} onChange={(e) => upd({ windows: e.target.value })} />
-      </Field>
-      <Field label="Rights notes">
-        <TextArea rows={4} value={meta.rights.notes} disabled={readOnly} onChange={(e) => upd({ notes: e.target.value })} />
       </Field>
     </div>
   );

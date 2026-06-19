@@ -189,6 +189,24 @@ export class ResumableUploadInterrupted extends Error {
 }
 
 export type MultipartProgress = (loaded: number, total: number) => void;
+export type UploadStage =
+  | "initializing"
+  | "signing"
+  | "uploading"
+  | "verifying"
+  | "completing"
+  | "registering"
+  | "metadata"
+  | "complete";
+export type UploadTelemetry = {
+  stage: UploadStage;
+  loaded: number;
+  total: number;
+  partsDone: number;
+  totalParts: number;
+  speedBps: number;        // bytes per second (rolling)
+  etaSeconds: number | null;
+};
 
 export type MultipartParams = {
   file: File;
@@ -199,15 +217,68 @@ export type MultipartParams = {
   category?: string | null;
   subpath?: string | null;
   onProgress?: MultipartProgress;
+  onTelemetry?: (t: UploadTelemetry) => void;
   signal?: AbortSignal;
 };
 
 export type MultipartResult = { upload: any; resumed?: boolean };
 
+export class UploadContractError extends Error {
+  code = "upload_contract_mismatch" as const;
+  constructor(message: string) {
+    super(message);
+    this.name = "UploadContractError";
+  }
+}
+
+/** Map raw internal errors into safe, user-friendly messages (no OCI internals). */
+export function mapUploadError(raw: unknown): string {
+  const msg = raw instanceof Error ? raw.message : String(raw ?? "");
+  const m = msg.toLowerCase();
+  if (m.includes("part exceeds") || m.includes("upload_contract_mismatch")) {
+    return "Upload could not start. The platform is validating the best upload method. Please try again or contact support.";
+  }
+  if (m.includes("exceeds category limit") || m.includes("exceeds ") && m.includes("bytes")) {
+    return "Upload Not Allowed — the selected file exceeds the limit for this category.";
+  }
+  if (m.includes("storage quota")) {
+    return "Upload Not Allowed — your storage quota has been reached. Please upgrade your plan.";
+  }
+  if (m.includes("forbidden")) return "You do not have permission to upload to this workspace.";
+  if (m.includes("not signed in") || m.includes("not authenticated")) return "Please sign in again to continue uploading.";
+  if (m.includes("aborted")) return "Upload was cancelled.";
+  if (m.includes("network") || m.includes("failed to fetch")) return "Network interruption — the upload will resume automatically when reconnected.";
+  return "Upload Failed — please try again or contact support.";
+}
+
 export async function uploadFileMultipart(p: MultipartParams): Promise<MultipartResult> {
-  const { file, workspaceId, pendingId, onProgress, signal } = p;
-  const PART_SIZE = pickPartSize(file.size);
-  const totalChunks = Math.max(1, Math.ceil(file.size / PART_SIZE));
+  const { file, workspaceId, pendingId, onProgress, onTelemetry, signal } = p;
+
+  // Initial recommended chunk size — final value is clamped to server partSize after init.
+  let PART_SIZE = recommendPartSize(file.size);
+  let concurrency = UPLOAD_CONCURRENCY_DEFAULT;
+  let totalChunks = Math.max(1, Math.ceil(file.size / PART_SIZE));
+
+  // Telemetry / speed tracking (rolling 5s window).
+  const samples: Array<{ t: number; bytes: number }> = [];
+  let stage: UploadStage = "initializing";
+  const emit = (loaded: number, partsDone: number) => {
+    const now = performance.now();
+    samples.push({ t: now, bytes: loaded });
+    while (samples.length > 1 && now - samples[0].t > 5000) samples.shift();
+    let speedBps = 0;
+    if (samples.length >= 2) {
+      const first = samples[0];
+      const last = samples[samples.length - 1];
+      const dt = (last.t - first.t) / 1000;
+      if (dt > 0) speedBps = Math.max(0, (last.bytes - first.bytes) / dt);
+    }
+    const remaining = Math.max(0, file.size - loaded);
+    const etaSeconds = speedBps > 0 ? Math.round(remaining / speedBps) : null;
+    onProgress?.(loaded, file.size);
+    onTelemetry?.({ stage, loaded, total: file.size, partsDone, totalParts: totalChunks, speedBps, etaSeconds });
+  };
+  emit(0, 0);
 
   // 0) Hash the file for cross-device resume (skipped for >1.5GB files).
   const shaHex = await fileSha256Hex(file);
@@ -216,6 +287,7 @@ export async function uploadFileMultipart(p: MultipartParams): Promise<Multipart
   let uploadId: string | null = null;
   let effectivePendingId = pendingId;
   let resumedFromLookup = false;
+  let serverPartSize: number | null = null;
 
   // 1a) LOCAL REGISTRY — fastest path, works for any file size including >1.5GB.
   const local = loadResumeEntry(file);
@@ -241,8 +313,10 @@ export async function uploadFileMultipart(p: MultipartParams): Promise<Multipart
       const lk = await invoke<{
         found: boolean;
         session?: { id: string; oci_upload_id: string };
+        partSize?: number;
       }>("lookup", { fileSha256: shaHex }, { signal });
       if (lk.found && lk.session?.oci_upload_id) {
+        if (typeof lk.partSize === "number") serverPartSize = lk.partSize;
         const { data: row } = await supabase
           .from("recent_uploads")
           .select("id")
@@ -264,6 +338,10 @@ export async function uploadFileMultipart(p: MultipartParams): Promise<Multipart
       uploadId: string;
       upload?: any;
       idempotent?: boolean;
+      partSize?: number;
+      concurrency?: number;
+      multipartThreshold?: number;
+      maxBytes?: number;
     };
     const init = await invoke<InitResp>("init", {
       fileName: file.name,
@@ -280,13 +358,26 @@ export async function uploadFileMultipart(p: MultipartParams): Promise<Multipart
     }, { signal });
 
     if (init.idempotent && init.upload) {
-      onProgress?.(file.size, file.size);
+      stage = "complete";
+      emit(file.size, totalChunks);
       clearResumeEntry(file);
       return { upload: init.upload };
     }
     uploadRowId = init.uploadRowId;
     uploadId = init.uploadId;
+    if (typeof init.partSize === "number") serverPartSize = init.partSize;
+    if (typeof init.concurrency === "number" && init.concurrency > 0) concurrency = init.concurrency;
   }
+
+  // CONTRACT VALIDATION — server partSize is the ceiling.
+  if (serverPartSize && serverPartSize > 0) {
+    if (PART_SIZE > serverPartSize) {
+      // eslint-disable-next-line no-console
+      console.warn("upload_contract_mismatch", { clientPartSize: PART_SIZE, serverPartSize });
+      PART_SIZE = serverPartSize;
+    }
+  }
+  totalChunks = Math.max(1, Math.ceil(file.size / PART_SIZE));
 
   saveResumeEntry(file, {
     uploadRowId: uploadRowId!,
@@ -298,6 +389,8 @@ export async function uploadFileMultipart(p: MultipartParams): Promise<Multipart
   });
 
   // 3) LIST already-uploaded parts
+  stage = "signing";
+  emit(0, 0);
   const listed = await invoke<{ parts: Array<{ partNumber: number; etag: string }> }>(
     "list_parts", { uploadRowId, uploadId }, { signal },
   ).catch(() => ({ parts: [] as Array<{ partNumber: number; etag: string }> }));
@@ -305,11 +398,10 @@ export async function uploadFileMultipart(p: MultipartParams): Promise<Multipart
   for (const part of listed.parts) completed.set(part.partNumber, part.etag);
 
   let loaded = Math.min(file.size, completed.size * PART_SIZE);
-  onProgress?.(loaded, file.size);
+  stage = "uploading";
+  emit(loaded, completed.size);
 
-  // 4) PHASE 11: parallel chunk workers (4-way pool).
-  // Workers pull part numbers from a shared queue; completed/loaded/onProgress
-  // are mutated under the single-threaded JS event loop so no locking needed.
+  // 4) Parallel chunk workers.
   const queue: number[] = [];
   for (let n = 1; n <= totalChunks; n++) if (!completed.has(n)) queue.push(n);
 
@@ -337,7 +429,7 @@ export async function uploadFileMultipart(p: MultipartParams): Promise<Multipart
         const put = await putChunkWithRetry(sign.url, sign.headers, buf, 3, signal);
         completed.set(partNumber, put.etag);
         loaded += contentLength;
-        onProgress?.(Math.min(loaded, file.size), file.size);
+        emit(Math.min(loaded, file.size), completed.size);
         invoke("report_part", {
           uploadId, partNumber, ok: true,
           httpStatus: put.status, durationMs: put.durationMs, bytes: contentLength,
@@ -356,7 +448,7 @@ export async function uploadFileMultipart(p: MultipartParams): Promise<Multipart
     }
   }
 
-  const workerCount = Math.min(UPLOAD_CONCURRENCY, Math.max(1, queue.length));
+  const workerCount = Math.min(concurrency, Math.max(1, queue.length));
   await Promise.all(Array.from({ length: workerCount }, () => worker()));
 
   if (firstError) {
@@ -365,11 +457,16 @@ export async function uploadFileMultipart(p: MultipartParams): Promise<Multipart
   }
 
   // 5) COMPLETE
+  stage = "verifying";
+  emit(loaded, completed.size);
   const parts = Array.from(completed.entries())
     .sort(([a], [b]) => a - b)
     .map(([partNumber, etag]) => ({ partNumber, etag }));
+  stage = "completing";
+  emit(loaded, completed.size);
   const done = await invoke<{ upload: any }>("complete", { uploadRowId, uploadId, parts }, { signal });
-  onProgress?.(file.size, file.size);
+  stage = "complete";
+  emit(file.size, totalChunks);
   clearResumeEntry(file);
   return { upload: done.upload, resumed: resumedFromLookup };
 }

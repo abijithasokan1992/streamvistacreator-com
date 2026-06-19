@@ -283,8 +283,53 @@ Deno.serve(async (req) => {
     }
   }
 
+  // Phase 4: server-derived prefix when titleId is supplied.
+  const titleIdRaw = form.get("titleId");
+  const titleId = typeof titleIdRaw === "string" ? titleIdRaw.trim() : "";
+  const catKeyRaw = typeof categoryRaw === "string"
+    ? categoryRaw.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "")
+    : "";
+
+  // Phase 3: per-category limit
+  if (titleId) {
+    if (!catKeyRaw || !(catKeyRaw in CATEGORY_LIMITS)) {
+      return new Response(JSON.stringify({ error: `invalid category '${catKeyRaw}'` }), { status: 400, headers: cors });
+    }
+    if (file.size > CATEGORY_LIMITS[catKeyRaw]) {
+      return new Response(JSON.stringify({ error: `Upload Failed — ${catKeyRaw} exceeds category limit`, limitBytes: CATEGORY_LIMITS[catKeyRaw] }), { status: 413, headers: cors });
+    }
+  }
+
+  // Phase 7: total storage quota
+  {
+    const { data: prof } = await admin.from("user_profiles")
+      .select("plan_tier, topup_tb").eq("user_id", userId).maybeSingle();
+    const quota = planQuotaBytes(prof?.plan_tier, prof?.topup_tb);
+    const { data: usedRows } = await admin.from("recent_uploads")
+      .select("file_size").eq("user_id", userId)
+      .in("status", ["uploading", "uploaded", "verified", "ready", "completed", "done"]);
+    const usedBytes = (usedRows ?? []).reduce((s: number, r: any) => s + (Number(r.file_size) || 0), 0);
+    if (usedBytes + file.size > quota) {
+      return new Response(JSON.stringify({
+        error: `Upload Failed — storage quota exceeded (${Math.round(quota / GB)} GB total)`,
+        quotaBytes: quota, usedBytes,
+      }), { status: 413, headers: cors });
+    }
+  }
+
   if (!row) {
-    const objectKey = `workspaces/${workspaceId}/${projectSegment}${categorySegment}/users/${userId}/${Date.now()}-${crypto.randomUUID()}-${safeName(file.name)}`;
+    let objectKey: string;
+    if (titleId) {
+      const { data: t } = await admin.from("content_titles")
+        .select("id, owner_user_id").eq("id", titleId).maybeSingle();
+      if (!t || t.owner_user_id !== userId) {
+        return new Response(JSON.stringify({ error: "forbidden_title" }), { status: 403, headers: cors });
+      }
+      const prefix = CATEGORY_PREFIX[catKeyRaw] ?? "documents";
+      objectKey = `users/${userId}/titles/${titleId}/${prefix}/${Date.now()}-${crypto.randomUUID()}-${safeName(file.name)}`;
+    } else {
+      objectKey = `workspaces/${workspaceId}/${projectSegment}${categorySegment}/users/${userId}/${Date.now()}-${crypto.randomUUID()}-${safeName(file.name)}`;
+    }
     const { data: inserted, error: insErr } = await admin
       .from("recent_uploads")
       .insert({
@@ -297,8 +342,8 @@ Deno.serve(async (req) => {
         object_key: objectKey,
         status: "uploading",
         client_pending_id: pendingId,
-        project_id: projectSegment ? projectIdRaw : null,
-        category: projectSegment ? categorySegment : null,
+        project_id: titleId ? null : (projectSegment ? projectIdRaw : null),
+        category: titleId ? catKeyRaw : (projectSegment ? categorySegment : null),
       })
       .select("id, object_key, status").single();
     if (insErr || !inserted) {

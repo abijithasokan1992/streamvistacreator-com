@@ -167,13 +167,19 @@ Deno.serve(async (req) => {
       return json(400, { error: `Invalid JSON body: ${(e as Error).message}` });
     }
 
-    const tenancy = (body.tenancyOcid ?? "").trim();
-    const fingerprint = (body.keyFingerprint ?? "").trim();
-    const namespace = (body.namespace ?? "").trim();
-    const bucket = (body.bucketName ?? "").trim();
+    const { data: cfg } = await admin
+      .from("site_config")
+      .select("oracle_tenancy_ocid, oracle_user_ocid, oracle_fingerprint, oracle_region, oracle_namespace, oracle_bucket")
+      .eq("id", true)
+      .maybeSingle();
+
+    const tenancy = (body.tenancyOcid ?? cfg?.oracle_tenancy_ocid ?? Deno.env.get("OCI_TENANCY_OCID") ?? "").trim();
+    const fingerprint = (body.keyFingerprint ?? cfg?.oracle_fingerprint ?? Deno.env.get("OCI_FINGERPRINT") ?? "").trim();
+    const namespace = (body.namespace ?? cfg?.oracle_namespace ?? Deno.env.get("OCI_NAMESPACE") ?? "").trim();
+    const bucket = (body.bucketName ?? cfg?.oracle_bucket ?? Deno.env.get("OCI_BUCKET") ?? Deno.env.get("OCI_BUCKET_NAME") ?? "").trim();
     const userOcid = (body.userOcid ?? Deno.env.get("OCI_USER_OCID") ?? "").trim();
-    const region = (body.region ?? Deno.env.get("OCI_REGION") ?? "").trim();
-    const pem = Deno.env.get("ORACLE_PRIVATE_KEY") ?? "";
+    const region = (body.region ?? cfg?.oracle_region ?? Deno.env.get("OCI_REGION") ?? "").trim();
+    const pem = Deno.env.get("ORACLE_PRIVATE_KEY") || Deno.env.get("OCI_PRIVATE_KEY") || "";
 
     if (!pem) return json(400, { error: "ORACLE_PRIVATE_KEY backend secret is not set." });
     if (!tenancy || !fingerprint || !namespace || !bucket) {

@@ -3207,6 +3207,48 @@ export type Database = {
         }
         Relationships: []
       }
+      title_assets: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          is_primary: boolean
+          title_id: string
+          upload_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          title_id: string
+          upload_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          title_id?: string
+          upload_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "title_assets_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "title_assets_upload_id_fkey"
+            columns: ["upload_id"]
+            isOneToOne: false
+            referencedRelation: "recent_uploads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       upload_sessions: {
         Row: {
           created_at: string
@@ -3812,6 +3854,11 @@ export type Database = {
         | "locked"
         | "published"
         | "archived"
+        | "incomplete"
+        | "qc_review"
+        | "legal_review"
+        | "hold"
+        | "rejected"
       plan_assignment_status: "active" | "suspended" | "expired" | "cancelled"
       production_banner: "Crayons Pictures" | "Abhijith Asokan Productions"
       studio_slug:
@@ -3977,6 +4024,11 @@ export const Constants = {
         "locked",
         "published",
         "archived",
+        "incomplete",
+        "qc_review",
+        "legal_review",
+        "hold",
+        "rejected",
       ],
       plan_assignment_status: ["active", "suspended", "expired", "cancelled"],
       production_banner: ["Crayons Pictures", "Abhijith Asokan Productions"],

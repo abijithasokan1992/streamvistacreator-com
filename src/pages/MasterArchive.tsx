@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, dashboardForRole } from "@/hooks/useAuth";
 import { useWorkspaces } from "@/hooks/useWorkspaces";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -155,7 +155,7 @@ function categorySatisfies(category: string | null, item: typeof BRIDGE_CHECKLIS
 }
 
 export default function MasterArchive() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, role } = useAuth();
   const { workspaces, active, activeId, setActiveId, loading: wsLoading } = useWorkspaces();
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectId, setProjectId] = useState<string>("");
@@ -458,8 +458,8 @@ export default function MasterArchive() {
       <header className="border-b border-border/50 sticky top-0 z-30 backdrop-blur bg-background/80">
         <div className="container flex items-center justify-between h-16">
           <div className="flex items-center gap-3">
-            <Link to="/projects" className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm">
-              <ArrowLeft className="w-4 h-4" /> Projects
+            <Link to={dashboardForRole(role)} className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm">
+              <ArrowLeft className="w-4 h-4" /> Dashboard
             </Link>
             <div className="h-6 w-px bg-border" />
             <h1 className="font-display font-bold text-lg inline-flex items-center gap-2">

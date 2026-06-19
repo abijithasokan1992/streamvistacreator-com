@@ -259,34 +259,19 @@ export async function uploadTitleAsset(p: UploadAssetParams): Promise<TitleAsset
     }
   }
 
-  // (3) title_assets row
-  const { data: assetRow, error: linkErr } = await (supabase as any)
-    .from("title_assets")
-    .insert({
-      title_id: p.titleId,
-      upload_id: uploadRow.id,
-      category: p.category,
-      is_primary: true,
-    })
-    .select("*")
-    .single();
-  if (linkErr || !assetRow) throw new UploadValidationError("title_assets link row", linkErr);
-
-  // Demote any other primary in the same category.
-  await (supabase as any)
-    .from("title_assets")
-    .update({ is_primary: false })
-    .eq("title_id", p.titleId)
-    .eq("category", p.category)
-    .neq("id", assetRow.id);
-
-  // (4) audit
-  await audit("title_asset_uploaded", {
-    title_id: p.titleId,
-    category: p.category,
-    upload_id: uploadRow.id,
-    file_name: uploadRow.file_name,
-  });
+  // (3) title_assets row — use server RPC for atomic ownership/lock/Oracle validation + audit.
+  const { data: newAssetId, error: linkErr } = await (supabase as any).rpc(
+    "complete_title_asset_upload",
+    {
+      _title_id: p.titleId,
+      _upload_id: uploadRow.id,
+      _category: p.category,
+      _is_primary: true,
+    },
+  );
+  if (linkErr || !newAssetId) {
+    throw new UploadValidationError("title_assets link row", linkErr);
+  }
 
   // (5) storage usage refresh — recent_uploads inserts are already counted
   // by the existing storage triggers; we verify by re-reading the user's
@@ -297,7 +282,15 @@ export async function uploadTitleAsset(p: UploadAssetParams): Promise<TitleAsset
     .eq("user_id", verify.user_id);
   if (usageErr) throw new UploadValidationError("Storage usage refresh", usageErr);
 
-  return { ...assetRow, upload: uploadRow as any };
+  return {
+    id: String(newAssetId),
+    title_id: p.titleId,
+    upload_id: uploadRow.id,
+    category: p.category,
+    is_primary: true,
+    created_at: new Date().toISOString(),
+    upload: uploadRow as any,
+  };
 }
 
 export type SubmitChecklist = {

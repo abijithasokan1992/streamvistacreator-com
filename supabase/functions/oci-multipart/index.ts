@@ -24,7 +24,9 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const MAX_BYTES = 50 * 1024 * 1024 * 1024;        // 50 GB hard ceiling (global safety)
 const MIN_PART  = 5  * 1024 * 1024;                // OCI minimum 5 MB (last part exempt)
-const MAX_PART  = 50 * 1024 * 1024;                // 50 MB per part recommended
+const MAX_PART  = 128 * 1024 * 1024;               // 128 MB per part ceiling (matches client PART_SIZE_LARGE)
+const MULTIPART_THRESHOLD = 5 * 1024 * 1024;       // 5 MB — files at/above this use multipart
+const UPLOAD_CONCURRENCY = 4;                      // recommended parallel chunk workers
 
 // ---------- Phase 3: Server-side category limits (bytes) ----------
 // Caps stay <= MAX_BYTES until the global ceiling is intentionally raised.
@@ -373,6 +375,10 @@ Deno.serve(async (req) => {
               objectKey: existing.object_key,
               bucket, namespace: ns, region,
               partSize: MAX_PART,
+              minPart: MIN_PART,
+              maxBytes: MAX_BYTES,
+              multipartThreshold: MULTIPART_THRESHOLD,
+              concurrency: UPLOAD_CONCURRENCY,
             }, 200, cors);
           }
         }
@@ -507,6 +513,9 @@ Deno.serve(async (req) => {
         bucket, namespace: ns, region,
         partSize: MAX_PART,
         minPart: MIN_PART,
+        maxBytes: MAX_BYTES,
+        multipartThreshold: MULTIPART_THRESHOLD,
+        concurrency: UPLOAD_CONCURRENCY,
       }, 200, cors);
     }
 

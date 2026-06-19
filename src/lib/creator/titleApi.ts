@@ -179,6 +179,7 @@ export type UploadAssetParams = {
   titleId: string;
   workspaceId: string;
   onProgress?: (loaded: number, total: number) => void;
+  onTelemetry?: (t: import("@/lib/ociMultipartUpload").UploadTelemetry) => void;
   signal?: AbortSignal;
 };
 
@@ -234,6 +235,7 @@ export async function uploadTitleAsset(p: UploadAssetParams): Promise<TitleAsset
         titleId: p.titleId,
         category: p.category,
         onProgress: p.onProgress,
+        onTelemetry: p.onTelemetry,
         signal: p.signal,
       });
       uploadRow = res.upload;

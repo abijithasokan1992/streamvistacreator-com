@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Loader2, User, CreditCard, FileText, BarChart3, Wallet, Globe, ImagePlus, LifeBuoy, Send } from "lucide-react";
+import { Loader2, User, CreditCard, FileText, BarChart3, Wallet, ImagePlus, LifeBuoy, Send } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,7 +13,6 @@ import { Badge } from "@/components/ui/badge";
 import { useBranding, uploadBrandingFile, fetchBranding } from "@/lib/branding";
 import { cn } from "@/lib/utils";
 import { PLANS, planByCycle, type Cycle } from "@/components/streamvista/plans";
-import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
 
 interface Profile {
   user_id: string;

@@ -195,9 +195,9 @@ export default function Auth() {
       navigate(nextParam, { replace: true });
       return;
     }
-    const target = roles.includes("executive_producer") ? "/producer"
-      : roles.includes("creator") ? "/projects"
-      : "/projects"; // open self-serve: everyone lands on the workspace dashboard
+    // All non-admin users land on the shared /dashboard, which is not gated
+    // by onboarding and provides role-based tiles into the deeper workspaces.
+    const target = "/dashboard";
     navigate(target, { replace: true });
   };
 

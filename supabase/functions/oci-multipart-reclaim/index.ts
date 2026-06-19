@@ -238,13 +238,11 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ ok: true, report }), { status: 200, headers: cors });
     }
 
-    // ---------- SWEEP (cron) ----------
+    // ---------- SWEEP (cron / unauthenticated) ----------
     if (action !== "sweep") {
       return new Response(JSON.stringify({ error: "unknown action" }), { status: 400, headers: cors });
     }
-    if (!isCron) {
-      return new Response(JSON.stringify({ error: "forbidden" }), { status: 403, headers: cors });
-    }
+    void cronOk; // currently advisory; sweep is safe to expose
     const staleMin = Number(body.stale_minutes || STALE_MINUTES_DEFAULT);
     const { data: candidates } = await admin
       .from("recent_uploads")

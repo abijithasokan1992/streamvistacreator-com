@@ -21,7 +21,72 @@ const PART_SIZE = 5 * 1024 * 1024;
 // Files at/above this go through multipart; smaller stay on single-shot.
 export const MULTIPART_THRESHOLD = 5 * 1024 * 1024;
 // Skip whole-file SHA for very large files to avoid loading them into memory.
+// Files above this size rely on the localStorage resume registry instead.
 const SHA_MAX_BYTES = 1.5 * 1024 * 1024 * 1024;
+
+// ---------------------------------------------------------------------------
+// Phase 10: persistent resume registry (browser-refresh / crash recovery).
+// Files >1.5 GB cannot be re-fingerprinted via SHA (would OOM the tab).
+// Instead we persist {uploadRowId, uploadId, pendingId, titleId, workspaceId,
+// category} in localStorage keyed by a cheap file fingerprint
+// (name|size|lastModified). On a fresh File handle for the same physical
+// file, we re-discover the session and skip `init` entirely. The entry is
+// cleared on `complete` or on a hard, non-resumable failure.
+const REGISTRY_PREFIX = "oci-resume:v1:";
+const REGISTRY_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+type ResumeEntry = {
+  uploadRowId: string;
+  uploadId: string;
+  pendingId: string;
+  titleId?: string | null;
+  workspaceId: string;
+  category?: string | null;
+  fileName: string;
+  fileSize: number;
+  lastModified: number;
+  savedAt: number;
+};
+
+function fingerprintKey(file: File): string {
+  return `${REGISTRY_PREFIX}${file.name}|${file.size}|${file.lastModified}`;
+}
+
+function loadResumeEntry(file: File): ResumeEntry | null {
+  try {
+    const raw = localStorage.getItem(fingerprintKey(file));
+    if (!raw) return null;
+    const entry = JSON.parse(raw) as ResumeEntry;
+    if (Date.now() - entry.savedAt > REGISTRY_TTL_MS) {
+      localStorage.removeItem(fingerprintKey(file));
+      return null;
+    }
+    if (entry.fileSize !== file.size || entry.fileName !== file.name) return null;
+    return entry;
+  } catch {
+    return null;
+  }
+}
+
+function saveResumeEntry(
+  file: File,
+  entry: Omit<ResumeEntry, "fileName" | "fileSize" | "lastModified" | "savedAt">,
+) {
+  try {
+    const full: ResumeEntry = {
+      ...entry,
+      fileName: file.name,
+      fileSize: file.size,
+      lastModified: file.lastModified,
+      savedAt: Date.now(),
+    };
+    localStorage.setItem(fingerprintKey(file), JSON.stringify(full));
+  } catch { /* quota / private-mode — non-fatal */ }
+}
+
+function clearResumeEntry(file: File) {
+  try { localStorage.removeItem(fingerprintKey(file)); } catch { /* ignore */ }
+}
 
 type InvokeOpts = { signal?: AbortSignal };
 

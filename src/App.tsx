@@ -129,7 +129,8 @@ const PublicRoutes = () => (
     <Route path="/about" element={<About />} />
     <Route path="/ingest-test" element={<IngestTest />} />
     <Route path="/c2c-setup" element={<C2CSetupManual />} />
-    <Route path="/support" element={<About />} />
+    <Route path="/support" element={<Contact />} />
+    <Route path="/contact" element={<Contact />} />
     <Route path="/unsubscribe" element={<Unsubscribe />} />
     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
     <Route path="*" element={<NotFound />} />

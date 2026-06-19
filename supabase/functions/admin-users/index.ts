@@ -6,7 +6,6 @@ import { buildCorsHeaders, handleOptions, resolveSiteOrigin } from "../_shared/c
 import { loadOciConfig, deleteUserObjects } from "../_shared/oci.ts";
 import {
   cancelRazorpaySubscriptionsForUser,
-  cancelStripeSubscriptionsForUser,
 } from "../_shared/billing-cancel.ts";
 
 type Action =

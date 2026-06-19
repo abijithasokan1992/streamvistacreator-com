@@ -110,6 +110,7 @@ function statusColor(s: string) {
   switch (s) {
     case "approved":
     case "published": return "bg-emerald-500/15 text-emerald-300 border-emerald-500/30";
+    case "ready_for_distribution": return "bg-cyan-500/15 text-cyan-300 border-cyan-500/30";
     case "rejected": return "bg-red-500/15 text-red-300 border-red-500/30";
     case "hold": return "bg-amber-500/15 text-amber-300 border-amber-500/30";
     case "changes_requested": return "bg-orange-500/15 text-orange-300 border-orange-500/30";

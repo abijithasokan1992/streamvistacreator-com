@@ -14,7 +14,7 @@
  * valid even though the user hasn't set a new password.
  */
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
 import { loadRazorpayCreds } from "../_shared/razorpay-config.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -23,10 +23,10 @@ const ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
 
 const FASTLINK_AMOUNT_PAISE = 100; // ₹1.00
 
-function json(body: unknown, status = 200) {
+function json(body: unknown, status = 200, req?: Request) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...(req ? buildCorsHeaders(req) : {}), "Content-Type": "application/json" },
   });
 }
 
@@ -46,7 +46,8 @@ async function hmacSha256Hex(key: string, msg: string): Promise<string> {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") return handleOptions(req);
+  const j = (b: unknown, s = 200) => json(b, s, req);
 
   try {
     const authHeader = req.headers.get("Authorization");

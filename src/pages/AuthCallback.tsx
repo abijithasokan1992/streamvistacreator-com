@@ -32,18 +32,19 @@ export default function AuthCallback() {
     let cancelled = false;
     (async () => {
       try {
-        // 1. Apply pending role if needed.
-        if (!role) {
-          const stashed = (() => {
-            try { return sessionStorage.getItem("sv_pending_role"); } catch { return null; }
-          })();
-          const metaRole = (user.user_metadata as Record<string, unknown> | undefined)?.requested_role;
-          const chosen = (stashed || metaRole) as string | null;
-          if (chosen) {
-            await supabase.rpc("set_initial_role" as never, { _role: chosen } as never);
-          }
-          try { sessionStorage.removeItem("sv_pending_role"); } catch { /* noop */ }
+        // 1. Apply the public signup role. New users may briefly receive the
+        // legacy default role before this page runs, so do not require role=null.
+        const stashed = (() => {
+          try { return sessionStorage.getItem("sv_pending_role"); } catch { return null; }
+        })();
+        const metaRole = (user.user_metadata as Record<string, unknown> | undefined)?.requested_role;
+        const chosen = (stashed || metaRole) as string | null;
+        const publicSignupRoles = ["content_owner", "studio", "buyer"];
+        const protectedRoles = ["admin", "super_admin", "localization_partner", "distributor"];
+        if (chosen && publicSignupRoles.includes(chosen) && !protectedRoles.includes(role ?? "")) {
+          await supabase.rpc("set_initial_role" as never, { _role: chosen } as never);
         }
+        try { sessionStorage.removeItem("sv_pending_role"); } catch { /* noop */ }
 
         // 2. Ensure profile row.
         const displayName =

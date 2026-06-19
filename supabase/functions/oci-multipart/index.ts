@@ -413,6 +413,7 @@ Deno.serve(async (req) => {
         method: "PUT", host, path,
         contentSha256, contentType: "application/octet-stream",
         contentLength, keyId, privateKey,
+        dateHeader: "x-date",
       });
 
       await logIngest(admin, {
@@ -425,11 +426,10 @@ Deno.serve(async (req) => {
         method: "PUT",
         headers: {
           host,
-          date: sig.date,
+          "x-date": sig.date,
           Authorization: sig.authorization,
           "x-content-sha256": contentSha256,
           "content-type": "application/octet-stream",
-          "content-length": String(contentLength),
         },
         expires_in: 300,
       }, 200, cors);

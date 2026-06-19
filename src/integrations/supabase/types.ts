@@ -746,6 +746,7 @@ export type Database = {
           locked_by: string | null
           metadata: Json
           owner_user_id: string
+          previous_status: Database["public"]["Enums"]["content_status"] | null
           published_at: string | null
           status: Database["public"]["Enums"]["content_status"]
           submitted_at: string | null
@@ -767,6 +768,7 @@ export type Database = {
           locked_by?: string | null
           metadata?: Json
           owner_user_id: string
+          previous_status?: Database["public"]["Enums"]["content_status"] | null
           published_at?: string | null
           status?: Database["public"]["Enums"]["content_status"]
           submitted_at?: string | null
@@ -788,6 +790,7 @@ export type Database = {
           locked_by?: string | null
           metadata?: Json
           owner_user_id?: string
+          previous_status?: Database["public"]["Enums"]["content_status"] | null
           published_at?: string | null
           status?: Database["public"]["Enums"]["content_status"]
           submitted_at?: string | null
@@ -3774,6 +3777,38 @@ export type Database = {
     }
     Functions: {
       admin_exists: { Args: never; Returns: boolean }
+      admin_review_queue: {
+        Args: { _status?: string }
+        Returns: {
+          approved_at: string
+          id: string
+          latest_note: string
+          locked: boolean
+          owner_email: string
+          owner_user_id: string
+          previous_status: Database["public"]["Enums"]["content_status"]
+          published_at: string
+          status: Database["public"]["Enums"]["content_status"]
+          submitted_at: string
+          title: string
+          updated_at: string
+          workspace_id: string
+        }[]
+      }
+      admin_title_history: {
+        Args: { _title_id: string }
+        Returns: {
+          action: string
+          actor_email: string
+          actor_user_id: string
+          details: Json
+          from_status: string
+          kind: string
+          note: string
+          occurred_at: string
+          to_status: string
+        }[]
+      }
       attach_referral: {
         Args: { _code: string; _email?: string }
         Returns: string
@@ -3883,6 +3918,10 @@ export type Database = {
         Returns: undefined
       }
       title_submission_readiness: { Args: { _title_id: string }; Returns: Json }
+      transition_title_status: {
+        Args: { _note?: string; _title_id: string; _to_status: string }
+        Returns: Json
+      }
       user_in_banner: {
         Args: {
           _banner: Database["public"]["Enums"]["production_banner"]

@@ -60,13 +60,13 @@ export async function loadOciConfig(admin: any): Promise<OciConfig | null> {
     .maybeSingle();
 
   // Private key only lives in the encrypted backend secret — never in the DB.
-  const pem = Deno.env.get("ORACLE_PRIVATE_KEY");
+  const pem = Deno.env.get("ORACLE_PRIVATE_KEY") || Deno.env.get("OCI_PRIVATE_KEY");
   const tenancy = cfg?.oracle_tenancy_ocid || Deno.env.get("OCI_TENANCY_OCID");
   const user = cfg?.oracle_user_ocid || Deno.env.get("OCI_USER_OCID");
   const fingerprint = cfg?.oracle_fingerprint || Deno.env.get("OCI_FINGERPRINT");
   const region = cfg?.oracle_region || Deno.env.get("OCI_REGION");
   const namespace = cfg?.oracle_namespace || Deno.env.get("OCI_NAMESPACE");
-  const bucket = cfg?.oracle_bucket || Deno.env.get("OCI_BUCKET");
+  const bucket = cfg?.oracle_bucket || Deno.env.get("OCI_BUCKET") || Deno.env.get("OCI_BUCKET_NAME");
   if (!pem || !tenancy || !user || !fingerprint || !region || !namespace || !bucket) {
     return null;
   }

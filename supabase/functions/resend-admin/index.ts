@@ -25,7 +25,8 @@ async function requireAdmin(req: Request) {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") return handleOptions(req);
+  const json = jsonWith(req);
 
   const gate = await requireAdmin(req);
   if (!gate.ok) return json({ error: gate.error }, gate.status);

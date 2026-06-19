@@ -201,17 +201,38 @@ export async function uploadFileMultipart(p: MultipartParams): Promise<Multipart
 
   let uploadRowId: string | null = null;
   let uploadId: string | null = null;
+  let effectivePendingId = pendingId;
   let resumedFromLookup = false;
 
-  // 1) LOOKUP — does a pending session for this exact file already exist?
-  if (shaHex) {
+  // 1a) LOCAL REGISTRY — fastest path, works for any file size including >1.5GB.
+  // Recovers from browser refresh, tab crash, power failure, network loss.
+  const local = loadResumeEntry(file);
+  if (local && local.workspaceId === workspaceId) {
+    // Validate the session is still alive on the server before trusting it.
+    try {
+      await invoke<{ parts: Array<{ partNumber: number; etag: string }> }>(
+        "list_parts",
+        { uploadRowId: local.uploadRowId, uploadId: local.uploadId },
+        { signal },
+      );
+      uploadRowId = local.uploadRowId;
+      uploadId = local.uploadId;
+      effectivePendingId = local.pendingId;
+      resumedFromLookup = true;
+    } catch {
+      // Server no longer recognizes this upload (aborted/expired) — drop it.
+      clearResumeEntry(file);
+    }
+  }
+
+  // 1b) SHA LOOKUP — cross-device resume (only for files ≤1.5GB).
+  if (!uploadRowId && shaHex) {
     try {
       const lk = await invoke<{
         found: boolean;
         session?: { id: string; oci_upload_id: string };
       }>("lookup", { fileSha256: shaHex }, { signal });
       if (lk.found && lk.session?.oci_upload_id) {
-        // Map the session back to its recent_uploads row (sign_part needs that id).
         const { data: row } = await supabase
           .from("recent_uploads")
           .select("id")
@@ -226,7 +247,7 @@ export async function uploadFileMultipart(p: MultipartParams): Promise<Multipart
     } catch { /* non-fatal — fall through to init */ }
   }
 
-  // 2) INIT (when lookup didn't yield a reusable session).
+  // 2) INIT (when neither registry nor lookup yielded a reusable session).
   if (!uploadRowId || !uploadId) {
     type InitResp = {
       uploadRowId: string;
@@ -239,7 +260,7 @@ export async function uploadFileMultipart(p: MultipartParams): Promise<Multipart
       fileSize: file.size,
       mimeType: file.type || "application/octet-stream",
       workspaceId,
-      pendingId,
+      pendingId: effectivePendingId,
       projectId: p.projectId ?? undefined,
       titleId: p.titleId ?? undefined,
       category: p.category ?? undefined,
@@ -250,11 +271,23 @@ export async function uploadFileMultipart(p: MultipartParams): Promise<Multipart
 
     if (init.idempotent && init.upload) {
       onProgress?.(file.size, file.size);
+      clearResumeEntry(file);
       return { upload: init.upload };
     }
     uploadRowId = init.uploadRowId;
     uploadId = init.uploadId;
   }
+
+  // Persist the resume entry NOW — before any chunk uploads — so a crash
+  // mid-first-chunk can still recover.
+  saveResumeEntry(file, {
+    uploadRowId: uploadRowId!,
+    uploadId: uploadId!,
+    pendingId: effectivePendingId,
+    titleId: p.titleId ?? null,
+    workspaceId,
+    category: p.category ?? null,
+  });
 
   // 3) LIST already-uploaded parts so resume only re-sends the missing tail.
   const listed = await invoke<{ parts: Array<{ partNumber: number; etag: string }> }>(

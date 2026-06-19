@@ -16,12 +16,21 @@ import { supabase } from "@/integrations/supabase/client";
 const SUPABASE_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co`;
 const FN_URL = `${SUPABASE_URL}/functions/v1/oci-multipart`;
 
-// 5 MB chunks (OCI minimum part size) per spec.
-const PART_SIZE = 5 * 1024 * 1024;
+// Phase 11: adaptive part size. OCI caps at 10,000 parts per upload.
+//   5 MB  → 50 GB max  (legacy)
+//   64 MB → 640 GB max (default)
+//  128 MB → 1.28 TB max (enterprise tier, files > 500 GB)
+const PART_SIZE_DEFAULT = 64 * 1024 * 1024;
+const PART_SIZE_LARGE   = 128 * 1024 * 1024;
+const LARGE_FILE_THRESHOLD = 500 * 1024 * 1024 * 1024; // 500 GB
+function pickPartSize(fileSize: number): number {
+  return fileSize > LARGE_FILE_THRESHOLD ? PART_SIZE_LARGE : PART_SIZE_DEFAULT;
+}
 // Files at/above this go through multipart; smaller stay on single-shot.
 export const MULTIPART_THRESHOLD = 5 * 1024 * 1024;
+// Phase 11: 4-way concurrent chunk workers.
+const UPLOAD_CONCURRENCY = 4;
 // Skip whole-file SHA for very large files to avoid loading them into memory.
-// Files above this size rely on the localStorage resume registry instead.
 const SHA_MAX_BYTES = 1.5 * 1024 * 1024 * 1024;
 
 // ---------------------------------------------------------------------------
@@ -194,6 +203,7 @@ export type MultipartResult = { upload: any; resumed?: boolean };
 
 export async function uploadFileMultipart(p: MultipartParams): Promise<MultipartResult> {
   const { file, workspaceId, pendingId, onProgress, signal } = p;
+  const PART_SIZE = pickPartSize(file.size);
   const totalChunks = Math.max(1, Math.ceil(file.size / PART_SIZE));
 
   // 0) Hash the file for cross-device resume (skipped for >1.5GB files).
@@ -205,10 +215,8 @@ export async function uploadFileMultipart(p: MultipartParams): Promise<Multipart
   let resumedFromLookup = false;
 
   // 1a) LOCAL REGISTRY — fastest path, works for any file size including >1.5GB.
-  // Recovers from browser refresh, tab crash, power failure, network loss.
   const local = loadResumeEntry(file);
   if (local && local.workspaceId === workspaceId) {
-    // Validate the session is still alive on the server before trusting it.
     try {
       await invoke<{ parts: Array<{ partNumber: number; etag: string }> }>(
         "list_parts",
@@ -220,7 +228,6 @@ export async function uploadFileMultipart(p: MultipartParams): Promise<Multipart
       effectivePendingId = local.pendingId;
       resumedFromLookup = true;
     } catch {
-      // Server no longer recognizes this upload (aborted/expired) — drop it.
       clearResumeEntry(file);
     }
   }
@@ -244,10 +251,10 @@ export async function uploadFileMultipart(p: MultipartParams): Promise<Multipart
           resumedFromLookup = true;
         }
       }
-    } catch { /* non-fatal — fall through to init */ }
+    } catch { /* non-fatal */ }
   }
 
-  // 2) INIT (when neither registry nor lookup yielded a reusable session).
+  // 2) INIT
   if (!uploadRowId || !uploadId) {
     type InitResp = {
       uploadRowId: string;
@@ -278,8 +285,6 @@ export async function uploadFileMultipart(p: MultipartParams): Promise<Multipart
     uploadId = init.uploadId;
   }
 
-  // Persist the resume entry NOW — before any chunk uploads — so a crash
-  // mid-first-chunk can still recover.
   saveResumeEntry(file, {
     uploadRowId: uploadRowId!,
     uploadId: uploadId!,
@@ -289,7 +294,7 @@ export async function uploadFileMultipart(p: MultipartParams): Promise<Multipart
     category: p.category ?? null,
   });
 
-  // 3) LIST already-uploaded parts so resume only re-sends the missing tail.
+  // 3) LIST already-uploaded parts
   const listed = await invoke<{ parts: Array<{ partNumber: number; etag: string }> }>(
     "list_parts", { uploadRowId, uploadId }, { signal },
   ).catch(() => ({ parts: [] as Array<{ partNumber: number; etag: string }> }));
@@ -299,41 +304,61 @@ export async function uploadFileMultipart(p: MultipartParams): Promise<Multipart
   let loaded = Math.min(file.size, completed.size * PART_SIZE);
   onProgress?.(loaded, file.size);
 
-  // 4) Stream missing parts: sign → PUT → report_part.
-  for (let partNumber = 1; partNumber <= totalChunks; partNumber++) {
-    if (signal?.aborted) throw new Error("aborted");
-    if (completed.has(partNumber)) continue;
+  // 4) PHASE 11: parallel chunk workers (4-way pool).
+  // Workers pull part numbers from a shared queue; completed/loaded/onProgress
+  // are mutated under the single-threaded JS event loop so no locking needed.
+  const queue: number[] = [];
+  for (let n = 1; n <= totalChunks; n++) if (!completed.has(n)) queue.push(n);
 
-    const start = (partNumber - 1) * PART_SIZE;
-    const end = Math.min(start + PART_SIZE, file.size);
-    const buf = await file.slice(start, end).arrayBuffer();
-    const contentLength = buf.byteLength;
-    const contentSha256 = await sha256Base64(buf);
+  let firstError: unknown = null;
+  let firstErrorPart = 0;
 
-    const sign = await invoke<{ url: string; headers: Record<string, string> }>(
-      "sign_part",
-      { uploadRowId, uploadId, partNumber, contentSha256, contentLength },
-      { signal },
-    );
+  async function worker() {
+    while (queue.length > 0 && !firstError) {
+      if (signal?.aborted) throw new Error("aborted");
+      const partNumber = queue.shift();
+      if (partNumber === undefined) return;
 
-    try {
-      const put = await putChunkWithRetry(sign.url, sign.headers, buf, 3, signal);
-      completed.set(partNumber, put.etag);
-      loaded += contentLength;
-      onProgress?.(Math.min(loaded, file.size), file.size);
-      invoke("report_part", {
-        uploadId, partNumber, ok: true,
-        httpStatus: put.status, durationMs: put.durationMs, bytes: contentLength,
-      }).catch(() => {});
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      invoke("report_part", {
-        uploadId, partNumber, ok: false, bytes: contentLength, error: msg,
-      }).catch(() => {});
-      // Surface a resumable interruption so the UI can show its cinematic
-      // "saved, resume from any device" message instead of a hard failure.
-      throw new ResumableUploadInterrupted(msg, partNumber, totalChunks);
+      const start = (partNumber - 1) * PART_SIZE;
+      const end = Math.min(start + PART_SIZE, file.size);
+      const buf = await file.slice(start, end).arrayBuffer();
+      const contentLength = buf.byteLength;
+      const contentSha256 = await sha256Base64(buf);
+
+      try {
+        const sign = await invoke<{ url: string; headers: Record<string, string> }>(
+          "sign_part",
+          { uploadRowId, uploadId, partNumber, contentSha256, contentLength },
+          { signal },
+        );
+        const put = await putChunkWithRetry(sign.url, sign.headers, buf, 3, signal);
+        completed.set(partNumber, put.etag);
+        loaded += contentLength;
+        onProgress?.(Math.min(loaded, file.size), file.size);
+        invoke("report_part", {
+          uploadId, partNumber, ok: true,
+          httpStatus: put.status, durationMs: put.durationMs, bytes: contentLength,
+        }).catch(() => {});
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        invoke("report_part", {
+          uploadId, partNumber, ok: false, bytes: contentLength, error: msg,
+        }).catch(() => {});
+        if (!firstError) {
+          firstError = e;
+          firstErrorPart = partNumber;
+        }
+        return;
+      }
     }
+  }
+
+  const workerCount = Math.min(UPLOAD_CONCURRENCY, Math.max(1, queue.length));
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+
+  if (firstError) {
+    const msg = firstError instanceof Error ? firstError.message : String(firstError);
+    throw new ResumableUploadInterrupted(msg, firstErrorPart, totalChunks);
   }
 
   // 5) COMPLETE
@@ -342,7 +367,6 @@ export async function uploadFileMultipart(p: MultipartParams): Promise<Multipart
     .map(([partNumber, etag]) => ({ partNumber, etag }));
   const done = await invoke<{ upload: any }>("complete", { uploadRowId, uploadId, parts }, { signal });
   onProgress?.(file.size, file.size);
-  // Clear the persistent resume entry — upload is finalized on OCI + DB.
   clearResumeEntry(file);
   return { upload: done.upload, resumed: resumedFromLookup };
 }

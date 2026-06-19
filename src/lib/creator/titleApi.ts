@@ -197,9 +197,10 @@ export type UploadAssetParams = {
  */
 export async function uploadTitleAsset(p: UploadAssetParams): Promise<TitleAsset> {
   const pendingId = `${p.titleId}-${p.category}-${p.file.name}-${p.file.size}-${Date.now()}`;
-  const subpath = `titles/${p.titleId}/${p.category}/`;
 
-  // (1) + (2): OCI object + recent_uploads row
+  // (1) + (2): OCI object + recent_uploads row.
+  // The server derives the OCI prefix from titleId + category — we no longer
+  // pass a client `subpath`. See oci-multipart CATEGORY_PREFIX.
   let uploadRow: { id: string; file_name: string; status: string } | null = null;
   try {
     if (p.file.size < MULTIPART_THRESHOLD) {
@@ -210,7 +211,7 @@ export async function uploadTitleAsset(p: UploadAssetParams): Promise<TitleAsset
       fd.append("file", p.file);
       fd.append("workspaceId", p.workspaceId);
       fd.append("pendingId", pendingId);
-      fd.append("subpath", subpath);
+      fd.append("titleId", p.titleId);
       fd.append("category", p.category);
       const url = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/oci-upload`;
       const resp = await fetch(url, {
@@ -230,7 +231,7 @@ export async function uploadTitleAsset(p: UploadAssetParams): Promise<TitleAsset
         file: p.file,
         workspaceId: p.workspaceId,
         pendingId,
-        subpath,
+        titleId: p.titleId,
         category: p.category,
         onProgress: p.onProgress,
         signal: p.signal,

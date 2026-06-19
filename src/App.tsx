@@ -43,7 +43,7 @@ import IngestTest from "./pages/IngestTest.tsx";
 import C2CSetupManual from "./pages/C2CSetupManual.tsx";
 import Unsubscribe from "./pages/Unsubscribe.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
-import { PaymentTestModeBanner } from "./components/PaymentTestModeBanner.tsx";
+
 import ReferralCapture from "./components/ReferralCapture.tsx";
 import WrongPortal from "./components/WrongPortal.tsx";
 import { SystemMessageProvider } from "./components/system/SystemMessageProvider.tsx";
@@ -141,7 +141,7 @@ const App = () => (
             <SystemMessageProvider>
               <StorageQuotaProvider>
                 <GlobalErrorListener />
-                <PaymentTestModeBanner />
+                
                 <ReferralCapture />
                 <ErrorBoundary>
                   <HostAwareRoutes />

@@ -40,6 +40,7 @@ import NotFound from "./pages/NotFound.tsx";
 import IngestTest from "./pages/IngestTest.tsx";
 import C2CSetupManual from "./pages/C2CSetupManual.tsx";
 import Unsubscribe from "./pages/Unsubscribe.tsx";
+import Contact from "./pages/Contact.tsx";
 
 import ReferralCapture from "./components/ReferralCapture.tsx";
 import WrongPortal from "./components/WrongPortal.tsx";

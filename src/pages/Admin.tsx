@@ -15,6 +15,7 @@ import RazorpayAuditLog from "@/components/admin/RazorpayAuditLog";
 import FreeTierConfig from "@/components/admin/FreeTierConfig";
 import BrandingSettings from "@/components/admin/BrandingSettings";
 import SupportInbox from "@/components/admin/SupportInbox";
+import ContactInbox from "@/components/admin/ContactInbox";
 import OnboardingApprovals from "@/components/admin/OnboardingApprovals";
 import PartnerLogos from "@/components/admin/PartnerLogos";
 import RolesManager from "@/components/admin/RolesManager";

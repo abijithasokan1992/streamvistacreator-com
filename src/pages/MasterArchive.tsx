@@ -155,7 +155,7 @@ function categorySatisfies(category: string | null, item: typeof BRIDGE_CHECKLIS
 }
 
 export default function MasterArchive() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, role } = useAuth();
   const { workspaces, active, activeId, setActiveId, loading: wsLoading } = useWorkspaces();
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectId, setProjectId] = useState<string>("");

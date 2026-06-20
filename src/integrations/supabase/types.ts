@@ -1392,13 +1392,6 @@ export type Database = {
             foreignKeyName: "invoices_topup_id_fkey"
             columns: ["topup_id"]
             isOneToOne: false
-            referencedRelation: "admin_studio_vault_purchases"
-            referencedColumns: ["topup_id"]
-          },
-          {
-            foreignKeyName: "invoices_topup_id_fkey"
-            columns: ["topup_id"]
-            isOneToOne: false
             referencedRelation: "storage_topups"
             referencedColumns: ["id"]
           },
@@ -4190,28 +4183,6 @@ export type Database = {
       }
     }
     Views: {
-      admin_studio_vault_purchases: {
-        Row: {
-          amount_inr: number | null
-          billing_interval_months: number | null
-          created_at: string | null
-          customer_email: string | null
-          entitlement_projected_at: string | null
-          invoice_id: string | null
-          invoice_number: string | null
-          product_name: string | null
-          razorpay_order_id: string | null
-          razorpay_payment_id: string | null
-          status: string | null
-          storage_class: string | null
-          tb_added: number | null
-          topup_id: string | null
-          total_paise: number | null
-          updated_at: string | null
-          user_id: string | null
-        }
-        Relationships: []
-      }
       payment_security_events: {
         Row: {
           action_type: string | null
@@ -4307,6 +4278,28 @@ export type Database = {
           title: string
           updated_at: string
           workspace_id: string
+        }[]
+      }
+      admin_studio_vault_purchases: {
+        Args: { _limit?: number }
+        Returns: {
+          amount_inr: number
+          billing_interval_months: number
+          created_at: string
+          customer_email: string
+          entitlement_projected_at: string
+          invoice_id: string
+          invoice_number: string
+          product_name: string
+          razorpay_order_id: string
+          razorpay_payment_id: string
+          status: string
+          storage_class: string
+          tb_added: number
+          topup_id: string
+          total_paise: number
+          updated_at: string
+          user_id: string
         }[]
       }
       admin_title_history: {

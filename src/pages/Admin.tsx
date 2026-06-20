@@ -39,6 +39,7 @@ import ContentReviewWorkflow from "@/components/admin/ContentReviewWorkflow";
 import AdminInvoices from "@/components/admin/AdminInvoices";
 import PaymentSecurityEvents from "@/components/admin/PaymentSecurityEvents";
 import StudioVaultPricing from "@/components/admin/StudioVaultPricing";
+import AdminStudioVaultPurchases from "@/components/admin/AdminStudioVaultPurchases";
 
 interface Row {
   id: string;

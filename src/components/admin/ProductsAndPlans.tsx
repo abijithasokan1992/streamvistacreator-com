@@ -6,11 +6,11 @@ import FreeTierConfig from "@/components/admin/FreeTierConfig";
 type Plan = {
   id: string;
   name: string | null;
-  price?: number | null;
+  price_amount?: number | null;
   currency?: string | null;
   storage_gb?: number | null;
   is_active?: boolean | null;
-  cycle?: string | null;
+  billing_cycle?: string | null;
 };
 
 type Topup = { id: string; tb_added: number | null; amount_inr: number | null; status: string | null; created_at: string };
@@ -59,8 +59,8 @@ export default function ProductsAndPlans() {
                 {plans.map(p => (
                   <tr key={p.id} className="border-b border-border/20">
                     <td className="py-2 pr-4 font-medium">{p.name ?? p.id}</td>
-                    <td className="py-2 pr-4 text-muted-foreground">{p.cycle ?? "—"}</td>
-                    <td className="py-2 pr-4 font-mono">{p.price != null ? `${p.currency ?? "₹"}${p.price}` : "—"}</td>
+                    <td className="py-2 pr-4 text-muted-foreground">{p.billing_cycle ?? "—"}</td>
+                    <td className="py-2 pr-4 font-mono">{p.price_amount != null ? `${p.currency ?? "₹"}${p.price_amount}` : "—"}</td>
                     <td className="py-2 pr-4">{p.storage_gb != null ? `${p.storage_gb} GB` : "—"}</td>
                     <td className="py-2 pr-4">{p.is_active ? "Yes" : "No"}</td>
                   </tr>

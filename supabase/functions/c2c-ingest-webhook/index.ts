@@ -4,28 +4,58 @@
 // writes a structured row into public.payment_debug_logs so ops can see the
 // checksum handshake / ETag verification and per-file duration.
 //
-// Endpoint is intentionally public — callers (encoders, browser) send a
-// non-sensitive ingest receipt, never secrets. Service role is used only to
-// write the audit row.
+// SECURITY: this endpoint is NOT anonymous. It accepts either:
+//   1. a signed-in user bearer token (preferred, browser callers), or
+//   2. the shared secret `C2C_WEBHOOK_SECRET` (for non-browser encoders),
+//       sent as the `X-C2C-Webhook-Secret` header.
+// Wildcard CORS has been removed — only origins on the strict allow-list
+// (managed via site_config / SITE_ORIGIN) may make browser requests.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const ANON_KEY     = Deno.env.get("SUPABASE_ANON_KEY")!;
+const WEBHOOK_SECRET = Deno.env.get("C2C_WEBHOOK_SECRET") ?? "";
 
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+function jsonWith(req: Request) {
+  const cors = buildCorsHeaders(req);
+  return (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") return handleOptions(req);
+  const json = jsonWith(req);
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
+    // ---- Authentication: bearer user OR shared secret ----
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const secretHeader = req.headers.get("x-c2c-webhook-secret") ?? "";
+
+    let user_id: string | null = null;
+    let authed = false;
+
+    if (authHeader.startsWith("Bearer ")) {
+      const userClient = createClient(SUPABASE_URL, ANON_KEY, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: userRes } = await userClient.auth.getUser();
+      if (userRes?.user?.id) {
+        user_id = userRes.user.id;
+        authed = true;
+      }
+    }
+    if (!authed && WEBHOOK_SECRET && secretHeader && secretHeader === WEBHOOK_SECRET) {
+      authed = true;
+    }
+    if (!authed) return json({ error: "Unauthorized" }, 401);
+
     // Reject obviously oversized payloads (log flooding / abuse defence).
     const rawText = await req.text();
     if (rawText.length > 8 * 1024) {
@@ -66,7 +96,6 @@ Deno.serve(async (req) => {
     const par_status = clip(body?.par_status, 16);
     const par_status_num = par_status ? Number(par_status) : NaN;
 
-    // ETag handshake: if both sha256 and etag are present, they should agree.
     const etag_matches = sha256 && etag
       ? etag.replace(/"/g, "").toLowerCase().includes(sha256.slice(0, 16).toLowerCase())
       : null;
@@ -74,13 +103,6 @@ Deno.serve(async (req) => {
     const supa = createClient(SUPABASE_URL, SERVICE_ROLE, {
       auth: { persistSession: false },
     });
-
-    const auth = req.headers.get("Authorization") ?? "";
-    let user_id: string | null = null;
-    if (auth.startsWith("Bearer ")) {
-      const { data } = await supa.auth.getUser(auth.replace("Bearer ", ""));
-      user_id = data.user?.id ?? null;
-    }
 
     const { error } = await supa.from("payment_debug_logs").insert({
       severity: Number.isFinite(par_status_num) && par_status_num >= 400 ? "error" : "info",

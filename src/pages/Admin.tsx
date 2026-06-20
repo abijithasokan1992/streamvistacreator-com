@@ -403,18 +403,11 @@ function DeptHeader({ icon, title, desc }: { icon: React.ReactNode; title: strin
   );
 }
 
-function FinanceOverview({ rows }: { rows: Row[] }) {
-  const paid = rows.filter(r => r.payment_status === "paid");
-  const revenue = paid.reduce((s, r) => s + Number(r.final_price || 0), 0);
-  const pending = rows.filter(r => r.payment_status !== "paid" && r.payment_status !== "failed").length;
-  return (
-    <div className="grid sm:grid-cols-3 gap-4">
-      <MetricCard label="Total Revenue (paid)" value={`₹${revenue.toLocaleString("en-IN")}`} />
-      <MetricCard label="Paid Orders" value={paid.length.toString()} />
-      <MetricCard label="Pending Payments" value={pending.toString()} />
-    </div>
-  );
-}
+// FinanceOverview removed — platform revenue is now invoice-backed in AdminInvoices.
+// The legacy MFI lead funnel is preserved below under LegacyOnboardingFunnel with
+// an explicit "legacy" label so it cannot be mistaken for platform revenue.
+
+
 
 function LegacyOnboardingFunnel({ rows }: { rows: Row[] }) {
   // Explicitly labeled legacy MFI onboarding funnel — NOT platform revenue.

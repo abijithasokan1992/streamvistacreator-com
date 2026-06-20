@@ -75,6 +75,7 @@ export default function Admin() {
   const { user, isAdmin, isSuperAdmin, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   useBackGuard(!!user);
   const [rows, setRows] = useState<Row[]>([]);
   const [fetching, setFetching] = useState(false);

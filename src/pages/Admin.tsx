@@ -340,6 +340,7 @@ export default function Admin() {
           {/* 6. Products & Plans */}
           <TabsContent value="products" className="space-y-8 mt-0 animate-fade-in">
             <DeptHeader icon={<Package className="w-5 h-5" />} title="Products & Plans" desc="Plans, storage tiers, free vs paid limits and entitlements visibility." />
+            <AdminStudioVaultPurchases />
             <StudioVaultPricing />
             <ProductsAndPlans />
           </TabsContent>

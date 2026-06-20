@@ -201,6 +201,10 @@ export default function PlatformOverview() {
             </div>
             <ul className="space-y-2 text-sm">
               <InboxRow label="Submissions awaiting review" count={pendingApprovals} to="/admin?tab=content" />
+              <InboxRow label="QC reviews blocked" count={blockedQc} to="/admin?tab=content&stage=qc_review" />
+              <InboxRow label="Legal reviews blocked" count={blockedLegal} to="/admin?tab=content&stage=legal_review" />
+              <InboxRow label="QC titles unassigned" count={unassignedQc} to="/admin?tab=content&stage=qc_review" />
+              <InboxRow label="Legal titles unassigned" count={unassignedLegal} to="/admin?tab=content&stage=legal_review" />
               <InboxRow label="Open onboarding approvals" count={openOnboarding} to="/admin?tab=users" />
               <InboxRow label="DMCA requests" count={openDmca} to="/admin?tab=security" />
               <InboxRow label="Support tickets" count={openSupport} to="/admin?tab=ops" />

@@ -118,7 +118,7 @@ export default function EcosystemAbout() {
               {profile.founder_role_line}
             </div>
             <div className="h-px bg-border/60 my-2" />
-            <div className="prose prose-invert max-w-none text-sm md:text-base text-muted-foreground whitespace-pre-line leading-relaxed">
+            <div className="text-sm md:text-base text-muted-foreground whitespace-pre-line leading-relaxed">
               {profile.founder_bio}
             </div>
             {v.works && works.length > 0 && (

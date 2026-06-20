@@ -154,28 +154,39 @@ export function TitleEditor({
 
   return (
     <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm grid place-items-stretch">
-      <div className="bg-background border-l border-border/50 w-full max-w-5xl ml-auto h-dvh flex flex-col">
+      <div className="bg-background border-l border-border/50 w-full sm:max-w-5xl sm:ml-auto h-dvh flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-border/40">
-          <div className="min-w-0 flex items-center gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-3 sm:px-5 py-3 border-b border-border/40">
+          <div className="min-w-0 flex items-center gap-2 sm:gap-3 flex-1">
             <button onClick={onClose} className="p-1.5 rounded hover:bg-secondary/30" aria-label="Close">
               <X className="w-4 h-4" />
             </button>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               {readOnly ? (
                 <p className="font-semibold truncate">{title?.title ?? "Loading…"}</p>
               ) : (
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="bg-transparent font-semibold text-base outline-none border-b border-transparent focus:border-border/60"
+                  className="w-full bg-transparent font-semibold text-base outline-none border-b border-transparent focus:border-border/60"
                 />
               )}
-              <div className="flex items-center gap-2 mt-0.5">
+              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                 {title && <StatusBadge status={title.status} />}
                 {title?.locked && (
                   <span className="text-[10px] text-muted-foreground inline-flex items-center gap-1">
                     <Lock className="w-3 h-3" /> Locked
+                  </span>
+                )}
+                {!readOnly && (
+                  <span className="text-[10px] text-muted-foreground inline-flex items-center gap-1">
+                    {saving ? (
+                      <><Loader2 className="w-3 h-3 animate-spin" /> Saving…</>
+                    ) : dirty ? (
+                      <>Unsaved changes</>
+                    ) : autoSavedAt ? (
+                      <><Check className="w-3 h-3 text-emerald-400" /> Auto-saved</>
+                    ) : null}
                   </span>
                 )}
               </div>
@@ -199,11 +210,13 @@ export function TitleEditor({
                 title={ready ? "Submit for review" : `Missing: ${missing.join(", ")}`}
               >
                 {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                Submit to Admin
+                <span className="hidden sm:inline">Submit to Admin</span>
+                <span className="sm:hidden">Submit</span>
               </button>
             )}
           </div>
         </div>
+
 
         {/* Locked banner */}
         {title?.locked && (

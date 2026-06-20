@@ -3397,6 +3397,206 @@ export type Database = {
           },
         ]
       }
+      title_review_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          created_at: string
+          id: string
+          reviewer_user_id: string | null
+          stage: string
+          title_id: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          reviewer_user_id?: string | null
+          stage: string
+          title_id: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          reviewer_user_id?: string | null
+          stage?: string
+          title_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "title_review_assignments_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      title_review_checklist: {
+        Row: {
+          blocking: boolean
+          created_at: string
+          id: string
+          item_key: string
+          item_label: string
+          note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          severity: string
+          stage: string
+          status: string
+          title_id: string
+          updated_at: string
+        }
+        Insert: {
+          blocking?: boolean
+          created_at?: string
+          id?: string
+          item_key: string
+          item_label: string
+          note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          severity?: string
+          stage: string
+          status?: string
+          title_id: string
+          updated_at?: string
+        }
+        Update: {
+          blocking?: boolean
+          created_at?: string
+          id?: string
+          item_key?: string
+          item_label?: string
+          note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          severity?: string
+          stage?: string
+          status?: string
+          title_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "title_review_checklist_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      title_review_issues: {
+        Row: {
+          category_group: string
+          category_key: string
+          category_label: string
+          created_at: string
+          creator_note: string | null
+          id: string
+          internal_note: string | null
+          raised_at: string
+          raised_by: string | null
+          resolution_note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          stage: string
+          status: string
+          title_id: string
+          updated_at: string
+        }
+        Insert: {
+          category_group: string
+          category_key: string
+          category_label: string
+          created_at?: string
+          creator_note?: string | null
+          id?: string
+          internal_note?: string | null
+          raised_at?: string
+          raised_by?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          stage: string
+          status?: string
+          title_id: string
+          updated_at?: string
+        }
+        Update: {
+          category_group?: string
+          category_key?: string
+          category_label?: string
+          created_at?: string
+          creator_note?: string | null
+          id?: string
+          internal_note?: string | null
+          raised_at?: string
+          raised_by?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          stage?: string
+          status?: string
+          title_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "title_review_issues_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      title_review_notes: {
+        Row: {
+          author_email: string | null
+          author_user_id: string | null
+          body: string
+          created_at: string
+          id: string
+          title_id: string
+        }
+        Insert: {
+          author_email?: string | null
+          author_user_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          title_id: string
+        }
+        Update: {
+          author_email?: string | null
+          author_user_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          title_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "title_review_notes_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       upload_sessions: {
         Row: {
           created_at: string
@@ -3924,6 +4124,23 @@ export type Database = {
       }
     }
     Functions: {
+      add_internal_review_note: {
+        Args: { _body: string; _title_id: string }
+        Returns: string
+      }
+      add_review_issue: {
+        Args: {
+          _category_group: string
+          _category_key: string
+          _category_label: string
+          _creator_note?: string
+          _internal_note?: string
+          _severity?: string
+          _stage: string
+          _title_id: string
+        }
+        Returns: string
+      }
       admin_exists: { Args: never; Returns: boolean }
       admin_grant_storage: {
         Args: { _gb: number; _note?: string; _user_id: string }
@@ -3961,6 +4178,10 @@ export type Database = {
           to_status: string
         }[]
       }
+      assign_title_reviewer: {
+        Args: { _reviewer: string; _stage: string; _title_id: string }
+        Returns: Json
+      }
       attach_referral: {
         Args: { _code: string; _email?: string }
         Returns: string
@@ -3981,6 +4202,20 @@ export type Database = {
         Returns: string
       }
       creator_free_tier_status: { Args: { _user_id?: string }; Returns: Json }
+      creator_review_feedback: {
+        Args: { _title_id: string }
+        Returns: {
+          category_group: string
+          category_label: string
+          creator_note: string
+          id: string
+          raised_at: string
+          resolved_at: string
+          severity: string
+          stage: string
+          status: string
+        }[]
+      }
       current_dashboard_role: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"]
@@ -4015,6 +4250,14 @@ export type Database = {
       is_workspace_member: {
         Args: { _user_id: string; _workspace_id: string }
         Returns: boolean
+      }
+      list_review_candidates: {
+        Args: never
+        Returns: {
+          email: string
+          role: string
+          user_id: string
+        }[]
       }
       list_shares_for_me: {
         Args: never
@@ -4066,6 +4309,19 @@ export type Database = {
         Args: { _creator_email: string }
         Returns: boolean
       }
+      request_title_changes: {
+        Args: {
+          _creator_summary: string
+          _internal_note?: string
+          _reasons: Json
+          _title_id: string
+        }
+        Returns: Json
+      }
+      resolve_review_issue: {
+        Args: { _issue_id: string; _resolution_note?: string }
+        Returns: Json
+      }
       revoke_creator_role: { Args: { _user_id: string }; Returns: undefined }
       set_initial_role: { Args: { _role: string }; Returns: boolean }
       submit_title_to_admin: {
@@ -4076,9 +4332,23 @@ export type Database = {
         Args: { _older_than_hours?: number }
         Returns: Json
       }
+      title_review_summary: { Args: { _title_id: string }; Returns: Json }
       title_submission_readiness: { Args: { _title_id: string }; Returns: Json }
       transition_title_status: {
         Args: { _note?: string; _title_id: string; _to_status: string }
+        Returns: Json
+      }
+      upsert_title_checklist_item: {
+        Args: {
+          _blocking?: boolean
+          _item_key: string
+          _item_label: string
+          _note?: string
+          _severity?: string
+          _stage: string
+          _status: string
+          _title_id: string
+        }
         Returns: Json
       }
       user_in_banner: {

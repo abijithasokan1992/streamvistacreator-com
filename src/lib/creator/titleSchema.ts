@@ -113,3 +113,23 @@ export const CATEGORY_LABEL: Record<AssetCategory, string> = {
 
 /** Formats that require a censor certificate before submission. */
 export const REQUIRES_CENSOR: ReadonlyArray<TitleMetadata["format"]> = ["feature_film"];
+
+/** User-facing content-type choices captured at title creation. */
+export const CONTENT_TYPE_OPTIONS: ReadonlyArray<{
+  value: TitleMetadata["format"];
+  label: string;
+  hint?: string;
+}> = [
+  { value: "feature_film", label: "Feature Film",  hint: "Theatrical / OTT feature" },
+  { value: "web_series",   label: "Web Series",    hint: "Episodic for streaming" },
+  { value: "tv_series",    label: "TV Series",     hint: "Episodic for broadcast" },
+  { value: "short_film",   label: "Short Film" },
+  { value: "documentary",  label: "Documentary" },
+  { value: "music_video",  label: "Music Video" },
+  { value: "animation",    label: "Animation" },
+  { value: "other",        label: "Other",         hint: "Anything else" },
+];
+
+export const CONTENT_TYPE_LABEL: Record<string, string> = Object.fromEntries(
+  CONTENT_TYPE_OPTIONS.map((o) => [o.value, o.label]),
+);

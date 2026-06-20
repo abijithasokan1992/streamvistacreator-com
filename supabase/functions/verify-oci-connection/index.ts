@@ -6,8 +6,9 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const ALLOWED_ORIGINS = [
-  "https://app.crayonspictures.com",
-  "https://www.app.crayonspictures.com",
+  "https://www.streamvistacreator.com",
+  "https://streamvistacreator.com",
+  "https://streamvista-creator.lovable.app",
 ];
 
 function corsFor(req: Request): Record<string, string> {

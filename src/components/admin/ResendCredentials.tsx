@@ -18,6 +18,9 @@ export default function ResendCredentials() {
   const [verified, setVerified] = useState<null | boolean>(null);
   const [verifyMsg, setVerifyMsg] = useState<string>("");
   const [status, setStatus] = useState<StatusResp | null>(null);
+  const [sender, setSender] = useState<{ from_address: string; sender_name: string; sender_domain: string } | null>(null);
+  const [testTo, setTestTo] = useState("");
+  const [sending, setSending] = useState(false);
 
   const loadStatus = async () => {
     setLoading(true);

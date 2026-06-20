@@ -118,9 +118,11 @@ export async function createTitle(
   userId: string,
   workspaceId: string | null,
   name: string,
+  format: TitleMetadata["format"] = "feature_film",
 ): Promise<TitleRow> {
   const trimmed = name.trim();
   if (!trimmed) throw new Error("Title name is required");
+  const meta = { ...emptyMetadata(), format };
   const { data, error } = await (supabase as any)
     .from("content_titles")
     .insert({
@@ -129,11 +131,41 @@ export async function createTitle(
       title: trimmed,
       status: "draft",
       locked: false,
-      metadata: emptyMetadata(),
+      metadata: meta,
     })
     .select("*")
     .single();
   if (error) throw error;
+  return { ...data, metadata: parseMetadata(data.metadata) };
+}
+
+export type FreeTierStatus = {
+  is_free: boolean;
+  draft_count: number;
+  lifecycle_count: number;
+  max_drafts: number | null;
+  max_submissions: number | null;
+  can_create_draft: boolean;
+  can_submit: boolean;
+};
+
+export async function fetchFreeTierStatus(): Promise<FreeTierStatus | null> {
+  const { data, error } = await (supabase as any).rpc("creator_free_tier_status");
+  if (error || !data) return null;
+  return data as FreeTierStatus;
+}
+
+/** Find the user's first active draft (free-tier reuse path). */
+export async function findFirstActiveDraft(userId: string): Promise<TitleRow | null> {
+  const { data, error } = await (supabase as any)
+    .from("content_titles")
+    .select("*")
+    .eq("owner_user_id", userId)
+    .in("status", ["draft", "incomplete", "changes_requested"])
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error || !data) return null;
   return { ...data, metadata: parseMetadata(data.metadata) };
 }
 

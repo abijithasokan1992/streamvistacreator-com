@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { X, Loader2, Send, Lock, ShieldCheck, Clock, CheckCircle2, Circle, ArrowRight } from "lucide-react";
+import { X, Loader2, Send, Lock, ShieldCheck, Clock, CheckCircle2, Circle, ArrowRight, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   getTitle, listAssets, saveTitleMetadata, submitTitle,
-  evaluateChecklist, fetchReadiness, fetchTitleTimeline,
+  evaluateChecklist, fetchReadiness, fetchTitleTimeline, fetchFreeTierStatus,
   type TitleRow, type TitleAsset, type ServerReadiness, type ContentStatus, type TitleTimelineEntry,
 } from "@/lib/creator/titleApi";
 import {
@@ -43,11 +43,15 @@ export function TitleEditor({
   const [timeline, setTimeline] = useState<TitleTimelineEntry[]>([]);
   const [tab, setTab] = useState<TabId>("overview");
   const [saving, setSaving] = useState(false);
+  const [autoSavedAt, setAutoSavedAt] = useState<number | null>(null);
+  const [dirty, setDirty] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [name, setName] = useState("");
   const [meta, setMeta] = useState<TitleMetadata | null>(null);
 
   const readOnly = mode === "view" || !!title?.locked;
+  const debounceRef = useRef<number | null>(null);
+  const loadedRef = useRef(false);
 
   const reload = useCallback(async () => {
     const [t, a, r, tl] = await Promise.all([
@@ -64,21 +68,57 @@ export function TitleEditor({
       setName(t.title);
       setMeta(t.metadata);
     }
+    loadedRef.current = true;
+    setDirty(false);
   }, [titleId]);
 
   useEffect(() => { reload(); }, [reload]);
 
-  const save = async () => {
+  const doSave = useCallback(async (silent = false) => {
     if (!title || !meta) return;
     setSaving(true);
     try {
       await saveTitleMetadata(title.id, { title: name, metadata: meta });
-      toast.success("Saved.");
-      await reload();
+      setDirty(false);
+      setAutoSavedAt(Date.now());
+      if (!silent) toast.success("Saved.");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Save failed.");
+      if (!silent) toast.error(e instanceof Error ? e.message : "Save failed.");
     } finally { setSaving(false); }
-  };
+  }, [title, meta, name]);
+
+  const save = () => doSave(false);
+
+  // Mark dirty whenever the editable fields change after initial load.
+  useEffect(() => {
+    if (!loadedRef.current || readOnly) return;
+    setDirty(true);
+  }, [name, meta, readOnly]);
+
+  // Debounced auto-save (1.5s) while the editor is open.
+  useEffect(() => {
+    if (!dirty || readOnly || !title || !meta) return;
+    if (debounceRef.current) window.clearTimeout(debounceRef.current);
+    debounceRef.current = window.setTimeout(() => { doSave(true); }, 1500);
+    return () => { if (debounceRef.current) window.clearTimeout(debounceRef.current); };
+  }, [dirty, readOnly, title, meta, name, doSave]);
+
+  // Best-effort flush on unmount / tab close so accidental closures don't lose work.
+  useEffect(() => {
+    const flush = () => {
+      if (dirty && !readOnly && title && meta) {
+        // Fire-and-forget; storage trigger will persist.
+        void saveTitleMetadata(title.id, { title: name, metadata: meta }).catch(() => {});
+      }
+    };
+    window.addEventListener("beforeunload", flush);
+    window.addEventListener("pagehide", flush);
+    return () => {
+      window.removeEventListener("beforeunload", flush);
+      window.removeEventListener("pagehide", flush);
+      flush();
+    };
+  }, [dirty, readOnly, title, meta, name]);
 
   const localChecklist = useMemo(
     () => (title ? evaluateChecklist(title, assets) : null),
@@ -91,6 +131,14 @@ export function TitleEditor({
     if (!title) return;
     if (!ready) {
       toast.error(`Missing: ${missing.join(", ")}`);
+      return;
+    }
+    // Flush any pending edits before submitting so the lock doesn't strand changes.
+    if (dirty) { await doSave(true); }
+    // Free-tier guard: 1 submission allowed.
+    const t = await fetchFreeTierStatus();
+    if (t?.is_free && !t.can_submit) {
+      toast.error("Free plan allows 1 submission. Upgrade to submit more titles.");
       return;
     }
     setSubmitting(true);
@@ -106,28 +154,39 @@ export function TitleEditor({
 
   return (
     <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm grid place-items-stretch">
-      <div className="bg-background border-l border-border/50 w-full max-w-5xl ml-auto h-dvh flex flex-col">
+      <div className="bg-background border-l border-border/50 w-full sm:max-w-5xl sm:ml-auto h-dvh flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-border/40">
-          <div className="min-w-0 flex items-center gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-3 sm:px-5 py-3 border-b border-border/40">
+          <div className="min-w-0 flex items-center gap-2 sm:gap-3 flex-1">
             <button onClick={onClose} className="p-1.5 rounded hover:bg-secondary/30" aria-label="Close">
               <X className="w-4 h-4" />
             </button>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               {readOnly ? (
                 <p className="font-semibold truncate">{title?.title ?? "Loading…"}</p>
               ) : (
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="bg-transparent font-semibold text-base outline-none border-b border-transparent focus:border-border/60"
+                  className="w-full bg-transparent font-semibold text-base outline-none border-b border-transparent focus:border-border/60"
                 />
               )}
-              <div className="flex items-center gap-2 mt-0.5">
+              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                 {title && <StatusBadge status={title.status} />}
                 {title?.locked && (
                   <span className="text-[10px] text-muted-foreground inline-flex items-center gap-1">
                     <Lock className="w-3 h-3" /> Locked
+                  </span>
+                )}
+                {!readOnly && (
+                  <span className="text-[10px] text-muted-foreground inline-flex items-center gap-1">
+                    {saving ? (
+                      <><Loader2 className="w-3 h-3 animate-spin" /> Saving…</>
+                    ) : dirty ? (
+                      <>Unsaved changes</>
+                    ) : autoSavedAt ? (
+                      <><Check className="w-3 h-3 text-emerald-400" /> Auto-saved</>
+                    ) : null}
                   </span>
                 )}
               </div>
@@ -151,15 +210,17 @@ export function TitleEditor({
                 title={ready ? "Submit for review" : `Missing: ${missing.join(", ")}`}
               >
                 {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                Submit to Admin
+                <span className="hidden sm:inline">Submit to Admin</span>
+                <span className="sm:hidden">Submit</span>
               </button>
             )}
           </div>
         </div>
 
+
         {/* Locked banner */}
         {title?.locked && (
-          <div className="px-5 py-3 border-b border-border/40 bg-amber-500/5">
+          <div className="px-3 sm:px-5 py-3 border-b border-border/40 bg-amber-500/5">
             <div className="flex items-center gap-2 text-sm">
               <ShieldCheck className="w-4 h-4 text-amber-300" />
               <span className="font-medium">Submitted For Review</span>
@@ -194,7 +255,7 @@ export function TitleEditor({
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto px-5 py-5">
+        <div className="flex-1 overflow-y-auto px-3 sm:px-5 py-4 sm:py-5">
           {!title || !meta ? (
             <div className="grid place-items-center py-16">
               <Loader2 className="w-4 h-4 animate-spin text-accent" />

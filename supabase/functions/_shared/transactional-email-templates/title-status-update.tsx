@@ -1,6 +1,6 @@
 import * as React from 'npm:react@18.3.1'
 import {
-  Body, Container, Head, Heading, Html, Preview, Section, Text, Hr,
+  Body, Button, Container, Head, Heading, Html, Link, Preview, Section, Text, Hr,
 } from 'npm:@react-email/components@0.0.22'
 import type { TemplateEntry } from './registry.ts'
 
@@ -11,6 +11,7 @@ interface Props {
   fromStatus?: string | null
   note?: string | null
   occurredAt?: string | null
+  dashboardUrl?: string
 }
 
 const NEXT_STEP: Record<string, string> = {
@@ -34,11 +35,17 @@ const Email = ({
   fromStatus,
   note,
   occurredAt,
+  dashboardUrl = 'https://streamvistacreator.com/dashboard/content-owner?section=titles',
 }: Props) => {
   const stamp = occurredAt
     ? new Date(occurredAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
     : null
   const nextLine = NEXT_STEP[toStatus] ?? 'We will keep you posted on the next step.'
+  const ctaLabel =
+    toStatus === 'changes_requested' ? 'Review feedback'
+    : toStatus === 'rejected' ? 'View details'
+    : toStatus === 'approved' || toStatus === 'ready_for_distribution' || toStatus === 'published' ? 'Open title'
+    : 'View in dashboard'
   return (
     <Html lang="en" dir="ltr">
       <Head />
@@ -66,9 +73,13 @@ const Email = ({
             <Text style={nextLabel}>What happens next</Text>
             <Text style={nextText}>{nextLine}</Text>
           </Section>
+          <Section style={ctaWrap}>
+            <Button href={dashboardUrl} style={button}>{ctaLabel}</Button>
+          </Section>
           <Hr style={hr} />
           <Text style={fineprint}>
-            You can view full history and respond from your StreamVista dashboard.
+            Trouble with the button?{' '}
+            <Link href={dashboardUrl} style={link}>Open your dashboard</Link>.
           </Text>
         </Container>
       </Body>
@@ -105,3 +116,11 @@ const nextLabel = { fontSize: '11px', letterSpacing: '0.12em', textTransform: 'u
 const nextText = { fontSize: '14px', color: '#0c4a6e', margin: 0, lineHeight: '1.5' }
 const hr = { borderColor: '#e2e8f0', margin: '24px 0' }
 const fineprint = { fontSize: '12px', color: '#64748b', lineHeight: '1.6', margin: '8px 0' }
+const ctaWrap = { textAlign: 'center' as const, margin: '20px 0' }
+const button = {
+  background: 'linear-gradient(135deg, #0891b2, #22d3ee)',
+  color: '#ffffff', padding: '12px 24px', borderRadius: '12px',
+  fontWeight: 700, fontSize: '13px', letterSpacing: '0.08em',
+  textTransform: 'uppercase' as const, textDecoration: 'none', display: 'inline-block',
+}
+const link = { color: '#0891b2' }

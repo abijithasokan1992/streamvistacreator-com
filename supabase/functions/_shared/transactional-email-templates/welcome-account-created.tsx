@@ -49,7 +49,8 @@ const Email = ({
             Didn't create this account? Reply to this email so our team can lock it down.
           </Text>
           <Text style={fineprint}>
-            <Link href={dashboardUrl} style={link}>{dashboardUrl}</Link>
+            Trouble with the button?{' '}
+            <Link href={dashboardUrl} style={link}>Open your workspace</Link>.
           </Text>
         </Container>
       </Body>

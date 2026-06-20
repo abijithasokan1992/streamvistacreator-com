@@ -13,7 +13,7 @@ type Plan = {
   cycle?: string | null;
 };
 
-type Topup = { id: string; storage_gb: number | null; amount: number | null; status: string | null; created_at: string };
+type Topup = { id: string; tb_added: number | null; amount_inr: number | null; status: string | null; created_at: string };
 
 export default function ProductsAndPlans() {
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -93,8 +93,8 @@ export default function ProductsAndPlans() {
                 {topups.map(t => (
                   <tr key={t.id} className="border-b border-border/20">
                     <td className="py-2 pr-4">{new Date(t.created_at).toLocaleString()}</td>
-                    <td className="py-2 pr-4">{t.storage_gb ?? "—"} GB</td>
-                    <td className="py-2 pr-4 font-mono">{t.amount ?? "—"}</td>
+                    <td className="py-2 pr-4">{t.tb_added != null ? `${t.tb_added} TB` : "—"}</td>
+                    <td className="py-2 pr-4 font-mono">{t.amount_inr != null ? `₹${t.amount_inr}` : "—"}</td>
                     <td className="py-2 pr-4">{t.status ?? "—"}</td>
                   </tr>
                 ))}

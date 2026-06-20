@@ -8,6 +8,7 @@ import { ComingSoonGrid } from "./ComingSoonGrid";
 import { UploadDiagnostics } from "@/components/creator/UploadDiagnostics";
 import WhatHappensNext from "@/components/creator/WhatHappensNext";
 import ReviewNotesInbox from "@/components/creator/ReviewNotesInbox";
+import CreatorReviewFeedback from "@/components/creator/CreatorReviewFeedback";
 import type { SectionId } from "@/components/creator/CreatorSidebar";
 
 function Stat({ icon: Icon, label, value, hint }: { icon: any; label: string; value: string; hint?: string }) {

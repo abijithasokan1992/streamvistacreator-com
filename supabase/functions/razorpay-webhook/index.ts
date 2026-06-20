@@ -29,6 +29,8 @@ async function processEvent(supabase: any, event: any, creds: any): Promise<void
   const order = event?.payload?.order?.entity;
   const subscription = event?.payload?.subscription?.entity;
   const orderId = payment?.order_id ?? order?.id;
+  const topupIdFromNotes: string | null =
+    payment?.notes?.topup_id ?? order?.notes?.topup_id ?? null;
 
   // ── One-shot payment & top-up handlers ──────────────
   if (orderId && (type === "payment.captured" || type === "order.paid")) {
@@ -41,15 +43,78 @@ async function processEvent(supabase: any, event: any, creds: any): Promise<void
         amount_paid_paise: payment?.amount ?? order?.amount ?? null,
       })
       .eq("razorpay_order_id", orderId);
+
+    // Canonical projection for storage top-ups (idempotent).
+    let topupRow: any = null;
+    if (topupIdFromNotes) {
+      const { data } = await supabase
+        .from("storage_topups").select("*").eq("id", topupIdFromNotes).maybeSingle();
+      topupRow = data;
+    }
+    if (!topupRow && orderId) {
+      const { data } = await supabase
+        .from("storage_topups").select("*").eq("razorpay_order_id", orderId).maybeSingle();
+      topupRow = data;
+    }
+    if (topupRow) {
+      // Amount sanity check
+      const expectedPaise = Math.round(Number(topupRow.amount_inr) * 100);
+      const paidPaise = Number(payment?.amount ?? order?.amount ?? 0);
+      if (paidPaise && expectedPaise && Math.abs(paidPaise - expectedPaise) > 1) {
+        await logPayment(supabase, {
+          severity: "ERROR", source: "webhook", action_type: "payment.amount_mismatch",
+          order_id: orderId, payment_id: payment?.id ?? null,
+          error_message: `Expected ${expectedPaise} paise, got ${paidPaise}`,
+          extra: { topup_id: topupRow.id },
+        });
+      }
+
+      if (topupRow.status !== "paid") {
+        await supabase.from("storage_topups")
+          .update({ status: "paid", razorpay_payment_id: payment?.id ?? null })
+          .eq("id", topupRow.id);
+      }
+      const { error: projErr, data: proj } = await supabase
+        .rpc("project_topup_entitlement", { _topup_id: topupRow.id });
+      if (projErr) {
+        await logPayment(supabase, {
+          severity: "ERROR", source: "webhook", action_type: "entitlement.projection_failed",
+          order_id: orderId, payment_id: payment?.id ?? null,
+          error_message: projErr.message, extra: { topup_id: topupRow.id },
+        });
+      } else {
+        await logPayment(supabase, {
+          severity: "INFO", source: "webhook", action_type: "entitlement.projected",
+          order_id: orderId, payment_id: payment?.id ?? null,
+          extra: { topup_id: topupRow.id, invoice_id: (proj as any)?.invoice_id },
+        });
+      }
+    } else if (!subscription?.id) {
+      // Unknown order with no matching topup or subscription
+      await logPayment(supabase, {
+        severity: "WARN", source: "webhook", action_type: "payment.unknown_mapping",
+        order_id: orderId, payment_id: payment?.id ?? null,
+        error_message: "No topup, subscription or onboarding row mapped to this order",
+      });
+    }
   } else if (orderId && type === "payment.failed") {
     await supabase
       .from("onboarding_requests")
       .update({ payment_status: "failed" })
       .eq("razorpay_order_id", orderId);
+    await supabase
+      .from("storage_topups")
+      .update({ status: "failed" })
+      .eq("razorpay_order_id", orderId)
+      .neq("status", "paid");
   } else if (orderId && type === "refund.processed") {
     await supabase
       .from("onboarding_requests")
       .update({ payment_status: "refunded" })
+      .eq("razorpay_order_id", orderId);
+    await supabase
+      .from("invoices")
+      .update({ status: "refunded" })
       .eq("razorpay_order_id", orderId);
   }
 
@@ -69,7 +134,7 @@ async function processEvent(supabase: any, event: any, creds: any): Promise<void
       subscription.customer_id ?? payment?.customer_id ?? null;
     const razorpayTokenId = payment?.token_id ?? null;
 
-    await supabase.from("subscriptions").upsert(
+    const { error: subErr } = await supabase.from("subscriptions").upsert(
       {
         user_id: userId,
         razorpay_subscription_id: subscription.id,
@@ -87,6 +152,14 @@ async function processEvent(supabase: any, event: any, creds: any): Promise<void
       },
       { onConflict: "razorpay_subscription_id" },
     );
+    if (subErr) {
+      await logPayment(supabase, {
+        severity: "ERROR", source: "webhook", action_type: "subscription.mapping_failed",
+        order_id: orderId, payment_id: payment?.id ?? null,
+        error_message: subErr.message,
+        extra: { subscription_id: subscription.id, user_id: userId },
+      });
+    }
 
     if (razorpayCustomerId || razorpayTokenId) {
       const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
@@ -114,7 +187,10 @@ async function processEvent(supabase: any, event: any, creds: any): Promise<void
   }
 
   if (!orderId && !subscription?.id) {
-    console.log("razorpay-webhook: unhandled event", type);
+    await logPayment(supabase, {
+      severity: "WARN", source: "webhook", action_type: "payment.unknown_mapping",
+      error_message: `Unhandled event ${type} with no order/subscription id`,
+    });
   }
 }
 
@@ -157,7 +233,13 @@ Deno.serve(async (req) => {
   } catch { signatureValid = false; }
 
   let event: any = null;
-  try { event = JSON.parse(raw); } catch { /* logged below */ }
+  try { event = JSON.parse(raw); } catch (e) {
+    await logPayment(supabase, {
+      severity: "ERROR", source: "webhook", action_type: "webhook.parse_failed",
+      error_message: e instanceof Error ? e.message : String(e),
+      extra: { raw_preview: raw.slice(0, 256) },
+    });
+  }
 
   // Derive the canonical event id (prefer the header, fall back to body id).
   const eventId = eventIdHeader || event?.id || `derived_${expected.slice(0, 16)}_${event?.event ?? "unknown"}`;

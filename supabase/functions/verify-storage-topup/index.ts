@@ -1,17 +1,20 @@
 /**
  * verify-storage-topup
  *
- * Verifies the Razorpay signature for a PAYG top-up, marks the
- * `storage_topups` row as paid, and increments the user's `topup_tb`
- * counter on `user_profiles`.
+ * Verifies a Razorpay signature for a PAYG top-up, marks the
+ * `storage_topups` row as paid, projects the entitlement to the
+ * canonical `plan_assignments` + `storage_allocations` tables via
+ * `project_topup_entitlement`, creates the invoice, and emails the receipt.
  */
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
 import { createHmac } from "node:crypto";
 import { loadRazorpayCreds } from "../_shared/razorpay-config.ts";
+import { logPayment } from "../_shared/payment-logger.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const SITE_ORIGIN  = Deno.env.get("SITE_ORIGIN") ?? "https://streamvistacreator.com";
 
 function jsonWith(req: Request) {
   const cors = buildCorsHeaders(req);
@@ -20,6 +23,32 @@ function jsonWith(req: Request) {
       status,
       headers: { ...cors, "Content-Type": "application/json" },
     });
+}
+
+async function sendReceipt(admin: any, invoiceId: string) {
+  try {
+    const { data: inv } = await admin.from("invoices").select("*").eq("id", invoiceId).maybeSingle();
+    if (!inv || !inv.billed_to_email) return;
+    await admin.functions.invoke("send-transactional-email", {
+      body: {
+        templateName: "invoice-receipt",
+        recipientEmail: inv.billed_to_email,
+        idempotencyKey: `invoice-${inv.id}`,
+        templateData: {
+          invoiceNumber: inv.invoice_number,
+          description: inv.description,
+          subtotalInr: Number(inv.subtotal_paise) / 100,
+          gstInr: Number(inv.gst_paise) / 100,
+          totalInr: Number(inv.total_paise) / 100,
+          issuedAt: inv.issued_at,
+          receiptUrl: `${SITE_ORIGIN}/invoice/${inv.id}`,
+          billedToEmail: inv.billed_to_email,
+        },
+      },
+    });
+  } catch (e) {
+    console.error("invoice receipt email failed", e);
+  }
 }
 
 Deno.serve(async (req) => {
@@ -48,31 +77,60 @@ Deno.serve(async (req) => {
     const expected = createHmac("sha256", creds.keySecret)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest("hex");
-    if (expected !== razorpay_signature) return json({ error: "Signature mismatch" }, 400);
+    if (expected !== razorpay_signature) {
+      await logPayment(admin, {
+        severity: "ERROR", source: "edge", action_type: "webhook.signature",
+        user_id: uid, order_id: razorpay_order_id, payment_id: razorpay_payment_id,
+        error_message: "Signature mismatch on verify-storage-topup",
+      });
+      return json({ error: "Signature mismatch" }, 400);
+    }
 
-    // Load + ownership check
     const { data: row, error: rowErr } = await admin
       .from("storage_topups").select("*").eq("id", topupId).maybeSingle();
     if (rowErr || !row) return json({ error: "Top-up not found" }, 404);
     if (row.user_id !== uid) return json({ error: "Forbidden" }, 403);
-    if (row.razorpay_order_id !== razorpay_order_id) return json({ error: "Order mismatch" }, 400);
+    if (row.razorpay_order_id !== razorpay_order_id) {
+      await logPayment(admin, {
+        severity: "ERROR", source: "edge", action_type: "webhook.idempotency_conflict",
+        user_id: uid, order_id: razorpay_order_id, payment_id: razorpay_payment_id,
+        error_message: `Order id mismatch (expected ${row.razorpay_order_id})`,
+        extra: { topup_id: topupId },
+      });
+      return json({ error: "Order mismatch" }, 400);
+    }
 
-    // Idempotency: skip if already paid
-    if (row.status === "paid") return json({ ok: true, already: true });
+    if (row.status === "paid") {
+      // Idempotent — re-project entitlement and re-send receipt only if missing.
+      const { data: proj } = await admin.rpc("project_topup_entitlement", { _topup_id: topupId });
+      if (proj?.invoice_id) await sendReceipt(admin, proj.invoice_id);
+      return json({ ok: true, already: true, ...(proj ?? {}) });
+    }
 
-    // Mark paid + bump topup_tb
     await admin.from("storage_topups")
       .update({ status: "paid", razorpay_payment_id })
       .eq("id", topupId);
 
-    const { data: prof } = await admin
-      .from("user_profiles").select("topup_tb,plan_tier").eq("user_id", uid).maybeSingle();
-    const next = Number(prof?.topup_tb || 0) + Number(row.tb_added || 1);
-    await admin.from("user_profiles")
-      .update({ topup_tb: next, plan_tier: prof?.plan_tier === "free" ? "creator" : (prof?.plan_tier || "creator") })
-      .eq("user_id", uid);
+    // Canonical projection: plan_assignments + storage_allocations + invoices
+    const { data: proj, error: projErr } = await admin.rpc("project_topup_entitlement", { _topup_id: topupId });
+    if (projErr) {
+      await logPayment(admin, {
+        severity: "ERROR", source: "edge", action_type: "entitlement.projection_failed",
+        user_id: uid, order_id: razorpay_order_id, payment_id: razorpay_payment_id,
+        error_message: projErr.message, extra: { topup_id: topupId },
+      });
+      return json({ error: "Entitlement projection failed", detail: projErr.message }, 500);
+    }
 
-    return json({ ok: true, topup_tb: next });
+    if (proj?.invoice_id) await sendReceipt(admin, proj.invoice_id);
+
+    await logPayment(admin, {
+      severity: "INFO", source: "edge", action_type: "verify.complete",
+      user_id: uid, order_id: razorpay_order_id, payment_id: razorpay_payment_id,
+      extra: { topup_id: topupId, invoice_id: proj?.invoice_id, tb_added: proj?.tb_added },
+    });
+
+    return json({ ok: true, ...(proj ?? {}) });
   } catch (e) {
     console.error("verify-storage-topup error", e);
     return json({ error: "Internal server error" }, 500);

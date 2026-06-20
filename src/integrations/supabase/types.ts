@@ -1300,6 +1300,100 @@ export type Database = {
         }
         Relationships: []
       }
+      invoices: {
+        Row: {
+          billed_to_email: string | null
+          billed_to_name: string | null
+          created_at: string
+          currency: string
+          description: string
+          gst_paise: number
+          gst_percent: number
+          id: string
+          invoice_number: string
+          issued_at: string
+          plan_id: string | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          source: string
+          status: string
+          subscription_id: string | null
+          subtotal_paise: number
+          topup_id: string | null
+          total_paise: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          billed_to_email?: string | null
+          billed_to_name?: string | null
+          created_at?: string
+          currency?: string
+          description: string
+          gst_paise: number
+          gst_percent?: number
+          id?: string
+          invoice_number?: string
+          issued_at?: string
+          plan_id?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          source: string
+          status?: string
+          subscription_id?: string | null
+          subtotal_paise: number
+          topup_id?: string | null
+          total_paise: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          billed_to_email?: string | null
+          billed_to_name?: string | null
+          created_at?: string
+          currency?: string
+          description?: string
+          gst_paise?: number
+          gst_percent?: number
+          id?: string
+          invoice_number?: string
+          issued_at?: string
+          plan_id?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          source?: string
+          status?: string
+          subscription_id?: string | null
+          subtotal_paise?: number
+          topup_id?: string | null
+          total_paise?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_topup_id_fkey"
+            columns: ["topup_id"]
+            isOneToOne: false
+            referencedRelation: "storage_topups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mcp_audit_log: {
         Row: {
           action: string
@@ -1958,9 +2052,11 @@ export type Database = {
           is_archived: boolean
           name: string
           price_amount: number
+          razorpay_plan_id: string | null
           role: Database["public"]["Enums"]["app_role"]
           sort_order: number
           storage_gb: number
+          topup_unit_tb: number | null
           trial_days: number
           updated_at: string
           user_limit: number
@@ -1981,9 +2077,11 @@ export type Database = {
           is_archived?: boolean
           name: string
           price_amount?: number
+          razorpay_plan_id?: string | null
           role: Database["public"]["Enums"]["app_role"]
           sort_order?: number
           storage_gb?: number
+          topup_unit_tb?: number | null
           trial_days?: number
           updated_at?: string
           user_limit?: number
@@ -2004,9 +2102,11 @@ export type Database = {
           is_archived?: boolean
           name?: string
           price_amount?: number
+          razorpay_plan_id?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           sort_order?: number
           storage_gb?: number
+          topup_unit_tb?: number | null
           trial_days?: number
           updated_at?: string
           user_limit?: number
@@ -3767,6 +3867,54 @@ export type Database = {
       }
     }
     Views: {
+      payment_security_events: {
+        Row: {
+          action_type: string | null
+          created_at: string | null
+          duration_ms: number | null
+          error_message: string | null
+          event_category: string | null
+          event_id: string | null
+          extra: Json | null
+          id: string | null
+          order_id: string | null
+          payment_id: string | null
+          severity: string | null
+          source: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action_type?: string | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          event_category?: never
+          event_id?: string | null
+          extra?: Json | null
+          id?: string | null
+          order_id?: string | null
+          payment_id?: string | null
+          severity?: string | null
+          source?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action_type?: string | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          event_category?: never
+          event_id?: string | null
+          extra?: Json | null
+          id?: string | null
+          order_id?: string | null
+          payment_id?: string | null
+          severity?: string | null
+          source?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       v_kammattam_meter: {
         Row: {
           black_paise: number | null
@@ -3898,6 +4046,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      project_topup_entitlement: { Args: { _topup_id: string }; Returns: Json }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {

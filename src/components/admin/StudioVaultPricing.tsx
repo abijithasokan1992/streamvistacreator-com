@@ -30,7 +30,7 @@ export default function StudioVaultPricing() {
     setSaving(true);
     try {
       const { error } = await supabase.rpc("studio_vault_upsert_product", {
-        _payload: editing as unknown as Record<string, unknown>,
+        _payload: JSON.parse(JSON.stringify(editing)),
       });
       if (error) throw error;
       toast.success("Vault product saved");
@@ -45,7 +45,7 @@ export default function StudioVaultPricing() {
 
   const toggle = async (p: VaultProduct, field: "visible" | "self_serve_enabled", val: boolean) => {
     const { error } = await supabase.rpc("studio_vault_upsert_product", {
-      _payload: { id: p.id, [field]: val } as Record<string, unknown>,
+      _payload: { id: p.id, [field]: val } as never,
     });
     if (error) toast.error(error.message);
     else { toast.success("Updated"); await load(); }

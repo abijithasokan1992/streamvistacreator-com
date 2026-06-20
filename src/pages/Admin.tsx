@@ -361,6 +361,7 @@ export default function Admin() {
             <SupportInbox />
             <ContactInbox />
             <BrandingSettings />
+            <CompanyProfileSettings />
             <PartnerLogos />
             <MarketingCMS />
             <MarketingAnalytics rows={rows} />

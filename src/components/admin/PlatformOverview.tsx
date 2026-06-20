@@ -38,6 +38,10 @@ export default function PlatformOverview() {
   const [openSupport, setOpenSupport] = useState(0);
   const [pendingApprovals, setPendingApprovals] = useState(0);
   const [dlqEmails, setDlqEmails] = useState(0);
+  const [blockedQc, setBlockedQc] = useState(0);
+  const [blockedLegal, setBlockedLegal] = useState(0);
+  const [unassignedQc, setUnassignedQc] = useState(0);
+  const [unassignedLegal, setUnassignedLegal] = useState(0);
 
   const load = async () => {
     setLoading(true);
@@ -104,6 +108,22 @@ export default function PlatformOverview() {
       setOpenSupport(support.count ?? 0);
       setPendingApprovals(approvals.count ?? 0);
       setDlqEmails(emailDlq.count ?? 0);
+
+      // Review-ops indicators (lightweight)
+      const [issuesQc, issuesLg, qcAssigned, legalAssigned, qcTitles, legalTitles] = await Promise.all([
+        supabase.from("title_review_issues").select("title_id").eq("status", "open").eq("severity", "blocking").eq("stage", "qc"),
+        supabase.from("title_review_issues").select("title_id").eq("status", "open").eq("severity", "blocking").in("stage", ["legal","general"]),
+        supabase.from("title_review_assignments").select("title_id").eq("stage", "qc").not("reviewer_user_id", "is", null),
+        supabase.from("title_review_assignments").select("title_id").eq("stage", "legal").not("reviewer_user_id", "is", null),
+        supabase.from("content_titles").select("id").eq("status", "qc_review"),
+        supabase.from("content_titles").select("id").eq("status", "legal_review"),
+      ]);
+      setBlockedQc(new Set((issuesQc.data ?? []).map((r: any) => r.title_id)).size);
+      setBlockedLegal(new Set((issuesLg.data ?? []).map((r: any) => r.title_id)).size);
+      const qcSet = new Set((qcAssigned.data ?? []).map((r: any) => r.title_id));
+      const lgSet = new Set((legalAssigned.data ?? []).map((r: any) => r.title_id));
+      setUnassignedQc((qcTitles.data ?? []).filter((t: any) => !qcSet.has(t.id)).length);
+      setUnassignedLegal((legalTitles.data ?? []).filter((t: any) => !lgSet.has(t.id)).length);
     } finally {
       setLoading(false);
     }
@@ -181,6 +201,10 @@ export default function PlatformOverview() {
             </div>
             <ul className="space-y-2 text-sm">
               <InboxRow label="Submissions awaiting review" count={pendingApprovals} to="/admin?tab=content" />
+              <InboxRow label="QC reviews blocked" count={blockedQc} to="/admin?tab=content&stage=qc_review" />
+              <InboxRow label="Legal reviews blocked" count={blockedLegal} to="/admin?tab=content&stage=legal_review" />
+              <InboxRow label="QC titles unassigned" count={unassignedQc} to="/admin?tab=content&stage=qc_review" />
+              <InboxRow label="Legal titles unassigned" count={unassignedLegal} to="/admin?tab=content&stage=legal_review" />
               <InboxRow label="Open onboarding approvals" count={openOnboarding} to="/admin?tab=users" />
               <InboxRow label="DMCA requests" count={openDmca} to="/admin?tab=security" />
               <InboxRow label="Support tickets" count={openSupport} to="/admin?tab=ops" />

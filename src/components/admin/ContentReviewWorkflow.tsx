@@ -8,6 +8,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, RefreshCw, ClipboardList, History } from "lucide-react";
 import { toast } from "sonner";
+import TitleReviewPanel from "./TitleReviewPanel";
 
 type Status =
   | "submitted" | "in_review" | "qc_review" | "legal_review"
@@ -271,27 +272,38 @@ export default function ContentReviewWorkflow() {
                 <Info label="Previous Status" value={selected.previous_status || "—"} />
               </div>
 
+              <TitleReviewPanel
+                titleId={selected.id}
+                currentStatus={selected.status}
+                onChanged={() => { loadQueue(activeTab); loadCounts(); }}
+              />
+
               <div>
-                <div className="text-sm font-medium mb-1">Review Note</div>
-                <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional note for this transition…" rows={3} />
+                <div className="text-sm font-medium mb-1">Status transition note</div>
+                <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional note attached to the transition below…" rows={2} />
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {(TRANSITIONS[selected.status] || []).map(opt => (
-                  <Button
-                    key={opt.value}
-                    size="sm"
-                    variant={opt.variant || "default"}
-                    disabled={!!transitionBusy}
-                    onClick={() => runTransition(opt.value)}
-                  >
-                    {transitionBusy === opt.value && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
-                    {opt.label}
-                  </Button>
-                ))}
+                {(TRANSITIONS[selected.status] || [])
+                  .filter(opt => opt.value !== "changes_requested") // use structured Request Changes inside the panel
+                  .map(opt => (
+                    <Button
+                      key={opt.value}
+                      size="sm"
+                      variant={opt.variant || "default"}
+                      disabled={!!transitionBusy}
+                      onClick={() => runTransition(opt.value)}
+                    >
+                      {transitionBusy === opt.value && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
+                      {opt.label}
+                    </Button>
+                  ))}
                 {!TRANSITIONS[selected.status] && (
                   <div className="text-sm text-muted-foreground">No transitions available from <code>{selected.status}</code>.</div>
                 )}
+                <p className="w-full text-[11px] text-muted-foreground">
+                  Approve / Mark ready are blocked while open blocking issues exist.
+                </p>
               </div>
 
               <div>

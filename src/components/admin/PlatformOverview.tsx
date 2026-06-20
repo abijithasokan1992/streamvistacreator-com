@@ -205,7 +205,7 @@ export default function PlatformOverview() {
           icon={<IndianRupee className="w-4 h-4" />}
           label="Revenue (this month)"
           value={`₹${revenueThisMonth.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
-          sub={revenuePending > 0 ? `${revenuePending} pending` : "no pending issues"}
+          sub={`${invoiceCount} invoices · last mo ₹${revenueLastMonth.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
         />
       </div>
 

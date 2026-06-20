@@ -285,7 +285,7 @@ export default function Admin() {
           defaultValue={pathToTab(location.pathname, searchParams, isSuperAdmin)}
           className="w-full"
         >
-          <TabsList className={`grid grid-cols-2 sm:grid-cols-3 ${isSuperAdmin ? "lg:grid-cols-9" : "lg:grid-cols-8"} gap-2 h-auto p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-8`}>
+          <TabsList className={`grid grid-cols-2 sm:grid-cols-3 ${isSuperAdmin ? "lg:grid-cols-9" : "lg:grid-cols-8"} gap-1.5 sm:gap-2 h-auto p-1 sm:p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-6 sm:mb-8`}>
             <DeptTab value="overview" icon={<LayoutDashboard className="w-4 h-4" />} label="Platform Overview" />
             <DeptTab value="content" icon={<Film className="w-4 h-4" />} label="Content Pipeline" />
             <DeptTab value="users" icon={<UsersIcon className="w-4 h-4" />} label="Users & Orgs" />

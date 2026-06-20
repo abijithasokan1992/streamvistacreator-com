@@ -1,7 +1,24 @@
 // Canonical production origin for the app. Used by auth redirects,
 // transactional links, and anywhere we need a stable URL that survives
 // preview/staging hostnames. Keep in sync with site_config.primary_domain.
-export const APP_ORIGIN = "https://app.crayonspictures.com";
+//
+// Production payment + app domain (Studio Vault, auth callbacks, invoices,
+// post-checkout returns):  https://www.streamvistacreator.com
+// Preview-only fallback:    https://streamvista-creator.lovable.app
+// Corporate / parent brand: https://www.crayonspictures.com  (NOT used for
+//   app/payment/auth callbacks anymore — historically `app.crayonspictures.com`
+//   was used and is now deprecated.)
+export const APP_ORIGIN = "https://www.streamvistacreator.com";
+export const APP_ORIGIN_BARE = "https://streamvistacreator.com";
+export const PREVIEW_ORIGIN = "https://streamvista-creator.lovable.app";
+export const CORPORATE_SITE = "https://www.crayonspictures.com";
+
+/** Domains explicitly retired from active app/payment/auth use. */
+export const DEPRECATED_APP_ORIGINS = [
+  "https://app.crayonspictures.com",
+  "https://www.app.crayonspictures.com",
+  "https://https-app-crayonspictures-com.lovable.app",
+];
 
 /**
  * Returns the origin to use for outbound links (email redirects, OAuth
@@ -18,4 +35,24 @@ export function getAppOrigin(): string {
     hostname.endsWith(".lovable.app") ||
     hostname.endsWith(".lovableproject.com");
   return isLocal ? origin : APP_ORIGIN;
+}
+
+/**
+ * Classify the current browser origin for operator-facing diagnostics.
+ * Returns 'production' on the canonical streamvistacreator.com domains,
+ * 'preview' on lovable preview hosts / localhost, and 'deprecated' if the
+ * app is somehow being served from a retired domain.
+ */
+export function classifyOrigin(origin?: string): "production" | "preview" | "deprecated" | "unknown" {
+  const o = (origin ?? (typeof window !== "undefined" ? window.location.origin : "")).toLowerCase();
+  if (!o) return "unknown";
+  if (DEPRECATED_APP_ORIGINS.some(d => o.startsWith(d))) return "deprecated";
+  if (o.includes("streamvistacreator.com")) return "production";
+  if (
+    o.includes(".lovable.app") ||
+    o.includes(".lovableproject.com") ||
+    o.includes("localhost") ||
+    o.includes("127.0.0.1")
+  ) return "preview";
+  return "unknown";
 }

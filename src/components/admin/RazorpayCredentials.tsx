@@ -296,14 +296,44 @@ export default function RazorpayCredentials() {
           <span className="font-mono text-foreground">refund.processed</span>,{" "}
           <span className="font-mono text-foreground">subscription.*</span>.
         </p>
-        {SITE_ORIGIN && (
-          <p className="text-muted-foreground pt-1 border-t border-border/30">
-            Frontend origin: <span className="font-mono text-foreground">{SITE_ORIGIN}</span>
-            <span className="ml-1 opacity-70">
-              — for reference only. The webhook must point at the backend edge function above, never at the site domain.
-            </span>
+
+        <div className="pt-3 mt-1 border-t border-border/30 space-y-2">
+          <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Razorpay website / origin checklist</p>
+          <ul className="space-y-1.5">
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 inline-flex w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+              <span>Production app + payment website expected in Razorpay: <span className="font-mono text-foreground">https://www.streamvistacreator.com</span></span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 inline-flex w-1.5 h-1.5 rounded-full bg-foreground/40 shrink-0" />
+              <span>Corporate site (may also exist on the same Razorpay account, but is not the Studio Vault checkout return domain): <span className="font-mono text-foreground">https://www.crayonspictures.com</span></span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 inline-flex w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+              <span>Preview only — do not treat as the live payment website: <span className="font-mono text-foreground">https://streamvista-creator.lovable.app</span></span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 inline-flex w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />
+              <span className="line-through opacity-70">https://app.crayonspictures.com</span>
+              <span className="not-italic opacity-80">— deprecated, remove from Razorpay if still listed.</span>
+            </li>
+          </ul>
+          <p className="text-[11px] text-muted-foreground pt-1">
+            The same live Razorpay key may be shared across approved related business websites — this patch does not rotate the key. It only aligns the operator-facing domain guidance.
           </p>
-        )}
+          {SITE_ORIGIN && (
+            <p className="text-[11px] text-muted-foreground pt-1">
+              Current browser origin (for reference): <span className="font-mono text-foreground">{SITE_ORIGIN}</span>
+              {SITE_ORIGIN.includes("streamvistacreator.com")
+                ? <span className="ml-1 text-emerald-300">· production</span>
+                : (SITE_ORIGIN.includes("lovable.app") || SITE_ORIGIN.includes("localhost"))
+                ? <span className="ml-1 text-amber-300">· preview — not the canonical payment domain</span>
+                : SITE_ORIGIN.includes("app.crayonspictures.com")
+                ? <span className="ml-1 text-red-300">· deprecated domain</span>
+                : null}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

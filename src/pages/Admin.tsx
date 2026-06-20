@@ -462,10 +462,30 @@ function MetricCard({ label, value }: { label: string; value: string }) {
 }
 
 function DomainHostingPanel() {
-  const DEFAULT_PRIMARY = "https://app.crayonspictures.com";
+  const DEFAULT_PRIMARY = "https://www.streamvistacreator.com";
+  const DEFAULT_EXTRA = "https://streamvistacreator.com, https://streamvista-creator.lovable.app";
+  const DEPRECATED = [
+    "https://app.crayonspictures.com",
+    "https://www.app.crayonspictures.com",
+    "https://https-app-crayonspictures-com.lovable.app",
+  ];
   const currentOrigin = typeof window !== "undefined" ? window.location.origin : "";
+  const isPreview =
+    currentOrigin.includes(".lovable.app") ||
+    currentOrigin.includes(".lovableproject.com") ||
+    currentOrigin.includes("localhost");
+  const isProduction = currentOrigin.includes("streamvistacreator.com");
+  const isDeprecated = DEPRECATED.some(d => currentOrigin.startsWith(d));
+  const envBadge = isDeprecated
+    ? { label: "DEPRECATED DOMAIN", cls: "bg-red-500/15 text-red-300 border-red-500/30" }
+    : isProduction
+    ? { label: "PRODUCTION", cls: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" }
+    : isPreview
+    ? { label: "PREVIEW", cls: "bg-amber-500/15 text-amber-300 border-amber-500/30" }
+    : { label: "UNKNOWN", cls: "bg-secondary text-muted-foreground border-border" };
+
   const [primary, setPrimary] = useState(DEFAULT_PRIMARY);
-  const [extra, setExtra] = useState("");
+  const [extra, setExtra] = useState(DEFAULT_EXTRA);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -477,8 +497,11 @@ function DomainHostingPanel() {
         .eq("id", true)
         .maybeSingle();
       if (!error && data) {
-        setPrimary(data.primary_domain?.trim() || DEFAULT_PRIMARY);
-        setExtra((data.extra_origins ?? []).join(", "));
+        const p = data.primary_domain?.trim();
+        // If the stored value is a deprecated app domain, snap operator
+        // UI to the new canonical production domain (does not auto-save).
+        setPrimary(p && !DEPRECATED.includes(p) ? p : DEFAULT_PRIMARY);
+        setExtra((data.extra_origins ?? []).filter((o: string) => !DEPRECATED.includes(o)).join(", "));
       }
       setLoading(false);
     })();
@@ -495,6 +518,11 @@ function DomainHostingPanel() {
     const primary_domain = normalize(primary);
     const extra_origins = extra
       .split(",").map(normalize).filter(Boolean);
+    if (DEPRECATED.includes(primary_domain) || extra_origins.some(o => DEPRECATED.includes(o))) {
+      setSaving(false);
+      toast.error("This domain is deprecated. Use https://www.streamvistacreator.com instead.");
+      return;
+    }
     const { error } = await supabase
       .from("site_config")
       .upsert({ id: true, primary_domain, extra_origins }, { onConflict: "id" });
@@ -507,8 +535,30 @@ function DomainHostingPanel() {
     <div className="glass rounded-2xl p-6 space-y-5">
       <div>
         <h2 className="font-display text-2xl font-bold flex items-center gap-2"><Code2 className="w-5 h-5 text-accent" /> Domain & Hosting</h2>
-        <p className="text-xs text-muted-foreground mt-1">Manage the primary domain that powers links, emails and CORS. Current origin: <span className="font-mono text-foreground">{currentOrigin}</span></p>
+        <p className="text-xs text-muted-foreground mt-1">
+          Manage the primary domain that powers links, emails and CORS. Current origin:{" "}
+          <span className="font-mono text-foreground">{currentOrigin}</span>
+          <span className={`ml-2 inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] tracking-wider ${envBadge.cls}`}>{envBadge.label}</span>
+        </p>
       </div>
+
+      <div className="grid sm:grid-cols-3 gap-3 text-xs">
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3">
+          <div className="text-[10px] uppercase tracking-wider text-emerald-300">Production app + payment</div>
+          <div className="font-mono text-foreground mt-1 break-all">https://www.streamvistacreator.com</div>
+        </div>
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
+          <div className="text-[10px] uppercase tracking-wider text-amber-300">Preview only</div>
+          <div className="font-mono text-foreground mt-1 break-all">https://streamvista-creator.lovable.app</div>
+          <div className="text-muted-foreground mt-1">Not the canonical payment domain.</div>
+        </div>
+        <div className="rounded-xl border border-border/40 bg-secondary/20 p-3">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Corporate site</div>
+          <div className="font-mono text-foreground mt-1 break-all">https://www.crayonspictures.com</div>
+          <div className="text-muted-foreground mt-1">Parent brand, not an app callback.</div>
+        </div>
+      </div>
+
       {loading ? (
         <div className="py-8 grid place-items-center"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
       ) : (
@@ -516,11 +566,11 @@ function DomainHostingPanel() {
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs uppercase tracking-wider text-muted-foreground">Primary domain</label>
-              <input value={primary} onChange={e => setPrimary(e.target.value)} placeholder="https://app.crayonspictures.com" className="w-full h-11 px-3 rounded-xl bg-secondary/40 border border-border/60 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" />
+              <input value={primary} onChange={e => setPrimary(e.target.value)} placeholder="https://www.streamvistacreator.com" className="w-full h-11 px-3 rounded-xl bg-secondary/40 border border-border/60 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs uppercase tracking-wider text-muted-foreground">Additional origins (comma-separated)</label>
-              <input value={extra} onChange={e => setExtra(e.target.value)} placeholder="https://www.crayonspictures.com" className="w-full h-11 px-3 rounded-xl bg-secondary/40 border border-border/60 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" />
+              <input value={extra} onChange={e => setExtra(e.target.value)} placeholder="https://streamvistacreator.com, https://streamvista-creator.lovable.app" className="w-full h-11 px-3 rounded-xl bg-secondary/40 border border-border/60 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" />
             </div>
           </div>
           <button
@@ -530,6 +580,15 @@ function DomainHostingPanel() {
           >{saving && <Loader2 className="w-4 h-4 animate-spin" />} Save & Apply</button>
         </>
       )}
+
+      <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-4 text-xs space-y-1">
+        <p className="font-semibold text-red-300">Deprecated — do not use as the app/payment/auth domain:</p>
+        {DEPRECATED.map(d => (
+          <p key={d} className="font-mono text-foreground/70 line-through">{d}</p>
+        ))}
+        <p className="text-muted-foreground pt-1">These were previously used for app callbacks and are no longer the active production domain. Remove them from Razorpay, OAuth providers, and any email templates.</p>
+      </div>
+
       <div className="rounded-xl border border-border/40 bg-secondary/20 p-4 text-xs text-muted-foreground space-y-1">
         <p className="font-semibold text-foreground">DNS records (point your registrar here):</p>
         <p>A · @ → <span className="font-mono text-foreground">185.158.133.1</span></p>

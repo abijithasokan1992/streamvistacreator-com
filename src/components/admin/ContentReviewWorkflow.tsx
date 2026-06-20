@@ -11,9 +11,11 @@ import { toast } from "sonner";
 
 type Status =
   | "submitted" | "in_review" | "qc_review" | "legal_review"
-  | "approved" | "ready_for_distribution" | "published"
+  | "approved" | "ready_for_distribution"
   | "changes_requested" | "hold" | "rejected" | "archived"
-  | "draft" | "incomplete" | "locked";
+  | "draft" | "incomplete" | "locked"
+  // legacy enum value — kept for backward-compat reads only; not surfaced as a queue or transition.
+  | "published";
 
 interface QueueRow {
   id: string;
@@ -43,6 +45,8 @@ interface HistoryRow {
   details: any;
 }
 
+// Current review workflow does NOT include "published" — the terminal positive
+// state is "ready_for_distribution". Commercial release is a future stream.
 const QUEUES: { value: Status; label: string }[] = [
   { value: "submitted", label: "Submitted" },
   { value: "in_review", label: "In Review" },
@@ -50,7 +54,6 @@ const QUEUES: { value: Status; label: string }[] = [
   { value: "legal_review", label: "Legal Review" },
   { value: "approved", label: "Approved" },
   { value: "ready_for_distribution", label: "Ready For Distribution" },
-  { value: "published", label: "Published" },
   { value: "changes_requested", label: "Changes Requested" },
   { value: "hold", label: "Hold" },
   { value: "rejected", label: "Rejected" },
@@ -84,17 +87,11 @@ const TRANSITIONS: Record<string, { value: Status; label: string; variant?: any 
   ],
   approved: [
     { value: "ready_for_distribution", label: "Mark Ready For Distribution" },
-    { value: "published", label: "Publish" },
     { value: "hold", label: "Hold" },
   ],
   ready_for_distribution: [
-    { value: "published", label: "Publish" },
     { value: "hold", label: "Hold" },
     { value: "archived", label: "Archive" },
-  ],
-  published: [
-    { value: "archived", label: "Archive" },
-    { value: "hold", label: "Hold" },
   ],
   hold: [
     { value: "in_review", label: "Resume → In Review" },
@@ -108,8 +105,7 @@ const TRANSITIONS: Record<string, { value: Status; label: string; variant?: any 
 
 function statusColor(s: string) {
   switch (s) {
-    case "approved":
-    case "published": return "bg-emerald-500/15 text-emerald-300 border-emerald-500/30";
+    case "approved": return "bg-emerald-500/15 text-emerald-300 border-emerald-500/30";
     case "ready_for_distribution": return "bg-cyan-500/15 text-cyan-300 border-cyan-500/30";
     case "rejected": return "bg-red-500/15 text-red-300 border-red-500/30";
     case "hold": return "bg-amber-500/15 text-amber-300 border-amber-500/30";

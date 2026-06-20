@@ -40,6 +40,7 @@ import AdminInvoices from "@/components/admin/AdminInvoices";
 import PaymentSecurityEvents from "@/components/admin/PaymentSecurityEvents";
 import StudioVaultPricing from "@/components/admin/StudioVaultPricing";
 import AdminStudioVaultPurchases from "@/components/admin/AdminStudioVaultPurchases";
+import CompanyProfileSettings from "@/components/admin/CompanyProfileSettings";
 
 interface Row {
   id: string;
@@ -360,6 +361,7 @@ export default function Admin() {
             <SupportInbox />
             <ContactInbox />
             <BrandingSettings />
+            <CompanyProfileSettings />
             <PartnerLogos />
             <MarketingCMS />
             <MarketingAnalytics rows={rows} />

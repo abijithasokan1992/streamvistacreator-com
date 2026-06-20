@@ -649,6 +649,54 @@ export type Database = {
           },
         ]
       }
+      company_profile: {
+        Row: {
+          brands: Json
+          created_at: string
+          ecosystem_thesis: string
+          founder_bio: string
+          founder_image_alt: string | null
+          founder_image_url: string | null
+          founder_name: string
+          founder_role_line: string
+          id: string
+          parent_company_description: string
+          parent_company_name: string
+          updated_at: string
+          visibility: Json
+        }
+        Insert: {
+          brands?: Json
+          created_at?: string
+          ecosystem_thesis?: string
+          founder_bio?: string
+          founder_image_alt?: string | null
+          founder_image_url?: string | null
+          founder_name?: string
+          founder_role_line?: string
+          id?: string
+          parent_company_description?: string
+          parent_company_name?: string
+          updated_at?: string
+          visibility?: Json
+        }
+        Update: {
+          brands?: Json
+          created_at?: string
+          ecosystem_thesis?: string
+          founder_bio?: string
+          founder_image_alt?: string | null
+          founder_image_url?: string | null
+          founder_name?: string
+          founder_role_line?: string
+          id?: string
+          parent_company_description?: string
+          parent_company_name?: string
+          updated_at?: string
+          visibility?: Json
+        }
+        Relationships: []
+      }
       contact_messages: {
         Row: {
           company: string | null
@@ -1077,6 +1125,48 @@ export type Database = {
           status?: string
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      founder_works: {
+        Row: {
+          achievement: string | null
+          banner: string | null
+          created_at: string
+          id: string
+          role: string | null
+          sort_order: number
+          synopsis: string | null
+          title: string
+          updated_at: string
+          visible: boolean
+          year: string | null
+        }
+        Insert: {
+          achievement?: string | null
+          banner?: string | null
+          created_at?: string
+          id?: string
+          role?: string | null
+          sort_order?: number
+          synopsis?: string | null
+          title: string
+          updated_at?: string
+          visible?: boolean
+          year?: string | null
+        }
+        Update: {
+          achievement?: string | null
+          banner?: string | null
+          created_at?: string
+          id?: string
+          role?: string | null
+          sort_order?: number
+          synopsis?: string | null
+          title?: string
+          updated_at?: string
+          visible?: boolean
+          year?: string | null
         }
         Relationships: []
       }

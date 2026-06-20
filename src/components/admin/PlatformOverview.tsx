@@ -108,6 +108,22 @@ export default function PlatformOverview() {
       setOpenSupport(support.count ?? 0);
       setPendingApprovals(approvals.count ?? 0);
       setDlqEmails(emailDlq.count ?? 0);
+
+      // Review-ops indicators (lightweight)
+      const [issuesQc, issuesLg, qcAssigned, legalAssigned, qcTitles, legalTitles] = await Promise.all([
+        supabase.from("title_review_issues").select("title_id").eq("status", "open").eq("severity", "blocking").eq("stage", "qc"),
+        supabase.from("title_review_issues").select("title_id").eq("status", "open").eq("severity", "blocking").in("stage", ["legal","general"]),
+        supabase.from("title_review_assignments").select("title_id").eq("stage", "qc").not("reviewer_user_id", "is", null),
+        supabase.from("title_review_assignments").select("title_id").eq("stage", "legal").not("reviewer_user_id", "is", null),
+        supabase.from("content_titles").select("id").eq("status", "qc_review"),
+        supabase.from("content_titles").select("id").eq("status", "legal_review"),
+      ]);
+      setBlockedQc(new Set((issuesQc.data ?? []).map((r: any) => r.title_id)).size);
+      setBlockedLegal(new Set((issuesLg.data ?? []).map((r: any) => r.title_id)).size);
+      const qcSet = new Set((qcAssigned.data ?? []).map((r: any) => r.title_id));
+      const lgSet = new Set((legalAssigned.data ?? []).map((r: any) => r.title_id));
+      setUnassignedQc((qcTitles.data ?? []).filter((t: any) => !qcSet.has(t.id)).length);
+      setUnassignedLegal((legalTitles.data ?? []).filter((t: any) => !lgSet.has(t.id)).length);
     } finally {
       setLoading(false);
     }

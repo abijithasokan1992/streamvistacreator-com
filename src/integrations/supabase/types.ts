@@ -3925,6 +3925,10 @@ export type Database = {
     }
     Functions: {
       admin_exists: { Args: never; Returns: boolean }
+      admin_grant_storage: {
+        Args: { _gb: number; _note?: string; _user_id: string }
+        Returns: Json
+      }
       admin_review_queue: {
         Args: { _status?: string }
         Returns: {
@@ -4065,6 +4069,10 @@ export type Database = {
       submit_title_to_admin: {
         Args: { _note?: string; _title_id: string }
         Returns: undefined
+      }
+      sweep_abandoned_topups: {
+        Args: { _older_than_hours?: number }
+        Returns: Json
       }
       title_submission_readiness: { Args: { _title_id: string }; Returns: Json }
       transition_title_status: {

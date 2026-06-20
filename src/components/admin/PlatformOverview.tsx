@@ -38,6 +38,10 @@ export default function PlatformOverview() {
   const [openSupport, setOpenSupport] = useState(0);
   const [pendingApprovals, setPendingApprovals] = useState(0);
   const [dlqEmails, setDlqEmails] = useState(0);
+  const [blockedQc, setBlockedQc] = useState(0);
+  const [blockedLegal, setBlockedLegal] = useState(0);
+  const [unassignedQc, setUnassignedQc] = useState(0);
+  const [unassignedLegal, setUnassignedLegal] = useState(0);
 
   const load = async () => {
     setLoading(true);

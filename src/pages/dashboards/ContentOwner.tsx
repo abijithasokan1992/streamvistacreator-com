@@ -6,12 +6,10 @@ import { CreatorSidebar, SECTIONS, type SectionId } from "@/components/creator/C
 import HomeSection from "@/components/creator/sections/Home";
 import MyTitlesSection from "@/components/creator/sections/MyTitles";
 import UpdatesSection from "@/components/creator/sections/Updates";
-import DistributionSection from "@/components/creator/sections/Distribution";
 import InsightsSection from "@/components/creator/sections/Insights";
 import StatementsSection from "@/components/creator/sections/Statements";
 import ScheduleSection from "@/components/creator/sections/Schedule";
 import UpgradeSection from "@/components/creator/sections/Upgrade";
-import ReferralsSection from "@/components/creator/sections/Referrals";
 import HelpSection from "@/components/creator/sections/Help";
 import EntitlementChip from "@/components/creator/EntitlementChip";
 

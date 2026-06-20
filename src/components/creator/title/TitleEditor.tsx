@@ -266,7 +266,7 @@ const NEXT_STEP: Record<string, { next: string; eta: string }> = {
   changes_requested:      { next: "Apply changes and re-submit.", eta: "Self-paced" },
   hold:                   { next: "Awaiting review team follow-up.", eta: "Variable" },
   rejected:               { next: "See review note for details.", eta: "—" },
-  published:              { next: "Live on the platform.", eta: "—" },
+  published:              { next: "Archived (legacy state).", eta: "—" },
   archived:               { next: "Archived.", eta: "—" },
 };
 

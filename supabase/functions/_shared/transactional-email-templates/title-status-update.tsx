@@ -116,3 +116,11 @@ const nextLabel = { fontSize: '11px', letterSpacing: '0.12em', textTransform: 'u
 const nextText = { fontSize: '14px', color: '#0c4a6e', margin: 0, lineHeight: '1.5' }
 const hr = { borderColor: '#e2e8f0', margin: '24px 0' }
 const fineprint = { fontSize: '12px', color: '#64748b', lineHeight: '1.6', margin: '8px 0' }
+const ctaWrap = { textAlign: 'center' as const, margin: '20px 0' }
+const button = {
+  background: 'linear-gradient(135deg, #0891b2, #22d3ee)',
+  color: '#ffffff', padding: '12px 24px', borderRadius: '12px',
+  fontWeight: 700, fontSize: '13px', letterSpacing: '0.08em',
+  textTransform: 'uppercase' as const, textDecoration: 'none', display: 'inline-block',
+}
+const link = { color: '#0891b2' }

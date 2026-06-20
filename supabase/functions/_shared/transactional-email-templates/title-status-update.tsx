@@ -35,11 +35,17 @@ const Email = ({
   fromStatus,
   note,
   occurredAt,
+  dashboardUrl = 'https://streamvistacreator.com/dashboard/content-owner?section=titles',
 }: Props) => {
   const stamp = occurredAt
     ? new Date(occurredAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
     : null
   const nextLine = NEXT_STEP[toStatus] ?? 'We will keep you posted on the next step.'
+  const ctaLabel =
+    toStatus === 'changes_requested' ? 'Review feedback'
+    : toStatus === 'rejected' ? 'View details'
+    : toStatus === 'approved' || toStatus === 'ready_for_distribution' || toStatus === 'published' ? 'Open title'
+    : 'View in dashboard'
   return (
     <Html lang="en" dir="ltr">
       <Head />
@@ -67,9 +73,13 @@ const Email = ({
             <Text style={nextLabel}>What happens next</Text>
             <Text style={nextText}>{nextLine}</Text>
           </Section>
+          <Section style={ctaWrap}>
+            <Button href={dashboardUrl} style={button}>{ctaLabel}</Button>
+          </Section>
           <Hr style={hr} />
           <Text style={fineprint}>
-            You can view full history and respond from your StreamVista dashboard.
+            Trouble with the button?{' '}
+            <Link href={dashboardUrl} style={link}>Open your dashboard</Link>.
           </Text>
         </Container>
       </Body>

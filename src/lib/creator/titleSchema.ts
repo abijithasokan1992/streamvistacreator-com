@@ -22,7 +22,13 @@ export const TitleMetadataSchema = z.object({
   synopsis: z.string().max(5000).default(""),
   genres: z.array(z.string().trim().max(60)).default([]),
   keywords: z.array(z.string().trim().max(60)).default([]),
-  format: z.enum(["feature_film", "trailer", "short", "teaser", "wip", "series", "other"]).default("feature_film"),
+  format: z.enum([
+    "feature_film", "web_series", "tv_series", "short_film",
+    "documentary", "music_video", "animation",
+    // legacy values kept for backwards-compat with older rows.
+    "trailer", "short", "teaser", "wip", "series",
+    "other",
+  ]).default("feature_film"),
   runtime_minutes: z.number().int().min(0).max(100000).default(0),
   production_company: z.string().max(200).default(""),
   owner: z.string().max(200).default(""),

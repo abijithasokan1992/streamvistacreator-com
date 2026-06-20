@@ -8,6 +8,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, RefreshCw, ClipboardList, History } from "lucide-react";
 import { toast } from "sonner";
+import TitleReviewPanel from "./TitleReviewPanel";
 
 type Status =
   | "submitted" | "in_review" | "qc_review" | "legal_review"

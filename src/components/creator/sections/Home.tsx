@@ -87,6 +87,7 @@ export default function HomeSection({ onNavigate }: { onNavigate: (s: SectionId)
 
       {/* Latest review notes from the admin team */}
       <ReviewNotesInbox />
+      <CreatorReviewFeedback />
 
 
 

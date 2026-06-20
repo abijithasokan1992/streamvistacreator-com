@@ -3146,41 +3146,73 @@ export type Database = {
       storage_topups: {
         Row: {
           amount_inr: number
+          billing_interval_months: number
+          billing_periods: number
           created_at: string
+          gst_paise: number | null
           id: string
           notes: string | null
           razorpay_order_id: string | null
           razorpay_payment_id: string | null
+          source: string
           status: string
+          storage_class: string | null
+          subtotal_paise: number | null
           tb_added: number
+          total_paise: number | null
           updated_at: string
           user_id: string
+          vault_product_id: string | null
         }
         Insert: {
           amount_inr?: number
+          billing_interval_months?: number
+          billing_periods?: number
           created_at?: string
+          gst_paise?: number | null
           id?: string
           notes?: string | null
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
+          source?: string
           status?: string
+          storage_class?: string | null
+          subtotal_paise?: number | null
           tb_added?: number
+          total_paise?: number | null
           updated_at?: string
           user_id: string
+          vault_product_id?: string | null
         }
         Update: {
           amount_inr?: number
+          billing_interval_months?: number
+          billing_periods?: number
           created_at?: string
+          gst_paise?: number | null
           id?: string
           notes?: string | null
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
+          source?: string
           status?: string
+          storage_class?: string | null
+          subtotal_paise?: number | null
           tb_added?: number
+          total_paise?: number | null
           updated_at?: string
           user_id?: string
+          vault_product_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "storage_topups_vault_product_id_fkey"
+            columns: ["vault_product_id"]
+            isOneToOne: false
+            referencedRelation: "studio_vault_products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       students: {
         Row: {
@@ -3231,6 +3263,84 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      studio_vault_products: {
+        Row: {
+          badge: string | null
+          billing_modes: Json
+          code: string
+          created_at: string
+          created_by: string | null
+          default_tb_options: Json
+          description: string | null
+          enterprise_only: boolean
+          features: Json
+          gst_percent: number
+          id: string
+          internal_cost_per_tb_paise: number
+          max_tb: number
+          min_tb: number
+          name: string
+          oci_storage_tier: string | null
+          self_serve_enabled: boolean
+          sell_price_per_tb_paise: number
+          short_pitch: string | null
+          sort_order: number
+          storage_class: string
+          updated_at: string
+          visible: boolean
+        }
+        Insert: {
+          badge?: string | null
+          billing_modes?: Json
+          code: string
+          created_at?: string
+          created_by?: string | null
+          default_tb_options?: Json
+          description?: string | null
+          enterprise_only?: boolean
+          features?: Json
+          gst_percent?: number
+          id?: string
+          internal_cost_per_tb_paise?: number
+          max_tb?: number
+          min_tb?: number
+          name: string
+          oci_storage_tier?: string | null
+          self_serve_enabled?: boolean
+          sell_price_per_tb_paise: number
+          short_pitch?: string | null
+          sort_order?: number
+          storage_class: string
+          updated_at?: string
+          visible?: boolean
+        }
+        Update: {
+          badge?: string | null
+          billing_modes?: Json
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          default_tb_options?: Json
+          description?: string | null
+          enterprise_only?: boolean
+          features?: Json
+          gst_percent?: number
+          id?: string
+          internal_cost_per_tb_paise?: number
+          max_tb?: number
+          min_tb?: number
+          name?: string
+          oci_storage_tier?: string | null
+          self_serve_enabled?: boolean
+          sell_price_per_tb_paise?: number
+          short_pitch?: string | null
+          sort_order?: number
+          storage_class?: string
+          updated_at?: string
+          visible?: boolean
+        }
+        Relationships: []
       }
       subscriptions: {
         Row: {
@@ -4331,6 +4441,15 @@ export type Database = {
       }
       revoke_creator_role: { Args: { _user_id: string }; Returns: undefined }
       set_initial_role: { Args: { _role: string }; Returns: boolean }
+      studio_vault_calculate_price: {
+        Args: { _months?: number; _product_id: string; _tb: number }
+        Returns: Json
+      }
+      studio_vault_create_topup: {
+        Args: { _months: number; _product_id: string; _tb: number }
+        Returns: string
+      }
+      studio_vault_upsert_product: { Args: { _payload: Json }; Returns: string }
       submit_title_to_admin: {
         Args: { _note?: string; _title_id: string }
         Returns: undefined
@@ -4391,6 +4510,11 @@ export type Database = {
         | "localization_partner"
         | "distributor"
         | "super_admin"
+        | "studio_owner"
+        | "studio_manager"
+        | "studio_uploader"
+        | "studio_reviewer"
+        | "studio_archive_manager"
       content_status:
         | "draft"
         | "submitted"
@@ -4561,6 +4685,11 @@ export const Constants = {
         "localization_partner",
         "distributor",
         "super_admin",
+        "studio_owner",
+        "studio_manager",
+        "studio_uploader",
+        "studio_reviewer",
+        "studio_archive_manager",
       ],
       content_status: [
         "draft",

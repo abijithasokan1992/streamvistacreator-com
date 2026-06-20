@@ -42,8 +42,11 @@ export default function AdminStudioVaultPurchases() {
   const refresh = async () => {
     setLoading(true);
     setError(null);
-    // @ts-expect-error rpc name not yet in generated types
-    const { data, error } = await supabase.rpc("admin_studio_vault_purchases", { _limit: 100 });
+    const { data, error } = await (supabase.rpc as unknown as (
+      fn: string, args: Record<string, unknown>
+    ) => Promise<{ data: Row[] | null; error: { message: string } | null }>)(
+      "admin_studio_vault_purchases", { _limit: 100 }
+    );
     if (error) setError(error.message);
     setRows((data as Row[]) ?? []);
     setLoading(false);

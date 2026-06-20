@@ -384,7 +384,7 @@ function DeptTab({ value, icon, label }: { value: string; icon: React.ReactNode;
   return (
     <TabsTrigger
       value={value}
-      className="flex items-center justify-center gap-2 h-12 rounded-xl text-xs sm:text-sm font-semibold data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:glow-primary data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground transition-all"
+      className="flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] sm:h-12 px-2 rounded-xl text-[11px] sm:text-sm font-semibold data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:glow-primary data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground transition-all"
     >
       {icon}<span className="truncate">{label}</span>
     </TabsTrigger>

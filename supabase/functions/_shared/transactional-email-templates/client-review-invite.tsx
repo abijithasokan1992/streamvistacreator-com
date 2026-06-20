@@ -77,9 +77,8 @@ const Email = ({
           <Hr style={hr} />
 
           <Text style={fineprint}>
-            If the button doesn't open, paste this link into your browser:
-            <br />
-            <Link href={shareUrl} style={link}>{shareUrl}</Link>
+            Trouble with the button?{' '}
+            <Link href={shareUrl} style={link}>Open the secure review link</Link>.
           </Text>
 
           <Text style={fineprint}>

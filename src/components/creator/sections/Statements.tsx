@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import CreatorInvoices from "@/components/creator/CreatorInvoices";
 
 type Row = { id: string; kind: string; description: string; amount: string; at: string };
 
@@ -60,9 +61,10 @@ export default function StatementsSection() {
 
   if (loading) return <p className="text-xs text-muted-foreground">Loading…</p>;
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <CreatorInvoices />
       {rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No billing history yet.</p>
+        <p className="text-sm text-muted-foreground">No additional billing history yet.</p>
       ) : (
         <div className="rounded-xl border border-border/40 overflow-hidden">
           <table className="w-full text-sm">

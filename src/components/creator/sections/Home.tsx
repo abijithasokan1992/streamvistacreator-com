@@ -81,6 +81,14 @@ export default function HomeSection({ onNavigate }: { onNavigate: (s: SectionId)
       {/* In-flight / stuck upload diagnostics */}
       <UploadDiagnostics />
 
+      {/* Active review status guidance */}
+      <WhatHappensNext />
+
+      {/* Latest review notes from the admin team */}
+      <ReviewNotesInbox />
+
+
+
 
 
       {/* Recent Updates */}

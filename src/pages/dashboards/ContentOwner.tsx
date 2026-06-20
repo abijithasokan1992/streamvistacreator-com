@@ -57,12 +57,15 @@ export default function ContentOwnerDashboard() {
             <Link to="/" className="text-sm font-semibold tracking-tight">StreamVista</Link>
             <span className="hidden md:inline text-xs text-muted-foreground/70">/ Creator</span>
           </div>
-          <button
-            onClick={signOut}
-            className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5"
-          >
-            <LogOut className="w-3.5 h-3.5" /> Sign out
-          </button>
+          <div className="flex items-center gap-3">
+            <EntitlementChip />
+            <button
+              onClick={signOut}
+              className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5"
+            >
+              <LogOut className="w-3.5 h-3.5" /> Sign out
+            </button>
+          </div>
         </div>
       </header>
 

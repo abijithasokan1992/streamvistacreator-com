@@ -78,12 +78,10 @@ export default function ContentOwnerDashboard() {
           {section === "home" && <HomeSection onNavigate={setSection} />}
           {section === "titles" && <MyTitlesSection />}
           {section === "updates" && <UpdatesSection />}
-          {section === "distribution" && <DistributionSection />}
           {section === "insights" && <InsightsSection />}
           {section === "statements" && <StatementsSection />}
           {section === "schedule" && <ScheduleSection />}
           {section === "upgrade" && <UpgradeSection />}
-          {section === "referrals" && <ReferralsSection />}
           {section === "help" && <HelpSection />}
         </section>
       </div>

@@ -265,7 +265,9 @@ export default function ContentReviewWorkflow() {
                 <Info label="Locked" value={selected.locked ? "Yes" : "No"} />
                 <Info label="Submitted" value={selected.submitted_at ? new Date(selected.submitted_at).toLocaleString() : "—"} />
                 <Info label="Approved" value={selected.approved_at ? new Date(selected.approved_at).toLocaleString() : "—"} />
-                <Info label="Published" value={selected.published_at ? new Date(selected.published_at).toLocaleString() : "—"} />
+                {selected.published_at && (
+                  <Info label="Published (legacy)" value={new Date(selected.published_at).toLocaleString()} />
+                )}
                 <Info label="Previous Status" value={selected.previous_status || "—"} />
               </div>
 

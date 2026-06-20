@@ -3149,6 +3149,7 @@ export type Database = {
           billing_interval_months: number
           billing_periods: number
           created_at: string
+          entitlement_projected_at: string | null
           gst_paise: number | null
           id: string
           notes: string | null
@@ -3169,6 +3170,7 @@ export type Database = {
           billing_interval_months?: number
           billing_periods?: number
           created_at?: string
+          entitlement_projected_at?: string | null
           gst_paise?: number | null
           id?: string
           notes?: string | null
@@ -3189,6 +3191,7 @@ export type Database = {
           billing_interval_months?: number
           billing_periods?: number
           created_at?: string
+          entitlement_projected_at?: string | null
           gst_paise?: number | null
           id?: string
           notes?: string | null
@@ -4275,6 +4278,28 @@ export type Database = {
           title: string
           updated_at: string
           workspace_id: string
+        }[]
+      }
+      admin_studio_vault_purchases: {
+        Args: { _limit?: number }
+        Returns: {
+          amount_inr: number
+          billing_interval_months: number
+          created_at: string
+          customer_email: string
+          entitlement_projected_at: string
+          invoice_id: string
+          invoice_number: string
+          product_name: string
+          razorpay_order_id: string
+          razorpay_payment_id: string
+          status: string
+          storage_class: string
+          tb_added: number
+          topup_id: string
+          total_paise: number
+          updated_at: string
+          user_id: string
         }[]
       }
       admin_title_history: {

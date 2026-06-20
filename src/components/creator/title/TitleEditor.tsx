@@ -220,7 +220,7 @@ export function TitleEditor({
 
         {/* Locked banner */}
         {title?.locked && (
-          <div className="px-5 py-3 border-b border-border/40 bg-amber-500/5">
+          <div className="px-3 sm:px-5 py-3 border-b border-border/40 bg-amber-500/5">
             <div className="flex items-center gap-2 text-sm">
               <ShieldCheck className="w-4 h-4 text-amber-300" />
               <span className="font-medium">Submitted For Review</span>
@@ -255,7 +255,7 @@ export function TitleEditor({
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto px-5 py-5">
+        <div className="flex-1 overflow-y-auto px-3 sm:px-5 py-4 sm:py-5">
           {!title || !meta ? (
             <div className="grid place-items-center py-16">
               <Loader2 className="w-4 h-4 animate-spin text-accent" />

@@ -49,8 +49,19 @@ export default function ResendCredentials() {
     (async () => {
       const s = await loadStatus();
       if (s?.configured) await runTest(true);
+      const { data: info } = await supabase.functions.invoke("resend-admin", { body: { action: "sender_info" } });
+      if (info) setSender(info as any);
     })();
   }, []);
+
+  const sendTest = async () => {
+    if (!testTo) { toast.error("Enter a recipient email"); return; }
+    setSending(true);
+    const { data, error } = await supabase.functions.invoke("resend-admin", { body: { action: "send_test", to: testTo } });
+    setSending(false);
+    if (error || !data?.ok) { toast.error(data?.error || error?.message || "Test send failed"); return; }
+    toast.success(`Test email queued to ${testTo}`);
+  };
 
   const statusBadge = () => {
     if (loading) return null;

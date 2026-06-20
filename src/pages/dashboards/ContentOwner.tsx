@@ -13,6 +13,7 @@ import ScheduleSection from "@/components/creator/sections/Schedule";
 import UpgradeSection from "@/components/creator/sections/Upgrade";
 import ReferralsSection from "@/components/creator/sections/Referrals";
 import HelpSection from "@/components/creator/sections/Help";
+import EntitlementChip from "@/components/creator/EntitlementChip";
 
 export default function ContentOwnerDashboard() {
   const { user, role, dashboardRole, loading, signOut } = useAuth();

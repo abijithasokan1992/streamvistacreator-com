@@ -1,6 +1,6 @@
 import * as React from 'npm:react@18.3.1'
 import {
-  Body, Container, Head, Heading, Hr, Html, Link, Preview, Section, Text,
+  Body, Button, Container, Head, Heading, Hr, Html, Link, Preview, Section, Text,
 } from 'npm:@react-email/components@0.0.22'
 import type { TemplateEntry } from './registry.ts'
 
@@ -45,12 +45,15 @@ const Email = ({
             {userAgent && <Text style={metaItem}><strong>Device:</strong> {userAgent}</Text>}
           </Section>
           <Text style={p}>
-            <strong>Didn't sign in?</strong> Reset your password immediately and review
-            recent activity from your account settings.
+            <strong>Didn't sign in?</strong> Secure your account by resetting your password.
           </Text>
+          <Section style={ctaWrap}>
+            <Button href={resetUrl} style={button}>Secure my account</Button>
+          </Section>
           <Hr style={hr} />
           <Text style={fineprint}>
-            Reset link: <Link href={resetUrl} style={link}>{resetUrl}</Link>
+            Trouble with the button?{' '}
+            <Link href={resetUrl} style={link}>Open the secure link</Link>.
           </Text>
         </Container>
       </Body>
@@ -78,8 +81,15 @@ const brandBar = { padding: '12px 16px', backgroundColor: '#0f172a', borderRadiu
 const brandText = { color: '#22d3ee', fontSize: '11px', letterSpacing: '0.3em', margin: 0, fontWeight: 700 }
 const h1 = { color: '#0f172a', fontSize: '22px', lineHeight: '1.3', margin: '0 0 16px', fontWeight: 800 }
 const p = { fontSize: '15px', lineHeight: '1.6', margin: '0 0 14px' }
+const ctaWrap = { textAlign: 'center' as const, margin: '20px 0' }
+const button = {
+  background: 'linear-gradient(135deg, #0891b2, #22d3ee)',
+  color: '#ffffff', padding: '12px 24px', borderRadius: '12px',
+  fontWeight: 700, fontSize: '13px', letterSpacing: '0.08em',
+  textTransform: 'uppercase' as const, textDecoration: 'none', display: 'inline-block',
+}
 const metaBox = { backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '14px 18px', margin: '16px 0' }
 const metaItem = { fontSize: '13px', margin: '4px 0', color: '#475569' }
 const hr = { borderColor: '#e2e8f0', margin: '24px 0' }
 const fineprint = { fontSize: '12px', color: '#64748b', lineHeight: '1.6', margin: '8px 0' }
-const link = { color: '#0891b2', wordBreak: 'break-all' as const }
+const link = { color: '#0891b2' }

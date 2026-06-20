@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { Loader2, LogOut, ShieldCheck, Crown, RefreshCw, Mail, Phone, Tag, History, Copy, Check, Briefcase, Wallet, Code2, Megaphone, Inbox, Users as UsersIcon } from "lucide-react";
+import { Loader2, LogOut, ShieldCheck, Crown, RefreshCw, Mail, Phone, Tag, History, Copy, Check, Briefcase, Wallet, Code2, Megaphone, Inbox, Users as UsersIcon, LayoutDashboard, Film, HardDrive, ShieldAlert, Wrench, Package } from "lucide-react";
 import PlatformOwnerConsole from "@/components/admin/PlatformOwnerConsole";
+import PlatformOverview from "@/components/admin/PlatformOverview";
+import ProductsAndPlans from "@/components/admin/ProductsAndPlans";
+import OracleStorageMonitor from "@/components/admin/OracleStorageMonitor";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";

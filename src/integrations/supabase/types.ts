@@ -1392,6 +1392,13 @@ export type Database = {
             foreignKeyName: "invoices_topup_id_fkey"
             columns: ["topup_id"]
             isOneToOne: false
+            referencedRelation: "admin_studio_vault_purchases"
+            referencedColumns: ["topup_id"]
+          },
+          {
+            foreignKeyName: "invoices_topup_id_fkey"
+            columns: ["topup_id"]
+            isOneToOne: false
             referencedRelation: "storage_topups"
             referencedColumns: ["id"]
           },
@@ -3149,6 +3156,7 @@ export type Database = {
           billing_interval_months: number
           billing_periods: number
           created_at: string
+          entitlement_projected_at: string | null
           gst_paise: number | null
           id: string
           notes: string | null
@@ -3169,6 +3177,7 @@ export type Database = {
           billing_interval_months?: number
           billing_periods?: number
           created_at?: string
+          entitlement_projected_at?: string | null
           gst_paise?: number | null
           id?: string
           notes?: string | null
@@ -3189,6 +3198,7 @@ export type Database = {
           billing_interval_months?: number
           billing_periods?: number
           created_at?: string
+          entitlement_projected_at?: string | null
           gst_paise?: number | null
           id?: string
           notes?: string | null
@@ -4180,6 +4190,28 @@ export type Database = {
       }
     }
     Views: {
+      admin_studio_vault_purchases: {
+        Row: {
+          amount_inr: number | null
+          billing_interval_months: number | null
+          created_at: string | null
+          customer_email: string | null
+          entitlement_projected_at: string | null
+          invoice_id: string | null
+          invoice_number: string | null
+          product_name: string | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          status: string | null
+          storage_class: string | null
+          tb_added: number | null
+          topup_id: string | null
+          total_paise: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
       payment_security_events: {
         Row: {
           action_type: string | null

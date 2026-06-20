@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Mail, Loader2, ShieldCheck, ShieldAlert, Zap, Pencil, XCircle, ExternalLink, KeyRound } from "lucide-react";
+import { Mail, Loader2, ShieldCheck, ShieldAlert, Zap, Pencil, XCircle, ExternalLink, KeyRound, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 

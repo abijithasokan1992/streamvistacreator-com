@@ -41,13 +41,13 @@ export default function ReviewNotesInbox() {
         .order("created_at", { ascending: false })
         .limit(10);
 
-      setNotes(((rows ?? []) as any[]).map((r) => ({
+      setNotes(((rows ?? []) as any[]).map((r): Note => ({
         id: r.id,
         title_id: r.title_id,
         to_status: r.to_status,
         note: r.note,
         created_at: r.created_at,
-        title: titleMap.get(r.title_id) ?? "Untitled",
+        title: (titleMap.get(r.title_id) as string | undefined) ?? "Untitled",
       })));
       setLoading(false);
     })();

@@ -40,7 +40,7 @@ export function StatusBadge({ status }: { status: ContentStatus }) {
   return (
     <span className={cn(
       "inline-flex items-center text-[10px] uppercase tracking-wider border rounded-full px-2 py-0.5",
-      STYLES[status] ?? STYLES.draft,
+      STYLES[status] ?? STYLES.draft!,
     )}>
       {LABELS[status] ?? status}
     </span>

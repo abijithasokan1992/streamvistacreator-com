@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { X, Loader2, Send, Lock, ShieldCheck, Clock, CheckCircle2, Circle, ArrowRight } from "lucide-react";
+import { X, Loader2, Send, Lock, ShieldCheck, Clock, CheckCircle2, Circle, ArrowRight, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   getTitle, listAssets, saveTitleMetadata, submitTitle,
-  evaluateChecklist, fetchReadiness, fetchTitleTimeline,
+  evaluateChecklist, fetchReadiness, fetchTitleTimeline, fetchFreeTierStatus,
   type TitleRow, type TitleAsset, type ServerReadiness, type ContentStatus, type TitleTimelineEntry,
 } from "@/lib/creator/titleApi";
 import {

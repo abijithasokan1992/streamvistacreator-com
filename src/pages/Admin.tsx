@@ -328,12 +328,12 @@ export default function Admin() {
 
           {/* 5. Business & Revenue */}
           <TabsContent value="business" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<Wallet className="w-5 h-5" />} title="Business & Revenue" desc="Revenue, invoices, commissions, Razorpay activity and subscription/top-up monitoring." />
-            <KammattamMeter />
-            <FinanceOverview rows={rows} />
+            <DeptHeader icon={<Wallet className="w-5 h-5" />} title="Business & Revenue" desc="Invoice-backed revenue, commissions, Razorpay activity and legacy onboarding funnel." />
             <AdminInvoices />
+            <KammattamMeter />
             <CommissionsTracker />
             <RazorpayAuditLog />
+            <LegacyOnboardingFunnel rows={rows} />
           </TabsContent>
 
           {/* 6. Products & Plans */}

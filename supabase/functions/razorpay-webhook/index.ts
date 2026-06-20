@@ -233,7 +233,13 @@ Deno.serve(async (req) => {
   } catch { signatureValid = false; }
 
   let event: any = null;
-  try { event = JSON.parse(raw); } catch { /* logged below */ }
+  try { event = JSON.parse(raw); } catch (e) {
+    await logPayment(supabase, {
+      severity: "ERROR", source: "webhook", action_type: "webhook.parse_failed",
+      error_message: e instanceof Error ? e.message : String(e),
+      extra: { raw_preview: raw.slice(0, 256) },
+    });
+  }
 
   // Derive the canonical event id (prefer the header, fall back to body id).
   const eventId = eventIdHeader || event?.id || `derived_${expected.slice(0, 16)}_${event?.event ?? "unknown"}`;

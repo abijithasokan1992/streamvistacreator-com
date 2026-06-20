@@ -342,20 +342,20 @@ export default function Admin() {
             <ProductsAndPlans />
           </TabsContent>
 
-          {/* 7. Security Center */}
+          {/* 7. Security Center — payment, security and compliance events only */}
           <TabsContent value="security" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<ShieldAlert className="w-5 h-5" />} title="Security Center" desc="Payment security events, branding policy and inbound contact." />
+            <DeptHeader icon={<ShieldAlert className="w-5 h-5" />} title="Security Center" desc="Payment security events, signature failures and access audit." />
             <PaymentSecurityEvents />
-            <BrandingSettings />
-            <ContactInbox />
           </TabsContent>
 
           {/* 8. Platform Operations */}
           <TabsContent value="ops" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<Briefcase className="w-5 h-5" />} title="Platform Operations" desc="Email logs, broadcasts, support inbox, partner CMS & system reporting." />
+            <DeptHeader icon={<Briefcase className="w-5 h-5" />} title="Platform Operations" desc="Email logs, broadcasts, support inbox, branding, partner CMS & system reporting." />
             <EmailLogMonitor />
             <UniversalBroadcast />
             <SupportInbox />
+            <ContactInbox />
+            <BrandingSettings />
             <PartnerLogos />
             <MarketingCMS />
             <MarketingAnalytics rows={rows} />

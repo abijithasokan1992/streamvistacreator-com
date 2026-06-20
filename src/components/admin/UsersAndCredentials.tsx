@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
-  Loader2, Users, ShieldAlert, Trash2, Pause, Play, Eye, Crown, Camera,
+  Loader2, Users, ShieldAlert, Trash2, Pause, Play, Eye, Crown, Camera, Receipt,
   Briefcase, History, Mail, Search, RefreshCw, Copy, Check, KeyRound, UserPlus, Send,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";

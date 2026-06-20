@@ -268,78 +268,108 @@ export default function Admin() {
 
       <section className="container py-10">
         <div className="mb-8">
-          <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight">Department Console</h1>
-          <p className="text-sm text-muted-foreground mt-1">Switch between department windows · all controls are no-code.</p>
+          <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight">
+            {isSuperAdmin ? "Platform Owner · Media Operations" : "Admin Console"}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {isSuperAdmin
+              ? "Operate the platform: pipeline, storage, revenue, and platform health at a glance."
+              : "All controls grouped by operational area."}
+          </p>
         </div>
 
-        <Tabs key={location.pathname} defaultValue={pathToTab(location.pathname, isSuperAdmin)} className="w-full">
-          <TabsList className={`grid grid-cols-2 ${isSuperAdmin ? "md:grid-cols-6" : "md:grid-cols-5"} gap-2 h-auto p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-8`}>
-            {isSuperAdmin && <DeptTab value="platform" icon={<Crown className="w-4 h-4" />} label="Platform Owner" />}
-            <DeptTab value="ops" icon={<Briefcase className="w-4 h-4" />} label="Business & Ops" />
-            <DeptTab value="finance" icon={<Wallet className="w-4 h-4" />} label="Finance & Billing" />
-            <DeptTab value="dev" icon={<Code2 className="w-4 h-4" />} label="Development" />
-            <DeptTab value="marketing" icon={<Megaphone className="w-4 h-4" />} label="Marketing" />
-            <DeptTab value="users" icon={<UsersIcon className="w-4 h-4" />} label="Users & Credentials" />
+        <Tabs
+          key={location.pathname + (searchParams.get("tab") ?? "")}
+          defaultValue={pathToTab(location.pathname, searchParams, isSuperAdmin)}
+          className="w-full"
+        >
+          <TabsList className={`grid grid-cols-2 sm:grid-cols-3 ${isSuperAdmin ? "lg:grid-cols-9" : "lg:grid-cols-8"} gap-2 h-auto p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-8`}>
+            <DeptTab value="overview" icon={<LayoutDashboard className="w-4 h-4" />} label="Platform Overview" />
+            <DeptTab value="content" icon={<Film className="w-4 h-4" />} label="Content Pipeline" />
+            <DeptTab value="users" icon={<UsersIcon className="w-4 h-4" />} label="Users & Orgs" />
+            <DeptTab value="storage" icon={<HardDrive className="w-4 h-4" />} label="Storage & Media" />
+            <DeptTab value="business" icon={<Wallet className="w-4 h-4" />} label="Business & Revenue" />
+            <DeptTab value="products" icon={<Package className="w-4 h-4" />} label="Products & Plans" />
+            <DeptTab value="security" icon={<ShieldAlert className="w-4 h-4" />} label="Security Center" />
+            <DeptTab value="ops" icon={<Briefcase className="w-4 h-4" />} label="Platform Operations" />
+            {isSuperAdmin && <DeptTab value="dev" icon={<Wrench className="w-4 h-4" />} label="Developer Tools" />}
           </TabsList>
 
-          {isSuperAdmin && (
-            <TabsContent value="platform" className="space-y-8 mt-0 animate-fade-in">
-              <PlatformOwnerConsole />
-            </TabsContent>
-          )}
+          {/* 1. Platform Overview (default) */}
+          <TabsContent value="overview" className="space-y-8 mt-0 animate-fade-in">
+            <PlatformOverview />
+            {isSuperAdmin && <PlatformOwnerConsole />}
+          </TabsContent>
 
-
-          {/* 1. Business & Operations */}
-          <TabsContent value="ops" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<Briefcase className="w-5 h-5" />} title="Business & Operations" desc="Subscriptions, user roles, branding & CMS controls." />
+          {/* 2. Content Pipeline */}
+          <TabsContent value="content" className="space-y-8 mt-0 animate-fade-in">
+            <DeptHeader icon={<Film className="w-5 h-5" />} title="Content Pipeline" desc="Submission queues, review workflow, transitions and archived titles." />
             <ContentReviewWorkflow />
+          </TabsContent>
+
+          {/* 3. Users & Organizations */}
+          <TabsContent value="users" className="space-y-8 mt-0 animate-fade-in">
+            <DeptHeader icon={<UsersIcon className="w-5 h-5" />} title="Users & Organizations" desc="Roles, accounts, organizations, onboarding & premium invitations." />
             <RolesManager />
-            <BrandingSettings />
-            <PartnerLogos />
-            <FreeTierConfig />
-            <ContactInbox />
-            <SupportInbox />
+            <UsersAndCredentials />
             <OnboardingApprovals />
-            <AdminCredentials />
+            <PremiumInvitations />
           </TabsContent>
 
-          {/* 2. Finance & Billing */}
-          <TabsContent value="finance" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<Wallet className="w-5 h-5" />} title="Finance & Billing" desc="Razorpay revenue, commissions, invoices." />
-            <KammattamMeter />
-            <FinanceOverview rows={rows} />
-            <RazorpayCredentials />
-            <RazorpayConnectivityStatus />
-            <RazorpayTestCheckout />
-            <CommissionsTracker />
-          </TabsContent>
-
-          {/* 3. Development & Software */}
-          <TabsContent value="dev" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<Code2 className="w-5 h-5" />} title="Development & Software" desc="Oracle DB, OCI storage, AI/MCP governance & domain deployment." />
-            <AiMcpControlCenter />
-            <DomainHostingPanel />
+          {/* 4. Storage & Media */}
+          <TabsContent value="storage" className="space-y-8 mt-0 animate-fade-in">
+            <DeptHeader icon={<HardDrive className="w-5 h-5" />} title="Storage & Media" desc="OCI storage health, allocations, asset library, failed uploads & multipart sessions." />
+            <OracleStorageMonitor />
             <OracleOciStorageCard />
-            <RazorpayAuditLog />
             <GlobalAssetManager />
           </TabsContent>
 
-          {/* 4. Marketing & Research */}
-          <TabsContent value="marketing" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<Megaphone className="w-5 h-5" />} title="Marketing & Research" desc="Homepage CMS, promo campaigns, premium invites, analytics." />
-            <MarketingCMS />
-            <UniversalBroadcast />
-            <PremiumInvitations />
-            <ResendCredentials />
+          {/* 5. Business & Revenue */}
+          <TabsContent value="business" className="space-y-8 mt-0 animate-fade-in">
+            <DeptHeader icon={<Wallet className="w-5 h-5" />} title="Business & Revenue" desc="Revenue, commissions, Razorpay activity and subscription/top-up monitoring." />
+            <KammattamMeter />
+            <FinanceOverview rows={rows} />
+            <CommissionsTracker />
+            <RazorpayAuditLog />
+          </TabsContent>
+
+          {/* 6. Products & Plans */}
+          <TabsContent value="products" className="space-y-8 mt-0 animate-fade-in">
+            <DeptHeader icon={<Package className="w-5 h-5" />} title="Products & Plans" desc="Plans, storage tiers, free vs paid limits and entitlements visibility." />
+            <ProductsAndPlans />
+          </TabsContent>
+
+          {/* 7. Security Center */}
+          <TabsContent value="security" className="space-y-8 mt-0 animate-fade-in">
+            <DeptHeader icon={<ShieldAlert className="w-5 h-5" />} title="Security Center" desc="Audit logs, DMCA requests and access-control visibility." />
+            <BrandingSettings />
+            <ContactInbox />
+          </TabsContent>
+
+          {/* 8. Platform Operations */}
+          <TabsContent value="ops" className="space-y-8 mt-0 animate-fade-in">
+            <DeptHeader icon={<Briefcase className="w-5 h-5" />} title="Platform Operations" desc="Email logs, broadcasts, support inbox, partner CMS & system reporting." />
             <EmailLogMonitor />
+            <UniversalBroadcast />
+            <SupportInbox />
+            <PartnerLogos />
+            <MarketingCMS />
             <MarketingAnalytics rows={rows} />
           </TabsContent>
 
-          {/* 5. Users & Credentials */}
-          <TabsContent value="users" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<UsersIcon className="w-5 h-5" />} title="Users & Credentials" desc="Full account lifecycle, role/plan changes, holds, deletions, and admin invites — every action audited." />
-            <UsersAndCredentials />
-          </TabsContent>
+          {/* 9. Developer Tools (super admin only) */}
+          {isSuperAdmin && (
+            <TabsContent value="dev" className="space-y-8 mt-0 animate-fade-in">
+              <DeptHeader icon={<Wrench className="w-5 h-5" />} title="Developer Tools" desc="Test tooling, credentials helpers, domain and AI/MCP governance — not for normal operations." />
+              <AiMcpControlCenter />
+              <DomainHostingPanel />
+              <RazorpayCredentials />
+              <RazorpayConnectivityStatus />
+              <RazorpayTestCheckout />
+              <ResendCredentials />
+              <AdminCredentials />
+            </TabsContent>
+          )}
         </Tabs>
       </section>
     </main>

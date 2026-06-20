@@ -95,6 +95,7 @@ export default function UsersAndCredentials() {
 
   const [deleting, setDeleting] = useState<UserRow | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [entitlementTarget, setEntitlementTarget] = useState<EntitlementTarget | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);

@@ -1,7 +1,10 @@
 import { cn } from "@/lib/utils";
 import type { ContentStatus } from "@/lib/creator/titleApi";
 
-const STYLES: Record<ContentStatus, string> = {
+// "published" exists in the DB enum for backward compatibility but is NOT a
+// state in the current review workflow. We keep neutral styling so legacy rows
+// still render, but it is not surfaced as a target state anywhere.
+const STYLES: Partial<Record<ContentStatus, string>> = {
   draft:                  "bg-secondary/30 text-foreground/80 border-border/50",
   incomplete:             "bg-amber-500/10 text-amber-300 border-amber-500/30",
   submitted:              "bg-sky-500/10 text-sky-300 border-sky-500/30",
@@ -13,11 +16,11 @@ const STYLES: Record<ContentStatus, string> = {
   ready_for_distribution: "bg-cyan-500/10 text-cyan-300 border-cyan-500/30",
   rejected:               "bg-rose-500/10 text-rose-300 border-rose-500/30",
   hold:                   "bg-zinc-500/10 text-zinc-300 border-zinc-500/30",
-  published:              "bg-teal-500/10 text-teal-300 border-teal-500/30",
   archived:               "bg-muted/30 text-muted-foreground border-border/50",
+  published:              "bg-muted/30 text-muted-foreground border-border/50",
 };
 
-const LABELS: Record<ContentStatus, string> = {
+const LABELS: Partial<Record<ContentStatus, string>> = {
   draft: "Draft",
   incomplete: "Incomplete",
   submitted: "Submitted",
@@ -29,8 +32,8 @@ const LABELS: Record<ContentStatus, string> = {
   ready_for_distribution: "Ready For Distribution",
   rejected: "Rejected",
   hold: "Hold",
-  published: "Published",
   archived: "Archived",
+  published: "Archived (legacy)",
 };
 
 export function StatusBadge({ status }: { status: ContentStatus }) {

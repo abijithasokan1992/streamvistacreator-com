@@ -1,0 +1,1 @@
+ALTER VIEW public.payment_security_events SET (security_invoker = on);

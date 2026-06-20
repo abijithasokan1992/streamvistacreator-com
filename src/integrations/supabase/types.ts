@@ -748,6 +748,7 @@ export type Database = {
           owner_user_id: string
           previous_status: Database["public"]["Enums"]["content_status"] | null
           published_at: string | null
+          requested_from_stage: string | null
           status: Database["public"]["Enums"]["content_status"]
           submitted_at: string | null
           synopsis: string | null
@@ -770,6 +771,7 @@ export type Database = {
           owner_user_id: string
           previous_status?: Database["public"]["Enums"]["content_status"] | null
           published_at?: string | null
+          requested_from_stage?: string | null
           status?: Database["public"]["Enums"]["content_status"]
           submitted_at?: string | null
           synopsis?: string | null
@@ -792,6 +794,7 @@ export type Database = {
           owner_user_id?: string
           previous_status?: Database["public"]["Enums"]["content_status"] | null
           published_at?: string | null
+          requested_from_stage?: string | null
           status?: Database["public"]["Enums"]["content_status"]
           submitted_at?: string | null
           synopsis?: string | null
@@ -4202,6 +4205,10 @@ export type Database = {
         Returns: string
       }
       creator_free_tier_status: { Args: { _user_id?: string }; Returns: Json }
+      creator_resubmit_title: {
+        Args: { _note?: string; _title_id: string }
+        Returns: Json
+      }
       creator_review_feedback: {
         Args: { _title_id: string }
         Returns: {

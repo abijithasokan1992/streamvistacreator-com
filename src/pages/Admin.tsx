@@ -55,17 +55,20 @@ interface Row {
 
 const STATUSES = ["pending", "contacted", "activated", "rejected"];
 
-function pathToTab(path: string, isSuperAdmin: boolean): string {
+function pathToTab(path: string, search: URLSearchParams, isSuperAdmin: boolean): string {
+  const q = search.get("tab");
+  if (q) return q;
   const p = path.toLowerCase();
-  if (p.startsWith("/admin/super")) return isSuperAdmin ? "platform" : "ops";
+  if (p.startsWith("/admin/super")) return "overview";
   if (p.startsWith("/admin/users")) return "users";
-  if (p.startsWith("/admin/storage")) return "dev";
-  if (p.startsWith("/admin/billing")) return "finance";
-  if (p.startsWith("/admin/settings")) return "ops";
-  if (p.startsWith("/admin/security") || p.startsWith("/admin/legal") || p.startsWith("/admin/qc") || p.startsWith("/admin/rights") || p.startsWith("/admin/audit")) {
-    return isSuperAdmin ? "platform" : "ops";
-  }
-  return "ops";
+  if (p.startsWith("/admin/storage")) return "storage";
+  if (p.startsWith("/admin/billing") || p.startsWith("/admin/finance")) return "business";
+  if (p.startsWith("/admin/content")) return "content";
+  if (p.startsWith("/admin/security") || p.startsWith("/admin/legal") || p.startsWith("/admin/audit")) return "security";
+  if (p.startsWith("/admin/ops") || p.startsWith("/admin/settings")) return "ops";
+  if (p.startsWith("/admin/dev")) return "dev";
+  if (p.startsWith("/admin/products") || p.startsWith("/admin/plans")) return "products";
+  return "overview";
 }
 
 export default function Admin() {

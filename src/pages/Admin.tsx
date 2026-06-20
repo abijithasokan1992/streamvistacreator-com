@@ -328,12 +328,12 @@ export default function Admin() {
 
           {/* 5. Business & Revenue */}
           <TabsContent value="business" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<Wallet className="w-5 h-5" />} title="Business & Revenue" desc="Revenue, invoices, commissions, Razorpay activity and subscription/top-up monitoring." />
-            <KammattamMeter />
-            <FinanceOverview rows={rows} />
+            <DeptHeader icon={<Wallet className="w-5 h-5" />} title="Business & Revenue" desc="Invoice-backed revenue, commissions, Razorpay activity and legacy onboarding funnel." />
             <AdminInvoices />
+            <KammattamMeter />
             <CommissionsTracker />
             <RazorpayAuditLog />
+            <LegacyOnboardingFunnel rows={rows} />
           </TabsContent>
 
           {/* 6. Products & Plans */}
@@ -342,20 +342,20 @@ export default function Admin() {
             <ProductsAndPlans />
           </TabsContent>
 
-          {/* 7. Security Center */}
+          {/* 7. Security Center — payment, security and compliance events only */}
           <TabsContent value="security" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<ShieldAlert className="w-5 h-5" />} title="Security Center" desc="Payment security events, branding policy and inbound contact." />
+            <DeptHeader icon={<ShieldAlert className="w-5 h-5" />} title="Security Center" desc="Payment security events, signature failures and access audit." />
             <PaymentSecurityEvents />
-            <BrandingSettings />
-            <ContactInbox />
           </TabsContent>
 
           {/* 8. Platform Operations */}
           <TabsContent value="ops" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<Briefcase className="w-5 h-5" />} title="Platform Operations" desc="Email logs, broadcasts, support inbox, partner CMS & system reporting." />
+            <DeptHeader icon={<Briefcase className="w-5 h-5" />} title="Platform Operations" desc="Email logs, broadcasts, support inbox, branding, partner CMS & system reporting." />
             <EmailLogMonitor />
             <UniversalBroadcast />
             <SupportInbox />
+            <ContactInbox />
+            <BrandingSettings />
             <PartnerLogos />
             <MarketingCMS />
             <MarketingAnalytics rows={rows} />
@@ -403,16 +403,34 @@ function DeptHeader({ icon, title, desc }: { icon: React.ReactNode; title: strin
   );
 }
 
-function FinanceOverview({ rows }: { rows: Row[] }) {
+// FinanceOverview removed — platform revenue is now invoice-backed in AdminInvoices.
+// The legacy MFI lead funnel is preserved below under LegacyOnboardingFunnel with
+// an explicit "legacy" label so it cannot be mistaken for platform revenue.
+
+
+
+function LegacyOnboardingFunnel({ rows }: { rows: Row[] }) {
+  // Explicitly labeled legacy MFI onboarding funnel — NOT platform revenue.
+  // Platform revenue is invoice-backed via AdminInvoices + PlatformOverview.
   const paid = rows.filter(r => r.payment_status === "paid");
   const revenue = paid.reduce((s, r) => s + Number(r.final_price || 0), 0);
   const pending = rows.filter(r => r.payment_status !== "paid" && r.payment_status !== "failed").length;
+  const withPromo = rows.filter(r => r.promo_code).length;
+  const conversion = rows.length ? Math.round((paid.length / rows.length) * 100) : 0;
   return (
-    <div className="grid sm:grid-cols-3 gap-4">
-      <MetricCard label="Total Revenue (paid)" value={`₹${revenue.toLocaleString("en-IN")}`} />
-      <MetricCard label="Paid Orders" value={paid.length.toString()} />
-      <MetricCard label="Pending Payments" value={pending.toString()} />
-    </div>
+    <section className="rounded-2xl border border-border/40 bg-secondary/5 p-5">
+      <div className="flex items-center gap-2 mb-3">
+        <h3 className="text-sm font-semibold">Legacy onboarding funnel (MFI)</h3>
+        <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-muted text-muted-foreground border border-border/60">Legacy · not platform revenue</span>
+      </div>
+      <div className="grid sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <MetricCard label="Onboarding revenue (legacy)" value={`₹${revenue.toLocaleString("en-IN")}`} />
+        <MetricCard label="Paid onboardings" value={paid.length.toString()} />
+        <MetricCard label="Pending onboardings" value={pending.toString()} />
+        <MetricCard label="Promo redemptions" value={withPromo.toString()} />
+        <MetricCard label="Lead → Paid %" value={`${conversion}%`} />
+      </div>
+    </section>
   );
 }
 

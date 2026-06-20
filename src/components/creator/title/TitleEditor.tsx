@@ -266,7 +266,7 @@ const NEXT_STEP: Record<string, { next: string; eta: string }> = {
   changes_requested:      { next: "Apply changes and re-submit.", eta: "Self-paced" },
   hold:                   { next: "Awaiting review team follow-up.", eta: "Variable" },
   rejected:               { next: "See review note for details.", eta: "—" },
-  published:              { next: "Live on the platform.", eta: "—" },
+  published:              { next: "Archived (legacy state).", eta: "—" },
   archived:               { next: "Archived.", eta: "—" },
 };
 
@@ -641,7 +641,7 @@ function StatusTab({ title, timeline }: { title: TitleRow; timeline: TitleTimeli
         <li>Last updated: {new Date(title.updated_at).toLocaleString()}</li>
         {title.submitted_at && <li>Submitted: {new Date(title.submitted_at).toLocaleString()}</li>}
         {title.approved_at && <li>Approved: {new Date(title.approved_at).toLocaleString()}</li>}
-        {title.published_at && <li>Published: {new Date(title.published_at).toLocaleString()}</li>}
+        {title.published_at && <li>Published (legacy): {new Date(title.published_at).toLocaleString()}</li>}
         {title.locked && <li className="text-amber-300">Locked — content, metadata, documents and rights are read-only.</li>}
       </ul>
       <div>

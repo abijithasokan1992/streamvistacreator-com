@@ -1,12 +1,12 @@
 import { cn } from "@/lib/utils";
 import {
-  Home, Film, Bell, Radio, BarChart3, Receipt, CalendarClock,
-  Crown, Gift, LifeBuoy,
+  Home, Film, Bell, BarChart3, Receipt, CalendarClock,
+  Crown, LifeBuoy,
 } from "lucide-react";
 
 export type SectionId =
-  | "home" | "titles" | "updates" | "distribution" | "insights"
-  | "statements" | "schedule" | "upgrade" | "referrals" | "help";
+  | "home" | "titles" | "updates" | "insights"
+  | "statements" | "schedule" | "upgrade" | "help";
 
 export const SECTIONS: ReadonlyArray<{
   id: SectionId;
@@ -19,12 +19,10 @@ export const SECTIONS: ReadonlyArray<{
   { id: "home",         label: "Home",         heading: "Home",                  subhead: "Your studio at a glance.",                                       icon: Home },
   { id: "titles",       label: "My Titles",    heading: "My Titles",             subhead: "Create, manage and submit your catalog.",                        icon: Film },
   { id: "updates",      label: "Updates",      heading: "Updates",               subhead: "System notices, approvals, review notes and admin messages.",   icon: Bell },
-  { id: "distribution", label: "Distribution", heading: "Distribution",          subhead: "Distribution channels.",                                         icon: Radio, comingSoon: true },
   { id: "insights",     label: "Insights",     heading: "Insights",              subhead: "Storage, catalog activity and upload trends.",                   icon: BarChart3 },
-  { id: "statements",   label: "Statements",   heading: "Statements",            subhead: "Invoices, subscriptions and billing history.",                   icon: Receipt },
+  { id: "statements",   label: "Statements",   heading: "Statements",            subhead: "Invoices, top-ups and billing history.",                         icon: Receipt },
   { id: "schedule",     label: "Schedule",     heading: "Schedule",              subhead: "Upcoming reviews, approval deadlines and delivery dates.",       icon: CalendarClock },
   { id: "upgrade",      label: "Upgrade",      heading: "Upgrade",               subhead: "Manage plan and storage.",                                       icon: Crown },
-  { id: "referrals",    label: "Referrals",    heading: "Referrals",             subhead: "Refer creators and partners.",                                   icon: Gift, comingSoon: true },
   { id: "help",         label: "Help",         heading: "Help & Support",        subhead: "Contact us, read docs, or submit a ticket.",                     icon: LifeBuoy },
 ];
 

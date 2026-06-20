@@ -6,13 +6,12 @@ import { CreatorSidebar, SECTIONS, type SectionId } from "@/components/creator/C
 import HomeSection from "@/components/creator/sections/Home";
 import MyTitlesSection from "@/components/creator/sections/MyTitles";
 import UpdatesSection from "@/components/creator/sections/Updates";
-import DistributionSection from "@/components/creator/sections/Distribution";
 import InsightsSection from "@/components/creator/sections/Insights";
 import StatementsSection from "@/components/creator/sections/Statements";
 import ScheduleSection from "@/components/creator/sections/Schedule";
 import UpgradeSection from "@/components/creator/sections/Upgrade";
-import ReferralsSection from "@/components/creator/sections/Referrals";
 import HelpSection from "@/components/creator/sections/Help";
+import EntitlementChip from "@/components/creator/EntitlementChip";
 
 export default function ContentOwnerDashboard() {
   const { user, role, dashboardRole, loading, signOut } = useAuth();
@@ -56,12 +55,15 @@ export default function ContentOwnerDashboard() {
             <Link to="/" className="text-sm font-semibold tracking-tight">StreamVista</Link>
             <span className="hidden md:inline text-xs text-muted-foreground/70">/ Creator</span>
           </div>
-          <button
-            onClick={signOut}
-            className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5"
-          >
-            <LogOut className="w-3.5 h-3.5" /> Sign out
-          </button>
+          <div className="flex items-center gap-3">
+            <EntitlementChip />
+            <button
+              onClick={signOut}
+              className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5"
+            >
+              <LogOut className="w-3.5 h-3.5" /> Sign out
+            </button>
+          </div>
         </div>
       </header>
 
@@ -76,12 +78,10 @@ export default function ContentOwnerDashboard() {
           {section === "home" && <HomeSection onNavigate={setSection} />}
           {section === "titles" && <MyTitlesSection />}
           {section === "updates" && <UpdatesSection />}
-          {section === "distribution" && <DistributionSection />}
           {section === "insights" && <InsightsSection />}
           {section === "statements" && <StatementsSection />}
           {section === "schedule" && <ScheduleSection />}
           {section === "upgrade" && <UpgradeSection />}
-          {section === "referrals" && <ReferralsSection />}
           {section === "help" && <HelpSection />}
         </section>
       </div>

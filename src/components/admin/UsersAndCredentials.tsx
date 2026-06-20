@@ -271,6 +271,11 @@ export default function UsersAndCredentials() {
                           <Button size="sm" variant="ghost" onClick={() => onView(row)} title="View">
                             <Eye className="w-4 h-4" />
                           </Button>
+                          <Button size="sm" variant="ghost"
+                            onClick={() => setEntitlementTarget({ user_id: row.id, email: row.email, display_name: row.display_name })}
+                            title="Billing & entitlement">
+                            <Receipt className="w-4 h-4 text-accent" />
+                          </Button>
                           <Button size="sm" variant="ghost" onClick={() => onEdit(row)} title="Modify">
                             <Crown className="w-4 h-4" />
                           </Button>

@@ -446,6 +446,13 @@ export default function UsersAndCredentials() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Entitlement / billing drill-in */}
+      <UserEntitlementDrillIn
+        target={entitlementTarget}
+        open={!!entitlementTarget}
+        onOpenChange={(o) => { if (!o) setEntitlementTarget(null); }}
+      />
     </div>
   );
 }

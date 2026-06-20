@@ -28,6 +28,8 @@ export default function PlatformOverview() {
   const [storageBytes, setStorageBytes] = useState(0);
   const [storageQuota, setStorageQuota] = useState(0);
   const [revenueThisMonth, setRevenueThisMonth] = useState(0);
+  const [revenueLastMonth, setRevenueLastMonth] = useState(0);
+  const [invoiceCount, setInvoiceCount] = useState(0);
   const [revenuePending, setRevenuePending] = useState(0);
   const [staleUploads, setStaleUploads] = useState(0);
   const [failedUploads, setFailedUploads] = useState(0);
@@ -40,14 +42,22 @@ export default function PlatformOverview() {
   const load = async () => {
     setLoading(true);
     try {
-      const [titles, roles, orgs, uploads, allocations, razorpay, subs,
+      const now = new Date();
+      const startMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const startLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
+
+      const [titles, roles, orgs, uploads, allocations, invoicesMtd, invoicesLast, subs,
              onboarding, dmca, support, approvals, emailDlq] = await Promise.all([
         supabase.from("content_titles").select("status"),
         supabase.from("user_roles").select("role"),
         supabase.from("organizations").select("id", { count: "exact", head: true }),
-        supabase.from("recent_uploads").select("status, size_bytes, created_at"),
-        supabase.from("storage_allocations").select("quota_bytes"),
-        supabase.from("razorpay_audit_log").select("amount, created_at, event_type"),
+        // FIXED: recent_uploads.file_size (not size_bytes)
+        supabase.from("recent_uploads").select("status, file_size, created_at"),
+        // FIXED: storage_allocations.allocated_gb (not quota_bytes)
+        supabase.from("storage_allocations").select("allocated_gb"),
+        // CANONICAL revenue source: invoices.total_paise — NOT razorpay raw events.
+        supabase.from("invoices").select("total_paise, status").gte("issued_at", startMonth),
+        supabase.from("invoices").select("total_paise").gte("issued_at", startLastMonth).lt("issued_at", startMonth),
         supabase.from("subscriptions").select("status"),
         supabase.from("onboarding_requests").select("id", { count: "exact", head: true }).eq("onboarding_status", "pending"),
         supabase.from("dmca_requests").select("id", { count: "exact", head: true }).neq("status", "closed"),
@@ -65,12 +75,10 @@ export default function PlatformOverview() {
       setRoleCounts(rc);
       setOrgsCount(orgs.count ?? 0);
 
-      const now = new Date();
-      const startMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
       let bytes = 0; let stale = 0; let failed = 0;
       const staleCutoff = Date.now() - 30 * 60 * 1000;
       (uploads.data ?? []).forEach((u: any) => {
-        if (u.status === "verified") bytes += Number(u.size_bytes || 0);
+        if (u.status === "verified") bytes += Number(u.file_size || 0);
         if (u.status === "uploading" && new Date(u.created_at).getTime() < staleCutoff) stale++;
         if (u.status === "failed") failed++;
       });
@@ -78,14 +86,17 @@ export default function PlatformOverview() {
       setStaleUploads(stale);
       setFailedUploads(failed);
 
-      const quota = (allocations.data ?? []).reduce((s: number, a: any) => s + Number(a.quota_bytes || 0), 0);
-      setStorageQuota(quota);
+      // allocated_gb (integer GB) → bytes for display alongside used bytes
+      const quotaBytes = (allocations.data ?? []).reduce(
+        (s: number, a: any) => s + Number(a.allocated_gb || 0) * 1024 * 1024 * 1024, 0,
+      );
+      setStorageQuota(quotaBytes);
 
-      let revMonth = 0;
-      (razorpay.data ?? []).forEach((r: any) => {
-        if (r.created_at >= startMonth && Number(r.amount)) revMonth += Number(r.amount) / 100;
-      });
-      setRevenueThisMonth(revMonth);
+      const sumPaise = (rows: any[] | null | undefined) =>
+        (rows ?? []).reduce((s: number, r: any) => s + Number(r.total_paise || 0), 0);
+      setRevenueThisMonth(sumPaise(invoicesMtd.data) / 100);
+      setRevenueLastMonth(sumPaise(invoicesLast.data) / 100);
+      setInvoiceCount((invoicesMtd.data ?? []).length);
       setRevenuePending((subs.data ?? []).filter((s: any) => s.status === "past_due" || s.status === "pending").length);
 
       setOpenOnboarding(onboarding.count ?? 0);

@@ -36,6 +36,8 @@ import KammattamMeter from "@/components/admin/KammattamMeter";
 import MarketingCMS from "@/components/admin/MarketingCMS";
 import AiMcpControlCenter from "@/components/admin/AiMcpControlCenter";
 import ContentReviewWorkflow from "@/components/admin/ContentReviewWorkflow";
+import AdminInvoices from "@/components/admin/AdminInvoices";
+import PaymentSecurityEvents from "@/components/admin/PaymentSecurityEvents";
 
 interface Row {
   id: string;
@@ -326,9 +328,10 @@ export default function Admin() {
 
           {/* 5. Business & Revenue */}
           <TabsContent value="business" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<Wallet className="w-5 h-5" />} title="Business & Revenue" desc="Revenue, commissions, Razorpay activity and subscription/top-up monitoring." />
+            <DeptHeader icon={<Wallet className="w-5 h-5" />} title="Business & Revenue" desc="Revenue, invoices, commissions, Razorpay activity and subscription/top-up monitoring." />
             <KammattamMeter />
             <FinanceOverview rows={rows} />
+            <AdminInvoices />
             <CommissionsTracker />
             <RazorpayAuditLog />
           </TabsContent>
@@ -341,7 +344,8 @@ export default function Admin() {
 
           {/* 7. Security Center */}
           <TabsContent value="security" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<ShieldAlert className="w-5 h-5" />} title="Security Center" desc="Audit logs, DMCA requests and access-control visibility." />
+            <DeptHeader icon={<ShieldAlert className="w-5 h-5" />} title="Security Center" desc="Payment security events, branding policy and inbound contact." />
+            <PaymentSecurityEvents />
             <BrandingSettings />
             <ContactInbox />
           </TabsContent>

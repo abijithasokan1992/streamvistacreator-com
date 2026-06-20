@@ -4,6 +4,7 @@ import { template as systemMessageReport } from './system-message-report.tsx'
 import { template as welcomeAccountCreated } from './welcome-account-created.tsx'
 import { template as loginAlert } from './login-alert.tsx'
 import { template as titleStatusUpdate } from './title-status-update.tsx'
+import { template as invoiceReceipt } from './invoice-receipt.tsx'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -19,4 +20,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'welcome-account-created': welcomeAccountCreated,
   'login-alert': loginAlert,
   'title-status-update': titleStatusUpdate,
+  'invoice-receipt': invoiceReceipt,
 }

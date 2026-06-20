@@ -3980,6 +3980,7 @@ export type Database = {
         }
         Returns: string
       }
+      creator_free_tier_status: { Args: { _user_id?: string }; Returns: Json }
       current_dashboard_role: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"]
@@ -4001,6 +4002,7 @@ export type Database = {
         Returns: boolean
       }
       invoke_edge_function: { Args: { fn_name: string }; Returns: number }
+      is_free_tier_user: { Args: { _user_id: string }; Returns: boolean }
       is_producer_of: {
         Args: { _creator: string; _ep: string }
         Returns: boolean

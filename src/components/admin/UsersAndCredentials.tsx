@@ -21,6 +21,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import UserEntitlementDrillIn, { type EntitlementTarget } from "@/components/admin/UserEntitlementDrillIn";
 
 type Role = "admin" | "executive_producer" | "creator" | "moderator" | "client" | "user";
 const ALL_ROLES: { value: Role; label: string }[] = [

@@ -583,7 +583,7 @@ export default function MasterArchive() {
                 <Badge variant="outline">reel-{reel.padStart(2, "0")}</Badge>
               </p>
               <Button onClick={pickFiles} size="lg" className="gap-2" disabled={!activeId || wsLoading || quota.locked}>
-                <Upload className="w-4 h-4" /> {quota.locked ? "Storage full — upgrade to upload" : "Upload to this folder"}
+                <Upload className="w-4 h-4" /> {quota.locked ? "Storage full — request more storage" : "Upload to this folder"}
               </Button>
               <input
                 ref={fileInput}

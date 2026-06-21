@@ -64,10 +64,10 @@ export default function StatementsSection() {
             </span>
           </div>
           <Link
-            to="/dashboard/content-owner?section=upgrade"
+            to="/dashboard/content?section=upgrade"
             className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-accent text-accent-foreground text-xs font-semibold hover:opacity-90"
           >
-            <ShoppingCart className="w-3.5 h-3.5" /> Buy next 1 TB
+            <ShoppingCart className="w-3.5 h-3.5" /> Request more storage
           </Link>
         </div>
         {loading ? (

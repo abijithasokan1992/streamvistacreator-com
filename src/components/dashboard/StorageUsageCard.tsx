@@ -173,7 +173,7 @@ export default function StorageUsageCard() {
         </div>
         {storageFull && (
           <p className="text-[11px] text-destructive mt-1.5">
-            Storage full — uploads paused. {isCreator ? "Tap below to add the next TB." : "Upgrade to Creator for 1 TB + auto top-up."}
+            Storage full — uploads paused. {isCreator ? "Request more storage from the Upgrade tab — our team will follow up." : "Request a Creator upgrade for more storage."}
           </p>
         )}
       </div>
@@ -201,29 +201,19 @@ export default function StorageUsageCard() {
         </div>
       )}
 
-      {/* 1-click PAYG top-up */}
-      {isCreator ? (
-        <button
-          onClick={topUp}
-          disabled={toppingUp}
-          className={cn(
-            "w-full h-11 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all",
-            storageFull
-              ? "bg-gradient-primary text-primary-foreground glow-primary animate-pulse"
-              : "border border-accent/40 text-accent hover:bg-accent/10",
-          )}
-        >
-          {toppingUp ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUpRight className="w-4 h-4" />}
-          {storageFull ? `Add next 1 TB · ₹${PAYG_TB_INR}` : `Top up 1 TB · ₹${PAYG_TB_INR}`}
-        </button>
-      ) : (
-        <a
-          href="/auth?plan=creator"
-          className="block w-full h-11 leading-[44px] text-center rounded-xl bg-gradient-primary text-primary-foreground text-sm font-semibold glow-primary"
-        >
-          Upgrade to Creator · ₹{PAYG_TB_INR} / TB
-        </a>
-      )}
+      {/* Creator billing is founder-assisted — route to upgrade request form, not self-serve checkout. */}
+      <a
+        href="/dashboard/content?section=upgrade"
+        className={cn(
+          "w-full h-11 leading-[44px] text-center rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all",
+          storageFull
+            ? "bg-gradient-primary text-primary-foreground glow-primary"
+            : "border border-accent/40 text-accent hover:bg-accent/10",
+        )}
+      >
+        <ArrowUpRight className="w-4 h-4" />
+        {isCreator ? "Request more storage" : "Request a Creator upgrade"}
+      </a>
     </div>
   );
 }

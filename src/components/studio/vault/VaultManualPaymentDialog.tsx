@@ -64,9 +64,7 @@ export default function VaultManualPaymentDialog({ product, tb, months, open, on
     if (!open) return;
     setStage("choose"); setOrderId(null); setTopupId(null);
     setUtr(""); setBankName(""); setRemarks(""); setFile(null);
-    supabase.from("billing_payment_method_configs")
-      .select("*").eq("is_enabled", true)
-      .then(({ data }) => setConfigs((data as PMC[]) ?? []));
+    setConfigs([]);
   }, [open]);
 
   const matching = configs.filter(c => c.rail === rail);
@@ -80,10 +78,16 @@ export default function VaultManualPaymentDialog({ product, tb, months, open, on
       _payment_mode: rail,
       _customer_note: null,
     });
-    setBusy(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { setBusy(false); toast.error(error.message); return; }
     const d = data as any;
     setOrderId(d.order_id); setTopupId(d.topup_id);
+    // Fetch payment method configs *after* the order exists — RLS gates
+    // access to bank/UPI details on the presence of an active billing order.
+    const { data: pmcRows } = await supabase
+      .from("billing_payment_method_configs")
+      .select("*").eq("is_enabled", true);
+    setConfigs((pmcRows as PMC[]) ?? []);
+    setBusy(false);
     if (rail === "invoice_offline") {
       setStage("done");
       toast.success("Order created. Our team will reach out with the invoice.");

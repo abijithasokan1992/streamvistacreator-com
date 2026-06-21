@@ -173,13 +173,13 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
                   : "bg-gradient-primary text-primary-foreground glow-primary hover:scale-[1.02] hover:shadow-[0_0_40px_-6px_hsl(var(--accent)/0.7)]",
               )}
             >
-              <Upload className="w-4 h-4" /> {quota.locked ? "Storage full — Upgrade" : "Upload File"}
+              <Upload className="w-4 h-4" /> {quota.locked ? "Storage full — request more storage" : "Upload File"}
               {!quota.locked && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-accent animate-ping opacity-60" />}
               {!quota.locked && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-accent" />}
             </button>
           </DialogTrigger>
         </TooltipTrigger>
-        <TooltipContent side="bottom">{quota.locked ? "You've hit the 50 GB free cap. Upgrade to keep uploading." : "Drop a file, paste from clipboard, or ingest from a card — uploads run in the background."}</TooltipContent>
+        <TooltipContent side="bottom">{quota.locked ? "You've hit the 50 GB free cap. Request more storage from the Upgrade tab." : "Drop a file, paste from clipboard, or ingest from a card — uploads run in the background."}</TooltipContent>
       </Tooltip>
 
       <DialogContent className="max-w-xl glass-strong border-border/60">
@@ -299,15 +299,15 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
               })}
             </nav>
 
-            {/* Upgrade tile (1-click) */}
+            {/* Request upgrade tile — creator billing is founder-assisted. */}
             <div className="glass-strong rounded-2xl p-4 mt-4 hidden lg:block">
               <div className="flex items-center gap-2 mb-1.5">
                 <Crown className="w-4 h-4 text-accent" />
-                <span className="font-display font-semibold text-sm">Go Sovereign</span>
+                <span className="font-display font-semibold text-sm">Need more storage?</span>
               </div>
-              <p className="text-[11px] text-muted-foreground mb-3">India-resident storage, longer expiries, premium support.</p>
-              <Link to="/auth?plan=creator" className="block w-full text-center h-9 leading-9 rounded-lg bg-gradient-primary text-primary-foreground text-xs font-semibold glow-primary">
-                Upgrade Plan
+              <p className="text-[11px] text-muted-foreground mb-3">Request a plan or storage change — our team will follow up.</p>
+              <Link to="/dashboard/content?section=upgrade" className="block w-full text-center h-9 leading-9 rounded-lg bg-gradient-primary text-primary-foreground text-xs font-semibold glow-primary">
+                Request upgrade
               </Link>
             </div>
           </aside>
@@ -408,8 +408,8 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
                   title="My Account"
                   desc="Profile, billing, branding & subscription."
                   actions={
-                    <Link to="/auth?plan=creator" className="h-10 px-4 rounded-xl bg-gradient-primary text-primary-foreground font-semibold glow-primary text-xs inline-flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5" /> Upgrade
+                    <Link to="/dashboard/content?section=upgrade" className="h-10 px-4 rounded-xl bg-gradient-primary text-primary-foreground font-semibold glow-primary text-xs inline-flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5" /> Request upgrade
                     </Link>
                   }
                 />

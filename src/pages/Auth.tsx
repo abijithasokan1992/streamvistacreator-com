@@ -25,7 +25,7 @@ type View = "login" | "signup";
 type PublicRole = "content_owner" | "studio" | "buyer";
 
 const ROLE_OPTIONS: { value: PublicRole; label: string; hint: string }[] = [
-  { value: "content_owner", label: "Content Owner", hint: "Filmmakers, producers, IP holders" },
+  { value: "content_owner", label: "Creator", hint: "Filmmakers, producers, IP holders" },
   { value: "studio", label: "Studio", hint: "Production & post-production teams" },
   { value: "buyer", label: "Buyer", hint: "Acquisitions, platforms, distributors of record" },
 ];

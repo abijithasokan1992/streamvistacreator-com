@@ -299,15 +299,15 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
               })}
             </nav>
 
-            {/* Upgrade tile (1-click) */}
+            {/* Request upgrade tile — creator billing is founder-assisted. */}
             <div className="glass-strong rounded-2xl p-4 mt-4 hidden lg:block">
               <div className="flex items-center gap-2 mb-1.5">
                 <Crown className="w-4 h-4 text-accent" />
-                <span className="font-display font-semibold text-sm">Go Sovereign</span>
+                <span className="font-display font-semibold text-sm">Need more storage?</span>
               </div>
-              <p className="text-[11px] text-muted-foreground mb-3">India-resident storage, longer expiries, premium support.</p>
-              <Link to="/auth?plan=creator" className="block w-full text-center h-9 leading-9 rounded-lg bg-gradient-primary text-primary-foreground text-xs font-semibold glow-primary">
-                Upgrade Plan
+              <p className="text-[11px] text-muted-foreground mb-3">Request a plan or storage change — our team will follow up.</p>
+              <Link to="/dashboard/content?section=upgrade" className="block w-full text-center h-9 leading-9 rounded-lg bg-gradient-primary text-primary-foreground text-xs font-semibold glow-primary">
+                Request upgrade
               </Link>
             </div>
           </aside>
@@ -408,8 +408,8 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
                   title="My Account"
                   desc="Profile, billing, branding & subscription."
                   actions={
-                    <Link to="/auth?plan=creator" className="h-10 px-4 rounded-xl bg-gradient-primary text-primary-foreground font-semibold glow-primary text-xs inline-flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5" /> Upgrade
+                    <Link to="/dashboard/content?section=upgrade" className="h-10 px-4 rounded-xl bg-gradient-primary text-primary-foreground font-semibold glow-primary text-xs inline-flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5" /> Request upgrade
                     </Link>
                   }
                 />

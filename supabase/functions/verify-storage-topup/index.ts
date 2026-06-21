@@ -101,10 +101,17 @@ Deno.serve(async (req) => {
     }
 
     if (row.status === "paid") {
-      // Idempotent — re-project entitlement and re-send receipt only if missing.
+      // Idempotent — webhook (or a prior verify call) already finalized this top-up.
+      // Re-project entitlement (safe no-op if already projected) and return success
+      // so the frontend transitions to verified_success instead of error.
       const { data: proj } = await admin.rpc("project_topup_entitlement", { _topup_id: topupId });
       if (proj?.invoice_id) await sendReceipt(admin, proj.invoice_id);
-      return json({ ok: true, already: true, ...(proj ?? {}) });
+      return json({
+        ok: true,
+        alreadyProcessed: true,
+        webhookFinalized: true,
+        ...(proj ?? {}),
+      });
     }
 
     await admin.from("storage_topups")
@@ -130,7 +137,7 @@ Deno.serve(async (req) => {
       extra: { topup_id: topupId, invoice_id: proj?.invoice_id, tb_added: proj?.tb_added },
     });
 
-    return json({ ok: true, ...(proj ?? {}) });
+    return json({ ok: true, alreadyProcessed: false, webhookFinalized: false, ...(proj ?? {}) });
   } catch (e) {
     console.error("verify-storage-topup error", e);
     return json({ error: "Internal server error" }, 500);

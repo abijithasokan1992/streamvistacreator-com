@@ -334,6 +334,7 @@ export default function Admin() {
           {/* 5. Business & Revenue */}
           <TabsContent value="business" className="space-y-8 mt-0 animate-fade-in">
             <DeptHeader icon={<Wallet className="w-5 h-5" />} title="Business & Revenue" desc="Invoice-backed revenue, commissions, Razorpay activity and legacy onboarding funnel." />
+            <RazorpayOpsBanner />
             <AdminInvoices />
             <PaymentTrace />
             <KammattamMeter />

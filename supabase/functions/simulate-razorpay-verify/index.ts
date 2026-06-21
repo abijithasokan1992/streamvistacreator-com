@@ -60,6 +60,26 @@ Deno.serve(async (req) => {
       valid = a.byteLength === b.byteLength && timingSafeEqual(a, b);
     } catch { valid = false; }
 
+    // Idempotency: if this order already has a successful row (from either
+    // the admin verify path or the webhook), surface a structured
+    // already-processed success response instead of erroring.
+    let alreadyProcessed = false;
+    let webhookFinalized = false;
+    try {
+      const { data: prior } = await admin
+        .from("razorpay_audit_log")
+        .select("event_type,status,source")
+        .eq("order_id", orderId)
+        .in("status", ["paid", "captured"])
+        .limit(5);
+      if (prior && prior.length > 0) {
+        alreadyProcessed = true;
+        webhookFinalized = prior.some(
+          (r: any) => r.source === "webhook" || String(r.event_type).startsWith("payment."),
+        );
+      }
+    } catch (e) { console.error("idempotency check failed", e); }
+
     try {
       await admin.from("razorpay_audit_log").insert({
         event_type: "admin.test.verify",
@@ -69,13 +89,21 @@ Deno.serve(async (req) => {
         status: valid ? "paid" : "signature_failed",
         signature_valid: valid,
         user_id: userId,
-        payload: { simulated: true, mode: creds.mode },
+        payload: { simulated: true, mode: creds.mode, alreadyProcessed },
       });
     } catch (e) { console.error("audit insert failed", e); }
 
     if (!valid) return json(req, { ok: false, error: "Signature mismatch" }, 400);
 
-    return json(req, { ok: true, status: "paid", orderId, paymentId, mode: creds.mode });
+    return json(req, {
+      ok: true,
+      status: "paid",
+      orderId,
+      paymentId,
+      mode: creds.mode,
+      alreadyProcessed,
+      webhookFinalized,
+    });
   } catch (e) {
     console.error("simulate-razorpay-verify error", e);
     return json(req, { error: "Internal error" }, 500);

@@ -32,7 +32,7 @@ export const Pricing = () => (
           return (
             <div
               key={p.cycle}
-              className="relative text-left p-7 md:p-10 transition-all duration-300 animate-fade-in group bg-background hover:bg-primary/[0.04]"
+              className="relative text-left p-7 md:p-10 transition-all duration-300 animate-fade-in group bg-card hover:bg-primary/[0.04]"
               style={{ animationDelay: `${i * 100}ms` }}
             >
               {p.badge && (

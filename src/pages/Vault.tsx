@@ -173,13 +173,13 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
                   : "bg-gradient-primary text-primary-foreground glow-primary hover:scale-[1.02] hover:shadow-[0_0_40px_-6px_hsl(var(--accent)/0.7)]",
               )}
             >
-              <Upload className="w-4 h-4" /> {quota.locked ? "Storage full — Upgrade" : "Upload File"}
+              <Upload className="w-4 h-4" /> {quota.locked ? "Storage full — request more storage" : "Upload File"}
               {!quota.locked && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-accent animate-ping opacity-60" />}
               {!quota.locked && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-accent" />}
             </button>
           </DialogTrigger>
         </TooltipTrigger>
-        <TooltipContent side="bottom">{quota.locked ? "You've hit the 50 GB free cap. Upgrade to keep uploading." : "Drop a file, paste from clipboard, or ingest from a card — uploads run in the background."}</TooltipContent>
+        <TooltipContent side="bottom">{quota.locked ? "You've hit the 50 GB free cap. Request more storage from the Upgrade tab." : "Drop a file, paste from clipboard, or ingest from a card — uploads run in the background."}</TooltipContent>
       </Tooltip>
 
       <DialogContent className="max-w-xl glass-strong border-border/60">

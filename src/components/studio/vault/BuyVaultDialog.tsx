@@ -63,6 +63,8 @@ export default function BuyVaultDialog({ product, open, onOpenChange, onPurchase
   const [detail, setDetail] = useState<string>("");
   const [debug, setDebug] = useState<DebugInfo>({});
   const stepRef = useRef<Step>("idle");
+  const [manualOpen, setManualOpen] = useState(false);
+
 
   useEffect(() => {
     if (product) {

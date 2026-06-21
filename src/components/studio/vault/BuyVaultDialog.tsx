@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, ShoppingCart, Sparkles, ShieldCheck, CheckCircle2, XCircle } from "lucide-react";
+import { Loader2, ShoppingCart, Sparkles, ShieldCheck, CheckCircle2, XCircle, Building2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { computePricePreview, fmtINR, fmtINRDecimal, INTERVAL_OPTIONS, IntervalMonths, STORAGE_CLASS_META, VaultProduct } from "@/lib/studioVault";
+import VaultManualPaymentDialog from "./VaultManualPaymentDialog";
 
 declare global { interface Window { Razorpay?: any } }
 

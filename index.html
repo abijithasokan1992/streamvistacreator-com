@@ -23,6 +23,20 @@
     <script type="application/ld+json">
       {"@context":"https://schema.org","@type":"WebSite","name":"StreamVista Cloud X","url":"https://streamvistacreator.com/"}
     </script>
+    <script>
+      // Apply theme before paint to avoid flash. Mirrors ThemeProvider logic.
+      (function () {
+        try {
+          var stored = localStorage.getItem('sv.theme');
+          var mode = (stored === 'light' || stored === 'dark' || stored === 'system') ? stored : 'dark';
+          var resolved = mode === 'system'
+            ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+            : mode;
+          if (resolved === 'dark') document.documentElement.classList.add('dark');
+          document.documentElement.style.colorScheme = resolved;
+        } catch (e) { document.documentElement.classList.add('dark'); }
+      })();
+    </script>
 </head>
 
   <body>

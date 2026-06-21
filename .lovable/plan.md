@@ -1,102 +1,118 @@
-# StreamVista → Role-Based Media OS (Approved with changes)
 
-Phased refactor. One phase per turn, review between.
+# Stream 11.4 — StreamVista Design OS
 
-## Approved deltas from the user
-1. **Role migration**: `executive_producer` → **Content Owner** (not Studio).
-2. **Public signup restricted to 3 roles**: Content Owner, Studio, Buyer.
-   - Localization Partner, Distributor, Admin, Super Admin are **invite-only** (admin-assigned).
-3. **Content Lock workflow** after submission — once a title is submitted for review it becomes immutable until an admin/owner unlocks or approves it.
-4. **No placeholder dashboard cards** — each role dashboard ships only with real, wired-up modules. Empty states are honest ("No titles yet").
-5. **Licensing / Acquisition requests for Buyers** — buyers can submit acquisition requests against any catalog title; routed to the Content Owner for accept/decline/counter.
-6. **Full content approval lifecycle**: `draft → submitted → in_review → changes_requested → approved → locked → published → archived` with audit trail.
-7. **OCI configuration is view-only** in Admin / Super Admin UI. No edit/delete buttons. Values come from existing secrets and remain untouched.
-8. **Public site** = Create Account · Log In · Contact Us only. No marketing CMS, no plan cards, no testimonials, no partner logos.
-9. **Preserve as-is**: Oracle Database, Oracle Object Storage (OCI), Razorpay (orders, subscriptions, webhooks, audit log). No schema or function changes to those subsystems.
+A staged refactor of the visual & UX layer of the existing StreamVista app. No payment, security, routing, or auth rewrites. Working Razorpay / Studio Vault / billing flows remain untouched — only the chrome and theming around them change.
 
-## Defaults already locked
-- Additive DB migration — nothing existing is dropped.
-- Magic link is the only public auth path. Google OAuth kept as one-click alt. Password UI removed from client.
-- Existing passwords stay in `auth.users` for break-glass.
+This is a multi-phase stream. Each phase is independently shippable. I will execute them sequentially in subsequent turns, not all in one giant patch (it would be unsafe and unreviewable across the existing ~50+ pages).
 
 ---
 
-## Phase 1 — DB foundation (this turn)
+## Phase A — Theme Token Foundation + Dark/Light/System
 
-New enums:
-- Extend `app_role` with `content_owner`, `studio`, `buyer`, `localization_partner`, `distributor`, `super_admin`.
-- New `content_status`: draft, submitted, in_review, changes_requested, approved, locked, published, archived.
-- New `acquisition_status`: pending, accepted, declined, countered, withdrawn.
+Goal: a single semantic token system that works in both modes, with a runtime ThemeProvider.
 
-New tables (all with GRANTs → RLS → policies):
-
-```
-plans               role-scoped plan catalogue (admin-managed)
-plan_assignments    user/org → plan, with grant/suspend/lifetime/promo
-vouchers            code, %/fixed, expiry, usage limit, scope
-voucher_redemptions audit of voucher uses
-storage_allocations admin-granted storage on top of plan
-platform_settings   super-admin global key/value
-content_titles      title-level record with content_status + locked_at + locked_by
-content_approvals   approval log: actor, from_status, to_status, note, at
-acquisition_requests buyer → title, terms, status, counter_terms
-invitations         invite-only roles (localization_partner, distributor, admin)
-```
-
-Helper functions:
-- `current_dashboard_role()` — maps legacy roles (creator/executive_producer/client) to new ones and returns the canonical dashboard role.
-- `is_super_admin()` — already exists, reused.
-- `lock_content(title_id)` / `unlock_content(title_id)` — SECURITY DEFINER, audit-logged.
-- `can_signup_as(role)` — only allows content_owner/studio/buyer via the public path.
-
-Legacy role mapping (used at login + by `current_dashboard_role`):
-- `executive_producer` → `content_owner`
-- `creator` → `content_owner`
-- `client` → `buyer`
-- `admin` stays `admin`
-- first admin can be promoted to `super_admin` from Admin Console
-
-## Phase 2 — Magic-link auth + role-restricted signup
-- `/auth` with Create Account (Full Name, Email, Role ∈ {Content Owner, Studio, Buyer}) and Log In (Email only).
-- `signInWithOtp` for both. Callback applies `set_initial_role` only when role is in the allowed set.
-- Role-based redirect: content_owner→`/dashboard/content`, studio→`/dashboard/studio`, buyer→`/dashboard/buyer`, localization_partner→`/dashboard/localization`, distributor→`/dashboard/distribution`, admin→`/admin`, super_admin→`/admin/super`.
-
-## Phase 3 — Public site reduction
-- `Index.tsx`: remove Hero plan grid, CmsHeroBanners, CmsAdZone, PlanFeature, CmsFeaturedFilms, ComparisonTable, Testimonials, CmsNewsEvents, CloudStudioPartners, Pricing.
-- New minimal landing: headline, sub-line, "Create your account and choose the plan that fits your workflow.", primary **Create Account**, secondary **Log In**.
-- Header: Logo · Create Account · Contact Us · Log In.
-- Footer: Terms · Privacy · DMCA · Support.
-
-## Phase 4 — Real role dashboards (no placeholders)
-- Content Owner: title list, upload, submit-for-review, lock state, revenue snapshot (real data only).
-- Studio: productions, deliverables, review links (existing components).
-- Buyer: licensed catalog, **Submit Acquisition Request** form, request status list, invoices.
-- Localization Partner: assigned titles, deliverable upload (invite-only access).
-- Distributor: distribution windows, territory rights (invite-only access).
-
-If a module has no data source yet, it's hidden — not shown as a stub.
-
-## Phase 5 — Content approval + lock lifecycle
-- Status machine enforced by DB triggers.
-- "Submit for review" transitions draft→submitted and locks the title.
-- Admin/Owner actions: approve, request changes, unlock, publish, archive — all audited in `content_approvals`.
-- Buyer's acquisition requests flow into Content Owner inbox.
-
-## Phase 6 — Dynamic pricing + voucher UX
-- Auth-gated `/pricing` reads `plans` filtered by user's role + active + visibility=public.
-- Voucher box on checkout; server-side `redeem-voucher` edge function.
-- Razorpay order amount = `plan.price_amount` + `plan.gst_percent` - voucher discount. **No changes to Razorpay code paths** beyond reading the dynamic amount.
-
-## Phase 7 — Admin & Super Admin
-- Admin: Users, Orgs, Roles, Plans CRUD/archive/duplicate, Vouchers, Storage allocations, Invitations, Approvals queue, Acquisition requests, Content lock overrides, Notifications.
-- Super Admin: Platform settings, feature flags, audit logs, payment settings (view), **OCI config view-only**, email config.
+1. Rewrite `src/index.css`:
+   - Keep current dark palette as `.dark` (default).
+   - Add a new `:root` light palette tuned for "operational comfort" (warm off-white canvas, near-black ink, restrained primary, no neon glows).
+   - Introduce semantic layer tokens beyond shadcn defaults:
+     - `--surface`, `--surface-elevated`, `--surface-sunken`
+     - `--border-subtle`, `--border-strong`
+     - `--text-secondary`, `--text-tertiary`
+     - `--state-success / warning / danger / info` (+ `-foreground`, `-soft`)
+     - `--row-hover`, `--row-selected`
+     - `--chart-1..6`
+   - Demote glow/gradient utilities so they only fire in cinematic surfaces, not on every page.
+2. Extend `tailwind.config.ts` to expose the new tokens as utilities (`bg-surface`, `bg-surface-elevated`, `text-secondary`, `border-subtle`, etc.).
+3. Add `src/components/theme/ThemeProvider.tsx` + `useTheme()` hook:
+   - Modes: `dark` | `light` | `system`.
+   - Persists to `localStorage` (`sv.theme`).
+   - Reacts to `prefers-color-scheme` when `system`.
+   - Mounts class on `<html>`.
+4. Add `ThemeToggle` (segmented Sun / Moon / Monitor) and wire into the app header + admin header.
+5. Default mode by surface family:
+   - Marketing, Creator home, Vault library, Review = `dark` (cinematic).
+   - Admin, Billing, Invoices, Settings, Account = follows user preference, default `system`.
 
 ---
 
-## Hard constraints
-- **No edits** to: `supabase/functions/oci-*`, `oracle-proxy`, `create-razorpay-*`, `verify-razorpay-*`, `razorpay-webhook*`, `razorpay-admin`, `_shared/oci.ts`, `_shared/razorpay-config.ts`, `oracle-gateway.ts`, `ociMultipartUpload.ts`.
-- No drops of existing tables. Marketing components stay in repo but are unlinked from routes.
-- Passwords kept in `auth.users`; UI never offers password sign-in.
+## Phase B — Primitive Component Audit
 
-## Delivery
-After each phase I stop and wait. Phase 1 (DB migration) goes out next.
+Goal: every shared primitive reads from semantic tokens, not literals.
+
+1. Sweep `src/components/ui/*` for hardcoded `bg-white`, `bg-black`, `text-white`, `bg-[#...]`, neon glow defaults; replace with tokens.
+2. Normalize variants on: `Button`, `Card`, `Input`, `Select`, `Textarea`, `Badge`, `Table`, `Dialog`, `Sheet`, `Tabs`, `Tooltip`, `Alert`, `Skeleton`.
+3. Add missing primitives we keep re-inventing across pages:
+   - `PageHeader` (title, eyebrow, description, actions slot)
+   - `StatTile` (label, value, delta, icon)
+   - `SectionCard` (header + body + footer)
+   - `EmptyState`
+   - `DataTable` density variants (`comfortable` | `compact`)
+   - `SegmentedControl`
+
+---
+
+## Phase C — App Shells
+
+Goal: one shell per surface family, OS-consistent.
+
+1. `AppShell` (creator/studio): cinematic top bar + collapsible sidebar, dark by default.
+2. `AdminShell`: operational layout — fixed sidebar, breadcrumbs, search, density toggle. Honors theme.
+3. `BillingShell` / `AccountShell`: light-mode-first, generous whitespace, no glows.
+4. Consistent route header pattern using `PageHeader` everywhere.
+
+---
+
+## Phase D — Surface Refits (page-by-page, additive)
+
+In order of business value:
+1. Index / marketing landing — polish without redesign.
+2. Creator dashboard (`pages/dashboards/*`) — token sweep + `StatTile` / `SectionCard`.
+3. Vault — keep cinematic, tighten density.
+4. Admin — biggest cleanup; tables, filters, modals, finance views.
+5. Invoice / Receipt / Checkout return — operational light surfaces.
+6. Auth / Reset / Onboarding — calmer hierarchy.
+
+Each page change is a token + layout swap; no behavioral changes to data fetching, mutations, or payments.
+
+---
+
+## Phase E — Email Presentation Layer
+
+1. Shared HTML email layout under `supabase/functions/_shared/email/layout.ts` (header bar, logo, body card, footer, dual light/dark friendly).
+2. Refactor existing transactional templates to use it (invoice, receipt, manual-payment-received, welcome, password reset).
+3. No deliverability changes — same `from`, same routes, same triggers.
+
+---
+
+## Phase F — QA Pass
+
+1. Visual sweep of every route in both themes via the preview.
+2. Verify Studio Vault checkout flow still completes in both themes.
+3. Verify admin tables render correctly with new density.
+4. Lighthouse contrast spot-check on critical light-mode pages.
+
+---
+
+## Technical notes
+
+- No new dependencies required; theming via class + CSS vars (already wired through shadcn).
+- `next-themes` is NOT used (Vite project) — custom 60-line provider is enough.
+- Migrations: none. This is presentation-only.
+- Edge functions touched only in Phase E (email layout) — no signature or invocation changes.
+- Types: `src/integrations/supabase/types.ts` untouched (auto-gen).
+
+---
+
+## Out of scope (explicit)
+
+- Razorpay / billing core / entitlements logic
+- RLS, security posture, scanner findings
+- Routing tree changes
+- Auth provider changes
+- New product features
+
+---
+
+## Execution order in this stream
+
+I will start with **Phase A** in the next turn (tokens + ThemeProvider + toggle), confirm the preview renders both modes cleanly, then proceed phase by phase. Each phase ends with a short status note so you can pause or redirect the stream.

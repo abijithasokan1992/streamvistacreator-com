@@ -11,6 +11,7 @@ import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
 import { createHmac } from "node:crypto";
 import { loadRazorpayCreds } from "../_shared/razorpay-config.ts";
 import { logPayment } from "../_shared/payment-logger.ts";
+import { recordTrace, nowIso } from "../_shared/payment-trace.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;

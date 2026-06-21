@@ -10,6 +10,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
 import { loadRazorpayCreds } from "../_shared/razorpay-config.ts";
+import { recordTrace, nowIso } from "../_shared/payment-trace.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -92,6 +93,17 @@ Deno.serve(async (req) => {
     }
 
     await admin.from("storage_topups").update({ razorpay_order_id: order.id }).eq("id", topupId);
+
+    await recordTrace(admin, order.id, {
+      user_id: uid,
+      source: "studio_vault",
+      topup_id: String(topupId),
+      amount_paise: String(amountPaise),
+      currency: "INR",
+      razorpay_order_status: order.status ?? "created",
+      frontend_state: "order_created",
+      extra: { product_id: productId, tb, months, mode: creds.mode },
+    });
 
     return json({
       topupId,

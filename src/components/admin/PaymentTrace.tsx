@@ -58,9 +58,16 @@ function buildTimeline(t: Trace): Step[] {
 }
 
 function summarize(t: Trace): { label: string; tone: "ok" | "warn" | "err" | "pending" } {
-  if (t.final_result === "verified_success" || t.final_result === "verified_success_already_processed" || t.final_result === "webhook_processed") return { label: "✅ Completed", tone: "ok" };
+  const success = t.final_result === "verified_success"
+    || t.final_result === "verified_success_already_processed"
+    || t.final_result === "webhook_processed";
+  if (success) return { label: "✅ Completed", tone: "ok" };
   if (t.final_result?.includes("failed")) return { label: `❌ ${t.final_result}`, tone: "err" };
   if (t.frontend_state === "checkout_dismissed") return { label: "🚪 Checkout Dismissed", tone: "warn" };
+  // Captured + verify ok, webhook still in flight — normal short-window state.
+  if (t.verify_completed_at && !t.webhook_received_at) return { label: "⏳ Verified · webhook delayed", tone: "pending" };
+  // Webhook landed first, frontend verify still pending — also normal.
+  if (t.webhook_received_at && !t.verify_completed_at && !t.final_result?.includes("failed")) return { label: "⏳ Webhook OK · verify delayed", tone: "pending" };
   if (t.payment_completed_at && !t.webhook_received_at && !t.verify_completed_at) return { label: "⚠️ Webhook Missing", tone: "warn" };
   if (t.webhook_received_at && t.final_result?.includes("verify_failed")) return { label: "⚠️ Webhook OK / Verify Failed", tone: "warn" };
   if (t.checkout_opened_at && !t.payment_completed_at) return { label: "⏳ Checkout Open", tone: "pending" };

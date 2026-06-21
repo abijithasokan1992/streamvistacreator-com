@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Loader2, LogOut, ShieldCheck, Crown, RefreshCw, Mail, Phone, Tag, History, Copy, Check, Briefcase, Wallet, Code2, Megaphone, Inbox, Users as UsersIcon, LayoutDashboard, Film, HardDrive, ShieldAlert, Wrench, Package } from "lucide-react";
 import PlatformOwnerConsole from "@/components/admin/PlatformOwnerConsole";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import PlatformOverview from "@/components/admin/PlatformOverview";
 import ProductsAndPlans from "@/components/admin/ProductsAndPlans";
 import OracleStorageMonitor from "@/components/admin/OracleStorageMonitor";
@@ -262,6 +263,7 @@ export default function Admin() {
               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-1" />
             </div>
 
+            <ThemeToggle />
             <button onClick={load} disabled={fetching} className="px-3 py-2 text-sm rounded-md border border-border hover:bg-secondary flex items-center gap-2">
               <RefreshCw className={`w-4 h-4 ${fetching ? "animate-spin" : ""}`} /> Refresh
             </button>

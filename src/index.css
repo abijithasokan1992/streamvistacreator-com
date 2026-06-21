@@ -271,6 +271,39 @@
   :root:not(.dark) .glow-primary,
   :root:not(.dark) .glow-purple,
   :root:not(.dark) .glow-gold { box-shadow: var(--shadow-card); }
+
+  /* Light mode: retarget cinematic white-on-dark micro-tints used across
+     UploadManager, admin tabs, list rows, etc. so they remain readable
+     on light surfaces without rewriting every component. */
+  :root:not(.dark) .bg-white\/5,
+  :root:not(.dark) .bg-white\/10,
+  :root:not(.dark) .bg-white\/\[0\.02\],
+  :root:not(.dark) .bg-white\/\[0\.03\],
+  :root:not(.dark) .bg-white\/\[0\.04\],
+  :root:not(.dark) .bg-white\/\[0\.05\],
+  :root:not(.dark) .bg-white\/\[0\.06\],
+  :root:not(.dark) .bg-white\/\[0\.08\] {
+    background-color: hsl(var(--foreground) / 0.04);
+  }
+  :root:not(.dark) .hover\:bg-white\/5:hover,
+  :root:not(.dark) .hover\:bg-white\/10:hover,
+  :root:not(.dark) .hover\:bg-white\/\[0\.02\]:hover,
+  :root:not(.dark) .hover\:bg-white\/\[0\.04\]:hover,
+  :root:not(.dark) .hover\:bg-white\/\[0\.05\]:hover,
+  :root:not(.dark) .hover\:bg-white\/\[0\.08\]:hover {
+    background-color: hsl(var(--foreground) / 0.06);
+  }
+  :root:not(.dark) .border-white\/5,
+  :root:not(.dark) .border-white\/10,
+  :root:not(.dark) .border-white\/\[0\.06\],
+  :root:not(.dark) .border-white\/\[0\.08\] {
+    border-color: hsl(var(--foreground) / 0.10);
+  }
+  :root:not(.dark) .bg-black\/40,
+  :root:not(.dark) .bg-black\/50,
+  :root:not(.dark) .bg-black\/60 {
+    background-color: hsl(var(--foreground) / 0.45);
+  }
 }
 
 @keyframes cta-breathe {

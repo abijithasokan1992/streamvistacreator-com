@@ -336,8 +336,9 @@ export default function Admin() {
 
           {/* 5. Business & Revenue */}
           <TabsContent value="business" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<Wallet className="w-5 h-5" />} title="Business & Revenue" desc="Invoice-backed revenue, commissions, Razorpay activity and legacy onboarding funnel." />
+            <DeptHeader icon={<Wallet className="w-5 h-5" />} title="Business & Revenue" desc="Payments OS — canonical billing orders, manual payment review, invoice-backed revenue and Razorpay activity." />
             <RazorpayOpsBanner />
+            <BillingOperations />
             <AdminInvoices />
             <PaymentTrace />
             <KammattamMeter />
@@ -345,6 +346,7 @@ export default function Admin() {
             <RazorpayAuditLog />
             <LegacyOnboardingFunnel rows={rows} />
           </TabsContent>
+
 
           {/* 6. Products & Plans */}
           <TabsContent value="products" className="space-y-8 mt-0 animate-fade-in">

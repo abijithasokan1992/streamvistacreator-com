@@ -432,6 +432,14 @@ export default function BuyVaultDialog({ product, open, onOpenChange, onPurchase
             {step === "verification_failed" || step === "payment_failed" || step === "payment_cancelled" ? "Close" : "Cancel"}
           </Button>
           <Button
+            variant="outline"
+            onClick={() => setManualOpen(true)}
+            disabled={isActive || !priced}
+            className="gap-1.5"
+          >
+            <Building2 className="w-4 h-4" /> Bank / UPI / Invoice
+          </Button>
+          <Button
             onClick={buy}
             disabled={isActive || !priced}
             className="bg-gradient-primary text-primary-foreground glow-primary"
@@ -439,15 +447,24 @@ export default function BuyVaultDialog({ product, open, onOpenChange, onPurchase
             {isActive ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ShoppingCart className="w-4 h-4 mr-2" />}
             {step === "verification_failed" || step === "payment_failed" || step === "payment_cancelled"
               ? `Retry · ${priced ? fmtINRDecimal(priced.total) : ""}`
-              : `Pay ${priced ? fmtINRDecimal(priced.total) : ""}`}
+              : `Pay online ${priced ? fmtINRDecimal(priced.total) : ""}`}
           </Button>
         </DialogFooter>
         <p className="text-[11px] text-center text-muted-foreground flex items-center justify-center gap-1 -mt-1">
-          <ShieldCheck className="w-3 h-3" /> Secured by Razorpay · Invoice issued automatically
+          <ShieldCheck className="w-3 h-3" /> Razorpay or manual bank/UPI · Invoice issued automatically
         </p>
         </>
         )}
       </DialogContent>
+      <VaultManualPaymentDialog
+        product={product}
+        tb={effectiveTb}
+        months={months}
+        open={manualOpen}
+        onOpenChange={setManualOpen}
+        onSubmitted={() => { setManualOpen(false); onOpenChange(false); onPurchased?.(); }}
+      />
     </Dialog>
   );
 }
+

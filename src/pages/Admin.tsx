@@ -26,6 +26,7 @@ import RolesManager from "@/components/admin/RolesManager";
 import RazorpayCredentials from "@/components/admin/RazorpayCredentials";
 import RazorpayTestCheckout from "@/components/admin/RazorpayTestCheckout";
 import RazorpayConnectivityStatus from "@/components/admin/RazorpayConnectivityStatus";
+import RazorpayOpsBanner from "@/components/admin/RazorpayOpsBanner";
 import ResendCredentials from "@/components/admin/ResendCredentials";
 import AdminCredentials from "@/components/admin/AdminCredentials";
 import GlobalAssetManager from "@/components/admin/GlobalAssetManager";

@@ -8,6 +8,7 @@ import { AuthProvider, dashboardForRole, useAuth } from "@/hooks/useAuth";
 import RoleGate from "@/components/RoleGate";
 import OnboardingGate from "@/components/OnboardingGate";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import Onboarding from "./pages/Onboarding.tsx";
 import Index from "./pages/Index.tsx";
 import Auth from "./pages/Auth.tsx";
@@ -166,26 +167,28 @@ const HostAwareRoutes = () => {
 
 const App = () => (
   <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <AuthProvider>
-            <SystemMessageProvider>
-              <StorageQuotaProvider>
-                <GlobalErrorListener />
-                
-                <ReferralCapture />
-                <ErrorBoundary>
-                  <HostAwareRoutes />
-                </ErrorBoundary>
-              </StorageQuotaProvider>
-            </SystemMessageProvider>
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <AuthProvider>
+              <SystemMessageProvider>
+                <StorageQuotaProvider>
+                  <GlobalErrorListener />
+
+                  <ReferralCapture />
+                  <ErrorBoundary>
+                    <HostAwareRoutes />
+                  </ErrorBoundary>
+                </StorageQuotaProvider>
+              </SystemMessageProvider>
+            </AuthProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   </ErrorBoundary>
 );
 

@@ -4,11 +4,106 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =============================================================
+   StreamVista Design OS — semantic tokens
+   - .dark  : cinematic brand mode (default)
+   - :root  : operational light mode
+   Every color in components MUST come from a token below.
+   ============================================================= */
+
 @layer base {
+  /* ---------- LIGHT (operational) ---------- */
   :root {
-    /* Premium dark futuristic palette - StreamVista */
+    --background: 40 30% 98%;
+    --foreground: 230 25% 12%;
+
+    --surface: 40 25% 96%;
+    --surface-elevated: 0 0% 100%;
+    --surface-sunken: 40 20% 94%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 230 25% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 230 25% 12%;
+
+    --primary: 222 75% 48%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 250 70% 55%;
+
+    --secondary: 230 15% 92%;
+    --secondary-foreground: 230 25% 18%;
+
+    --muted: 230 15% 94%;
+    --muted-foreground: 230 10% 40%;
+
+    --accent: 38 90% 50%;
+    --accent-foreground: 230 30% 12%;
+
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 145 60% 38%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 90% 48%;
+    --warning-foreground: 230 30% 12%;
+    --info: 210 85% 48%;
+    --info-foreground: 0 0% 100%;
+
+    --border: 230 15% 88%;
+    --border-subtle: 230 15% 92%;
+    --border-strong: 230 15% 78%;
+    --input: 230 15% 90%;
+    --ring: 222 75% 48%;
+
+    --text-secondary: 230 12% 32%;
+    --text-tertiary: 230 10% 50%;
+
+    --row-hover: 230 30% 96%;
+    --row-selected: 222 75% 95%;
+
+    --chart-1: 222 75% 48%;
+    --chart-2: 250 70% 55%;
+    --chart-3: 38 90% 50%;
+    --chart-4: 145 60% 38%;
+    --chart-5: 0 72% 50%;
+    --chart-6: 195 80% 42%;
+
+    --radius: 0.75rem;
+
+    /* Light mode is operational — no neon, soft shadows only */
+    --gradient-hero: linear-gradient(180deg, hsl(40 30% 99%), hsl(40 25% 96%));
+    --gradient-primary: linear-gradient(135deg, hsl(222 75% 48%), hsl(250 70% 55%));
+    --gradient-gold: linear-gradient(135deg, hsl(38 90% 50%), hsl(28 90% 48%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(40 25% 97%));
+    --gradient-border: linear-gradient(135deg, hsl(222 75% 48% / 0.4), hsl(250 70% 55% / 0.25));
+
+    --shadow-glow: 0 1px 2px hsl(230 25% 12% / 0.05), 0 4px 12px hsl(230 25% 12% / 0.06);
+    --shadow-glow-purple: 0 1px 2px hsl(230 25% 12% / 0.05), 0 4px 12px hsl(230 25% 12% / 0.06);
+    --shadow-glow-gold: 0 1px 2px hsl(230 25% 12% / 0.05), 0 4px 12px hsl(230 25% 12% / 0.06);
+    --shadow-card: 0 1px 3px hsl(230 25% 12% / 0.06), 0 8px 24px -12px hsl(230 25% 12% / 0.08);
+    --shadow-elevated: 0 12px 32px -12px hsl(230 25% 12% / 0.12);
+
+    --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 230 25% 18%;
+    --sidebar-primary: 222 75% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 230 15% 94%;
+    --sidebar-accent-foreground: 230 25% 18%;
+    --sidebar-border: 230 15% 88%;
+    --sidebar-ring: 222 75% 48%;
+  }
+
+  /* ---------- DARK (cinematic, brand default) ---------- */
+  .dark {
     --background: 230 45% 5%;
     --foreground: 220 25% 96%;
+
+    --surface: 230 40% 7%;
+    --surface-elevated: 230 38% 10%;
+    --surface-sunken: 230 50% 4%;
 
     --card: 230 40% 8%;
     --card-foreground: 220 25% 96%;
@@ -16,9 +111,9 @@
     --popover: 230 45% 7%;
     --popover-foreground: 220 25% 96%;
 
-    --primary: 220 95% 62%;        /* neon blue */
+    --primary: 220 95% 62%;
     --primary-foreground: 230 45% 5%;
-    --primary-glow: 250 95% 70%;   /* electric purple */
+    --primary-glow: 250 95% 70%;
 
     --secondary: 230 35% 14%;
     --secondary-foreground: 220 25% 96%;
@@ -26,7 +121,7 @@
     --muted: 230 30% 12%;
     --muted-foreground: 220 15% 65%;
 
-    --accent: 45 95% 60%;          /* gold */
+    --accent: 45 95% 60%;
     --accent-foreground: 230 45% 5%;
 
     --destructive: 0 75% 60%;
@@ -34,14 +129,30 @@
 
     --success: 145 70% 50%;
     --success-foreground: 230 45% 5%;
+    --warning: 38 95% 58%;
+    --warning-foreground: 230 45% 5%;
+    --info: 210 95% 62%;
+    --info-foreground: 230 45% 5%;
 
     --border: 230 30% 18%;
+    --border-subtle: 230 30% 14%;
+    --border-strong: 230 30% 24%;
     --input: 230 30% 14%;
     --ring: 220 95% 62%;
 
-    --radius: 1rem;
+    --text-secondary: 220 15% 78%;
+    --text-tertiary: 220 12% 60%;
 
-    /* Gradients */
+    --row-hover: 230 35% 12%;
+    --row-selected: 220 60% 16%;
+
+    --chart-1: 220 95% 62%;
+    --chart-2: 250 95% 70%;
+    --chart-3: 45 95% 60%;
+    --chart-4: 145 70% 50%;
+    --chart-5: 0 75% 60%;
+    --chart-6: 195 95% 60%;
+
     --gradient-hero: radial-gradient(ellipse at top, hsl(250 80% 25% / 0.6), transparent 60%),
                      radial-gradient(ellipse at bottom right, hsl(220 90% 30% / 0.5), transparent 60%),
                      linear-gradient(180deg, hsl(230 50% 6%), hsl(230 45% 4%));
@@ -50,14 +161,11 @@
     --gradient-card: linear-gradient(145deg, hsl(230 40% 11% / 0.9), hsl(230 45% 7% / 0.7));
     --gradient-border: linear-gradient(135deg, hsl(220 95% 62% / 0.5), hsl(250 95% 70% / 0.3), hsl(45 95% 60% / 0.4));
 
-    /* Shadows / glows */
     --shadow-glow: 0 0 60px hsl(220 95% 62% / 0.35);
     --shadow-glow-purple: 0 0 80px hsl(250 95% 70% / 0.4);
     --shadow-glow-gold: 0 0 50px hsl(45 95% 60% / 0.3);
     --shadow-card: 0 20px 60px -20px hsl(230 80% 2% / 0.8);
     --shadow-elevated: 0 30px 80px -30px hsl(220 95% 50% / 0.5);
-
-    --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 
     --sidebar-background: 230 45% 5%;
     --sidebar-foreground: 220 25% 96%;
@@ -96,10 +204,9 @@
     box-shadow: var(--shadow-card);
   }
   .glass-strong {
-    @apply backdrop-blur-2xl border;
-    background: linear-gradient(145deg, hsl(230 40% 13% / 0.95), hsl(230 45% 8% / 0.85));
-    border-color: hsl(var(--primary) / 0.25);
-    box-shadow: var(--shadow-card), inset 0 1px 0 hsl(220 95% 62% / 0.1);
+    @apply backdrop-blur-2xl border border-border;
+    background: var(--gradient-card);
+    box-shadow: var(--shadow-card);
   }
   .gradient-text {
     @apply bg-clip-text text-transparent;
@@ -115,13 +222,13 @@
 
   .grid-bg {
     background-image:
-      linear-gradient(hsl(220 95% 62% / 0.06) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(220 95% 62% / 0.06) 1px, transparent 1px);
+      linear-gradient(hsl(var(--primary) / 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--primary) / 0.06) 1px, transparent 1px);
     background-size: 48px 48px;
     mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
   }
 
-  /* Invisible Guidance — cinematic CTA cues */
+  /* Invisible Guidance — cinematic CTA cues (dark surfaces only) */
   .cta-guide {
     position: relative;
     isolation: isolate;
@@ -149,7 +256,7 @@
   }
   .cta-hint {
     @apply pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full backdrop-blur-xl text-[10px] font-mono-tech uppercase tracking-[0.22em] opacity-0 transition-all duration-500 whitespace-nowrap;
-    background: linear-gradient(145deg, hsl(230 40% 13% / 0.9), hsl(230 45% 8% / 0.75));
+    background: var(--gradient-card);
     border: 1px solid hsl(var(--primary) / 0.35);
     color: hsl(var(--foreground));
     box-shadow: 0 8px 30px -10px hsl(var(--primary) / 0.5);
@@ -157,6 +264,13 @@
   }
   .cta-guide .cta-hint { opacity: 0.85; }
   .cta-guide:hover .cta-hint { opacity: 1; transform: translate(-50%, -4px); }
+
+  /* Light mode: tone down all cinematic glows */
+  :root:not(.dark) .cta-guide::before { opacity: 0.18; filter: blur(10px); animation: none; }
+  :root:not(.dark) .cta-guide::after { display: none; }
+  :root:not(.dark) .glow-primary,
+  :root:not(.dark) .glow-purple,
+  :root:not(.dark) .glow-gold { box-shadow: var(--shadow-card); }
 }
 
 @keyframes cta-breathe {
@@ -172,12 +286,10 @@
   0%, 100% { transform: translate(-50%, 0); }
   50%      { transform: translate(-50%, -3px); }
 }
-
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-
 .animate-fade-in {
   animation: fadeIn 0.6s ease-out both;
 }

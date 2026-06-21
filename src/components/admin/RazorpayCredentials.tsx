@@ -302,11 +302,20 @@ export default function RazorpayCredentials() {
           <ul className="space-y-1.5">
             <li className="flex items-start gap-2">
               <span className="mt-0.5 inline-flex w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-              <span>Production app + payment website expected in Razorpay: <span className="font-mono text-foreground">https://www.streamvistacreator.com</span></span>
+              <span>Canonical app + payment website (used by the app): <span className="font-mono text-foreground">https://www.streamvistacreator.com</span></span>
             </li>
             <li className="flex items-start gap-2">
               <span className="mt-0.5 inline-flex w-1.5 h-1.5 rounded-full bg-foreground/40 shrink-0" />
-              <span>Corporate site (may also exist on the same Razorpay account, but is not the Studio Vault checkout return domain): <span className="font-mono text-foreground">https://www.crayonspictures.com</span></span>
+              <span>Approved corporate website: <span className="font-mono text-foreground">https://www.crayonspictures.com</span></span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 inline-flex w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+              <span>
+                Razorpay merchant review pending — dashboard may still show
+                <span className="font-mono text-foreground"> https://www.crayonsloop.com</span> as
+                the current primary website until approval. External operator state only — the app
+                does NOT use Crayons Loop for callbacks, verify, webhook returns, invoices or auth.
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <span className="mt-0.5 inline-flex w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
@@ -319,7 +328,10 @@ export default function RazorpayCredentials() {
             </li>
           </ul>
           <p className="text-[11px] text-muted-foreground pt-1">
-            The same live Razorpay key may be shared across approved related business websites — this patch does not rotate the key. It only aligns the operator-facing domain guidance.
+            App-side payment success/failure handling is fully decoupled from the Razorpay website
+            review status. Continue product build on the StreamVista Creator domain model; run a
+            real Studio Vault payment after Razorpay approves the website cutover to complete live
+            launch validation.
           </p>
           {SITE_ORIGIN && (
             <p className="text-[11px] text-muted-foreground pt-1">

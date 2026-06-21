@@ -282,6 +282,19 @@ Deno.serve(async (req) => {
     });
   } catch (e) { console.error("razorpay-webhook: audit insert failed", e); }
 
+  // Forensic trace: record receipt of webhook for this order.
+  await recordTrace(supabase, orderId, {
+    payment_id: paymentId,
+    webhook_event: eventType,
+    webhook_signature_valid: signatureValid,
+    webhook_received_at: nowIso(),
+    razorpay_payment_status: payment?.status ?? null,
+    razorpay_order_status: order?.status ?? null,
+    amount_paise: payment?.amount != null ? String(payment.amount) : (order?.amount != null ? String(order.amount) : null),
+    currency: payment?.currency ?? order?.currency ?? null,
+    extra: { event_id: eventId, error_code: payment?.error_code ?? null, error_description: payment?.error_description ?? null },
+  });
+
   if (!signatureValid) return ok({ error: "invalid signature" }, 400);
   if (!event) return ok({ error: "bad json" }, 400);
 
@@ -373,6 +386,10 @@ Deno.serve(async (req) => {
       duration_ms: procTimer(),
       extra: { event_type: eventType },
     });
+    await recordTrace(supabase, orderId, {
+      final_result: eventType === "payment.failed" ? "payment_failed_webhook" : "webhook_processed",
+      extra: { processed_ms: procTimer() },
+    });
     return ok({ received: true });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -388,8 +405,10 @@ Deno.serve(async (req) => {
       error_message: msg, duration_ms: procTimer(),
       extra: { event_type: eventType },
     });
-    // Returning 200 prevents Razorpay from retrying infinitely; the admin
-    // retry endpoint replays the persisted payload from the ledger.
+    await recordTrace(supabase, orderId, {
+      final_result: "webhook_processing_failed",
+      last_error: msg,
+    });
     return ok({ received: true, queued_for_retry: true });
   }
 });

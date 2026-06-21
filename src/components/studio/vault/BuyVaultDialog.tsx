@@ -169,6 +169,13 @@ export default function BuyVaultDialog({ product, open, onOpenChange, onPurchase
         orderId: d.orderId,
       });
 
+      // Forensic trace: checkout opened on the client.
+      supabase.rpc("record_payment_trace_event", {
+        p_order_id: d.orderId,
+        p_event: "checkout_opened",
+        p_extra: { topup_id: d.topupId } as any,
+      }).then(() => {}, () => {});
+
       const rzp = new window.Razorpay!({
         key: d.keyId,
         order_id: d.orderId,
@@ -179,6 +186,12 @@ export default function BuyVaultDialog({ product, open, onOpenChange, onPurchase
         prefill: { email: user.email },
         theme: { color: "#a855f7" },
         handler: async (resp: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
+          // Forensic trace: payment success callback fired on client.
+          supabase.rpc("record_payment_trace_event", {
+            p_order_id: resp.razorpay_order_id,
+            p_event: "payment_success_callback",
+            p_extra: { payment_id: resp.razorpay_payment_id } as any,
+          }).then(() => {}, () => {});
           try {
             await verifyPayment(d.topupId, resp);
           } catch (e) {
@@ -189,8 +202,6 @@ export default function BuyVaultDialog({ product, open, onOpenChange, onPurchase
         },
         modal: {
           ondismiss: () => {
-            // ondismiss fires AFTER the success handler — guard against stale closure
-            // overwriting a verifying / verified / failed state.
             const cur = stepRef.current;
             if (
               cur === "payment_pending_verification" ||
@@ -199,6 +210,11 @@ export default function BuyVaultDialog({ product, open, onOpenChange, onPurchase
               cur === "payment_failed"
             ) return;
             updateStep("payment_cancelled", "Checkout dismissed before payment completed.");
+            supabase.rpc("record_payment_trace_event", {
+              p_order_id: d.orderId,
+              p_event: "checkout_dismissed",
+              p_extra: {} as any,
+            }).then(() => {}, () => {});
           },
         },
       });
@@ -211,6 +227,11 @@ export default function BuyVaultDialog({ product, open, onOpenChange, onPurchase
           paymentId: err?.metadata?.payment_id,
           orderId: err?.metadata?.order_id,
         });
+        supabase.rpc("record_payment_trace_event", {
+          p_order_id: d.orderId,
+          p_event: "payment_failed",
+          p_extra: { message: msg, payment_id: err?.metadata?.payment_id } as any,
+        }).then(() => {}, () => {});
         toast.error(msg);
       });
 

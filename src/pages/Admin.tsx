@@ -38,6 +38,7 @@ import AiMcpControlCenter from "@/components/admin/AiMcpControlCenter";
 import ContentReviewWorkflow from "@/components/admin/ContentReviewWorkflow";
 import AdminInvoices from "@/components/admin/AdminInvoices";
 import PaymentSecurityEvents from "@/components/admin/PaymentSecurityEvents";
+import PaymentTrace from "@/components/admin/PaymentTrace";
 import StudioVaultPricing from "@/components/admin/StudioVaultPricing";
 import AdminStudioVaultPurchases from "@/components/admin/AdminStudioVaultPurchases";
 import CompanyProfileSettings from "@/components/admin/CompanyProfileSettings";
@@ -333,6 +334,7 @@ export default function Admin() {
           <TabsContent value="business" className="space-y-8 mt-0 animate-fade-in">
             <DeptHeader icon={<Wallet className="w-5 h-5" />} title="Business & Revenue" desc="Invoice-backed revenue, commissions, Razorpay activity and legacy onboarding funnel." />
             <AdminInvoices />
+            <PaymentTrace />
             <KammattamMeter />
             <CommissionsTracker />
             <RazorpayAuditLog />

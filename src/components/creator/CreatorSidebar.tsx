@@ -22,7 +22,7 @@ export const SECTIONS: ReadonlyArray<{
   { id: "insights",     label: "Insights",     heading: "Insights",              subhead: "Storage, catalog activity and upload trends.",                   icon: BarChart3 },
   { id: "statements",   label: "Statements",   heading: "Statements",            subhead: "Invoices and billing history (read-only).",                      icon: Receipt },
   { id: "schedule",     label: "Schedule",     heading: "Schedule",              subhead: "Upcoming reviews, approval deadlines and delivery dates.",       icon: CalendarClock },
-  { id: "upgrade",      label: "Upgrade",      heading: "Upgrade",               subhead: "Manage plan and storage.",                                       icon: Crown },
+  { id: "upgrade",      label: "Upgrade",      heading: "Upgrade",               subhead: "Request a plan or storage change — our team handles the rest.",  icon: Crown },
   { id: "help",         label: "Help",         heading: "Help & Support",        subhead: "Contact us, read docs, or submit a ticket.",                     icon: LifeBuoy },
 ];
 

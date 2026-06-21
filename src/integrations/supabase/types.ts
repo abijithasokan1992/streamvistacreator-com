@@ -2073,6 +2073,102 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_traces: {
+        Row: {
+          allocation_created: boolean
+          amount_paise: number | null
+          checkout_opened_at: string | null
+          created_at: string
+          currency: string | null
+          entitlement_completed_at: string | null
+          entitlement_started_at: string | null
+          extra: Json
+          final_result: string | null
+          frontend_state: string | null
+          id: string
+          invoice_created: boolean
+          invoice_id: string | null
+          last_error: string | null
+          order_created_at: string
+          order_id: string
+          payment_completed_at: string | null
+          payment_id: string | null
+          razorpay_order_status: string | null
+          razorpay_payment_status: string | null
+          source: string | null
+          topup_id: string | null
+          updated_at: string
+          user_id: string | null
+          verify_completed_at: string | null
+          verify_started_at: string | null
+          webhook_event: string | null
+          webhook_received_at: string | null
+          webhook_signature_valid: boolean | null
+        }
+        Insert: {
+          allocation_created?: boolean
+          amount_paise?: number | null
+          checkout_opened_at?: string | null
+          created_at?: string
+          currency?: string | null
+          entitlement_completed_at?: string | null
+          entitlement_started_at?: string | null
+          extra?: Json
+          final_result?: string | null
+          frontend_state?: string | null
+          id?: string
+          invoice_created?: boolean
+          invoice_id?: string | null
+          last_error?: string | null
+          order_created_at?: string
+          order_id: string
+          payment_completed_at?: string | null
+          payment_id?: string | null
+          razorpay_order_status?: string | null
+          razorpay_payment_status?: string | null
+          source?: string | null
+          topup_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+          verify_completed_at?: string | null
+          verify_started_at?: string | null
+          webhook_event?: string | null
+          webhook_received_at?: string | null
+          webhook_signature_valid?: boolean | null
+        }
+        Update: {
+          allocation_created?: boolean
+          amount_paise?: number | null
+          checkout_opened_at?: string | null
+          created_at?: string
+          currency?: string | null
+          entitlement_completed_at?: string | null
+          entitlement_started_at?: string | null
+          extra?: Json
+          final_result?: string | null
+          frontend_state?: string | null
+          id?: string
+          invoice_created?: boolean
+          invoice_id?: string | null
+          last_error?: string | null
+          order_created_at?: string
+          order_id?: string
+          payment_completed_at?: string | null
+          payment_id?: string | null
+          razorpay_order_status?: string | null
+          razorpay_payment_status?: string | null
+          source?: string | null
+          topup_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+          verify_completed_at?: string | null
+          verify_started_at?: string | null
+          webhook_event?: string | null
+          webhook_received_at?: string | null
+          webhook_signature_valid?: boolean | null
+        }
+        Relationships: []
+      }
       plan_assignments: {
         Row: {
           created_at: string
@@ -4523,6 +4619,10 @@ export type Database = {
         }
         Returns: number
       }
+      payment_trace_upsert: {
+        Args: { p_order_id: string; p_patch: Json }
+        Returns: string
+      }
       primary_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -4537,6 +4637,10 @@ export type Database = {
         }[]
       }
       realtime_topic_workspace: { Args: { _topic: string }; Returns: string }
+      record_payment_trace_event: {
+        Args: { p_event: string; p_extra?: Json; p_order_id: string }
+        Returns: undefined
+      }
       request_creator_link: {
         Args: { _creator_email: string }
         Returns: boolean

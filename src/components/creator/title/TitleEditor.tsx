@@ -138,7 +138,7 @@ export function TitleEditor({
     // Free-tier guard: 1 submission allowed.
     const t = await fetchFreeTierStatus();
     if (t?.is_free && !t.can_submit) {
-      toast.error("Free plan allows 1 submission. Upgrade to submit more titles.");
+      toast.error("Free plan allows 1 submission. Request an upgrade from the Upgrade tab to submit more titles.");
       return;
     }
     setSubmitting(true);

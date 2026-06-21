@@ -47,7 +47,7 @@ export default function MyTitlesSection() {
         setEditorMode("edit");
         return;
       }
-      toast.error("Free plan limit reached. Upgrade to add more titles.");
+      toast.error("Free plan limit reached. Request an upgrade from the Upgrade tab to add more titles.");
       return;
     }
     setCreating(true);
@@ -62,7 +62,7 @@ export default function MyTitlesSection() {
             <div className="font-medium">Free plan</div>
             <div className="text-muted-foreground mt-0.5">
               You have {tier.draft_count}/1 draft and {tier.lifecycle_count}/1 submission used.
-              Upgrade for unlimited titles.
+              Request an upgrade to add more titles — our team will follow up.
             </div>
           </div>
         </div>

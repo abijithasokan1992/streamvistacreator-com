@@ -12,6 +12,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { loadRazorpayCreds } from "../_shared/razorpay-config.ts";
 import { logPayment, timer } from "../_shared/payment-logger.ts";
+import { recordTrace, nowIso } from "../_shared/payment-trace.ts";
 
 function ok(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {

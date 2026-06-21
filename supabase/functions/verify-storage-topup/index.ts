@@ -72,6 +72,14 @@ Deno.serve(async (req) => {
     }
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
+
+    await recordTrace(admin, razorpay_order_id, {
+      payment_id: razorpay_payment_id,
+      user_id: uid,
+      verify_started_at: nowIso(),
+      frontend_state: "verify_started",
+    });
+
     const creds = await loadRazorpayCreds(admin);
     if (!creds) return json({ error: "Razorpay not configured" }, 503);
 
@@ -83,6 +91,12 @@ Deno.serve(async (req) => {
         severity: "ERROR", source: "edge", action_type: "webhook.signature",
         user_id: uid, order_id: razorpay_order_id, payment_id: razorpay_payment_id,
         error_message: "Signature mismatch on verify-storage-topup",
+      });
+      await recordTrace(admin, razorpay_order_id, {
+        verify_completed_at: nowIso(),
+        frontend_state: "verify_failed_signature",
+        final_result: "verify_failed_signature",
+        last_error: "Signature mismatch",
       });
       return json({ error: "Signature mismatch" }, 400);
     }
@@ -103,10 +117,18 @@ Deno.serve(async (req) => {
 
     if (row.status === "paid") {
       // Idempotent — webhook (or a prior verify call) already finalized this top-up.
-      // Re-project entitlement (safe no-op if already projected) and return success
-      // so the frontend transitions to verified_success instead of error.
       const { data: proj } = await admin.rpc("project_topup_entitlement", { _topup_id: topupId });
       if (proj?.invoice_id) await sendReceipt(admin, proj.invoice_id);
+      await recordTrace(admin, razorpay_order_id, {
+        verify_completed_at: nowIso(),
+        entitlement_completed_at: nowIso(),
+        frontend_state: "verified_success",
+        invoice_id: proj?.invoice_id ?? null,
+        invoice_created: Boolean(proj?.invoice_id),
+        allocation_created: true,
+        final_result: "verified_success_already_processed",
+        razorpay_payment_status: "captured",
+      });
       return json({
         ok: true,
         alreadyProcessed: true,
@@ -119,6 +141,12 @@ Deno.serve(async (req) => {
       .update({ status: "paid", razorpay_payment_id })
       .eq("id", topupId);
 
+    await recordTrace(admin, razorpay_order_id, {
+      entitlement_started_at: nowIso(),
+      frontend_state: "entitlement_projecting",
+      razorpay_payment_status: "captured",
+    });
+
     // Canonical projection: plan_assignments + storage_allocations + invoices
     const { data: proj, error: projErr } = await admin.rpc("project_topup_entitlement", { _topup_id: topupId });
     if (projErr) {
@@ -126,6 +154,12 @@ Deno.serve(async (req) => {
         severity: "ERROR", source: "edge", action_type: "entitlement.projection_failed",
         user_id: uid, order_id: razorpay_order_id, payment_id: razorpay_payment_id,
         error_message: projErr.message, extra: { topup_id: topupId },
+      });
+      await recordTrace(admin, razorpay_order_id, {
+        verify_completed_at: nowIso(),
+        frontend_state: "entitlement_failed",
+        final_result: "entitlement_failed",
+        last_error: projErr.message,
       });
       return json({ error: "Entitlement projection failed", detail: projErr.message }, 500);
     }
@@ -136,6 +170,16 @@ Deno.serve(async (req) => {
       severity: "INFO", source: "edge", action_type: "verify.complete",
       user_id: uid, order_id: razorpay_order_id, payment_id: razorpay_payment_id,
       extra: { topup_id: topupId, invoice_id: proj?.invoice_id, tb_added: proj?.tb_added },
+    });
+
+    await recordTrace(admin, razorpay_order_id, {
+      verify_completed_at: nowIso(),
+      entitlement_completed_at: nowIso(),
+      frontend_state: "verified_success",
+      invoice_id: proj?.invoice_id ?? null,
+      invoice_created: Boolean(proj?.invoice_id),
+      allocation_created: true,
+      final_result: "verified_success",
     });
 
     return json({ ok: true, alreadyProcessed: false, webhookFinalized: false, ...(proj ?? {}) });

@@ -242,8 +242,13 @@ Deno.serve(async (req) => {
     if (action !== "sweep") {
       return new Response(JSON.stringify({ error: "unknown action" }), { status: 400, headers: cors });
     }
-    void cronOk; // currently advisory; sweep is safe to expose
-    const staleMin = Number(body.stale_minutes || STALE_MINUTES_DEFAULT);
+    // Enforce CRON_SECRET when configured to prevent unauthenticated abuse.
+    if (CRON_SECRET && !cronOk) {
+      return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: cors });
+    }
+    // Ignore caller-supplied stale_minutes; always use the safe server-side
+    // default so an attacker cannot force aggressive aborts on in-flight uploads.
+    const staleMin = STALE_MINUTES_DEFAULT;
     const { data: candidates } = await admin
       .from("recent_uploads")
       .select("id, user_id, workspace_id, file_name, file_size, object_key, oci_upload_id, created_at")

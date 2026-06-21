@@ -299,11 +299,16 @@
   :root:not(.dark) .border-white\/\[0\.08\] {
     border-color: hsl(var(--foreground) / 0.10);
   }
+  :root:not(.dark) .bg-black\/20,
+  :root:not(.dark) .bg-black\/30 {
+    background-color: hsl(var(--foreground) / 0.06);
+  }
   :root:not(.dark) .bg-black\/40,
   :root:not(.dark) .bg-black\/50,
   :root:not(.dark) .bg-black\/60 {
     background-color: hsl(var(--foreground) / 0.45);
   }
+  /* Keep dialog/sheet/drawer scrims dark in both modes (intentional modal backdrop) */
 }
 
 @keyframes cta-breathe {

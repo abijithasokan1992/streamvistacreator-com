@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 const Wordmark = () => (
   <div className="font-display font-black tracking-tight text-sm md:text-base uppercase leading-none">
@@ -16,7 +17,8 @@ export const Navbar = () => {
         </Link>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-3 md:gap-5">
+        <div className="flex items-center gap-3 md:gap-4">
+          <ThemeToggle className="hidden sm:inline-flex" />
           <Link
             to="/contact"
             className="text-xs md:text-sm text-muted-foreground hover:text-foreground transition-colors"

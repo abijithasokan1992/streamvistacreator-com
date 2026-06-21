@@ -12,6 +12,7 @@ import ScheduleSection from "@/components/creator/sections/Schedule";
 import UpgradeSection from "@/components/creator/sections/Upgrade";
 import HelpSection from "@/components/creator/sections/Help";
 import EntitlementChip from "@/components/creator/EntitlementChip";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 export default function ContentOwnerDashboard() {
   const { user, role, dashboardRole, loading, signOut } = useAuth();
@@ -57,6 +58,7 @@ export default function ContentOwnerDashboard() {
           </div>
           <div className="flex items-center gap-3">
             <EntitlementChip />
+            <ThemeToggle />
             <button
               onClick={signOut}
               className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5"

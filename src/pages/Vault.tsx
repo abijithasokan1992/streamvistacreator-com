@@ -16,6 +16,7 @@ import {
   Link2, FileText, Activity,
 } from "lucide-react";
 import MyAccount from "@/components/dashboard/MyAccount";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import ReferralRewards from "@/components/dashboard/ReferralRewards";
 import FirstStepsCard from "@/components/dashboard/FirstStepsCard";
 import StorageUsageCard from "@/components/dashboard/StorageUsageCard";
@@ -264,6 +265,7 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <button onClick={signOut} className="px-3 py-2 text-sm rounded-md border border-border/60 hover:bg-secondary inline-flex items-center gap-2">
               <LogOut className="w-4 h-4" /> <span className="hidden sm:inline">Sign out</span>
             </button>

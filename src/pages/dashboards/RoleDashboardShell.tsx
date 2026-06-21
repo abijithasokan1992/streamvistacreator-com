@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { Loader2, LogOut } from "lucide-react";
 import { useAuth, dashboardForRole } from "@/hooks/useAuth";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 /**
  * Honest, empty role dashboard.
@@ -47,12 +48,15 @@ export default function RoleDashboardShell({
           <Link to="/" className="text-sm font-semibold tracking-tight">
             StreamVista
           </Link>
-          <button
-            onClick={signOut}
-            className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5"
-          >
-            <LogOut className="w-3.5 h-3.5" /> Sign out
-          </button>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <button
+              onClick={signOut}
+              className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5"
+            >
+              <LogOut className="w-3.5 h-3.5" /> Sign out
+            </button>
+          </div>
         </div>
       </header>
 

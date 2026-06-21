@@ -4,7 +4,7 @@ export type ThemeMode = "dark" | "light" | "system";
 type ResolvedTheme = "dark" | "light";
 
 const STORAGE_KEY = "sv.theme";
-const DEFAULT_MODE: ThemeMode = "dark"; // brand default
+const DEFAULT_MODE: ThemeMode = "system"; // follow OS; falls back to brand dark when OS is dark
 
 interface ThemeCtx {
   mode: ThemeMode;

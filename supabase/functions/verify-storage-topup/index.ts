@@ -137,7 +137,7 @@ Deno.serve(async (req) => {
       extra: { topup_id: topupId, invoice_id: proj?.invoice_id, tb_added: proj?.tb_added },
     });
 
-    return json({ ok: true, ...(proj ?? {}) });
+    return json({ ok: true, alreadyProcessed: false, webhookFinalized: false, ...(proj ?? {}) });
   } catch (e) {
     console.error("verify-storage-topup error", e);
     return json({ error: "Internal server error" }, 500);

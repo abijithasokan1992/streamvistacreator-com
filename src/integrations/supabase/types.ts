@@ -4928,9 +4928,73 @@ export type Database = {
         }
         Returns: string
       }
+      admin_billing_order_detail: { Args: { _order_id: string }; Returns: Json }
+      admin_billing_orders_list: {
+        Args: {
+          _app_key?: string
+          _limit?: number
+          _rail?: string
+          _status?: string
+        }
+        Returns: {
+          amount_total_paise: number
+          app_key: string
+          created_at: string
+          currency: string
+          customer_email: string
+          customer_user_id: string
+          id: string
+          invoice_id: string
+          invoice_number: string
+          payment_method_mode: string
+          payment_trace_id: string
+          razorpay_order_id: string
+          source_type: string
+          status: string
+          updated_at: string
+        }[]
+      }
       admin_exists: { Args: never; Returns: boolean }
       admin_grant_storage: {
         Args: { _gb: number; _note?: string; _user_id: string }
+        Returns: Json
+      }
+      admin_mark_order_paid: {
+        Args: { _order_id: string; _reason: string }
+        Returns: Json
+      }
+      admin_pending_manual_reviews: {
+        Args: { _limit?: number }
+        Returns: {
+          amount_paid_paise: number
+          app_key: string
+          bank_name: string
+          currency: string
+          customer_email: string
+          customer_user_id: string
+          order_id: string
+          order_status: string
+          order_total_paise: number
+          paid_at: string
+          payer_email: string
+          payer_name: string
+          payer_phone: string
+          payment_channel: string
+          proof_file_path: string
+          remarks: string
+          source_type: string
+          submission_id: string
+          submission_status: string
+          submitted_at: string
+          utr_or_reference: string
+        }[]
+      }
+      admin_review_manual_payment: {
+        Args: {
+          _action: string
+          _review_notes?: string
+          _submission_id: string
+        }
         Returns: Json
       }
       admin_review_queue: {
@@ -5014,6 +5078,15 @@ export type Database = {
         }
         Returns: string
       }
+      create_manual_vault_order: {
+        Args: {
+          _billing_interval_months: number
+          _customer_note?: string
+          _payment_mode: string
+          _vault_product_id: string
+        }
+        Returns: Json
+      }
       creator_free_tier_status: { Args: { _user_id?: string }; Returns: Json }
       creator_resubmit_title: {
         Args: { _note?: string; _title_id: string }
@@ -5045,6 +5118,7 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      fulfill_billing_order: { Args: { _order_id: string }; Returns: Json }
       grant_creator_role: { Args: { _user_id: string }; Returns: undefined }
       has_role: {
         Args: {
@@ -5158,6 +5232,22 @@ export type Database = {
         Returns: string
       }
       studio_vault_upsert_product: { Args: { _payload: Json }; Returns: string }
+      submit_manual_payment_proof: {
+        Args: {
+          _amount_paid_paise: number
+          _bank_name?: string
+          _order_id: string
+          _paid_at: string
+          _payer_email?: string
+          _payer_name?: string
+          _payer_phone?: string
+          _payment_channel: string
+          _proof_file_path?: string
+          _remarks?: string
+          _utr_or_reference: string
+        }
+        Returns: Json
+      }
       submit_title_to_admin: {
         Args: { _note?: string; _title_id: string }
         Returns: undefined

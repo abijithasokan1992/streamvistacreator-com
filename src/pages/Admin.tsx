@@ -377,9 +377,17 @@ export default function Admin() {
               <DeptHeader icon={<Wrench className="w-5 h-5" />} title="Developer Tools" desc="Test tooling, credentials helpers, domain and AI/MCP governance — not for normal operations." />
               <AiMcpControlCenter />
               <DomainHostingPanel />
+              <RazorpayOpsBanner />
               <RazorpayCredentials />
               <RazorpayConnectivityStatus />
-              <RazorpayTestCheckout />
+              <details className="rounded-2xl border border-border/40 bg-secondary/10 p-4">
+                <summary className="cursor-pointer text-sm font-semibold text-muted-foreground hover:text-foreground">
+                  Founder-only ₹1 Razorpay E2E test (developer debug, not real customer flow)
+                </summary>
+                <div className="pt-4">
+                  <RazorpayTestCheckout />
+                </div>
+              </details>
               <ResendCredentials />
               <AdminCredentials />
             </TabsContent>

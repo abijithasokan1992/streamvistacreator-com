@@ -84,11 +84,10 @@ Deno.serve(async (req) => {
     const userClient = createClient(supaUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claims } = await userClient.auth.getClaims(token);
-    const userId = claims?.claims?.sub as string | undefined;
-    const userEmail = claims?.claims?.email as string | undefined;
-    if (!userId) return jsonError(req, "Unauthorized", 401);
+    const { data: userRes, error: userErr } = await userClient.auth.getUser();
+    const userId = userRes?.user?.id;
+    const userEmail = userRes?.user?.email;
+    if (userErr || !userId) return jsonError(req, "Unauthorized", 401);
 
     const supabase = createClient(supaUrl, serviceKey);
     const creds = await loadRazorpayCreds(supabase);

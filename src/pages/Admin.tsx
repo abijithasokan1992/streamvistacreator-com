@@ -44,6 +44,7 @@ import PaymentTrace from "@/components/admin/PaymentTrace";
 import StudioVaultPricing from "@/components/admin/StudioVaultPricing";
 import AdminStudioVaultPurchases from "@/components/admin/AdminStudioVaultPurchases";
 import CompanyProfileSettings from "@/components/admin/CompanyProfileSettings";
+import BillingOperations from "@/components/admin/BillingOperations";
 
 interface Row {
   id: string;

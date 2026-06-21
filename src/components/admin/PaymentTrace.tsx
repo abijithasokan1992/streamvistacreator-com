@@ -177,7 +177,7 @@ export default function PaymentTrace() {
                     <span className="font-mono text-xs">{t.order_id}</span>
                     {t.payment_id && <span className="font-mono text-[11px] text-muted-foreground">{t.payment_id}</span>}
                     {t.source && <Badge variant="outline" className="text-[10px]">{t.source}</Badge>}
-                    <span className="text-xs text-muted-foreground ml-auto">{rupees(t.amount_paise)} · {fmt(t.created_at as unknown as string ?? t.order_created_at)}</span>
+                    <span className="text-xs text-muted-foreground ml-auto">{rupees(t.amount_paise)} · {fmt(t.order_created_at)}</span>
                   </button>
 
                   {isOpen && (

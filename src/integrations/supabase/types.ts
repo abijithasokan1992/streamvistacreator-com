@@ -470,6 +470,30 @@ export type Database = {
           },
         ]
       }
+      billing_apps: {
+        Row: {
+          app_key: string
+          created_at: string
+          description: string | null
+          display_name: string
+          is_active: boolean
+        }
+        Insert: {
+          app_key: string
+          created_at?: string
+          description?: string | null
+          display_name: string
+          is_active?: boolean
+        }
+        Update: {
+          app_key?: string
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          is_active?: boolean
+        }
+        Relationships: []
+      }
       billing_config: {
         Row: {
           api_rate_paise_per_1k: number
@@ -508,6 +532,467 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      billing_ledger_events: {
+        Row: {
+          actor_user_id: string | null
+          billing_order_id: string
+          created_at: string
+          event_type: string
+          id: string
+          payload: Json
+        }
+        Insert: {
+          actor_user_id?: string | null
+          billing_order_id: string
+          created_at?: string
+          event_type: string
+          id?: string
+          payload?: Json
+        }
+        Update: {
+          actor_user_id?: string | null
+          billing_order_id?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_ledger_events_billing_order_id_fkey"
+            columns: ["billing_order_id"]
+            isOneToOne: false
+            referencedRelation: "billing_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      billing_manual_payment_submissions: {
+        Row: {
+          amount_paid_paise: number
+          bank_name: string | null
+          billing_order_id: string
+          created_at: string
+          currency: string
+          id: string
+          paid_at: string | null
+          payer_email: string | null
+          payer_name: string | null
+          payer_phone: string | null
+          payment_channel: string
+          proof_file_path: string | null
+          remarks: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["billing_manual_status"]
+          submitted_by_user_id: string | null
+          updated_at: string
+          utr_or_reference: string | null
+        }
+        Insert: {
+          amount_paid_paise: number
+          bank_name?: string | null
+          billing_order_id: string
+          created_at?: string
+          currency?: string
+          id?: string
+          paid_at?: string | null
+          payer_email?: string | null
+          payer_name?: string | null
+          payer_phone?: string | null
+          payment_channel: string
+          proof_file_path?: string | null
+          remarks?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["billing_manual_status"]
+          submitted_by_user_id?: string | null
+          updated_at?: string
+          utr_or_reference?: string | null
+        }
+        Update: {
+          amount_paid_paise?: number
+          bank_name?: string | null
+          billing_order_id?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          paid_at?: string | null
+          payer_email?: string | null
+          payer_name?: string | null
+          payer_phone?: string | null
+          payment_channel?: string
+          proof_file_path?: string | null
+          remarks?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["billing_manual_status"]
+          submitted_by_user_id?: string | null
+          updated_at?: string
+          utr_or_reference?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_manual_payment_submissions_billing_order_id_fkey"
+            columns: ["billing_order_id"]
+            isOneToOne: false
+            referencedRelation: "billing_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      billing_orders: {
+        Row: {
+          amount_subtotal_paise: number
+          amount_tax_paise: number
+          amount_total_paise: number
+          app_key: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          customer_org_id: string | null
+          customer_user_id: string | null
+          id: string
+          invoice_id: string | null
+          metadata: Json
+          notes: string | null
+          payment_method_mode: Database["public"]["Enums"]["billing_payment_rail"]
+          payment_trace_id: string | null
+          product_id: string | null
+          source_ref_id: string | null
+          source_type: string
+          status: Database["public"]["Enums"]["billing_order_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount_subtotal_paise?: number
+          amount_tax_paise?: number
+          amount_total_paise?: number
+          app_key: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          customer_org_id?: string | null
+          customer_user_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          metadata?: Json
+          notes?: string | null
+          payment_method_mode?: Database["public"]["Enums"]["billing_payment_rail"]
+          payment_trace_id?: string | null
+          product_id?: string | null
+          source_ref_id?: string | null
+          source_type: string
+          status?: Database["public"]["Enums"]["billing_order_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount_subtotal_paise?: number
+          amount_tax_paise?: number
+          amount_total_paise?: number
+          app_key?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          customer_org_id?: string | null
+          customer_user_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          metadata?: Json
+          notes?: string | null
+          payment_method_mode?: Database["public"]["Enums"]["billing_payment_rail"]
+          payment_trace_id?: string | null
+          product_id?: string | null
+          source_ref_id?: string | null
+          source_type?: string
+          status?: Database["public"]["Enums"]["billing_order_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_orders_app_key_fkey"
+            columns: ["app_key"]
+            isOneToOne: false
+            referencedRelation: "billing_apps"
+            referencedColumns: ["app_key"]
+          },
+          {
+            foreignKeyName: "billing_orders_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billing_orders_payment_trace_id_fkey"
+            columns: ["payment_trace_id"]
+            isOneToOne: false
+            referencedRelation: "payment_traces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billing_orders_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "billing_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      billing_payment_attempts: {
+        Row: {
+          amount_paise: number
+          billing_order_id: string
+          created_at: string
+          currency: string
+          failure_reason: string | null
+          gateway_response: Json
+          id: string
+          rail: Database["public"]["Enums"]["billing_payment_rail"]
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          razorpay_signature_valid: boolean | null
+          status: Database["public"]["Enums"]["billing_attempt_status"]
+          updated_at: string
+          utr_or_reference: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          amount_paise?: number
+          billing_order_id: string
+          created_at?: string
+          currency?: string
+          failure_reason?: string | null
+          gateway_response?: Json
+          id?: string
+          rail: Database["public"]["Enums"]["billing_payment_rail"]
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature_valid?: boolean | null
+          status?: Database["public"]["Enums"]["billing_attempt_status"]
+          updated_at?: string
+          utr_or_reference?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          amount_paise?: number
+          billing_order_id?: string
+          created_at?: string
+          currency?: string
+          failure_reason?: string | null
+          gateway_response?: Json
+          id?: string
+          rail?: Database["public"]["Enums"]["billing_payment_rail"]
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature_valid?: boolean | null
+          status?: Database["public"]["Enums"]["billing_attempt_status"]
+          updated_at?: string
+          utr_or_reference?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_payment_attempts_billing_order_id_fkey"
+            columns: ["billing_order_id"]
+            isOneToOne: false
+            referencedRelation: "billing_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      billing_payment_method_configs: {
+        Row: {
+          account_number: string | null
+          bank_name: string | null
+          beneficiary_name: string | null
+          branch: string | null
+          created_at: string
+          created_by: string | null
+          display_name: string
+          id: string
+          ifsc: string | null
+          instructions: string | null
+          is_enabled: boolean
+          metadata: Json
+          qr_image_path: string | null
+          rail: Database["public"]["Enums"]["billing_payment_rail"]
+          scope_app_key: string | null
+          scope_product_types: string[]
+          support_contact: string | null
+          updated_at: string
+          upi_id: string | null
+        }
+        Insert: {
+          account_number?: string | null
+          bank_name?: string | null
+          beneficiary_name?: string | null
+          branch?: string | null
+          created_at?: string
+          created_by?: string | null
+          display_name: string
+          id?: string
+          ifsc?: string | null
+          instructions?: string | null
+          is_enabled?: boolean
+          metadata?: Json
+          qr_image_path?: string | null
+          rail: Database["public"]["Enums"]["billing_payment_rail"]
+          scope_app_key?: string | null
+          scope_product_types?: string[]
+          support_contact?: string | null
+          updated_at?: string
+          upi_id?: string | null
+        }
+        Update: {
+          account_number?: string | null
+          bank_name?: string | null
+          beneficiary_name?: string | null
+          branch?: string | null
+          created_at?: string
+          created_by?: string | null
+          display_name?: string
+          id?: string
+          ifsc?: string | null
+          instructions?: string | null
+          is_enabled?: boolean
+          metadata?: Json
+          qr_image_path?: string | null
+          rail?: Database["public"]["Enums"]["billing_payment_rail"]
+          scope_app_key?: string | null
+          scope_product_types?: string[]
+          support_contact?: string | null
+          updated_at?: string
+          upi_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_payment_method_configs_scope_app_key_fkey"
+            columns: ["scope_app_key"]
+            isOneToOne: false
+            referencedRelation: "billing_apps"
+            referencedColumns: ["app_key"]
+          },
+        ]
+      }
+      billing_price_versions: {
+        Row: {
+          amount_paise: number
+          created_at: string
+          currency: string
+          effective_from: string
+          id: string
+          notes: string | null
+          product_id: string
+          tax_rate: number
+          version: number
+        }
+        Insert: {
+          amount_paise: number
+          created_at?: string
+          currency?: string
+          effective_from?: string
+          id?: string
+          notes?: string | null
+          product_id: string
+          tax_rate?: number
+          version: number
+        }
+        Update: {
+          amount_paise?: number
+          created_at?: string
+          currency?: string
+          effective_from?: string
+          id?: string
+          notes?: string | null
+          product_id?: string
+          tax_rate?: number
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_price_versions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "billing_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      billing_products: {
+        Row: {
+          app_key: string
+          base_amount_paise: number
+          billing_mode: string
+          created_at: string
+          currency: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_self_serve: boolean
+          metadata: Json
+          name: string
+          product_key: string
+          product_type: string
+          target_actor: string
+          tax_mode: string
+          tax_rate: number
+          updated_at: string
+        }
+        Insert: {
+          app_key: string
+          base_amount_paise?: number
+          billing_mode?: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_self_serve?: boolean
+          metadata?: Json
+          name: string
+          product_key: string
+          product_type: string
+          target_actor?: string
+          tax_mode?: string
+          tax_rate?: number
+          updated_at?: string
+        }
+        Update: {
+          app_key?: string
+          base_amount_paise?: number
+          billing_mode?: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_self_serve?: boolean
+          metadata?: Json
+          name?: string
+          product_key?: string
+          product_type?: string
+          target_actor?: string
+          tax_mode?: string
+          tax_rate?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_products_app_key_fkey"
+            columns: ["app_key"]
+            isOneToOne: false
+            referencedRelation: "billing_apps"
+            referencedColumns: ["app_key"]
+          },
+        ]
       }
       branding_settings: {
         Row: {
@@ -4510,6 +4995,10 @@ export type Database = {
         Args: { _code: string; _email?: string }
         Returns: string
       }
+      billing_sync_from_storage_topup: {
+        Args: { _topup_id: string }
+        Returns: string
+      }
       can_signup_as: { Args: { _role: string }; Returns: boolean }
       can_write_workspace: {
         Args: { _user_id: string; _workspace_id: string }
@@ -4734,6 +5223,35 @@ export type Database = {
         | "studio_uploader"
         | "studio_reviewer"
         | "studio_archive_manager"
+      billing_attempt_status:
+        | "initiated"
+        | "succeeded"
+        | "failed"
+        | "expired"
+        | "refunded"
+        | "verified"
+        | "signature_failed"
+      billing_manual_status:
+        | "submitted"
+        | "under_review"
+        | "approved"
+        | "rejected"
+        | "needs_clarification"
+      billing_order_status:
+        | "draft"
+        | "awaiting_payment"
+        | "payment_under_review"
+        | "paid"
+        | "failed"
+        | "cancelled"
+        | "expired"
+        | "refunded"
+      billing_payment_rail:
+        | "razorpay"
+        | "bank_transfer"
+        | "upi_manual"
+        | "invoice_offline"
+        | "admin_mark_paid"
       content_status:
         | "draft"
         | "submitted"
@@ -4909,6 +5427,39 @@ export const Constants = {
         "studio_uploader",
         "studio_reviewer",
         "studio_archive_manager",
+      ],
+      billing_attempt_status: [
+        "initiated",
+        "succeeded",
+        "failed",
+        "expired",
+        "refunded",
+        "verified",
+        "signature_failed",
+      ],
+      billing_manual_status: [
+        "submitted",
+        "under_review",
+        "approved",
+        "rejected",
+        "needs_clarification",
+      ],
+      billing_order_status: [
+        "draft",
+        "awaiting_payment",
+        "payment_under_review",
+        "paid",
+        "failed",
+        "cancelled",
+        "expired",
+        "refunded",
+      ],
+      billing_payment_rail: [
+        "razorpay",
+        "bank_transfer",
+        "upi_manual",
+        "invoice_offline",
+        "admin_mark_paid",
       ],
       content_status: [
         "draft",

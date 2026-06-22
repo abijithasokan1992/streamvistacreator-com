@@ -6966,6 +6966,10 @@ export type Database = {
         Args: { _invoice_id: string; _reason?: string }
         Returns: undefined
       }
+      assert_storage_quota: {
+        Args: { _add_bytes: number; _user_id: string }
+        Returns: Json
+      }
       assign_title_reviewer: {
         Args: { _reviewer: string; _stage: string; _title_id: string }
         Returns: Json

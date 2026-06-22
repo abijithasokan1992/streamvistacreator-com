@@ -1,12 +1,15 @@
 import { cn } from "@/lib/utils";
 import {
-  Home, Film, Bell, BarChart3, Receipt, CalendarClock,
-  Crown, LifeBuoy, Lock,
+  Home, Film, Inbox, Bell, Wallet, LifeBuoy,
+  BarChart3, Receipt, CalendarClock, Lock,
 } from "lucide-react";
 
 export type SectionId =
-  | "home" | "titles" | "updates" | "insights"
-  | "statements" | "schedule" | "upgrade" | "help";
+  | "home" | "titles" | "submissions" | "updates"
+  | "billing" | "help"
+  | "insights" | "statements" | "schedule"
+  // legacy alias kept for old URLs
+  | "upgrade";
 
 type SectionDef = {
   id: SectionId;
@@ -14,24 +17,29 @@ type SectionDef = {
   heading: string;
   subhead?: string;
   icon: React.ComponentType<{ className?: string }>;
-  /** Hidden / locked for Free-tier creators. */
+  /** Hidden for Free-tier creators (kept reachable via direct route for paid users). */
   proOnly?: boolean;
 };
 
 export const SECTIONS: ReadonlyArray<SectionDef> = [
-  { id: "home",       label: "Home",       heading: "Creator Workspace", subhead: "Your titles, submissions and account at a glance.", icon: Home },
-  { id: "titles",     label: "My Titles",  heading: "My Titles",         subhead: "Create, manage and submit your catalog.",           icon: Film },
-  { id: "updates",    label: "Updates",    heading: "Updates",           subhead: "Announcements, review notes and admin messages.",   icon: Bell },
-  { id: "insights",   label: "Insights",   heading: "Insights",          subhead: "Catalog activity, performance and trends.",         icon: BarChart3, proOnly: true },
-  { id: "statements", label: "Statements", heading: "Statements",        subhead: "Invoices and account history.",                     icon: Receipt,   proOnly: true },
-  { id: "schedule",   label: "Schedule",   heading: "Schedule",          subhead: "Reviews, deadlines and delivery dates.",            icon: CalendarClock, proOnly: true },
-  { id: "upgrade",    label: "Upgrade",    heading: "Upgrade",           subhead: "Plan and storage changes are founder-assisted — request and our team follows up.", icon: Crown },
-  { id: "help",       label: "Help",       heading: "Help & Support",    subhead: "Contact us or submit a ticket.",                    icon: LifeBuoy },
+  { id: "home",        label: "Home",              heading: "Creator Workspace", subhead: "Your titles, submissions and account at a glance.",                          icon: Home },
+  { id: "titles",      label: "My Titles",         heading: "My Titles",         subhead: "Create, manage and prepare your catalog for submission.",                   icon: Film },
+  { id: "submissions", label: "Submissions",       heading: "Submissions",       subhead: "Cross-title view of submission state and review progress.",                  icon: Inbox },
+  { id: "billing",     label: "Storage & Billing", heading: "Storage & Billing", subhead: "Plan access (founder-assisted) and self-serve storage add-ons.",            icon: Wallet },
+  { id: "updates",     label: "Updates",           heading: "Updates",           subhead: "Announcements, review notes and admin messages.",                            icon: Bell },
+  { id: "help",        label: "Help",              heading: "Help & Support",    subhead: "Contact us or submit a ticket.",                                             icon: LifeBuoy },
+
+  // Paid-only — hidden entirely from Free sidebar to reduce noise.
+  { id: "insights",    label: "Insights",          heading: "Insights",          subhead: "Catalog activity, performance and trends.",                                  icon: BarChart3,     proOnly: true },
+  { id: "statements",  label: "Statements",        heading: "Statements",        subhead: "Invoices and account history.",                                              icon: Receipt,       proOnly: true },
+  { id: "schedule",    label: "Schedule",          heading: "Schedule",          subhead: "Reviews, deadlines and delivery dates.",                                     icon: CalendarClock, proOnly: true },
 ];
 
-/** Items visible in the sidebar for a given tier. Pro-only items are locked (not hidden) for Free. */
+/** Items visible in the sidebar for a given tier. Pro-only items are hidden for Free. */
 export function visibleSections(isFree: boolean): ReadonlyArray<SectionDef & { locked: boolean }> {
-  return SECTIONS.map((s) => ({ ...s, locked: isFree && !!s.proOnly }));
+  return SECTIONS
+    .filter((s) => !(isFree && s.proOnly))
+    .map((s) => ({ ...s, locked: false }));
 }
 
 export function CreatorSidebar({
@@ -55,19 +63,16 @@ export function CreatorSidebar({
         {items.map((s) => {
           const Icon = s.icon;
           const isActive = s.id === active;
-          const target: SectionId = s.locked ? "upgrade" : s.id;
           return (
             <button
               key={s.id}
-              onClick={() => onSelect(target)}
+              onClick={() => onSelect(s.id)}
               className={cn(
                 "w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors text-left",
                 isActive
                   ? "bg-accent/15 text-foreground"
                   : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground",
-                s.locked && "opacity-70",
               )}
-              title={s.locked ? "Available on Creator Pro — click to upgrade" : undefined}
             >
               <Icon className="w-4 h-4 shrink-0" />
               <span className="flex-1 truncate">{s.label}</span>

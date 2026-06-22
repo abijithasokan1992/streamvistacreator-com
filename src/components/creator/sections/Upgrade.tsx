@@ -141,8 +141,12 @@ export default function UpgradeSection() {
     try {
       const metadata = {
         kind: "creator_upgrade",
+        surface: "creator",
+        request_kind: "plan_change",
         requested_package_key: selected,
         requested_package_name: label,
+        requested_plan: label,
+        current_plan: currentPlanName,
         current_plan_name: currentPlanName,
         current_plan_assignment_id: plan?.id ?? null,
         current_title_count: titleCount,
@@ -152,8 +156,8 @@ export default function UpgradeSection() {
       };
       const { error } = await (supabase as any).from("support_requests").insert({
         user_id: user.id,
-        request_type: "upgrade",
-        subject: `Creator upgrade request — ${label}`,
+        request_type: "plan_upgrade",
+        subject: `Creator plan change request — ${label}`,
         message:
           `Requested package: ${label}\n` +
           `Current plan: ${currentPlanName}\n` +
@@ -164,7 +168,7 @@ export default function UpgradeSection() {
         metadata,
       });
       if (error) throw error;
-      toast.success("Upgrade request submitted. Our team will reach out by email.");
+      toast.success("Plan change request submitted. Our team will reach out by email.");
       setNote("");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not submit request.");
@@ -258,14 +262,14 @@ export default function UpgradeSection() {
       {/* ─────────── SECTION 1 — Plans (founder-assisted) ─────────── */}
       <section className="space-y-4">
         <div className="flex items-baseline justify-between gap-3 flex-wrap">
-          <h2 className="text-base font-semibold font-display">1 · Creator Plans</h2>
+          <h2 className="text-base font-semibold font-display">Plan &amp; workspace access</h2>
           <span className="text-[11px] uppercase tracking-widest text-muted-foreground">Founder-assisted</span>
         </div>
 
         <div className="rounded-xl border border-border/40 bg-secondary/5 p-4 text-xs text-muted-foreground">
-          Creator plans are <span className="text-foreground font-medium">founder-assisted</span> today.
-          Pick a package, tell us what you need, and our team will follow up by email to confirm pricing,
-          provision your account and issue an invoice. Storage add-ons (Section&nbsp;2) are self-serve.
+          Creator plans are <span className="text-foreground font-medium">founder-assisted</span> — pick a package,
+          tell us what you need, and our team confirms pricing and provisions your account by email.
+          Extra storage (below) is self-serve and billed monthly in 1 TB blocks.
         </div>
 
         <div className="grid sm:grid-cols-2 gap-3">
@@ -323,7 +327,7 @@ export default function UpgradeSection() {
 
         <div className="rounded-xl border border-border/40 bg-secondary/5 p-5">
           <div className="flex items-center gap-2 text-sm font-semibold">
-            <LifeBuoy className="w-4 h-4" /> Submit upgrade request
+            <LifeBuoy className="w-4 h-4" /> Request plan change
           </div>
           <p className="text-xs text-muted-foreground mt-1">
             Tell us about your catalog size, timeline and any custom needs. We'll reply by email with
@@ -342,7 +346,7 @@ export default function UpgradeSection() {
             disabled={busy}
             className="mt-3 inline-flex rounded-md bg-accent text-accent-foreground text-xs px-3 py-1.5 disabled:opacity-50"
           >
-            {busy ? "Submitting…" : "Submit Upgrade Request"}
+            {busy ? "Submitting…" : "Request Plan Change"}
           </button>
         </div>
       </section>
@@ -350,7 +354,7 @@ export default function UpgradeSection() {
       {/* ─────────── SECTION 2 — Storage add-ons (self-serve) ─────────── */}
       <section className="space-y-4">
         <div className="flex items-baseline justify-between gap-3 flex-wrap">
-          <h2 className="text-base font-semibold font-display">2 · Creator Storage Add-ons</h2>
+          <h2 className="text-base font-semibold font-display">Storage add-ons</h2>
           <span className="text-[11px] uppercase tracking-widest text-accent">Self-serve · Recurring</span>
         </div>
 

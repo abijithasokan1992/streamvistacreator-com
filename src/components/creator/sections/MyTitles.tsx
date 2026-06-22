@@ -49,7 +49,7 @@ export default function MyTitlesSection() {
         setEditorMode("edit");
         return;
       }
-      toast.error("Free plan limit reached. Request an upgrade from the Upgrade tab to add more titles.");
+      toast.error("Free plan limit reached. Request a plan change from Storage & Billing to add more titles.");
       return;
     }
     setGating(true);
@@ -66,14 +66,14 @@ export default function MyTitlesSection() {
             <div className="font-medium">Creator Basic</div>
             <div className="text-muted-foreground mt-0.5">
               {tier.draft_count}/1 draft · {tier.lifecycle_count}/1 submission used.
-              Upgrade for more titles, more storage and priority review.
+              Request a plan change for more titles, storage and priority review.
             </div>
           </div>
           <a
-            href="?section=upgrade"
+            href="?section=billing"
             className="text-[11px] rounded-md border border-amber-500/40 px-2.5 py-1 hover:bg-amber-500/10 whitespace-nowrap"
           >
-            Upgrade
+            Storage & Billing
           </a>
         </div>
       )}
@@ -85,7 +85,7 @@ export default function MyTitlesSection() {
         <button
           onClick={handleStartCreate}
           disabled={freeLimitHit}
-          title={freeLimitHit ? "Free plan limit reached — upgrade to add more titles" : undefined}
+          title={freeLimitHit ? "Free plan limit reached — request a plan change to add more titles" : undefined}
           className={cn(
             "inline-flex items-center gap-1.5 rounded-md text-xs px-3 py-1.5 transition-colors",
             freeLimitHit

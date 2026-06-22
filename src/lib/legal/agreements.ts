@@ -59,7 +59,7 @@ export async function recordAcceptance(
     agreement_type: agreement.agreement_type,
     version: agreement.version,
     user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
-    context,
+    context: context as never,
   });
   if (error && !/duplicate key/i.test(error.message)) throw error;
 }

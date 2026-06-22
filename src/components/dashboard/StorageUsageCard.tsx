@@ -93,6 +93,9 @@ export default function StorageUsageCard() {
             toast.error("Payment verification failed");
           } else {
             toast.success("+1 TB added to your workspace 🎉");
+            if (user?.id) {
+              await notify(user.id, "storage_topup_paid", "+1 TB storage added", "Your workspace storage entitlement has been expanded. New uploads can use the additional space immediately.");
+            }
             load();
           }
         },

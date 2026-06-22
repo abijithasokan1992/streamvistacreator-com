@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { CreatorSidebar, SECTIONS, type SectionId } from "@/components/creator/CreatorSidebar";
 import HomeSection from "@/components/creator/sections/Home";
 import MyTitlesSection from "@/components/creator/sections/MyTitles";
+import SubmissionsSection from "@/components/creator/sections/Submissions";
 import UpdatesSection from "@/components/creator/sections/Updates";
 import InsightsSection from "@/components/creator/sections/Insights";
 import StatementsSection from "@/components/creator/sections/Statements";
@@ -21,7 +22,9 @@ export default function ContentOwnerDashboard() {
   const [params, setParams] = useSearchParams();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isFree, setIsFree] = useState<boolean>(true);
-  const section = (params.get("section") as SectionId) || "home";
+  const raw = (params.get("section") as SectionId) || "home";
+  // Backward-compat: legacy `?section=upgrade` deep links resolve to Storage & Billing.
+  const section: SectionId = raw === "upgrade" ? "billing" : raw;
 
   useEffect(() => {
     if (!user) return;
@@ -50,9 +53,9 @@ export default function ContentOwnerDashboard() {
     setMobileOpen(false);
   };
 
-  // For Free users, gated sections silently redirect to Upgrade rather than rendering a broken view.
+  // Free-tier: pro-only sections redirect to Storage & Billing rather than rendering empty.
   const def = SECTIONS.find((s) => s.id === section) ?? SECTIONS[0];
-  const effectiveSection: SectionId = isFree && (def as any).proOnly ? "upgrade" : def.id;
+  const effectiveSection: SectionId = isFree && (def as any).proOnly ? "billing" : def.id;
   const current = SECTIONS.find((s) => s.id === effectiveSection)!;
 
   return (
@@ -96,11 +99,12 @@ export default function ContentOwnerDashboard() {
           )}
           {effectiveSection === "home" && <HomeSection onNavigate={setSection} isFree={isFree} />}
           {effectiveSection === "titles" && <MyTitlesSection />}
+          {effectiveSection === "submissions" && <SubmissionsSection onNavigate={setSection} />}
           {effectiveSection === "updates" && <UpdatesSection />}
           {effectiveSection === "insights" && <InsightsSection isFree={isFree} />}
           {effectiveSection === "statements" && <StatementsSection />}
           {effectiveSection === "schedule" && <ScheduleSection />}
-          {effectiveSection === "upgrade" && <UpgradeSection />}
+          {effectiveSection === "billing" && <UpgradeSection />}
           {effectiveSection === "help" && <HelpSection />}
         </section>
       </div>

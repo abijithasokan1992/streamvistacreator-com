@@ -94,7 +94,7 @@ export default function WorkspaceWelcome() {
           </h2>
           <p className="text-xs text-muted-foreground mt-1">
             {s.isFree
-              ? "You're on Creator Basic — request an upgrade any time from the Upgrade tab."
+              ? "You're on Creator Basic — request a plan change any time from Storage & Billing."
               : "Your account is in good standing."}
           </p>
         </div>

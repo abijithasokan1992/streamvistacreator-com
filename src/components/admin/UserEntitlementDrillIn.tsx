@@ -38,9 +38,6 @@ export default function UserEntitlementDrillIn({
   const [topups, setTopups] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [profile, setProfile] = useState<any>(null);
-  const [grantGb, setGrantGb] = useState("");
-  const [grantNote, setGrantNote] = useState("");
-  const [granting, setGranting] = useState(false);
 
   const reload = async (userId: string) => {
     setLoading(true);

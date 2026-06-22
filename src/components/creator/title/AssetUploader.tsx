@@ -192,7 +192,12 @@ export function AssetUploader({
   const acceptAttr = accept ?? (cfg ? cfg.exts.map((e) => `.${e}`).join(",") : undefined);
 
   return (
-    <div className="rounded-lg border border-dashed border-border/50 p-4 space-y-3">
+    <div
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      className={`rounded-lg border border-dashed p-4 space-y-3 transition ${drag ? "border-accent bg-accent/5" : "border-border/50"}`}
+    >
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-medium">{label ?? "Upload file"}</p>

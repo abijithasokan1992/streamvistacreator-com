@@ -130,6 +130,10 @@ export default function StudioDashboard() {
             <StudioRequestPlanChange />
           </div>
           <VaultBillingPanel />
+          <div className="pt-2">
+            <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground font-mono mb-2">Founder-issued invoices</p>
+            <ManualInvoicesList surface="studio" />
+          </div>
         </section>
       </div>
     </RoleDashboardShell>

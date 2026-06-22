@@ -491,6 +491,9 @@ async function runMultipart(p: MultipartParams): Promise<MultipartResult> {
   await Promise.all(Array.from({ length: workerCount }, () => worker()));
 
   if (firstError) {
+    // Session-expired must propagate so the outer wrapper can restart cleanly
+    // instead of treating it as a resumable interruption.
+    if (firstError instanceof UploadSessionExpiredError) throw firstError;
     const msg = firstError instanceof Error ? firstError.message : String(firstError);
     throw new ResumableUploadInterrupted(msg, firstErrorPart, totalChunks);
   }

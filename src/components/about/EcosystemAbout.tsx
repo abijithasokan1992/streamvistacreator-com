@@ -46,7 +46,7 @@ export default function EcosystemAbout() {
               <Building2 className="w-4 h-4" /> About the Ecosystem
             </div>
             <h1 className="font-display text-4xl md:text-5xl font-bold tracking-tight">
-              {profile.parent_company_name}
+              {profile.parent_company_name} — Integrated Media Infrastructure
             </h1>
             <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
               {profile.parent_company_description}

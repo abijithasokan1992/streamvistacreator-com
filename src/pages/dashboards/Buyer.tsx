@@ -154,8 +154,8 @@ export default function BuyerDashboard() {
           ) : (
             <div className="space-y-3">
               {rows.map(r => (
-                <div key={r.id} className="rounded-xl border border-border/40 bg-secondary/10 p-4">
-                  <div className="flex flex-wrap items-center gap-2 justify-between">
+                <details key={r.id} className="rounded-xl border border-border/40 bg-secondary/10 p-4 group">
+                  <summary className="cursor-pointer flex flex-wrap items-center gap-2 justify-between list-none">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-secondary/40 border border-border/60">
@@ -176,9 +176,11 @@ export default function BuyerDashboard() {
                     </div>
                     <div className="text-[10px] text-muted-foreground">
                       Updated {new Date(r.updated_at).toLocaleString()}
+                      <span className="ml-2 underline opacity-70 group-open:opacity-100">View timeline</span>
                     </div>
-                  </div>
-                </div>
+                  </summary>
+                  <RequestTimeline requestId={r.id} />
+                </details>
               ))}
             </div>
           )}

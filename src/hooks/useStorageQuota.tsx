@@ -249,5 +249,3 @@ export function StorageWarningBanner() {
     </div>
   );
 }
-
-}

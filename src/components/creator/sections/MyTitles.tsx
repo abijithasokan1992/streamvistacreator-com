@@ -10,6 +10,7 @@ import {
 import { CONTENT_TYPE_OPTIONS, CONTENT_TYPE_LABEL, type TitleMetadata } from "@/lib/creator/titleSchema";
 import { StatusBadge } from "@/components/creator/title/StatusBadge";
 import { TitleEditor } from "@/components/creator/title/TitleEditor";
+import { AgreementGate } from "@/components/legal/AgreementGate";
 import { cn } from "@/lib/utils";
 
 type Format = TitleMetadata["format"];
@@ -21,6 +22,7 @@ export default function MyTitlesSection() {
   const [loading, setLoading] = useState(true);
   const [tier, setTier] = useState<FreeTierStatus | null>(null);
   const [creating, setCreating] = useState(false);
+  const [gating, setGating] = useState(false);
   const [editorId, setEditorId] = useState<string | null>(null);
   const [editorMode, setEditorMode] = useState<"edit" | "view">("edit");
 
@@ -50,7 +52,7 @@ export default function MyTitlesSection() {
       toast.error("Free plan limit reached. Request an upgrade from the Upgrade tab to add more titles.");
       return;
     }
-    setCreating(true);
+    setGating(true);
   };
 
   const freeLimitHit = !!tier?.is_free && tier.lifecycle_count >= 1 && !tier.can_create_draft;
@@ -95,6 +97,15 @@ export default function MyTitlesSection() {
           {freeLimitHit ? "Add Title — Pro" : "Add Title"}
         </button>
       </div>
+
+      {gating && (
+        <AgreementGate
+          type="creator_master"
+          context={{ action: "create_title" }}
+          onCancel={() => setGating(false)}
+          onAccepted={() => { setGating(false); setCreating(true); }}
+        />
+      )}
 
       {creating && user && (
         <CreateTitleModal

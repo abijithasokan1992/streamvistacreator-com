@@ -683,12 +683,8 @@ function CommercialQueue() {
                   value={noteDraft[r.id] ?? ""}
                   onChange={e => setNoteDraft(d => ({ ...d, [r.id]: e.target.value }))}
                 />
-                <div className="flex justify-between items-center">
-                  {!r.title_id && (
-                    <span className="text-[10px] text-amber-300 inline-flex items-center gap-1">
-                      <ExternalLink className="w-3 h-3" /> Link to a content_title via Content Pipeline if appropriate.
-                    </span>
-                  )}
+                <LinkTitleRow row={r} onLinked={(tid) => setRows(rs => rs.map(x => x.id === r.id ? { ...x, title_id: tid } : x))} />
+                <div className="flex justify-end items-center">
                   <Button size="sm" onClick={() => saveNote(r.id)} className="ml-auto">Save note</Button>
                 </div>
               </div>
@@ -713,4 +709,77 @@ function Metric({ label, value }: { label: string; value: string }) {
 
 function EmptyRow({ label }: { label: string }) {
   return <div className="p-6 text-center text-xs text-muted-foreground">{label}</div>;
+}
+
+function LinkTitleRow({ row, onLinked }: { row: CommercialRow; onLinked: (titleId: string | null) => void }) {
+  const [search, setSearch] = useState("");
+  const [results, setResults] = useState<{ id: string; title: string }[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  const doSearch = async (q: string) => {
+    setSearch(q);
+    if (q.trim().length < 2) { setResults([]); return; }
+    const { data } = await supabase
+      .from("content_titles")
+      .select("id,title")
+      .ilike("title", `%${q.trim()}%`)
+      .limit(10);
+    setResults((data as { id: string; title: string }[]) ?? []);
+  };
+
+  const link = async (titleId: string | null) => {
+    setBusy(true);
+    const { error } = await supabase.from("commercial_requests").update({ title_id: titleId } as never).eq("id", row.id);
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(titleId ? "Linked to title" : "Unlinked");
+    onLinked(titleId);
+    setOpen(false);
+  };
+
+  return (
+    <div className="rounded-lg border border-border/30 bg-background/40 p-2 space-y-2">
+      <div className="flex items-center justify-between gap-2 text-xs">
+        <div className="flex items-center gap-2">
+          <ExternalLink className="w-3 h-3 text-muted-foreground" />
+          <span className="text-muted-foreground">Title link:</span>
+          {row.title_id ? (
+            <code className="font-mono text-foreground/80">{row.title_id.slice(0, 8)}…</code>
+          ) : (
+            <span className="text-amber-300">unlinked</span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {row.title_id && <Button size="sm" variant="ghost" onClick={() => link(null)} disabled={busy}>Unlink</Button>}
+          <Button size="sm" variant="outline" onClick={() => setOpen(o => !o)}>{open ? "Close" : "Link / change"}</Button>
+        </div>
+      </div>
+      {open && (
+        <div className="space-y-2">
+          <Input
+            className="h-8 text-xs"
+            placeholder={`Search title (try "${row.title_query ?? ""}")…`}
+            value={search}
+            onChange={e => doSearch(e.target.value)}
+          />
+          {results.length > 0 && (
+            <div className="rounded border border-border/40 divide-y divide-border/30 max-h-40 overflow-y-auto">
+              {results.map(t => (
+                <button
+                  key={t.id}
+                  className="w-full text-left p-2 text-xs hover:bg-secondary/30 flex items-center justify-between gap-2"
+                  onClick={() => link(t.id)}
+                  disabled={busy}
+                >
+                  <span className="truncate">{t.title}</span>
+                  <span className="font-mono text-[10px] text-muted-foreground">{t.id.slice(0, 8)}…</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }

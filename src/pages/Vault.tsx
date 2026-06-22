@@ -132,7 +132,6 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
       toast.error(`File exceeds remaining storage (${(remaining / 1073741824).toFixed(2)} GB available). Buy storage from Storage & Billing.`);
       return;
     }
-    }
     if (!quota.checkOrPaywall()) return;
     enqueue(file, {
       tier,

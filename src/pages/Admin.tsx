@@ -343,6 +343,7 @@ export default function Admin() {
             <DeptHeader icon={<Wallet className="w-5 h-5" />} title="Business & Revenue" desc="Payments OS — canonical billing orders, manual payment review, invoice-backed revenue and Razorpay activity." />
             <CommercialControlTower />
             <TitleCommercialOpsConsole />
+            <ScreeningOpsConsole />
             <RazorpayOpsBanner />
             <BillingOperations />
             <ManualInvoiceConsole />

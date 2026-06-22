@@ -389,10 +389,44 @@ export default function UpgradeSection() {
           <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-xs text-destructive flex items-start gap-2">
             <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
             <div>
-              <p className="font-semibold">Account is over quota — uploads are paused.</p>
+              <p className="font-semibold">Account is over quota — new uploads are blocked.</p>
               <p className="mt-1 text-destructive/90">
                 Your used storage ({entitlement.used_gb} GB) exceeds your current allowance ({entitlement.total_gb} GB).
-                Files are preserved. Add another 1 TB block below or reduce usage to resume uploads.
+                Existing files are preserved. Add another 1 TB block below or reduce usage to resume uploads.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {(entitlement?.halted_subscriptions ?? 0) > 0 && (
+          <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-xs text-amber-200 flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+            <div>
+              <p className="font-semibold text-amber-100">
+                Payment issue on {entitlement!.halted_subscriptions} storage block{entitlement!.halted_subscriptions! > 1 ? "s" : ""}.
+              </p>
+              <p className="mt-1">
+                Your existing files are safe, but the affected block no longer contributes to your storage allowance.
+                Add a fresh 1 TB block below to restore capacity, or contact support if you need help reactivating the original subscription.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {!entitlement?.over_quota
+          && entitlement?.projected_over_quota_after_cancellations
+          && (entitlement?.cancelling_tb ?? 0) > 0 && (
+          <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-xs text-amber-200 flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+            <div>
+              <p className="font-semibold text-amber-100">
+                Scheduled cancellation will leave you over quota
+                {entitlement?.next_period_end ? ` on ${new Date(entitlement.next_period_end).toLocaleDateString()}` : ""}.
+              </p>
+              <p className="mt-1">
+                After the cycle ends your allowance drops from {entitlement.total_gb} GB to{" "}
+                {entitlement.projected_total_gb_after_cancellations} GB — below your current usage of {entitlement.used_gb} GB.
+                Add storage or reduce usage before then to keep uploads flowing.
               </p>
             </div>
           </div>

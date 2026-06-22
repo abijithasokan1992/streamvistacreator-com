@@ -327,27 +327,44 @@ Deno.serve(async (req) => {
       }
 
       // ---------- Phase 7: total storage quota ----------
-      const { data: prof } = await admin
-        .from("user_profiles")
-        .select("plan_tier, topup_tb")
-        .eq("user_id", userId)
-        .maybeSingle();
-      const quota = planQuotaBytes(prof?.plan_tier, prof?.topup_tb);
-      const { data: usedRows } = await admin
-        .from("recent_uploads")
-        .select("file_size")
-        .eq("user_id", userId)
-        .in("status", ["uploading", "uploaded", "verified", "ready", "completed", "done"]);
-      const usedBytes = (usedRows ?? []).reduce(
-        (sum: number, r: any) => sum + (Number(r.file_size) || 0),
-        0,
-      );
-      if (usedBytes + fileSize > quota) {
-        return json({
-          error: `Upload Failed — storage quota exceeded (${Math.round(quota / GB)} GB total)`,
-          quotaBytes: quota,
-          usedBytes,
-        }, 413, cors);
+      // Authoritative source = creator entitlement RPC. Falls back to the
+      // profile-based PLAN_QUOTA only when the RPC is unavailable.
+      {
+        let quota: number | null = null;
+        let usedBytes = 0;
+        try {
+          const { data: entRows } = await admin.rpc("get_creator_storage_entitlement", { _user_id: userId });
+          const ent: any = Array.isArray(entRows) ? entRows[0] : entRows;
+          if (ent && typeof ent.total_gb === "number") {
+            quota = Number(ent.total_gb) * GB;
+            usedBytes = Math.round(Number(ent.used_gb || 0) * GB);
+          }
+        } catch (_) { /* fall through */ }
+        if (quota === null) {
+          const { data: prof } = await admin
+            .from("user_profiles")
+            .select("plan_tier, topup_tb")
+            .eq("user_id", userId)
+            .maybeSingle();
+          quota = planQuotaBytes(prof?.plan_tier, prof?.topup_tb);
+          const { data: usedRows } = await admin
+            .from("recent_uploads")
+            .select("file_size")
+            .eq("user_id", userId)
+            .in("status", ["uploading", "uploaded", "verified", "ready", "completed", "done"]);
+          usedBytes = (usedRows ?? []).reduce(
+            (sum: number, r: any) => sum + (Number(r.file_size) || 0),
+            0,
+          );
+        }
+        if (usedBytes + fileSize > quota) {
+          return json({
+            error: `Storage limit reached — your workspace has used ${Math.round(usedBytes / GB)} GB of ${Math.round(quota / GB)} GB. Add another 1 TB block in Storage & Billing or request a higher plan.`,
+            code: "storage_quota_exceeded",
+            quotaBytes: quota,
+            usedBytes,
+          }, 413, cors);
+        }
       }
 
       // Idempotent resume: if a prior row exists for the same pendingId and it

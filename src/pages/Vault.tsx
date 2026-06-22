@@ -180,7 +180,7 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
             </button>
           </DialogTrigger>
         </TooltipTrigger>
-        <TooltipContent side="bottom">{quota.locked ? "You've hit the 50 GB free cap. Request more storage from the Upgrade tab." : "Drop a file, paste from clipboard, or ingest from a card — uploads run in the background."}</TooltipContent>
+        <TooltipContent side="bottom">{quota.locked ? `Storage full (${quota.totalGb} GB used). Add a 1 TB block from Storage & Billing to keep uploading.` : "Drop a file, paste from clipboard, or ingest from a card — uploads run in the background."}</TooltipContent></TooltipContent>
       </Tooltip>
 
       <DialogContent className="max-w-xl glass-strong border-border/60">

@@ -244,55 +244,120 @@ function SupportQueue({
 
 /* ----------------------------- Storage queue ------------------------------ */
 
+type StorageRiskRow = {
+  user_id: string;
+  email: string | null;
+  full_name: string | null;
+  plan_tier: string | null;
+  used_gb: number;
+  total_gb: number;
+  projected_total_gb: number;
+  over_quota: boolean;
+  projected_over_quota: boolean;
+  active_blocks: number;
+  cancelling_tb: number;
+  halted_blocks: number;
+  next_period_end: string | null;
+  monthly_paise: number;
+};
+
 function StorageBillingQueue() {
   const [topups, setTopups] = useState<TopupRow[]>([]);
   const [subs, setSubs] = useState<SubscriptionRow[]>([]);
+  const [risk, setRisk] = useState<StorageRiskRow[]>([]);
   const [loading, setLoading] = useState(false);
 
   const load = async () => {
     setLoading(true);
-    const [t, s] = await Promise.all([
+    const [t, s, r] = await Promise.all([
       supabase.from("storage_topups")
         .select("id,user_id,status,tb_added,total_paise,storage_class,source,razorpay_payment_id,created_at")
         .order("created_at", { ascending: false }).limit(50),
       supabase.from("subscriptions")
         .select("id,user_id,status,subscription_type,storage_quantity_tb,cancel_requested_at,current_period_end,created_at")
+        .eq("subscription_type", "creator_storage")
         .order("created_at", { ascending: false }).limit(50),
+      (supabase as any).rpc("admin_list_creator_storage_risk"),
     ]);
     setLoading(false);
     if (t.error) toast.error(t.error.message);
     if (s.error) toast.error(s.error.message);
+    if (r.error) toast.error(r.error.message);
     setTopups((t.data as unknown as TopupRow[]) ?? []);
     setSubs((s.data as unknown as SubscriptionRow[]) ?? []);
+    setRisk((r.data as unknown as StorageRiskRow[]) ?? []);
   };
 
   useEffect(() => { load(); }, []);
 
-  const risky = useMemo(() => {
-    const failed = topups.filter(t => t.status === "failed" || t.status === "pending").length;
+  const counts = useMemo(() => {
+    const halted = subs.filter(s => s.status === "halted" || s.status === "paused").length;
     const cancelling = subs.filter(s => s.cancel_requested_at).length;
-    return { failed, cancelling };
-  }, [topups, subs]);
+    const failedTopups = topups.filter(t => t.status === "failed" || t.status === "pending").length;
+    const overQuota = risk.filter(r => r.over_quota).length;
+    const projectedOver = risk.filter(r => !r.over_quota && r.projected_over_quota).length;
+    return { halted, cancelling, failedTopups, overQuota, projectedOver };
+  }, [topups, subs, risk]);
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground">
-          Recurring storage subscriptions, top-ups, cancellations pending cycle end. For full inspection use the Business & Revenue tab.
+          Self-serve recurring storage: active subscriptions, halted / failed renewals, scheduled cancellations, and accounts currently — or about to be — over quota.
         </p>
         <Button size="sm" variant="outline" onClick={load}><RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} /></Button>
       </div>
 
-      <div className="grid sm:grid-cols-3 gap-3">
-        <Metric label="Pending / failed top-ups" value={String(risky.failed)} />
-        <Metric label="Cancellations pending cycle end" value={String(risky.cancelling)} />
-        <Metric label="Active storage subscriptions" value={String(subs.filter(s => s.status === "active").length)} />
+      <div className="grid sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <Metric label="Active storage subs" value={String(subs.filter(s => s.status === "active").length)} />
+        <Metric label="Cancel @ cycle end" value={String(counts.cancelling)} />
+        <Metric label="Halted / paused" value={String(counts.halted)} />
+        <Metric label="Over quota now" value={String(counts.overQuota)} />
+        <Metric label="Over quota after cancel" value={String(counts.projectedOver)} />
+      </div>
+
+      <div>
+        <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1.5">At-risk accounts</p>
+        <div className="rounded-xl border border-border/40 bg-secondary/10 divide-y divide-border/40 max-h-96 overflow-y-auto">
+          {risk.length === 0 ? <EmptyRow label="No creators with storage activity yet." /> : risk.map(r => {
+            const flag = r.over_quota ? { label: "OVER QUOTA", cls: "border-red-500/40 text-red-300 bg-red-500/10" }
+              : r.halted_blocks > 0 ? { label: "HALTED", cls: "border-amber-500/40 text-amber-300 bg-amber-500/10" }
+              : r.projected_over_quota ? { label: "OVER AFTER CANCEL", cls: "border-amber-500/40 text-amber-300 bg-amber-500/10" }
+              : r.cancelling_tb > 0 ? { label: "CANCEL SCHEDULED", cls: "border-border/60 text-muted-foreground" }
+              : { label: "OK", cls: "border-emerald-500/30 text-emerald-300 bg-emerald-500/10" };
+            return (
+              <div key={r.user_id} className="p-3 text-xs grid grid-cols-12 gap-2 items-center">
+                <div className="col-span-3 min-w-0">
+                  <div className="truncate font-medium text-foreground">{r.email || r.full_name || r.user_id.slice(0, 8) + "…"}</div>
+                  <div className="text-[10px] text-muted-foreground truncate">{r.plan_tier ?? "—"} · {r.user_id.slice(0, 8)}…</div>
+                </div>
+                <div className="col-span-3">
+                  <div>{r.used_gb} GB / {r.total_gb} GB</div>
+                  {r.cancelling_tb > 0 && (
+                    <div className="text-[10px] text-amber-300">→ {r.projected_total_gb} GB after {r.cancelling_tb} TB cancels</div>
+                  )}
+                </div>
+                <div className="col-span-2">
+                  <div>{r.active_blocks} block{r.active_blocks === 1 ? "" : "s"}</div>
+                  {r.halted_blocks > 0 && <div className="text-[10px] text-amber-300">{r.halted_blocks} halted</div>}
+                </div>
+                <div className="col-span-2 text-muted-foreground">
+                  {r.next_period_end ? new Date(r.next_period_end).toLocaleDateString() : "—"}
+                  {r.monthly_paise > 0 && <div className="text-[10px]">₹{Math.round(r.monthly_paise / 100).toLocaleString("en-IN")}/mo</div>}
+                </div>
+                <div className="col-span-2 flex justify-end">
+                  <span className={`px-1.5 py-0.5 rounded border text-[10px] ${flag.cls}`}>{flag.label}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <div className="grid gap-3 lg:grid-cols-2">
         <div>
           <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1.5">Recent storage top-ups</p>
-          <div className="rounded-xl border border-border/40 bg-secondary/10 divide-y divide-border/40 max-h-80 overflow-y-auto">
+          <div className="rounded-xl border border-border/40 bg-secondary/10 divide-y divide-border/40 max-h-64 overflow-y-auto">
             {topups.length === 0 ? <EmptyRow label="No top-ups." /> : topups.map(t => (
               <div key={t.id} className="p-3 text-xs flex flex-wrap items-center justify-between gap-2">
                 <div className="font-mono truncate">{t.user_id.slice(0, 8)}…</div>
@@ -306,12 +371,12 @@ function StorageBillingQueue() {
         </div>
         <div>
           <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1.5">Recurring subscriptions</p>
-          <div className="rounded-xl border border-border/40 bg-secondary/10 divide-y divide-border/40 max-h-80 overflow-y-auto">
+          <div className="rounded-xl border border-border/40 bg-secondary/10 divide-y divide-border/40 max-h-64 overflow-y-auto">
             {subs.length === 0 ? <EmptyRow label="No subscriptions." /> : subs.map(s => (
               <div key={s.id} className="p-3 text-xs flex flex-wrap items-center justify-between gap-2">
                 <div className="font-mono truncate">{s.user_id.slice(0, 8)}…</div>
                 <div>{s.subscription_type ?? "—"}{s.storage_quantity_tb ? ` · ${s.storage_quantity_tb} TB` : ""}</div>
-                <div className={`px-1.5 py-0.5 rounded border text-[10px] ${s.status === "active" ? "border-emerald-500/30 text-emerald-300 bg-emerald-500/10" : "border-border/60 text-muted-foreground"}`}>{s.status}</div>
+                <div className={`px-1.5 py-0.5 rounded border text-[10px] ${s.status === "active" ? "border-emerald-500/30 text-emerald-300 bg-emerald-500/10" : s.status === "halted" || s.status === "paused" ? "border-amber-500/30 text-amber-300 bg-amber-500/10" : "border-border/60 text-muted-foreground"}`}>{s.status}</div>
                 {s.cancel_requested_at && <div className="text-amber-300 text-[10px]">cancel @ cycle end</div>}
                 <div className="text-muted-foreground">{s.current_period_end ? new Date(s.current_period_end).toLocaleDateString() : ""}</div>
               </div>

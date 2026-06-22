@@ -81,11 +81,12 @@ export default function VaultManualPaymentDialog({ product, tb, months, open, on
     if (error) { setBusy(false); toast.error(error.message); return; }
     const d = data as any;
     setOrderId(d.order_id); setTopupId(d.topup_id);
-    // Fetch payment method configs *after* the order exists — RLS gates
-    // access to bank/UPI details on the presence of an active billing order.
-    const { data: pmcRows } = await supabase
-      .from("billing_payment_method_configs")
-      .select("*").eq("is_enabled", true);
+    // Fetch payment method configs *after* the order exists, through a
+    // SECURITY DEFINER RPC that only returns details for an order the caller owns.
+    const { data: pmcRows } = await (supabase as any).rpc(
+      "get_payment_method_configs_for_my_order",
+      { _order_id: d.order_id },
+    );
     setConfigs((pmcRows as PMC[]) ?? []);
     setBusy(false);
     if (rail === "invoice_offline") {

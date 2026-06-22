@@ -5119,6 +5119,23 @@ export type Database = {
         Returns: number
       }
       fulfill_billing_order: { Args: { _order_id: string }; Returns: Json }
+      get_payment_method_configs_for_my_order: {
+        Args: { _order_id: string }
+        Returns: {
+          account_number: string
+          bank_name: string
+          beneficiary_name: string
+          branch: string
+          display_name: string
+          id: string
+          ifsc: string
+          instructions: string
+          qr_image_path: string
+          rail: string
+          support_contact: string
+          upi_id: string
+        }[]
+      }
       grant_creator_role: { Args: { _user_id: string }; Returns: undefined }
       has_role: {
         Args: {

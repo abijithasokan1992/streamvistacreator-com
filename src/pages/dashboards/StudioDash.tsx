@@ -4,6 +4,7 @@ import RoleDashboardShell from "./RoleDashboardShell";
 import VaultPlanCards from "@/components/studio/vault/VaultPlanCards";
 import MyVaultSummary from "@/components/studio/vault/MyVaultSummary";
 import VaultBillingPanel from "@/components/studio/vault/VaultBillingPanel";
+import StudioRequestService from "@/components/studio/StudioRequestService";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
@@ -92,7 +93,13 @@ export default function StudioDashboard() {
 
         {/* Vault services (reserved space, non-blocking) */}
         <section>
-          <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground font-mono mb-2">Vault Services</p>
+          <div className="flex items-end justify-between mb-2">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground font-mono">Vault Services</p>
+              <p className="text-xs text-muted-foreground">Request operator-led services for your vault and titles. Pricing is confirmed before any paid work begins.</p>
+            </div>
+            <StudioRequestService />
+          </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             {[
               "Proxy generation",

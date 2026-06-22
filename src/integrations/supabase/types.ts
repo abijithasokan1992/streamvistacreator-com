@@ -1186,14 +1186,16 @@ export type Database = {
           buyer_user_id: string
           created_at: string
           id: string
+          interest_summary: string | null
           message: string | null
-          owner_user_id: string
+          owner_user_id: string | null
           request_type: Database["public"]["Enums"]["commercial_request_type"]
           state: Database["public"]["Enums"]["commercial_request_state"]
           state_changed_at: string
           state_changed_by: string | null
           terms: Json
-          title_id: string
+          title_id: string | null
+          title_query: string | null
           updated_at: string
         }
         Insert: {
@@ -1203,14 +1205,16 @@ export type Database = {
           buyer_user_id: string
           created_at?: string
           id?: string
+          interest_summary?: string | null
           message?: string | null
-          owner_user_id: string
+          owner_user_id?: string | null
           request_type: Database["public"]["Enums"]["commercial_request_type"]
           state?: Database["public"]["Enums"]["commercial_request_state"]
           state_changed_at?: string
           state_changed_by?: string | null
           terms?: Json
-          title_id: string
+          title_id?: string | null
+          title_query?: string | null
           updated_at?: string
         }
         Update: {
@@ -1220,14 +1224,16 @@ export type Database = {
           buyer_user_id?: string
           created_at?: string
           id?: string
+          interest_summary?: string | null
           message?: string | null
-          owner_user_id?: string
+          owner_user_id?: string | null
           request_type?: Database["public"]["Enums"]["commercial_request_type"]
           state?: Database["public"]["Enums"]["commercial_request_state"]
           state_changed_at?: string
           state_changed_by?: string | null
           terms?: Json
-          title_id?: string
+          title_id?: string | null
+          title_query?: string | null
           updated_at?: string
         }
         Relationships: [

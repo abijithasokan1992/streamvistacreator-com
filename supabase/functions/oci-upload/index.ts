@@ -322,13 +322,23 @@ Deno.serve(async (req) => {
     let quota: number | null = null;
     let usedBytes = 0;
     try {
-      const { data: entRows } = await admin.rpc("get_creator_storage_entitlement", { _user_id: userId });
-      const ent: any = Array.isArray(entRows) ? entRows[0] : entRows;
-      if (ent && typeof ent.total_gb === "number") {
-        quota = Number(ent.total_gb) * GB;
-        usedBytes = Math.round(Number(ent.used_gb || 0) * GB);
+      const { data: ent } = await admin.rpc("get_workspace_storage_entitlement", { _user_id: userId });
+      if (ent && typeof (ent as any).total_storage_gb !== "undefined") {
+        quota = Number((ent as any).total_storage_gb) * GB;
+        usedBytes = Number((ent as any).used_bytes ?? 0);
       }
     } catch (_) { /* fall through */ }
+    if (quota === null) {
+      // Legacy fallback for any environment still on the old RPC.
+      try {
+        const { data: entRows } = await admin.rpc("get_creator_storage_entitlement", { _user_id: userId });
+        const e: any = Array.isArray(entRows) ? entRows[0] : entRows;
+        if (e && typeof e.total_gb === "number") {
+          quota = Number(e.total_gb) * GB;
+          usedBytes = Math.round(Number(e.used_gb || 0) * GB);
+        }
+      } catch (_) { /* fall through */ }
+    }
     if (quota === null) {
       const { data: prof } = await admin.from("user_profiles")
         .select("plan_tier, topup_tb").eq("user_id", userId).maybeSingle();
@@ -338,6 +348,7 @@ Deno.serve(async (req) => {
         .in("status", ["uploading", "uploaded", "verified", "ready", "completed", "done"]);
       usedBytes = (usedRows ?? []).reduce((s: number, r: any) => s + (Number(r.file_size) || 0), 0);
     }
+
     if (usedBytes + file.size > quota) {
       return new Response(JSON.stringify({
         error: `Storage limit reached — your workspace has used ${Math.round(usedBytes / GB)} GB of ${Math.round(quota / GB)} GB. Add another 1 TB block in Storage & Billing or request a higher plan.`,

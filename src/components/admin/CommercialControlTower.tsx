@@ -97,7 +97,9 @@ export default function CommercialControlTower() {
           <SupportQueue
             requestTypes={["plan_upgrade", "upgrade"]}
             emptyLabel="No plan / upgrade requests."
-            helpText="Founder-assisted plan changes (Creator Pro, Creator Studio, Studio plans, custom)."
+            helpText="Founder-assisted plan changes (Creator Pro, Creator Studio, Studio plans, custom). Quote → invoice → provision."
+            showFinance
+            showProvision
           />
         </TabsContent>
 
@@ -113,7 +115,8 @@ export default function CommercialControlTower() {
           <SupportQueue
             requestTypes={["service"]}
             emptyLabel="No paid service requests."
-            helpText="QC, mastering, anti-piracy, delivery prep, ingest / migration."
+            helpText="QC, mastering, anti-piracy, delivery prep, ingest / migration. Bill via founder-assisted invoice."
+            showFinance
           />
         </TabsContent>
       </Tabs>

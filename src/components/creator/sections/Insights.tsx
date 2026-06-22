@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { Database, Film, UploadCloud } from "lucide-react";
+import { Database, Film, UploadCloud, Lock, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useSearchParams } from "react-router-dom";
 
-export default function InsightsSection() {
+export default function InsightsSection({ isFree = false }: { isFree?: boolean }) {
   const { user } = useAuth();
+  const [, setParams] = useSearchParams();
   const [storageBytes, setStorageBytes] = useState(0);
   const [titleCount, setTitleCount] = useState(0);
   const [uploads30, setUploads30] = useState(0);
@@ -47,9 +49,31 @@ export default function InsightsSection() {
         {card(Film, "Title Count", String(titleCount))}
         {card(UploadCloud, "Uploads (30d)", String(uploads30))}
       </div>
-      <div className="rounded-xl border border-dashed border-border/50 bg-secondary/5 p-6 text-center">
-        <p className="text-sm">Additional Analytics Coming Soon</p>
-      </div>
+
+      {isFree ? (
+        <button
+          onClick={() => setParams({ section: "upgrade" })}
+          className="w-full rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-accent/5 p-6 text-left flex items-start gap-4 hover:from-amber-500/15"
+        >
+          <div className="rounded-full bg-amber-500/15 p-2.5">
+            <Lock className="w-5 h-5 text-amber-300" />
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold">Advanced analytics are on Creator Pro</p>
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed max-w-prose">
+              Viewership trends, licensing performance, channel breakdowns and revenue reporting unlock when you upgrade.
+              Free accounts see operational metrics only.
+            </p>
+            <span className="inline-flex items-center gap-1.5 text-xs text-accent mt-2 font-medium">
+              Request upgrade <ArrowRight className="w-3 h-3" />
+            </span>
+          </div>
+        </button>
+      ) : (
+        <div className="rounded-xl border border-dashed border-border/50 bg-secondary/5 p-6 text-center">
+          <p className="text-sm">Advanced analytics modules are being rolled out — your account will see them as they ship.</p>
+        </div>
+      )}
     </div>
   );
 }

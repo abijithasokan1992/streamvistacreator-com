@@ -77,7 +77,7 @@ export default function ScreeningRoom() {
 
   const data = state.data;
   if (!data || !data.ok) {
-    const reason = (data && !data.ok) ? data.reason : "not_found";
+    const reason = (data && data.ok === false) ? data.reason : "not_found";
     const copy = denyCopy[reason] ?? denyCopy.not_found;
     return (
       <div className="min-h-dvh grid place-items-center bg-black text-white p-6">

@@ -124,6 +124,11 @@ export default function Auth() {
 
   return (
     <main className="relative min-h-dvh bg-background text-foreground grid place-items-center px-4 py-12">
+      <Seo
+        title="Sign in to StreamVista Cloud X — Creator Studio"
+        description="Sign in or create your StreamVista Cloud X account to upload, review and deliver film projects from set to screen."
+        path="/auth"
+      />
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-40 -left-32 w-[480px] h-[480px] rounded-full bg-primary/15 blur-[140px]" />
         <div className="absolute -bottom-40 -right-32 w-[480px] h-[480px] rounded-full bg-accent/15 blur-[140px]" />

@@ -286,15 +286,8 @@ function InvoiceEditor({
 
   const resolveUser = async () => {
     if (userId) return userId;
-    if (!userEmail) { toast.error("Provide user email"); return null; }
-    const { data, error } = await (supabase as any).rpc("admin_get_user_id_by_email", { _email: userEmail.trim() });
-    if (error || !data) {
-      // fallback: try user_profiles join (may not exist); ask admin to paste UUID
-      toast.error("Could not resolve email — paste the user UUID instead");
-      return null;
-    }
-    setUserId(data as string);
-    return data as string;
+    toast.error("Paste the customer's user UUID (visible in the request / admin user table).");
+    return null;
   };
 
   const save = async () => {

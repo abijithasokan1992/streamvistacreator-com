@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { computePricePreview, fmtINR, fmtINRDecimal, INTERVAL_OPTIONS, IntervalMonths, STORAGE_CLASS_META, VaultProduct } from "@/lib/studioVault";
 import VaultManualPaymentDialog from "./VaultManualPaymentDialog";
+import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
 
 declare global { interface Window { Razorpay?: any } }
 
@@ -157,6 +158,7 @@ export default function BuyVaultDialog({ product, open, onOpenChange, onPurchase
     updateStep("creating_order", "Preparing secure checkout…");
 
     try {
+      assertLiveCheckoutHost();
       await loadRazorpay();
 
       const { data, error } = await supabase.functions.invoke("create-vault-purchase", {

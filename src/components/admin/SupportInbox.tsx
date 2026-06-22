@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2, Inbox, Send, CheckCircle2, Mail } from "lucide-react";
+import { Loader2, Inbox, Send, CheckCircle2, Mail, Crown, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -12,7 +12,9 @@ interface Req {
   status: string;
   admin_reply: string | null;
   user_email?: string | null;
+  metadata?: Record<string, any> | null;
   created_at: string;
+  invoice?: { id: string; invoice_number: string; total_paise: number; status: string } | null;
 }
 
 const STATUSES = ["open", "in_progress", "resolved", "closed"];
@@ -27,11 +29,16 @@ export default function SupportInbox() {
     setLoading(true);
     const { data, error } = await supabase
       .from("support_requests")
-      .select("*")
+      .select("*, invoice:invoices!invoices_support_request_id_fkey(id,invoice_number,total_paise,status)")
       .order("created_at", { ascending: false });
     setLoading(false);
     if (error) return toast.error(error.message);
-    setRows((data as Req[]) ?? []);
+    // invoice comes back as array from PostgREST embed — flatten to first
+    const normalized = ((data as any[]) ?? []).map((r) => ({
+      ...r,
+      invoice: Array.isArray(r.invoice) ? (r.invoice[0] ?? null) : r.invoice ?? null,
+    })) as Req[];
+    setRows(normalized);
   };
 
   useEffect(() => { load(); }, []);
@@ -101,6 +108,29 @@ export default function SupportInbox() {
                   </select>
                 </div>
                 <p className="text-sm mt-2 whitespace-pre-wrap">{r.message}</p>
+
+                {/* Structured upgrade metadata (creator managed model) */}
+                {r.metadata?.kind === "creator_upgrade" && (
+                  <div className="mt-3 rounded-lg border border-accent/30 bg-accent/5 p-3 text-xs space-y-1">
+                    <div className="inline-flex items-center gap-1.5 font-semibold text-foreground">
+                      <Crown className="w-3.5 h-3.5 text-accent" /> Creator upgrade request
+                    </div>
+                    <div><span className="text-muted-foreground">Requested package:</span> <b>{r.metadata.requested_package_name}</b> <span className="text-muted-foreground">({r.metadata.requested_package_key})</span></div>
+                    <div><span className="text-muted-foreground">Current plan:</span> {r.metadata.current_plan_name ?? "—"}</div>
+                    <div><span className="text-muted-foreground">Titles:</span> {r.metadata.current_title_count ?? "—"} · <span className="text-muted-foreground">Storage used:</span> {r.metadata.current_storage_gb ?? "—"} GB</div>
+                    <div className="pt-1 border-t border-border/40 mt-2">
+                      <span className="text-muted-foreground">Invoice:</span>{" "}
+                      {r.invoice ? (
+                        <a href={`/invoice/${r.invoice.id}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-accent hover:underline">
+                          <FileText className="w-3 h-3" /> {r.invoice.invoice_number} · ₹{(r.invoice.total_paise / 100).toFixed(2)} · {r.invoice.status}
+                        </a>
+                      ) : (
+                        <span className="text-amber-400">Not issued yet</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div className="mt-3 space-y-2">
                   <textarea
                     defaultValue={r.admin_reply ?? ""}

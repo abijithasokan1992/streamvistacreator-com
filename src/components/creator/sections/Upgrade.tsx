@@ -145,7 +145,7 @@ export default function UpgradeSection() {
         <div className="rounded-xl border border-border/40 bg-secondary/5 p-5">
           <div className="flex items-center gap-2 text-xs text-muted-foreground"><Crown className="w-3.5 h-3.5" /> Current Plan</div>
           <div className="text-xl font-semibold font-display mt-2">
-            {plan?.plan?.name || profile?.plan_tier || "Creator Basic"}
+            {currentPlanName}
           </div>
           {plan?.status && <p className="text-[11px] text-muted-foreground mt-1">Status: {plan.status}</p>}
         </div>

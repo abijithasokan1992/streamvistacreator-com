@@ -3,6 +3,7 @@ import { Loader2, ShieldAlert, Sparkles, ArrowUpRight, Lock } from "lucide-react
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PAYG_TB_INR, FREE_STORAGE_GB } from "@/components/streamvista/plans";
@@ -95,6 +96,7 @@ export function StorageQuotaProvider({ children }: { children: React.ReactNode }
     setPaying(true);
     const t = toast.loading("Opening Razorpay…");
     try {
+      assertLiveCheckoutHost();
       const { data, error } = await supabase.functions.invoke("create-storage-topup", { body: { tb: 1 } });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);

@@ -3,6 +3,7 @@ import { HardDrive, Zap, Sparkles, Loader2, ArrowUpRight } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
 import {
   PAYG_TB_INR,
   FREE_STORAGE_GB,
@@ -53,6 +54,7 @@ export default function StorageUsageCard() {
     setToppingUp(true);
     const t = toast.loading("Opening Razorpay…");
     try {
+      assertLiveCheckoutHost();
       const { data, error } = await supabase.functions.invoke("create-storage-topup", {
         body: { tb: 1 },
       });

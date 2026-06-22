@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { logCheckoutTelemetry } from "@/lib/paymentTelemetry";
+import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
 
 /**
  * CreatorPlanCard
@@ -43,6 +44,7 @@ export default function CreatorPlanCard({ onPurchased }: { onPurchased?: () => v
     setBusy(true);
     const t = toast.loading("Opening Razorpay…");
     try {
+      assertLiveCheckoutHost();
       const { data, error } = await supabase.functions.invoke("create-storage-topup", {
         body: { tb: 1 },
       });

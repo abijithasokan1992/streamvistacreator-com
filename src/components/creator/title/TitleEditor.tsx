@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { X, Loader2, Send, Lock, ShieldCheck, Clock, CheckCircle2, Circle, ArrowRight, Check } from "lucide-react";
+import { X, Loader2, Send, Lock, ShieldCheck, Clock, CheckCircle2, Circle, ArrowRight, Check, Unlock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   getTitle, listAssets, saveTitleMetadata, submitTitle,
@@ -12,6 +12,8 @@ import {
 } from "@/lib/creator/titleSchema";
 import { AssetUploader, AssetList } from "./AssetUploader";
 import { StatusBadge } from "./StatusBadge";
+import RequestEditButton from "@/components/creator/RequestEditButton";
+import { useTitleLock } from "@/hooks/useTitleLock";
 
 type TabId = "overview" | "metadata" | "assets" | "legal" | "submission";
 
@@ -43,7 +45,26 @@ export function TitleEditor({
   const [name, setName] = useState("");
   const [meta, setMeta] = useState<TitleMetadata | null>(null);
 
-  const readOnly = mode === "view" || !!title?.locked;
+  const lockState = useTitleLock(titleId);
+  const titleLocked = !!title?.locked || lockState.isLocked;
+  const readOnly = mode === "view" || titleLocked;
+  const metadataLocked = mode === "view" || (titleLocked && !lockState.isTabEditable("metadata"));
+  const assetsLockedFor = (cat: AssetCategory): boolean => {
+    if (mode === "view") return true;
+    if (!titleLocked) return false;
+    const map: Record<string, "master_file" | "trailer" | "poster" | "subtitles_audio" | "legal_documents"> = {
+      feature_film: "master_file",
+      trailer: "trailer",
+      poster: "poster",
+      censor_certificate: "legal_documents",
+      censor_cert: "legal_documents",
+      ownership_documents: "legal_documents",
+      ownership: "legal_documents",
+    };
+    const key = map[cat];
+    if (!key) return true;
+    return !lockState.isSectionEditable(key);
+  };
   const debounceRef = useRef<number | null>(null);
   const loadedRef = useRef(false);
 
@@ -188,16 +209,16 @@ export function TitleEditor({
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {!readOnly && (
+            {mode === "edit" && (!titleLocked || lockState.unlocks.length > 0) && (
               <button
                 onClick={save}
                 disabled={saving}
                 className="rounded-md border border-border/50 text-xs px-3 py-1.5 hover:bg-secondary/30 disabled:opacity-50"
               >
-                {saving ? "Saving…" : "Save"}
+                {saving ? "Saving…" : titleLocked ? "Save unlocked sections" : "Save"}
               </button>
             )}
-            {!readOnly && (
+            {mode === "edit" && !titleLocked && (
               <button
                 onClick={handleSubmit}
                 disabled={submitting || !ready}
@@ -213,10 +234,10 @@ export function TitleEditor({
         </div>
 
 
-        {/* Locked banner */}
-        {title?.locked && (
+        {/* Locked banner + section unlocks + edit request */}
+        {titleLocked && (
           <div className="px-3 sm:px-5 py-3 border-b border-border/40 bg-amber-500/5">
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex flex-wrap items-center gap-2 text-sm">
               <ShieldCheck className="w-4 h-4 text-amber-300" />
               <span className="font-medium">Submitted For Review</span>
               <span className="text-muted-foreground">·</span>
@@ -227,7 +248,27 @@ export function TitleEditor({
               <span className="text-muted-foreground inline-flex items-center gap-1">
                 <Clock className="w-3 h-3" /> Awaiting Admin Review
               </span>
+              {lockState.openRequests > 0 && (
+                <span className="ml-2 text-[11px] inline-flex items-center gap-1 rounded-md bg-sky-500/10 border border-sky-500/30 text-sky-300 px-2 py-0.5">
+                  <Clock className="w-3 h-3" /> {lockState.openRequests} edit request pending
+                </span>
+              )}
+              {lockState.unlocks.length > 0 && (
+                <span className="ml-2 text-[11px] inline-flex items-center gap-1 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 px-2 py-0.5">
+                  <Unlock className="w-3 h-3" /> {lockState.unlocks.length} section{lockState.unlocks.length === 1 ? "" : "s"} unlocked
+                </span>
+              )}
+              {mode === "edit" && (
+                <div className="ml-auto">
+                  <RequestEditButton titleId={title!.id} />
+                </div>
+              )}
             </div>
+            {lockState.unlocks.length > 0 && (
+              <div className="mt-2 text-[11px] text-muted-foreground">
+                Editable now: {lockState.unlocks.map((u) => u.section_key.replace(/_/g, " ")).join(", ")}
+              </div>
+            )}
           </div>
         )}
 
@@ -261,29 +302,29 @@ export function TitleEditor({
                 <OverviewSnapshot title={title} meta={meta} assets={assets} timeline={timeline} />
               )}
               {tab === "metadata" && (
-                <MetadataTab meta={meta} setMeta={setMeta} readOnly={readOnly} />
+                <MetadataTab meta={meta} setMeta={setMeta} readOnly={metadataLocked} />
               )}
               {tab === "assets" && (
                 <div className="space-y-8">
                   <AssetTab cat="feature_film" label="Master File"
                     assets={byCat(["feature_film"])} titleId={title.id}
-                    locked={readOnly} onUploaded={reload} accept="video/*" />
+                    locked={assetsLockedFor("feature_film")} onUploaded={reload} accept="video/*" />
                   <AssetTab cat="trailer" label="Trailer"
                     assets={byCat(["trailer"])} titleId={title.id}
-                    locked={readOnly} onUploaded={reload} accept="video/*" />
+                    locked={assetsLockedFor("trailer")} onUploaded={reload} accept="video/*" />
                   <AssetTab cat="poster" label="Poster"
                     assets={byCat(["poster"])} titleId={title.id}
-                    locked={readOnly} onUploaded={reload} accept="image/*" />
+                    locked={assetsLockedFor("poster")} onUploaded={reload} accept="image/*" />
                 </div>
               )}
               {tab === "legal" && (
                 <div className="space-y-8">
                   <AssetTab cat="censor_certificate" label="Censor Certificate"
                     assets={byCat(["censor_certificate", "censor_cert"])} titleId={title.id}
-                    locked={readOnly} onUploaded={reload} accept="application/pdf,image/*" />
+                    locked={assetsLockedFor("censor_certificate")} onUploaded={reload} accept="application/pdf,image/*" />
                   <AssetTab cat="ownership_documents" label="Ownership Documents"
                     assets={byCat(["ownership_documents", "ownership"])} titleId={title.id}
-                    locked={readOnly} onUploaded={reload} accept="application/pdf,image/*" />
+                    locked={assetsLockedFor("ownership_documents")} onUploaded={reload} accept="application/pdf,image/*" />
                 </div>
               )}
               {tab === "submission" && (

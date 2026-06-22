@@ -38,6 +38,7 @@ import KammattamMeter from "@/components/admin/KammattamMeter";
 import MarketingCMS from "@/components/admin/MarketingCMS";
 import AiMcpControlCenter from "@/components/admin/AiMcpControlCenter";
 import ContentReviewWorkflow from "@/components/admin/ContentReviewWorkflow";
+import TitleEditRequestsInbox from "@/components/admin/TitleEditRequestsInbox";
 import AdminInvoices from "@/components/admin/AdminInvoices";
 import ManualInvoiceConsole from "@/components/admin/ManualInvoiceConsole";
 import PaymentSecurityEvents from "@/components/admin/PaymentSecurityEvents";
@@ -320,6 +321,7 @@ export default function Admin() {
           <TabsContent value="content" className="space-y-8 mt-0 animate-fade-in">
             <DeptHeader icon={<Film className="w-5 h-5" />} title="Content Pipeline" desc="Submission queues, review workflow, transitions and archived titles." />
             <ContentReviewWorkflow />
+            <TitleEditRequestsInbox />
           </TabsContent>
 
           {/* 3. Users & Organizations */}

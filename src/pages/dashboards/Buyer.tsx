@@ -250,3 +250,43 @@ function Metric({ label, value, sub }: { label: string; value: string; sub?: str
     </div>
   );
 }
+
+function RequestTimeline({ requestId }: { requestId: string }) {
+  const [events, setEvents] = useState<Array<{ id: string; from_state: string | null; to_state: string; note: string | null; created_at: string }>>([]);
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("commercial_request_events")
+        .select("id,from_state,to_state,note,created_at")
+        .eq("request_id", requestId)
+        .order("created_at", { ascending: true });
+      if (cancelled) return;
+      setLoaded(true);
+      if (error) return;
+      setEvents((data as never) ?? []);
+    })();
+    return () => { cancelled = true; };
+  }, [requestId]);
+  if (!loaded) {
+    return <div className="mt-3 text-[11px] text-muted-foreground">Loading timeline…</div>;
+  }
+  if (events.length === 0) {
+    return <div className="mt-3 text-[11px] text-muted-foreground">Submitted · awaiting admin review. No state changes yet.</div>;
+  }
+  return (
+    <ol className="mt-3 space-y-1.5 border-l border-border/40 pl-3">
+      {events.map(e => (
+        <li key={e.id} className="text-xs">
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{new Date(e.created_at).toLocaleString()}</span>
+          <div>
+            <span className="text-foreground">{STATE_LABEL[e.to_state] ?? e.to_state}</span>
+            {e.from_state && <span className="text-muted-foreground"> · from {STATE_LABEL[e.from_state] ?? e.from_state}</span>}
+          </div>
+          {e.note && <div className="text-muted-foreground italic">"{e.note}"</div>}
+        </li>
+      ))}
+    </ol>
+  );
+}

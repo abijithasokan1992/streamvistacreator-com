@@ -43,6 +43,7 @@ import C2CSetupManual from "./pages/C2CSetupManual.tsx";
 import Unsubscribe from "./pages/Unsubscribe.tsx";
 import Contact from "./pages/Contact.tsx";
 import InvoiceReceipt from "./pages/InvoiceReceipt.tsx";
+import ManualInvoiceReceipt from "./pages/ManualInvoiceReceipt.tsx";
 
 import ReferralCapture from "./components/ReferralCapture.tsx";
 import WrongPortal from "./components/WrongPortal.tsx";

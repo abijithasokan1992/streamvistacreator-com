@@ -1489,6 +1489,108 @@ export type Database = {
         }
         Relationships: []
       }
+      deal_memos: {
+        Row: {
+          amount_paise: number | null
+          approved_at: string | null
+          buyer_contact_email: string | null
+          buyer_facing_memo: string | null
+          buyer_org_name: string | null
+          buyer_user_id: string | null
+          closed_at: string | null
+          commercial_request_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          deal_type: Database["public"]["Enums"]["deal_type"]
+          exclusivity: Database["public"]["Enums"]["right_exclusivity"] | null
+          id: string
+          internal_notes: string | null
+          language: string | null
+          memo_number: string
+          owner_admin_id: string | null
+          payment_terms: string | null
+          right_category: Database["public"]["Enums"]["right_category"] | null
+          status: Database["public"]["Enums"]["deal_status"]
+          term_end: string | null
+          term_start: string | null
+          territory: string | null
+          title_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount_paise?: number | null
+          approved_at?: string | null
+          buyer_contact_email?: string | null
+          buyer_facing_memo?: string | null
+          buyer_org_name?: string | null
+          buyer_user_id?: string | null
+          closed_at?: string | null
+          commercial_request_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          deal_type: Database["public"]["Enums"]["deal_type"]
+          exclusivity?: Database["public"]["Enums"]["right_exclusivity"] | null
+          id?: string
+          internal_notes?: string | null
+          language?: string | null
+          memo_number?: string
+          owner_admin_id?: string | null
+          payment_terms?: string | null
+          right_category?: Database["public"]["Enums"]["right_category"] | null
+          status?: Database["public"]["Enums"]["deal_status"]
+          term_end?: string | null
+          term_start?: string | null
+          territory?: string | null
+          title_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount_paise?: number | null
+          approved_at?: string | null
+          buyer_contact_email?: string | null
+          buyer_facing_memo?: string | null
+          buyer_org_name?: string | null
+          buyer_user_id?: string | null
+          closed_at?: string | null
+          commercial_request_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          deal_type?: Database["public"]["Enums"]["deal_type"]
+          exclusivity?: Database["public"]["Enums"]["right_exclusivity"] | null
+          id?: string
+          internal_notes?: string | null
+          language?: string | null
+          memo_number?: string
+          owner_admin_id?: string | null
+          payment_terms?: string | null
+          right_category?: Database["public"]["Enums"]["right_category"] | null
+          status?: Database["public"]["Enums"]["deal_status"]
+          term_end?: string | null
+          term_start?: string | null
+          territory?: string | null
+          title_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_memos_commercial_request_id_fkey"
+            columns: ["commercial_request_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_memos_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deliverables: {
         Row: {
           created_at: string | null
@@ -4572,16 +4674,29 @@ export type Database = {
         Row: {
           acquisition_open: boolean
           admin_approval_required: boolean
+          admin_internal_notes: string | null
+          available_for_acquisition: boolean
+          available_for_distribution_partnership: boolean
+          available_for_exclusive_license: boolean
+          available_for_nonexclusive_license: boolean
+          available_for_screeners: boolean
+          buyer_facing_summary: string | null
+          chain_of_title_notes: string | null
+          commercial_status: Database["public"]["Enums"]["title_commercial_status"]
           created_at: string
           creator_final_approval_required: boolean
           creator_tier: string
           deal_mode: Database["public"]["Enums"]["deal_mode"]
+          delivery_readiness_summary: string | null
           distribution_open: boolean
           id: string
+          legal_clearance_summary: string | null
           licensing_open: boolean
           notes: string | null
           owner_user_id: string
           protection_tier: Database["public"]["Enums"]["protection_tier"]
+          published_to_buyers: boolean
+          rights_status_summary: string | null
           screening_allowed: boolean
           title_id: string
           updated_at: string
@@ -4589,16 +4704,29 @@ export type Database = {
         Insert: {
           acquisition_open?: boolean
           admin_approval_required?: boolean
+          admin_internal_notes?: string | null
+          available_for_acquisition?: boolean
+          available_for_distribution_partnership?: boolean
+          available_for_exclusive_license?: boolean
+          available_for_nonexclusive_license?: boolean
+          available_for_screeners?: boolean
+          buyer_facing_summary?: string | null
+          chain_of_title_notes?: string | null
+          commercial_status?: Database["public"]["Enums"]["title_commercial_status"]
           created_at?: string
           creator_final_approval_required?: boolean
           creator_tier?: string
           deal_mode?: Database["public"]["Enums"]["deal_mode"]
+          delivery_readiness_summary?: string | null
           distribution_open?: boolean
           id?: string
+          legal_clearance_summary?: string | null
           licensing_open?: boolean
           notes?: string | null
           owner_user_id: string
           protection_tier?: Database["public"]["Enums"]["protection_tier"]
+          published_to_buyers?: boolean
+          rights_status_summary?: string | null
           screening_allowed?: boolean
           title_id: string
           updated_at?: string
@@ -4606,16 +4734,29 @@ export type Database = {
         Update: {
           acquisition_open?: boolean
           admin_approval_required?: boolean
+          admin_internal_notes?: string | null
+          available_for_acquisition?: boolean
+          available_for_distribution_partnership?: boolean
+          available_for_exclusive_license?: boolean
+          available_for_nonexclusive_license?: boolean
+          available_for_screeners?: boolean
+          buyer_facing_summary?: string | null
+          chain_of_title_notes?: string | null
+          commercial_status?: Database["public"]["Enums"]["title_commercial_status"]
           created_at?: string
           creator_final_approval_required?: boolean
           creator_tier?: string
           deal_mode?: Database["public"]["Enums"]["deal_mode"]
+          delivery_readiness_summary?: string | null
           distribution_open?: boolean
           id?: string
+          legal_clearance_summary?: string | null
           licensing_open?: boolean
           notes?: string | null
           owner_user_id?: string
           protection_tier?: Database["public"]["Enums"]["protection_tier"]
+          published_to_buyers?: boolean
+          rights_status_summary?: string | null
           screening_allowed?: boolean
           title_id?: string
           updated_at?: string
@@ -4826,6 +4967,72 @@ export type Database = {
             columns: ["title_id"]
             isOneToOne: false
             referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      title_rights_availability: {
+        Row: {
+          committed_deal_id: string | null
+          created_at: string
+          created_by: string | null
+          exclusivity: Database["public"]["Enums"]["right_exclusivity"]
+          id: string
+          language: string
+          notes: string | null
+          right_category: Database["public"]["Enums"]["right_category"]
+          status: Database["public"]["Enums"]["right_status"]
+          term_end: string | null
+          term_start: string | null
+          territory: string
+          title_id: string
+          updated_at: string
+        }
+        Insert: {
+          committed_deal_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          exclusivity?: Database["public"]["Enums"]["right_exclusivity"]
+          id?: string
+          language?: string
+          notes?: string | null
+          right_category: Database["public"]["Enums"]["right_category"]
+          status?: Database["public"]["Enums"]["right_status"]
+          term_end?: string | null
+          term_start?: string | null
+          territory?: string
+          title_id: string
+          updated_at?: string
+        }
+        Update: {
+          committed_deal_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          exclusivity?: Database["public"]["Enums"]["right_exclusivity"]
+          id?: string
+          language?: string
+          notes?: string | null
+          right_category?: Database["public"]["Enums"]["right_category"]
+          status?: Database["public"]["Enums"]["right_status"]
+          term_end?: string | null
+          term_start?: string | null
+          territory?: string
+          title_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "title_rights_availability_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trights_deal_fk"
+            columns: ["committed_deal_id"]
+            isOneToOne: false
+            referencedRelation: "deal_memos"
             referencedColumns: ["id"]
           },
         ]
@@ -5507,6 +5714,46 @@ export type Database = {
           updated_at: string
         }[]
       }
+      admin_close_deal_memo: {
+        Args: {
+          _deal_id: string
+          _status: Database["public"]["Enums"]["deal_status"]
+        }
+        Returns: {
+          amount_paise: number | null
+          approved_at: string | null
+          buyer_contact_email: string | null
+          buyer_facing_memo: string | null
+          buyer_org_name: string | null
+          buyer_user_id: string | null
+          closed_at: string | null
+          commercial_request_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          deal_type: Database["public"]["Enums"]["deal_type"]
+          exclusivity: Database["public"]["Enums"]["right_exclusivity"] | null
+          id: string
+          internal_notes: string | null
+          language: string | null
+          memo_number: string
+          owner_admin_id: string | null
+          payment_terms: string | null
+          right_category: Database["public"]["Enums"]["right_category"] | null
+          status: Database["public"]["Enums"]["deal_status"]
+          term_end: string | null
+          term_start: string | null
+          territory: string | null
+          title_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "deal_memos"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_create_manual_invoice: {
         Args: {
           _document_type: string
@@ -5748,6 +5995,13 @@ export type Database = {
       current_dashboard_role: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"]
+      }
+      deal_memo_check_conflict: {
+        Args: { _deal_id: string }
+        Returns: {
+          conflict_count: number
+          sample_memo: string
+        }[]
       }
       delete_email: {
         Args: { message_id: number; queue_name: string }
@@ -6056,6 +6310,22 @@ export type Database = {
         | "hold"
         | "rejected"
       deal_mode: "admin_managed" | "creator_managed" | "hybrid"
+      deal_status:
+        | "draft"
+        | "screening_requested"
+        | "screening_shared"
+        | "negotiating"
+        | "offer_sent"
+        | "won"
+        | "lost"
+        | "expired"
+        | "cancelled"
+      deal_type:
+        | "licensing"
+        | "screener"
+        | "acquisition"
+        | "distribution_representation"
+        | "rights_information"
       legal_agreement_type:
         | "creator_master"
         | "buyer_request_confidentiality"
@@ -6065,10 +6335,29 @@ export type Database = {
       plan_assignment_status: "active" | "suspended" | "expired" | "cancelled"
       production_banner: "Crayons Pictures" | "Abhijith Asokan Productions"
       protection_tier: "baseline" | "enhanced" | "forensic"
+      right_category:
+        | "screening"
+        | "digital_ott"
+        | "satellite_tv"
+        | "theatrical"
+        | "airline_nontheatrical"
+        | "remake_adaptation"
+        | "dubbing_derivative"
+        | "distribution_representation"
+        | "acquisition"
+      right_exclusivity: "exclusive" | "non_exclusive" | "hold" | "unavailable"
+      right_status: "available" | "hold" | "sold" | "blocked"
       studio_slug:
         | "crayons_pictures"
         | "abhijith_asokan_productions"
         | "independent"
+      title_commercial_status:
+        | "not_open"
+        | "screening_only"
+        | "licensing_open"
+        | "acquisition_open"
+        | "invite_only"
+        | "internal_hold"
       workspace_role: "owner" | "admin" | "editor" | "viewer"
     }
     CompositeTypes: {
@@ -6291,6 +6580,24 @@ export const Constants = {
         "rejected",
       ],
       deal_mode: ["admin_managed", "creator_managed", "hybrid"],
+      deal_status: [
+        "draft",
+        "screening_requested",
+        "screening_shared",
+        "negotiating",
+        "offer_sent",
+        "won",
+        "lost",
+        "expired",
+        "cancelled",
+      ],
+      deal_type: [
+        "licensing",
+        "screener",
+        "acquisition",
+        "distribution_representation",
+        "rights_information",
+      ],
       legal_agreement_type: [
         "creator_master",
         "buyer_request_confidentiality",
@@ -6301,10 +6608,31 @@ export const Constants = {
       plan_assignment_status: ["active", "suspended", "expired", "cancelled"],
       production_banner: ["Crayons Pictures", "Abhijith Asokan Productions"],
       protection_tier: ["baseline", "enhanced", "forensic"],
+      right_category: [
+        "screening",
+        "digital_ott",
+        "satellite_tv",
+        "theatrical",
+        "airline_nontheatrical",
+        "remake_adaptation",
+        "dubbing_derivative",
+        "distribution_representation",
+        "acquisition",
+      ],
+      right_exclusivity: ["exclusive", "non_exclusive", "hold", "unavailable"],
+      right_status: ["available", "hold", "sold", "blocked"],
       studio_slug: [
         "crayons_pictures",
         "abhijith_asokan_productions",
         "independent",
+      ],
+      title_commercial_status: [
+        "not_open",
+        "screening_only",
+        "licensing_open",
+        "acquisition_open",
+        "invite_only",
+        "internal_hold",
       ],
       workspace_role: ["owner", "admin", "editor", "viewer"],
     },

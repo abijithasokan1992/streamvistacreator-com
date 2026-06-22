@@ -246,26 +246,43 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (!sess || !sess.oci_upload_id) return json({ found: false }, 200, cors);
 
-      // Confirm with OCI which parts are actually stored.
+      // Confirm with OCI that the multipart upload still exists.
       const path = `/n/${ns}/b/${bucket}/u/${encodeURIComponent(sess.object_key)}?uploadId=${encodeURIComponent(sess.oci_upload_id)}`;
       const sig = await buildOciSignature({ method: "GET", host, path, contentSha256: "", keyId, privateKey });
       const resp = await fetch(`https://${host}${path}`, {
         method: "GET", headers: { host, date: sig.date, Authorization: sig.authorization },
       });
       const text = await resp.text();
-      let parts: Array<{ partNumber: number; etag: string; size?: number }> = [];
-      if (resp.ok) {
-        try {
-          const arr = JSON.parse(text);
-          if (Array.isArray(arr)) {
-            parts = arr.map((p: any) => ({
-              partNumber: Number(p.partNumber ?? p.uploadPartNum ?? p.part_num),
-              etag: String(p.etag ?? p.ETag ?? "").replace(/^"|"$/g, ""),
-              size: typeof p.size === "number" ? p.size : undefined,
-            })).filter((p) => Number.isInteger(p.partNumber) && p.etag);
-          }
-        } catch { /* ignore */ }
+
+      // If OCI says the multipart is gone (404 UploadNotFound, 403, etc.), DO NOT
+      // hand the stale uploadId back to the client — invalidate the session row
+      // and force a fresh init.
+      if (!resp.ok) {
+        await admin.from("upload_sessions")
+          .update({ status: "aborted", error_message: `oci_list_parts_${resp.status}: ${text.slice(0, 200)}` })
+          .eq("id", sess.id);
+        await admin.from("recent_uploads")
+          .update({ status: "failed", error_message: `OCI multipart no longer exists (${resp.status})` })
+          .eq("user_id", userId).eq("oci_upload_id", sess.oci_upload_id);
+        await logIngest(admin, {
+          user_id: userId, session_id: sess.id, oci_upload_id: sess.oci_upload_id,
+          event: "session.invalidated", severity: "warn", http_status: resp.status,
+          error_message: text.slice(0, 200),
+        });
+        return json({ found: false, invalidated: true }, 200, cors);
       }
+
+      let parts: Array<{ partNumber: number; etag: string; size?: number }> = [];
+      try {
+        const arr = JSON.parse(text);
+        if (Array.isArray(arr)) {
+          parts = arr.map((p: any) => ({
+            partNumber: Number(p.partNumber ?? p.uploadPartNum ?? p.part_num),
+            etag: String(p.etag ?? p.ETag ?? "").replace(/^"|"$/g, ""),
+            size: typeof p.size === "number" ? p.size : undefined,
+          })).filter((p) => Number.isInteger(p.partNumber) && p.etag);
+        }
+      } catch { /* ignore */ }
       const nextPart = (parts.reduce((m, p) => Math.max(m, p.partNumber), 0) || 0) + 1;
       await logIngest(admin, {
         user_id: userId, session_id: sess.id, oci_upload_id: sess.oci_upload_id,

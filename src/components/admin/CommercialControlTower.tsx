@@ -72,7 +72,7 @@ const COMMERCIAL_STATES = [
   "closed",
 ];
 
-const SUPPORT_STATUSES = ["open", "in_progress", "resolved", "closed"];
+const SUPPORT_STATUSES = ["open", "in_progress", "reviewing", "quoted", "approved", "provisioned", "rejected", "cancelled", "resolved", "closed"];
 
 export default function CommercialControlTower() {
   return (

@@ -7251,6 +7251,7 @@ export type Database = {
       sweep_screening_invites_expired: { Args: never; Returns: number }
       title_review_summary: { Args: { _title_id: string }; Returns: Json }
       title_submission_readiness: { Args: { _title_id: string }; Returns: Json }
+      title_write_allowed: { Args: { _title_id: string }; Returns: boolean }
       transition_title_status: {
         Args: { _note?: string; _title_id: string; _to_status: string }
         Returns: Json

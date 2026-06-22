@@ -47,6 +47,7 @@ import AdminStudioVaultPurchases from "@/components/admin/AdminStudioVaultPurcha
 import CompanyProfileSettings from "@/components/admin/CompanyProfileSettings";
 import BillingOperations from "@/components/admin/BillingOperations";
 import CommercialControlTower from "@/components/admin/CommercialControlTower";
+import TitleCommercialOpsConsole from "@/components/admin/TitleCommercialOpsConsole";
 
 interface Row {
   id: string;

@@ -156,6 +156,7 @@ const PublicRoutes = () => (
     <Route path="/contact" element={<Contact />} />
     <Route path="/unsubscribe" element={<Unsubscribe />} />
     <Route path="/invoice/:id" element={<InvoiceReceipt />} />
+    <Route path="/invoice/manual/:id" element={<ManualInvoiceReceipt />} />
     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
     <Route path="*" element={<NotFound />} />
   </Routes>

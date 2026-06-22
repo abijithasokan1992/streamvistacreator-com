@@ -25,6 +25,7 @@ import { useStorageQuota, StorageWarningBanner } from "@/hooks/useStorageQuota";
 import ShareLinkModal, { ShareLinkFile } from "@/components/vault/ShareLinkModal";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { Seo } from "@/components/Seo";
 
 
 type Tier = "lite" | "sovereign";
@@ -507,6 +508,11 @@ const Vault = () => {
 
   return (
     <UploadManagerProvider config={config}>
+      <Seo
+        title="Vault — Secure Creator Cloud Storage | StreamVista"
+        description="Upload, encrypt and share dailies, masters and review cuts from your StreamVista Vault — your private creator cloud storage."
+        path="/vault"
+      />
       <VaultInner reloadRef={reloadRef} />
     </UploadManagerProvider>
   );

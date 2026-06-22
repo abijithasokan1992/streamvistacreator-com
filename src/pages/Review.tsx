@@ -133,7 +133,7 @@ export default function Review() {
               ) : isImage(unlocked.mime) ? (
                 <img
                   src={unlocked.playback_url}
-                  alt={unlocked.filename}
+                  alt={`Review image — ${unlocked.filename}`}
                   onContextMenu={(e) => unlocked.view_only && e.preventDefault()}
                   className="w-full max-h-[75vh] object-contain bg-black"
                 />

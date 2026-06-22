@@ -10,6 +10,27 @@ export default function About() {
         title="About StreamVista Ecosystem — Founder & Brands"
         description="StreamVista OPC Pvt Ltd, Crayons Pictures, Crayons Bridge, Crayons Loop and founder Abijith Asokan — the integrated media infrastructure ecosystem."
         path="/about"
+        jsonLd={[
+          {
+            "@context": "https://schema.org",
+            "@type": "LocalBusiness",
+            name: "StreamVista OPC Pvt Ltd",
+            url: "https://streamvistacreator.com/about",
+            email: "support@streamvistacreator.com",
+            address: {
+              "@type": "PostalAddress",
+              addressLocality: "Ernakulam",
+              addressRegion: "Kerala",
+              addressCountry: "IN",
+            },
+            openingHours: "Mo-Sa 10:00-19:00",
+            parentOrganization: {
+              "@type": "Organization",
+              name: "StreamVista",
+              url: "https://streamvistacreator.com/",
+            },
+          },
+        ]}
       />
       <main className="container py-12 md:py-16 max-w-6xl">
         <EcosystemAbout />

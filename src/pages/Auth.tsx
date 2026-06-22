@@ -39,12 +39,19 @@ export default function Auth() {
   const [search] = useSearchParams();
   const { user, role, loading } = useAuth();
 
-  const initialView: View = search.get("mode") === "signup" ? "signup" : "login";
+  const intentParam = search.get("intent");
+  const roleParam = search.get("role");
+  const initialView: View =
+    search.get("mode") === "signup" || intentParam === "signup" ? "signup" : "login";
   const [view, setView] = useState<View>(initialView);
 
   const [email, setEmail] = useState(search.get("email") ?? "");
   const [fullName, setFullName] = useState("");
-  const [signupRole, setSignupRole] = useState<PublicRole>("content_owner");
+  const initialRole: PublicRole =
+    roleParam === "studio" || roleParam === "buyer" || roleParam === "content_owner"
+      ? (roleParam as PublicRole)
+      : "content_owner";
+  const [signupRole, setSignupRole] = useState<PublicRole>(initialRole);
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
 

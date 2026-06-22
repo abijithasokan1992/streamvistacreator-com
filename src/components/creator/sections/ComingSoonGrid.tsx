@@ -29,19 +29,29 @@ const FUTURE = [
 
 export function ComingSoonGrid() {
   return (
-    <div className="mt-10">
-      <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground/70 mb-3">Future Modules</p>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+    <details className="mt-10 group">
+      <summary className="cursor-pointer list-none flex items-center justify-between rounded-xl border border-border/40 bg-secondary/5 px-4 py-3 hover:bg-secondary/10">
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground/70">Roadmap</p>
+          <p className="text-sm font-medium mt-0.5">Modules on the roadmap — not available yet</p>
+        </div>
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60 group-open:hidden">Show</span>
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60 hidden group-open:inline">Hide</span>
+      </summary>
+      <p className="text-xs text-muted-foreground mt-3 px-1">
+        These are directional and not part of the current Creator workspace. No timelines committed.
+      </p>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-3">
         {FUTURE.map((f) => (
           <div key={f.title} className="rounded-xl border border-border/40 bg-secondary/5 p-4">
             <div className="flex items-center justify-between">
               <h3 className="font-medium text-sm">{f.title}</h3>
-              <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60">Soon</span>
+              <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60">Roadmap</span>
             </div>
             <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">{f.body}</p>
           </div>
         ))}
       </div>
-    </div>
+    </details>
   );
 }

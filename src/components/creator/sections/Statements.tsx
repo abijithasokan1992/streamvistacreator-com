@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import CreatorInvoices from "@/components/creator/CreatorInvoices";
-import { HardDrive, ChevronDown, ChevronUp, ShoppingCart } from "lucide-react";
+import { HardDrive, ChevronDown, ChevronUp, LifeBuoy } from "lucide-react";
 import { Link } from "react-router-dom";
 
 type Topup = {
@@ -53,27 +53,30 @@ export default function StatementsSection() {
     <div className="space-y-6">
       <CreatorInvoices />
 
-      {/* Storage top-ups with lifecycle status */}
+      {/* Storage allocation history — read-only record of past changes */}
       <section className="rounded-2xl border border-border/50 bg-card p-5">
-        <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+        <div className="flex items-center justify-between mb-2 gap-3 flex-wrap">
           <div className="flex items-center gap-2">
             <HardDrive className="w-5 h-5 text-accent" />
-            <h3 className="font-display text-lg font-bold">Storage Top-ups</h3>
+            <h3 className="font-display text-lg font-bold">Storage Allocation History</h3>
             <span className="text-xs text-muted-foreground">
               {topups.length} record{topups.length === 1 ? "" : "s"}
             </span>
           </div>
           <Link
             to="/dashboard/content?section=upgrade"
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-accent text-accent-foreground text-xs font-semibold hover:opacity-90"
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border/50 text-xs font-semibold hover:bg-secondary/30"
           >
-            <ShoppingCart className="w-3.5 h-3.5" /> Request more storage
+            <LifeBuoy className="w-3.5 h-3.5" /> Request more storage
           </Link>
         </div>
+        <p className="text-xs text-muted-foreground mb-4">
+          Read-only record of storage allocations applied to your account (admin grants and founder-assisted top-ups). Creator storage changes are not self-serve today — use the Upgrade tab to request more.
+        </p>
         {loading ? (
           <div className="py-8 text-center text-sm text-muted-foreground">Loading…</div>
         ) : topups.length === 0 ? (
-          <div className="py-6 text-center text-sm text-muted-foreground">No storage top-ups yet.</div>
+          <div className="py-6 text-center text-sm text-muted-foreground">No storage allocations recorded yet.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

@@ -9,30 +9,38 @@ import { Button } from "@/components/ui/button";
 import { PAYG_TB_INR, FREE_STORAGE_GB } from "@/components/streamvista/plans";
 
 /**
- * Fair Usage & Soft-Lock
- * ──────────────────────
- *  Free users: 50 GB hard cap. Warning at 45 GB. Past the cap all upload
- *  surfaces (Vault, Camera-to-Cloud, Master Archive, etc.) call
- *  `checkOrPaywall()` which either allows the upload or opens the
- *  conversion overlay wired to the existing Razorpay top-up flow.
- *
- *  Creator users have no soft-lock (their meter lives in StorageUsageCard
- *  with auto top-up at the same Razorpay endpoint).
+ * Storage entitlement & hard-stop (Part 11E)
+ * ──────────────────────────────────────────
+ * Source of truth is the `get_workspace_storage_entitlement` RPC which returns
+ *   included_storage_gb + paid_storage_gb + admin_bonus_storage_gb → total_storage_gb
+ * Creator Basic ships with 5 GB included. Buying a 1 TB add-on or receiving an
+ * admin grant grows `total_storage_gb` and the same warning/urgent/hard-stop
+ * thresholds apply to every plan — there is no separate "creator means infinite".
  */
 
 const MB_PER_GB = 1024;
 const FREE_LIMIT_MB = FREE_STORAGE_GB * MB_PER_GB;
-export const FREE_WARN_MB = 45 * MB_PER_GB;
+export const FREE_WARN_MB = 4 * MB_PER_GB; // 80% of 5 GB — kept exported for legacy callers
 
 type Quota = {
   loading: boolean;
+  /** True when the workspace is on the Creator Basic submission plan. */
+  isBasic: boolean;
+  /** Legacy alias — `isCreator` historically meant "has paid storage". */
   isCreator: boolean;
+  planCode: string;
   usedMb: number;
   limitMb: number;
+  totalGb: number;
+  includedGb: number;
+  paidGb: number;
+  bonusGb: number;
+  addonBlocks: number;
   percent: number;
   warning: boolean;
+  urgent: boolean;
   locked: boolean;
-  /** Free user has hit the 50 GB cap → uploads are soft-locked. */
+  /** Returns false when over the hard-stop and opens the upgrade overlay. */
   checkOrPaywall: () => boolean;
   /** Force-open the upgrade overlay (for the warning banner CTA). */
   openPaywall: () => void;
@@ -44,10 +52,11 @@ const Ctx = createContext<Quota | null>(null);
 export function useStorageQuota(): Quota {
   const v = useContext(Ctx);
   if (!v) {
-    // Safe fallback so components rendered outside the provider don't crash.
     return {
-      loading: false, isCreator: true, usedMb: 0, limitMb: FREE_LIMIT_MB,
-      percent: 0, warning: false, locked: false,
+      loading: false, isBasic: true, isCreator: false, planCode: "creator_basic",
+      usedMb: 0, limitMb: FREE_LIMIT_MB,
+      totalGb: FREE_STORAGE_GB, includedGb: FREE_STORAGE_GB, paidGb: 0, bonusGb: 0, addonBlocks: 0,
+      percent: 0, warning: false, urgent: false, locked: false,
       checkOrPaywall: () => true, openPaywall: () => {}, refresh: async () => {},
     };
   }
@@ -57,32 +66,38 @@ export function useStorageQuota(): Quota {
 export function StorageQuotaProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [isCreator, setIsCreator] = useState(true);
-  const [usedMb, setUsedMb] = useState(0);
+  const [ent, setEnt] = useState<any>(null);
   const [open, setOpen] = useState(false);
   const [paying, setPaying] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!user) { setLoading(false); return; }
     setLoading(true);
-    const { data } = await supabase
-      .from("user_profiles")
-      .select("plan_tier,storage_used_mb")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    const { data, error } = await (supabase as any).rpc("get_workspace_storage_entitlement", { _user_id: user.id });
     setLoading(false);
-    if (data) {
-      setIsCreator(data.plan_tier === "creator");
-      setUsedMb(Number(data.storage_used_mb || 0));
-    }
+    if (!error && data) setEnt(data);
   }, [user?.id]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  const limitMb = isCreator ? Number.MAX_SAFE_INTEGER : FREE_LIMIT_MB;
-  const percent = isCreator ? 0 : Math.min(100, Math.round((usedMb / FREE_LIMIT_MB) * 100));
-  const warning = !isCreator && usedMb >= FREE_WARN_MB && usedMb < FREE_LIMIT_MB;
-  const locked = !isCreator && usedMb >= FREE_LIMIT_MB;
+  const planCode = String(ent?.plan_code || "creator_basic");
+  const includedGb = Number(ent?.included_storage_gb ?? FREE_STORAGE_GB);
+  const paidGb = Number(ent?.paid_storage_gb ?? 0);
+  const bonusGb = Number(ent?.admin_bonus_storage_gb ?? 0);
+  const totalGb = Number(ent?.total_storage_gb ?? includedGb + paidGb + bonusGb);
+  const addonBlocks = Number(ent?.storage_addon_blocks ?? 0);
+  const usedBytes = Number(ent?.used_bytes ?? 0);
+  const usedMb = Math.round(usedBytes / (1024 * 1024));
+  const limitMb = Math.max(1, totalGb * MB_PER_GB);
+  const percent = Math.min(100, Math.round((usedMb / limitMb) * 100));
+  const warnPct = Number(ent?.warning_threshold_pct ?? 80);
+  const urgentPct = Number(ent?.urgent_threshold_pct ?? 95);
+  const hardPct = Number(ent?.hard_stop_threshold_pct ?? 100);
+  const warning = percent >= warnPct && percent < urgentPct;
+  const urgent = percent >= urgentPct && percent < hardPct;
+  const locked = percent >= hardPct;
+  const isBasic = planCode === "creator_basic" && paidGb <= 0;
+  const isCreator = !isBasic;
 
   const openPaywall = useCallback(() => setOpen(true), []);
 

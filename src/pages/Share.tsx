@@ -199,7 +199,7 @@ const Share = () => {
               {unlocked && mediaUrl && kind === "image" && (
                 <img
                   src={mediaUrl}
-                  alt={info.filename}
+                  alt={`Shared image preview — ${info.filename}`}
                   onContextMenu={(e) => { if (info.view_only) e.preventDefault(); }}
                   className="w-full h-full object-contain"
                 />

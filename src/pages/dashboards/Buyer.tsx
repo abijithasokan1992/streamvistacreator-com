@@ -64,8 +64,24 @@ export default function BuyerDashboard() {
 
   const [type, setType] = useState<RequestType>("acquisition");
   const [titleQuery, setTitleQuery] = useState("");
+  const [titleId, setTitleId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // Prefill from ?title_id=… &type=… deep link
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tid = params.get("title_id");
+    const t = params.get("type") as RequestType | null;
+    if (t && ["acquisition","licensing","screener","rights_info","distribution"].includes(t)) setType(t);
+    if (tid) {
+      setTitleId(tid);
+      setTab("new");
+      supabase.from("content_titles").select("title").eq("id", tid).maybeSingle().then(({ data }) => {
+        if (data?.title) setTitleQuery(data.title);
+      });
+    }
+  }, []);
 
   const load = async () => {
     if (!user) return;

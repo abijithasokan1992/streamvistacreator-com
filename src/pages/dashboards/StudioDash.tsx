@@ -6,6 +6,7 @@ import MyVaultSummary from "@/components/studio/vault/MyVaultSummary";
 import VaultBillingPanel from "@/components/studio/vault/VaultBillingPanel";
 import StudioRequestService from "@/components/studio/StudioRequestService";
 import StudioRequestPlanChange from "@/components/studio/StudioRequestPlanChange";
+import ManualInvoicesList from "@/components/billing/ManualInvoicesList";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
@@ -129,6 +130,10 @@ export default function StudioDashboard() {
             <StudioRequestPlanChange />
           </div>
           <VaultBillingPanel />
+          <div className="pt-2">
+            <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground font-mono mb-2">Founder-issued invoices</p>
+            <ManualInvoicesList surface="studio" />
+          </div>
         </section>
       </div>
     </RoleDashboardShell>

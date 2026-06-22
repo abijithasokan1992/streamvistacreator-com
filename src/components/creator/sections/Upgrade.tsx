@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
+import ManualInvoicesList from "@/components/billing/ManualInvoicesList";
 
 /**
  * Creator Upgrade — two clearly separated commercial surfaces:
@@ -518,6 +519,15 @@ export default function UpgradeSection() {
           Need heavy archival / production-grade storage? That belongs to{" "}
           <span className="text-foreground font-medium">Studio Vault</span>, not Creator.
         </p>
+      </section>
+
+      {/* ── Founder-assisted invoices ────────────────────────── */}
+      <section className="space-y-3">
+        <div>
+          <h2 className="font-display text-xl font-bold">Your Invoices</h2>
+          <p className="text-xs text-muted-foreground">Quotes and invoices issued by StreamVista for managed plan upgrades or custom commercial work.</p>
+        </div>
+        <ManualInvoicesList surface="creator" />
       </section>
     </div>
   );

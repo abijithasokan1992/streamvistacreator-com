@@ -43,6 +43,7 @@ import C2CSetupManual from "./pages/C2CSetupManual.tsx";
 import Unsubscribe from "./pages/Unsubscribe.tsx";
 import Contact from "./pages/Contact.tsx";
 import InvoiceReceipt from "./pages/InvoiceReceipt.tsx";
+import ManualInvoiceReceipt from "./pages/ManualInvoiceReceipt.tsx";
 
 import ReferralCapture from "./components/ReferralCapture.tsx";
 import WrongPortal from "./components/WrongPortal.tsx";
@@ -155,6 +156,7 @@ const PublicRoutes = () => (
     <Route path="/contact" element={<Contact />} />
     <Route path="/unsubscribe" element={<Unsubscribe />} />
     <Route path="/invoice/:id" element={<InvoiceReceipt />} />
+    <Route path="/invoice/manual/:id" element={<ManualInvoiceReceipt />} />
     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
     <Route path="*" element={<NotFound />} />
   </Routes>

@@ -428,7 +428,11 @@ async function runMultipart(p: MultipartParams): Promise<MultipartResult> {
   emit(0, 0);
   const listed = await invoke<{ parts: Array<{ partNumber: number; etag: string }> }>(
     "list_parts", { uploadRowId, uploadId }, { signal },
-  ).catch(() => ({ parts: [] as Array<{ partNumber: number; etag: string }> }));
+  ).catch((e) => {
+    // Session-expired must bubble — do NOT proceed to PUT into a dead uploadId.
+    if (e instanceof UploadSessionExpiredError) throw e;
+    return { parts: [] as Array<{ partNumber: number; etag: string }> };
+  });
   const completed = new Map<number, string>();
   for (const part of listed.parts) completed.set(part.partNumber, part.etag);
 

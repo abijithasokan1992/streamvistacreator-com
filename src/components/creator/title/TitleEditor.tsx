@@ -45,7 +45,26 @@ export function TitleEditor({
   const [name, setName] = useState("");
   const [meta, setMeta] = useState<TitleMetadata | null>(null);
 
-  const readOnly = mode === "view" || !!title?.locked;
+  const lockState = useTitleLock(titleId);
+  const titleLocked = !!title?.locked || lockState.isLocked;
+  const readOnly = mode === "view" || titleLocked;
+  const metadataLocked = mode === "view" || (titleLocked && !lockState.isTabEditable("metadata"));
+  const assetsLockedFor = (cat: AssetCategory): boolean => {
+    if (mode === "view") return true;
+    if (!titleLocked) return false;
+    const map: Record<string, "master_file" | "trailer" | "poster" | "subtitles_audio" | "legal_documents"> = {
+      feature_film: "master_file",
+      trailer: "trailer",
+      poster: "poster",
+      censor_certificate: "legal_documents",
+      censor_cert: "legal_documents",
+      ownership_documents: "legal_documents",
+      ownership: "legal_documents",
+    };
+    const key = map[cat];
+    if (!key) return true;
+    return !lockState.isSectionEditable(key);
+  };
   const debounceRef = useRef<number | null>(null);
   const loadedRef = useRef(false);
 

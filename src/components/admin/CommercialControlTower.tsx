@@ -683,12 +683,8 @@ function CommercialQueue() {
                   value={noteDraft[r.id] ?? ""}
                   onChange={e => setNoteDraft(d => ({ ...d, [r.id]: e.target.value }))}
                 />
-                <div className="flex justify-between items-center">
-                  {!r.title_id && (
-                    <span className="text-[10px] text-amber-300 inline-flex items-center gap-1">
-                      <ExternalLink className="w-3 h-3" /> Link to a content_title via Content Pipeline if appropriate.
-                    </span>
-                  )}
+                <LinkTitleRow row={r} onLinked={(tid) => setRows(rs => rs.map(x => x.id === r.id ? { ...x, title_id: tid } : x))} />
+                <div className="flex justify-end items-center">
                   <Button size="sm" onClick={() => saveNote(r.id)} className="ml-auto">Save note</Button>
                 </div>
               </div>

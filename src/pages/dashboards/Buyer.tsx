@@ -122,7 +122,7 @@ export default function BuyerDashboard() {
       return;
     }
     toast.success("Request submitted. Admin will review shortly.");
-    setTitleQuery(""); setMessage(""); setType("acquisition");
+    setTitleQuery(""); setMessage(""); setType("acquisition"); setTitleId(null);
     setTab("requests");
     load();
   };

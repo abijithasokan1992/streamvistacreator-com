@@ -1134,6 +1134,119 @@ export type Database = {
           },
         ]
       }
+      commercial_request_events: {
+        Row: {
+          actor_user_id: string | null
+          created_at: string
+          from_state:
+            | Database["public"]["Enums"]["commercial_request_state"]
+            | null
+          id: string
+          note: string | null
+          request_id: string
+          to_state: Database["public"]["Enums"]["commercial_request_state"]
+        }
+        Insert: {
+          actor_user_id?: string | null
+          created_at?: string
+          from_state?:
+            | Database["public"]["Enums"]["commercial_request_state"]
+            | null
+          id?: string
+          note?: string | null
+          request_id: string
+          to_state: Database["public"]["Enums"]["commercial_request_state"]
+        }
+        Update: {
+          actor_user_id?: string | null
+          created_at?: string
+          from_state?:
+            | Database["public"]["Enums"]["commercial_request_state"]
+            | null
+          id?: string
+          note?: string | null
+          request_id?: string
+          to_state?: Database["public"]["Enums"]["commercial_request_state"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commercial_request_events_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commercial_requests: {
+        Row: {
+          accepted_agreement_id: string | null
+          admin_notes: string | null
+          assigned_admin_id: string | null
+          buyer_user_id: string
+          created_at: string
+          id: string
+          message: string | null
+          owner_user_id: string
+          request_type: Database["public"]["Enums"]["commercial_request_type"]
+          state: Database["public"]["Enums"]["commercial_request_state"]
+          state_changed_at: string
+          state_changed_by: string | null
+          terms: Json
+          title_id: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_agreement_id?: string | null
+          admin_notes?: string | null
+          assigned_admin_id?: string | null
+          buyer_user_id: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          owner_user_id: string
+          request_type: Database["public"]["Enums"]["commercial_request_type"]
+          state?: Database["public"]["Enums"]["commercial_request_state"]
+          state_changed_at?: string
+          state_changed_by?: string | null
+          terms?: Json
+          title_id: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_agreement_id?: string | null
+          admin_notes?: string | null
+          assigned_admin_id?: string | null
+          buyer_user_id?: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          owner_user_id?: string
+          request_type?: Database["public"]["Enums"]["commercial_request_type"]
+          state?: Database["public"]["Enums"]["commercial_request_state"]
+          state_changed_at?: string
+          state_changed_by?: string | null
+          terms?: Json
+          title_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commercial_requests_accepted_agreement_id_fkey"
+            columns: ["accepted_agreement_id"]
+            isOneToOne: false
+            referencedRelation: "legal_agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commercial_requests_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_profile: {
         Row: {
           brands: Json
@@ -1981,6 +2094,95 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      legal_acceptances: {
+        Row: {
+          accepted_at: string
+          agreement_id: string
+          agreement_type: Database["public"]["Enums"]["legal_agreement_type"]
+          context: Json
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+          user_id: string
+          version: number
+        }
+        Insert: {
+          accepted_at?: string
+          agreement_id: string
+          agreement_type: Database["public"]["Enums"]["legal_agreement_type"]
+          context?: Json
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_id: string
+          version: number
+        }
+        Update: {
+          accepted_at?: string
+          agreement_id?: string
+          agreement_type?: Database["public"]["Enums"]["legal_agreement_type"]
+          context?: Json
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_acceptances_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "legal_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_agreements: {
+        Row: {
+          agreement_type: Database["public"]["Enums"]["legal_agreement_type"]
+          body: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_current: boolean
+          is_published: boolean
+          published_at: string | null
+          summary: string | null
+          title: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          agreement_type: Database["public"]["Enums"]["legal_agreement_type"]
+          body: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_current?: boolean
+          is_published?: boolean
+          published_at?: string | null
+          summary?: string | null
+          title: string
+          updated_at?: string
+          version: number
+        }
+        Update: {
+          agreement_type?: Database["public"]["Enums"]["legal_agreement_type"]
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_current?: boolean
+          is_published?: boolean
+          published_at?: string | null
+          summary?: string | null
+          title?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
       }
       mcp_audit_log: {
         Row: {
@@ -4204,6 +4406,68 @@ export type Database = {
           },
         ]
       }
+      title_commercial_profiles: {
+        Row: {
+          acquisition_open: boolean
+          admin_approval_required: boolean
+          created_at: string
+          creator_final_approval_required: boolean
+          creator_tier: string
+          deal_mode: Database["public"]["Enums"]["deal_mode"]
+          distribution_open: boolean
+          id: string
+          licensing_open: boolean
+          notes: string | null
+          owner_user_id: string
+          protection_tier: Database["public"]["Enums"]["protection_tier"]
+          screening_allowed: boolean
+          title_id: string
+          updated_at: string
+        }
+        Insert: {
+          acquisition_open?: boolean
+          admin_approval_required?: boolean
+          created_at?: string
+          creator_final_approval_required?: boolean
+          creator_tier?: string
+          deal_mode?: Database["public"]["Enums"]["deal_mode"]
+          distribution_open?: boolean
+          id?: string
+          licensing_open?: boolean
+          notes?: string | null
+          owner_user_id: string
+          protection_tier?: Database["public"]["Enums"]["protection_tier"]
+          screening_allowed?: boolean
+          title_id: string
+          updated_at?: string
+        }
+        Update: {
+          acquisition_open?: boolean
+          admin_approval_required?: boolean
+          created_at?: string
+          creator_final_approval_required?: boolean
+          creator_tier?: string
+          deal_mode?: Database["public"]["Enums"]["deal_mode"]
+          distribution_open?: boolean
+          id?: string
+          licensing_open?: boolean
+          notes?: string | null
+          owner_user_id?: string
+          protection_tier?: Database["public"]["Enums"]["protection_tier"]
+          screening_allowed?: boolean
+          title_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "title_commercial_profiles_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: true
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       title_review_assignments: {
         Row: {
           assigned_at: string
@@ -5229,6 +5493,13 @@ export type Database = {
         }[]
       }
       grant_creator_role: { Args: { _user_id: string }; Returns: undefined }
+      has_accepted_agreement: {
+        Args: {
+          _type: Database["public"]["Enums"]["legal_agreement_type"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -5451,6 +5722,21 @@ export type Database = {
         | "upi_manual"
         | "invoice_offline"
         | "admin_mark_paid"
+      commercial_request_state:
+        | "pending_admin_review"
+        | "awaiting_creator_review"
+        | "more_info_required"
+        | "rejected"
+        | "approved_for_negotiation"
+        | "agreement_pending"
+        | "delivery_authorized"
+        | "closed"
+      commercial_request_type:
+        | "acquisition"
+        | "licensing"
+        | "distribution"
+        | "screener"
+        | "rights_info"
       content_status:
         | "draft"
         | "submitted"
@@ -5466,8 +5752,16 @@ export type Database = {
         | "legal_review"
         | "hold"
         | "rejected"
+      deal_mode: "admin_managed" | "creator_managed" | "hybrid"
+      legal_agreement_type:
+        | "creator_master"
+        | "buyer_request_confidentiality"
+        | "free_tier_commercial"
+        | "screener_access"
+        | "antipiracy_addendum"
       plan_assignment_status: "active" | "suspended" | "expired" | "cancelled"
       production_banner: "Crayons Pictures" | "Abhijith Asokan Productions"
+      protection_tier: "baseline" | "enhanced" | "forensic"
       studio_slug:
         | "crayons_pictures"
         | "abhijith_asokan_productions"
@@ -5660,6 +5954,23 @@ export const Constants = {
         "invoice_offline",
         "admin_mark_paid",
       ],
+      commercial_request_state: [
+        "pending_admin_review",
+        "awaiting_creator_review",
+        "more_info_required",
+        "rejected",
+        "approved_for_negotiation",
+        "agreement_pending",
+        "delivery_authorized",
+        "closed",
+      ],
+      commercial_request_type: [
+        "acquisition",
+        "licensing",
+        "distribution",
+        "screener",
+        "rights_info",
+      ],
       content_status: [
         "draft",
         "submitted",
@@ -5676,8 +5987,17 @@ export const Constants = {
         "hold",
         "rejected",
       ],
+      deal_mode: ["admin_managed", "creator_managed", "hybrid"],
+      legal_agreement_type: [
+        "creator_master",
+        "buyer_request_confidentiality",
+        "free_tier_commercial",
+        "screener_access",
+        "antipiracy_addendum",
+      ],
       plan_assignment_status: ["active", "suspended", "expired", "cancelled"],
       production_banner: ["Crayons Pictures", "Abhijith Asokan Productions"],
+      protection_tier: ["baseline", "enhanced", "forensic"],
       studio_slug: [
         "crayons_pictures",
         "abhijith_asokan_productions",

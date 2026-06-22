@@ -8,6 +8,7 @@ import { lovable } from "@/integrations/lovable";
 import { useAuth, dashboardForRole } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { getAppOrigin } from "@/lib/site";
+import { Seo } from "@/components/Seo";
 
 /**
  * Passwordless magic-link auth.

@@ -13,20 +13,14 @@ import {
 import { AssetUploader, AssetList } from "./AssetUploader";
 import { StatusBadge } from "./StatusBadge";
 
-type TabId =
-  | "overview" | "metadata"
-  | "film" | "trailer" | "poster" | "censor" | "ownership"
-  | "status";
+type TabId = "overview" | "metadata" | "assets" | "legal" | "submission";
 
 const TABS: { id: TabId; label: string }[] = [
-  { id: "overview",  label: "Overview" },
-  { id: "metadata",  label: "Metadata" },
-  { id: "film",      label: "Feature Film" },
-  { id: "trailer",   label: "Trailer" },
-  { id: "poster",    label: "Poster" },
-  { id: "censor",    label: "Censor Certificate" },
-  { id: "ownership", label: "Ownership Documents" },
-  { id: "status",    label: "Status" },
+  { id: "overview",   label: "Overview" },
+  { id: "metadata",   label: "Metadata" },
+  { id: "assets",     label: "Assets" },
+  { id: "legal",      label: "Legal & Rights" },
+  { id: "submission", label: "Submission" },
 ];
 
 export function TitleEditor({
@@ -162,6 +156,7 @@ export function TitleEditor({
               <X className="w-4 h-4" />
             </button>
             <div className="min-w-0 flex-1">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground/70">Title Workspace</p>
               {readOnly ? (
                 <p className="font-semibold truncate">{title?.title ?? "Loading…"}</p>
               ) : (
@@ -263,39 +258,39 @@ export function TitleEditor({
           ) : (
             <>
               {tab === "overview" && (
-                <OverviewTab title={title} readiness={readiness} local={localChecklist!} assets={assets} meta={meta} timeline={timeline} />
+                <OverviewSnapshot title={title} meta={meta} assets={assets} timeline={timeline} />
               )}
               {tab === "metadata" && (
                 <MetadataTab meta={meta} setMeta={setMeta} readOnly={readOnly} />
               )}
-              {tab === "status" && <StatusTab title={title} timeline={timeline} />}
-
-              {tab === "film" && (
-                <AssetTab cat="feature_film" label="Feature Film"
-                  assets={byCat(["feature_film"])} titleId={title.id}
-                  locked={readOnly} onUploaded={reload} accept="video/*" />
+              {tab === "assets" && (
+                <div className="space-y-8">
+                  <AssetTab cat="feature_film" label="Master File"
+                    assets={byCat(["feature_film"])} titleId={title.id}
+                    locked={readOnly} onUploaded={reload} accept="video/*" />
+                  <AssetTab cat="trailer" label="Trailer"
+                    assets={byCat(["trailer"])} titleId={title.id}
+                    locked={readOnly} onUploaded={reload} accept="video/*" />
+                  <AssetTab cat="poster" label="Poster"
+                    assets={byCat(["poster"])} titleId={title.id}
+                    locked={readOnly} onUploaded={reload} accept="image/*" />
+                </div>
               )}
-              {tab === "trailer" && (
-                <AssetTab cat="trailer" label="Trailer"
-                  assets={byCat(["trailer"])} titleId={title.id}
-                  locked={readOnly} onUploaded={reload} accept="video/*" />
+              {tab === "legal" && (
+                <div className="space-y-8">
+                  <AssetTab cat="censor_certificate" label="Censor Certificate"
+                    assets={byCat(["censor_certificate", "censor_cert"])} titleId={title.id}
+                    locked={readOnly} onUploaded={reload} accept="application/pdf,image/*" />
+                  <AssetTab cat="ownership_documents" label="Ownership Documents"
+                    assets={byCat(["ownership_documents", "ownership"])} titleId={title.id}
+                    locked={readOnly} onUploaded={reload} accept="application/pdf,image/*" />
+                </div>
               )}
-              {tab === "poster" && (
-                <AssetTab cat="poster" label="Poster"
-                  assets={byCat(["poster"])} titleId={title.id}
-                  locked={readOnly} onUploaded={reload} accept="image/*" />
-              )}
-              {tab === "censor" && (
-                <AssetTab cat="censor_certificate" label="Censor Certificate"
-                  assets={byCat(["censor_certificate", "censor_cert"])} titleId={title.id}
-                  locked={readOnly} onUploaded={reload} accept="application/pdf,image/*" />
-              )}
-              {tab === "ownership" && (
-                <AssetTab cat="ownership_documents" label="Ownership Documents"
-                  assets={byCat(["ownership_documents", "ownership"])} titleId={title.id}
-                  locked={readOnly} onUploaded={reload} accept="application/pdf,image/*" />
+              {tab === "submission" && (
+                <OverviewTab title={title} readiness={readiness} local={localChecklist!} assets={assets} meta={meta} timeline={timeline} />
               )}
             </>
+
           )}
         </div>
       </div>
@@ -340,7 +335,7 @@ function FilmJourney({ status, timeline }: { status: ContentStatus; timeline: Ti
   })();
   return (
     <div className="rounded-lg border border-border/40 p-4 bg-card/30">
-      <div className="text-xs font-semibold mb-3 text-foreground/90">Film Journey</div>
+      <div className="text-xs font-semibold mb-3 text-foreground/90">Review Pipeline</div>
       <ol className="flex flex-wrap items-center gap-2">
         {stages.map((s, i) => {
           const done = visitedSet.has(s.key) || i < currentIdx;
@@ -364,6 +359,45 @@ function FilmJourney({ status, timeline }: { status: ContentStatus; timeline: Ti
     </div>
   );
 }
+
+/**
+ * OverviewSnapshot — light, read-only summary surface for the Overview tab.
+ * Detailed status / readiness lives in the Submission tab.
+ */
+function OverviewSnapshot({
+  title, meta, assets, timeline,
+}: {
+  title: TitleRow; meta: TitleMetadata | null; assets: TitleAsset[]; timeline: TitleTimelineEntry[];
+}) {
+  const lastEvent = timeline[timeline.length - 1];
+  return (
+    <div className="space-y-5">
+      <section className="rounded-lg border border-border/40 p-4 bg-card/30">
+        <div className="text-xs font-semibold mb-2">Summary</div>
+        <dl className="grid sm:grid-cols-2 gap-3 text-xs">
+          <div><dt className="text-muted-foreground">Title</dt><dd className="truncate">{title.title}</dd></div>
+          <div><dt className="text-muted-foreground">Format</dt><dd>{title.metadata.format}</dd></div>
+          <div><dt className="text-muted-foreground">Runtime</dt><dd>{meta?.runtime_minutes || 0} min</dd></div>
+          <div><dt className="text-muted-foreground">Genres</dt><dd className="truncate">{meta?.genres.join(", ") || "—"}</dd></div>
+          <div><dt className="text-muted-foreground">Production company</dt><dd className="truncate">{meta?.production_company || "—"}</dd></div>
+          <div><dt className="text-muted-foreground">Current status</dt><dd><StatusBadge status={title.status} /></dd></div>
+          <div><dt className="text-muted-foreground">Last updated</dt><dd>{new Date(title.updated_at).toLocaleString()}</dd></div>
+          <div><dt className="text-muted-foreground">Total files</dt><dd>{assets.length}</dd></div>
+        </dl>
+        {lastEvent && (
+          <p className="text-[11px] text-muted-foreground mt-3">
+            Latest event: {(lastEvent.from_status ?? "—").replace(/_/g, " ")} → {lastEvent.to_status.replace(/_/g, " ")} ·{" "}
+            {new Date(lastEvent.created_at).toLocaleString()}
+          </p>
+        )}
+      </section>
+      <p className="text-[11px] text-muted-foreground">
+        Detailed readiness, checklist and review history live in the <span className="text-foreground">Submission</span> tab.
+      </p>
+    </div>
+  );
+}
+
 
 function readinessScore(local: ReturnType<typeof evaluateChecklist>, readiness: ServerReadiness | null) {
   const has = readiness?.has ?? {};
@@ -437,7 +471,7 @@ function OverviewTab({
   const rows: { key: string; label: string }[] = [
     { key: "title", label: "Title name" },
     { key: "synopsis", label: "Synopsis" },
-    { key: "feature_film", label: "Feature Film" },
+    { key: "feature_film", label: "Master File" },
     { key: "trailer", label: "Trailer" },
     { key: "poster", label: "Poster" },
     { key: "censor_certificate", label: "Censor Certificate" },
@@ -475,7 +509,7 @@ function OverviewTab({
       </section>
 
       <section className="rounded-lg border border-sky-500/20 bg-sky-500/5 p-4">
-        <div className="text-[10px] uppercase tracking-wider text-sky-300 font-semibold">What Happens Next</div>
+        <div className="text-[10px] uppercase tracking-wider text-sky-300 font-semibold">Submission Flow</div>
         <div className="mt-2 grid sm:grid-cols-3 gap-3 text-xs">
           <div>
             <div className="text-muted-foreground">Current Status</div>

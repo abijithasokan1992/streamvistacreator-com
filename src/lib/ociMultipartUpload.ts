@@ -102,6 +102,13 @@ function clearResumeEntry(file: File) {
 
 type InvokeOpts = { signal?: AbortSignal };
 
+/** Thrown when the OCI multipart upload has expired / been aborted. Caller must
+ *  clean local state and re-init from scratch with a fresh pendingId. */
+export class UploadSessionExpiredError extends Error {
+  code = "upload_session_expired" as const;
+  constructor(message: string) { super(message); this.name = "UploadSessionExpiredError"; }
+}
+
 async function invoke<T>(action: string, body: Record<string, unknown>, opts: InvokeOpts = {}): Promise<T> {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error("Not signed in");
@@ -117,6 +124,9 @@ async function invoke<T>(action: string, body: Record<string, unknown>, opts: In
   const text = await resp.text();
   let parsed: any = {};
   try { parsed = text ? JSON.parse(text) : {}; } catch { /* keep raw */ }
+  if (resp.status === 410 || parsed?.code === "upload_not_found") {
+    throw new UploadSessionExpiredError(parsed?.error || "upload_not_found");
+  }
   if (!resp.ok) throw new Error(parsed?.error || `oci-multipart ${action} ${resp.status}`);
   return parsed as T;
 }
@@ -165,12 +175,18 @@ async function putChunkWithRetry(
       const durationMs = Math.round(performance.now() - started);
       if (!resp.ok) {
         const text = await resp.text().catch(() => "");
+        // Terminal for this multipart session — do NOT retry, surface so the
+        // caller can clean state and re-init from scratch.
+        if (resp.status === 404 && /UploadNotFound/i.test(text)) {
+          throw new UploadSessionExpiredError(`OCI PUT 404: ${text.slice(0, 200)}`);
+        }
         throw new Error(`OCI PUT ${resp.status}: ${text.slice(0, 200)}`);
       }
       const etag = (resp.headers.get("etag") || resp.headers.get("ETag") || "").replace(/^"|"$/g, "");
       if (!etag) throw new Error("OCI did not return ETag");
       return { etag, status: resp.status, durationMs };
     } catch (e) {
+      if (e instanceof UploadSessionExpiredError) throw e;
       lastErr = e;
       if (signal?.aborted) throw e;
       await new Promise((r) => setTimeout(r, 500 * Math.pow(3, i)));

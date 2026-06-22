@@ -209,16 +209,16 @@ export function TitleEditor({
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {!readOnly && (
+            {mode === "edit" && (!titleLocked || lockState.unlocks.length > 0) && (
               <button
                 onClick={save}
                 disabled={saving}
                 className="rounded-md border border-border/50 text-xs px-3 py-1.5 hover:bg-secondary/30 disabled:opacity-50"
               >
-                {saving ? "Saving…" : "Save"}
+                {saving ? "Saving…" : titleLocked ? "Save unlocked sections" : "Save"}
               </button>
             )}
-            {!readOnly && (
+            {mode === "edit" && !titleLocked && (
               <button
                 onClick={handleSubmit}
                 disabled={submitting || !ready}

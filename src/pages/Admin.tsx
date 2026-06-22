@@ -342,6 +342,7 @@ export default function Admin() {
             <CommercialControlTower />
             <RazorpayOpsBanner />
             <BillingOperations />
+            <ManualInvoiceConsole />
             <AdminInvoices />
             <PaymentTrace />
             <KammattamMeter />

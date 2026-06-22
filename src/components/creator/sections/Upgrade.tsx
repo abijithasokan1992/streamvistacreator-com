@@ -546,6 +546,16 @@ export default function UpgradeSection() {
         </div>
         <ManualInvoicesList surface="creator" />
       </section>
+
+      {/* ── Distribution offers ────────────────────────── */}
+      <section className="space-y-3">
+        <div>
+          <h2 className="font-display text-xl font-bold">Distribution Offers</h2>
+          <p className="text-xs text-muted-foreground">Distribution programs offered by StreamVista for your titles. Review and accept or reject directly.</p>
+        </div>
+        <CreatorDistributionOffers />
+      </section>
+      </section>
     </div>
   );
 }

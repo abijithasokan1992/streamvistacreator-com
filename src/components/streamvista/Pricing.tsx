@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
  * The Buyer entry block lives in <BuyerEntry />.
  *
  * Numbers shown:
- *   • Creator Basic       free, 50 GB included
+ *   • Creator Basic       free, 5 GB workspace
  *   • Storage add-on       ₹650 + 18% GST = ₹767 per TB / month (already live)
  *   • Studio / Creator Pro / Studio plans → priced on conversation
  */
@@ -41,7 +41,7 @@ const BLOCKS: Block[] = [
     tagline:
       "Start free on Creator Basic. Upgrade to Pro or Studio when your catalog grows — our team confirms pricing based on titles, storage and workflow needs.",
     bullets: [
-      "Creator Basic — 50 GB included, 1 active title, standard review",
+      "Creator Basic — 5 GB workspace, 1 active title, standard review",
       "Creator Pro (managed) — up to 10 active titles, priority review, named contact",
       "Creator Studio (managed) — custom commercial terms for larger catalogs",
       "Plan upgrades are handled by our team — no surprise checkout",

@@ -38,7 +38,7 @@ const PACKAGES: ReadonlyArray<{
     name: "Creator Basic",
     posture: "Included by default",
     titles: "1 active title, 1 submission",
-    storage: "50 GB included",
+    storage: "5 GB workspace",
     workflow: "Standard review workflow",
   },
   {

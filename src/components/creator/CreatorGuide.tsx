@@ -22,7 +22,7 @@ const TOPICS: { q: string; a: string }[] = [
   },
   {
     q: "What storage is included?",
-    a: "Creator Basic includes 50 GB. Larger allowances are sized to your catalog on Creator Pro / Studio. Heavy masters and archival belong in Studio Vault — request from the Upgrade tab.",
+    a: "Creator Basic includes 5 GB workspace (submission and evaluation plan). Larger allowances are sized to your catalog on Creator Pro / Studio. Heavy masters and archival belong in Studio Vault — request from the Upgrade tab.",
   },
   {
     q: "When do I need to upgrade?",

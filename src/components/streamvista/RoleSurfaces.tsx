@@ -38,7 +38,7 @@ const SURFACES: Surface[] = [
     bullets: [
       "Title intake — metadata, posters, trailers, master files, legal docs",
       "Frame-accurate review and submission pipeline",
-      "50 GB included on Creator Basic — add recurring 1 TB storage blocks self-serve",
+      "5 GB workspace on Creator Basic — add recurring 1 TB storage blocks self-serve",
       "Creator Pro / Creator Studio packages handled by our team",
     ],
     model: "Self-serve sign-up · founder-assisted upgrades · self-serve storage",

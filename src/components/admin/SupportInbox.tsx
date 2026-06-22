@@ -43,7 +43,7 @@ export default function SupportInbox() {
 
   useEffect(() => { load(); }, []);
 
-  const update = async (id: string, patch: Partial<Omit<Req, "user_email">>) => {
+  const update = async (id: string, patch: { admin_reply?: string; status?: string }) => {
     const { error } = await supabase.from("support_requests").update(patch).eq("id", id);
     if (error) return toast.error(error.message);
     setRows((r) => r.map((x) => (x.id === id ? { ...x, ...patch } as Req : x)));

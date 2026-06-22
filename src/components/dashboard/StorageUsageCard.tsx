@@ -160,7 +160,8 @@ export default function StorageUsageCard() {
             Storage &amp; Bandwidth
           </h3>
           <p className="text-[11px] text-muted-foreground mt-0.5">
-            {isCreator ? "Creator · Pay-As-You-Go" : "Basic Free Plan"}
+            {planLabel}
+
           </p>
         </div>
         {isCreator && (

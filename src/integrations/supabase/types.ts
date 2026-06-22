@@ -2149,6 +2149,7 @@ export type Database = {
           is_current: boolean
           is_published: boolean
           published_at: string | null
+          requires_legal_review: boolean
           summary: string | null
           title: string
           updated_at: string
@@ -2163,6 +2164,7 @@ export type Database = {
           is_current?: boolean
           is_published?: boolean
           published_at?: string | null
+          requires_legal_review?: boolean
           summary?: string | null
           title: string
           updated_at?: string
@@ -2177,6 +2179,7 @@ export type Database = {
           is_current?: boolean
           is_published?: boolean
           published_at?: string | null
+          requires_legal_review?: boolean
           summary?: string | null
           title?: string
           updated_at?: string

@@ -145,6 +145,7 @@ const PublicRoutes = () => (
     <Route path="/checkout/return" element={<CheckoutReturn />} />
     <Route path="/s/:token" element={<Share />} />
     <Route path="/review/:token" element={<Review />} />
+    <Route path="/screening/:token" element={<ScreeningRoom />} />
     <Route path="/terms" element={<Terms />} />
     <Route path="/privacy" element={<Privacy />} />
     <Route path="/ip-copyright" element={<IPCopyright />} />

@@ -1,6 +1,9 @@
 import { Navigate } from "react-router-dom";
 import { Navbar } from "@/components/streamvista/Navbar";
 import { Hero } from "@/components/streamvista/Hero";
+import { RoleSurfaces } from "@/components/streamvista/RoleSurfaces";
+import { Pricing } from "@/components/streamvista/Pricing";
+import { BuyerEntry } from "@/components/streamvista/BuyerEntry";
 import { Footer } from "@/components/streamvista/Footer";
 import { Seo } from "@/components/Seo";
 import { dashboardForRole, useAuth } from "@/hooks/useAuth";
@@ -14,8 +17,8 @@ const Index = () => {
   return (
     <main className="min-h-dvh">
       <Seo
-        title="StreamVista Cloud X — Creator Cloud Studio"
-        description="The creator cloud studio built for cinema. Upload, review, and deliver from set to screen."
+        title="StreamVista — Secure media cloud for creators, studios & buyers"
+        description="One platform for title intake, recurring storage, post & vault workflows, and buyer rights requests. Self-serve where it makes sense, founder-assisted where it matters."
         path="/"
         jsonLd={[
           {
@@ -28,6 +31,9 @@ const Index = () => {
       />
       <Navbar />
       <Hero />
+      <RoleSurfaces />
+      <Pricing />
+      <BuyerEntry />
       <Footer />
     </main>
   );

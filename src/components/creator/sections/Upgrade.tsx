@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
 import ManualInvoicesList from "@/components/billing/ManualInvoicesList";
+import CreatorDistributionOffers from "@/components/creator/CreatorDistributionOffers";
 
 /**
  * Creator Upgrade — two clearly separated commercial surfaces:

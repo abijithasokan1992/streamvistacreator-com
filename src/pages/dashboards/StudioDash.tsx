@@ -6,6 +6,7 @@ import MyVaultSummary from "@/components/studio/vault/MyVaultSummary";
 import VaultBillingPanel from "@/components/studio/vault/VaultBillingPanel";
 import StudioRequestService from "@/components/studio/StudioRequestService";
 import StudioRequestPlanChange from "@/components/studio/StudioRequestPlanChange";
+import ManualInvoicesList from "@/components/billing/ManualInvoicesList";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 

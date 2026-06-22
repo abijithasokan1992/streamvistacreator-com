@@ -44,6 +44,7 @@ import Unsubscribe from "./pages/Unsubscribe.tsx";
 import Contact from "./pages/Contact.tsx";
 import InvoiceReceipt from "./pages/InvoiceReceipt.tsx";
 import ManualInvoiceReceipt from "./pages/ManualInvoiceReceipt.tsx";
+import ScreeningRoom from "./pages/ScreeningRoom.tsx";
 
 import ReferralCapture from "./components/ReferralCapture.tsx";
 import WrongPortal from "./components/WrongPortal.tsx";

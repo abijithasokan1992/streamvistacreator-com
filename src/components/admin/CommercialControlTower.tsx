@@ -126,19 +126,31 @@ export default function CommercialControlTower() {
 
 /* ------------------------------ Support queue ------------------------------ */
 
+type LinkedInvoice = {
+  id: string; invoice_number: string; status: string; total_paise: number;
+  document_type: string; payment_link_url: string | null;
+};
+
 function SupportQueue({
   requestTypes,
   emptyLabel,
   helpText,
+  showFinance = false,
+  showProvision = false,
 }: {
   requestTypes: string[];
   emptyLabel: string;
   helpText: string;
+  showFinance?: boolean;
+  showProvision?: boolean;
 }) {
   const [rows, setRows] = useState<SupportRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("open");
   const [replyDraft, setReplyDraft] = useState<Record<string, string>>({});
+  const [invoicesByReq, setInvoicesByReq] = useState<Record<string, LinkedInvoice[]>>({});
+  const [editorReq, setEditorReq] = useState<SupportRow | null>(null);
+  const [provisionReq, setProvisionReq] = useState<SupportRow | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -152,7 +164,21 @@ function SupportQueue({
     const { data, error } = await q;
     setLoading(false);
     if (error) { toast.error(error.message); return; }
-    setRows((data as unknown as SupportRow[]) ?? []);
+    const list = (data as unknown as SupportRow[]) ?? [];
+    setRows(list);
+    if (showFinance && list.length) {
+      const ids = list.map(r => r.id);
+      const { data: inv } = await (supabase as any)
+        .from("manual_invoices")
+        .select("id,invoice_number,status,total_paise,document_type,payment_link_url,support_request_id")
+        .in("support_request_id", ids);
+      const map: Record<string, LinkedInvoice[]> = {};
+      (inv ?? []).forEach((x: any) => {
+        if (!x.support_request_id) return;
+        (map[x.support_request_id] ??= []).push(x);
+      });
+      setInvoicesByReq(map);
+    }
   };
 
   useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [statusFilter]);
@@ -197,6 +223,7 @@ function SupportQueue({
         <div className="space-y-2">
           {rows.map(r => {
             const meta = (r.metadata ?? {}) as Record<string, unknown>;
+            const linked = invoicesByReq[r.id] ?? [];
             return (
               <details key={r.id} className="rounded-xl border border-border/40 bg-secondary/10 p-3">
                 <summary className="cursor-pointer flex flex-wrap items-center gap-2 justify-between">
@@ -208,8 +235,10 @@ function SupportQueue({
                       {typeof meta.surface === "string" && <span>· surface: {String(meta.surface)}</span>}
                       {typeof meta.service_kind === "string" && <span>· {String(meta.service_kind)}</span>}
                       {typeof meta.target_plan === "string" && <span>· plan: {String(meta.target_plan)}</span>}
+                      {typeof meta.requested_plan === "string" && <span>· wants: {String(meta.requested_plan)}</span>}
                       {typeof meta.urgency === "string" && <span>· urgency: {String(meta.urgency)}</span>}
                       <span>· {new Date(r.created_at).toLocaleString()}</span>
+                      {linked.length > 0 && <span>· {linked.length} invoice(s)</span>}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -224,20 +253,51 @@ function SupportQueue({
 
                 <div className="mt-3 grid gap-3 text-sm">
                   <p className="whitespace-pre-wrap text-foreground/90">{r.message}</p>
+                  <div className="grid sm:grid-cols-2 gap-2 text-[11px] text-muted-foreground">
+                    <div>User UUID: <code className="font-mono text-foreground/80">{r.user_id}</code></div>
+                    {typeof meta.requested_plan === "string" && <div>Requested plan: {String(meta.requested_plan)}</div>}
+                    {typeof meta.storage_need_tb === "number" && <div>Storage need: {String(meta.storage_need_tb)} TB</div>}
+                    {typeof meta.team_size === "number" && <div>Team size: {String(meta.team_size)}</div>}
+                  </div>
                   {r.admin_reply && (
                     <div className="text-xs border-l-2 border-accent/40 pl-2 text-foreground">
                       <span className="text-[10px] uppercase tracking-wider text-accent">Current admin note · </span>
                       {r.admin_reply}
                     </div>
                   )}
+
+                  {linked.length > 0 && (
+                    <div className="rounded-lg border border-border/30 bg-background/40 p-2 space-y-1">
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Linked invoices</div>
+                      {linked.map(inv => (
+                        <div key={inv.id} className="flex items-center justify-between text-xs">
+                          <a className="font-mono hover:underline" href={`/invoice/manual/${inv.id}`} target="_blank" rel="noreferrer">{inv.invoice_number}</a>
+                          <span className="text-muted-foreground">{inv.document_type}</span>
+                          <span className="font-mono">₹{(inv.total_paise / 100).toLocaleString("en-IN")}</span>
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase ${inv.status === "paid" ? "bg-emerald-500/15 text-emerald-600" : "bg-secondary/40"}`}>{inv.status}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   <Textarea
                     rows={2}
                     placeholder="Internal note / reply to user"
                     value={replyDraft[r.id] ?? ""}
                     onChange={e => setReplyDraft(d => ({ ...d, [r.id]: e.target.value }))}
                   />
-                  <div className="flex justify-end">
-                    <Button size="sm" onClick={() => saveReply(r.id)}>Save reply</Button>
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <Button size="sm" variant="outline" onClick={() => saveReply(r.id)}>Save reply</Button>
+                    {showFinance && (
+                      <Button size="sm" variant="outline" onClick={() => setEditorReq(r)}>
+                        <FileText className="w-3.5 h-3.5 mr-1" /> Create invoice / quote
+                      </Button>
+                    )}
+                    {showProvision && (
+                      <Button size="sm" onClick={() => setProvisionReq(r)}>
+                        <ShieldCheck className="w-3.5 h-3.5 mr-1" /> Provision plan
+                      </Button>
+                    )}
                   </div>
                 </div>
               </details>
@@ -245,7 +305,133 @@ function SupportQueue({
           })}
         </div>
       )}
+
+      {editorReq && (
+        <RequestInvoiceLauncher
+          req={editorReq}
+          onClose={() => setEditorReq(null)}
+          onSaved={() => { setEditorReq(null); load(); }}
+        />
+      )}
+      {provisionReq && (
+        <ProvisionPlanDialog
+          req={provisionReq}
+          onClose={() => setProvisionReq(null)}
+          onSaved={() => { setProvisionReq(null); load(); }}
+        />
+      )}
     </div>
+  );
+}
+
+function RequestInvoiceLauncher({ req, onClose, onSaved }: { req: SupportRow; onClose: () => void; onSaved: () => void }) {
+  const meta = (req.metadata ?? {}) as Record<string, unknown>;
+  const surface = typeof meta.surface === "string" ? String(meta.surface) : "creator";
+  return (
+    <InvoiceEditor
+      open={true}
+      onOpenChange={(o) => { if (!o) onClose(); }}
+      editing={null}
+      onSaved={onSaved}
+      presetUserId={req.user_id}
+      presetRequestId={req.id}
+      presetSurface={surface}
+    />
+  );
+}
+
+function ProvisionPlanDialog({ req, onClose, onSaved }: { req: SupportRow; onClose: () => void; onSaved: () => void }) {
+  const meta = (req.metadata ?? {}) as Record<string, unknown>;
+  const surface = typeof meta.surface === "string" ? String(meta.surface) : "creator";
+  const requestedPlan = typeof meta.requested_plan === "string" ? String(meta.requested_plan) : "";
+  const [planTier, setPlanTier] = useState<string>(surface === "studio" ? "studio" : "pro");
+  const [studioPkg, setStudioPkg] = useState<string>(requestedPlan || "Studio Custom");
+  const [storageGb, setStorageGb] = useState<number>(0);
+  const [expiresAt, setExpiresAt] = useState<string>("");
+  const [notes, setNotes] = useState<string>(requestedPlan ? `Requested: ${requestedPlan}` : "");
+  const [busy, setBusy] = useState(false);
+
+  const apply = async () => {
+    setBusy(true);
+    if (surface === "studio") {
+      const { error } = await (supabase as any).rpc("admin_provision_studio_plan", {
+        _user_id: req.user_id,
+        _support_request_id: req.id,
+        _package_label: studioPkg,
+        _notes: notes || null,
+      });
+      setBusy(false);
+      if (error) return toast.error(error.message);
+      toast.success("Studio plan recorded");
+    } else {
+      const { error } = await (supabase as any).rpc("admin_provision_creator_plan", {
+        _user_id: req.user_id,
+        _support_request_id: req.id,
+        _plan_tier: planTier,
+        _storage_grant_gb: storageGb || 0,
+        _grant_expires_at: expiresAt || null,
+        _notes: notes || null,
+      });
+      setBusy(false);
+      if (error) return toast.error(error.message);
+      toast.success(`Creator account moved to ${planTier}`);
+    }
+    onSaved();
+  };
+
+  return (
+    <Dialog open={true} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Provision plan · {surface}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 text-sm">
+          <div className="text-xs text-muted-foreground">
+            Request: <strong className="text-foreground">{req.subject}</strong> · user <code className="font-mono">{req.user_id.slice(0, 8)}…</code>
+            {requestedPlan && <> · requested <strong>{requestedPlan}</strong></>}
+          </div>
+          {surface === "studio" ? (
+            <div>
+              <Label className="text-xs">Approved package / plan label</Label>
+              <Input value={studioPkg} onChange={e => setStudioPkg(e.target.value)} placeholder="e.g. Studio Pro Annual" />
+            </div>
+          ) : (
+            <>
+              <div>
+                <Label className="text-xs">Approved Creator plan tier</Label>
+                <Select value={planTier} onValueChange={setPlanTier}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="free">Free (Basic)</SelectItem>
+                    <SelectItem value="creator">Creator (legacy)</SelectItem>
+                    <SelectItem value="pro">Creator Pro</SelectItem>
+                    <SelectItem value="studio">Creator Studio</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs">Included storage grant (GB)</Label>
+                  <Input type="number" value={storageGb} onChange={e => setStorageGb(Number(e.target.value))} placeholder="0 = no extra grant" />
+                </div>
+                <div>
+                  <Label className="text-xs">Grant expires (optional)</Label>
+                  <Input type="datetime-local" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} />
+                </div>
+              </div>
+            </>
+          )}
+          <div>
+            <Label className="text-xs">Provisioning notes</Label>
+            <Textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button onClick={apply} disabled={busy}>{busy && <Loader2 className="w-3 h-3 mr-1 animate-spin" />} Apply &amp; mark provisioned</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

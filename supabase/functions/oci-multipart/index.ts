@@ -246,26 +246,43 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (!sess || !sess.oci_upload_id) return json({ found: false }, 200, cors);
 
-      // Confirm with OCI which parts are actually stored.
+      // Confirm with OCI that the multipart upload still exists.
       const path = `/n/${ns}/b/${bucket}/u/${encodeURIComponent(sess.object_key)}?uploadId=${encodeURIComponent(sess.oci_upload_id)}`;
       const sig = await buildOciSignature({ method: "GET", host, path, contentSha256: "", keyId, privateKey });
       const resp = await fetch(`https://${host}${path}`, {
         method: "GET", headers: { host, date: sig.date, Authorization: sig.authorization },
       });
       const text = await resp.text();
-      let parts: Array<{ partNumber: number; etag: string; size?: number }> = [];
-      if (resp.ok) {
-        try {
-          const arr = JSON.parse(text);
-          if (Array.isArray(arr)) {
-            parts = arr.map((p: any) => ({
-              partNumber: Number(p.partNumber ?? p.uploadPartNum ?? p.part_num),
-              etag: String(p.etag ?? p.ETag ?? "").replace(/^"|"$/g, ""),
-              size: typeof p.size === "number" ? p.size : undefined,
-            })).filter((p) => Number.isInteger(p.partNumber) && p.etag);
-          }
-        } catch { /* ignore */ }
+
+      // If OCI says the multipart is gone (404 UploadNotFound, 403, etc.), DO NOT
+      // hand the stale uploadId back to the client — invalidate the session row
+      // and force a fresh init.
+      if (!resp.ok) {
+        await admin.from("upload_sessions")
+          .update({ status: "aborted", error_message: `oci_list_parts_${resp.status}: ${text.slice(0, 200)}` })
+          .eq("id", sess.id);
+        await admin.from("recent_uploads")
+          .update({ status: "failed", error_message: `OCI multipart no longer exists (${resp.status})` })
+          .eq("user_id", userId).eq("oci_upload_id", sess.oci_upload_id);
+        await logIngest(admin, {
+          user_id: userId, session_id: sess.id, oci_upload_id: sess.oci_upload_id,
+          event: "session.invalidated", severity: "warn", http_status: resp.status,
+          error_message: text.slice(0, 200),
+        });
+        return json({ found: false, invalidated: true }, 200, cors);
       }
+
+      let parts: Array<{ partNumber: number; etag: string; size?: number }> = [];
+      try {
+        const arr = JSON.parse(text);
+        if (Array.isArray(arr)) {
+          parts = arr.map((p: any) => ({
+            partNumber: Number(p.partNumber ?? p.uploadPartNum ?? p.part_num),
+            etag: String(p.etag ?? p.ETag ?? "").replace(/^"|"$/g, ""),
+            size: typeof p.size === "number" ? p.size : undefined,
+          })).filter((p) => Number.isInteger(p.partNumber) && p.etag);
+        }
+      } catch { /* ignore */ }
       const nextPart = (parts.reduce((m, p) => Math.max(m, p.partNumber), 0) || 0) + 1;
       await logIngest(admin, {
         user_id: userId, session_id: sess.id, oci_upload_id: sess.oci_upload_id,
@@ -395,18 +412,44 @@ Deno.serve(async (req) => {
             return json({ idempotent: true, upload: full }, 200, cors);
           }
           if (existing.oci_upload_id && existing.object_key) {
-            return json({
-              resumed: true,
-              uploadRowId: existing.id,
-              uploadId: existing.oci_upload_id,
-              objectKey: existing.object_key,
-              bucket, namespace: ns, region,
-              partSize: MAX_PART,
-              minPart: MIN_PART,
-              maxBytes: MAX_BYTES,
-              multipartThreshold: MULTIPART_THRESHOLD,
-              concurrency: UPLOAD_CONCURRENCY,
-            }, 200, cors);
+            // CRITICAL: validate the OCI multipart is still alive before handing
+            // back the stale uploadId. If OCI has expired/aborted it, fall
+            // through to create a fresh multipart upload on the same row.
+            const probePath = `/n/${ns}/b/${bucket}/u/${encodeURIComponent(existing.object_key)}?uploadId=${encodeURIComponent(existing.oci_upload_id)}`;
+            const probeSig = await buildOciSignature({
+              method: "GET", host, path: probePath, contentSha256: "", keyId, privateKey,
+            });
+            const probeResp = await fetch(`https://${host}${probePath}`, {
+              method: "GET", headers: { host, date: probeSig.date, Authorization: probeSig.authorization },
+            });
+            await probeResp.text().catch(() => "");
+            if (probeResp.ok) {
+              return json({
+                resumed: true,
+                uploadRowId: existing.id,
+                uploadId: existing.oci_upload_id,
+                objectKey: existing.object_key,
+                bucket, namespace: ns, region,
+                partSize: MAX_PART,
+                minPart: MIN_PART,
+                maxBytes: MAX_BYTES,
+                multipartThreshold: MULTIPART_THRESHOLD,
+                concurrency: UPLOAD_CONCURRENCY,
+              }, 200, cors);
+            }
+            // OCI says it's gone — invalidate this row and let the code below
+            // create a brand-new multipart upload + insert a fresh row.
+            await admin.from("recent_uploads")
+              .update({ status: "failed", error_message: `OCI multipart gone (${probeResp.status}) — restarting` })
+              .eq("id", existing.id);
+            await admin.from("upload_sessions")
+              .update({ status: "aborted", error_message: `oci_probe_${probeResp.status}` })
+              .eq("user_id", userId).eq("oci_upload_id", existing.oci_upload_id);
+            await logIngest(admin, {
+              user_id: userId, oci_upload_id: existing.oci_upload_id,
+              event: "session.restart", severity: "warn", http_status: probeResp.status,
+            });
+            // fall through
           }
         }
       }
@@ -639,7 +682,26 @@ Deno.serve(async (req) => {
         headers: { host, date: sig.date, Authorization: sig.authorization },
       });
       const text = await resp.text();
-      if (!resp.ok) return json({ error: `OCI list-parts ${resp.status}`, detail: text.slice(0, 400) }, 502, cors);
+      if (!resp.ok) {
+        // OCI says the multipart no longer exists — invalidate the row + session
+        // so the client knows to start over with a fresh init instead of trying
+        // to PUT into a dead uploadId.
+        if (resp.status === 404 || resp.status === 403) {
+          await admin.from("recent_uploads")
+            .update({ status: "failed", error_message: `OCI multipart gone (${resp.status})` })
+            .eq("id", uploadRowId);
+          await admin.from("upload_sessions")
+            .update({ status: "aborted", error_message: `oci_list_parts_${resp.status}` })
+            .eq("user_id", userId).eq("oci_upload_id", uploadId);
+          await logIngest(admin, {
+            user_id: userId, oci_upload_id: uploadId,
+            event: "session.invalidated", severity: "warn", http_status: resp.status,
+            error_message: text.slice(0, 200),
+          });
+          return json({ error: "upload_not_found", code: "upload_not_found", ociStatus: resp.status }, 410, cors);
+        }
+        return json({ error: `OCI list-parts ${resp.status}`, detail: text.slice(0, 400) }, 502, cors);
+      }
       let parts: Array<{ partNumber: number; etag: string; size?: number }> = [];
       try {
         const arr = JSON.parse(text);

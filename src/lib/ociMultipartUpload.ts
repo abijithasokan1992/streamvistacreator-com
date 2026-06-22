@@ -102,6 +102,13 @@ function clearResumeEntry(file: File) {
 
 type InvokeOpts = { signal?: AbortSignal };
 
+/** Thrown when the OCI multipart upload has expired / been aborted. Caller must
+ *  clean local state and re-init from scratch with a fresh pendingId. */
+export class UploadSessionExpiredError extends Error {
+  code = "upload_session_expired" as const;
+  constructor(message: string) { super(message); this.name = "UploadSessionExpiredError"; }
+}
+
 async function invoke<T>(action: string, body: Record<string, unknown>, opts: InvokeOpts = {}): Promise<T> {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error("Not signed in");
@@ -117,6 +124,9 @@ async function invoke<T>(action: string, body: Record<string, unknown>, opts: In
   const text = await resp.text();
   let parsed: any = {};
   try { parsed = text ? JSON.parse(text) : {}; } catch { /* keep raw */ }
+  if (resp.status === 410 || parsed?.code === "upload_not_found") {
+    throw new UploadSessionExpiredError(parsed?.error || "upload_not_found");
+  }
   if (!resp.ok) throw new Error(parsed?.error || `oci-multipart ${action} ${resp.status}`);
   return parsed as T;
 }
@@ -165,12 +175,18 @@ async function putChunkWithRetry(
       const durationMs = Math.round(performance.now() - started);
       if (!resp.ok) {
         const text = await resp.text().catch(() => "");
+        // Terminal for this multipart session — do NOT retry, surface so the
+        // caller can clean state and re-init from scratch.
+        if (resp.status === 404 && /UploadNotFound/i.test(text)) {
+          throw new UploadSessionExpiredError(`OCI PUT 404: ${text.slice(0, 200)}`);
+        }
         throw new Error(`OCI PUT ${resp.status}: ${text.slice(0, 200)}`);
       }
       const etag = (resp.headers.get("etag") || resp.headers.get("ETag") || "").replace(/^"|"$/g, "");
       if (!etag) throw new Error("OCI did not return ETag");
       return { etag, status: resp.status, durationMs };
     } catch (e) {
+      if (e instanceof UploadSessionExpiredError) throw e;
       lastErr = e;
       if (signal?.aborted) throw e;
       await new Promise((r) => setTimeout(r, 500 * Math.pow(3, i)));
@@ -251,7 +267,26 @@ export function mapUploadError(raw: unknown): string {
   return "Upload Failed — please try again or contact support.";
 }
 
-export async function uploadFileMultipart(p: MultipartParams): Promise<MultipartResult> {
+export async function uploadFileMultipart(p: MultipartParams, _retryAttempt = 0): Promise<MultipartResult> {
+  const { file, workspaceId, pendingId, onProgress, onTelemetry, signal } = p;
+  try {
+    return await runMultipart(p);
+  } catch (e) {
+    // OCI multipart upload disappeared (expired / reclaimed / aborted out of
+    // band). Clean every cached pointer and re-init from scratch ONCE with a
+    // fresh pendingId so the user doesn't see UploadNotFound.
+    if (e instanceof UploadSessionExpiredError && _retryAttempt === 0) {
+      clearResumeEntry(file);
+      const freshPendingId = `${pendingId}-r${Date.now().toString(36)}`;
+      // eslint-disable-next-line no-console
+      console.warn("[oci-multipart] session expired — restarting with fresh pendingId", { freshPendingId });
+      return uploadFileMultipart({ ...p, pendingId: freshPendingId }, 1);
+    }
+    throw e;
+  }
+}
+
+async function runMultipart(p: MultipartParams): Promise<MultipartResult> {
   const { file, workspaceId, pendingId, onProgress, onTelemetry, signal } = p;
 
   // Initial recommended chunk size — final value is clamped to server partSize after init.
@@ -393,7 +428,11 @@ export async function uploadFileMultipart(p: MultipartParams): Promise<Multipart
   emit(0, 0);
   const listed = await invoke<{ parts: Array<{ partNumber: number; etag: string }> }>(
     "list_parts", { uploadRowId, uploadId }, { signal },
-  ).catch(() => ({ parts: [] as Array<{ partNumber: number; etag: string }> }));
+  ).catch((e) => {
+    // Session-expired must bubble — do NOT proceed to PUT into a dead uploadId.
+    if (e instanceof UploadSessionExpiredError) throw e;
+    return { parts: [] as Array<{ partNumber: number; etag: string }> };
+  });
   const completed = new Map<number, string>();
   for (const part of listed.parts) completed.set(part.partNumber, part.etag);
 
@@ -452,6 +491,9 @@ export async function uploadFileMultipart(p: MultipartParams): Promise<Multipart
   await Promise.all(Array.from({ length: workerCount }, () => worker()));
 
   if (firstError) {
+    // Session-expired must propagate so the outer wrapper can restart cleanly
+    // instead of treating it as a resumable interruption.
+    if (firstError instanceof UploadSessionExpiredError) throw firstError;
     const msg = firstError instanceof Error ? firstError.message : String(firstError);
     throw new ResumableUploadInterrupted(msg, firstErrorPart, totalChunks);
   }

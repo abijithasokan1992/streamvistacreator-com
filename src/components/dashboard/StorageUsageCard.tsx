@@ -11,6 +11,7 @@ import {
   FREE_BANDWIDTH_OVERAGE_INR_PER_GB,
 } from "@/components/streamvista/plans";
 import { cn } from "@/lib/utils";
+import { notify } from "@/lib/notify";
 
 interface UsageProfile {
   plan_tier: string;

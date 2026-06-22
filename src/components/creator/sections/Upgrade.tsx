@@ -72,6 +72,11 @@ type StorageEntitlement = {
   over_quota: boolean;
   active_storage_subscriptions: number;
   monthly_paise: number;
+  cancelling_tb?: number;
+  next_period_end?: string | null;
+  halted_subscriptions?: number;
+  projected_total_gb_after_cancellations?: number;
+  projected_over_quota_after_cancellations?: boolean;
 };
 
 type StorageSub = {

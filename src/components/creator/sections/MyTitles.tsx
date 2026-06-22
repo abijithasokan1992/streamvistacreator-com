@@ -53,18 +53,26 @@ export default function MyTitlesSection() {
     setCreating(true);
   };
 
+  const freeLimitHit = !!tier?.is_free && tier.lifecycle_count >= 1 && !tier.can_create_draft;
+
   return (
     <div>
       {tier?.is_free && (
         <div className="mb-4 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 flex items-start gap-3 text-xs sm:text-sm">
           <Crown className="w-4 h-4 text-amber-300 mt-0.5 shrink-0" />
-          <div className="min-w-0">
-            <div className="font-medium">Free plan</div>
+          <div className="min-w-0 flex-1">
+            <div className="font-medium">Creator Basic</div>
             <div className="text-muted-foreground mt-0.5">
-              You have {tier.draft_count}/1 draft and {tier.lifecycle_count}/1 submission used.
-              Request an upgrade to add more titles — our team will follow up.
+              {tier.draft_count}/1 draft · {tier.lifecycle_count}/1 submission used.
+              Upgrade for more titles, more storage and priority review.
             </div>
           </div>
+          <a
+            href="?section=upgrade"
+            className="text-[11px] rounded-md border border-amber-500/40 px-2.5 py-1 hover:bg-amber-500/10 whitespace-nowrap"
+          >
+            Upgrade
+          </a>
         </div>
       )}
 
@@ -74,9 +82,17 @@ export default function MyTitlesSection() {
         </p>
         <button
           onClick={handleStartCreate}
-          className="inline-flex items-center gap-1.5 rounded-md bg-accent text-accent-foreground text-xs px-3 py-1.5"
+          disabled={freeLimitHit}
+          title={freeLimitHit ? "Free plan limit reached — upgrade to add more titles" : undefined}
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-md text-xs px-3 py-1.5 transition-colors",
+            freeLimitHit
+              ? "border border-amber-500/40 text-amber-200/80 bg-amber-500/5 cursor-not-allowed"
+              : "bg-accent text-accent-foreground hover:bg-accent/90",
+          )}
         >
-          <Plus className="w-3.5 h-3.5" /> Add Title
+          {freeLimitHit ? <Lock className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+          {freeLimitHit ? "Add Title — Pro" : "Add Title"}
         </button>
       </div>
 
@@ -93,6 +109,7 @@ export default function MyTitlesSection() {
           userId={user.id}
         />
       )}
+
 
       {loading ? (
         <div className="grid place-items-center py-16">

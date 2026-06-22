@@ -1,7 +1,7 @@
 import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { Loader2, LogOut, Menu } from "lucide-react";
 import { useAuth, dashboardForRole } from "@/hooks/useAuth";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CreatorSidebar, SECTIONS, type SectionId } from "@/components/creator/CreatorSidebar";
 import HomeSection from "@/components/creator/sections/Home";
 import MyTitlesSection from "@/components/creator/sections/MyTitles";
@@ -12,13 +12,24 @@ import ScheduleSection from "@/components/creator/sections/Schedule";
 import UpgradeSection from "@/components/creator/sections/Upgrade";
 import HelpSection from "@/components/creator/sections/Help";
 import EntitlementChip from "@/components/creator/EntitlementChip";
+import CreatorGuide from "@/components/creator/CreatorGuide";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { fetchFreeTierStatus } from "@/lib/creator/titleApi";
 
 export default function ContentOwnerDashboard() {
   const { user, role, dashboardRole, loading, signOut } = useAuth();
   const [params, setParams] = useSearchParams();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isFree, setIsFree] = useState<boolean>(true);
   const section = (params.get("section") as SectionId) || "home";
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const t = await fetchFreeTierStatus();
+      setIsFree(!!t?.is_free);
+    })();
+  }, [user?.id]);
 
   if (loading) {
     return (
@@ -39,7 +50,10 @@ export default function ContentOwnerDashboard() {
     setMobileOpen(false);
   };
 
-  const current = SECTIONS.find((s) => s.id === section) ?? SECTIONS[0];
+  // For Free users, gated sections silently redirect to Upgrade rather than rendering a broken view.
+  const def = SECTIONS.find((s) => s.id === section) ?? SECTIONS[0];
+  const effectiveSection: SectionId = isFree && (def as any).proOnly ? "upgrade" : def.id;
+  const current = SECTIONS.find((s) => s.id === effectiveSection)!;
 
   return (
     <main className="min-h-dvh bg-background text-foreground">
@@ -58,6 +72,7 @@ export default function ContentOwnerDashboard() {
           </div>
           <div className="flex items-center gap-3">
             <EntitlementChip />
+            <CreatorGuide />
             <ThemeToggle />
             <button
               onClick={signOut}
@@ -70,21 +85,23 @@ export default function ContentOwnerDashboard() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 grid md:grid-cols-[220px_1fr] gap-6">
-        <CreatorSidebar active={section} onSelect={setSection} mobileOpen={mobileOpen} />
+        <CreatorSidebar active={effectiveSection} onSelect={setSection} mobileOpen={mobileOpen} isFree={isFree} />
         <section className="min-w-0">
-          <div className="mb-6">
-            <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground/70">{current.label}</p>
-            <h1 className="font-display text-2xl md:text-3xl mt-1">{current.heading}</h1>
-            {current.subhead && <p className="text-sm text-muted-foreground mt-1.5 max-w-2xl">{current.subhead}</p>}
-          </div>
-          {section === "home" && <HomeSection onNavigate={setSection} />}
-          {section === "titles" && <MyTitlesSection />}
-          {section === "updates" && <UpdatesSection />}
-          {section === "insights" && <InsightsSection />}
-          {section === "statements" && <StatementsSection />}
-          {section === "schedule" && <ScheduleSection />}
-          {section === "upgrade" && <UpgradeSection />}
-          {section === "help" && <HelpSection />}
+          {effectiveSection !== "home" && (
+            <div className="mb-6">
+              <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground/70">{current.label}</p>
+              <h1 className="font-display text-2xl md:text-3xl mt-1">{current.heading}</h1>
+              {current.subhead && <p className="text-sm text-muted-foreground mt-1.5 max-w-2xl">{current.subhead}</p>}
+            </div>
+          )}
+          {effectiveSection === "home" && <HomeSection onNavigate={setSection} isFree={isFree} />}
+          {effectiveSection === "titles" && <MyTitlesSection />}
+          {effectiveSection === "updates" && <UpdatesSection />}
+          {effectiveSection === "insights" && <InsightsSection isFree={isFree} />}
+          {effectiveSection === "statements" && <StatementsSection />}
+          {effectiveSection === "schedule" && <ScheduleSection />}
+          {effectiveSection === "upgrade" && <UpgradeSection />}
+          {effectiveSection === "help" && <HelpSection />}
         </section>
       </div>
     </main>

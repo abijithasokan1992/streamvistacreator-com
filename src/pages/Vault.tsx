@@ -25,6 +25,7 @@ import { useStorageQuota, StorageWarningBanner } from "@/hooks/useStorageQuota";
 import ShareLinkModal, { ShareLinkFile } from "@/components/vault/ShareLinkModal";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { Seo } from "@/components/Seo";
 
 
 type Tier = "lite" | "sovereign";

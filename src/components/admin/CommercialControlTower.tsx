@@ -338,7 +338,7 @@ function CommercialQueue() {
       .select("*")
       .order("created_at", { ascending: false })
       .limit(100);
-    if (stateFilter !== "all") q = q.eq("state", stateFilter);
+    if (stateFilter !== "all") q = q.eq("state", stateFilter as never);
     const { data, error } = await q;
     setLoading(false);
     if (error) { toast.error(error.message); return; }

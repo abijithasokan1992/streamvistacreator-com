@@ -142,7 +142,7 @@ export function AssetUploader({
     if (!pre.ok) {
       // Stage the file so the user sees the precise reason; don't auto-start a bad upload.
       setStagedFile(f);
-      toast.error(pre.reason);
+      toast.error((pre as { ok: false; reason: string }).reason);
       return;
     }
     if (locked) {

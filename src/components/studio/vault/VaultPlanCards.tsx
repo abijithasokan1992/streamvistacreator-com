@@ -14,7 +14,7 @@ export default function VaultPlanCards({ onPurchased }: { onPurchased?: () => vo
   const load = async () => {
     setLoading(true);
     const { data } = await supabase
-      .from("studio_vault_products")
+      .from("studio_vault_products_public" as any)
       .select("*")
       .eq("visible", true)
       .order("sort_order", { ascending: true });

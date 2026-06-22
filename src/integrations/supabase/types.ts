@@ -5270,6 +5270,29 @@ export type Database = {
       }
     }
     Functions: {
+      accept_legal_agreement: {
+        Args: {
+          p_agreement_type: Database["public"]["Enums"]["legal_agreement_type"]
+          p_context?: Json
+        }
+        Returns: {
+          accepted_at: string
+          agreement_id: string
+          agreement_type: Database["public"]["Enums"]["legal_agreement_type"]
+          context: Json
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+          user_id: string
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "legal_acceptances"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       add_internal_review_note: {
         Args: { _body: string; _title_id: string }
         Returns: string

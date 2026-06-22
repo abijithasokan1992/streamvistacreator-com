@@ -30,7 +30,7 @@ export async function fetchCurrentAgreement(type: AgreementType): Promise<LegalA
   return (data as LegalAgreement) ?? null;
 }
 
-/** Has the current user accepted the current version of this agreement? */
+/** Has the current user accepted the current published version of this agreement? */
 export async function hasAcceptedCurrent(type: AgreementType): Promise<boolean> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return false;
@@ -41,25 +41,29 @@ export async function hasAcceptedCurrent(type: AgreementType): Promise<boolean> 
     .select("id")
     .eq("user_id", user.id)
     .eq("agreement_id", agreement.id)
+    .eq("version", agreement.version)
     .maybeSingle();
   if (error) throw error;
   return !!data;
 }
 
-/** Record acceptance of a specific agreement version for the current user. */
+/**
+ * Record acceptance via the controlled server RPC. The server resolves the
+ * current published version and the calling user id; the client cannot
+ * insert directly into legal_acceptances.
+ */
 export async function recordAcceptance(
   agreement: LegalAgreement,
   context: Record<string, unknown> = {},
 ): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not signed in.");
-  const { error } = await supabase.from("legal_acceptances").insert({
-    user_id: user.id,
-    agreement_id: agreement.id,
-    agreement_type: agreement.agreement_type,
-    version: agreement.version,
+  const ctx: Record<string, unknown> = {
+    ...context,
     user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
-    context: context as never,
+    accepted_via: "web_modal",
+  };
+  const { error } = await supabase.rpc("accept_legal_agreement", {
+    p_agreement_type: agreement.agreement_type,
+    p_context: ctx as never,
   });
-  if (error && !/duplicate key/i.test(error.message)) throw error;
+  if (error) throw error;
 }

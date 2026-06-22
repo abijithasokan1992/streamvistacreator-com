@@ -4099,6 +4099,175 @@ export type Database = {
           },
         ]
       }
+      screening_events: {
+        Row: {
+          actor_user_id: string | null
+          id: string
+          invite_id: string
+          ip: string | null
+          kind: string
+          metadata: Json
+          occurred_at: string
+          progress_pct: number | null
+          user_agent: string | null
+        }
+        Insert: {
+          actor_user_id?: string | null
+          id?: string
+          invite_id: string
+          ip?: string | null
+          kind: string
+          metadata?: Json
+          occurred_at?: string
+          progress_pct?: number | null
+          user_agent?: string | null
+        }
+        Update: {
+          actor_user_id?: string | null
+          id?: string
+          invite_id?: string
+          ip?: string | null
+          kind?: string
+          metadata?: Json
+          occurred_at?: string
+          progress_pct?: number | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "screening_events_invite_id_fkey"
+            columns: ["invite_id"]
+            isOneToOne: false
+            referencedRelation: "screening_invites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      screening_invites: {
+        Row: {
+          buyer_org_name: string | null
+          buyer_user_id: string | null
+          commercial_request_id: string | null
+          completed: boolean
+          created_at: string
+          created_by: string | null
+          deal_memo_id: string | null
+          expires_at: string
+          first_opened_at: string | null
+          id: string
+          invite_email: string
+          invite_name: string | null
+          last_viewed_at: string | null
+          max_progress_pct: number
+          max_views: number | null
+          metadata: Json
+          nda_required: boolean
+          notes: string | null
+          playback_url: string | null
+          playback_url_expires_at: string | null
+          revoke_reason: string | null
+          revoked_at: string | null
+          screening_asset_id: string | null
+          status: string
+          title_id: string
+          token: string
+          updated_at: string
+          view_count: number
+          watermark_enabled: boolean
+        }
+        Insert: {
+          buyer_org_name?: string | null
+          buyer_user_id?: string | null
+          commercial_request_id?: string | null
+          completed?: boolean
+          created_at?: string
+          created_by?: string | null
+          deal_memo_id?: string | null
+          expires_at: string
+          first_opened_at?: string | null
+          id?: string
+          invite_email: string
+          invite_name?: string | null
+          last_viewed_at?: string | null
+          max_progress_pct?: number
+          max_views?: number | null
+          metadata?: Json
+          nda_required?: boolean
+          notes?: string | null
+          playback_url?: string | null
+          playback_url_expires_at?: string | null
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          screening_asset_id?: string | null
+          status?: string
+          title_id: string
+          token: string
+          updated_at?: string
+          view_count?: number
+          watermark_enabled?: boolean
+        }
+        Update: {
+          buyer_org_name?: string | null
+          buyer_user_id?: string | null
+          commercial_request_id?: string | null
+          completed?: boolean
+          created_at?: string
+          created_by?: string | null
+          deal_memo_id?: string | null
+          expires_at?: string
+          first_opened_at?: string | null
+          id?: string
+          invite_email?: string
+          invite_name?: string | null
+          last_viewed_at?: string | null
+          max_progress_pct?: number
+          max_views?: number | null
+          metadata?: Json
+          nda_required?: boolean
+          notes?: string | null
+          playback_url?: string | null
+          playback_url_expires_at?: string | null
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          screening_asset_id?: string | null
+          status?: string
+          title_id?: string
+          token?: string
+          updated_at?: string
+          view_count?: number
+          watermark_enabled?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "screening_invites_commercial_request_id_fkey"
+            columns: ["commercial_request_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "screening_invites_deal_memo_id_fkey"
+            columns: ["deal_memo_id"]
+            isOneToOne: false
+            referencedRelation: "deal_memos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "screening_invites_screening_asset_id_fkey"
+            columns: ["screening_asset_id"]
+            isOneToOne: false
+            referencedRelation: "title_screening_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "screening_invites_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shared_file_secrets: {
         Row: {
           created_at: string
@@ -5037,6 +5206,75 @@ export type Database = {
           },
         ]
       }
+      title_screening_assets: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          duration_seconds: number | null
+          external_url: string | null
+          file_size: number | null
+          id: string
+          is_active: boolean
+          label: string
+          mime_type: string | null
+          notes: string | null
+          resolution: string | null
+          source_kind: string
+          title_id: string
+          updated_at: string
+          upload_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          duration_seconds?: number | null
+          external_url?: string | null
+          file_size?: number | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          mime_type?: string | null
+          notes?: string | null
+          resolution?: string | null
+          source_kind?: string
+          title_id: string
+          updated_at?: string
+          upload_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          duration_seconds?: number | null
+          external_url?: string | null
+          file_size?: number | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          mime_type?: string | null
+          notes?: string | null
+          resolution?: string | null
+          source_kind?: string
+          title_id?: string
+          updated_at?: string
+          upload_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "title_screening_assets_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "title_screening_assets_upload_id_fkey"
+            columns: ["upload_id"]
+            isOneToOne: false
+            referencedRelation: "recent_uploads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       upload_sessions: {
         Row: {
           created_at: string
@@ -5770,7 +6008,38 @@ export type Database = {
         }
         Returns: string
       }
+      admin_create_screening_invite: {
+        Args: {
+          _buyer_org_name?: string
+          _buyer_user_id?: string
+          _commercial_request_id?: string
+          _deal_memo_id?: string
+          _expires_at?: string
+          _invite_email: string
+          _invite_name?: string
+          _max_views?: number
+          _nda_required?: boolean
+          _notes?: string
+          _playback_url?: string
+          _playback_url_expires_at?: string
+          _screening_asset_id: string
+          _title_id: string
+        }
+        Returns: {
+          id: string
+          token: string
+        }[]
+      }
       admin_exists: { Args: never; Returns: boolean }
+      admin_extend_screening_invite: {
+        Args: {
+          _invite_id: string
+          _new_expires_at: string
+          _new_playback_url?: string
+          _new_playback_url_expires_at?: string
+        }
+        Returns: undefined
+      }
       admin_grant_storage: {
         Args: { _gb: number; _note?: string; _user_id: string }
         Returns: Json
@@ -5883,6 +6152,10 @@ export type Database = {
           updated_at: string
           workspace_id: string
         }[]
+      }
+      admin_revoke_screening_invite: {
+        Args: { _invite_id: string; _reason?: string }
+        Returns: undefined
       }
       admin_studio_vault_purchases: {
         Args: { _limit?: number }
@@ -6158,6 +6431,11 @@ export type Database = {
         Returns: Json
       }
       revoke_creator_role: { Args: { _user_id: string }; Returns: undefined }
+      screening_log_event: {
+        Args: { _kind: string; _progress_pct?: number; _token: string }
+        Returns: undefined
+      }
+      screening_resolve: { Args: { _token: string }; Returns: Json }
       set_initial_role: { Args: { _role: string }; Returns: boolean }
       studio_vault_calculate_price: {
         Args: { _months?: number; _product_id: string; _tb: number }
@@ -6193,6 +6471,7 @@ export type Database = {
         Returns: Json
       }
       sweep_manual_invoices_overdue: { Args: never; Returns: number }
+      sweep_screening_invites_expired: { Args: never; Returns: number }
       title_review_summary: { Args: { _title_id: string }; Returns: Json }
       title_submission_readiness: { Args: { _title_id: string }; Returns: Json }
       transition_title_status: {

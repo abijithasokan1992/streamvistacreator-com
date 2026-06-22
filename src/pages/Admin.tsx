@@ -48,6 +48,7 @@ import CompanyProfileSettings from "@/components/admin/CompanyProfileSettings";
 import BillingOperations from "@/components/admin/BillingOperations";
 import CommercialControlTower from "@/components/admin/CommercialControlTower";
 import TitleCommercialOpsConsole from "@/components/admin/TitleCommercialOpsConsole";
+import ScreeningOpsConsole from "@/components/admin/ScreeningOpsConsole";
 
 interface Row {
   id: string;
@@ -342,6 +343,7 @@ export default function Admin() {
             <DeptHeader icon={<Wallet className="w-5 h-5" />} title="Business & Revenue" desc="Payments OS — canonical billing orders, manual payment review, invoice-backed revenue and Razorpay activity." />
             <CommercialControlTower />
             <TitleCommercialOpsConsole />
+            <ScreeningOpsConsole />
             <RazorpayOpsBanner />
             <BillingOperations />
             <ManualInvoiceConsole />

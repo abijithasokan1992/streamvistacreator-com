@@ -44,6 +44,7 @@ import Unsubscribe from "./pages/Unsubscribe.tsx";
 import Contact from "./pages/Contact.tsx";
 import InvoiceReceipt from "./pages/InvoiceReceipt.tsx";
 import ManualInvoiceReceipt from "./pages/ManualInvoiceReceipt.tsx";
+import ScreeningRoom from "./pages/ScreeningRoom.tsx";
 
 import ReferralCapture from "./components/ReferralCapture.tsx";
 import WrongPortal from "./components/WrongPortal.tsx";
@@ -144,6 +145,7 @@ const PublicRoutes = () => (
     <Route path="/checkout/return" element={<CheckoutReturn />} />
     <Route path="/s/:token" element={<Share />} />
     <Route path="/review/:token" element={<Review />} />
+    <Route path="/screening/:token" element={<ScreeningRoom />} />
     <Route path="/terms" element={<Terms />} />
     <Route path="/privacy" element={<Privacy />} />
     <Route path="/ip-copyright" element={<IPCopyright />} />

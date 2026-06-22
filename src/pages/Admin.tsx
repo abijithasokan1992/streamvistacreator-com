@@ -50,6 +50,7 @@ import BillingOperations from "@/components/admin/BillingOperations";
 import CommercialControlTower from "@/components/admin/CommercialControlTower";
 import TitleCommercialOpsConsole from "@/components/admin/TitleCommercialOpsConsole";
 import ScreeningOpsConsole from "@/components/admin/ScreeningOpsConsole";
+import DistributionOffersConsole from "@/components/admin/DistributionOffersConsole";
 import DealOperationsConsole from "@/components/admin/DealOperationsConsole";
 
 interface Row {
@@ -348,6 +349,7 @@ export default function Admin() {
             <TitleCommercialOpsConsole />
             <ScreeningOpsConsole />
             <DealOperationsConsole />
+            <DistributionOffersConsole />
             <RazorpayOpsBanner />
             <BillingOperations />
             <ManualInvoiceConsole />

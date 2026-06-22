@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
 import ManualInvoicesList from "@/components/billing/ManualInvoicesList";
+import CreatorDistributionOffers from "@/components/creator/CreatorDistributionOffers";
 
 /**
  * Creator Upgrade — two clearly separated commercial surfaces:
@@ -544,6 +545,15 @@ export default function UpgradeSection() {
           <p className="text-xs text-muted-foreground">Quotes and invoices issued by StreamVista for managed plan upgrades or custom commercial work.</p>
         </div>
         <ManualInvoicesList surface="creator" />
+      </section>
+
+      {/* ── Distribution offers ────────────────────────── */}
+      <section className="space-y-3">
+        <div>
+          <h2 className="font-display text-xl font-bold">Distribution Offers</h2>
+          <p className="text-xs text-muted-foreground">Distribution programs offered by StreamVista for your titles. Review and accept or reject directly.</p>
+        </div>
+        <CreatorDistributionOffers />
       </section>
     </div>
   );

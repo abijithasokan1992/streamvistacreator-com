@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { computePricePreview, fmtINR, fmtINRDecimal, INTERVAL_OPTIONS, IntervalMonths, STORAGE_CLASS_META, VaultProduct } from "@/lib/studioVault";
 import VaultManualPaymentDialog from "./VaultManualPaymentDialog";
 import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
+import { notify } from "@/lib/notify";
 
 declare global { interface Window { Razorpay?: any } }
 
@@ -144,6 +145,11 @@ export default function BuyVaultDialog({ product, open, onOpenChange, onPurchase
         },
       );
       toast.success(`${product.name} activated — ${effectiveTb} TB added to your vault.`);
+      if (user?.id) {
+        await notify(user.id, "vault_purchase_paid",
+          `Studio Vault: ${product.name} activated`,
+          `${effectiveTb} TB added to your vault. Visible immediately under My Vault → Storage.`);
+      }
       onPurchased?.();
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unexpected verification error";

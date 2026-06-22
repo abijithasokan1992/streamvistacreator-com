@@ -102,8 +102,16 @@ export default function ScreeningOpsConsole() {
     load();
   }
   async function rotateUrl(id: string) {
-    const url = window.prompt("New playback URL");
-    if (!url) return;
+    const url = window.prompt("Paste new playback URL (leave blank to auto-mint a 48h Oracle PAR)");
+    if (url === null) return;
+    if (url.trim() === "") {
+      // Auto-mint via Oracle PAR.
+      const { data, error } = await sb.functions.invoke("mint-screening-par", { body: { invite_id: id, ttl_hours: 48 } });
+      if (error || (data as any)?.error) return toast.error(((data as any)?.error || error?.message) ?? "Mint failed");
+      toast.success(`Playback URL minted (${(data as any).source})`);
+      load();
+      return;
+    }
     const exp = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
     const { error } = await sb.rpc("admin_extend_screening_invite", {
       _invite_id: id, _new_expires_at: null,

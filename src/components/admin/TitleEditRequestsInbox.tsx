@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { notify } from "@/lib/notify";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -90,6 +91,15 @@ export default function TitleEditRequestsInbox() {
         .is("closed_at", null);
     }
     toast.success(decision === "approved" ? "Approved & sections unlocked" : "Rejected");
+    // In-app notification to the creator.
+    await notify(
+      active.creator_user_id,
+      decision === "approved" ? "edit_request_approved" : "edit_request_rejected",
+      decision === "approved" ? "Edit request approved" : "Edit request rejected",
+      decision === "approved"
+        ? `Sections unlocked: ${unlocks.join(", ") || "—"}${response ? `\n\nNote: ${response}` : ""}`
+        : `Reason: ${response || "—"}`,
+    );
     setActive(null);
     load();
   };

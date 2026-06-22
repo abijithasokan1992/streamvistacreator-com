@@ -46,7 +46,7 @@ type SharedFile = {
   view_only: boolean;
 };
 
-const MAX_BYTES = 2_684_354_560; // 2.5 GB
+// Per-file cap is computed from live workspace entitlement (Creator plan + paid storage + admin bonus).
 const SECTIONS = [
   { id: "files", label: "My Vault", icon: FolderLock },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
@@ -124,7 +124,14 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
 
 
   const handleUpload = (file: File) => {
-    if (file.size > MAX_BYTES) { toast.error("File exceeds 2.5 GB limit"); return; }
+    // Per-file cap = remaining workspace entitlement (Creator plan + paid + admin bonus).
+    const totalBytes = (quota.totalGb ?? 0) * 1024 * 1024 * 1024;
+    const usedBytes = (quota.usedMb ?? 0) * 1024 * 1024;
+    const remaining = Math.max(0, totalBytes - usedBytes);
+    if (remaining > 0 && file.size > remaining) {
+      toast.error(`File exceeds remaining storage (${(remaining / 1073741824).toFixed(2)} GB available). Buy storage from Storage & Billing.`);
+      return;
+    }
     if (!quota.checkOrPaywall()) return;
     enqueue(file, {
       tier,
@@ -209,7 +216,7 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
         >
           <Upload className="h-8 w-8 mx-auto mb-3 text-accent" />
           <p className="font-medium">Drag & drop files, or click to choose</p>
-          <p className="text-xs text-muted-foreground mt-1">Multiple files supported · Max 2.5 GB each · Upload keeps running in the background</p>
+          <p className="text-xs text-muted-foreground mt-1">Multiple files supported · Per-file size is bounded by your remaining workspace storage · Uploads keep running in the background</p>
           <input
             ref={fileInput} type="file" multiple className="hidden"
             onChange={(e) => { const list = Array.from(e.target.files || []); list.forEach(handleUpload); e.currentTarget.value = ""; }}

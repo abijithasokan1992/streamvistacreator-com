@@ -1489,27 +1489,127 @@ export type Database = {
         }
         Relationships: []
       }
+      deal_deliveries: {
+        Row: {
+          asset_refs: Json
+          buyer_org_name: string | null
+          buyer_user_id: string | null
+          created_at: string
+          created_by: string | null
+          deal_memo_id: string
+          delivered_at: string | null
+          expires_at: string | null
+          id: string
+          internal_notes: string | null
+          method: string
+          package_notes: string | null
+          recipient_email: string | null
+          share_url: string | null
+          shared_at: string | null
+          status: string
+          title_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          asset_refs?: Json
+          buyer_org_name?: string | null
+          buyer_user_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deal_memo_id: string
+          delivered_at?: string | null
+          expires_at?: string | null
+          id?: string
+          internal_notes?: string | null
+          method?: string
+          package_notes?: string | null
+          recipient_email?: string | null
+          share_url?: string | null
+          shared_at?: string | null
+          status?: string
+          title_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          asset_refs?: Json
+          buyer_org_name?: string | null
+          buyer_user_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deal_memo_id?: string
+          delivered_at?: string | null
+          expires_at?: string | null
+          id?: string
+          internal_notes?: string | null
+          method?: string
+          package_notes?: string | null
+          recipient_email?: string | null
+          share_url?: string | null
+          shared_at?: string | null
+          status?: string
+          title_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_deliveries_deal_memo_id_fkey"
+            columns: ["deal_memo_id"]
+            isOneToOne: false
+            referencedRelation: "deal_memos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_deliveries_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_memos: {
         Row: {
           amount_paise: number | null
+          approval_notes: string | null
+          approval_status: string
           approved_at: string | null
+          approved_by: string | null
           buyer_contact_email: string | null
           buyer_facing_memo: string | null
           buyer_org_name: string | null
           buyer_user_id: string | null
+          close_outcome: string | null
+          close_reason: string | null
           closed_at: string | null
+          closed_by: string | null
           commercial_request_id: string | null
           created_at: string
           created_by: string | null
           currency: string
           deal_type: Database["public"]["Enums"]["deal_type"]
+          delivered_at: string | null
+          delivery_notes: string | null
+          delivery_status: string
           exclusivity: Database["public"]["Enums"]["right_exclusivity"] | null
           id: string
           internal_notes: string | null
           language: string | null
           memo_number: string
+          ops_stage: string
           owner_admin_id: string | null
+          owner_share_paise: number | null
+          owner_share_pct: number | null
+          paid_amount_paise: number
+          paid_at: string | null
+          payment_mode: string | null
+          payment_notes: string | null
+          payment_reference: string | null
+          payment_status: string
           payment_terms: string | null
+          platform_share_paise: number | null
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_reason: string | null
           right_category: Database["public"]["Enums"]["right_category"] | null
           status: Database["public"]["Enums"]["deal_status"]
           term_end: string | null
@@ -1520,24 +1620,46 @@ export type Database = {
         }
         Insert: {
           amount_paise?: number | null
+          approval_notes?: string | null
+          approval_status?: string
           approved_at?: string | null
+          approved_by?: string | null
           buyer_contact_email?: string | null
           buyer_facing_memo?: string | null
           buyer_org_name?: string | null
           buyer_user_id?: string | null
+          close_outcome?: string | null
+          close_reason?: string | null
           closed_at?: string | null
+          closed_by?: string | null
           commercial_request_id?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
           deal_type: Database["public"]["Enums"]["deal_type"]
+          delivered_at?: string | null
+          delivery_notes?: string | null
+          delivery_status?: string
           exclusivity?: Database["public"]["Enums"]["right_exclusivity"] | null
           id?: string
           internal_notes?: string | null
           language?: string | null
           memo_number?: string
+          ops_stage?: string
           owner_admin_id?: string | null
+          owner_share_paise?: number | null
+          owner_share_pct?: number | null
+          paid_amount_paise?: number
+          paid_at?: string | null
+          payment_mode?: string | null
+          payment_notes?: string | null
+          payment_reference?: string | null
+          payment_status?: string
           payment_terms?: string | null
+          platform_share_paise?: number | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
           right_category?: Database["public"]["Enums"]["right_category"] | null
           status?: Database["public"]["Enums"]["deal_status"]
           term_end?: string | null
@@ -1548,24 +1670,46 @@ export type Database = {
         }
         Update: {
           amount_paise?: number | null
+          approval_notes?: string | null
+          approval_status?: string
           approved_at?: string | null
+          approved_by?: string | null
           buyer_contact_email?: string | null
           buyer_facing_memo?: string | null
           buyer_org_name?: string | null
           buyer_user_id?: string | null
+          close_outcome?: string | null
+          close_reason?: string | null
           closed_at?: string | null
+          closed_by?: string | null
           commercial_request_id?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
           deal_type?: Database["public"]["Enums"]["deal_type"]
+          delivered_at?: string | null
+          delivery_notes?: string | null
+          delivery_status?: string
           exclusivity?: Database["public"]["Enums"]["right_exclusivity"] | null
           id?: string
           internal_notes?: string | null
           language?: string | null
           memo_number?: string
+          ops_stage?: string
           owner_admin_id?: string | null
+          owner_share_paise?: number | null
+          owner_share_pct?: number | null
+          paid_amount_paise?: number
+          paid_at?: string | null
+          payment_mode?: string | null
+          payment_notes?: string | null
+          payment_reference?: string | null
+          payment_status?: string
           payment_terms?: string | null
+          platform_share_paise?: number | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
           right_category?: Database["public"]["Enums"]["right_category"] | null
           status?: Database["public"]["Enums"]["deal_status"]
           term_end?: string | null
@@ -1584,6 +1728,128 @@ export type Database = {
           },
           {
             foreignKeyName: "deal_memos_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_ops_events: {
+        Row: {
+          actor_user_id: string | null
+          deal_memo_id: string
+          id: string
+          kind: string
+          metadata: Json
+          occurred_at: string
+          summary: string | null
+        }
+        Insert: {
+          actor_user_id?: string | null
+          deal_memo_id: string
+          id?: string
+          kind: string
+          metadata?: Json
+          occurred_at?: string
+          summary?: string | null
+        }
+        Update: {
+          actor_user_id?: string | null
+          deal_memo_id?: string
+          id?: string
+          kind?: string
+          metadata?: Json
+          occurred_at?: string
+          summary?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_ops_events_deal_memo_id_fkey"
+            columns: ["deal_memo_id"]
+            isOneToOne: false
+            referencedRelation: "deal_memos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_payouts: {
+        Row: {
+          basis: string
+          beneficiary_email: string | null
+          beneficiary_label: string | null
+          beneficiary_type: string
+          beneficiary_user_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          deal_memo_id: string
+          gross_amount_paise: number
+          id: string
+          internal_notes: string | null
+          paid_at: string | null
+          payment_reference: string | null
+          payout_amount_paise: number
+          platform_share_paise: number
+          share_pct: number | null
+          status: string
+          title_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          basis?: string
+          beneficiary_email?: string | null
+          beneficiary_label?: string | null
+          beneficiary_type?: string
+          beneficiary_user_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          deal_memo_id: string
+          gross_amount_paise?: number
+          id?: string
+          internal_notes?: string | null
+          paid_at?: string | null
+          payment_reference?: string | null
+          payout_amount_paise?: number
+          platform_share_paise?: number
+          share_pct?: number | null
+          status?: string
+          title_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          basis?: string
+          beneficiary_email?: string | null
+          beneficiary_label?: string | null
+          beneficiary_type?: string
+          beneficiary_user_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          deal_memo_id?: string
+          gross_amount_paise?: number
+          id?: string
+          internal_notes?: string | null
+          paid_at?: string | null
+          payment_reference?: string | null
+          payout_amount_paise?: number
+          platform_share_paise?: number
+          share_pct?: number | null
+          status?: string
+          title_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_payouts_deal_memo_id_fkey"
+            columns: ["deal_memo_id"]
+            isOneToOne: false
+            referencedRelation: "deal_memos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_payouts_title_id_fkey"
             columns: ["title_id"]
             isOneToOne: false
             referencedRelation: "content_titles"
@@ -2335,6 +2601,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           currency: string
+          deal_memo_id: string | null
           document_type: string
           due_date: string | null
           gst_paise: number
@@ -2365,6 +2632,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           currency?: string
+          deal_memo_id?: string | null
           document_type?: string
           due_date?: string | null
           gst_paise?: number
@@ -2395,6 +2663,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           currency?: string
+          deal_memo_id?: string | null
           document_type?: string
           due_date?: string | null
           gst_paise?: number
@@ -2420,6 +2689,13 @@ export type Database = {
           voided_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "manual_invoices_deal_memo_id_fkey"
+            columns: ["deal_memo_id"]
+            isOneToOne: false
+            referencedRelation: "deal_memos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "manual_invoices_storage_allocation_id_fkey"
             columns: ["storage_allocation_id"]
@@ -5959,24 +6235,46 @@ export type Database = {
         }
         Returns: {
           amount_paise: number | null
+          approval_notes: string | null
+          approval_status: string
           approved_at: string | null
+          approved_by: string | null
           buyer_contact_email: string | null
           buyer_facing_memo: string | null
           buyer_org_name: string | null
           buyer_user_id: string | null
+          close_outcome: string | null
+          close_reason: string | null
           closed_at: string | null
+          closed_by: string | null
           commercial_request_id: string | null
           created_at: string
           created_by: string | null
           currency: string
           deal_type: Database["public"]["Enums"]["deal_type"]
+          delivered_at: string | null
+          delivery_notes: string | null
+          delivery_status: string
           exclusivity: Database["public"]["Enums"]["right_exclusivity"] | null
           id: string
           internal_notes: string | null
           language: string | null
           memo_number: string
+          ops_stage: string
           owner_admin_id: string | null
+          owner_share_paise: number | null
+          owner_share_pct: number | null
+          paid_amount_paise: number
+          paid_at: string | null
+          payment_mode: string | null
+          payment_notes: string | null
+          payment_reference: string | null
+          payment_status: string
           payment_terms: string | null
+          platform_share_paise: number | null
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_reason: string | null
           right_category: Database["public"]["Enums"]["right_category"] | null
           status: Database["public"]["Enums"]["deal_status"]
           term_end: string | null
@@ -6029,6 +6327,65 @@ export type Database = {
           id: string
           token: string
         }[]
+      }
+      admin_deal_close: {
+        Args: { _deal_id: string; _outcome: string; _reason?: string }
+        Returns: undefined
+      }
+      admin_deal_link_invoice: {
+        Args: { _deal_id: string; _invoice_id: string }
+        Returns: undefined
+      }
+      admin_deal_record_payment: {
+        Args: {
+          _deal_id: string
+          _mode?: string
+          _notes?: string
+          _paid_amount_paise?: number
+          _paid_at?: string
+          _reference?: string
+          _status: string
+        }
+        Returns: undefined
+      }
+      admin_deal_set_approval: {
+        Args: { _deal_id: string; _decision: string; _notes?: string }
+        Returns: undefined
+      }
+      admin_deal_upsert_delivery: {
+        Args: {
+          _deal_id: string
+          _delivery_id: string
+          _expires_at?: string
+          _internal_notes?: string
+          _mark_delivered?: boolean
+          _method?: string
+          _package_notes?: string
+          _recipient_email?: string
+          _share_url?: string
+          _status: string
+        }
+        Returns: string
+      }
+      admin_deal_upsert_payout: {
+        Args: {
+          _basis?: string
+          _beneficiary_email?: string
+          _beneficiary_label?: string
+          _beneficiary_type?: string
+          _beneficiary_user_id?: string
+          _deal_id: string
+          _gross_amount_paise?: number
+          _mark_paid?: boolean
+          _notes?: string
+          _payout_amount_paise?: number
+          _payout_id: string
+          _platform_share_paise?: number
+          _reference?: string
+          _share_pct?: number
+          _status?: string
+        }
+        Returns: string
       }
       admin_exists: { Args: never; Returns: boolean }
       admin_extend_screening_invite: {

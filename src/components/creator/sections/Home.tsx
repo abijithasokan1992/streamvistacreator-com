@@ -76,7 +76,7 @@ export default function HomeSection({ onNavigate }: { onNavigate: (s: SectionId)
         <Stat icon={FileText} label="Title Count" value={String(titles.length)}
           hint="All titles in your account." />
         <Stat icon={Database} label="Storage Usage" value={`${gbUsed} GB`}
-          hint="Across all uploads to Oracle Object Storage." />
+          hint="Across all uploads. Need more? Request from the Upgrade tab." />
       </div>
 
       {/* In-flight / stuck upload diagnostics */}

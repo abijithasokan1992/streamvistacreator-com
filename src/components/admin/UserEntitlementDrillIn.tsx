@@ -68,7 +68,6 @@ export default function UserEntitlementDrillIn({
 
   useEffect(() => {
     if (open && target?.user_id) {
-      setGrantGb(""); setGrantNote("");
       reload(target.user_id);
     }
   }, [open, target?.user_id]);
@@ -77,28 +76,6 @@ export default function UserEntitlementDrillIn({
   const totalUsedGb = allocations.reduce((s, a) => s + Number(a.used_gb || 0), 0);
   const activePlan = assignments.find((a) => a.status === "active") ?? assignments[0];
   const latestInvoice = invoices[0];
-
-  const onGrant = async () => {
-    if (!target?.user_id) return;
-    const gb = Number(grantGb);
-    if (!gb || gb <= 0 || !Number.isFinite(gb)) {
-      toast.error("Enter a positive GB amount."); return;
-    }
-    setGranting(true);
-    try {
-      const { error } = await (supabase as any).rpc("admin_grant_storage", {
-        _user_id: target.user_id,
-        _gb: Math.floor(gb),
-        _note: grantNote || null,
-      });
-      if (error) throw error;
-      toast.success(`Granted ${Math.floor(gb)} GB.`);
-      setGrantGb(""); setGrantNote("");
-      await reload(target.user_id);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Grant failed.");
-    } finally { setGranting(false); }
-  };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -121,9 +98,9 @@ export default function UserEntitlementDrillIn({
                 value={activePlan?.plan?.name || profile?.plan_tier || "Free"}
                 sub={activePlan?.status ? `Status: ${activePlan.status}` : undefined}
               />
-              <Tile icon={<HardDrive className="w-4 h-4 text-accent" />} label="Storage"
-                value={`${fmtGb(totalUsedGb)} / ${fmtGb(totalAllocatedGb || 50)}`}
-                sub={`${allocations.length} allocation${allocations.length === 1 ? "" : "s"} · legacy ${profile?.topup_tb || 0} TB`}
+              <Tile icon={<HardDrive className="w-4 h-4 text-accent" />} label="Storage (legacy view)"
+                value={`${fmtGb(totalUsedGb)} / ${totalAllocatedGb > 0 ? fmtGb(totalAllocatedGb) : "—"}`}
+                sub={`${allocations.length} legacy allocation${allocations.length === 1 ? "" : "s"} · live entitlement panel below`}
               />
               <Tile icon={<ShoppingCart className="w-4 h-4 text-accent" />} label="Top-ups"
                 value={`${topups.length} record${topups.length === 1 ? "" : "s"}`}
@@ -135,32 +112,8 @@ export default function UserEntitlementDrillIn({
               />
             </div>
 
-            {/* Grant storage */}
-            <section className="rounded-xl border border-accent/30 bg-accent/5 p-4 space-y-3">
-              <div className="flex items-center gap-2">
-                <Plus className="w-4 h-4 text-accent" />
-                <h3 className="text-sm font-semibold">Grant storage</h3>
-                <span className="text-[11px] text-muted-foreground ml-auto">
-                  Writes to <code>storage_allocations</code> with source=admin_grant.
-                </span>
-              </div>
-              <div className="grid grid-cols-3 gap-2 items-end">
-                <div className="space-y-1">
-                  <Label htmlFor="grant-gb" className="text-xs">Amount (GB)</Label>
-                  <Input id="grant-gb" type="number" min={1} value={grantGb}
-                    onChange={(e) => setGrantGb(e.target.value)} placeholder="e.g. 500" />
-                </div>
-                <div className="col-span-2 space-y-1">
-                  <Label htmlFor="grant-note" className="text-xs">Note (optional)</Label>
-                  <Input id="grant-note" value={grantNote}
-                    onChange={(e) => setGrantNote(e.target.value)} placeholder="reason / ticket id" />
-                </div>
-              </div>
-              <Button size="sm" onClick={onGrant} disabled={granting || !grantGb}>
-                {granting && <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />}
-                Grant storage
-              </Button>
-            </section>
+            {/* Canonical entitlement + admin storage adjustment */}
+            {target?.user_id && <StorageGrantPanel userId={target.user_id} />}
 
             {/* Allocations */}
             <Section title="Storage allocations">

@@ -345,6 +345,7 @@ export default function Admin() {
             <CommercialControlTower />
             <TitleCommercialOpsConsole />
             <ScreeningOpsConsole />
+            <DealOperationsConsole />
             <RazorpayOpsBanner />
             <BillingOperations />
             <ManualInvoiceConsole />

@@ -218,28 +218,36 @@ export function StorageQuotaProvider({ children }: { children: React.ReactNode }
   );
 }
 
-/** Inline alert banner — drop into the dashboard so users see the 45 GB warning. */
+/** Inline alert banner — surfaces warning / urgent / hard-stop based on real entitlement. */
 export function StorageWarningBanner() {
   const q = useStorageQuota();
-  if (q.loading || q.isCreator) return null;
-  if (!q.warning && !q.locked) return null;
+  if (q.loading) return null;
+  if (!q.warning && !q.urgent && !q.locked) return null;
+  const usedGb = (q.usedMb / MB_PER_GB).toFixed(1);
+  const totalGb = q.totalGb.toFixed(0);
   return (
     <div className={`rounded-xl border p-3 flex items-start gap-3 text-sm ${
       q.locked
         ? "border-destructive/40 bg-destructive/10 text-destructive"
+        : q.urgent
+        ? "border-destructive/40 bg-destructive/5 text-destructive"
         : "border-amber-400/40 bg-amber-400/10 text-amber-500"
     }`}>
       <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5" />
       <div className="flex-1">
         <div className="font-semibold">
           {q.locked
-            ? `Storage full — uploads paused (${(q.usedMb / MB_PER_GB).toFixed(1)} / ${FREE_STORAGE_GB} GB)`
-            : `You're at ${(q.usedMb / MB_PER_GB).toFixed(1)} GB of ${FREE_STORAGE_GB} GB — upgrade soon to keep uploading.`}
+            ? `Storage full — uploads paused (${usedGb} / ${totalGb} GB)`
+            : q.urgent
+            ? `Urgent — ${q.percent}% of ${totalGb} GB used. Add 1 TB to keep uploading.`
+            : `You're at ${usedGb} GB of ${totalGb} GB (${q.percent}%). Plan ahead — add 1 TB before you hit the cap.`}
         </div>
         <button onClick={q.openPaywall} className="underline underline-offset-2 hover:opacity-80 mt-1 text-xs">
-          Upgrade to Creator · ₹{PAYG_TB_INR} / month →
+          Add 1 TB storage · ₹{PAYG_TB_INR} / month →
         </button>
       </div>
     </div>
   );
+}
+
 }

@@ -125,12 +125,13 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
 
   const handleUpload = (file: File) => {
     // Per-file cap = remaining workspace entitlement (Creator plan + paid + admin bonus).
-    const totalBytes = (quota.totalGB ?? 0) * 1024 * 1024 * 1024;
-    const usedBytes = (quota.usedGB ?? 0) * 1024 * 1024 * 1024;
+    const totalBytes = (quota.totalGb ?? 0) * 1024 * 1024 * 1024;
+    const usedBytes = (quota.usedMb ?? 0) * 1024 * 1024;
     const remaining = Math.max(0, totalBytes - usedBytes);
     if (remaining > 0 && file.size > remaining) {
-      toast.error(`File exceeds remaining storage (${((remaining)/1073741824).toFixed(2)} GB available). Buy storage from Storage & Billing.`);
+      toast.error(`File exceeds remaining storage (${(remaining / 1073741824).toFixed(2)} GB available). Buy storage from Storage & Billing.`);
       return;
+    }
     }
     if (!quota.checkOrPaywall()) return;
     enqueue(file, {

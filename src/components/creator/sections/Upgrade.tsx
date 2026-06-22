@@ -368,7 +368,7 @@ export default function UpgradeSection() {
         <div className="rounded-xl border border-border/40 bg-secondary/5 p-5 grid sm:grid-cols-4 gap-4">
           <div>
             <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Included</p>
-            <p className="text-base font-semibold mt-1">{entitlement?.included_gb ?? 50} GB</p>
+            <p className="text-base font-semibold mt-1">{entitlement?.included_gb ?? 5} GB</p>
           </div>
           <div>
             <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Paid storage</p>

@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Crown, HardDrive, Receipt, ShoppingCart, Plus } from "lucide-react";
+import { Loader2, Crown, HardDrive, Receipt, ShoppingCart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle,
 } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import StorageGrantPanel from "@/components/admin/StorageGrantPanel";
 
 export type EntitlementTarget = {
   user_id: string;

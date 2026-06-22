@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { useBranding, uploadBrandingFile, fetchBranding } from "@/lib/branding";
 import { cn } from "@/lib/utils";
 import { PLANS, planByCycle, type Cycle } from "@/components/streamvista/plans";
+import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
 
 interface Profile {
   user_id: string;
@@ -287,6 +288,9 @@ function UpgradeSection({ currentTier, email, name, userId, onUpgraded }: { curr
   const startUpgrade = async () => {
     if (selected === "free") { toast.info("You're already on the Free plan"); return; }
     setBusy(true);
+
+    try { assertLiveCheckoutHost(); }
+    catch (e: any) { setBusy(false); toast.error(e?.message || "Checkout unavailable here"); return; }
 
     // Razorpay recurring subscription path
     const loaded = await loadRazorpay();

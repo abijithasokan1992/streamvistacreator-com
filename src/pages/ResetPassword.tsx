@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { dashboardForRole, type AppRole } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { getAppOrigin } from "@/lib/site";
+import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
 import crayonsLogo from "@/assets/partner-crayons-pictures.png";
 
 /**
@@ -129,6 +130,8 @@ export default function ResetPassword() {
 
   const runFastLink = async () => {
     if (!sessionReady) return toast.error("Recovery link expired — request a new one.");
+    try { assertLiveCheckoutHost(); }
+    catch (e: any) { return toast.error(e?.message || "Live payments are only available on the production domain."); }
     setFastSaving(true);
 
     try {

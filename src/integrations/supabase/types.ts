@@ -1134,6 +1134,39 @@ export type Database = {
           },
         ]
       }
+      commercial_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          details: Json
+          id: string
+          manual_invoice_id: string | null
+          subject_user_id: string | null
+          support_request_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          id?: string
+          manual_invoice_id?: string | null
+          subject_user_id?: string | null
+          support_request_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          id?: string
+          manual_invoice_id?: string | null
+          subject_user_id?: string | null
+          support_request_id?: string | null
+        }
+        Relationships: []
+      }
       commercial_request_events: {
         Row: {
           actor_user_id: string | null
@@ -2192,6 +2225,114 @@ export type Database = {
           version?: number
         }
         Relationships: []
+      }
+      manual_invoices: {
+        Row: {
+          billed_to_email: string | null
+          billed_to_name: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          document_type: string
+          due_date: string | null
+          gst_paise: number
+          gst_percent: number
+          id: string
+          invoice_number: string
+          issued_at: string | null
+          line_items: Json
+          notes: string | null
+          paid_at: string | null
+          payment_link_url: string | null
+          payment_method: string | null
+          payment_reference: string | null
+          status: string
+          storage_allocation_id: string | null
+          subtotal_paise: number
+          support_request_id: string | null
+          surface: string
+          tax_inclusive: boolean
+          total_paise: number
+          updated_at: string
+          user_id: string
+          voided_at: string | null
+        }
+        Insert: {
+          billed_to_email?: string | null
+          billed_to_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          document_type?: string
+          due_date?: string | null
+          gst_paise?: number
+          gst_percent?: number
+          id?: string
+          invoice_number?: string
+          issued_at?: string | null
+          line_items?: Json
+          notes?: string | null
+          paid_at?: string | null
+          payment_link_url?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          status?: string
+          storage_allocation_id?: string | null
+          subtotal_paise?: number
+          support_request_id?: string | null
+          surface?: string
+          tax_inclusive?: boolean
+          total_paise?: number
+          updated_at?: string
+          user_id: string
+          voided_at?: string | null
+        }
+        Update: {
+          billed_to_email?: string | null
+          billed_to_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          document_type?: string
+          due_date?: string | null
+          gst_paise?: number
+          gst_percent?: number
+          id?: string
+          invoice_number?: string
+          issued_at?: string | null
+          line_items?: Json
+          notes?: string | null
+          paid_at?: string | null
+          payment_link_url?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          status?: string
+          storage_allocation_id?: string | null
+          subtotal_paise?: number
+          support_request_id?: string | null
+          surface?: string
+          tax_inclusive?: boolean
+          total_paise?: number
+          updated_at?: string
+          user_id?: string
+          voided_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manual_invoices_storage_allocation_id_fkey"
+            columns: ["storage_allocation_id"]
+            isOneToOne: false
+            referencedRelation: "storage_allocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manual_invoices_support_request_id_fkey"
+            columns: ["support_request_id"]
+            isOneToOne: false
+            referencedRelation: "support_requests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mcp_audit_log: {
         Row: {
@@ -5288,6 +5429,18 @@ export type Database = {
       }
     }
     Functions: {
+      _mi_compute_totals: {
+        Args: {
+          _gst_percent: number
+          _line_items: Json
+          _tax_inclusive: boolean
+        }
+        Returns: {
+          gst_paise: number
+          subtotal_paise: number
+          total_paise: number
+        }[]
+      }
       accept_legal_agreement: {
         Args: {
           p_agreement_type: Database["public"]["Enums"]["legal_agreement_type"]
@@ -5354,10 +5507,30 @@ export type Database = {
           updated_at: string
         }[]
       }
+      admin_create_manual_invoice: {
+        Args: {
+          _document_type: string
+          _due_date?: string
+          _gst_percent?: number
+          _line_items: Json
+          _notes?: string
+          _payment_link_url?: string
+          _payment_method?: string
+          _support_request_id: string
+          _surface: string
+          _tax_inclusive?: boolean
+          _user_id: string
+        }
+        Returns: string
+      }
       admin_exists: { Args: never; Returns: boolean }
       admin_grant_storage: {
         Args: { _gb: number; _note?: string; _user_id: string }
         Returns: Json
+      }
+      admin_issue_manual_invoice: {
+        Args: { _invoice_id: string }
+        Returns: undefined
       }
       admin_list_creator_storage_risk: {
         Args: never
@@ -5377,6 +5550,14 @@ export type Database = {
           used_gb: number
           user_id: string
         }[]
+      }
+      admin_mark_invoice_paid: {
+        Args: {
+          _invoice_id: string
+          _payment_method?: string
+          _payment_reference?: string
+        }
+        Returns: undefined
       }
       admin_mark_order_paid: {
         Args: { _order_id: string; _reason: string }
@@ -5407,6 +5588,28 @@ export type Database = {
           submitted_at: string
           utr_or_reference: string
         }[]
+      }
+      admin_provision_creator_plan: {
+        Args: {
+          _grant_expires_at?: string
+          _manual_invoice_id?: string
+          _notes?: string
+          _plan_tier: string
+          _storage_grant_gb?: number
+          _support_request_id: string
+          _user_id: string
+        }
+        Returns: Json
+      }
+      admin_provision_studio_plan: {
+        Args: {
+          _manual_invoice_id?: string
+          _notes?: string
+          _package_label: string
+          _support_request_id: string
+          _user_id: string
+        }
+        Returns: Json
       }
       admin_review_manual_payment: {
         Args: {
@@ -5469,6 +5672,23 @@ export type Database = {
           occurred_at: string
           to_status: string
         }[]
+      }
+      admin_update_manual_invoice: {
+        Args: {
+          _due_date?: string
+          _gst_percent?: number
+          _invoice_id: string
+          _line_items: Json
+          _notes?: string
+          _payment_link_url?: string
+          _payment_method?: string
+          _tax_inclusive?: boolean
+        }
+        Returns: undefined
+      }
+      admin_void_manual_invoice: {
+        Args: { _invoice_id: string; _reason?: string }
+        Returns: undefined
       }
       assign_title_reviewer: {
         Args: { _reviewer: string; _stage: string; _title_id: string }
@@ -5718,6 +5938,7 @@ export type Database = {
         Args: { _older_than_hours?: number }
         Returns: Json
       }
+      sweep_manual_invoices_overdue: { Args: never; Returns: number }
       title_review_summary: { Args: { _title_id: string }; Returns: Json }
       title_submission_readiness: { Args: { _title_id: string }; Returns: Json }
       transition_title_status: {

@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
+import ManualInvoicesList from "@/components/billing/ManualInvoicesList";
 
 /**
  * Creator Upgrade — two clearly separated commercial surfaces:

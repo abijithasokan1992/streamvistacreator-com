@@ -5359,6 +5359,25 @@ export type Database = {
         Args: { _gb: number; _note?: string; _user_id: string }
         Returns: Json
       }
+      admin_list_creator_storage_risk: {
+        Args: never
+        Returns: {
+          active_blocks: number
+          cancelling_tb: number
+          email: string
+          full_name: string
+          halted_blocks: number
+          monthly_paise: number
+          next_period_end: string
+          over_quota: boolean
+          plan_tier: string
+          projected_over_quota: boolean
+          projected_total_gb: number
+          total_gb: number
+          used_gb: number
+          user_id: string
+        }[]
+      }
       admin_mark_order_paid: {
         Args: { _order_id: string; _reason: string }
         Returns: Json
@@ -5519,6 +5538,25 @@ export type Database = {
         Returns: number
       }
       fulfill_billing_order: { Args: { _order_id: string }; Returns: Json }
+      get_creator_storage_entitlement: {
+        Args: { _user_id: string }
+        Returns: {
+          active_storage_subscriptions: number
+          admin_gb: number
+          cancelling_tb: number
+          halted_subscriptions: number
+          included_gb: number
+          monthly_paise: number
+          next_period_end: string
+          over_quota: boolean
+          paid_gb: number
+          paid_tb: number
+          projected_over_quota_after_cancellations: boolean
+          projected_total_gb_after_cancellations: number
+          total_gb: number
+          used_gb: number
+        }[]
+      }
       get_payment_method_configs_for_my_order: {
         Args: { _order_id: string }
         Returns: {

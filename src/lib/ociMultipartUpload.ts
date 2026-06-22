@@ -267,7 +267,26 @@ export function mapUploadError(raw: unknown): string {
   return "Upload Failed — please try again or contact support.";
 }
 
-export async function uploadFileMultipart(p: MultipartParams): Promise<MultipartResult> {
+export async function uploadFileMultipart(p: MultipartParams, _retryAttempt = 0): Promise<MultipartResult> {
+  const { file, workspaceId, pendingId, onProgress, onTelemetry, signal } = p;
+  try {
+    return await runMultipart(p);
+  } catch (e) {
+    // OCI multipart upload disappeared (expired / reclaimed / aborted out of
+    // band). Clean every cached pointer and re-init from scratch ONCE with a
+    // fresh pendingId so the user doesn't see UploadNotFound.
+    if (e instanceof UploadSessionExpiredError && _retryAttempt === 0) {
+      clearResumeEntry(file);
+      const freshPendingId = `${pendingId}-r${Date.now().toString(36)}`;
+      // eslint-disable-next-line no-console
+      console.warn("[oci-multipart] session expired — restarting with fresh pendingId", { freshPendingId });
+      return uploadFileMultipart({ ...p, pendingId: freshPendingId }, 1);
+    }
+    throw e;
+  }
+}
+
+async function runMultipart(p: MultipartParams): Promise<MultipartResult> {
   const { file, workspaceId, pendingId, onProgress, onTelemetry, signal } = p;
 
   // Initial recommended chunk size — final value is clamped to server partSize after init.

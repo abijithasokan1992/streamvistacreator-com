@@ -411,7 +411,7 @@ function DealDetailDialog({
                           const { data, error } = await (supabase as any).functions.invoke("mint-delivery-par", { body: { delivery_id: dl.id, object_key: objectKey, ttl_hours: 72 } });
                           if (error || (data as any)?.error) { toast.error(((data as any)?.error || error?.message) ?? "Mint failed"); return; }
                           toast.success("Signed delivery URL minted (72h)");
-                          load();
+                          loadDetails();
                         }}>Mint signed URL</Button>
                         {dl.status !== "shared" && <Button size="sm" variant="outline" onClick={() => run("admin_deal_upsert_delivery", { _deal_id: deal.id, _delivery_id: dl.id, _status: "shared", _method: null, _recipient_email: null, _share_url: null, _expires_at: null, _package_notes: null, _internal_notes: null, _mark_delivered: false }, "Marked shared")}>Mark shared</Button>}
                         {dl.status !== "delivered" && <Button size="sm" onClick={() => run("admin_deal_upsert_delivery", { _deal_id: deal.id, _delivery_id: dl.id, _status: "delivered", _method: null, _recipient_email: null, _share_url: null, _expires_at: null, _package_notes: null, _internal_notes: null, _mark_delivered: true }, "Marked delivered")}>Mark delivered</Button>}

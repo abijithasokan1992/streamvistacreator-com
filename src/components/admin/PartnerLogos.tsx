@@ -333,7 +333,7 @@ function AddPartnerForm({
             style={{ aspectRatio: settings.aspect_ratio.replace("/", " / "), background: settings.container_bg }}
           >
             {preview ? (
-              <img src={preview} alt="Preview" className="w-full h-full object-contain" />
+              <img src={preview} alt="Partner logo upload preview" className="w-full h-full object-contain" />
             ) : (
               <div className="text-xs text-muted-foreground">No file selected</div>
             )}

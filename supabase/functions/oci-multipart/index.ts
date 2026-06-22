@@ -412,9 +412,6 @@ Deno.serve(async (req) => {
             return json({ idempotent: true, upload: full }, 200, cors);
           }
           if (existing.oci_upload_id && existing.object_key) {
-            // CRITICAL: validate the OCI multipart is still alive before handing
-            // back the stale uploadId. If OCI has expired/aborted it, fall
-            // through to create a fresh multipart upload on the same row.
             const probePath = `/n/${ns}/b/${bucket}/u/${encodeURIComponent(existing.object_key)}?uploadId=${encodeURIComponent(existing.oci_upload_id)}`;
             const probeSig = await buildOciSignature({
               method: "GET", host, path: probePath, contentSha256: "", keyId, privateKey,
@@ -437,11 +434,6 @@ Deno.serve(async (req) => {
                 concurrency: UPLOAD_CONCURRENCY,
               }, 200, cors);
             }
-            // OCI says it's gone — invalidate this row and let the code below
-            // create a brand-new multipart upload + insert a fresh row.
-            await admin.from("recent_uploads")
-              .update({ status: "failed", error_message: `OCI multipart gone (${probeResp.status}) — restarting` })
-              .eq("id", existing.id);
             await admin.from("upload_sessions")
               .update({ status: "aborted", error_message: `oci_probe_${probeResp.status}` })
               .eq("user_id", userId).eq("oci_upload_id", existing.oci_upload_id);
@@ -449,8 +441,16 @@ Deno.serve(async (req) => {
               user_id: userId, oci_upload_id: existing.oci_upload_id,
               event: "session.restart", severity: "warn", http_status: probeResp.status,
             });
-            // fall through
           }
+          // Free the unique (user_id, client_pending_id) slot on the stale row
+          // so the fresh insert below does not violate the unique constraint.
+          await admin.from("recent_uploads")
+            .update({
+              status: "failed",
+              client_pending_id: null,
+              error_message: `superseded by retry`,
+            })
+            .eq("id", existing.id);
         }
       }
 

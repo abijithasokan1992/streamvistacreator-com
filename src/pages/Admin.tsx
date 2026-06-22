@@ -39,6 +39,7 @@ import MarketingCMS from "@/components/admin/MarketingCMS";
 import AiMcpControlCenter from "@/components/admin/AiMcpControlCenter";
 import ContentReviewWorkflow from "@/components/admin/ContentReviewWorkflow";
 import AdminInvoices from "@/components/admin/AdminInvoices";
+import ManualInvoiceConsole from "@/components/admin/ManualInvoiceConsole";
 import PaymentSecurityEvents from "@/components/admin/PaymentSecurityEvents";
 import PaymentTrace from "@/components/admin/PaymentTrace";
 import StudioVaultPricing from "@/components/admin/StudioVaultPricing";

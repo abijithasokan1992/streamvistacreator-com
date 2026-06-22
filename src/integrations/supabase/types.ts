@@ -3896,6 +3896,13 @@ export type Database = {
             referencedRelation: "studio_vault_products"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "storage_topups_vault_product_id_fkey"
+            columns: ["vault_product_id"]
+            isOneToOne: false
+            referencedRelation: "studio_vault_products_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       students: {
@@ -4912,6 +4919,78 @@ export type Database = {
           severity?: string | null
           source?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      studio_vault_products_public: {
+        Row: {
+          badge: string | null
+          billing_modes: Json | null
+          code: string | null
+          created_at: string | null
+          default_tb_options: Json | null
+          description: string | null
+          enterprise_only: boolean | null
+          features: Json | null
+          gst_percent: number | null
+          id: string | null
+          max_tb: number | null
+          min_tb: number | null
+          name: string | null
+          oci_storage_tier: string | null
+          self_serve_enabled: boolean | null
+          sell_price_per_tb_paise: number | null
+          short_pitch: string | null
+          sort_order: number | null
+          storage_class: string | null
+          updated_at: string | null
+          visible: boolean | null
+        }
+        Insert: {
+          badge?: string | null
+          billing_modes?: Json | null
+          code?: string | null
+          created_at?: string | null
+          default_tb_options?: Json | null
+          description?: string | null
+          enterprise_only?: boolean | null
+          features?: Json | null
+          gst_percent?: number | null
+          id?: string | null
+          max_tb?: number | null
+          min_tb?: number | null
+          name?: string | null
+          oci_storage_tier?: string | null
+          self_serve_enabled?: boolean | null
+          sell_price_per_tb_paise?: number | null
+          short_pitch?: string | null
+          sort_order?: number | null
+          storage_class?: string | null
+          updated_at?: string | null
+          visible?: boolean | null
+        }
+        Update: {
+          badge?: string | null
+          billing_modes?: Json | null
+          code?: string | null
+          created_at?: string | null
+          default_tb_options?: Json | null
+          description?: string | null
+          enterprise_only?: boolean | null
+          features?: Json | null
+          gst_percent?: number | null
+          id?: string | null
+          max_tb?: number | null
+          min_tb?: number | null
+          name?: string | null
+          oci_storage_tier?: string | null
+          self_serve_enabled?: boolean | null
+          sell_price_per_tb_paise?: number | null
+          short_pitch?: string | null
+          sort_order?: number | null
+          storage_class?: string | null
+          updated_at?: string | null
+          visible?: boolean | null
         }
         Relationships: []
       }

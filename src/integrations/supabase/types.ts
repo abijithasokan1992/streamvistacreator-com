@@ -5519,20 +5519,6 @@ export type Database = {
         Returns: number
       }
       fulfill_billing_order: { Args: { _order_id: string }; Returns: Json }
-      get_creator_storage_entitlement: {
-        Args: { _user_id: string }
-        Returns: {
-          active_storage_subscriptions: number
-          admin_gb: number
-          included_gb: number
-          monthly_paise: number
-          over_quota: boolean
-          paid_gb: number
-          paid_tb: number
-          total_gb: number
-          used_gb: number
-        }[]
-      }
       get_payment_method_configs_for_my_order: {
         Args: { _order_id: string }
         Returns: {

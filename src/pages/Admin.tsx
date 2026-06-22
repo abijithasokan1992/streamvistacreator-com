@@ -48,6 +48,7 @@ import CompanyProfileSettings from "@/components/admin/CompanyProfileSettings";
 import BillingOperations from "@/components/admin/BillingOperations";
 import CommercialControlTower from "@/components/admin/CommercialControlTower";
 import TitleCommercialOpsConsole from "@/components/admin/TitleCommercialOpsConsole";
+import ScreeningOpsConsole from "@/components/admin/ScreeningOpsConsole";
 
 interface Row {
   id: string;

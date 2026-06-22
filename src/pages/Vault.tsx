@@ -46,7 +46,7 @@ type SharedFile = {
   view_only: boolean;
 };
 
-const MAX_BYTES = 2_684_354_560; // 2.5 GB
+// Per-file cap is computed from live workspace entitlement (Creator plan + paid storage + admin bonus).
 const SECTIONS = [
   { id: "files", label: "My Vault", icon: FolderLock },
   { id: "analytics", label: "Analytics", icon: BarChart3 },

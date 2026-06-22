@@ -555,7 +555,6 @@ export default function UpgradeSection() {
         </div>
         <CreatorDistributionOffers />
       </section>
-      </section>
     </div>
   );
 }

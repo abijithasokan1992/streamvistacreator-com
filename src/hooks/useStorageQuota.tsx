@@ -9,30 +9,38 @@ import { Button } from "@/components/ui/button";
 import { PAYG_TB_INR, FREE_STORAGE_GB } from "@/components/streamvista/plans";
 
 /**
- * Fair Usage & Soft-Lock
- * ──────────────────────
- *  Free users: 50 GB hard cap. Warning at 45 GB. Past the cap all upload
- *  surfaces (Vault, Camera-to-Cloud, Master Archive, etc.) call
- *  `checkOrPaywall()` which either allows the upload or opens the
- *  conversion overlay wired to the existing Razorpay top-up flow.
- *
- *  Creator users have no soft-lock (their meter lives in StorageUsageCard
- *  with auto top-up at the same Razorpay endpoint).
+ * Storage entitlement & hard-stop (Part 11E)
+ * ──────────────────────────────────────────
+ * Source of truth is the `get_workspace_storage_entitlement` RPC which returns
+ *   included_storage_gb + paid_storage_gb + admin_bonus_storage_gb → total_storage_gb
+ * Creator Basic ships with 5 GB included. Buying a 1 TB add-on or receiving an
+ * admin grant grows `total_storage_gb` and the same warning/urgent/hard-stop
+ * thresholds apply to every plan — there is no separate "creator means infinite".
  */
 
 const MB_PER_GB = 1024;
 const FREE_LIMIT_MB = FREE_STORAGE_GB * MB_PER_GB;
-export const FREE_WARN_MB = 45 * MB_PER_GB;
+export const FREE_WARN_MB = 4 * MB_PER_GB; // 80% of 5 GB — kept exported for legacy callers
 
 type Quota = {
   loading: boolean;
+  /** True when the workspace is on the Creator Basic submission plan. */
+  isBasic: boolean;
+  /** Legacy alias — `isCreator` historically meant "has paid storage". */
   isCreator: boolean;
+  planCode: string;
   usedMb: number;
   limitMb: number;
+  totalGb: number;
+  includedGb: number;
+  paidGb: number;
+  bonusGb: number;
+  addonBlocks: number;
   percent: number;
   warning: boolean;
+  urgent: boolean;
   locked: boolean;
-  /** Free user has hit the 50 GB cap → uploads are soft-locked. */
+  /** Returns false when over the hard-stop and opens the upgrade overlay. */
   checkOrPaywall: () => boolean;
   /** Force-open the upgrade overlay (for the warning banner CTA). */
   openPaywall: () => void;
@@ -44,10 +52,11 @@ const Ctx = createContext<Quota | null>(null);
 export function useStorageQuota(): Quota {
   const v = useContext(Ctx);
   if (!v) {
-    // Safe fallback so components rendered outside the provider don't crash.
     return {
-      loading: false, isCreator: true, usedMb: 0, limitMb: FREE_LIMIT_MB,
-      percent: 0, warning: false, locked: false,
+      loading: false, isBasic: true, isCreator: false, planCode: "creator_basic",
+      usedMb: 0, limitMb: FREE_LIMIT_MB,
+      totalGb: FREE_STORAGE_GB, includedGb: FREE_STORAGE_GB, paidGb: 0, bonusGb: 0, addonBlocks: 0,
+      percent: 0, warning: false, urgent: false, locked: false,
       checkOrPaywall: () => true, openPaywall: () => {}, refresh: async () => {},
     };
   }
@@ -57,32 +66,38 @@ export function useStorageQuota(): Quota {
 export function StorageQuotaProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [isCreator, setIsCreator] = useState(true);
-  const [usedMb, setUsedMb] = useState(0);
+  const [ent, setEnt] = useState<any>(null);
   const [open, setOpen] = useState(false);
   const [paying, setPaying] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!user) { setLoading(false); return; }
     setLoading(true);
-    const { data } = await supabase
-      .from("user_profiles")
-      .select("plan_tier,storage_used_mb")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    const { data, error } = await (supabase as any).rpc("get_workspace_storage_entitlement", { _user_id: user.id });
     setLoading(false);
-    if (data) {
-      setIsCreator(data.plan_tier === "creator");
-      setUsedMb(Number(data.storage_used_mb || 0));
-    }
+    if (!error && data) setEnt(data);
   }, [user?.id]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  const limitMb = isCreator ? Number.MAX_SAFE_INTEGER : FREE_LIMIT_MB;
-  const percent = isCreator ? 0 : Math.min(100, Math.round((usedMb / FREE_LIMIT_MB) * 100));
-  const warning = !isCreator && usedMb >= FREE_WARN_MB && usedMb < FREE_LIMIT_MB;
-  const locked = !isCreator && usedMb >= FREE_LIMIT_MB;
+  const planCode = String(ent?.plan_code || "creator_basic");
+  const includedGb = Number(ent?.included_storage_gb ?? FREE_STORAGE_GB);
+  const paidGb = Number(ent?.paid_storage_gb ?? 0);
+  const bonusGb = Number(ent?.admin_bonus_storage_gb ?? 0);
+  const totalGb = Number(ent?.total_storage_gb ?? includedGb + paidGb + bonusGb);
+  const addonBlocks = Number(ent?.storage_addon_blocks ?? 0);
+  const usedBytes = Number(ent?.used_bytes ?? 0);
+  const usedMb = Math.round(usedBytes / (1024 * 1024));
+  const limitMb = Math.max(1, totalGb * MB_PER_GB);
+  const percent = Math.min(100, Math.round((usedMb / limitMb) * 100));
+  const warnPct = Number(ent?.warning_threshold_pct ?? 80);
+  const urgentPct = Number(ent?.urgent_threshold_pct ?? 95);
+  const hardPct = Number(ent?.hard_stop_threshold_pct ?? 100);
+  const warning = percent >= warnPct && percent < urgentPct;
+  const urgent = percent >= urgentPct && percent < hardPct;
+  const locked = percent >= hardPct;
+  const isBasic = planCode === "creator_basic" && paidGb <= 0;
+  const isCreator = !isBasic;
 
   const openPaywall = useCallback(() => setOpen(true), []);
 
@@ -145,9 +160,12 @@ export function StorageQuotaProvider({ children }: { children: React.ReactNode }
   }, [user, refresh]);
 
   const value = useMemo<Quota>(() => ({
-    loading, isCreator, usedMb, limitMb, percent, warning, locked,
+    loading, isBasic, isCreator, planCode,
+    usedMb, limitMb, totalGb, includedGb, paidGb, bonusGb, addonBlocks,
+    percent, warning, urgent, locked,
     checkOrPaywall, openPaywall, refresh,
-  }), [loading, isCreator, usedMb, limitMb, percent, warning, locked, checkOrPaywall, openPaywall, refresh]);
+  }), [loading, isBasic, isCreator, planCode, usedMb, limitMb, totalGb, includedGb, paidGb, bonusGb, addonBlocks, percent, warning, urgent, locked, checkOrPaywall, openPaywall, refresh]);
+
 
   return (
     <Ctx.Provider value={value}>
@@ -200,26 +218,32 @@ export function StorageQuotaProvider({ children }: { children: React.ReactNode }
   );
 }
 
-/** Inline alert banner — drop into the dashboard so users see the 45 GB warning. */
+/** Inline alert banner — surfaces warning / urgent / hard-stop based on real entitlement. */
 export function StorageWarningBanner() {
   const q = useStorageQuota();
-  if (q.loading || q.isCreator) return null;
-  if (!q.warning && !q.locked) return null;
+  if (q.loading) return null;
+  if (!q.warning && !q.urgent && !q.locked) return null;
+  const usedGb = (q.usedMb / MB_PER_GB).toFixed(1);
+  const totalGb = q.totalGb.toFixed(0);
   return (
     <div className={`rounded-xl border p-3 flex items-start gap-3 text-sm ${
       q.locked
         ? "border-destructive/40 bg-destructive/10 text-destructive"
+        : q.urgent
+        ? "border-destructive/40 bg-destructive/5 text-destructive"
         : "border-amber-400/40 bg-amber-400/10 text-amber-500"
     }`}>
       <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5" />
       <div className="flex-1">
         <div className="font-semibold">
           {q.locked
-            ? `Storage full — uploads paused (${(q.usedMb / MB_PER_GB).toFixed(1)} / ${FREE_STORAGE_GB} GB)`
-            : `You're at ${(q.usedMb / MB_PER_GB).toFixed(1)} GB of ${FREE_STORAGE_GB} GB — upgrade soon to keep uploading.`}
+            ? `Storage full — uploads paused (${usedGb} / ${totalGb} GB)`
+            : q.urgent
+            ? `Urgent — ${q.percent}% of ${totalGb} GB used. Add 1 TB to keep uploading.`
+            : `You're at ${usedGb} GB of ${totalGb} GB (${q.percent}%). Plan ahead — add 1 TB before you hit the cap.`}
         </div>
         <button onClick={q.openPaywall} className="underline underline-offset-2 hover:opacity-80 mt-1 text-xs">
-          Upgrade to Creator · ₹{PAYG_TB_INR} / month →
+          Add 1 TB storage · ₹{PAYG_TB_INR} / month →
         </button>
       </div>
     </div>

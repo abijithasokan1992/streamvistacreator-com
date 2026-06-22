@@ -71,7 +71,7 @@ export const Hero = () => (
             icon: Film,
             step: "Creator",
             title: "Submit titles",
-            body: "Bring films, metadata, posters, trailers and master files into one secure pipeline. Start free with 50 GB; add recurring 1 TB storage blocks as your catalog grows.",
+            body: "Bring films, metadata, posters, trailers and master files into one secure pipeline. Start free with 5 GB; add recurring 1 TB storage blocks as your catalog grows.",
           },
           {
             icon: Layers,

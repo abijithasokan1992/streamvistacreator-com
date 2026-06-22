@@ -113,10 +113,22 @@ export default function StorageUsageCard() {
     );
   }
 
-  const isCreator = profile.plan_tier === "creator";
-  const storageQuotaMb = isCreator
-    ? (1 + Number(profile.topup_tb || 0)) * MB_PER_TB
-    : FREE_STORAGE_GB * MB_PER_GB;
+  // Resolve real total quota from entitlement RPC (included + paid + admin bonus).
+  const [entitlement, setEntitlement] = useState<any>(null);
+  useEffect(() => {
+    let cancelled = false;
+    if (!user) return;
+    (supabase as any).rpc("get_workspace_storage_entitlement", { _user_id: user.id })
+      .then(({ data }: any) => { if (!cancelled && data) setEntitlement(data); });
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
+  const totalGb = Number(entitlement?.total_storage_gb ?? FREE_STORAGE_GB);
+  const paidGb = Number(entitlement?.paid_storage_gb ?? 0);
+  const bonusGb = Number(entitlement?.admin_bonus_storage_gb ?? 0);
+  const planCode = String(entitlement?.plan_code ?? "creator_basic");
+  const isCreator = paidGb > 0 || planCode !== "creator_basic";
+  const storageQuotaMb = totalGb * MB_PER_GB;
   const storageUsedMb = Number(profile.storage_used_mb || 0);
   const storagePct = Math.min(100, Math.round((storageUsedMb / storageQuotaMb) * 100));
   const storageFull = storagePct >= 100;
@@ -131,9 +143,13 @@ export default function StorageUsageCard() {
     : mb >= MB_PER_GB ? `${(mb / MB_PER_GB).toFixed(1)} GB`
     : `${mb.toFixed(0)} MB`;
 
-  const totalQuotaLabel = isCreator
-    ? `${(storageQuotaMb / MB_PER_TB).toFixed(0)} TB`
-    : `${FREE_STORAGE_GB} GB`;
+  const totalQuotaLabel = totalGb >= 1024
+    ? `${(totalGb / 1024).toFixed(2)} TB`
+    : `${totalGb.toFixed(0)} GB`;
+  const planLabel = isCreator
+    ? `Creator · ${paidGb > 0 ? `${Math.round(paidGb / 1024)} TB add-on` : "paid plan"}${bonusGb > 0 ? ` + ${bonusGb.toFixed(0)} GB grant` : ""}`
+    : `Creator Basic · submission plan${bonusGb > 0 ? ` + ${bonusGb.toFixed(0)} GB grant` : ""}`;
+
 
   return (
     <div className="glass rounded-2xl p-5 space-y-5">
@@ -144,7 +160,8 @@ export default function StorageUsageCard() {
             Storage &amp; Bandwidth
           </h3>
           <p className="text-[11px] text-muted-foreground mt-0.5">
-            {isCreator ? "Creator · Pay-As-You-Go" : "Basic Free Plan"}
+            {planLabel}
+
           </p>
         </div>
         {isCreator && (

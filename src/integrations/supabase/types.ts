@@ -1905,6 +1905,104 @@ export type Database = {
           },
         ]
       }
+      distribution_program_offers: {
+        Row: {
+          accepted_at: string | null
+          channel_scope_json: Json
+          created_at: string
+          creator_user_id: string
+          id: string
+          is_non_exclusive: boolean
+          legal_text_snapshot: string | null
+          offered_at: string | null
+          offered_by_admin: string | null
+          platform_share_pct: number
+          program_name: string
+          rejected_at: string | null
+          revenue_model: string
+          rights_holder_share_pct: number
+          rights_scope_json: Json
+          status: Database["public"]["Enums"]["distribution_offer_status"]
+          streamvista_share_pct: number
+          term_end_date: string | null
+          term_start_date: string | null
+          term_years: number
+          termination_fee_amount: number
+          termination_fee_currency: string
+          termination_notice_days: number
+          territory_scope_json: Json
+          title_id: string | null
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          channel_scope_json?: Json
+          created_at?: string
+          creator_user_id: string
+          id?: string
+          is_non_exclusive?: boolean
+          legal_text_snapshot?: string | null
+          offered_at?: string | null
+          offered_by_admin?: string | null
+          platform_share_pct?: number
+          program_name?: string
+          rejected_at?: string | null
+          revenue_model?: string
+          rights_holder_share_pct?: number
+          rights_scope_json?: Json
+          status?: Database["public"]["Enums"]["distribution_offer_status"]
+          streamvista_share_pct?: number
+          term_end_date?: string | null
+          term_start_date?: string | null
+          term_years?: number
+          termination_fee_amount?: number
+          termination_fee_currency?: string
+          termination_notice_days?: number
+          territory_scope_json?: Json
+          title_id?: string | null
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          channel_scope_json?: Json
+          created_at?: string
+          creator_user_id?: string
+          id?: string
+          is_non_exclusive?: boolean
+          legal_text_snapshot?: string | null
+          offered_at?: string | null
+          offered_by_admin?: string | null
+          platform_share_pct?: number
+          program_name?: string
+          rejected_at?: string | null
+          revenue_model?: string
+          rights_holder_share_pct?: number
+          rights_scope_json?: Json
+          status?: Database["public"]["Enums"]["distribution_offer_status"]
+          streamvista_share_pct?: number
+          term_end_date?: string | null
+          term_start_date?: string | null
+          term_years?: number
+          termination_fee_amount?: number
+          termination_fee_currency?: string
+          termination_notice_days?: number
+          territory_scope_json?: Json
+          title_id?: string | null
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "distribution_program_offers_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dmca_requests: {
         Row: {
           accuracy_statement: boolean
@@ -5216,6 +5314,97 @@ export type Database = {
           },
         ]
       }
+      title_edit_requests: {
+        Row: {
+          admin_response: string | null
+          created_at: string
+          creator_user_id: string
+          handled_at: string | null
+          handled_by_admin: string | null
+          id: string
+          message: string | null
+          request_type: string
+          requested_sections: string[]
+          status: Database["public"]["Enums"]["title_edit_request_status"]
+          title_id: string
+          updated_at: string
+        }
+        Insert: {
+          admin_response?: string | null
+          created_at?: string
+          creator_user_id: string
+          handled_at?: string | null
+          handled_by_admin?: string | null
+          id?: string
+          message?: string | null
+          request_type: string
+          requested_sections?: string[]
+          status?: Database["public"]["Enums"]["title_edit_request_status"]
+          title_id: string
+          updated_at?: string
+        }
+        Update: {
+          admin_response?: string | null
+          created_at?: string
+          creator_user_id?: string
+          handled_at?: string | null
+          handled_by_admin?: string | null
+          id?: string
+          message?: string | null
+          request_type?: string
+          requested_sections?: string[]
+          status?: Database["public"]["Enums"]["title_edit_request_status"]
+          title_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "title_edit_requests_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      title_lock_state: {
+        Row: {
+          current_submission_state: string
+          is_locked: boolean
+          lock_reason: string | null
+          locked_at: string | null
+          locked_by: string | null
+          title_id: string
+          updated_at: string
+        }
+        Insert: {
+          current_submission_state?: string
+          is_locked?: boolean
+          lock_reason?: string | null
+          locked_at?: string | null
+          locked_by?: string | null
+          title_id: string
+          updated_at?: string
+        }
+        Update: {
+          current_submission_state?: string
+          is_locked?: boolean
+          lock_reason?: string | null
+          locked_at?: string | null
+          locked_by?: string | null
+          title_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "title_lock_state_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: true
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       title_review_assignments: {
         Row: {
           assigned_at: string
@@ -5547,6 +5736,56 @@ export type Database = {
             columns: ["upload_id"]
             isOneToOne: false
             referencedRelation: "recent_uploads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      title_section_unlocks: {
+        Row: {
+          closed_at: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          opened_at: string
+          opened_by_admin: string | null
+          opened_for_user_id: string | null
+          reason: string | null
+          section_key: string
+          status: Database["public"]["Enums"]["title_section_unlock_status"]
+          title_id: string
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          opened_at?: string
+          opened_by_admin?: string | null
+          opened_for_user_id?: string | null
+          reason?: string | null
+          section_key: string
+          status?: Database["public"]["Enums"]["title_section_unlock_status"]
+          title_id: string
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          opened_at?: string
+          opened_by_admin?: string | null
+          opened_for_user_id?: string | null
+          reason?: string | null
+          section_key?: string
+          status?: Database["public"]["Enums"]["title_section_unlock_status"]
+          title_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "title_section_unlocks_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
             referencedColumns: ["id"]
           },
         ]
@@ -5986,6 +6225,147 @@ export type Database = {
           },
         ]
       }
+      workspace_storage_admin_adjustments: {
+        Row: {
+          adjustment_type: Database["public"]["Enums"]["storage_adjustment_type"]
+          created_at: string
+          created_by_admin: string | null
+          delta_gb: number
+          expires_at: string | null
+          id: string
+          reason: string | null
+          resulting_bonus_gb: number
+          user_id: string
+          workspace_id: string | null
+        }
+        Insert: {
+          adjustment_type: Database["public"]["Enums"]["storage_adjustment_type"]
+          created_at?: string
+          created_by_admin?: string | null
+          delta_gb?: number
+          expires_at?: string | null
+          id?: string
+          reason?: string | null
+          resulting_bonus_gb?: number
+          user_id: string
+          workspace_id?: string | null
+        }
+        Update: {
+          adjustment_type?: Database["public"]["Enums"]["storage_adjustment_type"]
+          created_at?: string
+          created_by_admin?: string | null
+          delta_gb?: number
+          expires_at?: string | null
+          id?: string
+          reason?: string | null
+          resulting_bonus_gb?: number
+          user_id?: string
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
+      workspace_storage_entitlements: {
+        Row: {
+          admin_bonus_storage_gb: number
+          auto_expand_enabled: boolean
+          billing_status: string
+          created_at: string
+          effective_from: string
+          effective_to: string | null
+          hard_stop_threshold_pct: number
+          id: string
+          included_storage_gb: number
+          paid_storage_gb: number
+          plan_code: string
+          storage_addon_blocks: number
+          total_storage_gb: number | null
+          updated_at: string
+          urgent_threshold_pct: number
+          user_id: string
+          warning_threshold_pct: number
+          workspace_id: string | null
+        }
+        Insert: {
+          admin_bonus_storage_gb?: number
+          auto_expand_enabled?: boolean
+          billing_status?: string
+          created_at?: string
+          effective_from?: string
+          effective_to?: string | null
+          hard_stop_threshold_pct?: number
+          id?: string
+          included_storage_gb?: number
+          paid_storage_gb?: number
+          plan_code?: string
+          storage_addon_blocks?: number
+          total_storage_gb?: number | null
+          updated_at?: string
+          urgent_threshold_pct?: number
+          user_id: string
+          warning_threshold_pct?: number
+          workspace_id?: string | null
+        }
+        Update: {
+          admin_bonus_storage_gb?: number
+          auto_expand_enabled?: boolean
+          billing_status?: string
+          created_at?: string
+          effective_from?: string
+          effective_to?: string | null
+          hard_stop_threshold_pct?: number
+          id?: string
+          included_storage_gb?: number
+          paid_storage_gb?: number
+          plan_code?: string
+          storage_addon_blocks?: number
+          total_storage_gb?: number | null
+          updated_at?: string
+          urgent_threshold_pct?: number
+          user_id?: string
+          warning_threshold_pct?: number
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
+      workspace_storage_usage: {
+        Row: {
+          active_bytes: number
+          archived_bytes: number
+          billable_bytes: number
+          derived_bytes: number
+          display_used_bytes: number
+          id: string
+          last_recalculated_at: string | null
+          updated_at: string
+          user_id: string
+          workspace_id: string | null
+        }
+        Insert: {
+          active_bytes?: number
+          archived_bytes?: number
+          billable_bytes?: number
+          derived_bytes?: number
+          display_used_bytes?: number
+          id?: string
+          last_recalculated_at?: string | null
+          updated_at?: string
+          user_id: string
+          workspace_id?: string | null
+        }
+        Update: {
+          active_bytes?: number
+          archived_bytes?: number
+          billable_bytes?: number
+          derived_bytes?: number
+          display_used_bytes?: number
+          id?: string
+          last_recalculated_at?: string | null
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
       workspaces: {
         Row: {
           created_at: string
@@ -6202,6 +6582,16 @@ export type Database = {
         }
         Returns: string
       }
+      admin_adjust_storage: {
+        Args: {
+          _delta_gb: number
+          _expires_at?: string
+          _reason?: string
+          _type: Database["public"]["Enums"]["storage_adjustment_type"]
+          _user_id: string
+        }
+        Returns: Json
+      }
       admin_billing_order_detail: { Args: { _order_id: string }; Returns: Json }
       admin_billing_orders_list: {
         Args: {
@@ -6399,6 +6789,15 @@ export type Database = {
       }
       admin_grant_storage: {
         Args: { _gb: number; _note?: string; _user_id: string }
+        Returns: Json
+      }
+      admin_handle_title_edit_request: {
+        Args: {
+          _decision: string
+          _request_id: string
+          _response: string
+          _unlock_sections: string[]
+        }
         Returns: Json
       }
       admin_issue_manual_invoice: {
@@ -6604,6 +7003,19 @@ export type Database = {
         Returns: Json
       }
       creator_free_tier_status: { Args: { _user_id?: string }; Returns: Json }
+      creator_lock_title_on_submit: {
+        Args: { _title_id: string }
+        Returns: Json
+      }
+      creator_request_title_edit: {
+        Args: {
+          _message: string
+          _request_type: string
+          _sections: string[]
+          _title_id: string
+        }
+        Returns: Json
+      }
       creator_resubmit_title: {
         Args: { _note?: string; _title_id: string }
         Returns: Json
@@ -6677,6 +7089,10 @@ export type Database = {
           support_contact: string
           upi_id: string
         }[]
+      }
+      get_workspace_storage_entitlement: {
+        Args: { _user_id: string }
+        Returns: Json
       }
       grant_creator_role: { Args: { _user_id: string }; Returns: undefined }
       has_accepted_agreement: {
@@ -6962,6 +7378,13 @@ export type Database = {
         | "acquisition"
         | "distribution_representation"
         | "rights_information"
+      distribution_offer_status:
+        | "draft"
+        | "offered"
+        | "accepted"
+        | "rejected"
+        | "expired"
+        | "cancelled"
       legal_agreement_type:
         | "creator_master"
         | "buyer_request_confidentiality"
@@ -6983,6 +7406,7 @@ export type Database = {
         | "acquisition"
       right_exclusivity: "exclusive" | "non_exclusive" | "hold" | "unavailable"
       right_status: "available" | "hold" | "sold" | "blocked"
+      storage_adjustment_type: "grant" | "reduce" | "set"
       studio_slug:
         | "crayons_pictures"
         | "abhijith_asokan_productions"
@@ -6994,6 +7418,13 @@ export type Database = {
         | "acquisition_open"
         | "invite_only"
         | "internal_hold"
+      title_edit_request_status:
+        | "open"
+        | "approved"
+        | "rejected"
+        | "fulfilled"
+        | "cancelled"
+      title_section_unlock_status: "open" | "closed" | "expired"
       workspace_role: "owner" | "admin" | "editor" | "viewer"
     }
     CompositeTypes: {
@@ -7234,6 +7665,14 @@ export const Constants = {
         "distribution_representation",
         "rights_information",
       ],
+      distribution_offer_status: [
+        "draft",
+        "offered",
+        "accepted",
+        "rejected",
+        "expired",
+        "cancelled",
+      ],
       legal_agreement_type: [
         "creator_master",
         "buyer_request_confidentiality",
@@ -7257,6 +7696,7 @@ export const Constants = {
       ],
       right_exclusivity: ["exclusive", "non_exclusive", "hold", "unavailable"],
       right_status: ["available", "hold", "sold", "blocked"],
+      storage_adjustment_type: ["grant", "reduce", "set"],
       studio_slug: [
         "crayons_pictures",
         "abhijith_asokan_productions",
@@ -7270,6 +7710,14 @@ export const Constants = {
         "invite_only",
         "internal_hold",
       ],
+      title_edit_request_status: [
+        "open",
+        "approved",
+        "rejected",
+        "fulfilled",
+        "cancelled",
+      ],
+      title_section_unlock_status: ["open", "closed", "expired"],
       workspace_role: ["owner", "admin", "editor", "viewer"],
     },
   },

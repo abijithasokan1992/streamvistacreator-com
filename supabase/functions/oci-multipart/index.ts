@@ -682,7 +682,26 @@ Deno.serve(async (req) => {
         headers: { host, date: sig.date, Authorization: sig.authorization },
       });
       const text = await resp.text();
-      if (!resp.ok) return json({ error: `OCI list-parts ${resp.status}`, detail: text.slice(0, 400) }, 502, cors);
+      if (!resp.ok) {
+        // OCI says the multipart no longer exists — invalidate the row + session
+        // so the client knows to start over with a fresh init instead of trying
+        // to PUT into a dead uploadId.
+        if (resp.status === 404 || resp.status === 403) {
+          await admin.from("recent_uploads")
+            .update({ status: "failed", error_message: `OCI multipart gone (${resp.status})` })
+            .eq("id", uploadRowId);
+          await admin.from("upload_sessions")
+            .update({ status: "aborted", error_message: `oci_list_parts_${resp.status}` })
+            .eq("user_id", userId).eq("oci_upload_id", uploadId);
+          await logIngest(admin, {
+            user_id: userId, oci_upload_id: uploadId,
+            event: "session.invalidated", severity: "warn", http_status: resp.status,
+            error_message: text.slice(0, 200),
+          });
+          return json({ error: "upload_not_found", code: "upload_not_found", ociStatus: resp.status }, 410, cors);
+        }
+        return json({ error: `OCI list-parts ${resp.status}`, detail: text.slice(0, 400) }, 502, cors);
+      }
       let parts: Array<{ partNumber: number; etag: string; size?: number }> = [];
       try {
         const arr = JSON.parse(text);

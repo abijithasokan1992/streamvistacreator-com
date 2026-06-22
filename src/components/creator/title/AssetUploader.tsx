@@ -99,43 +99,34 @@ export function AssetUploader({
     [stagedFile, category],
   );
 
-  const handlePicked = useCallback((f: File) => {
-    setSuccess(null);
-    setStagedFile(f);
-  }, []);
-
   const cancelStaged = useCallback(() => {
     setStagedFile(null);
     if (inputRef.current) inputRef.current.value = "";
   }, []);
 
-  const startUpload = useCallback(async () => {
-    if (!stagedFile || !active) {
-      if (!active) toast.error("Workspace not ready. Try again in a moment.");
+  const runUpload = useCallback(async (file: File) => {
+    if (!active) {
+      toast.error("Workspace not ready. Try again in a moment.");
       return;
     }
-    if (!stagedPreflight || !stagedPreflight.ok) return;
-
     setBusy(true);
     setPct(0);
-    setTelemetry({ stage: "initializing", loaded: 0, total: stagedFile.size, partsDone: 0, totalParts: 1, speedBps: 0, etaSeconds: null });
+    setTelemetry({ stage: "initializing", loaded: 0, total: file.size, partsDone: 0, totalParts: 1, speedBps: 0, etaSeconds: null });
     try {
       await uploadTitleAsset({
-        file: stagedFile,
+        file,
         category,
         titleId,
         workspaceId: active.id,
         onProgress: (loaded, total) => setPct(total ? Math.round((loaded / total) * 100) : 0),
         onTelemetry: (t) => setTelemetry(t),
       });
-      setSuccess({ name: stagedFile.name, size: stagedFile.size, format: fileExt(stagedFile.name).toUpperCase() });
-      toast.success(`${stagedFile.name} uploaded.`);
+      setSuccess({ name: file.name, size: file.size, format: fileExt(file.name).toUpperCase() });
+      toast.success(`${file.name} uploaded.`);
       setStagedFile(null);
       onUploaded?.();
     } catch (e) {
-      const safe = e instanceof UploadValidationError
-        ? e.message
-        : mapUploadError(e);
+      const safe = e instanceof UploadValidationError ? e.message : mapUploadError(e);
       toast.error(safe);
     } finally {
       setBusy(false);
@@ -143,7 +134,45 @@ export function AssetUploader({
       setTelemetry(null);
       if (inputRef.current) inputRef.current.value = "";
     }
-  }, [stagedFile, stagedPreflight, active, category, titleId, onUploaded]);
+  }, [active, category, titleId, onUploaded]);
+
+  const handlePicked = useCallback((f: File) => {
+    setSuccess(null);
+    const pre = preflight(f, category);
+    if (!pre.ok) {
+      // Stage the file so the user sees the precise reason; don't auto-start a bad upload.
+      setStagedFile(f);
+      toast.error((pre as { ok: false; reason: string }).reason);
+      return;
+    }
+    if (locked) {
+      toast.error("This title is locked — uploads are disabled.");
+      return;
+    }
+    // Valid file picked or dropped → start the upload immediately (no extra click).
+    setStagedFile(f);
+    void runUpload(f);
+  }, [category, locked, runUpload]);
+
+  const startUpload = useCallback(() => {
+    if (stagedFile) void runUpload(stagedFile);
+  }, [stagedFile, runUpload]);
+
+  // Drag-and-drop (works on desktop; touch devices fall back to the Choose-file button).
+  const [drag, setDrag] = useState(false);
+  const onDragOver = useCallback((e: React.DragEvent) => {
+    if (locked || busy) return;
+    e.preventDefault();
+    setDrag(true);
+  }, [locked, busy]);
+  const onDragLeave = useCallback(() => setDrag(false), []);
+  const onDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDrag(false);
+    if (locked || busy) return;
+    const f = e.dataTransfer.files?.[0];
+    if (f) handlePicked(f);
+  }, [locked, busy, handlePicked]);
 
   // Warn the user before they navigate away or close the tab during an active upload.
   // Without this, abandoned uploads leak as "uploading" rows + OCI multipart parts
@@ -163,7 +192,12 @@ export function AssetUploader({
   const acceptAttr = accept ?? (cfg ? cfg.exts.map((e) => `.${e}`).join(",") : undefined);
 
   return (
-    <div className="rounded-lg border border-dashed border-border/50 p-4 space-y-3">
+    <div
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      className={`rounded-lg border border-dashed p-4 space-y-3 transition ${drag ? "border-accent bg-accent/5" : "border-border/50"}`}
+    >
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-medium">{label ?? "Upload file"}</p>

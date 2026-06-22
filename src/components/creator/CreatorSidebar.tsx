@@ -16,14 +16,14 @@ export const SECTIONS: ReadonlyArray<{
   icon: React.ComponentType<{ className?: string }>;
   comingSoon?: boolean;
 }> = [
-  { id: "home",         label: "Home",         heading: "Home",                  subhead: "Your studio at a glance.",                                       icon: Home },
+  { id: "home",         label: "Home",         heading: "Creator Workspace",     subhead: "Your titles, submissions and account status at a glance.",       icon: Home },
   { id: "titles",       label: "My Titles",    heading: "My Titles",             subhead: "Create, manage and submit your catalog.",                        icon: Film },
   { id: "updates",      label: "Updates",      heading: "Updates",               subhead: "System notices, approvals, review notes and admin messages.",   icon: Bell },
   { id: "insights",     label: "Insights",     heading: "Insights",              subhead: "Storage, catalog activity and upload trends.",                   icon: BarChart3 },
-  { id: "statements",   label: "Statements",   heading: "Statements",            subhead: "Invoices and billing history (read-only).",                      icon: Receipt },
+  { id: "statements",   label: "Statements",   heading: "Statements",            subhead: "Invoices and account history (read-only).",                      icon: Receipt },
   { id: "schedule",     label: "Schedule",     heading: "Schedule",              subhead: "Upcoming reviews, approval deadlines and delivery dates.",       icon: CalendarClock },
-  { id: "upgrade",      label: "Upgrade",      heading: "Upgrade",               subhead: "Request a plan or storage change — our team handles the rest.",  icon: Crown },
-  { id: "help",         label: "Help",         heading: "Help & Support",        subhead: "Contact us, read docs, or submit a ticket.",                     icon: LifeBuoy },
+  { id: "upgrade",      label: "Upgrade",      heading: "Upgrade",               subhead: "Plan and storage changes are founder-assisted — request and our team follows up.", icon: Crown },
+  { id: "help",         label: "Help",         heading: "Help & Support",        subhead: "Contact us or submit a ticket.",                                 icon: LifeBuoy },
 ];
 
 export function CreatorSidebar({

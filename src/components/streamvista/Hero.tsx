@@ -52,6 +52,7 @@ export const Hero = () => (
       </div>
 
       {/* 3-step demo strip */}
+      <h2 className="sr-only">How StreamVista Cloud Studio works in three steps</h2>
       <div className="mt-16 grid md:grid-cols-3 gap-px bg-border/60 border border-border/60 rounded-2xl overflow-hidden animate-fade-in">
         {[
           { icon: Camera, step: "01", title: "Upload from set", body: "Drag in dailies, RAW R3D, ProRes — direct from camera to your secure vault." },

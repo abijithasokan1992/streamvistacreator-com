@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { X, Loader2, Send, Lock, ShieldCheck, Clock, CheckCircle2, Circle, ArrowRight, Check } from "lucide-react";
+import { X, Loader2, Send, Lock, ShieldCheck, Clock, CheckCircle2, Circle, ArrowRight, Check, Unlock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   getTitle, listAssets, saveTitleMetadata, submitTitle,
@@ -12,6 +12,8 @@ import {
 } from "@/lib/creator/titleSchema";
 import { AssetUploader, AssetList } from "./AssetUploader";
 import { StatusBadge } from "./StatusBadge";
+import RequestEditButton from "@/components/creator/RequestEditButton";
+import { useTitleLock } from "@/hooks/useTitleLock";
 
 type TabId = "overview" | "metadata" | "assets" | "legal" | "submission";
 

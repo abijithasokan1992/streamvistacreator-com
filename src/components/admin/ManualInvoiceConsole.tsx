@@ -78,6 +78,19 @@ export default function ManualInvoiceConsole() {
     const { error } = await (supabase as any).rpc("admin_issue_manual_invoice", { _invoice_id: id });
     if (error) return toast.error(error.message);
     toast.success("Issued");
+    // In-app notify the customer if linked to a user.
+    try {
+      const { data: inv } = await (supabase as any)
+        .from("manual_invoices")
+        .select("customer_user_id, invoice_number, title, total_inr")
+        .eq("id", id).maybeSingle();
+      if (inv?.customer_user_id) {
+        const { notify } = await import("@/lib/notify");
+        await notify(inv.customer_user_id, "invoice_issued",
+          `Invoice issued: ${inv.invoice_number ?? id.slice(0, 8)}`,
+          `${inv.title ?? "StreamVista invoice"} · ₹${Number(inv.total_inr ?? 0).toLocaleString("en-IN")} — visible under Storage & Billing → Your Invoices.`);
+      }
+    } catch (e) { console.warn("notify failed", e); }
     load();
   };
 

@@ -216,7 +216,7 @@ const VaultInner = ({ reloadRef }: { reloadRef?: React.MutableRefObject<() => vo
         >
           <Upload className="h-8 w-8 mx-auto mb-3 text-accent" />
           <p className="font-medium">Drag & drop files, or click to choose</p>
-          <p className="text-xs text-muted-foreground mt-1">Multiple files supported · Max 2.5 GB each · Upload keeps running in the background</p>
+          <p className="text-xs text-muted-foreground mt-1">Multiple files supported · Per-file size is bounded by your remaining workspace storage · Uploads keep running in the background</p>
           <input
             ref={fileInput} type="file" multiple className="hidden"
             onChange={(e) => { const list = Array.from(e.target.files || []); list.forEach(handleUpload); e.currentTarget.value = ""; }}

@@ -364,19 +364,35 @@ export default function UpgradeSection() {
           <span className="text-[11px] uppercase tracking-widest text-accent">Self-serve · Recurring</span>
         </div>
 
-        {/* Entitlement summary */}
-        <div className="rounded-xl border border-border/40 bg-secondary/5 p-5 grid sm:grid-cols-4 gap-4">
+        {/* Entitlement summary — included + paid + admin bonus + total + used + monthly */}
+        <div className="rounded-xl border border-border/40 bg-secondary/5 p-5 grid sm:grid-cols-3 lg:grid-cols-6 gap-4">
           <div>
             <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Included</p>
             <p className="text-base font-semibold mt-1">{entitlement?.included_gb ?? 5} GB</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Creator Basic</p>
           </div>
           <div>
             <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Paid storage</p>
             <p className="text-base font-semibold mt-1">{entitlement?.paid_tb ?? 0} TB</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">{entitlement?.active_storage_subscriptions ?? 0} block{(entitlement?.active_storage_subscriptions ?? 0) === 1 ? "" : "s"}</p>
+          </div>
+          <div>
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Admin bonus</p>
+            <p className="text-base font-semibold mt-1">{entitlement?.admin_gb ?? 0} GB</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Granted by StreamVista</p>
           </div>
           <div>
             <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Total available</p>
-            <p className="text-base font-semibold mt-1">{entitlement?.total_gb ?? "—"} GB</p>
+            <p className="text-base font-semibold mt-1 text-accent">{entitlement?.total_gb ?? "—"} GB</p>
+          </div>
+          <div>
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Used</p>
+            <p className="text-base font-semibold mt-1">{entitlement?.used_gb ?? 0} GB</p>
+            {entitlement && entitlement.total_gb > 0 && (
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                {Math.min(100, Math.round((entitlement.used_gb / entitlement.total_gb) * 100))}% of allowance
+              </p>
+            )}
           </div>
           <div>
             <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Monthly recurring</p>

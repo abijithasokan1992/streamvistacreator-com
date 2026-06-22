@@ -1897,6 +1897,7 @@ export type Database = {
           status: string
           subscription_id: string | null
           subtotal_paise: number
+          support_request_id: string | null
           topup_id: string | null
           total_paise: number
           updated_at: string
@@ -1920,6 +1921,7 @@ export type Database = {
           status?: string
           subscription_id?: string | null
           subtotal_paise: number
+          support_request_id?: string | null
           topup_id?: string | null
           total_paise: number
           updated_at?: string
@@ -1943,6 +1945,7 @@ export type Database = {
           status?: string
           subscription_id?: string | null
           subtotal_paise?: number
+          support_request_id?: string | null
           topup_id?: string | null
           total_paise?: number
           updated_at?: string
@@ -1961,6 +1964,13 @@ export type Database = {
             columns: ["subscription_id"]
             isOneToOne: false
             referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_support_request_id_fkey"
+            columns: ["support_request_id"]
+            isOneToOne: false
+            referencedRelation: "support_requests"
             referencedColumns: ["id"]
           },
           {
@@ -4088,6 +4098,7 @@ export type Database = {
           created_at: string
           id: string
           message: string
+          metadata: Json
           request_type: string
           status: string
           subject: string
@@ -4099,6 +4110,7 @@ export type Database = {
           created_at?: string
           id?: string
           message: string
+          metadata?: Json
           request_type: string
           status?: string
           subject: string
@@ -4110,6 +4122,7 @@ export type Database = {
           created_at?: string
           id?: string
           message?: string
+          metadata?: Json
           request_type?: string
           status?: string
           subject?: string

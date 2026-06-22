@@ -7,8 +7,17 @@ import { cn } from "@/lib/utils";
 
 /**
  * Creator Commercial Model: A — Managed / Founder-Assisted.
- * No self-serve checkout. All upgrades flow through support_requests
- * and are operated by admin via the Support inbox.
+ * Canonical plan precedence (single source of truth):
+ *   1. plan_assignments (status='active', latest) → authoritative when present
+ *   2. user_profiles.plan_tier                    → legacy fallback
+ *   3. "Creator Basic" (free default)             → when neither exists
+ * Canonical storage precedence:
+ *   1. sum(storage_allocations.allocated_gb)      → authoritative
+ *   2. plan baseline from plan_assignments.plan.storage_gb
+ *   3. 50 GB + legacy user_profiles.topup_tb * 1024
+ *
+ * Upgrade requests write structured metadata into support_requests.metadata
+ * so admin/ops do not have to guess from free-text.
  */
 
 type PackageKey = "creator_basic" | "creator_pro_managed" | "creator_studio_managed" | "custom";
@@ -54,6 +63,8 @@ export default function UpgradeSection() {
   const [plan, setPlan] = useState<any>(null);
   const [allocation, setAllocation] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
+  const [titleCount, setTitleCount] = useState<number | null>(null);
+  const [storageGb, setStorageGb] = useState<number | null>(null);
   const [selected, setSelected] = useState<PackageKey>("creator_pro_managed");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
@@ -61,17 +72,25 @@ export default function UpgradeSection() {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const [a, alloc, prof] = await Promise.all([
+      const [a, alloc, prof, titles, uploads] = await Promise.all([
         (supabase as any).from("plan_assignments")
-          .select("*, plan:plans(*)").eq("user_id", user.id)
+          .select("*, plan:plans(*)").eq("user_id", user.id).eq("status", "active")
           .order("created_at", { ascending: false }).limit(1).maybeSingle(),
         (supabase as any).from("storage_allocations").select("*")
           .eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
         (supabase as any).from("user_profiles").select("plan_tier, topup_tb").eq("user_id", user.id).maybeSingle(),
+        (supabase as any).from("content_titles").select("id", { count: "exact", head: true }).eq("owner_user_id", user.id),
+        (supabase as any).from("recent_uploads").select("file_size").eq("user_id", user.id),
       ]);
       setPlan(a.data); setAllocation(alloc.data); setProfile(prof.data);
+      setTitleCount(titles.count ?? 0);
+      const bytes = (uploads.data ?? []).reduce((s: number, r: any) => s + (Number(r.file_size) || 0), 0);
+      setStorageGb(+(bytes / 1024 / 1024 / 1024).toFixed(2));
     })();
   }, [user]);
+
+  const currentPlanName: string =
+    plan?.plan?.name || profile?.plan_tier || "Creator Basic";
 
   const submitRequest = async () => {
     if (!user) return;
@@ -79,14 +98,29 @@ export default function UpgradeSection() {
     const label = pkg?.name ?? "Custom";
     setBusy(true);
     try {
+      const metadata = {
+        kind: "creator_upgrade",
+        requested_package_key: selected,
+        requested_package_name: label,
+        current_plan_name: currentPlanName,
+        current_plan_assignment_id: plan?.id ?? null,
+        current_title_count: titleCount,
+        current_storage_gb: storageGb,
+        creator_note: note.trim() || null,
+        submitted_at: new Date().toISOString(),
+      };
       const { error } = await (supabase as any).from("support_requests").insert({
         user_id: user.id,
         request_type: "upgrade",
         subject: `Creator upgrade request — ${label}`,
         message:
-          `Requested package: ${label}\n\n` +
+          `Requested package: ${label}\n` +
+          `Current plan: ${currentPlanName}\n` +
+          `Current titles: ${titleCount ?? "—"}\n` +
+          `Current storage used: ${storageGb ?? "—"} GB\n\n` +
           (note.trim() ? `Notes from creator:\n${note.trim()}` : "No additional notes provided."),
         status: "open",
+        metadata,
       });
       if (error) throw error;
       toast.success("Upgrade request submitted. Our team will reach out by email.");
@@ -95,6 +129,7 @@ export default function UpgradeSection() {
       toast.error(e instanceof Error ? e.message : "Could not submit request.");
     } finally { setBusy(false); }
   };
+
 
   return (
     <div className="space-y-6">
@@ -110,7 +145,7 @@ export default function UpgradeSection() {
         <div className="rounded-xl border border-border/40 bg-secondary/5 p-5">
           <div className="flex items-center gap-2 text-xs text-muted-foreground"><Crown className="w-3.5 h-3.5" /> Current Plan</div>
           <div className="text-xl font-semibold font-display mt-2">
-            {plan?.plan?.name || profile?.plan_tier || "Creator Basic"}
+            {currentPlanName}
           </div>
           {plan?.status && <p className="text-[11px] text-muted-foreground mt-1">Status: {plan.status}</p>}
         </div>

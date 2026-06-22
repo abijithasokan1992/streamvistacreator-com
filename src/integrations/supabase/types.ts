@@ -4241,6 +4241,7 @@ export type Database = {
       subscriptions: {
         Row: {
           cancel_at_period_end: boolean | null
+          cancel_requested_at: string | null
           created_at: string
           current_period_end: string | null
           current_period_start: string | null
@@ -4255,13 +4256,17 @@ export type Database = {
           razorpay_subscription_id: string | null
           razorpay_token_id: string | null
           status: string
+          storage_quantity_tb: number | null
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
+          subscription_type: string
+          unit_amount_paise: number | null
           updated_at: string
           user_id: string | null
         }
         Insert: {
           cancel_at_period_end?: boolean | null
+          cancel_requested_at?: string | null
           created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
@@ -4276,13 +4281,17 @@ export type Database = {
           razorpay_subscription_id?: string | null
           razorpay_token_id?: string | null
           status?: string
+          storage_quantity_tb?: number | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          subscription_type?: string
+          unit_amount_paise?: number | null
           updated_at?: string
           user_id?: string | null
         }
         Update: {
           cancel_at_period_end?: boolean | null
+          cancel_requested_at?: string | null
           created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
@@ -4297,8 +4306,11 @@ export type Database = {
           razorpay_subscription_id?: string | null
           razorpay_token_id?: string | null
           status?: string
+          storage_quantity_tb?: number | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          subscription_type?: string
+          unit_amount_paise?: number | null
           updated_at?: string
           user_id?: string | null
         }
@@ -5501,6 +5513,20 @@ export type Database = {
         Returns: number
       }
       fulfill_billing_order: { Args: { _order_id: string }; Returns: Json }
+      get_creator_storage_entitlement: {
+        Args: { _user_id: string }
+        Returns: {
+          active_storage_subscriptions: number
+          admin_gb: number
+          included_gb: number
+          monthly_paise: number
+          over_quota: boolean
+          paid_gb: number
+          paid_tb: number
+          total_gb: number
+          used_gb: number
+        }[]
+      }
       get_payment_method_configs_for_my_order: {
         Args: { _order_id: string }
         Returns: {

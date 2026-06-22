@@ -135,6 +135,13 @@ async function processEvent(supabase: any, event: any, creds: any): Promise<void
       subscription.customer_id ?? payment?.customer_id ?? null;
     const razorpayTokenId = payment?.token_id ?? null;
 
+    // Subscription type comes from notes (set by create-razorpay-subscription) and
+    // distinguishes Creator-storage recurring add-ons from any future plan subs.
+    const subscriptionType: string =
+      subscription.notes?.subscription_type ?? "creator";
+    const isStorageSub = subscriptionType === "creator_storage";
+    const storageQtyTb = Number(subscription.quantity ?? 0) || null;
+
     const { error: subErr } = await supabase.from("subscriptions").upsert(
       {
         user_id: userId,
@@ -142,7 +149,9 @@ async function processEvent(supabase: any, event: any, creds: any): Promise<void
         razorpay_plan_id: subscription.plan_id ?? null,
         razorpay_customer_id: razorpayCustomerId,
         ...(razorpayTokenId ? { razorpay_token_id: razorpayTokenId } : {}),
-        price_id: "cloudx_creator",
+        price_id: isStorageSub ? "cloudx_creator_storage" : "cloudx_creator",
+        subscription_type: subscriptionType,
+        ...(isStorageSub && storageQtyTb ? { storage_quantity_tb: storageQtyTb } : {}),
         status,
         current_period_start: currentStart,
         current_period_end: currentEnd,
@@ -172,7 +181,9 @@ async function processEvent(supabase: any, event: any, creds: any): Promise<void
         .eq("razorpay_subscription_id", subscription.id);
     }
 
-    if (userId) {
+    // Role grants are reserved for Creator plan subscriptions, NOT for storage add-ons.
+    // Creator plans are founder-assisted in this pass — storage subs do not toggle role.
+    if (userId && !isStorageSub) {
       if (type === "subscription.activated" ||
           type === "subscription.charged" ||
           type === "subscription.resumed" ||

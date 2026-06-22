@@ -102,13 +102,14 @@ export default function BuyerDashboard() {
     if (!user) return;
     if (!titleQuery.trim()) { toast.error("Title of interest is required."); return; }
     setSubmitting(true);
-    const payload = {
+    const payload: Record<string, unknown> = {
       buyer_user_id: user.id,
       request_type: type,
       title_query: titleQuery.trim(),
       message: message.trim() || null,
       terms: {},
     };
+    if (titleId) payload.title_id = titleId;
     const { error } = await supabase.from("commercial_requests").insert(payload as never);
     setSubmitting(false);
     if (error) {

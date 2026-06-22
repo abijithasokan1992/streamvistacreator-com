@@ -154,8 +154,8 @@ export default function BuyerDashboard() {
           ) : (
             <div className="space-y-3">
               {rows.map(r => (
-                <div key={r.id} className="rounded-xl border border-border/40 bg-secondary/10 p-4">
-                  <div className="flex flex-wrap items-center gap-2 justify-between">
+                <details key={r.id} className="rounded-xl border border-border/40 bg-secondary/10 p-4 group">
+                  <summary className="cursor-pointer flex flex-wrap items-center gap-2 justify-between list-none">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-secondary/40 border border-border/60">
@@ -176,9 +176,11 @@ export default function BuyerDashboard() {
                     </div>
                     <div className="text-[10px] text-muted-foreground">
                       Updated {new Date(r.updated_at).toLocaleString()}
+                      <span className="ml-2 underline opacity-70 group-open:opacity-100">View timeline</span>
                     </div>
-                  </div>
-                </div>
+                  </summary>
+                  <RequestTimeline requestId={r.id} />
+                </details>
               ))}
             </div>
           )}
@@ -246,5 +248,45 @@ function Metric({ label, value, sub }: { label: string; value: string; sub?: str
       <div className="font-display text-2xl mt-1">{value}</div>
       {sub && <div className="text-[10px] text-muted-foreground mt-0.5">{sub}</div>}
     </div>
+  );
+}
+
+function RequestTimeline({ requestId }: { requestId: string }) {
+  const [events, setEvents] = useState<Array<{ id: string; from_state: string | null; to_state: string; note: string | null; created_at: string }>>([]);
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("commercial_request_events")
+        .select("id,from_state,to_state,note,created_at")
+        .eq("request_id", requestId)
+        .order("created_at", { ascending: true });
+      if (cancelled) return;
+      setLoaded(true);
+      if (error) return;
+      setEvents((data as never) ?? []);
+    })();
+    return () => { cancelled = true; };
+  }, [requestId]);
+  if (!loaded) {
+    return <div className="mt-3 text-[11px] text-muted-foreground">Loading timeline…</div>;
+  }
+  if (events.length === 0) {
+    return <div className="mt-3 text-[11px] text-muted-foreground">Submitted · awaiting admin review. No state changes yet.</div>;
+  }
+  return (
+    <ol className="mt-3 space-y-1.5 border-l border-border/40 pl-3">
+      {events.map(e => (
+        <li key={e.id} className="text-xs">
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{new Date(e.created_at).toLocaleString()}</span>
+          <div>
+            <span className="text-foreground">{STATE_LABEL[e.to_state] ?? e.to_state}</span>
+            {e.from_state && <span className="text-muted-foreground"> · from {STATE_LABEL[e.from_state] ?? e.from_state}</span>}
+          </div>
+          {e.note && <div className="text-muted-foreground italic">"{e.note}"</div>}
+        </li>
+      ))}
+    </ol>
   );
 }

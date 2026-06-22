@@ -5,6 +5,7 @@ import VaultPlanCards from "@/components/studio/vault/VaultPlanCards";
 import MyVaultSummary from "@/components/studio/vault/MyVaultSummary";
 import VaultBillingPanel from "@/components/studio/vault/VaultBillingPanel";
 import StudioRequestService from "@/components/studio/StudioRequestService";
+import StudioRequestPlanChange from "@/components/studio/StudioRequestPlanChange";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
@@ -119,7 +120,14 @@ export default function StudioDashboard() {
         </section>
 
         {/* Billing */}
-        <section key={`bill-${refreshKey}`}>
+        <section key={`bill-${refreshKey}`} className="space-y-3">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground font-mono">Studio Plan & Billing</p>
+              <p className="text-xs text-muted-foreground">Vault storage is self-serve below. Plan changes (workflow, SLAs, archive posture, team access) are founder-assisted — request and our team will scope, price and activate.</p>
+            </div>
+            <StudioRequestPlanChange />
+          </div>
           <VaultBillingPanel />
         </section>
       </div>

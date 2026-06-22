@@ -519,6 +519,15 @@ export default function UpgradeSection() {
           <span className="text-foreground font-medium">Studio Vault</span>, not Creator.
         </p>
       </section>
+
+      {/* ── Founder-assisted invoices ────────────────────────── */}
+      <section className="space-y-3">
+        <div>
+          <h2 className="font-display text-xl font-bold">Your Invoices</h2>
+          <p className="text-xs text-muted-foreground">Quotes and invoices issued by StreamVista for managed plan upgrades or custom commercial work.</p>
+        </div>
+        <ManualInvoicesList surface="creator" />
+      </section>
     </div>
   );
 }

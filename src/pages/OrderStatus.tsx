@@ -128,6 +128,44 @@ export default function OrderStatus() {
   const isTerminal = topup?.status === "paid" || topup?.status === "failed" || topup?.status === "cancelled";
   const isSuccess = topup?.status === "paid" && !!topup?.entitlement_projected_at;
 
+  // Verification failure / stall detection: payment captured by Razorpay
+  // but server-side signature verify or entitlement projection never landed.
+  const now = Date.now();
+  const ageSec = topup ? Math.floor((now - new Date(topup.updated_at).getTime()) / 1000) : 0;
+  const chargedButNotVerified =
+    !!topup &&
+    !!topup.razorpay_payment_id &&
+    topup.status !== "paid" &&
+    topup.status !== "cancelled";
+  const verificationStalled =
+    chargedButNotVerified && (topup?.status === "failed" || ageSec > 60);
+  const paidButNotActivated =
+    !!topup && topup.status === "paid" && !topup.entitlement_projected_at && ageSec > 30;
+  const showRecovery = verificationStalled || paidButNotActivated;
+
+  const supportMessage = topup
+    ? [
+        `Hi StreamVista support,`,
+        ``,
+        `My ${productLabel} purchase was charged but the plan has not activated. Please reconcile manually.`,
+        ``,
+        `topup_id: ${topup.id}`,
+        `razorpay_order_id: ${topup.razorpay_order_id ?? "(none)"}`,
+        `razorpay_payment_id: ${topup.razorpay_payment_id ?? "(none)"}`,
+        `status: ${topup.status}`,
+        `amount: ₹${(topup.total_paise ? topup.total_paise / 100 : Number(topup.amount_inr ?? 0)).toLocaleString("en-IN")}`,
+        `tb_requested: ${topup.tb_added ?? "(unknown)"}`,
+        `entitlement_projected_at: ${topup.entitlement_projected_at ?? "(not set)"}`,
+        `created_at: ${topup.created_at}`,
+        `last_updated: ${topup.updated_at}`,
+        ``,
+        `Thank you.`,
+      ].join("\n")
+    : "";
+  const supportHref = topup
+    ? `/support?message=${encodeURIComponent(supportMessage)}${user?.email ? `&email=${encodeURIComponent(user.email)}` : ""}`
+    : "/support";
+
   return (
     <main className="min-h-dvh px-4 py-10 max-w-2xl mx-auto">
       <div className="mb-6">
@@ -213,22 +251,55 @@ export default function OrderStatus() {
             </div>
           )}
 
-          {isTerminal && !isSuccess && (
-            <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-4">
-              <div className="flex items-center gap-2 font-semibold text-red-300">
-                <XCircle className="w-5 h-5" /> Order did not complete
+          {showRecovery && !isSuccess && (
+            <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 space-y-3">
+              <div className="flex items-center gap-2 font-semibold text-amber-300">
+                <XCircle className="w-5 h-5" />
+                {paidButNotActivated ? "Plan activation is taking longer than usual" : "Payment verification needs help"}
               </div>
-              <div className="text-sm text-muted-foreground mt-1">
-                Status: <span className="font-mono">{topup.status}</span>. If your card was charged, our team has already been notified and will reconcile within 24h.
+              <div className="text-sm text-muted-foreground">
+                Razorpay confirmed your charge ({topup?.razorpay_payment_id ? <span className="font-mono">{topup.razorpay_payment_id}</span> : "payment id pending"}),
+                but our server hasn't finished {paidButNotActivated ? "activating your plan" : "verifying the payment signature"} yet.
+                <span className="block mt-1"><strong className="text-foreground">Your money is safe.</strong> Either of two things will happen next:</span>
               </div>
-              <div className="mt-3 flex gap-2">
-                <Button asChild variant="outline"><Link to="/support">Open a support ticket</Link></Button>
+              <ol className="text-sm text-muted-foreground list-decimal pl-5 space-y-1">
+                <li>Our webhook auto-recovers within ~2 minutes — keep this page open and watch the stages above update.</li>
+                <li>If it's still stuck after a few minutes, send us the prefilled ticket below. We can match the Razorpay payment to your account and credit the storage manually within a few hours.</li>
+              </ol>
+              <div className="rounded-md bg-background/40 border border-border/40 p-2 text-[11px] font-mono space-y-0.5">
+                <div>topup_id: {topup?.id}</div>
+                {topup?.razorpay_order_id && <div>order_id: {topup.razorpay_order_id}</div>}
+                {topup?.razorpay_payment_id && <div>payment_id: {topup.razorpay_payment_id}</div>}
+                <div>status: {topup?.status} · last_update: {topup ? new Date(topup.updated_at).toLocaleString() : ""}</div>
+              </div>
+              <div className="flex flex-wrap gap-2 pt-1">
+                <Button variant="outline" onClick={fetchOnce}>
+                  <RefreshCw className="w-4 h-4 mr-2" /> Refresh status
+                </Button>
+                <Button asChild className="bg-gradient-primary text-primary-foreground glow-primary">
+                  <Link to={supportHref}>Open prefilled support ticket</Link>
+                </Button>
                 <Button asChild variant="secondary"><Link to="/dashboard/studio">Back to dashboard</Link></Button>
               </div>
             </div>
           )}
 
-          {!isTerminal && (
+          {isTerminal && !isSuccess && !showRecovery && (
+            <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-4">
+              <div className="flex items-center gap-2 font-semibold text-red-300">
+                <XCircle className="w-5 h-5" /> Order did not complete
+              </div>
+              <div className="text-sm text-muted-foreground mt-1">
+                Status: <span className="font-mono">{topup.status}</span>. No charge was captured — you can safely retry the purchase.
+              </div>
+              <div className="mt-3 flex gap-2">
+                <Button asChild variant="secondary"><Link to="/dashboard/studio">Back to dashboard & retry</Link></Button>
+                <Button asChild variant="outline"><Link to={supportHref}>Contact support</Link></Button>
+              </div>
+            </div>
+          )}
+
+          {!isTerminal && !showRecovery && (
             <div className="rounded-xl border border-border/50 bg-secondary/20 p-3 text-xs text-muted-foreground flex items-center gap-2">
               <Loader2 className="w-4 h-4 animate-spin text-accent" />
               Waiting for the next event… Last refresh {new Date(lastTick).toLocaleTimeString()}.

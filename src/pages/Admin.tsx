@@ -623,7 +623,7 @@ function DomainHostingPanel() {
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs uppercase tracking-wider text-muted-foreground">Primary domain</label>
-              <input value={primary} onChange={e => setPrimary(e.target.value)} placeholder="https://www.streamvistacreator.com" className="w-full h-11 px-3 rounded-xl bg-secondary/40 border border-border/60 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" />
+              <input value={primary} onChange={e => setPrimary(e.target.value)} placeholder="https://streamvistacreator.com" className="w-full h-11 px-3 rounded-xl bg-secondary/40 border border-border/60 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs uppercase tracking-wider text-muted-foreground">Additional origins (comma-separated)</label>

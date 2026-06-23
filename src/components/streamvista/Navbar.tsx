@@ -20,7 +20,6 @@ export const Navbar = () => {
         <nav className="hidden md:flex items-center gap-6">
           <a href="/#for" className="text-xs text-muted-foreground hover:text-foreground transition-colors">For</a>
           <a href="/#pricing" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Pricing</a>
-          <a href="/#buyer" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Buyers</a>
         </nav>
 
         {/* Right Actions */}

@@ -360,6 +360,18 @@ export default function IngestAlertsManager({ workspaceId }: { workspaceId: stri
                     />
                     <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
                   </label>
+                  <label className="flex items-center gap-2 text-xs cursor-pointer">
+                    <Switch
+                      checked={editing.channels.includes("webhook")}
+                      onCheckedChange={(v) => setEditing({
+                        ...editing,
+                        channels: v
+                          ? Array.from(new Set([...editing.channels, "webhook"]))
+                          : editing.channels.filter((c) => c !== "webhook"),
+                      })}
+                    />
+                    <Webhook className="w-3.5 h-3.5" /> Webhook
+                  </label>
                 </div>
               </div>
 

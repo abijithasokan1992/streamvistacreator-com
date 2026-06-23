@@ -50,6 +50,10 @@ function Section({ kind, title, icon }: { kind: Kind; title: string; icon: React
   const [rows, setRows] = useState<AnyRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [overIdx, setOverIdx] = useState<number | null>(null);
+  const [reordering, setReordering] = useState(false);
+  const dndEnabled = kind === "reel";
 
   const load = useCallback(async () => {
     setLoading(true);

@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { Plus, ArrowRight, Bell, Film, Inbox, HardDrive } from "lucide-react";
+import { Plus, ArrowRight, Bell, Film, Inbox, HardDrive, Database, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { listTitles, type TitleRow } from "@/lib/creator/titleApi";
 import WorkspaceWelcome from "@/components/creator/WorkspaceWelcome";
 import ReviewNotesInbox from "@/components/creator/ReviewNotesInbox";
 import { UploadDiagnostics } from "@/components/creator/UploadDiagnostics";
+import Buy1TBCard from "@/components/shared/Buy1TBCard";
+import { Button } from "@/components/ui/button";
 import type { SectionId } from "@/components/creator/CreatorSidebar";
 
 type UpdateRow = { id: string; title: string; message: string | null; created_at: string };
@@ -51,6 +53,30 @@ export default function HomeSection({ onNavigate }: { onNavigate: (s: SectionId)
     <div className="space-y-6">
       {/* Hero / welcome — plan + storage + titles summary already lives here */}
       <WorkspaceWelcome />
+
+      {/* Direct storage actions — make billing + Delivery Vault one-click reachable */}
+      <div className="rounded-2xl border border-border/40 bg-secondary/5 p-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-medium">Storage & Delivery Vault</p>
+          <p className="text-[11px] text-muted-foreground">
+            Workspace storage = title prep, posters, trailers. Delivery Vault = masters, delivery files and archive copies.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={() => onNavigate("billing")}>
+            <Wallet className="w-3.5 h-3.5 mr-1.5" /> Open Storage & Billing
+          </Button>
+          <Button size="sm" onClick={() => onNavigate("delivery_vault")} className="bg-gradient-primary text-primary-foreground">
+            <Database className="w-3.5 h-3.5 mr-1.5" /> Open Delivery Vault
+          </Button>
+        </div>
+      </div>
+
+      {/* Direct one-click 1 TB purchase — reuses existing Razorpay flow */}
+      <Buy1TBCard
+        variant="compact"
+        headline="Need more space? Add 1 TB Delivery Vault Storage"
+      />
 
       {/* Primary action */}
       <button

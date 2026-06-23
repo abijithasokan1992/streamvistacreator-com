@@ -413,6 +413,50 @@ export default function IngestAlertsManager({ workspaceId }: { workspaceId: stri
                 </div>
               )}
 
+              {editing.channels.includes("webhook") && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Webhook endpoints (one per line)</Label>
+                  <Textarea
+                    rows={3}
+                    className="font-mono text-[11px]"
+                    value={(editing.recipients.webhooks ?? []).map((w) => w.url).join("\n")}
+                    onChange={(e) => {
+                      const urls = e.target.value.split("\n").map((s) => s.trim()).filter(Boolean);
+                      const existing = editing.recipients.webhooks ?? [];
+                      const next = urls.map((url) => {
+                        const prev = existing.find((w) => w.url === url);
+                        return prev ?? { url, secret: existing[0]?.secret };
+                      });
+                      setEditing({
+                        ...editing,
+                        recipients: { ...editing.recipients, webhooks: next },
+                      });
+                    }}
+                    placeholder={"https://hooks.studio.com/ingest\nhttps://ops.internal/alerts"}
+                  />
+                  <Label className="text-xs pt-1">Shared secret (optional)</Label>
+                  <Input
+                    type="password"
+                    placeholder="Used to sign X-StreamVista-Signature (HMAC-SHA256)"
+                    value={editing.recipients.webhooks?.[0]?.secret ?? ""}
+                    onChange={(e) => {
+                      const secret = e.target.value;
+                      const next = (editing.recipients.webhooks ?? []).map((w) => ({ ...w, secret }));
+                      setEditing({
+                        ...editing,
+                        recipients: { ...editing.recipients, webhooks: next },
+                      });
+                    }}
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    POSTs JSON to each URL. If a secret is set, requests include
+                    <code className="mx-1">X-StreamVista-Signature: sha256=…</code>
+                    computed over the raw body. Only https:// endpoints are accepted.
+                  </p>
+                </div>
+              )}
+
+
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs">Cooldown (minutes)</Label>

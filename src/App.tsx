@@ -31,6 +31,7 @@ import About from "./pages/About.tsx";
 
 import LaunchingSpecialPlan from "./pages/LaunchingSpecialPlan.tsx";
 import CheckoutReturn from "./pages/CheckoutReturn.tsx";
+import CheckoutStorage from "./pages/CheckoutStorage.tsx";
 import OrderStatus from "./pages/OrderStatus.tsx";
 import Vault from "./pages/Vault.tsx";
 import Studio from "./pages/Studio.tsx";
@@ -151,6 +152,7 @@ const PublicRoutes = () => (
 
     <Route path="/launching-special-plan" element={<LaunchingSpecialPlan />} />
     <Route path="/checkout/return" element={<CheckoutReturn />} />
+    <Route path="/checkout/storage" element={<CheckoutStorage />} />
     <Route path="/billing/status/:topupId" element={<OrderStatus />} />
     <Route path="/s/:token" element={<Share />} />
     <Route path="/review/:token" element={<Review />} />

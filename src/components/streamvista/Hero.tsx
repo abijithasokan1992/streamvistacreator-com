@@ -81,7 +81,7 @@ export const Hero = () => (
           },
           {
             icon: Briefcase,
-            step: "Buyer",
+            step: "Licensing",
             title: "Request rights",
             body: "Acquisition teams, OTT and distributors submit screener, licensing and rights requests behind an NDA gate and track every conversation.",
           },

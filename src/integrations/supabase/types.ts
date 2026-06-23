@@ -2392,6 +2392,75 @@ export type Database = {
         }
         Relationships: []
       }
+      hard_disk_intakes: {
+        Row: {
+          admin_notes: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          courier_tracking: string | null
+          created_at: string
+          drive_capacity_gb: number | null
+          drive_interface: string | null
+          drive_label: string
+          drive_serial: string | null
+          estimated_content_gb: number | null
+          expected_arrival: string | null
+          filesystem: string | null
+          handoff_method: string
+          id: string
+          notes: string | null
+          pickup_address: string | null
+          project_title: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          courier_tracking?: string | null
+          created_at?: string
+          drive_capacity_gb?: number | null
+          drive_interface?: string | null
+          drive_label: string
+          drive_serial?: string | null
+          estimated_content_gb?: number | null
+          expected_arrival?: string | null
+          filesystem?: string | null
+          handoff_method?: string
+          id?: string
+          notes?: string | null
+          pickup_address?: string | null
+          project_title?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          courier_tracking?: string | null
+          created_at?: string
+          drive_capacity_gb?: number | null
+          drive_interface?: string | null
+          drive_label?: string
+          drive_serial?: string | null
+          estimated_content_gb?: number | null
+          expected_arrival?: string | null
+          filesystem?: string | null
+          handoff_method?: string
+          id?: string
+          notes?: string | null
+          pickup_address?: string | null
+          project_title?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       hero_banners: {
         Row: {
           created_at: string

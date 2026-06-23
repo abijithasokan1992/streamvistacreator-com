@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { Loader2, LogOut, ShieldCheck, Crown, RefreshCw, Mail, Phone, Tag, History, Copy, Check, Briefcase, Wallet, Code2, Megaphone, Inbox, Users as UsersIcon, LayoutDashboard, Film, HardDrive, ShieldAlert, Wrench, Package } from "lucide-react";
+import { Loader2, LogOut, ShieldCheck, Crown, RefreshCw, Mail, Phone, Tag, History, Copy, Check, Briefcase, Wallet, Code2, Megaphone, Inbox, Users as UsersIcon, LayoutDashboard, Film, HardDrive, ShieldAlert, Wrench, Package, LifeBuoy, Settings as SettingsIcon, ArrowRight } from "lucide-react";
 import PlatformOwnerConsole from "@/components/admin/PlatformOwnerConsole";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import PlatformOverview from "@/components/admin/PlatformOverview";

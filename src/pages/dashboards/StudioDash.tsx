@@ -311,7 +311,6 @@ function VaultWorkspace({ rows, loading, onGoBuy }: { rows: AllocRow[]; loading:
         {[
           { label: "Upload to Vault", desc: "Browser upload now", to: "/vault", icon: <ArrowUpRight className="w-4 h-4" /> },
           { label: "Camera-to-Cloud", desc: "Live ingest from set", to: "/studio", icon: <Cloud className="w-4 h-4" /> },
-          { label: "Hard-disk Import", desc: "Record physical intake", to: "/studio", icon: <Database className="w-4 h-4" /> },
           { label: "Archive Snapshot", desc: "Create archive copy", to: "/master-archive", icon: <Snowflake className="w-4 h-4" /> },
         ].map((a) => (
           <Link
@@ -323,6 +322,7 @@ function VaultWorkspace({ rows, loading, onGoBuy }: { rows: AllocRow[]; loading:
             <span className="text-xs text-muted-foreground">{a.desc}</span>
           </Link>
         ))}
+        <HardDiskIntakeDialog />
       </section>
 
       {/* Compact services panel — no clutter */}

@@ -443,7 +443,7 @@ export default function StudioDashboard() {
           <BuyStorage onPurchased={() => { refreshAfterPurchase(); setTab("home"); }} />
         </TabsContent>
         <TabsContent value="workspace" className="mt-6">
-          <VaultWorkspace rows={rows} loading={loading} onGoBuy={() => setTab("buy")} />
+          <VaultWorkspace rows={rows} loading={loading} onGoBuy={() => setTab("buy")} onGoIngest={() => setTab("ingest")} />
         </TabsContent>
         <TabsContent value="billing" className="mt-6">
           <BillingAndServices />

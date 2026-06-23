@@ -163,6 +163,7 @@ const PublicRoutes = () => (
     <Route path="/ip-copyright" element={<IPCopyright />} />
     <Route path="/dmca" element={<IPCopyright />} />
     <Route path="/refund" element={<Refund />} />
+    <Route path="/pricing" element={<PricingPage />} />
     <Route path="/about" element={<About />} />
     <Route path="/ingest-test" element={<IngestTest />} />
     <Route path="/c2c-setup" element={<C2CSetupManual />} />

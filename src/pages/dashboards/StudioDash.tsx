@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowUpRight, Cloud, Database, HardDrive, Loader2,
-  Snowflake, Sparkles, Wrench, Receipt, ShoppingCart, ShieldCheck,
+  Snowflake, Sparkles, Wrench, Receipt, ShoppingCart, ShieldCheck, UploadCloud,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,6 +18,7 @@ import StudioRequestService from "@/components/studio/StudioRequestService";
 import StudioRequestPlanChange from "@/components/studio/StudioRequestPlanChange";
 import ManualInvoicesList from "@/components/billing/ManualInvoicesList";
 import HardDiskIntakeDialog from "@/components/studio/HardDiskIntakeDialog";
+import StudioIngest from "@/components/studio/ingest/StudioIngest";
 import type { VaultProduct } from "@/lib/studioVault";
 
 type AllocRow = { id: string; allocated_gb: number; used_gb: number; source: string };

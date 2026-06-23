@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { computePricePreview, fmtINR, fmtINRDecimal, INTERVAL_OPTIONS, IntervalMonths, STORAGE_CLASS_META, VaultProduct } from "@/lib/studioVault";
 import VaultManualPaymentDialog from "./VaultManualPaymentDialog";
 import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
+import { extractFnError, reportBillingFailure } from "@/lib/payments/billingFailure";
 import { notify } from "@/lib/notify";
 
 declare global { interface Window { Razorpay?: any } }
@@ -125,12 +126,22 @@ export default function BuyVaultDialog({ product, open, onOpenChange, onPurchase
       };
 
       if (verr || !v.ok) {
-        const msg = verr?.message ?? v.error ?? "Verification failed";
+        const msg = v.error ?? (verr ? await extractFnError(verr, "Verification failed") : "Verification failed");
         updateStep("verification_failed", `❌ ${msg}`, {
           verifyResponse: vr ?? null,
           lastError: msg,
         });
         toast.error(`Payment verification failed — ${msg}`);
+        reportBillingFailure({
+          userId: user?.id,
+          userEmail: user?.email,
+          dashboard: "studio",
+          surface: "studio_buy_vault_dialog",
+          intent: `${product.name} · ${effectiveTb} TB · ${months}mo`,
+          stage: "payment_verify",
+          error: new Error(msg),
+          extra: { topup_id: topupId, razorpay_order_id: resp.razorpay_order_id, razorpay_payment_id: resp.razorpay_payment_id },
+        });
         return;
       }
 
@@ -170,10 +181,13 @@ export default function BuyVaultDialog({ product, open, onOpenChange, onPurchase
       const { data, error } = await supabase.functions.invoke("create-vault-purchase", {
         body: { productId: product.id, tb: effectiveTb, months },
       });
-      if (error) throw error;
+      if (error) {
+        const msg = await extractFnError(error, "Could not start checkout");
+        throw new Error(msg);
+      }
       const d = data as { topupId: string; orderId: string; amount: number; keyId: string; error?: string };
       if (d?.error) throw new Error(d.error);
-      if (!d?.orderId || !d?.topupId) throw new Error("Invalid order response");
+      if (!d?.orderId || !d?.topupId) throw new Error("Studio storage product is not available right now.");
 
       updateStep("checkout_open", "Opening Razorpay checkout…", {
         topupId: d.topupId,
@@ -244,6 +258,16 @@ export default function BuyVaultDialog({ product, open, onOpenChange, onPurchase
           p_extra: { message: msg, payment_id: err?.metadata?.payment_id } as any,
         }).then(() => {}, () => {});
         toast.error(msg);
+        reportBillingFailure({
+          userId: user?.id,
+          userEmail: user?.email,
+          dashboard: "studio",
+          surface: "studio_buy_vault_dialog",
+          intent: `${product.name} · ${effectiveTb} TB · ${months}mo`,
+          stage: "payment_verify",
+          error: new Error(msg),
+          extra: { topup_id: d.topupId, razorpay_order_id: d.orderId, razorpay_payment_id: err?.metadata?.payment_id },
+        });
       });
 
       rzp.open();
@@ -251,6 +275,15 @@ export default function BuyVaultDialog({ product, open, onOpenChange, onPurchase
       const msg = e instanceof Error ? e.message : "Could not start checkout";
       updateStep("payment_failed", msg, { lastError: msg });
       toast.error(msg);
+      reportBillingFailure({
+        userId: user?.id,
+        userEmail: user?.email,
+        dashboard: "studio",
+        surface: "studio_buy_vault_dialog",
+        intent: `${product?.name ?? "Studio Vault"} · ${effectiveTb} TB · ${months}mo`,
+        stage: "order_create",
+        error: e,
+      });
     }
   };
 

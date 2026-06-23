@@ -143,6 +143,7 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
 }) {
   const q = useStorageQuota();
   const liveSku = useLiveStudioSku();
+  const [buyOpen, setBuyOpen] = useState(false);
   const hasPaidVault = rows.length > 0;
   const hasTesting = q.testingModeEnabled && q.testingOverrideGb > 0;
   const hasUsable = hasPaidVault || hasTesting;
@@ -150,6 +151,17 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
   const paidGbTotal = rows.reduce((s, r) => s + r.allocated_gb, 0);
   const usedGbTotal = rows.reduce((s, r) => s + r.used_gb, 0);
   const totalGb = paidGbTotal + (hasTesting ? q.testingOverrideGb : 0);
+
+  // Direct paid CTA — opens the existing BuyVaultDialog with the live 1 TB SKU.
+  // Removes the previous "Browse plans" dead-end which only switched tabs.
+  const openBuy = () => {
+    if (!liveSku) {
+      // Surface a meaningful message instead of silently doing nothing.
+      // (toast import lives in shared scope of BuyVaultDialog; keep this local UX minimal)
+      return;
+    }
+    setBuyOpen(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -174,21 +186,24 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
               {hasPaidVault
                 ? "Upload, browse and manage your studio's footage and masters from one place."
                 : hasTesting
-                ? "Use the temporary 50 GB allowance to test uploads and the vault workspace. Purchase a vault class to activate real storage."
-                : "Pick a vault storage class to start uploading. Or request a founder-assisted plan if you need scoping help."}
+                ? "Use the temporary 50 GB allowance to test uploads and the vault workspace. Buy 1 TB Studio Storage to activate real, recurring vault capacity."
+                : "Buy 1 TB Studio Storage to activate your vault and start uploading."}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {hasUsable ? (
-              <>
-                <Button onClick={onGoVault} className="bg-gradient-primary text-primary-foreground glow-primary">
-                  <Cloud className="w-4 h-4 mr-2" /> Open Vault
-                </Button>
-                <Button variant="outline" onClick={onGoBuy}>
-                  <ShoppingCart className="w-4 h-4 mr-2" /> {hasPaidVault ? "Buy more storage" : "Browse plans"}
-                </Button>
-              </>
-            ) : null}
+            {hasUsable && (
+              <Button onClick={onGoVault} variant={hasPaidVault ? "default" : "outline"} className={hasPaidVault ? "bg-gradient-primary text-primary-foreground glow-primary" : ""}>
+                <Cloud className="w-4 h-4 mr-2" /> Open Vault
+              </Button>
+            )}
+            <Button
+              onClick={openBuy}
+              disabled={!liveSku}
+              className="bg-gradient-primary text-primary-foreground glow-primary"
+            >
+              <ShoppingCart className="w-4 h-4 mr-2" />
+              {hasPaidVault ? "Buy another 1 TB" : "Buy 1 TB Storage"}
+            </Button>
           </div>
         </div>
 
@@ -215,12 +230,26 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
         {hasTesting && !hasPaidVault && (
           <p className="text-[11px] text-muted-foreground mt-3">
             <ShieldCheck className="w-3 h-3 inline mr-1 text-amber-300" />
-            Includes a {q.testingOverrideGb} GB testing allowance — internal QA only. Buy paid storage below to activate real vault capacity.
+            Includes a {q.testingOverrideGb} GB testing allowance — internal QA only. Buy 1 TB Studio Storage to activate real vault capacity.
+          </p>
+        )}
+
+        {!liveSku && (
+          <p className="text-[11px] text-amber-300 mt-3">
+            Studio storage product is not available right now. Please refresh, or contact support if this persists.
           </p>
         )}
       </section>
 
-      {/* One-click purchase — primary commercial CTA, surfaced before per-class breakdown */}
+      {/* Shared BuyVaultDialog — single source of truth for Studio checkout. */}
+      <BuyVaultDialog
+        product={liveSku}
+        open={buyOpen}
+        onOpenChange={setBuyOpen}
+        onPurchased={() => { setBuyOpen(false); onPurchased(); }}
+      />
+
+      {/* Detailed one-click purchase card — kept for context, same dialog, same SKU. */}
       <OneClickBuyCard product={liveSku} hasPaid={hasPaidVault} onPurchased={onPurchased} />
 
       {/* Per-class breakdown only when we have paid storage */}

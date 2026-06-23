@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
+import { extractFnError, reportBillingFailure } from "@/lib/payments/billingFailure";
 import {
   PAYG_TB_INR,
   FREE_STORAGE_GB,
@@ -54,20 +55,28 @@ export default function StorageUsageCard() {
     if (!user) return;
     setToppingUp(true);
     const t = toast.loading("Opening Razorpay…");
+    let stage: "dialog_launch" | "order_create" | "payment_verify" = "dialog_launch";
     try {
       assertLiveCheckoutHost();
+      stage = "order_create";
       const { data, error } = await supabase.functions.invoke("create-storage-topup", {
         body: { tb: 1 },
       });
-      if (error) throw error;
+      if (error) {
+        const msg = await extractFnError(error, "Could not create storage top-up");
+        throw new Error(msg);
+      }
       if ((data as any)?.error) throw new Error((data as any).error);
+      if (!(data as any)?.orderId) {
+        throw new Error("Creator storage add-on is not available right now.");
+      }
 
-      // Load Razorpay checkout
-      await new Promise<void>((resolve) => {
+      await new Promise<void>((resolve, reject) => {
         if ((window as any).Razorpay) return resolve();
         const s = document.createElement("script");
         s.src = "https://checkout.razorpay.com/v1/checkout.js";
         s.onload = () => resolve();
+        s.onerror = () => reject(new Error("Failed to load Razorpay checkout"));
         document.body.appendChild(s);
       });
 
@@ -81,6 +90,7 @@ export default function StorageUsageCard() {
         prefill: { email: user.email },
         theme: { color: "#a855f7" },
         handler: async (resp: any) => {
+          stage = "payment_verify";
           const v = await supabase.functions.invoke("verify-storage-topup", {
             body: {
               topupId: data.topupId,
@@ -90,7 +100,19 @@ export default function StorageUsageCard() {
             },
           });
           if (v.error || (v.data as any)?.error) {
-            toast.error("Payment verification failed");
+            const msg = (v.data as any)?.error
+              || (await extractFnError(v.error, "Payment verification failed"));
+            toast.error(`Payment verification failed — ${msg}`);
+            reportBillingFailure({
+              userId: user.id,
+              userEmail: user.email,
+              dashboard: "creator",
+              surface: "creator_storage_topup_card",
+              intent: "Creator +1 TB top-up",
+              stage: "payment_verify",
+              error: new Error(msg),
+              extra: { topup_id: data.topupId, razorpay_order_id: resp.razorpay_order_id },
+            });
           } else {
             toast.success("+1 TB added to your workspace 🎉");
             if (user?.id) {
@@ -100,10 +122,34 @@ export default function StorageUsageCard() {
           }
         },
       });
+      rzp.on?.("payment.failed", (resp: any) => {
+        const msg = resp?.error?.description ?? resp?.error?.reason ?? "Payment failed at gateway";
+        toast.error(msg);
+        reportBillingFailure({
+          userId: user.id,
+          userEmail: user.email,
+          dashboard: "creator",
+          surface: "creator_storage_topup_card",
+          intent: "Creator +1 TB top-up",
+          stage: "payment_verify",
+          error: new Error(msg),
+          extra: { topup_id: data.topupId, razorpay_order_id: data.orderId },
+        });
+      });
       toast.dismiss(t);
       rzp.open();
     } catch (e: any) {
-      toast.error(e?.message || "Top-up failed", { id: t });
+      const msg = e?.message || "Top-up failed";
+      toast.error(msg, { id: t });
+      reportBillingFailure({
+        userId: user.id,
+        userEmail: user.email,
+        dashboard: "creator",
+        surface: "creator_storage_topup_card",
+        intent: "Creator +1 TB top-up",
+        stage,
+        error: e,
+      });
     } finally {
       setToppingUp(false);
     }

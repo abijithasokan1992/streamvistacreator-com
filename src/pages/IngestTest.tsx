@@ -9,6 +9,7 @@ import { CheckCircle2, CloudUpload, FileIcon, Loader2, XCircle } from "lucide-re
 import { useSystemMessage } from "@/components/system/SystemMessageProvider";
 import { useWorkspaces } from "@/hooks/useWorkspaces";
 import { supabase } from "@/integrations/supabase/client";
+import { Seo } from "@/components/Seo";
 import {
   uploadFileMultipart,
   MULTIPART_THRESHOLD,

@@ -2650,6 +2650,113 @@ export type Database = {
         }
         Relationships: []
       }
+      ingest_alert_events: {
+        Row: {
+          channels_attempted: string[]
+          delivery_status: Json
+          fired_at: string
+          id: string
+          payload: Json
+          rule_id: string
+          rule_type: string
+          workspace_id: string
+        }
+        Insert: {
+          channels_attempted?: string[]
+          delivery_status?: Json
+          fired_at?: string
+          id?: string
+          payload?: Json
+          rule_id: string
+          rule_type: string
+          workspace_id: string
+        }
+        Update: {
+          channels_attempted?: string[]
+          delivery_status?: Json
+          fired_at?: string
+          id?: string
+          payload?: Json
+          rule_id?: string
+          rule_type?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingest_alert_events_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "ingest_alert_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ingest_alert_events_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ingest_alert_rules: {
+        Row: {
+          channels: string[]
+          cooldown_minutes: number
+          created_at: string
+          created_by: string
+          enabled: boolean
+          id: string
+          last_evaluated_at: string | null
+          last_fired_at: string | null
+          name: string
+          recipients: Json
+          rule_type: string
+          threshold: Json
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          channels?: string[]
+          cooldown_minutes?: number
+          created_at?: string
+          created_by: string
+          enabled?: boolean
+          id?: string
+          last_evaluated_at?: string | null
+          last_fired_at?: string | null
+          name: string
+          recipients?: Json
+          rule_type: string
+          threshold?: Json
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          channels?: string[]
+          cooldown_minutes?: number
+          created_at?: string
+          created_by?: string
+          enabled?: boolean
+          id?: string
+          last_evaluated_at?: string | null
+          last_fired_at?: string | null
+          name?: string
+          recipients?: Json
+          rule_type?: string
+          threshold?: Json
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingest_alert_rules_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ingest_job_items: {
         Row: {
           asset_class: string | null

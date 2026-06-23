@@ -128,6 +128,44 @@ export default function OrderStatus() {
   const isTerminal = topup?.status === "paid" || topup?.status === "failed" || topup?.status === "cancelled";
   const isSuccess = topup?.status === "paid" && !!topup?.entitlement_projected_at;
 
+  // Verification failure / stall detection: payment captured by Razorpay
+  // but server-side signature verify or entitlement projection never landed.
+  const now = Date.now();
+  const ageSec = topup ? Math.floor((now - new Date(topup.updated_at).getTime()) / 1000) : 0;
+  const chargedButNotVerified =
+    !!topup &&
+    !!topup.razorpay_payment_id &&
+    topup.status !== "paid" &&
+    topup.status !== "cancelled";
+  const verificationStalled =
+    chargedButNotVerified && (topup?.status === "failed" || ageSec > 60);
+  const paidButNotActivated =
+    !!topup && topup.status === "paid" && !topup.entitlement_projected_at && ageSec > 30;
+  const showRecovery = verificationStalled || paidButNotActivated;
+
+  const supportMessage = topup
+    ? [
+        `Hi StreamVista support,`,
+        ``,
+        `My ${productLabel} purchase was charged but the plan has not activated. Please reconcile manually.`,
+        ``,
+        `topup_id: ${topup.id}`,
+        `razorpay_order_id: ${topup.razorpay_order_id ?? "(none)"}`,
+        `razorpay_payment_id: ${topup.razorpay_payment_id ?? "(none)"}`,
+        `status: ${topup.status}`,
+        `amount: ₹${(topup.total_paise ? topup.total_paise / 100 : Number(topup.amount_inr ?? 0)).toLocaleString("en-IN")}`,
+        `tb_requested: ${topup.tb_added ?? "(unknown)"}`,
+        `entitlement_projected_at: ${topup.entitlement_projected_at ?? "(not set)"}`,
+        `created_at: ${topup.created_at}`,
+        `last_updated: ${topup.updated_at}`,
+        ``,
+        `Thank you.`,
+      ].join("\n")
+    : "";
+  const supportHref = topup
+    ? `/support?message=${encodeURIComponent(supportMessage)}${user?.email ? `&email=${encodeURIComponent(user.email)}` : ""}`
+    : "/support";
+
   return (
     <main className="min-h-dvh px-4 py-10 max-w-2xl mx-auto">
       <div className="mb-6">

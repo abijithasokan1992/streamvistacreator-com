@@ -35,7 +35,7 @@ export default function About() {
       <main className="container py-12 md:py-16 max-w-6xl">
         <EcosystemAbout />
       </main>
-      <LegalLayout title="Support & Company Details" eyebrow="Company · Support">
+      <LegalLayout title="Support & Company Details" eyebrow="Company · Support" headingAs="h2">
         <LegalSection title="Registered entity">
           StreamVista OPC Pvt Ltd is an India-registered private company headquartered in{" "}
           <strong className="text-foreground">Ernakulam, Kerala</strong>. It owns and develops the

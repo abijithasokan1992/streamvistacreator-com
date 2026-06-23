@@ -9,12 +9,16 @@ interface LegalLayoutProps {
   title: string;
   updated?: string;
   children: ReactNode;
+  /** Heading element to render the title as. Defaults to h1; pass "h2" when the page already has an h1 above this layout. */
+  headingAs?: "h1" | "h2";
 }
 
-export const LegalLayout = ({ eyebrow = "Legal · Policy", title, updated, children }: LegalLayoutProps) => {
+export const LegalLayout = ({ eyebrow = "Legal · Policy", title, updated, children, headingAs = "h1" }: LegalLayoutProps) => {
   const date =
     updated ??
     new Date().toLocaleDateString("en-IN", { year: "numeric", month: "long", day: "numeric" });
+
+  const HeadingTag = headingAs;
 
   return (
     <main className="min-h-dvh">
@@ -31,7 +35,7 @@ export const LegalLayout = ({ eyebrow = "Legal · Policy", title, updated, child
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass text-xs uppercase tracking-[0.2em] text-accent mb-5">
             <Shield className="w-3.5 h-3.5" /> {eyebrow}
           </div>
-          <h1 className="font-display text-4xl md:text-5xl font-bold mb-3">{title}</h1>
+          <HeadingTag className="font-display text-4xl md:text-5xl font-bold mb-3">{title}</HeadingTag>
           <p className="text-muted-foreground text-sm">Last updated: {date}</p>
         </header>
 

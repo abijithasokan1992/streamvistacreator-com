@@ -443,9 +443,9 @@ export default function C2CSetupManual() {
         <section className="space-y-4">
           <div className="flex items-center gap-3 mb-1">
             <div className="w-8 h-px bg-accent" />
-            <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">
+            <h2 className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent m-0">
               Ingest Categories
-            </span>
+            </h2>
           </div>
           {CATEGORIES.map((cat) => (
             <CategoryCard key={cat.id} cat={cat} ingestHref={ingestQuery(cat.id)} />

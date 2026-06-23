@@ -261,6 +261,15 @@ export default function Auth() {
                 Continue with Google
               </button>
 
+              <button
+                onClick={handleApple}
+                disabled={submitting}
+                className="mt-3 w-full h-12 rounded-xl border border-border/60 bg-foreground text-background hover:bg-foreground/90 text-sm font-medium inline-flex items-center justify-center gap-2 disabled:opacity-60"
+              >
+                <AppleMark />
+                Continue with Apple
+              </button>
+
               <p className="mt-6 text-[11px] text-muted-foreground/70 text-center">
                 By continuing you agree to our{" "}
                 <Link to="/terms" className="underline hover:text-foreground">Terms</Link>{" "}

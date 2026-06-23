@@ -126,12 +126,22 @@ export default function BuyVaultDialog({ product, open, onOpenChange, onPurchase
       };
 
       if (verr || !v.ok) {
-        const msg = verr?.message ?? v.error ?? "Verification failed";
+        const msg = v.error ?? (verr ? await extractFnError(verr, "Verification failed") : "Verification failed");
         updateStep("verification_failed", `❌ ${msg}`, {
           verifyResponse: vr ?? null,
           lastError: msg,
         });
         toast.error(`Payment verification failed — ${msg}`);
+        reportBillingFailure({
+          userId: user?.id,
+          userEmail: user?.email,
+          dashboard: "studio",
+          surface: "studio_buy_vault_dialog",
+          intent: `${product.name} · ${effectiveTb} TB · ${months}mo`,
+          stage: "payment_verify",
+          error: new Error(msg),
+          extra: { topup_id: topupId, razorpay_order_id: resp.razorpay_order_id, razorpay_payment_id: resp.razorpay_payment_id },
+        });
         return;
       }
 

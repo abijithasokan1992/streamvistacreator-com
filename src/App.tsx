@@ -150,6 +150,7 @@ const PublicRoutes = () => (
 
     <Route path="/launching-special-plan" element={<LaunchingSpecialPlan />} />
     <Route path="/checkout/return" element={<CheckoutReturn />} />
+    <Route path="/billing/status/:topupId" element={<OrderStatus />} />
     <Route path="/s/:token" element={<Share />} />
     <Route path="/review/:token" element={<Review />} />
     <Route path="/screening/:token" element={<ScreeningRoom />} />

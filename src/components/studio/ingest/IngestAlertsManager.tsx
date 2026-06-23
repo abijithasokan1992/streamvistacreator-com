@@ -131,7 +131,7 @@ export default function IngestAlertsManager({ workspaceId }: { workspaceId: stri
       enabled: true,
       threshold: { ...RULE_META.error_spike.defaults },
       channels: ["email"],
-      recipients: { emails: user?.email ? [user.email] : [], phones: [] },
+      recipients: { emails: user?.email ? [user.email] : [], phones: [], webhooks: [] },
       cooldown_minutes: 30,
       last_fired_at: null,
       last_evaluated_at: null,

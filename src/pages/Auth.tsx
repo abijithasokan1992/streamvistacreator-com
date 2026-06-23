@@ -12,12 +12,13 @@ import { Seo } from "@/components/Seo";
 
 /**
  * Passwordless magic-link auth.
- *   • Create Account: Full Name + Email + Role (Content Owner / Studio / Buyer)
+ *   • Create Account: Full Name + Email + Role (Creator / Studio / Buyer)
  *   • Log In: Email only
  *   • Google OAuth kept as one-click alternative
  *
- * Invite-only roles (Localization Partner, Distributor, Admin, Super Admin)
- * are never selectable here — they are granted by an admin and the user signs
+ * Public signup is available for **Creator, Studio, and Buyer** accounts only.
+ * Reviewer and internal admin access (Admin, Super Admin, QC Reviewer,
+ * Legal Reviewer) are invite-only and granted by an admin — those users sign
  * in with the same magic-link form.
  */
 
@@ -28,8 +29,9 @@ type PublicRole = "content_owner" | "studio" | "buyer";
 const ROLE_OPTIONS: { value: PublicRole; label: string; hint: string }[] = [
   { value: "content_owner", label: "Creator", hint: "Filmmakers, producers, IP holders" },
   { value: "studio", label: "Studio", hint: "Production & post-production teams" },
-  { value: "buyer", label: "Buyer", hint: "Acquisitions, platforms, distributors of record" },
+  { value: "buyer", label: "Buyer", hint: "Acquisitions, platforms, licensing" },
 ];
+
 
 const EmailSchema = z.string().trim().email("Enter a valid email").max(255);
 const NameSchema = z.string().trim().min(1, "Enter your full name").max(120);
@@ -233,8 +235,9 @@ export default function Auth() {
                       ))}
                     </div>
                     <p className="mt-2 text-[11px] text-muted-foreground/70">
-                      Localization Partner, Distributor, and Admin access are invite-only.
+                      Public sign-up is available for Creator, Studio, and Buyer accounts only. Reviewer and internal admin access are invite-only.
                     </p>
+
                   </div>
                 )}
 

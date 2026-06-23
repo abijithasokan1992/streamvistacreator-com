@@ -40,7 +40,8 @@ export default function AuthCallback() {
         const metaRole = (user.user_metadata as Record<string, unknown> | undefined)?.requested_role;
         const chosen = (stashed || metaRole) as string | null;
         const publicSignupRoles = ["content_owner", "studio", "buyer"];
-        const protectedRoles = ["admin", "super_admin", "localization_partner", "distributor"];
+        const protectedRoles = ["admin", "super_admin", "qc_reviewer", "legal_reviewer", "localization_partner", "distributor"];
+
         if (chosen && publicSignupRoles.includes(chosen) && !protectedRoles.includes(role ?? "")) {
           await supabase.rpc("set_initial_role" as never, { _role: chosen } as never);
         }

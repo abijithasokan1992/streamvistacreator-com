@@ -22,10 +22,23 @@ const Wordmark = () => (
 
 export default function Contact() {
   const { toast } = useToast();
+  const [params] = useSearchParams();
   const [form, setForm] = useState({ name: "", email: "", company: "", role: "", message: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    const message = params.get("message");
+    const email = params.get("email");
+    if (message || email) {
+      setForm((f) => ({
+        ...f,
+        message: message ?? f.message,
+        email: email ?? f.email,
+      }));
+    }
+  }, [params]);
 
   const onChange = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm((f) => ({ ...f, [k]: e.target.value }));

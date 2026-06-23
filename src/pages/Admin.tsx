@@ -76,14 +76,12 @@ function pathToTab(path: string, search: URLSearchParams, isSuperAdmin: boolean)
   if (q) return q;
   const p = path.toLowerCase();
   if (p.startsWith("/admin/super")) return "overview";
+  if (p.startsWith("/admin/content") || p.startsWith("/admin/legal") || p.startsWith("/admin/qc")) return "content";
   if (p.startsWith("/admin/users")) return "users";
   if (p.startsWith("/admin/storage")) return "storage";
-  if (p.startsWith("/admin/billing") || p.startsWith("/admin/finance")) return "business";
-  if (p.startsWith("/admin/content")) return "content";
-  if (p.startsWith("/admin/security") || p.startsWith("/admin/legal") || p.startsWith("/admin/audit")) return "security";
-  if (p.startsWith("/admin/ops") || p.startsWith("/admin/settings")) return "ops";
-  if (p.startsWith("/admin/dev")) return "dev";
-  if (p.startsWith("/admin/products") || p.startsWith("/admin/plans")) return "products";
+  if (p.startsWith("/admin/business") || p.startsWith("/admin/billing") || p.startsWith("/admin/finance")) return "business";
+  if (p.startsWith("/admin/support")) return "support";
+  if (p.startsWith("/admin/settings") || p.startsWith("/admin/ops") || p.startsWith("/admin/security") || p.startsWith("/admin/audit") || p.startsWith("/admin/rights") || p.startsWith("/admin/dev") || p.startsWith("/admin/products") || p.startsWith("/admin/plans")) return "settings";
   return "overview";
 }
 

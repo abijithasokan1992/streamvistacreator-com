@@ -3,13 +3,13 @@
 // preview/staging hostnames. Keep in sync with site_config.primary_domain.
 //
 // Production payment + app domain (Studio Vault, auth callbacks, invoices,
-// post-checkout returns):  https://www.streamvistacreator.com
+// post-checkout returns):  https://streamvistacreator.com (bare domain is canonical)
 // Preview-only fallback:    https://streamvista-creator.lovable.app
 // Corporate / parent brand: https://www.crayonspictures.com  (NOT used for
 //   app/payment/auth callbacks anymore — historically `app.crayonspictures.com`
 //   was used and is now deprecated.)
-export const APP_ORIGIN = "https://www.streamvistacreator.com";
-export const APP_ORIGIN_BARE = "https://streamvistacreator.com";
+export const APP_ORIGIN = "https://streamvistacreator.com";
+export const APP_ORIGIN_WWW = "https://www.streamvistacreator.com";
 export const PREVIEW_ORIGIN = "https://streamvista-creator.lovable.app";
 export const CORPORATE_SITE = "https://www.crayonspictures.com";
 

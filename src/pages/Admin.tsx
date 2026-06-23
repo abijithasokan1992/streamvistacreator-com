@@ -519,8 +519,8 @@ function MetricCard({ label, value }: { label: string; value: string }) {
 }
 
 function DomainHostingPanel() {
-  const DEFAULT_PRIMARY = "https://www.streamvistacreator.com";
-  const DEFAULT_EXTRA = "https://streamvistacreator.com, https://streamvista-creator.lovable.app";
+  const DEFAULT_PRIMARY = "https://streamvistacreator.com";
+  const DEFAULT_EXTRA = "https://www.streamvistacreator.com, https://streamvista-creator.lovable.app";
   const DEPRECATED = [
     "https://app.crayonspictures.com",
     "https://www.app.crayonspictures.com",
@@ -577,7 +577,7 @@ function DomainHostingPanel() {
       .split(",").map(normalize).filter(Boolean);
     if (DEPRECATED.includes(primary_domain) || extra_origins.some(o => DEPRECATED.includes(o))) {
       setSaving(false);
-      toast.error("This domain is deprecated. Use https://www.streamvistacreator.com instead.");
+      toast.error("This domain is deprecated. Use https://streamvistacreator.com instead.");
       return;
     }
     const { error } = await supabase
@@ -602,7 +602,7 @@ function DomainHostingPanel() {
       <div className="grid sm:grid-cols-3 gap-3 text-xs">
         <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3">
           <div className="text-[10px] uppercase tracking-wider text-emerald-300">Production app + payment</div>
-          <div className="font-mono text-foreground mt-1 break-all">https://www.streamvistacreator.com</div>
+          <div className="font-mono text-foreground mt-1 break-all">https://streamvistacreator.com</div>
         </div>
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
           <div className="text-[10px] uppercase tracking-wider text-amber-300">Preview only</div>
@@ -623,11 +623,11 @@ function DomainHostingPanel() {
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs uppercase tracking-wider text-muted-foreground">Primary domain</label>
-              <input value={primary} onChange={e => setPrimary(e.target.value)} placeholder="https://www.streamvistacreator.com" className="w-full h-11 px-3 rounded-xl bg-secondary/40 border border-border/60 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" />
+              <input value={primary} onChange={e => setPrimary(e.target.value)} placeholder="https://streamvistacreator.com" className="w-full h-11 px-3 rounded-xl bg-secondary/40 border border-border/60 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs uppercase tracking-wider text-muted-foreground">Additional origins (comma-separated)</label>
-              <input value={extra} onChange={e => setExtra(e.target.value)} placeholder="https://streamvistacreator.com, https://streamvista-creator.lovable.app" className="w-full h-11 px-3 rounded-xl bg-secondary/40 border border-border/60 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" />
+              <input value={extra} onChange={e => setExtra(e.target.value)} placeholder="https://www.streamvistacreator.com, https://streamvista-creator.lovable.app" className="w-full h-11 px-3 rounded-xl bg-secondary/40 border border-border/60 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" />
             </div>
           </div>
           <button

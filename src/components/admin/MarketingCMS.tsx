@@ -169,6 +169,27 @@ function RowCard({ kind, row, onChange, onSave, onDelete, onUpload, onSetStatus,
         )}
       </div>
       <div className="grid md:grid-cols-2 gap-3">
+        {kind === "reel" && (<>
+          <Field label="Title"><input className={cls} value={row.title ?? ""} onChange={e => onChange({ title: e.target.value })} /></Field>
+          <Field label="Subtitle / tagline"><input className={cls} value={row.subtitle ?? ""} onChange={e => onChange({ subtitle: e.target.value })} /></Field>
+          <Field label="CTA label"><input className={cls} value={row.cta_label ?? ""} onChange={e => onChange({ cta_label: e.target.value })} /></Field>
+          <Field label="CTA URL"><input className={cls} value={row.cta_url ?? ""} onChange={e => onChange({ cta_url: e.target.value })} /></Field>
+          <Field label="Backdrop / still (16:9, wide)" full>
+            <div className="flex items-center gap-3">
+              {row.backdrop_url && <img src={row.backdrop_url} alt="" className="h-14 w-24 object-cover rounded-md border border-border/60" />}
+              <label className="h-9 px-3 rounded-md border border-border text-xs inline-flex items-center gap-1.5 cursor-pointer hover:bg-secondary">
+                <Upload className="w-3.5 h-3.5" /> Upload
+                <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) onUpload("backdrop_url", f); }} />
+              </label>
+              <input placeholder="…or paste backdrop URL" className={cls + " flex-1"} value={row.backdrop_url ?? ""} onChange={e => onChange({ backdrop_url: e.target.value })} />
+            </div>
+          </Field>
+          <Field label="Featured (spotlight)">
+            <label className="inline-flex items-center gap-2 text-sm h-10">
+              <input type="checkbox" checked={!!row.is_featured} onChange={e => onChange({ is_featured: e.target.checked })} /> Mark as spotlight
+            </label>
+          </Field>
+        </>)}
         {kind === "hero" && (<>
           <Field label="Headline"><input className={cls} value={row.headline ?? ""} onChange={e => onChange({ headline: e.target.value })} /></Field>
           <Field label="Subheadline"><input className={cls} value={row.subheadline ?? ""} onChange={e => onChange({ subheadline: e.target.value })} /></Field>

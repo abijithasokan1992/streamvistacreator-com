@@ -450,7 +450,7 @@ export default function BuyVaultDialog({ product, open, onOpenChange, onPurchase
             </div>
           )}
 
-          {debug.topupId && step !== "idle" && step !== "verified_success" && (
+          {debug.topupId && step !== "idle" && (
             <a
               href={`/billing/status/${debug.topupId}?label=${encodeURIComponent(`${product.name} · ${effectiveTb} TB`)}`}
               target="_blank"

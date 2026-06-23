@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
-import { Loader2, Plus, Trash2, Save, Upload, Image as ImageIcon, Newspaper, Film, Megaphone, Sparkles, Globe, FileEdit, EyeOff, Clapperboard } from "lucide-react";
+import { Loader2, Plus, Trash2, Save, Upload, Image as ImageIcon, Newspaper, Film, Megaphone, Sparkles, Globe, FileEdit, EyeOff, Clapperboard, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { HeroReelPreview } from "./HeroReelPreview";
 
 type AnyRow = Record<string, any> & { id: string };
 
@@ -49,6 +50,10 @@ function Section({ kind, title, icon }: { kind: Kind; title: string; icon: React
   const [rows, setRows] = useState<AnyRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [overIdx, setOverIdx] = useState<number | null>(null);
+  const [reordering, setReordering] = useState(false);
+  const dndEnabled = kind === "reel";
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -112,32 +117,95 @@ function Section({ kind, title, icon }: { kind: Kind; title: string; icon: React
     toast.success("Image uploaded");
   };
 
+  const persistOrder = async (next: AnyRow[]) => {
+    setReordering(true);
+    const updates = next
+      .map((r, idx) => ({ id: r.id, sort_order: idx * 10 }))
+      .filter(u => !u.id.startsWith("new-"));
+    const results = await Promise.all(
+      updates.map(u => (supabase as any).from(table).update({ sort_order: u.sort_order }).eq("id", u.id))
+    );
+    setReordering(false);
+    const firstErr = results.find((r: any) => r?.error);
+    if (firstErr) return toast.error(firstErr.error.message);
+    toast.success("Order saved");
+  };
+
+  const onDragStart = (idx: number) => (e: React.DragEvent) => {
+    setDragIdx(idx);
+    e.dataTransfer.effectAllowed = "move";
+    try { e.dataTransfer.setData("text/plain", String(idx)); } catch { /* noop */ }
+  };
+  const onDragOver = (idx: number) => (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (overIdx !== idx) setOverIdx(idx);
+  };
+  const onDragLeave = () => setOverIdx(null);
+  const onDrop = (idx: number) => async (e: React.DragEvent) => {
+    e.preventDefault();
+    setOverIdx(null);
+    if (dragIdx === null || dragIdx === idx) { setDragIdx(null); return; }
+    const next = [...rows];
+    const [moved] = next.splice(dragIdx, 1);
+    next.splice(idx, 0, moved);
+    const reindexed = next.map((r, i) => ({ ...r, sort_order: i * 10 }));
+    setRows(reindexed);
+    setDragIdx(null);
+    await persistOrder(reindexed);
+  };
+
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-sm flex items-center gap-2 text-foreground/90">{icon}{title}</h3>
+        <h3 className="font-semibold text-sm flex items-center gap-2 text-foreground/90">
+          {icon}{title}
+          {reordering && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
+        </h3>
         <button onClick={add} className="h-8 px-3 rounded-md border border-border text-xs flex items-center gap-1.5 hover:bg-secondary">
           <Plus className="w-3.5 h-3.5" /> Add
         </button>
       </div>
+
+      {dndEnabled && !loading && (
+        <HeroReelPreview items={rows} />
+      )}
+      {dndEnabled && rows.length > 1 && (
+        <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+          <GripVertical className="w-3 h-3" /> Drag the handle on each card to reorder. Order saves instantly.
+        </p>
+      )}
+
       {loading ? (
         <div className="py-8 grid place-items-center"><Loader2 className="w-4 h-4 animate-spin text-primary" /></div>
       ) : rows.length === 0 ? (
         <p className="text-xs text-muted-foreground py-6 text-center border border-dashed border-border/50 rounded-xl">No items yet — click Add.</p>
       ) : (
         <div className="space-y-3">
-          {rows.map(row => (
-            <RowCard
+          {rows.map((row, idx) => (
+            <div
               key={row.id}
-              kind={kind}
-              row={row}
-              onChange={(patch) => update(row.id, patch)}
-              onSave={() => save(row)}
-              onDelete={() => remove(row.id)}
-              onUpload={(field, file) => uploadImage(row, field, file)}
-              onSetStatus={(s) => setStatus(row, s)}
-              saving={savingId === row.id}
-            />
+              onDragOver={dndEnabled ? onDragOver(idx) : undefined}
+              onDragLeave={dndEnabled ? onDragLeave : undefined}
+              onDrop={dndEnabled ? onDrop(idx) : undefined}
+              className={`relative transition-all ${dndEnabled && overIdx === idx && dragIdx !== idx ? "ring-2 ring-accent/60 rounded-xl" : ""} ${dndEnabled && dragIdx === idx ? "opacity-50" : ""}`}
+            >
+              <RowCard
+                kind={kind}
+                row={row}
+                onChange={(patch) => update(row.id, patch)}
+                onSave={() => save(row)}
+                onDelete={() => remove(row.id)}
+                onUpload={(field, file) => uploadImage(row, field, file)}
+                onSetStatus={(s) => setStatus(row, s)}
+                saving={savingId === row.id}
+                dragHandleProps={dndEnabled ? {
+                  draggable: true,
+                  onDragStart: onDragStart(idx),
+                  onDragEnd: () => { setDragIdx(null); setOverIdx(null); },
+                } : undefined}
+              />
+            </div>
           ))}
         </div>
       )}
@@ -145,13 +213,14 @@ function Section({ kind, title, icon }: { kind: Kind; title: string; icon: React
   );
 }
 
-function RowCard({ kind, row, onChange, onSave, onDelete, onUpload, onSetStatus, saving }: {
+function RowCard({ kind, row, onChange, onSave, onDelete, onUpload, onSetStatus, saving, dragHandleProps }: {
   kind: Kind; row: AnyRow;
   onChange: (p: Partial<AnyRow>) => void;
   onSave: () => void; onDelete: () => void;
   onUpload: (field: string, file: File) => void;
   onSetStatus: (s: "draft" | "published") => void;
   saving: boolean;
+  dragHandleProps?: React.HTMLAttributes<HTMLDivElement> & { draggable?: boolean };
 }) {
   const imageField = kind === "film" ? "poster_url" : kind === "reel" ? "poster_url" : "image_url";
   const isPublished = row.status === "published";
@@ -159,9 +228,20 @@ function RowCard({ kind, row, onChange, onSave, onDelete, onUpload, onSetStatus,
   return (
     <div className={`rounded-xl border p-4 space-y-3 ${isPublished ? "border-emerald-500/30 bg-emerald-500/[0.03]" : "border-amber-500/30 bg-amber-500/[0.03]"}`}>
       <div className="flex items-center justify-between gap-2">
-        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${isPublished ? "bg-emerald-500/15 text-emerald-500" : "bg-amber-500/15 text-amber-500"}`}>
-          {isPublished ? <><Globe className="w-3 h-3" /> Published</> : <><FileEdit className="w-3 h-3" /> Draft</>}
-        </span>
+        <div className="flex items-center gap-2">
+          {dragHandleProps && (
+            <div
+              {...dragHandleProps}
+              title="Drag to reorder"
+              className="cursor-grab active:cursor-grabbing h-7 w-7 rounded-md grid place-items-center border border-border/60 text-muted-foreground hover:text-foreground hover:bg-secondary"
+            >
+              <GripVertical className="w-3.5 h-3.5" />
+            </div>
+          )}
+          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${isPublished ? "bg-emerald-500/15 text-emerald-500" : "bg-amber-500/15 text-amber-500"}`}>
+            {isPublished ? <><Globe className="w-3 h-3" /> Published</> : <><FileEdit className="w-3 h-3" /> Draft</>}
+          </span>
+        </div>
         {!isNew && (
           isPublished
             ? <button onClick={() => onSetStatus("draft")} className="h-8 px-3 rounded-md border border-border text-xs inline-flex items-center gap-1.5 hover:bg-secondary"><EyeOff className="w-3.5 h-3.5" /> Unpublish</button>

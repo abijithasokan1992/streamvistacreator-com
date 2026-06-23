@@ -130,7 +130,10 @@ export default function StorageUsageCard() {
   const totalGb = Number(entitlement?.total_storage_gb ?? FREE_STORAGE_GB);
   const paidGb = Number(entitlement?.paid_storage_gb ?? 0);
   const bonusGb = Number(entitlement?.admin_bonus_storage_gb ?? 0);
+  const testingGb = Number(entitlement?.testing_override_gb ?? 0);
+  const testingOn = Boolean(entitlement?.testing_mode_enabled) && testingGb > 0;
   const planCode = String(entitlement?.plan_code ?? "creator_basic");
+  const includedGb = Number(entitlement?.included_storage_gb ?? 0);
   const isCreator = paidGb > 0 || planCode !== "creator_basic";
   const storageQuotaMb = totalGb * MB_PER_GB;
   const storageUsedMb = Number(profile.storage_used_mb || 0);

@@ -6,6 +6,7 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
+import { validateUploadKind } from "../_shared/uploadValidation.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -216,6 +217,15 @@ Deno.serve(async (req) => {
   }
   if (file.size > MAX_BYTES) {
     return new Response(JSON.stringify({ error: `file exceeds ${MAX_BYTES} bytes` }), { status: 413, headers: cors });
+  }
+
+  // Server-side MIME / extension allowlist (defence-in-depth — clients can lie).
+  {
+    const categoryHint = typeof form.get("category") === "string" ? String(form.get("category")) : null;
+    const v = validateUploadKind({ fileName: file.name, mimeType: file.type, category: categoryHint });
+    if (v) {
+      return new Response(JSON.stringify({ error: v.message, code: v.code }), { status: 415, headers: cors });
+    }
   }
 
   // Workspace routing: the caller must specify which workspace this asset belongs

@@ -13,11 +13,91 @@ import { Button } from "@/components/ui/button";
 import VaultPlanCards from "@/components/studio/vault/VaultPlanCards";
 import MyVaultSummary from "@/components/studio/vault/MyVaultSummary";
 import VaultBillingPanel from "@/components/studio/vault/VaultBillingPanel";
+import BuyVaultDialog from "@/components/studio/vault/BuyVaultDialog";
 import StudioRequestService from "@/components/studio/StudioRequestService";
 import StudioRequestPlanChange from "@/components/studio/StudioRequestPlanChange";
 import ManualInvoicesList from "@/components/billing/ManualInvoicesList";
+import type { VaultProduct } from "@/lib/studioVault";
 
 type AllocRow = { id: string; allocated_gb: number; used_gb: number; source: string };
+
+function useLiveStudioSku() {
+  const [product, setProduct] = useState<VaultProduct | null>(null);
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("studio_vault_products_public" as any)
+        .select("*")
+        .eq("visible", true)
+        .eq("self_serve_enabled", true)
+        .order("sort_order", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      if (data) {
+        const p = data as unknown as VaultProduct;
+        setProduct({
+          ...p,
+          default_tb_options: Array.isArray(p.default_tb_options) ? p.default_tb_options : [1],
+          billing_modes: Array.isArray(p.billing_modes) ? p.billing_modes : ["monthly"],
+          features: Array.isArray(p.features) ? p.features : [],
+        });
+      }
+    })();
+  }, []);
+  return product;
+}
+
+function OneClickBuyCard({
+  product, hasPaid, onPurchased,
+}: { product: VaultProduct | null; hasPaid: boolean; onPurchased: () => void }) {
+  const [open, setOpen] = useState(false);
+  if (!product) return null;
+  const gstMul = 1 + (product.gst_percent ?? 18) / 100;
+  const totalRupees = Math.round((product.sell_price_per_tb_paise / 100) * gstMul);
+  const baseRupees = Math.round(product.sell_price_per_tb_paise / 100);
+  return (
+    <section className="rounded-2xl border border-accent/40 bg-gradient-to-br from-accent/10 to-secondary/10 p-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0 max-w-xl">
+          <span className="text-[11px] uppercase tracking-[0.25em] text-accent font-mono">One-click purchase</span>
+          <h3 className="font-display text-2xl mt-1.5">
+            {hasPaid ? "Add another 1 TB Studio Storage" : "Start with 1 TB Studio Storage"}
+          </h3>
+          <p className="text-sm text-muted-foreground mt-1.5">
+            Secure recurring vault storage for studio uploads, working media, masters and archive copies.
+          </p>
+          <p className="text-sm mt-3">
+            <span className="font-display text-2xl">₹{totalRupees}</span>
+            <span className="text-muted-foreground"> / month</span>
+            <span className="text-xs text-muted-foreground ml-2">(₹{baseRupees} + {product.gst_percent}% GST)</span>
+          </p>
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Billed monthly. Storage activates immediately after successful payment.
+          </p>
+        </div>
+        <div className="flex flex-col items-end gap-2">
+          <Button
+            size="lg"
+            onClick={() => setOpen(true)}
+            className="bg-gradient-primary text-primary-foreground glow-primary"
+          >
+            <ShoppingCart className="w-4 h-4 mr-2" />
+            {hasPaid ? "Buy another 1 TB" : "Buy 1 TB Now"}
+          </Button>
+          <Link to="/contact" className="text-[11px] text-muted-foreground hover:text-accent">
+            Need a larger setup? Contact StreamVista →
+          </Link>
+        </div>
+      </div>
+      <BuyVaultDialog
+        product={product}
+        open={open}
+        onOpenChange={setOpen}
+        onPurchased={() => { setOpen(false); onPurchased(); }}
+      />
+    </section>
+  );
+}
 
 function useStudioVaultRows() {
   const { user } = useAuth();

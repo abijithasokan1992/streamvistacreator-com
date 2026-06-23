@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Loader2, Mail, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Loader2, Mail, ArrowRight, CheckCircle2, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth, dashboardForRole } from "@/hooks/useAuth";
@@ -33,6 +33,21 @@ const ROLE_OPTIONS: { value: PublicRole; label: string; hint: string }[] = [
 
 const EmailSchema = z.string().trim().email("Enter a valid email").max(255);
 const NameSchema = z.string().trim().min(1, "Enter your full name").max(120);
+
+function isInAppBrowser(): boolean {
+  const ua = navigator.userAgent;
+  const indicators = [
+    "Instagram", "FBAN", "FBAV", "LinkedInApp",
+    "Twitter", "TwitterFor", "Snapchat", "Line/",
+    "MicroMessenger", "TikTok", "Bytedance", "trill",
+    "Messenger", "WhatsApp", "WeChat",
+  ];
+  return indicators.some((i) => ua.includes(i)) || /wv|WebView/i.test(ua);
+}
+
+function isMobile(): boolean {
+  return /Android|iPhone|iPad|iPod|Mobile|webOS|BlackBerry|IEMobile/i.test(navigator.userAgent);
+}
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -163,6 +178,10 @@ export default function Auth() {
                 </p>
               </header>
 
+              {search.get("in_app_error") === "1" && (
+                <OpenInBrowserNotice prominent />
+              )}
+
               <div className="mb-6 grid grid-cols-2 gap-1 p-1 rounded-xl bg-input/30 border border-border/50">
                 <TabButton active={view === "login"} onClick={() => setView("login")}>Log in</TabButton>
                 <TabButton active={view === "signup"} onClick={() => setView("signup")}>Create account</TabButton>
@@ -240,6 +259,10 @@ export default function Auth() {
                 or
                 <div className="h-px flex-1 bg-border/60" />
               </div>
+
+              {isInAppBrowser() && search.get("in_app_error") !== "1" && (
+                <OpenInBrowserNotice />
+              )}
 
               <button
                 onClick={handleGoogle}
@@ -334,6 +357,52 @@ function GoogleMark() {
     <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden>
       <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.4-1.6 4-5.5 4-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.1.8 3.9 1.5l2.6-2.5C16.9 3.5 14.7 2.5 12 2.5 6.8 2.5 2.6 6.7 2.6 12s4.2 9.5 9.4 9.5c5.4 0 9-3.8 9-9.2 0-.6-.1-1.1-.2-1.6H12z"/>
     </svg>
+  );
+}
+
+function OpenInBrowserNotice({ prominent = false }: { prominent?: boolean }) {
+  const [copied, setCopied] = useState(false);
+  const url = typeof window !== "undefined" ? window.location.href.split("?")[0] : "";
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // noop
+    }
+  };
+
+  return (
+    <div className={cn(
+      "rounded-xl border p-4 mb-6",
+      prominent
+        ? "border-accent/40 bg-accent/10"
+        : "border-border/60 bg-input/20"
+    )}>
+      <div className="flex items-start gap-3">
+        <ExternalLink className={cn("w-4 h-4 mt-0.5 shrink-0", prominent ? "text-accent" : "text-muted-foreground")} />
+        <div className="flex-1">
+          <p className={cn("text-sm font-medium", prominent ? "text-foreground" : "text-muted-foreground")}>
+            {prominent
+              ? "Sign-in was blocked by this browser."
+              : "In-app browser detected."}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {prominent
+              ? "Please open this page in Safari (iOS) or Chrome (Android) and try again."
+              : "For the best sign-in experience, open this page in your device's default browser."}
+          </p>
+          <button
+            onClick={handleCopy}
+            className="mt-2 text-xs inline-flex items-center gap-1 text-accent hover:underline"
+          >
+            {copied ? "Link copied!" : "Copy link to open in browser"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

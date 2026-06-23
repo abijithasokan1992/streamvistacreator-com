@@ -1,6 +1,7 @@
 import { Navigate } from "react-router-dom";
 import { Navbar } from "@/components/streamvista/Navbar";
 import { Hero } from "@/components/streamvista/Hero";
+import { HeroReel } from "@/components/streamvista/HeroReel";
 import { RoleSurfaces } from "@/components/streamvista/RoleSurfaces";
 import { Workflow } from "@/components/streamvista/Workflow";
 import { SuccessStories } from "@/components/streamvista/SuccessStories";

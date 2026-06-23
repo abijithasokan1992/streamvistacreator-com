@@ -260,6 +260,10 @@ export default function Auth() {
                 <div className="h-px flex-1 bg-border/60" />
               </div>
 
+              {isInAppBrowser() && search.get("in_app_error") !== "1" && (
+                <OpenInBrowserNotice />
+              )}
+
               <button
                 onClick={handleGoogle}
                 disabled={submitting}

@@ -22,4 +22,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'login-alert': loginAlert,
   'title-status-update': titleStatusUpdate,
   'invoice-receipt': invoiceReceipt,
+  'ingest-alert': ingestAlert,
 }

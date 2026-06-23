@@ -356,3 +356,49 @@ function GoogleMark() {
   );
 }
 
+function OpenInBrowserNotice({ prominent = false }: { prominent?: boolean }) {
+  const [copied, setCopied] = useState(false);
+  const url = typeof window !== "undefined" ? window.location.href.split("?")[0] : "";
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // noop
+    }
+  };
+
+  return (
+    <div className={cn(
+      "rounded-xl border p-4 mb-6",
+      prominent
+        ? "border-accent/40 bg-accent/10"
+        : "border-border/60 bg-input/20"
+    )}>
+      <div className="flex items-start gap-3">
+        <ExternalLink className={cn("w-4 h-4 mt-0.5 shrink-0", prominent ? "text-accent" : "text-muted-foreground")} />
+        <div className="flex-1">
+          <p className={cn("text-sm font-medium", prominent ? "text-foreground" : "text-muted-foreground")}>
+            {prominent
+              ? "Sign-in was blocked by this browser."
+              : "In-app browser detected."}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {prominent
+              ? "Please open this page in Safari (iOS) or Chrome (Android) and try again."
+              : "For the best sign-in experience, open this page in your device's default browser."}
+          </p>
+          <button
+            onClick={handleCopy}
+            className="mt-2 text-xs inline-flex items-center gap-1 text-accent hover:underline"
+          >
+            {copied ? "Link copied!" : "Copy link to open in browser"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+

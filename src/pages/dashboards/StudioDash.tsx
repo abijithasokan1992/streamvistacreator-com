@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowUpRight, Cloud, Database, HardDrive, Loader2,
-  Snowflake, Sparkles, Wrench, Receipt, ShoppingCart, ShieldCheck,
+  Snowflake, Sparkles, Wrench, Receipt, ShoppingCart, ShieldCheck, UploadCloud,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,6 +18,7 @@ import StudioRequestService from "@/components/studio/StudioRequestService";
 import StudioRequestPlanChange from "@/components/studio/StudioRequestPlanChange";
 import ManualInvoicesList from "@/components/billing/ManualInvoicesList";
 import HardDiskIntakeDialog from "@/components/studio/HardDiskIntakeDialog";
+import StudioIngest from "@/components/studio/ingest/StudioIngest";
 import type { VaultProduct } from "@/lib/studioVault";
 
 type AllocRow = { id: string; allocated_gb: number; used_gb: number; source: string };
@@ -279,7 +280,7 @@ function BuyStorage({ onPurchased }: { onPurchased: () => void }) {
 /* ============================================================
  * 3) VAULT WORKSPACE — real working actions
  * ============================================================ */
-function VaultWorkspace({ rows, loading, onGoBuy }: { rows: AllocRow[]; loading: boolean; onGoBuy: () => void; }) {
+function VaultWorkspace({ rows, loading, onGoBuy, onGoIngest }: { rows: AllocRow[]; loading: boolean; onGoBuy: () => void; onGoIngest: () => void; }) {
   const q = useStorageQuota();
   const hasPaid = rows.length > 0;
   const hasTesting = q.testingModeEnabled && q.testingOverrideGb > 0;
@@ -306,25 +307,34 @@ function VaultWorkspace({ rows, loading, onGoBuy }: { rows: AllocRow[]; loading:
     );
   }
 
+  // Tiles route serious ingest flows into the unified Studio Ingest tab so
+  // Camera-to-Cloud, Archive Snapshot and Hard-disk Import all share one
+  // queue, one folder-structure model, and one upload meter.
+  const tiles: Array<{ label: string; desc: string; icon: JSX.Element; onClick?: () => void; to?: string }> = [
+    { label: "Upload to Vault", desc: "Browser upload now", to: "/vault", icon: <ArrowUpRight className="w-4 h-4" /> },
+    { label: "Camera-to-Cloud", desc: "Live ingest from set", onClick: onGoIngest, icon: <Cloud className="w-4 h-4" /> },
+    { label: "Archive Intake", desc: "Master / archive bundle", onClick: onGoIngest, icon: <Snowflake className="w-4 h-4" /> },
+  ];
+
   return (
     <div className="space-y-6">
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          { label: "Upload to Vault", desc: "Browser upload now", to: "/vault", icon: <ArrowUpRight className="w-4 h-4" /> },
-          { label: "Camera-to-Cloud", desc: "Live ingest from set", to: "/studio", icon: <Cloud className="w-4 h-4" /> },
-          { label: "Archive Snapshot", desc: "Create archive copy", to: "/master-archive", icon: <Snowflake className="w-4 h-4" /> },
-        ].map((a) => (
-          <Link
-            key={a.label}
-            to={a.to}
-            className="rounded-xl border border-border/40 bg-secondary/10 hover:bg-secondary/20 transition-colors p-4 flex flex-col gap-1.5"
-          >
-            <span className="flex items-center gap-2 text-accent">{a.icon}<span className="font-medium text-foreground">{a.label}</span></span>
-            <span className="text-xs text-muted-foreground">{a.desc}</span>
-          </Link>
-        ))}
+        {tiles.map((a) => {
+          const inner = (
+            <>
+              <span className="flex items-center gap-2 text-accent">{a.icon}<span className="font-medium text-foreground">{a.label}</span></span>
+              <span className="text-xs text-muted-foreground">{a.desc}</span>
+            </>
+          );
+          return a.to ? (
+            <Link key={a.label} to={a.to} className="rounded-xl border border-border/40 bg-secondary/10 hover:bg-secondary/20 transition-colors p-4 flex flex-col gap-1.5">{inner}</Link>
+          ) : (
+            <button key={a.label} onClick={a.onClick} className="text-left rounded-xl border border-border/40 bg-secondary/10 hover:bg-secondary/20 transition-colors p-4 flex flex-col gap-1.5">{inner}</button>
+          );
+        })}
         <HardDiskIntakeDialog />
       </section>
+
 
       {/* Compact services panel — no clutter */}
       <section className="rounded-xl border border-border/40 bg-secondary/5 p-5">
@@ -408,8 +418,9 @@ export default function StudioDashboard() {
   return (
     <RoleDashboardShell expectedRole="studio" title="Studio Vault" subtitle={subtitle}>
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full max-w-2xl">
+        <TabsList className="grid grid-cols-3 sm:grid-cols-5 w-full max-w-3xl">
           <TabsTrigger value="home"><Sparkles className="w-3.5 h-3.5 mr-1.5" />Home</TabsTrigger>
+          <TabsTrigger value="ingest"><UploadCloud className="w-3.5 h-3.5 mr-1.5" />Ingest</TabsTrigger>
           <TabsTrigger value="buy"><ShoppingCart className="w-3.5 h-3.5 mr-1.5" />Buy Storage</TabsTrigger>
           <TabsTrigger value="workspace"><Cloud className="w-3.5 h-3.5 mr-1.5" />Vault Workspace</TabsTrigger>
           <TabsTrigger value="billing"><Receipt className="w-3.5 h-3.5 mr-1.5" />Billing & Services</TabsTrigger>
@@ -425,11 +436,14 @@ export default function StudioDashboard() {
             onPurchased={refreshAfterPurchase}
           />
         </TabsContent>
+        <TabsContent value="ingest" className="mt-6">
+          <StudioIngest />
+        </TabsContent>
         <TabsContent value="buy" className="mt-6">
           <BuyStorage onPurchased={() => { refreshAfterPurchase(); setTab("home"); }} />
         </TabsContent>
         <TabsContent value="workspace" className="mt-6">
-          <VaultWorkspace rows={rows} loading={loading} onGoBuy={() => setTab("buy")} />
+          <VaultWorkspace rows={rows} loading={loading} onGoBuy={() => setTab("buy")} onGoIngest={() => setTab("ingest")} />
         </TabsContent>
         <TabsContent value="billing" className="mt-6">
           <BillingAndServices />

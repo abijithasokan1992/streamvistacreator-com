@@ -2650,6 +2650,234 @@ export type Database = {
         }
         Relationships: []
       }
+      ingest_job_items: {
+        Row: {
+          asset_class: string | null
+          created_at: string
+          error_message: string | null
+          file_name: string
+          id: string
+          job_id: string
+          metadata: Json
+          mime_guess: string | null
+          progress_percent: number
+          relative_path: string
+          size_bytes: number
+          status: string
+          updated_at: string
+          upload_id: string | null
+          upload_session_id: string | null
+        }
+        Insert: {
+          asset_class?: string | null
+          created_at?: string
+          error_message?: string | null
+          file_name: string
+          id?: string
+          job_id: string
+          metadata?: Json
+          mime_guess?: string | null
+          progress_percent?: number
+          relative_path?: string
+          size_bytes?: number
+          status?: string
+          updated_at?: string
+          upload_id?: string | null
+          upload_session_id?: string | null
+        }
+        Update: {
+          asset_class?: string | null
+          created_at?: string
+          error_message?: string | null
+          file_name?: string
+          id?: string
+          job_id?: string
+          metadata?: Json
+          mime_guess?: string | null
+          progress_percent?: number
+          relative_path?: string
+          size_bytes?: number
+          status?: string
+          updated_at?: string
+          upload_id?: string | null
+          upload_session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingest_job_items_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "ingest_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ingest_job_items_upload_id_fkey"
+            columns: ["upload_id"]
+            isOneToOne: false
+            referencedRelation: "recent_uploads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ingest_jobs: {
+        Row: {
+          asset_class: string | null
+          camera_label: string | null
+          completed_at: string | null
+          completed_files: number
+          created_at: string
+          created_by: string
+          destination_type: string
+          error_message: string | null
+          failed_files: number
+          id: string
+          job_mode: string
+          metadata: Json
+          notes: string | null
+          preserve_structure: boolean
+          project_id: string | null
+          shoot_day: string | null
+          source_id: string | null
+          source_summary: Json
+          started_at: string | null
+          status: string
+          title_id: string | null
+          total_bytes: number
+          total_files: number
+          transferred_bytes: number
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          asset_class?: string | null
+          camera_label?: string | null
+          completed_at?: string | null
+          completed_files?: number
+          created_at?: string
+          created_by: string
+          destination_type?: string
+          error_message?: string | null
+          failed_files?: number
+          id?: string
+          job_mode: string
+          metadata?: Json
+          notes?: string | null
+          preserve_structure?: boolean
+          project_id?: string | null
+          shoot_day?: string | null
+          source_id?: string | null
+          source_summary?: Json
+          started_at?: string | null
+          status?: string
+          title_id?: string | null
+          total_bytes?: number
+          total_files?: number
+          transferred_bytes?: number
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          asset_class?: string | null
+          camera_label?: string | null
+          completed_at?: string | null
+          completed_files?: number
+          created_at?: string
+          created_by?: string
+          destination_type?: string
+          error_message?: string | null
+          failed_files?: number
+          id?: string
+          job_mode?: string
+          metadata?: Json
+          notes?: string | null
+          preserve_structure?: boolean
+          project_id?: string | null
+          shoot_day?: string | null
+          source_id?: string | null
+          source_summary?: Json
+          started_at?: string | null
+          status?: string
+          title_id?: string | null
+          total_bytes?: number
+          total_files?: number
+          transferred_bytes?: number
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingest_jobs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ingest_jobs_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "ingest_sources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ingest_jobs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ingest_sources: {
+        Row: {
+          agent_device_id: string | null
+          created_at: string
+          created_by: string
+          id: string
+          label: string
+          metadata: Json
+          path_hint: string | null
+          source_identifier: string | null
+          source_type: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          agent_device_id?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          label: string
+          metadata?: Json
+          path_hint?: string | null
+          source_identifier?: string | null
+          source_type: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          agent_device_id?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          label?: string
+          metadata?: Json
+          path_hint?: string | null
+          source_identifier?: string | null
+          source_type?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingest_sources_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ingest_telemetry: {
         Row: {
           bytes: number | null

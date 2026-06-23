@@ -344,7 +344,14 @@ export default function BuyVaultDialog({ product, open, onOpenChange, onPurchase
                 <div>entitlement_written: {String(Boolean(debug.entitlementWritten))}</div>
               </div>
             )}
-            <DialogFooter>
+            <DialogFooter className="flex-col sm:flex-row gap-2">
+              {debug.topupId && (
+                <Button asChild variant="outline">
+                  <a href={`/billing/status/${debug.topupId}?label=${encodeURIComponent(`${product.name} · ${effectiveTb} TB`)}`} target="_blank" rel="noreferrer">
+                    View order status
+                  </a>
+                </Button>
+              )}
               <Button onClick={() => onOpenChange(false)} className="bg-gradient-primary text-primary-foreground glow-primary">
                 Done
               </Button>

@@ -470,7 +470,7 @@ export default function C2CSetupManual() {
         </section>
 
         {/* Footer hint */}
-        <p className="text-center text-[11px] text-muted-foreground/60 pb-8">
+        <p className="text-center text-[11px] text-muted-foreground pb-8">
           All uploads are SHA-256 verified and encrypted in transit. For support, visit the{" "}
           <Link to="/support" className="underline hover:text-accent transition">Support Center</Link>.
         </p>

@@ -83,7 +83,7 @@ export function CreatorSidebar({
           if (groupItems.length === 0) return null;
           return (
             <div key={g} className="space-y-0.5">
-              <p className="px-3 pt-1 pb-1 text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">
+              <p className="px-3 pt-1 pb-1 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
                 {GROUP_LABEL[g]}
               </p>
               {groupItems.map((s) => {

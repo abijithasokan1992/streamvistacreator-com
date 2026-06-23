@@ -104,7 +104,7 @@ export default function EcosystemAbout() {
               />
             ) : (
               <div className="text-center px-4">
-                <User2 className="w-12 h-12 mx-auto text-muted-foreground/60" />
+                <User2 className="w-12 h-12 mx-auto text-muted-foreground" />
                 <div className="text-xs text-muted-foreground mt-2">Founder portrait</div>
               </div>
             )}

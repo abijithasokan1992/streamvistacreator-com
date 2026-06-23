@@ -185,17 +185,10 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
                   <Cloud className="w-4 h-4 mr-2" /> Open Vault
                 </Button>
                 <Button variant="outline" onClick={onGoBuy}>
-                  <ShoppingCart className="w-4 h-4 mr-2" /> {hasPaidVault ? "Buy more storage" : "Buy storage"}
+                  <ShoppingCart className="w-4 h-4 mr-2" /> {hasPaidVault ? "Buy more storage" : "Browse plans"}
                 </Button>
               </>
-            ) : (
-              <>
-                <Button onClick={onGoBuy} className="bg-gradient-primary text-primary-foreground glow-primary">
-                  <ShoppingCart className="w-4 h-4 mr-2" /> Choose storage
-                </Button>
-                <StudioRequestPlanChange />
-              </>
-            )}
+            ) : null}
           </div>
         </div>
 
@@ -219,19 +212,19 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
           </div>
         )}
 
-        {hasTesting && (
+        {hasTesting && !hasPaidVault && (
           <p className="text-[11px] text-muted-foreground mt-3">
             <ShieldCheck className="w-3 h-3 inline mr-1 text-amber-300" />
-            Includes a {q.testingOverrideGb} GB testing allowance — internal QA only. This auto-disables when the platform leaves testing mode.
+            Includes a {q.testingOverrideGb} GB testing allowance — internal QA only. Buy paid storage below to activate real vault capacity.
           </p>
         )}
       </section>
 
+      {/* One-click purchase — primary commercial CTA, surfaced before per-class breakdown */}
+      <OneClickBuyCard product={liveSku} hasPaid={hasPaidVault} onPurchased={onPurchased} />
+
       {/* Per-class breakdown only when we have paid storage */}
       {!loading && rows.length > 0 && <MyVaultSummary />}
-
-      {/* One-click purchase — single live SKU */}
-      <OneClickBuyCard product={liveSku} hasPaid={hasPaidVault} onPurchased={onPurchased} />
     </div>
   );
 }

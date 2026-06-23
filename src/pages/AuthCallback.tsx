@@ -83,7 +83,7 @@ export default function AuthCallback() {
       } catch (err) {
         console.error("auth callback failed", err);
         toast.error("Couldn't complete sign-in. Please try again.");
-        navigate("/auth", { replace: true });
+        navigate("/auth?in_app_error=1", { replace: true });
       }
     })();
     return () => { cancelled = true; };

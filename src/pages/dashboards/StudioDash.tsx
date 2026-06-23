@@ -136,11 +136,13 @@ function StatusPill({ tone, children }: { tone: "ok" | "warn" | "muted"; childre
 /* ============================================================
  * 1) STUDIO HOME — status-first, one primary CTA
  * ============================================================ */
-function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling }: {
+function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchased }: {
   rows: AllocRow[]; loading: boolean;
   onGoBuy: () => void; onGoVault: () => void; onGoBilling: () => void;
+  onPurchased: () => void;
 }) {
   const q = useStorageQuota();
+  const liveSku = useLiveStudioSku();
   const hasPaidVault = rows.length > 0;
   const hasTesting = q.testingModeEnabled && q.testingOverrideGb > 0;
   const hasUsable = hasPaidVault || hasTesting;

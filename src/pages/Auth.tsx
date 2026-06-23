@@ -178,6 +178,10 @@ export default function Auth() {
                 </p>
               </header>
 
+              {search.get("in_app_error") === "1" && (
+                <OpenInBrowserNotice prominent />
+              )}
+
               <div className="mb-6 grid grid-cols-2 gap-1 p-1 rounded-xl bg-input/30 border border-border/50">
                 <TabButton active={view === "login"} onClick={() => setView("login")}>Log in</TabButton>
                 <TabButton active={view === "signup"} onClick={() => setView("signup")}>Create account</TabButton>

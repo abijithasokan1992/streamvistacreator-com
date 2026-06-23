@@ -302,7 +302,7 @@ export default function RazorpayCredentials() {
           <ul className="space-y-1.5">
             <li className="flex items-start gap-2">
               <span className="mt-0.5 inline-flex w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-              <span>Canonical app + payment website (used by the app): <span className="font-mono text-foreground">https://www.streamvistacreator.com</span></span>
+              <span>Canonical app + payment website (used by the app): <span className="font-mono text-foreground">https://streamvistacreator.com</span></span>
             </li>
             <li className="flex items-start gap-2">
               <span className="mt-0.5 inline-flex w-1.5 h-1.5 rounded-full bg-foreground/40 shrink-0" />

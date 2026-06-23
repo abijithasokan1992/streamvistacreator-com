@@ -25,6 +25,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import IngestAlertsManager from "@/components/studio/ingest/IngestAlertsManager";
 
 type JobAgg = {
   id: string;
@@ -291,6 +292,13 @@ export default function IngestDiagnosticsPanel({ workspaceId }: { workspaceId: s
               </ul>
             )}
           </section>
+
+          {/* 4. Alert rules — configurable email / WhatsApp notifications */}
+          <section className="pt-1">
+            <IngestAlertsManager workspaceId={workspaceId} />
+          </section>
+
+
 
           <div className="flex items-center justify-between pt-2 border-t border-border/20">
             <p className="text-[10px] text-muted-foreground/70 tracking-wide">

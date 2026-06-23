@@ -42,6 +42,11 @@ const ROLES: { value: Role; label: string; icon: React.ReactNode; inviteOnly?: b
 // studio_*, moderator, user, client, creator) are intentionally NOT in this list.
 // They remain in the DB enum and continue to work for any account already holding
 // them, but they cannot be granted from this MVP admin UI.
+type ProfileRow = { user_id: string; display_name: string | null };
+type RoleRow    = { user_id: string; role: Role };
+type AssignRow  = { id: string; ep_user_id: string; creator_user_id: string; created_at: string };
+type DivisionRow = { id: string; user_id: string; division: Division };
+
 
 type Division = "ops" | "finance" | "dev" | "marketing";
 const DIVISIONS: { value: Division; label: string; icon: React.ReactNode }[] = [

@@ -150,11 +150,17 @@ export default function IngestAlertsManager({ workspaceId }: { workspaceId: stri
     if (editing.channels.length === 0) { toast.error("Pick at least one notification channel"); return; }
     const emails = editing.recipients.emails ?? [];
     const phones = editing.recipients.phones ?? [];
+    const webhooks = (editing.recipients.webhooks ?? []).filter(
+      (w) => w.url && /^https?:\/\//i.test(w.url),
+    );
     if (editing.channels.includes("email") && emails.length === 0) {
       toast.error("Add at least one email recipient"); return;
     }
     if (editing.channels.includes("whatsapp") && phones.length === 0) {
       toast.error("Add at least one WhatsApp number"); return;
+    }
+    if (editing.channels.includes("webhook") && webhooks.length === 0) {
+      toast.error("Add at least one webhook URL (https://…)"); return;
     }
 
     const payload = {
@@ -165,7 +171,7 @@ export default function IngestAlertsManager({ workspaceId }: { workspaceId: stri
       enabled: editing.enabled,
       threshold: editing.threshold,
       channels: editing.channels,
-      recipients: { emails, phones },
+      recipients: { emails, phones, webhooks },
       cooldown_minutes: Math.max(5, Math.min(1440, Number(editing.cooldown_minutes) || 30)),
     };
 

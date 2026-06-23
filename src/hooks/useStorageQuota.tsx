@@ -35,6 +35,9 @@ type Quota = {
   includedGb: number;
   paidGb: number;
   bonusGb: number;
+  testingOverrideGb: number;
+  testingModeEnabled: boolean;
+  testingRoleKey: string;
   addonBlocks: number;
   percent: number;
   warning: boolean;
@@ -55,7 +58,9 @@ export function useStorageQuota(): Quota {
     return {
       loading: false, isBasic: true, isCreator: false, planCode: "creator_basic",
       usedMb: 0, limitMb: FREE_LIMIT_MB,
-      totalGb: FREE_STORAGE_GB, includedGb: FREE_STORAGE_GB, paidGb: 0, bonusGb: 0, addonBlocks: 0,
+      totalGb: FREE_STORAGE_GB, includedGb: FREE_STORAGE_GB, paidGb: 0, bonusGb: 0,
+      testingOverrideGb: 0, testingModeEnabled: false, testingRoleKey: "creator",
+      addonBlocks: 0,
       percent: 0, warning: false, urgent: false, locked: false,
       checkOrPaywall: () => true, openPaywall: () => {}, refresh: async () => {},
     };
@@ -84,7 +89,10 @@ export function StorageQuotaProvider({ children }: { children: React.ReactNode }
   const includedGb = Number(ent?.included_storage_gb ?? FREE_STORAGE_GB);
   const paidGb = Number(ent?.paid_storage_gb ?? 0);
   const bonusGb = Number(ent?.admin_bonus_storage_gb ?? 0);
-  const totalGb = Number(ent?.total_storage_gb ?? includedGb + paidGb + bonusGb);
+  const testingOverrideGb = Number(ent?.testing_override_gb ?? 0);
+  const testingModeEnabled = Boolean(ent?.testing_mode_enabled ?? false);
+  const testingRoleKey = String(ent?.testing_role_key ?? "creator");
+  const totalGb = Number(ent?.total_storage_gb ?? includedGb + paidGb + bonusGb + testingOverrideGb);
   const addonBlocks = Number(ent?.storage_addon_blocks ?? 0);
   const usedBytes = Number(ent?.used_bytes ?? 0);
   const usedMb = Math.round(usedBytes / (1024 * 1024));
@@ -96,7 +104,7 @@ export function StorageQuotaProvider({ children }: { children: React.ReactNode }
   const warning = percent >= warnPct && percent < urgentPct;
   const urgent = percent >= urgentPct && percent < hardPct;
   const locked = percent >= hardPct;
-  const isBasic = planCode === "creator_basic" && paidGb <= 0;
+  const isBasic = planCode === "creator_basic" && paidGb <= 0 && testingOverrideGb <= 0;
   const isCreator = !isBasic;
 
   const openPaywall = useCallback(() => setOpen(true), []);

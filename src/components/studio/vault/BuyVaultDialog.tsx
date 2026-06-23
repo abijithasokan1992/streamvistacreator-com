@@ -450,6 +450,18 @@ export default function BuyVaultDialog({ product, open, onOpenChange, onPurchase
             </div>
           )}
 
+          {debug.topupId && step !== "idle" && step !== "verified_success" && (
+            <a
+              href={`/billing/status/${debug.topupId}?label=${encodeURIComponent(`${product.name} · ${effectiveTb} TB`)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs text-accent hover:underline"
+            >
+              <Loader2 className="w-3 h-3 animate-spin" />
+              Open live order status page →
+            </a>
+          )}
+
           {(debug.orderId || debug.paymentId || debug.lastError) && step !== "idle" && (
             <details className="text-xs bg-muted/30 rounded p-2 font-mono space-y-1 border">
               <summary className="cursor-pointer font-semibold text-foreground">Debug</summary>

@@ -112,8 +112,9 @@ export default function RolesManager() {
   // EP ↔ Creator assignment
   const [epPick, setEpPick] = useState<string>("");
   const [crPick, setCrPick] = useState<string>("");
-  const eps      = profiles.filter((p) => rolesByUser(p.user_id).includes("executive_producer"));
-  const creators = profiles.filter((p) => rolesByUser(p.user_id).includes("creator"));
+  const eps      = profiles.filter((p) => (rolesByUser(p.user_id) as string[]).includes("executive_producer"));
+  const creators = profiles.filter((p) => (rolesByUser(p.user_id) as string[]).includes("creator"));
+
   const linkPair = async () => {
     if (!guard()) return;
     if (!epPick || !crPick) return toast.error("Pick both an EP and a Creator");

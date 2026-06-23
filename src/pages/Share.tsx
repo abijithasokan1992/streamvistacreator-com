@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Download, Lock, Shield, Loader2, Eye, Clock, Hash, Play, FileText, Film,
 } from "lucide-react";
+import { Seo } from "@/components/Seo";
 
 type Info = {
   filename: string;

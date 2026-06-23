@@ -9,7 +9,6 @@ import { useAuth, dashboardForRole } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { getAppOrigin } from "@/lib/site";
 import { Seo } from "@/components/Seo";
-import { useInAppBrowser } from "@/hooks/useInAppBrowser";
 
 /**
  * Passwordless magic-link auth.

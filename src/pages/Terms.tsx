@@ -53,6 +53,41 @@ export default function Terms() {
         and removal of stored assets.
       </LegalSection>
 
+      <LegalSection title="5A. Payment Processing & Merchant of Record">
+        Card-based orders and subscriptions on StreamVista Cloud X are processed by{" "}
+        <strong className="text-foreground">Paddle.com Market Ltd ("Paddle")</strong>, which acts
+        as our authorised reseller and{" "}
+        <strong className="text-foreground">Merchant of Record (MoR)</strong>. This means Paddle is
+        the seller of record for those transactions, handles payment processing, calculates and
+        remits applicable sales tax / VAT / GST, and provides billing-related customer support
+        and refund handling on our behalf. Paddle's name (alongside ours) may appear on your bank
+        or card statement. By completing a card purchase you also agree to Paddle's{" "}
+        <a
+          className="text-accent hover:underline"
+          href="https://www.paddle.com/legal/checkout-buyer-terms"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Checkout / Buyer Terms
+        </a>
+        . For billing, invoice or refund queries you may contact Paddle directly via{" "}
+        <a
+          className="text-accent hover:underline"
+          href="https://www.paddle.net"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          paddle.net
+        </a>
+        ; for product-related support please contact us at{" "}
+        <a className="text-accent hover:underline" href="mailto:support@streamvistacreator.com">
+          support@streamvistacreator.com
+        </a>
+        . Certain INR domestic flows may continue to be processed by Razorpay, in which case the
+        Razorpay payment terms apply to that transaction.
+      </LegalSection>
+
+
       <LegalSection title="6. Disclaimer & Limitation of Liability">
         The Service is provided on an "as-is" and "as-available" basis. To the maximum extent
         permitted by law, StreamVista OPC Pvt Ltd shall not be liable for any indirect, incidental,

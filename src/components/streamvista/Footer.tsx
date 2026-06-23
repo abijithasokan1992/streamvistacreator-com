@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Lock, Cloud, ShieldCheck, type LucideIcon } from "lucide-react";
 
 const LEGAL_LINKS = [
+  { to: "/pricing", label: "Pricing" },
   { to: "/terms", label: "Terms" },
   { to: "/privacy", label: "Privacy" },
   { to: "/ip-copyright", label: "IP & DMCA" },

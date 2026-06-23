@@ -32,6 +32,7 @@ import About from "./pages/About.tsx";
 import LaunchingSpecialPlan from "./pages/LaunchingSpecialPlan.tsx";
 import CheckoutReturn from "./pages/CheckoutReturn.tsx";
 import CheckoutStorage from "./pages/CheckoutStorage.tsx";
+import PricingPage from "./pages/Pricing.tsx";
 import OrderStatus from "./pages/OrderStatus.tsx";
 import Vault from "./pages/Vault.tsx";
 import Studio from "./pages/Studio.tsx";

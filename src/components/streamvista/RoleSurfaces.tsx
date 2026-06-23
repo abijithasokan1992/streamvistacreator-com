@@ -65,7 +65,7 @@ const SURFACES: Surface[] = [
   {
     key: "buyer",
     tag: "For acquisitions, OTT & distributors",
-    title: "Buyer",
+    title: "Licensing",
     icon: Briefcase,
     pitch:
       "Request screeners, rights information and acquisition conversations — securely, with status you can track.",
@@ -76,7 +76,7 @@ const SURFACES: Surface[] = [
       "No subscription — pay nothing to open a conversation",
     ],
     model: "Request access · NDA-gated · no subscription plan",
-    primary: { label: "Join as Buyer", to: "/auth?intent=signup&role=buyer" },
+    primary: { label: "Open Licensing portal", to: "/auth?intent=signup&role=buyer" },
     secondary: { label: "Contact our team", to: "/contact" },
   },
 ];

@@ -69,10 +69,18 @@ export default function MyVaultSummary() {
     <div className="rounded-2xl border border-border/50 bg-secondary/10 p-6">
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h2 className="font-display text-xl">My Vault</h2>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h2 className="font-display text-xl">My Vault</h2>
+            <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 bg-emerald-400/10 border border-emerald-400/30 px-1.5 py-0.5 rounded">
+              Paid storage
+            </span>
+          </div>
           <p className="text-sm text-muted-foreground">
             {(totalAllocGb / 1024).toFixed(1)} TB allocated · {(totalUsedGb / 1024).toFixed(2)} TB used ·{" "}
             {((totalAllocGb - totalUsedGb) / 1024).toFixed(1)} TB available
+          </p>
+          <p className="text-[10px] text-muted-foreground mt-1">
+            Shows purchased vault allocations only. Any testing allowance appears separately on the Home tab total.
           </p>
         </div>
       </div>

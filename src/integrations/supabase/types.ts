@@ -406,6 +406,87 @@ export type Database = {
           },
         ]
       }
+      archive_jobs: {
+        Row: {
+          asset_id: string | null
+          checksum_algo: string
+          checksum_value: string | null
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          metadata: Json
+          progress_percent: number
+          requested_by: string
+          source_tier: string
+          started_at: string | null
+          status: string
+          target_location: string | null
+          target_tier: string
+          total_bytes: number
+          transferred_bytes: number
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          asset_id?: string | null
+          checksum_algo?: string
+          checksum_value?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json
+          progress_percent?: number
+          requested_by: string
+          source_tier?: string
+          started_at?: string | null
+          status?: string
+          target_location?: string | null
+          target_tier?: string
+          total_bytes?: number
+          transferred_bytes?: number
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          asset_id?: string | null
+          checksum_algo?: string
+          checksum_value?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json
+          progress_percent?: number
+          requested_by?: string
+          source_tier?: string
+          started_at?: string | null
+          status?: string
+          target_location?: string | null
+          target_tier?: string
+          total_bytes?: number
+          transferred_bytes?: number
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "archive_jobs_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "studio_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "archive_jobs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       asset_metadata: {
         Row: {
           asset_id: string | null
@@ -4388,6 +4469,88 @@ export type Database = {
         }
         Relationships: []
       }
+      restore_jobs: {
+        Row: {
+          archive_job_id: string | null
+          asset_id: string | null
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          eta_seconds: number | null
+          id: string
+          metadata: Json
+          progress_percent: number
+          requested_by: string
+          started_at: string | null
+          status: string
+          target_tier: string
+          total_bytes: number
+          transferred_bytes: number
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          archive_job_id?: string | null
+          asset_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          eta_seconds?: number | null
+          id?: string
+          metadata?: Json
+          progress_percent?: number
+          requested_by: string
+          started_at?: string | null
+          status?: string
+          target_tier?: string
+          total_bytes?: number
+          transferred_bytes?: number
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          archive_job_id?: string | null
+          asset_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          eta_seconds?: number | null
+          id?: string
+          metadata?: Json
+          progress_percent?: number
+          requested_by?: string
+          started_at?: string | null
+          status?: string
+          target_tier?: string
+          total_bytes?: number
+          transferred_bytes?: number
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restore_jobs_archive_job_id_fkey"
+            columns: ["archive_job_id"]
+            isOneToOne: false
+            referencedRelation: "archive_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restore_jobs_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "studio_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restore_jobs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       revenue_transactions: {
         Row: {
           amount: number | null
@@ -5148,6 +5311,145 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      studio_asset_files: {
+        Row: {
+          asset_id: string
+          created_at: string
+          id: string
+          role: string
+          sort_order: number
+          upload_id: string
+        }
+        Insert: {
+          asset_id: string
+          created_at?: string
+          id?: string
+          role?: string
+          sort_order?: number
+          upload_id: string
+        }
+        Update: {
+          asset_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+          sort_order?: number
+          upload_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_asset_files_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "studio_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_asset_files_upload_id_fkey"
+            columns: ["upload_id"]
+            isOneToOne: false
+            referencedRelation: "recent_uploads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      studio_assets: {
+        Row: {
+          asset_type: string
+          camera_make: string | null
+          camera_model: string | null
+          codec: string | null
+          created_at: string
+          file_count: number
+          fps: number | null
+          id: string
+          metadata: Json
+          notes: string | null
+          owner_id: string
+          primary_upload_id: string | null
+          project_id: string | null
+          resolution: string | null
+          shoot_date: string | null
+          sidecar_kinds: string[]
+          status: string
+          tags: string[]
+          title: string
+          total_size_bytes: number
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          asset_type?: string
+          camera_make?: string | null
+          camera_model?: string | null
+          codec?: string | null
+          created_at?: string
+          file_count?: number
+          fps?: number | null
+          id?: string
+          metadata?: Json
+          notes?: string | null
+          owner_id: string
+          primary_upload_id?: string | null
+          project_id?: string | null
+          resolution?: string | null
+          shoot_date?: string | null
+          sidecar_kinds?: string[]
+          status?: string
+          tags?: string[]
+          title: string
+          total_size_bytes?: number
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          asset_type?: string
+          camera_make?: string | null
+          camera_model?: string | null
+          codec?: string | null
+          created_at?: string
+          file_count?: number
+          fps?: number | null
+          id?: string
+          metadata?: Json
+          notes?: string | null
+          owner_id?: string
+          primary_upload_id?: string | null
+          project_id?: string | null
+          resolution?: string | null
+          shoot_date?: string | null
+          sidecar_kinds?: string[]
+          status?: string
+          tags?: string[]
+          title?: string
+          total_size_bytes?: number
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_assets_primary_upload_id_fkey"
+            columns: ["primary_upload_id"]
+            isOneToOne: false
+            referencedRelation: "recent_uploads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_assets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_assets_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]

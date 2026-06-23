@@ -44,7 +44,7 @@ const NotFound = () => {
         <p className="text-sm md:text-base text-muted-foreground max-w-md mb-2 animate-fade-in">
           The link you followed may be broken, expired, or never made it past the editor's bin.
         </p>
-        <code className="text-[11px] font-mono-tech text-muted-foreground/60 mb-10 break-all max-w-md">
+        <code className="text-[11px] font-mono-tech text-muted-foreground mb-10 break-all max-w-md">
           {location.pathname}
         </code>
 
@@ -63,7 +63,7 @@ const NotFound = () => {
           </Link>
         </div>
 
-        <p className="mt-12 text-[10px] font-mono-tech uppercase tracking-[0.3em] text-muted-foreground/60">
+        <p className="mt-12 text-[10px] font-mono-tech uppercase tracking-[0.3em] text-muted-foreground">
           © {new Date().getFullYear()} StreamVista OPC Pvt Ltd · Operated by Crayons Pictures
         </p>
       </main>

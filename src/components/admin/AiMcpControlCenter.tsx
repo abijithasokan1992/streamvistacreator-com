@@ -61,16 +61,32 @@ export default function AiMcpControlCenter() {
     if (!error && data) setAudit(data as AuditRow[]);
   }, []);
 
+  // Guard against duplicate realtime subscriptions across rerenders / StrictMode
+  // double-invokes. We keep both a ref to the active channel and a module-style
+  // id so we can detect and log any accidental second subscription attempt.
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const subIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     loadPerms();
     loadAudit();
-    // Unique channel name per mount avoids "add callbacks after subscribe()"
-    // when the supabase client dedupes channels by topic across StrictMode
-    // double-invokes or remounts.
-    const topic = `mcp-audit-live-${Math.random().toString(36).slice(2, 10)}`;
-    let ch: ReturnType<typeof supabase.channel> | null = null;
+
+    if (channelRef.current) {
+      console.warn(
+        "[mcp-audit-live] duplicate subscription prevented; existing id=",
+        subIdRef.current
+      );
+      return;
+    }
+
+    const id = `mcp-audit-live-${Date.now().toString(36)}-${Math.random()
+      .toString(36)
+      .slice(2, 8)}`;
+    subIdRef.current = id;
+
     try {
-      const channel = supabase.channel(topic);
+      const channel = supabase.channel(id);
+      // Attach ALL callbacks BEFORE .subscribe()
       channel.on(
         "postgres_changes" as never,
         { event: "INSERT", schema: "public", table: "mcp_audit_log" },
@@ -79,16 +95,24 @@ export default function AiMcpControlCenter() {
       );
       channel.subscribe((status) => {
         if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-          console.warn("[mcp-audit-live] realtime status:", status);
+          console.warn(`[mcp-audit-live:${id}] realtime status:`, status);
         }
       });
-      ch = channel;
+      channelRef.current = channel;
     } catch (err) {
       console.warn("[mcp-audit-live] realtime setup failed (non-fatal):", err);
     }
+
     return () => {
+      const ch = channelRef.current;
+      channelRef.current = null;
+      subIdRef.current = null;
       if (ch) {
-        try { supabase.removeChannel(ch); } catch (e) { console.warn("[mcp-audit-live] cleanup failed:", e); }
+        try {
+          supabase.removeChannel(ch);
+        } catch (e) {
+          console.warn("[mcp-audit-live] cleanup failed:", e);
+        }
       }
     };
   }, [loadPerms, loadAudit]);

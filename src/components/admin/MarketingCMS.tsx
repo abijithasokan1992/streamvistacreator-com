@@ -17,7 +17,7 @@ const TABLES = {
 type Kind = keyof typeof TABLES;
 
 const BLANK: Record<Kind, AnyRow> = {
-  reel: { id: "", title: "", subtitle: "", poster_url: "", backdrop_url: "", image_url: "", cta_label: "", cta_url: "", sort_order: 0, is_active: true, is_featured: false, status: "draft", starts_at: null, ends_at: null },
+  reel: { id: "", title: "", subtitle: "", poster_url: "", backdrop_url: "", image_url: "", cta_label: "", cta_url: "", sort_order: 0, is_active: true, is_featured: false, status: "published", starts_at: null, ends_at: null },
   hero: { id: "", headline: "", subheadline: "", image_url: "", cta_label: "", cta_url: "", sort_order: 0, is_active: true, status: "draft", starts_at: null, ends_at: null },
   ad:   { id: "", slot: "top", title: "", image_url: "", link_url: "", sort_order: 0, is_active: true, status: "draft", starts_at: null, ends_at: null },
   film: { id: "", title: "", blurb: "", poster_url: "", link_url: "", sort_order: 0, is_active: true, status: "draft", starts_at: null, ends_at: null },
@@ -323,6 +323,11 @@ function RowCard({ kind, row, onChange, onSave, onDelete, onUpload, onSetStatus,
         <Field label="Starts at"><input type="datetime-local" className={cls} value={toLocal(row.starts_at)} onChange={e => onChange({ starts_at: fromLocal(e.target.value) })} /></Field>
         <Field label="Ends at"><input type="datetime-local" className={cls} value={toLocal(row.ends_at)} onChange={e => onChange({ ends_at: fromLocal(e.target.value) })} /></Field>
       </div>
+      {kind === "reel" && !isPublished && (
+        <p className="text-[11px] text-amber-500/90 bg-amber-500/10 border border-amber-500/30 rounded-md px-3 py-2">
+          This carousel item is a <strong>draft</strong> and won't appear on the public homepage. Click <strong>Publish</strong> after saving to make it live.
+        </p>
+      )}
       <div className="flex justify-end gap-2 pt-1">
         <button onClick={onDelete} className="h-9 px-3 rounded-md border border-border text-xs flex items-center gap-1.5 hover:bg-destructive/10 hover:text-destructive">
           <Trash2 className="w-3.5 h-3.5" /> Delete

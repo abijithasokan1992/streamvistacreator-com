@@ -43,7 +43,11 @@ type Rule = {
   enabled: boolean;
   threshold: Record<string, number>;
   channels: string[];
-  recipients: { emails?: string[]; phones?: string[] };
+  recipients: {
+    emails?: string[];
+    phones?: string[];
+    webhooks?: Array<{ url: string; secret?: string }>;
+  };
   cooldown_minutes: number;
   last_fired_at: string | null;
   last_evaluated_at: string | null;

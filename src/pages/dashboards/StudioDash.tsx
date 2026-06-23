@@ -280,7 +280,7 @@ function BuyStorage({ onPurchased }: { onPurchased: () => void }) {
 /* ============================================================
  * 3) VAULT WORKSPACE — real working actions
  * ============================================================ */
-function VaultWorkspace({ rows, loading, onGoBuy }: { rows: AllocRow[]; loading: boolean; onGoBuy: () => void; }) {
+function VaultWorkspace({ rows, loading, onGoBuy, onGoIngest }: { rows: AllocRow[]; loading: boolean; onGoBuy: () => void; onGoIngest: () => void; }) {
   const q = useStorageQuota();
   const hasPaid = rows.length > 0;
   const hasTesting = q.testingModeEnabled && q.testingOverrideGb > 0;
@@ -307,25 +307,34 @@ function VaultWorkspace({ rows, loading, onGoBuy }: { rows: AllocRow[]; loading:
     );
   }
 
+  // Tiles route serious ingest flows into the unified Studio Ingest tab so
+  // Camera-to-Cloud, Archive Snapshot and Hard-disk Import all share one
+  // queue, one folder-structure model, and one upload meter.
+  const tiles: Array<{ label: string; desc: string; icon: JSX.Element; onClick?: () => void; to?: string }> = [
+    { label: "Upload to Vault", desc: "Browser upload now", to: "/vault", icon: <ArrowUpRight className="w-4 h-4" /> },
+    { label: "Camera-to-Cloud", desc: "Live ingest from set", onClick: onGoIngest, icon: <Cloud className="w-4 h-4" /> },
+    { label: "Archive Intake", desc: "Master / archive bundle", onClick: onGoIngest, icon: <Snowflake className="w-4 h-4" /> },
+  ];
+
   return (
     <div className="space-y-6">
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          { label: "Upload to Vault", desc: "Browser upload now", to: "/vault", icon: <ArrowUpRight className="w-4 h-4" /> },
-          { label: "Camera-to-Cloud", desc: "Live ingest from set", to: "/studio", icon: <Cloud className="w-4 h-4" /> },
-          { label: "Archive Snapshot", desc: "Create archive copy", to: "/master-archive", icon: <Snowflake className="w-4 h-4" /> },
-        ].map((a) => (
-          <Link
-            key={a.label}
-            to={a.to}
-            className="rounded-xl border border-border/40 bg-secondary/10 hover:bg-secondary/20 transition-colors p-4 flex flex-col gap-1.5"
-          >
-            <span className="flex items-center gap-2 text-accent">{a.icon}<span className="font-medium text-foreground">{a.label}</span></span>
-            <span className="text-xs text-muted-foreground">{a.desc}</span>
-          </Link>
-        ))}
+        {tiles.map((a) => {
+          const inner = (
+            <>
+              <span className="flex items-center gap-2 text-accent">{a.icon}<span className="font-medium text-foreground">{a.label}</span></span>
+              <span className="text-xs text-muted-foreground">{a.desc}</span>
+            </>
+          );
+          return a.to ? (
+            <Link key={a.label} to={a.to} className="rounded-xl border border-border/40 bg-secondary/10 hover:bg-secondary/20 transition-colors p-4 flex flex-col gap-1.5">{inner}</Link>
+          ) : (
+            <button key={a.label} onClick={a.onClick} className="text-left rounded-xl border border-border/40 bg-secondary/10 hover:bg-secondary/20 transition-colors p-4 flex flex-col gap-1.5">{inner}</button>
+          );
+        })}
         <HardDiskIntakeDialog />
       </section>
+
 
       {/* Compact services panel — no clutter */}
       <section className="rounded-xl border border-border/40 bg-secondary/5 p-5">

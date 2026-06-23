@@ -86,7 +86,7 @@ export default function ScreeningRoom() {
           <ShieldAlert className="w-12 h-12 mx-auto text-red-400" />
           <h1 className="text-2xl font-semibold">{copy.title}</h1>
           <p className="text-sm text-white/70">{copy.body}</p>
-          <p className="text-xs text-white/40">Need help? support@streamvistacreator.com</p>
+          <p className="text-xs text-white/70">Need help? support@streamvistacreator.com</p>
         </div>
       </div>
     );
@@ -115,7 +115,7 @@ export default function ScreeningRoom() {
           <Film className="w-5 h-5" />
           <div>
             <div className="text-sm font-semibold">{title.title}</div>
-            <div className="text-xs text-white/50">
+            <div className="text-xs text-white/75">
               {title.language || ""} {title.duration_minutes ? `· ${title.duration_minutes} min` : ""}
             </div>
           </div>
@@ -176,14 +176,14 @@ export default function ScreeningRoom() {
               <div className="md:col-span-2 space-y-2">
                 <h3 className="font-semibold">{title.title}</h3>
                 {title.synopsis && <p className="text-white/70 whitespace-pre-line">{title.synopsis}</p>}
-                {title.genre && <p className="text-xs text-white/50">Genre: {title.genre}</p>}
+                {title.genre && <p className="text-xs text-white/75">Genre: {title.genre}</p>}
               </div>
               <div className="space-y-2 text-xs text-white/60">
                 <div className="flex items-center gap-2"><Clock className="w-3.5 h-3.5" /> Expires {new Date(invite.expires_at).toLocaleDateString()}</div>
                 <div>Invitee: {invite.invite_name || invite.invite_email}</div>
                 {invite.buyer_org_name && <div>Organisation: {invite.buyer_org_name}</div>}
                 {asset?.label && <div>Source: {asset.label}</div>}
-                <div className="pt-2 border-t border-white/10 text-[11px] text-white/40">
+                <div className="pt-2 border-t border-white/10 text-[11px] text-white/70">
                   Activity on this screener is logged for security and commercial follow-up.
                 </div>
               </div>

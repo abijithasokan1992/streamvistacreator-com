@@ -359,11 +359,8 @@ export default function Admin() {
             <AdminReportsConsole />
           </TabsContent>
 
-            <UsersAndCredentials />
-            <PremiumInvitations />
-          </TabsContent>
-
           {/* 4. Storage & Media Operations */}
+
           <TabsContent value="storage" className="space-y-8 mt-0 animate-fade-in">
             <DeptHeader icon={<HardDrive className="w-5 h-5" />} title="Storage & Media Operations" desc="Storage health, failed uploads, vault purchases and OCI admin." />
             <OracleStorageMonitor />

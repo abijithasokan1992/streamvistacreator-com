@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
+import { extractFnError, reportBillingFailure } from "@/lib/payments/billingFailure";
 import ManualInvoicesList from "@/components/billing/ManualInvoicesList";
 import CreatorDistributionOffers from "@/components/creator/CreatorDistributionOffers";
 

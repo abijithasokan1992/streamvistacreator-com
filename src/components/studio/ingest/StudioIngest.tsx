@@ -82,7 +82,7 @@ const MODES: { id: IngestMode; label: string; icon: any; blurb: string }[] = [
   { id: "camera_card",     label: "Camera Card Intake",     icon: Camera,
     blurb: "DIT-friendly card offload — repeatable per project / shoot day, preserves card structure." },
   { id: "watch_folder",    label: "Watch Folder / Near-live", icon: FolderClock,
-    blurb: "Rescan a folder for new media as the shoot continues. Background watch requires the Ingest Agent." },
+    blurb: "Rescan a folder for new media as the shoot continues. Background watch is powered by the Crayons Bridge Ingest Engine." },
   { id: "archive",         label: "Archive Intake",         icon: Snowflake,
     blurb: "Master archive bundles, project backup drives and archive vault hand-offs." },
 ];
@@ -464,6 +464,9 @@ export default function StudioIngest() {
             Bring footage into your studio vault from local drives, camera cards, watch folders or archive
             bundles. Source folder structure is preserved by default — A_CAM / B_CAM / SOUND / day_01 stays intact.
           </p>
+          <p className="text-[10px] text-muted-foreground/60 mt-1.5 tracking-wide">
+            Powered by Crayons Bridge Ingest Engine
+          </p>
         </div>
         <div className="flex items-center gap-2">
           {workspaces.length > 0 && (
@@ -556,7 +559,7 @@ export default function StudioIngest() {
         {mode === "watch_folder" && (
           <p className="text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-md px-3 py-2">
             Browsers can't background-watch a folder. This MVP rescans the folder when you click <strong>Rescan source</strong>.
-            Continuous background watch arrives with the StreamVista Ingest Agent.
+            Continuous background watch arrives with the Crayons Bridge Ingest Engine.
           </p>
         )}
 

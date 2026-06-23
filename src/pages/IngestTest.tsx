@@ -347,6 +347,12 @@ export default function IngestTest() {
 
   return (
     <main className="min-h-screen bg-background py-12 px-4">
+      <Seo
+        title="Ingest Test — Crayons Bridge · StreamVista"
+        description="Internal browser-based ingest test for StreamVista Cloud — upload media files directly via Pre-Authenticated Request to validate the camera-to-cloud pipeline."
+        path="/ingest-test"
+        type="article"
+      />
       <div className="mx-auto max-w-3xl space-y-6">
         <header className="space-y-2 text-center">
           <Badge variant="secondary" className="mx-auto">Internal test route</Badge>

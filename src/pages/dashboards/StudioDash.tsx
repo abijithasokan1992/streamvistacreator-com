@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  ArrowUpRight, Cloud, Database, FolderPlus, HardDrive, Loader2,
-  Settings2, Snowflake, Sparkles, Wrench, Receipt, ShoppingCart, ShieldCheck,
+  ArrowUpRight, Cloud, Database, HardDrive, Loader2,
+  Snowflake, Sparkles, Wrench, Receipt, ShoppingCart, ShieldCheck,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";

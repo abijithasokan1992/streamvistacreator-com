@@ -519,8 +519,8 @@ function MetricCard({ label, value }: { label: string; value: string }) {
 }
 
 function DomainHostingPanel() {
-  const DEFAULT_PRIMARY = "https://www.streamvistacreator.com";
-  const DEFAULT_EXTRA = "https://streamvistacreator.com, https://streamvista-creator.lovable.app";
+  const DEFAULT_PRIMARY = "https://streamvistacreator.com";
+  const DEFAULT_EXTRA = "https://www.streamvistacreator.com, https://streamvista-creator.lovable.app";
   const DEPRECATED = [
     "https://app.crayonspictures.com",
     "https://www.app.crayonspictures.com",

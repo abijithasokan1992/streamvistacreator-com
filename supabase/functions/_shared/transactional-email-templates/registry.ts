@@ -5,6 +5,7 @@ import { template as welcomeAccountCreated } from './welcome-account-created.tsx
 import { template as loginAlert } from './login-alert.tsx'
 import { template as titleStatusUpdate } from './title-status-update.tsx'
 import { template as invoiceReceipt } from './invoice-receipt.tsx'
+import { template as ingestAlert } from './ingest-alert.tsx'
 
 export interface TemplateEntry {
   component: ComponentType<any>

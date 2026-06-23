@@ -15,8 +15,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   BellRing, Plus, Trash2, Mail, MessageCircle, Play, Loader2,
-  AlertTriangle, Zap, Gauge, Power, History,
+  AlertTriangle, Zap, Gauge, Power, History, Webhook,
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";

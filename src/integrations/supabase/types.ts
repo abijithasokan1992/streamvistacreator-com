@@ -2440,6 +2440,66 @@ export type Database = {
         }
         Relationships: []
       }
+      homepage_hero_reel: {
+        Row: {
+          backdrop_url: string | null
+          created_at: string
+          created_by: string | null
+          cta_label: string | null
+          cta_url: string | null
+          ends_at: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          is_featured: boolean
+          poster_url: string | null
+          sort_order: number
+          starts_at: string | null
+          status: string
+          subtitle: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          backdrop_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          cta_label?: string | null
+          cta_url?: string | null
+          ends_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_featured?: boolean
+          poster_url?: string | null
+          sort_order?: number
+          starts_at?: string | null
+          status?: string
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          backdrop_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          cta_label?: string | null
+          cta_url?: string | null
+          ends_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_featured?: boolean
+          poster_url?: string | null
+          sort_order?: number
+          starts_at?: string | null
+          status?: string
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ingest_telemetry: {
         Row: {
           bytes: number | null

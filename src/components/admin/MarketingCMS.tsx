@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback } from "react";
-import { Loader2, Plus, Trash2, Save, Upload, Image as ImageIcon, Newspaper, Film, Megaphone, Sparkles, Globe, FileEdit, EyeOff } from "lucide-react";
+import { Loader2, Plus, Trash2, Save, Upload, Image as ImageIcon, Newspaper, Film, Megaphone, Sparkles, Globe, FileEdit, EyeOff, Clapperboard } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 type AnyRow = Record<string, any> & { id: string };
 
 const TABLES = {
+  reel: "homepage_hero_reel",
   hero: "hero_banners",
   ad: "ad_zones",
   film: "featured_films",
@@ -15,6 +16,7 @@ const TABLES = {
 type Kind = keyof typeof TABLES;
 
 const BLANK: Record<Kind, AnyRow> = {
+  reel: { id: "", title: "", subtitle: "", poster_url: "", backdrop_url: "", image_url: "", cta_label: "", cta_url: "", sort_order: 0, is_active: true, is_featured: false, status: "draft", starts_at: null, ends_at: null },
   hero: { id: "", headline: "", subheadline: "", image_url: "", cta_label: "", cta_url: "", sort_order: 0, is_active: true, status: "draft", starts_at: null, ends_at: null },
   ad:   { id: "", slot: "top", title: "", image_url: "", link_url: "", sort_order: 0, is_active: true, status: "draft", starts_at: null, ends_at: null },
   film: { id: "", title: "", blurb: "", poster_url: "", link_url: "", sort_order: 0, is_active: true, status: "draft", starts_at: null, ends_at: null },
@@ -33,7 +35,8 @@ export default function MarketingCMS() {
           <p className="text-sm text-muted-foreground">Manage hero banners, advertisement zones, featured films and news / events on the public landing.</p>
         </div>
       </div>
-      <Section kind="hero" title="Hero banners (carousel)" icon={<ImageIcon className="w-4 h-4" />} />
+      <Section kind="reel" title="Homepage hero carousel (cinematic title reel)" icon={<Clapperboard className="w-4 h-4" />} />
+      <Section kind="hero" title="Hero banners (legacy editorial)" icon={<ImageIcon className="w-4 h-4" />} />
       <Section kind="ad"   title="Advertisement zones"     icon={<Megaphone className="w-4 h-4" />} />
       <Section kind="film" title="Featured films / projects" icon={<Film className="w-4 h-4" />} />
       <Section kind="news" title="News & events"           icon={<Newspaper className="w-4 h-4" />} />
@@ -150,7 +153,7 @@ function RowCard({ kind, row, onChange, onSave, onDelete, onUpload, onSetStatus,
   onSetStatus: (s: "draft" | "published") => void;
   saving: boolean;
 }) {
-  const imageField = kind === "film" ? "poster_url" : "image_url";
+  const imageField = kind === "film" ? "poster_url" : kind === "reel" ? "poster_url" : "image_url";
   const isPublished = row.status === "published";
   const isNew = row.id.startsWith("new-");
   return (
@@ -166,6 +169,27 @@ function RowCard({ kind, row, onChange, onSave, onDelete, onUpload, onSetStatus,
         )}
       </div>
       <div className="grid md:grid-cols-2 gap-3">
+        {kind === "reel" && (<>
+          <Field label="Title"><input className={cls} value={row.title ?? ""} onChange={e => onChange({ title: e.target.value })} /></Field>
+          <Field label="Subtitle / tagline"><input className={cls} value={row.subtitle ?? ""} onChange={e => onChange({ subtitle: e.target.value })} /></Field>
+          <Field label="CTA label"><input className={cls} value={row.cta_label ?? ""} onChange={e => onChange({ cta_label: e.target.value })} /></Field>
+          <Field label="CTA URL"><input className={cls} value={row.cta_url ?? ""} onChange={e => onChange({ cta_url: e.target.value })} /></Field>
+          <Field label="Backdrop / still (16:9, wide)" full>
+            <div className="flex items-center gap-3">
+              {row.backdrop_url && <img src={row.backdrop_url} alt="" className="h-14 w-24 object-cover rounded-md border border-border/60" />}
+              <label className="h-9 px-3 rounded-md border border-border text-xs inline-flex items-center gap-1.5 cursor-pointer hover:bg-secondary">
+                <Upload className="w-3.5 h-3.5" /> Upload
+                <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) onUpload("backdrop_url", f); }} />
+              </label>
+              <input placeholder="…or paste backdrop URL" className={cls + " flex-1"} value={row.backdrop_url ?? ""} onChange={e => onChange({ backdrop_url: e.target.value })} />
+            </div>
+          </Field>
+          <Field label="Featured (spotlight)">
+            <label className="inline-flex items-center gap-2 text-sm h-10">
+              <input type="checkbox" checked={!!row.is_featured} onChange={e => onChange({ is_featured: e.target.checked })} /> Mark as spotlight
+            </label>
+          </Field>
+        </>)}
         {kind === "hero" && (<>
           <Field label="Headline"><input className={cls} value={row.headline ?? ""} onChange={e => onChange({ headline: e.target.value })} /></Field>
           <Field label="Subheadline"><input className={cls} value={row.subheadline ?? ""} onChange={e => onChange({ subheadline: e.target.value })} /></Field>

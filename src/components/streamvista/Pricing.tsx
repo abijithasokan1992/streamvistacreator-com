@@ -97,11 +97,11 @@ export const Pricing = () => (
               Honest commercial model
             </span>
           </div>
-          <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-5xl md:text-7xl">
+          <h1 className="font-display font-black uppercase leading-[0.9] tracking-tight text-5xl md:text-7xl">
             Plans you talk about.
             <br />
             <span className="gradient-text">Storage you buy yourself.</span>
-          </h2>
+          </h1>
         </div>
         <p className="text-muted-foreground max-w-sm text-sm leading-relaxed">
           StreamVista uses a hybrid model on purpose. Creator and Studio plans are founder-assisted

@@ -1,7 +1,8 @@
-import { useEffect, useState, useCallback } from "react";
-import { Loader2, Plus, Trash2, Save, Upload, Image as ImageIcon, Newspaper, Film, Megaphone, Sparkles, Globe, FileEdit, EyeOff, Clapperboard } from "lucide-react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { Loader2, Plus, Trash2, Save, Upload, Image as ImageIcon, Newspaper, Film, Megaphone, Sparkles, Globe, FileEdit, EyeOff, Clapperboard, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { HeroReelPreview } from "./HeroReelPreview";
 
 type AnyRow = Record<string, any> & { id: string };
 

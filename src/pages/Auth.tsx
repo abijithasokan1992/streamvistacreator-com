@@ -362,15 +362,16 @@ function GoogleMark() {
 
 function OpenInBrowserNotice({ prominent = false }: { prominent?: boolean }) {
   const [copied, setCopied] = useState(false);
-  const url = typeof window !== "undefined" ? window.location.href.split("?")[0] : "";
+  const url = typeof window !== "undefined" ? window.location.href : "";
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
+      toast.success("Link copied — paste it into Safari or Chrome to sign in.");
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // noop
+      toast.error("Could not copy link. Please copy the address bar manually.");
     }
   };
 

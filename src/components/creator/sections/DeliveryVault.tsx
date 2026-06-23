@@ -1,6 +1,7 @@
 import { Database, HardDrive, Archive } from "lucide-react";
 import VaultPlanCards from "@/components/studio/vault/VaultPlanCards";
 import MyVaultSummary from "@/components/studio/vault/MyVaultSummary";
+import Buy1TBCard from "@/components/shared/Buy1TBCard";
 
 /**
  * Creator Delivery Vault

@@ -247,23 +247,57 @@ export class UploadContractError extends Error {
   }
 }
 
-/** Map raw internal errors into safe, user-friendly messages (no OCI internals). */
+/** Map raw internal errors into safe, user-friendly messages.
+ *  Preserves the real server error when it's already user-safe (quota,
+ *  category, MIME, forbidden, OCI status code) — only collapses to a
+ *  generic message when the underlying error is genuinely opaque. */
 export function mapUploadError(raw: unknown): string {
   const msg = raw instanceof Error ? raw.message : String(raw ?? "");
   const m = msg.toLowerCase();
+
+  // Client-side contract mismatch (rare; surfaces as actionable copy).
   if (m.includes("part exceeds") || m.includes("upload_contract_mismatch")) {
-    return "Upload could not start. The platform is validating the best upload method. Please try again or contact support.";
+    return "Upload could not start because of a chunk-size mismatch. Refresh the page and try again — if it persists, contact support.";
   }
-  if (m.includes("exceeds category limit") || m.includes("exceeds ") && m.includes("bytes")) {
-    return "Upload Not Allowed — the selected file exceeds the limit for this category.";
+  // Server-tagged validation rejections — message is already safe to show.
+  if (m.includes("forbidden_file_type") || m.includes("category_mime_mismatch")
+      || m.includes("upload not allowed") || m.includes("blocked for security")) {
+    return msg;
   }
-  if (m.includes("storage quota")) {
-    return "Upload Not Allowed — your storage quota has been reached. Please upgrade your plan.";
+  if (m.includes("exceeds category limit")) return msg;
+  if (m.includes("storage limit reached") || m.includes("storage_quota") || m.includes("storage quota")) {
+    return msg.includes("storage limit reached")
+      ? msg
+      : "Upload blocked — your workspace storage quota has been reached. Add another 1 TB block in Storage & Billing.";
   }
-  if (m.includes("forbidden")) return "You do not have permission to upload to this workspace.";
-  if (m.includes("not signed in") || m.includes("not authenticated")) return "Please sign in again to continue uploading.";
+  if (m.includes("forbidden_workspace") || m.includes("forbidden_title")) {
+    return "You don't have permission to upload to this workspace or title.";
+  }
+  if (m.includes("not signed in") || m.includes("invalid token") || m.includes("unauthenticated")) {
+    return "Please sign in again to continue uploading.";
+  }
   if (m.includes("aborted")) return "Upload was cancelled.";
-  if (m.includes("network") || m.includes("failed to fetch")) return "Network interruption — the upload will resume automatically when reconnected.";
+
+  // OCI-side errors: surface the status code + first chunk of the OCI body so
+  // ops can diagnose. These messages already come pre-formatted from the
+  // signing/PUT layer (e.g. "OCI PUT 401: NotAuthenticated …").
+  if (m.includes("oci put") || m.includes("oci ") || m.includes("notauthenticated") || m.includes("objectstorage")) {
+    return `Storage upload failed — ${msg.slice(0, 240)}`;
+  }
+  if (m.includes("oci did not return etag")) {
+    return "Storage upload failed — part was rejected by object storage. Please retry.";
+  }
+  if (m.includes("upload_not_found") || m.includes("upload session") || m.includes("uploadnotfound")) {
+    return "This upload session expired on the server. It will restart automatically — please wait or retry.";
+  }
+  if (m.includes("network") || m.includes("failed to fetch")) {
+    return "Network interruption — the upload will resume automatically when reconnected.";
+  }
+  if (m.includes("oci-multipart") || m.includes("oci-upload")) {
+    // Edge function returned a non-OCI error string — keep it verbatim.
+    return `Upload failed — ${msg.slice(0, 240)}`;
+  }
+  // Truly opaque — only now do we fall back to the generic copy.
   return "Upload Failed — please try again or contact support.";
 }
 

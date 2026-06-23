@@ -19,6 +19,7 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
+import { validateUploadKind } from "../_shared/uploadValidation.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -315,6 +316,13 @@ Deno.serve(async (req) => {
       if (!workspaceId) return json({ error: "missing workspaceId" }, 400, cors);
       if (!fileSize || fileSize <= 0) return json({ error: "missing fileSize" }, 400, cors);
       if (fileSize > MAX_BYTES) return json({ error: `file exceeds ${MAX_BYTES} bytes` }, 413, cors);
+
+      // Server-side MIME / extension allowlist (defence-in-depth — same
+      // contract as oci-upload so both paths reject identical inputs).
+      {
+        const v = validateUploadKind({ fileName, mimeType: mime, category: categoryRaw });
+        if (v) return json({ error: v.message, code: v.code }, 415, cors);
+      }
 
       const { data: membership } = await admin
         .from("workspace_members").select("role")

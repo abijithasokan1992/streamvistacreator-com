@@ -236,9 +236,9 @@ function BuyStorage({ onPurchased }: { onPurchased: () => void }) {
   return (
     <div className="space-y-4">
       <header>
-        <h2 className="font-display text-2xl">Choose a storage class</h2>
+        <h2 className="font-display text-2xl">1 TB Studio Storage</h2>
         <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-          Buy by the TB. Active for live productions, Library for completed titles and Archive for long-term preservation.
+          Secure recurring vault storage for studio uploads, working media, masters and archive copies. ₹767/month including GST.
         </p>
       </header>
       <VaultPlanCards onPurchased={onPurchased} />

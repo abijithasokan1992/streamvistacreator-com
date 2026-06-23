@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback } from "react";
-import { Loader2, Plus, Trash2, Save, Upload, Image as ImageIcon, Newspaper, Film, Megaphone, Sparkles, Globe, FileEdit, EyeOff } from "lucide-react";
+import { Loader2, Plus, Trash2, Save, Upload, Image as ImageIcon, Newspaper, Film, Megaphone, Sparkles, Globe, FileEdit, EyeOff, Clapperboard } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 type AnyRow = Record<string, any> & { id: string };
 
 const TABLES = {
+  reel: "homepage_hero_reel",
   hero: "hero_banners",
   ad: "ad_zones",
   film: "featured_films",
@@ -15,6 +16,7 @@ const TABLES = {
 type Kind = keyof typeof TABLES;
 
 const BLANK: Record<Kind, AnyRow> = {
+  reel: { id: "", title: "", subtitle: "", poster_url: "", backdrop_url: "", image_url: "", cta_label: "", cta_url: "", sort_order: 0, is_active: true, is_featured: false, status: "draft", starts_at: null, ends_at: null },
   hero: { id: "", headline: "", subheadline: "", image_url: "", cta_label: "", cta_url: "", sort_order: 0, is_active: true, status: "draft", starts_at: null, ends_at: null },
   ad:   { id: "", slot: "top", title: "", image_url: "", link_url: "", sort_order: 0, is_active: true, status: "draft", starts_at: null, ends_at: null },
   film: { id: "", title: "", blurb: "", poster_url: "", link_url: "", sort_order: 0, is_active: true, status: "draft", starts_at: null, ends_at: null },

@@ -188,19 +188,28 @@ export default function UpgradeSection() {
     if (!user) return;
     setStorageBusy(true);
     const t = toast.loading("Opening Razorpay…");
+    let stage: "dialog_launch" | "order_create" | "payment_verify" = "dialog_launch";
     try {
       assertLiveCheckoutHost();
+      stage = "order_create";
       const { data, error } = await supabase.functions.invoke("create-razorpay-subscription", {
         body: { tbCount: 1 },
       });
-      if (error) throw error;
+      if (error) {
+        const msg = await extractFnError(error, "Could not start storage subscription");
+        throw new Error(msg);
+      }
       if ((data as any)?.error) throw new Error((data as any).error);
+      if (!(data as any)?.subscriptionId) {
+        throw new Error("Creator storage add-on is not available right now.");
+      }
 
-      await new Promise<void>((resolve) => {
+      await new Promise<void>((resolve, reject) => {
         if ((window as any).Razorpay) return resolve();
         const s = document.createElement("script");
         s.src = "https://checkout.razorpay.com/v1/checkout.js";
         s.onload = () => resolve();
+        s.onerror = () => reject(new Error("Failed to load Razorpay checkout"));
         document.body.appendChild(s);
       });
 
@@ -217,10 +226,34 @@ export default function UpgradeSection() {
           setTimeout(() => loadAll(), 1500);
         },
       });
+      rzp.on?.("payment.failed", (resp: any) => {
+        const msg = resp?.error?.description ?? resp?.error?.reason ?? "Payment failed at gateway";
+        toast.error(msg);
+        reportBillingFailure({
+          userId: user.id,
+          userEmail: user.email,
+          dashboard: "creator",
+          surface: "creator_storage_addon_cta",
+          intent: "Creator Storage Add-on · 1 TB",
+          stage: "payment_verify",
+          error: new Error(msg),
+          extra: { razorpay_subscription_id: (data as any).subscriptionId },
+        });
+      });
       toast.dismiss(t);
       rzp.open();
     } catch (e: any) {
-      toast.error(e?.message || "Could not start subscription", { id: t });
+      const msg = e?.message || "Could not start subscription";
+      toast.error(msg, { id: t });
+      reportBillingFailure({
+        userId: user.id,
+        userEmail: user.email,
+        dashboard: "creator",
+        surface: "creator_storage_addon_cta",
+        intent: "Creator Storage Add-on · 1 TB",
+        stage,
+        error: e,
+      });
     } finally {
       setStorageBusy(false);
     }

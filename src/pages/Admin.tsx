@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { Loader2, LogOut, ShieldCheck, Crown, RefreshCw, Mail, Phone, Tag, History, Copy, Check, Briefcase, Wallet, Code2, Megaphone, Inbox, Users as UsersIcon, LayoutDashboard, Film, HardDrive, ShieldAlert, Wrench, Package, LifeBuoy, Settings as SettingsIcon, ArrowRight } from "lucide-react";
+import { Loader2, LogOut, ShieldCheck, Crown, RefreshCw, Mail, Phone, Tag, History, Copy, Check, Briefcase, Wallet, Code2, Megaphone, Inbox, Users as UsersIcon, LayoutDashboard, Film, HardDrive, ShieldAlert, Wrench, Package, LifeBuoy, Settings as SettingsIcon, ArrowRight, UserCog, BarChart3 } from "lucide-react";
+import AdminTeamManager from "@/components/admin/AdminTeamManager";
+import AdminFinanceConsole from "@/components/admin/AdminFinanceConsole";
+import AdminReportsConsole from "@/components/admin/AdminReportsConsole";
+
 import PlatformOwnerConsole from "@/components/admin/PlatformOwnerConsole";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import PlatformOverview from "@/components/admin/PlatformOverview";
@@ -77,13 +81,17 @@ function pathToTab(path: string, search: URLSearchParams, isSuperAdmin: boolean)
   const p = path.toLowerCase();
   if (p.startsWith("/admin/super")) return "overview";
   if (p.startsWith("/admin/content") || p.startsWith("/admin/legal") || p.startsWith("/admin/qc")) return "content";
+  if (p.startsWith("/admin/team")) return "team";
+  if (p.startsWith("/admin/finance")) return "finance";
+  if (p.startsWith("/admin/reports")) return "reports";
   if (p.startsWith("/admin/users")) return "users";
   if (p.startsWith("/admin/storage")) return "storage";
-  if (p.startsWith("/admin/business") || p.startsWith("/admin/billing") || p.startsWith("/admin/finance")) return "business";
+  if (p.startsWith("/admin/business") || p.startsWith("/admin/billing")) return "business";
   if (p.startsWith("/admin/support")) return "support";
   if (p.startsWith("/admin/settings") || p.startsWith("/admin/ops") || p.startsWith("/admin/security") || p.startsWith("/admin/audit") || p.startsWith("/admin/rights") || p.startsWith("/admin/dev") || p.startsWith("/admin/products") || p.startsWith("/admin/plans")) return "settings";
   return "overview";
 }
+
 
 export default function Admin() {
   const { user, isAdmin, isSuperAdmin, loading, signOut } = useAuth();
@@ -298,15 +306,19 @@ export default function Admin() {
           defaultValue={pathToTab(location.pathname, searchParams, isSuperAdmin)}
           className="w-full"
         >
-          <TabsList className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 sm:gap-2 h-auto p-1 sm:p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-6 sm:mb-8">
+          <TabsList className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-1.5 sm:gap-2 h-auto p-1 sm:p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-6 sm:mb-8">
             <DeptTab value="overview" icon={<LayoutDashboard className="w-4 h-4" />} label="Home" />
             <DeptTab value="content" icon={<Film className="w-4 h-4" />} label="Content Review" />
             <DeptTab value="users" icon={<UsersIcon className="w-4 h-4" />} label="Users" />
+            <DeptTab value="team" icon={<UserCog className="w-4 h-4" />} label="Admin Team" />
+            <DeptTab value="finance" icon={<Wallet className="w-4 h-4" />} label="Finance" />
+            <DeptTab value="reports" icon={<BarChart3 className="w-4 h-4" />} label="Reports" />
             <DeptTab value="storage" icon={<HardDrive className="w-4 h-4" />} label="Storage" />
-            <DeptTab value="business" icon={<Wallet className="w-4 h-4" />} label="Business & Revenue" />
-            <DeptTab value="support" icon={<LifeBuoy className="w-4 h-4" />} label="Support Inbox" />
+            <DeptTab value="business" icon={<Briefcase className="w-4 h-4" />} label="Business" />
+            <DeptTab value="support" icon={<LifeBuoy className="w-4 h-4" />} label="Support" />
             <DeptTab value="settings" icon={<SettingsIcon className="w-4 h-4" />} label="Settings" />
           </TabsList>
+
 
           {/* 1. Home / Command Center — compact snapshot + quick nav only */}
           <TabsContent value="overview" className="space-y-8 mt-0 animate-fade-in">
@@ -325,6 +337,28 @@ export default function Admin() {
           <TabsContent value="users" className="space-y-8 mt-0 animate-fade-in">
             <DeptHeader icon={<UsersIcon className="w-5 h-5" />} title="Users & Access" desc="Creators, studios, buyers, admins. Roles, invitations and entitlement drill-in." />
             <RolesManager />
+            <UsersAndCredentials />
+            <PremiumInvitations />
+          </TabsContent>
+
+          {/* 3b. Internal Admin Team (MVP) */}
+          <TabsContent value="team" className="space-y-8 mt-0 animate-fade-in">
+            <DeptHeader icon={<UserCog className="w-5 h-5" />} title="Internal Admin Team" desc="Department, designation and permission bundles for StreamVista staff. Layered on top of admin / super_admin / qc_reviewer / legal_reviewer." />
+            <AdminTeamManager />
+          </TabsContent>
+
+          {/* 3c. Finance Operations (MVP) */}
+          <TabsContent value="finance" className="space-y-8 mt-0 animate-fade-in">
+            <DeptHeader icon={<Wallet className="w-5 h-5" />} title="Finance Operations" desc="Subscriptions, invoices, refunds and payment traces — scoped for finance staff." />
+            <AdminFinanceConsole />
+          </TabsContent>
+
+          {/* 3d. Reports & Audit (MVP) */}
+          <TabsContent value="reports" className="space-y-8 mt-0 animate-fade-in">
+            <DeptHeader icon={<BarChart3 className="w-5 h-5" />} title="Reports & Audit" desc="Finance reports, management summary and admin audit log. Read-only." />
+            <AdminReportsConsole />
+          </TabsContent>
+
             <UsersAndCredentials />
             <PremiumInvitations />
           </TabsContent>

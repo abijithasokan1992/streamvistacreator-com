@@ -252,35 +252,14 @@ SELECT pg_temp.expect_denied('behav.anon.validate_razorpay_live_secrets','anon',
   'SELECT public.validate_razorpay_live_secrets(''x'',''y'')');
 
 -- 2b. anon must be ALLOWED on the public screening viewer surface.
---     We expect the call to succeed (no privilege error). It may return
---     NULL / empty rows for a bogus token — that's fine; we only assert
---     that no permission error is raised.
-DO $$
-DECLARE
-  ok boolean := true;
-  errmsg text;
-BEGIN
-  BEGIN
-    SET LOCAL ROLE anon;
-    PERFORM public.screening_resolve('__test_invalid_token__');
-    PERFORM public.screening_log_event('__test_invalid_token__', 'view', 0);
-    RESET ROLE;
-  EXCEPTION WHEN insufficient_privilege THEN
-    GET STACKED DIAGNOSTICS errmsg = MESSAGE_TEXT;
-    RESET ROLE;
-    ok := false;
-  WHEN OTHERS THEN
-    -- non-privilege errors are acceptable (token not found etc.)
-    RESET ROLE;
-    ok := true;
-  END;
-  PERFORM pg_temp.t_assert('behav.anon.screening_public_surface_allowed', ok,
-    'screening_resolve/log_event must NOT raise insufficient_privilege for anon');
-END $$;
+SELECT pg_temp.expect_allowed('behav.anon.screening_resolve', 'anon',
+  'SELECT public.screening_resolve(''__test_invalid_token__'')');
+SELECT pg_temp.expect_allowed('behav.anon.screening_log_event', 'anon',
+  'SELECT public.screening_log_event(''__test_invalid_token__'', ''view'', 0)');
 
 -- 2c. authenticated (no valid auth.uid()) must still be GATED by the
---     function body for admin RPCs — i.e. raise an authorization error
---     even though EXECUTE is granted.
+--     function body for admin RPCs — proves grants alone don't bypass
+--     in-body authorization checks.
 SELECT pg_temp.expect_denied('behav.authenticated_noctx.admin_grant_storage', 'authenticated',
   'SELECT public.admin_grant_storage(gen_random_uuid(), 10, ''t'')');
 SELECT pg_temp.expect_denied('behav.authenticated_noctx.admin_review_queue', 'authenticated',
@@ -294,62 +273,27 @@ SELECT pg_temp.expect_denied('behav.authenticated_noctx.grant_creator_role', 'au
 SELECT pg_temp.expect_denied('behav.authenticated_noctx.set_initial_role', 'authenticated',
   'SELECT public.set_initial_role(''admin'')');
 
--- 2d. has_role / is_super_admin are pure read helpers — authenticated
---     should be ALLOWED to call them (they just return boolean). We're
---     verifying that EXECUTE works and they don't raise.
-DO $$
-DECLARE ok boolean := true; errmsg text;
-BEGIN
-  BEGIN
-    SET LOCAL ROLE authenticated;
-    PERFORM public.has_role(gen_random_uuid(), 'admin'::app_role);
-    PERFORM public.is_super_admin(gen_random_uuid());
-    PERFORM public.is_workspace_admin(gen_random_uuid(), gen_random_uuid());
-    PERFORM public.is_workspace_member(gen_random_uuid(), gen_random_uuid());
-    RESET ROLE;
-  EXCEPTION WHEN OTHERS THEN
-    GET STACKED DIAGNOSTICS errmsg = MESSAGE_TEXT;
-    RESET ROLE;
-    ok := false;
-  END;
-  PERFORM pg_temp.t_assert('behav.authenticated.role_helpers_callable', ok,
-    COALESCE(errmsg, 'unexpected error'));
-END $$;
+-- 2d. authenticated CAN call pure read role helpers.
+SELECT pg_temp.expect_allowed('behav.authenticated.has_role', 'authenticated',
+  'SELECT public.has_role(gen_random_uuid(), ''admin''::app_role)');
+SELECT pg_temp.expect_allowed('behav.authenticated.is_super_admin', 'authenticated',
+  'SELECT public.is_super_admin(gen_random_uuid())');
+SELECT pg_temp.expect_allowed('behav.authenticated.is_workspace_admin', 'authenticated',
+  'SELECT public.is_workspace_admin(gen_random_uuid(), gen_random_uuid())');
+SELECT pg_temp.expect_allowed('behav.authenticated.is_workspace_member', 'authenticated',
+  'SELECT public.is_workspace_member(gen_random_uuid(), gen_random_uuid())');
 
--- 2e. service_role must be allowed on a representative slice (these are
---     called from edge functions). No-context calls may raise business
---     errors, but never insufficient_privilege.
-DO $$
-DECLARE ok boolean := true; errmsg text; errcode text;
-  fns text[] := ARRAY[
-    'SELECT public.admin_exists()',
-    'SELECT public.admin_review_queue(NULL)',
-    'SELECT public.sweep_manual_invoices_overdue()',
-    'SELECT public.sweep_screening_invites_expired()',
-    'SELECT public.has_role(gen_random_uuid(), ''admin''::app_role)'
-  ];
-  s text;
-BEGIN
-  FOREACH s IN ARRAY fns LOOP
-    BEGIN
-      SET LOCAL ROLE service_role;
-      EXECUTE s;
-      RESET ROLE;
-    EXCEPTION WHEN OTHERS THEN
-      GET STACKED DIAGNOSTICS errmsg = MESSAGE_TEXT, errcode = RETURNED_SQLSTATE;
-      RESET ROLE;
-      IF errcode = '42501' THEN
-        ok := false;
-        PERFORM pg_temp.t_assert(
-          format('behav.service_role.privileged[%s]', s),
-          false, format('insufficient_privilege: %s', errmsg));
-      END IF;
-    END;
-  END LOOP;
-  IF ok THEN
-    PERFORM pg_temp.t_assert('behav.service_role.privileged_slice', true);
-  END IF;
-END $$;
+-- 2e. service_role must never trip 42501 on the calls edge functions make.
+SELECT pg_temp.expect_allowed('behav.service_role.admin_exists', 'service_role',
+  'SELECT public.admin_exists()');
+SELECT pg_temp.expect_allowed('behav.service_role.admin_review_queue', 'service_role',
+  'SELECT public.admin_review_queue(NULL)');
+SELECT pg_temp.expect_allowed('behav.service_role.sweep_manual_invoices_overdue', 'service_role',
+  'SELECT public.sweep_manual_invoices_overdue()');
+SELECT pg_temp.expect_allowed('behav.service_role.sweep_screening_invites_expired', 'service_role',
+  'SELECT public.sweep_screening_invites_expired()');
+SELECT pg_temp.expect_allowed('behav.service_role.has_role', 'service_role',
+  'SELECT public.has_role(gen_random_uuid(), ''admin''::app_role)');
 
 -- ---------------------------------------------------------------------
 -- 3. Report & exit

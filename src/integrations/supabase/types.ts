@@ -202,6 +202,77 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_staff_permissions: {
+        Row: {
+          granted_at: string
+          granted_by: string | null
+          id: string
+          permission: Database["public"]["Enums"]["internal_permission"]
+          user_id: string
+        }
+        Insert: {
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          permission: Database["public"]["Enums"]["internal_permission"]
+          user_id: string
+        }
+        Update: {
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          permission?: Database["public"]["Enums"]["internal_permission"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_staff_permissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_staff_profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      admin_staff_profiles: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          department: Database["public"]["Enums"]["internal_department"]
+          designation: Database["public"]["Enums"]["internal_designation"]
+          email: string
+          full_name: string
+          notes: string | null
+          status: Database["public"]["Enums"]["internal_staff_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          department: Database["public"]["Enums"]["internal_department"]
+          designation: Database["public"]["Enums"]["internal_designation"]
+          email: string
+          full_name: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["internal_staff_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          department?: Database["public"]["Enums"]["internal_department"]
+          designation?: Database["public"]["Enums"]["internal_designation"]
+          email?: string
+          full_name?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["internal_staff_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       advertisements: {
         Row: {
           ad_type: string | null
@@ -7115,6 +7186,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_admin_permission: {
+        Args: {
+          _perm: Database["public"]["Enums"]["internal_permission"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -7403,6 +7481,40 @@ export type Database = {
         | "rejected"
         | "expired"
         | "cancelled"
+      internal_department:
+        | "finance"
+        | "billing"
+        | "audit"
+        | "management"
+        | "operations"
+        | "legal"
+        | "qc"
+        | "engineering"
+      internal_designation:
+        | "auditor"
+        | "accounts_staff"
+        | "billing_staff"
+        | "finance_approver"
+        | "finance_head"
+        | "ca_finance_reviewer"
+        | "management_reviewer"
+        | "ops_lead"
+        | "engineering"
+      internal_permission:
+        | "finance_read"
+        | "finance_admin"
+        | "billing_ops"
+        | "invoice_approval"
+        | "refund_approval"
+        | "manual_invoice_write"
+        | "subscription_read"
+        | "audit_readonly"
+        | "finance_reports"
+        | "management_reports"
+        | "review_ops"
+        | "buyer_request_ops"
+        | "storage_adjustment_ops"
+      internal_staff_status: "invited" | "active" | "suspended"
       legal_agreement_type:
         | "creator_master"
         | "buyer_request_confidentiality"
@@ -7693,6 +7805,43 @@ export const Constants = {
         "expired",
         "cancelled",
       ],
+      internal_department: [
+        "finance",
+        "billing",
+        "audit",
+        "management",
+        "operations",
+        "legal",
+        "qc",
+        "engineering",
+      ],
+      internal_designation: [
+        "auditor",
+        "accounts_staff",
+        "billing_staff",
+        "finance_approver",
+        "finance_head",
+        "ca_finance_reviewer",
+        "management_reviewer",
+        "ops_lead",
+        "engineering",
+      ],
+      internal_permission: [
+        "finance_read",
+        "finance_admin",
+        "billing_ops",
+        "invoice_approval",
+        "refund_approval",
+        "manual_invoice_write",
+        "subscription_read",
+        "audit_readonly",
+        "finance_reports",
+        "management_reports",
+        "review_ops",
+        "buyer_request_ops",
+        "storage_adjustment_ops",
+      ],
+      internal_staff_status: ["invited", "active", "suspended"],
       legal_agreement_type: [
         "creator_master",
         "buyer_request_confidentiality",

@@ -130,7 +130,10 @@ export default function StorageUsageCard() {
   const totalGb = Number(entitlement?.total_storage_gb ?? FREE_STORAGE_GB);
   const paidGb = Number(entitlement?.paid_storage_gb ?? 0);
   const bonusGb = Number(entitlement?.admin_bonus_storage_gb ?? 0);
+  const testingGb = Number(entitlement?.testing_override_gb ?? 0);
+  const testingOn = Boolean(entitlement?.testing_mode_enabled) && testingGb > 0;
   const planCode = String(entitlement?.plan_code ?? "creator_basic");
+  const includedGb = Number(entitlement?.included_storage_gb ?? 0);
   const isCreator = paidGb > 0 || planCode !== "creator_basic";
   const storageQuotaMb = totalGb * MB_PER_GB;
   const storageUsedMb = Number(profile.storage_used_mb || 0);
@@ -178,7 +181,14 @@ export default function StorageUsageCard() {
       {/* Storage meter */}
       <div>
         <div className="flex items-center justify-between text-xs mb-1.5">
-          <span className="text-muted-foreground">Storage</span>
+          <span className="text-muted-foreground inline-flex items-center gap-2">
+            Storage
+            {testingOn && (
+              <span className="text-[10px] font-mono uppercase tracking-wider text-amber-400 bg-amber-400/10 border border-amber-400/30 px-1.5 py-0.5 rounded">
+                Testing +{testingGb} GB
+              </span>
+            )}
+          </span>
           <span className="font-mono">
             <b className="text-foreground">{fmt(storageUsedMb)}</b> / {totalQuotaLabel}
           </span>
@@ -194,6 +204,11 @@ export default function StorageUsageCard() {
             style={{ width: `${storagePct}%` }}
           />
         </div>
+        {testingOn && (
+          <p className="text-[10px] text-muted-foreground mt-1.5">
+            Total = {includedGb} GB plan + {paidGb.toFixed(0)} GB paid{bonusGb > 0 ? ` + ${bonusGb.toFixed(0)} GB grant` : ""} + <span className="text-amber-400">{testingGb} GB testing</span>. Testing allowance is internal QA only and is removed when the platform exits testing mode.
+          </p>
+        )}
         {storageFull && (
           <p className="text-[11px] text-destructive mt-1.5">
             Storage full — uploads paused. {isCreator ? "Request more storage from the Upgrade tab — our team will follow up." : "Request a Creator upgrade for more storage."}

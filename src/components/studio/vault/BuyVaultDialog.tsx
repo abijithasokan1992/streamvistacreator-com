@@ -258,6 +258,16 @@ export default function BuyVaultDialog({ product, open, onOpenChange, onPurchase
           p_extra: { message: msg, payment_id: err?.metadata?.payment_id } as any,
         }).then(() => {}, () => {});
         toast.error(msg);
+        reportBillingFailure({
+          userId: user?.id,
+          userEmail: user?.email,
+          dashboard: "studio",
+          surface: "studio_buy_vault_dialog",
+          intent: `${product.name} · ${effectiveTb} TB · ${months}mo`,
+          stage: "payment_verify",
+          error: new Error(msg),
+          extra: { topup_id: d.topupId, razorpay_order_id: d.orderId, razorpay_payment_id: err?.metadata?.payment_id },
+        });
       });
 
       rzp.open();
@@ -265,6 +275,15 @@ export default function BuyVaultDialog({ product, open, onOpenChange, onPurchase
       const msg = e instanceof Error ? e.message : "Could not start checkout";
       updateStep("payment_failed", msg, { lastError: msg });
       toast.error(msg);
+      reportBillingFailure({
+        userId: user?.id,
+        userEmail: user?.email,
+        dashboard: "studio",
+        surface: "studio_buy_vault_dialog",
+        intent: `${product?.name ?? "Studio Vault"} · ${effectiveTb} TB · ${months}mo`,
+        stage: "order_create",
+        error: e,
+      });
     }
   };
 

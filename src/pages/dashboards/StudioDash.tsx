@@ -392,6 +392,12 @@ function BillingAndServices() {
 export default function StudioDashboard() {
   const [tab, setTab] = useState<string>("home");
   const { rows, loading, refresh } = useStudioVaultRows();
+  const quota = useStorageQuota();
+
+  const refreshAfterPurchase = () => {
+    refresh();
+    quota.refresh();
+  };
 
   const subtitle = useMemo(
     () => "Home, storage, vault workspace and billing — all in one console.",
@@ -415,11 +421,11 @@ export default function StudioDashboard() {
             onGoBuy={() => setTab("buy")}
             onGoVault={() => setTab("workspace")}
             onGoBilling={() => setTab("billing")}
-            onPurchased={refresh}
+            onPurchased={refreshAfterPurchase}
           />
         </TabsContent>
         <TabsContent value="buy" className="mt-6">
-          <BuyStorage onPurchased={() => { refresh(); setTab("home"); }} />
+          <BuyStorage onPurchased={() => { refreshAfterPurchase(); setTab("home"); }} />
         </TabsContent>
         <TabsContent value="workspace" className="mt-6">
           <VaultWorkspace rows={rows} loading={loading} onGoBuy={() => setTab("buy")} />

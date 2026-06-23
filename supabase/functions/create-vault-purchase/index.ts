@@ -75,6 +75,7 @@ Deno.serve(async (req) => {
         amount: amountPaise,
         currency: "INR",
         receipt: `vault_${String(topupId).slice(0, 28)}`,
+        payment_capture: 1,
         notes: {
           topup_id: String(topupId),
           user_id: uid,
@@ -89,7 +90,8 @@ Deno.serve(async (req) => {
     if (!rzpRes.ok) {
       console.error("Razorpay vault order error", order);
       await admin.from("storage_topups").update({ status: "failed", notes: "order_create_failed" }).eq("id", topupId);
-      return json({ error: "Order creation failed" }, 502);
+      const rzpMessage = order?.error?.description || order?.error?.reason || order?.error?.message;
+      return json({ error: rzpMessage ? `Razorpay order creation failed: ${rzpMessage}` : "Razorpay order creation failed. Please try again, or contact support if your bank shows a debit." }, 502);
     }
 
     await admin.from("storage_topups").update({ razorpay_order_id: order.id }).eq("id", topupId);

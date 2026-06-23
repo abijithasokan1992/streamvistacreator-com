@@ -7,6 +7,7 @@ import {
   uploadFileMultipart,
   MULTIPART_THRESHOLD,
 } from "@/lib/ociMultipartUpload";
+import { reportUploadFailure } from "@/lib/uploads/uploadFailure";
 import {
   ASSET_CATEGORIES,
   type AssetCategory,
@@ -293,6 +294,21 @@ export async function uploadTitleAsset(p: UploadAssetParams): Promise<TitleAsset
       uploadRow = res.upload;
     }
   } catch (e) {
+    // Real OCI / multipart failure — log to admin inbox before bubbling up.
+    const { data: { user } } = await supabase.auth.getUser();
+    const isSmall = p.file.size < MULTIPART_THRESHOLD;
+    void reportUploadFailure({
+      userId: user?.id,
+      userEmail: user?.email,
+      surface: "creator_title_asset",
+      stage: isSmall ? "upload_init" : "part_upload",
+      fileName: p.file.name,
+      fileSize: p.file.size,
+      workspaceId: p.workspaceId,
+      titleId: p.titleId,
+      category: p.category,
+      error: e,
+    });
     throw new UploadValidationError("Oracle Object Storage upload", e);
   }
   if (!uploadRow?.id) {

@@ -29,10 +29,10 @@ export const Hero = () => (
 
       <div className="grid lg:grid-cols-[1.4fr_1fr] gap-12 lg:gap-20 items-end animate-fade-in">
         <div>
-          <h1 className="font-display font-black uppercase leading-[0.88] tracking-tight text-[clamp(2.6rem,9vw,7.5rem)]">
+          <h1 className="font-display font-black uppercase leading-[0.88] tracking-tight text-[clamp(2.4rem,8.4vw,7rem)]">
             ONE SECURE
             <br />
-            MEDIA CLOUD
+            CINEMA &amp; CONTENT CLOUD
             <br />
             <span className="gradient-text">FROM INTAKE TO DEAL.</span>
           </h1>
@@ -81,7 +81,7 @@ export const Hero = () => (
           },
           {
             icon: Briefcase,
-            step: "Buyer",
+            step: "Licensing",
             title: "Request rights",
             body: "Acquisition teams, OTT and distributors submit screener, licensing and rights requests behind an NDA gate and track every conversation.",
           },

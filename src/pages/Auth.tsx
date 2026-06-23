@@ -121,17 +121,6 @@ export default function Auth() {
     if (result.error) toast.error(result.error.message || "Google sign-in failed.");
   };
 
-  const handleApple = async () => {
-    setSubmitting(true);
-    if (view === "signup") {
-      try { sessionStorage.setItem("sv_pending_role", signupRole); } catch { /* noop */ }
-    }
-    const result = await lovable.auth.signInWithOAuth("apple", {
-      redirect_uri: `${getAppOrigin()}/auth/callback`,
-    });
-    setSubmitting(false);
-    if (result.error) toast.error(result.error.message || "Apple sign-in failed.");
-  };
 
   if (loading) {
     return (

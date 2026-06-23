@@ -121,17 +121,6 @@ export default function Auth() {
     if (result.error) toast.error(result.error.message || "Google sign-in failed.");
   };
 
-  const handleApple = async () => {
-    setSubmitting(true);
-    if (view === "signup") {
-      try { sessionStorage.setItem("sv_pending_role", signupRole); } catch { /* noop */ }
-    }
-    const result = await lovable.auth.signInWithOAuth("apple", {
-      redirect_uri: `${getAppOrigin()}/auth/callback`,
-    });
-    setSubmitting(false);
-    if (result.error) toast.error(result.error.message || "Apple sign-in failed.");
-  };
 
   if (loading) {
     return (
@@ -261,14 +250,6 @@ export default function Auth() {
                 Continue with Google
               </button>
 
-              <button
-                onClick={handleApple}
-                disabled={submitting}
-                className="mt-3 w-full h-12 rounded-xl border border-border/60 bg-foreground text-background hover:bg-foreground/90 text-sm font-medium inline-flex items-center justify-center gap-2 disabled:opacity-60"
-              >
-                <AppleMark />
-                Continue with Apple
-              </button>
 
               <p className="mt-6 text-[11px] text-muted-foreground/70 text-center">
                 By continuing you agree to our{" "}
@@ -356,10 +337,3 @@ function GoogleMark() {
   );
 }
 
-function AppleMark() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden fill="currentColor">
-      <path d="M16.365 1.43c0 1.14-.42 2.22-1.12 3.02-.76.88-2 .54-2 .54s-.18-1.17.51-2.18c.69-1.01 1.86-1.34 2.61-1.38zM20.5 17.06c-.55 1.27-.82 1.83-1.53 2.95-.99 1.56-2.39 3.5-4.12 3.52-1.54.01-1.93-1-4.02-.99-2.09.01-2.52 1.01-4.06.99-1.74-.02-3.06-1.77-4.05-3.33-2.77-4.37-3.06-9.5-1.35-12.23.83-1.31 2.14-2.08 3.37-2.08 1.25 0 2.04.69 3.07.69 1 0 1.61-.69 3.06-.69 1.1 0 2.27.6 3.1 1.64-2.73 1.5-2.29 5.4.53 6.53z"/>
-    </svg>
-  );
-}

@@ -762,6 +762,9 @@ export default function StudioIngest() {
           </ul>
         )}
       </Card>
+
+      {/* Ingest Diagnostics — Crayons Bridge Ingest Engine supporting surface */}
+      <IngestDiagnosticsPanel workspaceId={activeId ?? null} />
     </div>
   );
 }

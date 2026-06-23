@@ -17,6 +17,7 @@ import BuyVaultDialog from "@/components/studio/vault/BuyVaultDialog";
 import StudioRequestService from "@/components/studio/StudioRequestService";
 import StudioRequestPlanChange from "@/components/studio/StudioRequestPlanChange";
 import ManualInvoicesList from "@/components/billing/ManualInvoicesList";
+import HardDiskIntakeDialog from "@/components/studio/HardDiskIntakeDialog";
 import type { VaultProduct } from "@/lib/studioVault";
 
 type AllocRow = { id: string; allocated_gb: number; used_gb: number; source: string };

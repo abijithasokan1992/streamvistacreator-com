@@ -298,51 +298,56 @@ export default function Admin() {
           defaultValue={pathToTab(location.pathname, searchParams, isSuperAdmin)}
           className="w-full"
         >
-          <TabsList className={`grid grid-cols-2 sm:grid-cols-3 ${isSuperAdmin ? "lg:grid-cols-9" : "lg:grid-cols-8"} gap-1.5 sm:gap-2 h-auto p-1 sm:p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-6 sm:mb-8`}>
-            <DeptTab value="overview" icon={<LayoutDashboard className="w-4 h-4" />} label="Platform Overview" />
-            <DeptTab value="content" icon={<Film className="w-4 h-4" />} label="Content Pipeline" />
-            <DeptTab value="users" icon={<UsersIcon className="w-4 h-4" />} label="Users & Orgs" />
-            <DeptTab value="storage" icon={<HardDrive className="w-4 h-4" />} label="Storage & Media" />
+          <TabsList className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 sm:gap-2 h-auto p-1 sm:p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-6 sm:mb-8">
+            <DeptTab value="overview" icon={<LayoutDashboard className="w-4 h-4" />} label="Home" />
+            <DeptTab value="content" icon={<Film className="w-4 h-4" />} label="Content Review" />
+            <DeptTab value="users" icon={<UsersIcon className="w-4 h-4" />} label="Users" />
+            <DeptTab value="storage" icon={<HardDrive className="w-4 h-4" />} label="Storage" />
             <DeptTab value="business" icon={<Wallet className="w-4 h-4" />} label="Business & Revenue" />
-            <DeptTab value="products" icon={<Package className="w-4 h-4" />} label="Products & Plans" />
-            <DeptTab value="security" icon={<ShieldAlert className="w-4 h-4" />} label="Security Center" />
-            <DeptTab value="ops" icon={<Briefcase className="w-4 h-4" />} label="Platform Operations" />
-            {isSuperAdmin && <DeptTab value="dev" icon={<Wrench className="w-4 h-4" />} label="Developer Tools" />}
+            <DeptTab value="support" icon={<LifeBuoy className="w-4 h-4" />} label="Support Inbox" />
+            <DeptTab value="settings" icon={<SettingsIcon className="w-4 h-4" />} label="Settings" />
           </TabsList>
 
-          {/* 1. Platform Overview (default) */}
+          {/* 1. Home / Command Center — compact snapshot + quick nav only */}
           <TabsContent value="overview" className="space-y-8 mt-0 animate-fade-in">
             <PlatformOverview />
-            {isSuperAdmin && <PlatformOwnerConsole />}
+            <QuickNav navigate={navigate} isSuperAdmin={isSuperAdmin} />
           </TabsContent>
 
-          {/* 2. Content Pipeline */}
+          {/* 2. Content Review */}
           <TabsContent value="content" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<Film className="w-5 h-5" />} title="Content Pipeline" desc="Submission queues, review workflow, transitions and archived titles." />
+            <DeptHeader icon={<Film className="w-5 h-5" />} title="Content Review" desc="Title submissions, review workspace, QC and legal queues." />
             <ContentReviewWorkflow />
             <TitleEditRequestsInbox />
           </TabsContent>
 
-          {/* 3. Users & Organizations */}
+          {/* 3. Users & Access */}
           <TabsContent value="users" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<UsersIcon className="w-5 h-5" />} title="Users & Organizations" desc="Roles, accounts, organizations, onboarding & premium invitations." />
+            <DeptHeader icon={<UsersIcon className="w-5 h-5" />} title="Users & Access" desc="Creators, studios, buyers, admins. Roles, invitations and entitlement drill-in." />
             <RolesManager />
             <UsersAndCredentials />
-            <OnboardingApprovals />
             <PremiumInvitations />
           </TabsContent>
 
-          {/* 4. Storage & Media */}
+          {/* 4. Storage & Media Operations */}
           <TabsContent value="storage" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<HardDrive className="w-5 h-5" />} title="Storage & Media" desc="OCI storage health, allocations, asset library, failed uploads & multipart sessions." />
+            <DeptHeader icon={<HardDrive className="w-5 h-5" />} title="Storage & Media Operations" desc="Storage health, failed uploads, vault purchases and OCI admin." />
             <OracleStorageMonitor />
-            <OracleOciStorageCard />
+            <AdminStudioVaultPurchases />
             <GlobalAssetManager />
+            <details className="rounded-2xl border border-border/40 bg-secondary/10 p-4">
+              <summary className="cursor-pointer text-sm font-semibold text-muted-foreground hover:text-foreground">
+                Advanced storage settings · OCI credentials & buckets
+              </summary>
+              <div className="pt-4">
+                <OracleOciStorageCard />
+              </div>
+            </details>
           </TabsContent>
 
           {/* 5. Business & Revenue */}
           <TabsContent value="business" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<Wallet className="w-5 h-5" />} title="Business & Revenue" desc="Payments OS — canonical billing orders, manual payment review, invoice-backed revenue and Razorpay activity." />
+            <DeptHeader icon={<Wallet className="w-5 h-5" />} title="Business & Revenue" desc="Commercial requests, deals, invoices, payouts and Razorpay activity." />
             <CommercialControlTower />
             <TitleCommercialOpsConsole />
             <ScreeningOpsConsole />
@@ -359,59 +364,82 @@ export default function Admin() {
             <LegacyOnboardingFunnel rows={rows} />
           </TabsContent>
 
-
-          {/* 6. Products & Plans */}
-          <TabsContent value="products" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<Package className="w-5 h-5" />} title="Products & Plans" desc="Plans, storage tiers, free vs paid limits and entitlements visibility." />
-            <AdminStudioVaultPurchases />
-            <StudioVaultPricing />
-            <ProductsAndPlans />
-          </TabsContent>
-
-          {/* 7. Security Center — payment, security and compliance events only */}
-          <TabsContent value="security" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<ShieldAlert className="w-5 h-5" />} title="Security Center" desc="Payment security events, signature failures and access audit." />
-            <PaymentSecurityEvents />
-          </TabsContent>
-
-          {/* 8. Platform Operations */}
-          <TabsContent value="ops" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<Briefcase className="w-5 h-5" />} title="Platform Operations" desc="Email logs, broadcasts, support inbox, branding, partner CMS & system reporting." />
-            <EmailLogMonitor />
-            <UniversalBroadcast />
+          {/* 6. Support / Contact / Onboarding Inbox */}
+          <TabsContent value="support" className="space-y-8 mt-0 animate-fade-in">
+            <DeptHeader icon={<LifeBuoy className="w-5 h-5" />} title="Support Inbox" desc="Contact messages, support tickets and onboarding approvals — one inbox." />
             <SupportInbox />
             <ContactInbox />
+            <OnboardingApprovals />
+            <EmailLogMonitor />
+            <UniversalBroadcast />
+          </TabsContent>
+
+          {/* 7. Platform Settings / Advanced Controls */}
+          <TabsContent value="settings" className="space-y-8 mt-0 animate-fade-in">
+            <DeptHeader icon={<SettingsIcon className="w-5 h-5" />} title="Platform Settings" desc="Non-daily controls: plans, pricing, branding, policies and developer tools." />
+            {isSuperAdmin && <PlatformOwnerConsole />}
+            <ProductsAndPlans />
+            <StudioVaultPricing />
+            <FreeTierConfig />
             <BrandingSettings />
             <CompanyProfileSettings />
             <PartnerLogos />
             <MarketingCMS />
+            <PaymentSecurityEvents />
+            <details className="rounded-2xl border border-border/40 bg-secondary/10 p-4">
+              <summary className="cursor-pointer text-sm font-semibold text-muted-foreground hover:text-foreground">
+                Advanced · AI / MCP, domain hosting & developer credentials
+              </summary>
+              <div className="pt-4 space-y-6">
+                <AiMcpControlCenter />
+                <DomainHostingPanel />
+                <RazorpayCredentials />
+                <RazorpayConnectivityStatus />
+                <RazorpayTestCheckout />
+                <ResendCredentials />
+                <AdminCredentials />
+              </div>
+            </details>
             <MarketingAnalytics rows={rows} />
           </TabsContent>
-
-          {/* 9. Developer Tools (super admin only) */}
-          {isSuperAdmin && (
-            <TabsContent value="dev" className="space-y-8 mt-0 animate-fade-in">
-              <DeptHeader icon={<Wrench className="w-5 h-5" />} title="Developer Tools" desc="Test tooling, credentials helpers, domain and AI/MCP governance — not for normal operations." />
-              <AiMcpControlCenter />
-              <DomainHostingPanel />
-              <RazorpayOpsBanner />
-              <RazorpayCredentials />
-              <RazorpayConnectivityStatus />
-              <details className="rounded-2xl border border-border/40 bg-secondary/10 p-4">
-                <summary className="cursor-pointer text-sm font-semibold text-muted-foreground hover:text-foreground">
-                  Founder-only ₹1 Razorpay E2E test (developer debug, not real customer flow)
-                </summary>
-                <div className="pt-4">
-                  <RazorpayTestCheckout />
-                </div>
-              </details>
-              <ResendCredentials />
-              <AdminCredentials />
-            </TabsContent>
-          )}
         </Tabs>
       </section>
     </main>
+  );
+}
+
+function QuickNav({ navigate, isSuperAdmin }: { navigate: (p: string) => void; isSuperAdmin: boolean }) {
+  const tiles = [
+    { path: "/admin/content", icon: <Film className="w-5 h-5" />, label: "Content Review", desc: "Submissions, QC, legal" },
+    { path: "/admin/users", icon: <UsersIcon className="w-5 h-5" />, label: "Users", desc: "Roles, invites, entitlements" },
+    { path: "/admin/storage", icon: <HardDrive className="w-5 h-5" />, label: "Storage", desc: "Uploads, vault, OCI" },
+    { path: "/admin/business", icon: <Wallet className="w-5 h-5" />, label: "Business & Revenue", desc: "Deals, invoices, payouts" },
+    { path: "/admin/support", icon: <LifeBuoy className="w-5 h-5" />, label: "Support Inbox", desc: "Contact, support, onboarding" },
+    { path: "/admin/settings", icon: <SettingsIcon className="w-5 h-5" />, label: "Settings", desc: "Plans, branding, advanced" },
+  ];
+  return (
+    <section className="space-y-3">
+      <div className="flex items-center gap-2">
+        <h3 className="font-display text-lg font-semibold">Jump to a section</h3>
+        <span className="text-xs text-muted-foreground">Open the right department to act on pending work.</span>
+      </div>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {tiles.map(t => (
+          <button
+            key={t.path}
+            onClick={() => navigate(t.path)}
+            className="group flex items-center gap-3 text-left rounded-2xl border border-border/50 bg-secondary/20 hover:bg-accent/10 hover:border-accent/40 transition-all p-4"
+          >
+            <div className="w-10 h-10 rounded-xl bg-accent/10 text-accent grid place-items-center shrink-0">{t.icon}</div>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold truncate">{t.label}</div>
+              <div className="text-[11px] text-muted-foreground truncate">{t.desc}</div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-accent transition-colors" />
+          </button>
+        ))}
+      </div>
+    </section>
   );
 }
 

@@ -254,6 +254,7 @@ export default function IngestAlertsManager({ workspaceId }: { workspaceId: stri
                       <Badge variant="outline" className="text-[10px] font-mono">{meta.label}</Badge>
                       {rule.channels.includes("email") && <Badge variant="outline" className="text-[10px]"><Mail className="w-2.5 h-2.5 mr-1" />email</Badge>}
                       {rule.channels.includes("whatsapp") && <Badge variant="outline" className="text-[10px]"><MessageCircle className="w-2.5 h-2.5 mr-1" />whatsapp</Badge>}
+                      {rule.channels.includes("webhook") && <Badge variant="outline" className="text-[10px]"><Webhook className="w-2.5 h-2.5 mr-1" />webhook</Badge>}
                       {!rule.enabled && <Badge variant="outline" className="text-[10px] text-muted-foreground">disabled</Badge>}
                     </div>
                     <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">

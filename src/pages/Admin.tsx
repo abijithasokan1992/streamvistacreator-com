@@ -577,7 +577,7 @@ function DomainHostingPanel() {
       .split(",").map(normalize).filter(Boolean);
     if (DEPRECATED.includes(primary_domain) || extra_origins.some(o => DEPRECATED.includes(o))) {
       setSaving(false);
-      toast.error("This domain is deprecated. Use https://www.streamvistacreator.com instead.");
+      toast.error("This domain is deprecated. Use https://streamvistacreator.com instead.");
       return;
     }
     const { error } = await supabase

@@ -30,6 +30,7 @@ export default function VaultBillingPanel() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [topups, setTopups] = useState<Topup[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showIncomplete, setShowIncomplete] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -63,7 +64,6 @@ export default function VaultBillingPanel() {
   // checkout attempts so the customer-facing receipts view is truthful.
   const paidTopups = topups.filter((t) => t.status === "paid");
   const incompleteTopups = topups.filter((t) => t.status !== "paid");
-  const [showIncomplete, setShowIncomplete] = useState(false);
 
   return (
     <div className="rounded-2xl border border-border/50 bg-secondary/10 p-6 space-y-6">

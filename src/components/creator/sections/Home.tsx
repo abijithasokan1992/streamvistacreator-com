@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { Plus, ArrowRight, Bell, Film, Inbox, HardDrive } from "lucide-react";
+import { Plus, ArrowRight, Bell, Film, Inbox, HardDrive, Database, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { listTitles, type TitleRow } from "@/lib/creator/titleApi";
 import WorkspaceWelcome from "@/components/creator/WorkspaceWelcome";
 import ReviewNotesInbox from "@/components/creator/ReviewNotesInbox";
 import { UploadDiagnostics } from "@/components/creator/UploadDiagnostics";
+import Buy1TBCard from "@/components/shared/Buy1TBCard";
+import { Button } from "@/components/ui/button";
 import type { SectionId } from "@/components/creator/CreatorSidebar";
 
 type UpdateRow = { id: string; title: string; message: string | null; created_at: string };

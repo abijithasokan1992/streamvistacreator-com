@@ -393,6 +393,7 @@ export default function StudioDashboard() {
             onGoBuy={() => setTab("buy")}
             onGoVault={() => setTab("workspace")}
             onGoBilling={() => setTab("billing")}
+            onPurchased={refresh}
           />
         </TabsContent>
         <TabsContent value="buy" className="mt-6">

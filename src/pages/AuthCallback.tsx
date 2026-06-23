@@ -25,7 +25,7 @@ export default function AuthCallback() {
       const params = new URLSearchParams(window.location.hash.slice(1));
       const err = params.get("error_description") || params.get("error");
       if (err) toast.error(decodeURIComponent(err));
-      navigate("/auth", { replace: true });
+      navigate(`/auth?in_app_error=1${err ? "&err=" + encodeURIComponent(err) : ""}`, { replace: true });
       return;
     }
 

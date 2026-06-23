@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Loader2, Mail, ArrowRight, CheckCircle2, ExternalLink, Smartphone } from "lucide-react";
+import { Loader2, Mail, ArrowRight, CheckCircle2, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth, dashboardForRole } from "@/hooks/useAuth";

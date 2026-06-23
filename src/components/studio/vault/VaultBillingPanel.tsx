@@ -59,6 +59,12 @@ export default function VaultBillingPanel() {
 
   if (loading) return <div className="rounded-2xl border border-border/40 p-6 grid place-items-center"><Loader2 className="w-4 h-4 animate-spin text-accent" /></div>;
 
+  // Separate real receipts (paid) from incomplete / failed / abandoned
+  // checkout attempts so the customer-facing receipts view is truthful.
+  const paidTopups = topups.filter((t) => t.status === "paid");
+  const incompleteTopups = topups.filter((t) => t.status !== "paid");
+  const [showIncomplete, setShowIncomplete] = useState(false);
+
   return (
     <div className="rounded-2xl border border-border/50 bg-secondary/10 p-6 space-y-6">
       <div className="flex items-center gap-2">
@@ -68,27 +74,50 @@ export default function VaultBillingPanel() {
 
       <div>
         <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Recent purchases</div>
-        {topups.length === 0 ? (
+        {paidTopups.length === 0 ? (
           <p className="text-sm text-muted-foreground">No vault purchases yet.</p>
         ) : (
           <ul className="text-sm divide-y divide-border/30">
-            {topups.map((t) => (
+            {paidTopups.map((t) => (
               <li key={t.id} className="py-2 flex justify-between gap-3">
                 <span className="text-muted-foreground">
                   {new Date(t.created_at).toLocaleDateString()} · {t.tb_added ?? 1} TB ·{" "}
                   {t.storage_class?.replace("_", " ") ?? "vault"} · {t.billing_interval_months ?? 1}mo
                 </span>
-                <span className={`text-xs uppercase tracking-widest font-mono ${
-                  t.status === "paid" ? "text-emerald-300" :
-                  t.status === "pending" ? "text-amber-300" : "text-muted-foreground"
-                }`}>
+                <span className="text-xs uppercase tracking-widest font-mono text-emerald-300">
                   {t.status}
                 </span>
               </li>
             ))}
           </ul>
         )}
+        {incompleteTopups.length > 0 && (
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={() => setShowIncomplete((v) => !v)}
+              className="text-[11px] text-muted-foreground hover:text-accent underline-offset-2 hover:underline"
+            >
+              {showIncomplete ? "Hide" : `Show ${incompleteTopups.length} incomplete checkout attempt${incompleteTopups.length === 1 ? "" : "s"}`}
+            </button>
+            {showIncomplete && (
+              <ul className="text-xs divide-y divide-border/20 mt-2 opacity-70">
+                {incompleteTopups.map((t) => (
+                  <li key={t.id} className="py-1.5 flex justify-between gap-3">
+                    <span className="text-muted-foreground">
+                      {new Date(t.created_at).toLocaleDateString()} · {t.tb_added ?? 1} TB
+                    </span>
+                    <span className={`text-[10px] uppercase tracking-widest font-mono ${
+                      t.status === "pending" ? "text-amber-300" : "text-muted-foreground"
+                    }`}>{t.status}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
       </div>
+
 
       <div>
         <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Invoices</div>

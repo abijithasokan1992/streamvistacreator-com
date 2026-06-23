@@ -77,8 +77,11 @@ const AdminRoutes = () => (
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/admin" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/super" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/content" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/users" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/storage" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/business" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/support" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/security" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/billing" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/settings" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />

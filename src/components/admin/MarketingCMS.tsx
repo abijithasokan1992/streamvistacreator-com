@@ -213,13 +213,14 @@ function Section({ kind, title, icon }: { kind: Kind; title: string; icon: React
   );
 }
 
-function RowCard({ kind, row, onChange, onSave, onDelete, onUpload, onSetStatus, saving }: {
+function RowCard({ kind, row, onChange, onSave, onDelete, onUpload, onSetStatus, saving, dragHandleProps }: {
   kind: Kind; row: AnyRow;
   onChange: (p: Partial<AnyRow>) => void;
   onSave: () => void; onDelete: () => void;
   onUpload: (field: string, file: File) => void;
   onSetStatus: (s: "draft" | "published") => void;
   saving: boolean;
+  dragHandleProps?: React.HTMLAttributes<HTMLDivElement> & { draggable?: boolean };
 }) {
   const imageField = kind === "film" ? "poster_url" : kind === "reel" ? "poster_url" : "image_url";
   const isPublished = row.status === "published";
@@ -227,9 +228,20 @@ function RowCard({ kind, row, onChange, onSave, onDelete, onUpload, onSetStatus,
   return (
     <div className={`rounded-xl border p-4 space-y-3 ${isPublished ? "border-emerald-500/30 bg-emerald-500/[0.03]" : "border-amber-500/30 bg-amber-500/[0.03]"}`}>
       <div className="flex items-center justify-between gap-2">
-        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${isPublished ? "bg-emerald-500/15 text-emerald-500" : "bg-amber-500/15 text-amber-500"}`}>
-          {isPublished ? <><Globe className="w-3 h-3" /> Published</> : <><FileEdit className="w-3 h-3" /> Draft</>}
-        </span>
+        <div className="flex items-center gap-2">
+          {dragHandleProps && (
+            <div
+              {...dragHandleProps}
+              title="Drag to reorder"
+              className="cursor-grab active:cursor-grabbing h-7 w-7 rounded-md grid place-items-center border border-border/60 text-muted-foreground hover:text-foreground hover:bg-secondary"
+            >
+              <GripVertical className="w-3.5 h-3.5" />
+            </div>
+          )}
+          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${isPublished ? "bg-emerald-500/15 text-emerald-500" : "bg-amber-500/15 text-amber-500"}`}>
+            {isPublished ? <><Globe className="w-3 h-3" /> Published</> : <><FileEdit className="w-3 h-3" /> Draft</>}
+          </span>
+        </div>
         {!isNew && (
           isPublished
             ? <button onClick={() => onSetStatus("draft")} className="h-8 px-3 rounded-md border border-border text-xs inline-flex items-center gap-1.5 hover:bg-secondary"><EyeOff className="w-3.5 h-3.5" /> Unpublish</button>

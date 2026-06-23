@@ -409,8 +409,9 @@ export default function StudioDashboard() {
   return (
     <RoleDashboardShell expectedRole="studio" title="Studio Vault" subtitle={subtitle}>
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full max-w-2xl">
+        <TabsList className="grid grid-cols-3 sm:grid-cols-5 w-full max-w-3xl">
           <TabsTrigger value="home"><Sparkles className="w-3.5 h-3.5 mr-1.5" />Home</TabsTrigger>
+          <TabsTrigger value="ingest"><UploadCloud className="w-3.5 h-3.5 mr-1.5" />Ingest</TabsTrigger>
           <TabsTrigger value="buy"><ShoppingCart className="w-3.5 h-3.5 mr-1.5" />Buy Storage</TabsTrigger>
           <TabsTrigger value="workspace"><Cloud className="w-3.5 h-3.5 mr-1.5" />Vault Workspace</TabsTrigger>
           <TabsTrigger value="billing"><Receipt className="w-3.5 h-3.5 mr-1.5" />Billing & Services</TabsTrigger>
@@ -425,6 +426,9 @@ export default function StudioDashboard() {
             onGoBilling={() => setTab("billing")}
             onPurchased={refreshAfterPurchase}
           />
+        </TabsContent>
+        <TabsContent value="ingest" className="mt-6">
+          <StudioIngest />
         </TabsContent>
         <TabsContent value="buy" className="mt-6">
           <BuyStorage onPurchased={() => { refreshAfterPurchase(); setTab("home"); }} />

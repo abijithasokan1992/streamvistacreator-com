@@ -2,8 +2,10 @@ import { Navigate } from "react-router-dom";
 import { Navbar } from "@/components/streamvista/Navbar";
 import { Hero } from "@/components/streamvista/Hero";
 import { RoleSurfaces } from "@/components/streamvista/RoleSurfaces";
-import { Pricing } from "@/components/streamvista/Pricing";
-import { BuyerEntry } from "@/components/streamvista/BuyerEntry";
+import { Workflow } from "@/components/streamvista/Workflow";
+import { SuccessStories } from "@/components/streamvista/SuccessStories";
+import { SecuritySection } from "@/components/streamvista/SecuritySection";
+import { FinalCta } from "@/components/streamvista/FinalCta";
 import { Footer } from "@/components/streamvista/Footer";
 import { Seo } from "@/components/Seo";
 import { dashboardForRole, useAuth } from "@/hooks/useAuth";
@@ -17,8 +19,8 @@ const Index = () => {
   return (
     <main className="min-h-dvh">
       <Seo
-        title="StreamVista — Secure media cloud for creators & studios"
-        description="One platform for title intake, recurring storage, post & vault workflows, and buyer rights requests. Self-serve where it makes sense, founder-assisted where it matters."
+        title="StreamVista — Secure cinema & content cloud, intake to deal"
+        description="One secure cinema and content cloud for creators, studios and licensing teams — ingest, store, prepare, control access and license your titles end-to-end."
         path="/"
         jsonLd={[
           {
@@ -32,8 +34,10 @@ const Index = () => {
       <Navbar />
       <Hero />
       <RoleSurfaces />
-      <Pricing />
-      <BuyerEntry />
+      <Workflow />
+      <SuccessStories />
+      <SecuritySection />
+      <FinalCta />
       <Footer />
     </main>
   );

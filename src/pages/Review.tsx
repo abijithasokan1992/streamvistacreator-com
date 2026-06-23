@@ -79,7 +79,11 @@ export default function Review() {
 
   return (
     <div className="min-h-dvh bg-black text-zinc-100">
-      <Seo title="Private Review · StreamVista" description="Secure review link" path={`/review/${token}`} />
+      <Seo
+        title="Private Review · StreamVista"
+        description="Open a secure, expiring StreamVista review link to preview a private screener, image or audio asset — password protected and access-logged for the rights holder."
+        path={`/review/${token}`}
+      />
       <header className="border-b border-zinc-900 px-4 sm:px-8 h-14 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/30 grid place-items-center">

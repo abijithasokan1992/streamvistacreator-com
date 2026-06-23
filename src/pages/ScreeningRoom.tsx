@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Loader2, ShieldAlert, ShieldCheck, Lock, Film, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Seo } from "@/components/Seo";
 
 type ResolveResult =
   | { ok: true; invite: any; title: any; asset: any | null; playback_url: string | null; playback_url_expires_at: string | null }
@@ -100,6 +101,15 @@ export default function ScreeningRoom() {
 
   return (
     <div className="min-h-dvh bg-black text-white">
+      <Seo
+        title={data.ok && data.title?.title ? `${data.title.title} · Private screener` : "Private screener · StreamVista"}
+        description={
+          data.ok && data.title?.title
+            ? `Watermarked private screener for "${data.title.title}" on StreamVista — invitation-only, watermarked playback with access logged for the rights holder.`
+            : "Watch a watermarked, invitation-only private screener on StreamVista — secure playback with NDA acknowledgement and full access logging."
+        }
+        path={`/screening/${token}`}
+      />
       <header className="border-b border-white/10 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Film className="w-5 h-5" />

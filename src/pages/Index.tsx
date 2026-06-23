@@ -17,7 +17,7 @@ const Index = () => {
   return (
     <main className="min-h-dvh">
       <Seo
-        title="StreamVista — Secure media cloud for creators, studios & buyers"
+        title="StreamVista — Secure media cloud for creators & studios"
         description="One platform for title intake, recurring storage, post & vault workflows, and buyer rights requests. Self-serve where it makes sense, founder-assisted where it matters."
         path="/"
         jsonLd={[

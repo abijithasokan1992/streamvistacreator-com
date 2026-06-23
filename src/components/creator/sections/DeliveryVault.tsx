@@ -37,6 +37,12 @@ export default function DeliveryVaultSection() {
         </div>
       </div>
 
+      {/* One-click 1 TB purchase — primary commercial CTA */}
+      <Buy1TBCard
+        headline="1 TB Delivery Vault Storage"
+        subline="Secure recurring vault storage for masters, delivery files, archive copies and buyer-facing delivery materials."
+      />
+
       <section className="space-y-3">
         <h3 className="font-display text-base">Your vault</h3>
         <MyVaultSummary />
@@ -44,8 +50,8 @@ export default function DeliveryVaultSection() {
 
       <section className="space-y-3">
         <div className="flex items-baseline justify-between">
-          <h3 className="font-display text-base">Expand storage</h3>
-          <p className="text-xs text-muted-foreground">Paid plans · self-serve</p>
+          <h3 className="font-display text-base">All storage plans</h3>
+          <p className="text-xs text-muted-foreground">Self-serve · Razorpay checkout</p>
         </div>
         <VaultPlanCards />
       </section>

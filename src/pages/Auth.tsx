@@ -34,6 +34,21 @@ const ROLE_OPTIONS: { value: PublicRole; label: string; hint: string }[] = [
 const EmailSchema = z.string().trim().email("Enter a valid email").max(255);
 const NameSchema = z.string().trim().min(1, "Enter your full name").max(120);
 
+function isInAppBrowser(): boolean {
+  const ua = navigator.userAgent;
+  const indicators = [
+    "Instagram", "FBAN", "FBAV", "LinkedInApp",
+    "Twitter", "TwitterFor", "Snapchat", "Line/",
+    "MicroMessenger", "TikTok", "Bytedance", "trill",
+    "Messenger", "WhatsApp", "WeChat",
+  ];
+  return indicators.some((i) => ua.includes(i)) || /wv|WebView/i.test(ua);
+}
+
+function isMobile(): boolean {
+  return /Android|iPhone|iPad|iPod|Mobile|webOS|BlackBerry|IEMobile/i.test(navigator.userAgent);
+}
+
 export default function Auth() {
   const navigate = useNavigate();
   const [search] = useSearchParams();

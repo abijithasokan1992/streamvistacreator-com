@@ -3,36 +3,49 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
 export type AppRole =
-  // New role set
-  | "super_admin"
-  | "admin"
-  | "content_owner"
+  // === MVP roles (the only roles the product surfaces) ===
+  // Public signup
+  | "content_owner"   // labelled "Creator" in UI
   | "studio"
   | "buyer"
+  // Invite-only
+  | "admin"
+  | "super_admin"
+  | "qc_reviewer"
+  | "legal_reviewer"
+  // === Dormant / Phase 2 — kept in the enum so existing rows still load,
+  // but never offered through signup, dashboards, or admin UI. ===
   | "localization_partner"
   | "distributor"
-  // Legacy roles (still in DB, auto-mapped to new dashboards)
   | "executive_producer"
   | "creator"
   | "client"
   | "moderator"
   | "user";
 
+/** The 7 roles supported by the StreamVista MVP. */
+export const MVP_PUBLIC_ROLES = ["content_owner", "studio", "buyer"] as const;
+export const MVP_INVITE_ROLES = ["admin", "super_admin", "qc_reviewer", "legal_reviewer"] as const;
+export const MVP_ROLES = [...MVP_PUBLIC_ROLES, ...MVP_INVITE_ROLES] as const;
+
 const ROLE_ORDER: AppRole[] = [
   "super_admin",
   "admin",
+  "qc_reviewer",
+  "legal_reviewer",
   "content_owner",
   "studio",
+  "buyer",
+  // Dormant fall-through
   "distributor",
   "localization_partner",
-  "buyer",
-  // Legacy fall-through
   "executive_producer",
   "creator",
   "moderator",
   "client",
   "user",
 ];
+
 
 interface AuthCtx {
   user: User | null;
@@ -42,10 +55,13 @@ interface AuthCtx {
   dashboardRole: AppRole | null;
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  isQcReviewer: boolean;
+  isLegalReviewer: boolean;
   loading: boolean;
   signOut: () => Promise<void>;
   refreshRole: () => Promise<void>;
 }
+
 
 const Ctx = createContext<AuthCtx>({} as AuthCtx);
 
@@ -146,6 +162,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         dashboardRole,
         isAdmin: role === "admin" || role === "super_admin",
         isSuperAdmin: role === "super_admin",
+        isQcReviewer: role === "qc_reviewer",
+        isLegalReviewer: role === "legal_reviewer",
         loading,
         signOut,
         refreshRole,
@@ -164,11 +182,16 @@ export function dashboardForRole(r: AppRole | null): string {
   switch (d) {
     case "super_admin": return "/admin/super";
     case "admin": return "/admin";
+    case "qc_reviewer": return "/admin/qc";
+    case "legal_reviewer": return "/admin/legal";
     case "content_owner": return "/dashboard/content";
     case "studio": return "/dashboard/studio";
     case "buyer": return "/dashboard/buyer";
+    // Dormant (Phase 2) roles still have routes so existing assignees aren't broken,
+    // but are never offered through signup or admin UI.
     case "localization_partner": return "/dashboard/localization";
     case "distributor": return "/dashboard/distribution";
     default: return "/dashboard/content";
   }
 }
+

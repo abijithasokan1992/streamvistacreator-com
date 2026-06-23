@@ -117,7 +117,7 @@ export default function HardDiskIntakeDialog({
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(10);
-    setRows((data as Row[]) ?? []);
+    setRows(((data as unknown) as Row[]) ?? []);
     setLoadingRows(false);
   };
 

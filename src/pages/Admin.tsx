@@ -602,7 +602,7 @@ function DomainHostingPanel() {
       <div className="grid sm:grid-cols-3 gap-3 text-xs">
         <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3">
           <div className="text-[10px] uppercase tracking-wider text-emerald-300">Production app + payment</div>
-          <div className="font-mono text-foreground mt-1 break-all">https://www.streamvistacreator.com</div>
+          <div className="font-mono text-foreground mt-1 break-all">https://streamvistacreator.com</div>
         </div>
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
           <div className="text-[10px] uppercase tracking-wider text-amber-300">Preview only</div>

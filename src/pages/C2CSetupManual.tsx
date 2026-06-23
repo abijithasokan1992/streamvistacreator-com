@@ -9,6 +9,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useWorkspaces } from "@/hooks/useWorkspaces";
+import { Seo } from "@/components/Seo";
 
 const PAR_BASE_URL = "https://objectstorage.ap-mumbai-1.oraclecloud.com/p/JeKB364pUi17Y_pIPaqVDc_M6XMrsCdj0xUXOHkWJT-2sOgzisRkuAB1KzAtfmym/n/bma8wibnommg/b/bucket-20260526-1544/o/";
 

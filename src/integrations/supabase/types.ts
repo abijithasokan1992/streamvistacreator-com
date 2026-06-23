@@ -7124,10 +7124,12 @@ export type Database = {
       }
       invoke_edge_function: { Args: { fn_name: string }; Returns: number }
       is_free_tier_user: { Args: { _user_id: string }; Returns: boolean }
+      is_legal_reviewer: { Args: { _user_id: string }; Returns: boolean }
       is_producer_of: {
         Args: { _creator: string; _ep: string }
         Returns: boolean
       }
+      is_qc_reviewer: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       is_workspace_admin: {
         Args: { _user_id: string; _workspace_id: string }

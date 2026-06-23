@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
+import { extractFnError, reportBillingFailure } from "@/lib/payments/billingFailure";
 import {
   PAYG_TB_INR,
   FREE_STORAGE_GB,

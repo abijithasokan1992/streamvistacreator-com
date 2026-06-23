@@ -153,7 +153,7 @@ function RowCard({ kind, row, onChange, onSave, onDelete, onUpload, onSetStatus,
   onSetStatus: (s: "draft" | "published") => void;
   saving: boolean;
 }) {
-  const imageField = kind === "film" ? "poster_url" : "image_url";
+  const imageField = kind === "film" ? "poster_url" : kind === "reel" ? "poster_url" : "image_url";
   const isPublished = row.status === "published";
   const isNew = row.id.startsWith("new-");
   return (

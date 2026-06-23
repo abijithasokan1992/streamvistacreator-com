@@ -181,10 +181,13 @@ export default function BuyVaultDialog({ product, open, onOpenChange, onPurchase
       const { data, error } = await supabase.functions.invoke("create-vault-purchase", {
         body: { productId: product.id, tb: effectiveTb, months },
       });
-      if (error) throw error;
+      if (error) {
+        const msg = await extractFnError(error, "Could not start checkout");
+        throw new Error(msg);
+      }
       const d = data as { topupId: string; orderId: string; amount: number; keyId: string; error?: string };
       if (d?.error) throw new Error(d.error);
-      if (!d?.orderId || !d?.topupId) throw new Error("Invalid order response");
+      if (!d?.orderId || !d?.topupId) throw new Error("Studio storage product is not available right now.");
 
       updateStep("checkout_open", "Opening Razorpay checkout…", {
         topupId: d.topupId,

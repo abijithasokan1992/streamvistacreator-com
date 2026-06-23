@@ -344,7 +344,14 @@ export default function BuyVaultDialog({ product, open, onOpenChange, onPurchase
                 <div>entitlement_written: {String(Boolean(debug.entitlementWritten))}</div>
               </div>
             )}
-            <DialogFooter>
+            <DialogFooter className="flex-col sm:flex-row gap-2">
+              {debug.topupId && (
+                <Button asChild variant="outline">
+                  <a href={`/billing/status/${debug.topupId}?label=${encodeURIComponent(`${product.name} · ${effectiveTb} TB`)}`} target="_blank" rel="noreferrer">
+                    View order status
+                  </a>
+                </Button>
+              )}
               <Button onClick={() => onOpenChange(false)} className="bg-gradient-primary text-primary-foreground glow-primary">
                 Done
               </Button>
@@ -448,6 +455,18 @@ export default function BuyVaultDialog({ product, open, onOpenChange, onPurchase
                 </div>
               )}
             </div>
+          )}
+
+          {debug.topupId && step !== "idle" && (
+            <a
+              href={`/billing/status/${debug.topupId}?label=${encodeURIComponent(`${product.name} · ${effectiveTb} TB`)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs text-accent hover:underline"
+            >
+              <Loader2 className="w-3 h-3 animate-spin" />
+              Open live order status page →
+            </a>
           )}
 
           {(debug.orderId || debug.paymentId || debug.lastError) && step !== "idle" && (

@@ -34,11 +34,11 @@ type MgmtSummary = {
 type AuditLogRow = {
   id: string;
   action: string;
-  actor_user_id: string | null;
-  target_user_id?: string | null;
+  admin_user_id: string | null;
+  target_user_id: string | null;
   created_at: string;
-  detail?: unknown;
 };
+
 
 const fmtINR = (n: number) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n || 0);
@@ -68,9 +68,10 @@ export default function AdminReportsConsole() {
       supabase.from("user_profiles").select("user_id", { count: "exact", head: true }),
       supabase.from("user_roles").select("user_id, role"),
       supabase.from("content_titles").select("id", { count: "exact", head: true }),
-      supabase.from("content_titles").select("id", { count: "exact", head: true }).in("status" as any, ["submitted", "in_review"]),
-      supabase.from("admin_audit_log").select("id, action, actor_user_id, target_user_id, created_at, detail").order("created_at", { ascending: false }).limit(50),
+      (supabase.from("content_titles").select("id", { count: "exact", head: true }) as any).in("status", ["submitted", "in_review"]),
+      supabase.from("admin_audit_log").select("id, action, admin_user_id, target_user_id, created_at").order("created_at", { ascending: false }).limit(50),
     ]);
+
 
     const invTotal = (inv30d.data ?? []).reduce((s: number, r: any) => s + (r.amount_cents ?? 0), 0) / 100;
     const refundsTotal = (refunds30d.data ?? []).reduce((s: number, r: any) => s + (r.amount_refunded_cents ?? 0), 0) / 100;
@@ -176,10 +177,11 @@ export default function AdminReportsConsole() {
                 <div className="min-w-0">
                   <div className="font-mono text-[12px] text-foreground">{row.action}</div>
                   <div className="text-[10px] text-muted-foreground font-mono truncate">
-                    actor: {row.actor_user_id?.slice(0, 8) ?? "—"}
+                    actor: {row.admin_user_id?.slice(0, 8) ?? "—"}
                     {row.target_user_id && <> · target: {row.target_user_id.slice(0, 8)}</>}
                   </div>
                 </div>
+
               </div>
             ))}
           </div>

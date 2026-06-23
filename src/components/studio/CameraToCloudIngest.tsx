@@ -73,6 +73,7 @@ export default function CameraToCloudIngest() {
   const inputRef = useRef<HTMLInputElement>(null);
   const { showMessage } = useSystemMessage();
   const { workspaces, activeId, setActiveId, canWriteActive } = useWorkspaces();
+  const { user } = useAuth();
   const quota = useStorageQuota();
 
   const refresh = useCallback(async () => {

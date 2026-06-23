@@ -25,6 +25,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import IngestAlertsManager from "@/components/studio/ingest/IngestAlertsManager";
 
 type JobAgg = {
   id: string;

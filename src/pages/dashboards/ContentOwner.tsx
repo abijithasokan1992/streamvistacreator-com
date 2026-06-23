@@ -11,6 +11,7 @@ import InsightsSection from "@/components/creator/sections/Insights";
 import StatementsSection from "@/components/creator/sections/Statements";
 import ScheduleSection from "@/components/creator/sections/Schedule";
 import UpgradeSection from "@/components/creator/sections/Upgrade";
+import DeliveryVaultSection from "@/components/creator/sections/DeliveryVault";
 import HelpSection from "@/components/creator/sections/Help";
 import EntitlementChip from "@/components/creator/EntitlementChip";
 import CreatorGuide from "@/components/creator/CreatorGuide";
@@ -105,6 +106,7 @@ export default function ContentOwnerDashboard() {
           {effectiveSection === "statements" && <StatementsSection />}
           {effectiveSection === "schedule" && <ScheduleSection />}
           {effectiveSection === "billing" && <UpgradeSection />}
+          {effectiveSection === "delivery_vault" && <DeliveryVaultSection />}
           {effectiveSection === "help" && <HelpSection />}
         </section>
       </div>

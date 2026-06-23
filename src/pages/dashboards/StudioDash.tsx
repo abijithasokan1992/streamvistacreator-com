@@ -230,20 +230,8 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
       {/* Per-class breakdown only when we have paid storage */}
       {!loading && rows.length > 0 && <MyVaultSummary />}
 
-      {/* Why three classes — short, no marketing dump */}
-      {!hasPaidVault && (
-        <section className="rounded-xl border border-border/40 bg-secondary/5 p-5">
-          <h3 className="font-semibold text-sm mb-2">Three vault classes</h3>
-          <div className="grid sm:grid-cols-3 gap-3 text-xs text-muted-foreground">
-            <div className="flex gap-2"><Sparkles className="w-3.5 h-3.5 text-emerald-300 mt-0.5 shrink-0" /><span><b className="text-foreground">Active</b> — current productions and live working media.</span></div>
-            <div className="flex gap-2"><HardDrive className="w-3.5 h-3.5 text-sky-300 mt-0.5 shrink-0" /><span><b className="text-foreground">Library</b> — completed titles, masters, posters, retained files.</span></div>
-            <div className="flex gap-2"><Snowflake className="w-3.5 h-3.5 text-amber-300 mt-0.5 shrink-0" /><span><b className="text-foreground">Archive</b> — long-term preservation and disaster recovery.</span></div>
-          </div>
-          <div className="mt-4">
-            <Button size="sm" variant="outline" onClick={onGoBuy}>See pricing →</Button>
-          </div>
-        </section>
-      )}
+      {/* One-click purchase — single live SKU */}
+      <OneClickBuyCard product={liveSku} hasPaid={hasPaidVault} onPurchased={onPurchased} />
     </div>
   );
 }

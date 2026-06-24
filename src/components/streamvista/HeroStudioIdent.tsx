@@ -77,9 +77,18 @@ export function HeroStudioIdent() {
       aria-label={`Studio ident — ${active.label}`}
       className="relative w-full aspect-[2.39/1] md:aspect-[2/1.1] rounded-xl overflow-hidden select-none bg-background"
     >
-      {/* Single unified backdrop — responsive padding keeps the enlarged logo
-          centered and uncropped on narrow mobile widths. */}
-      <div className="absolute inset-0 flex items-center justify-center px-[4%] py-[6%] sm:px-[3%] sm:py-[4%]">
+      {/* Soft primary aura behind the logo */}
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(60% 55% at 50% 50%, hsl(var(--primary-glow) / 0.22) 0%, hsl(var(--primary) / 0.10) 35%, transparent 70%)",
+        }}
+      />
+
+      {/* Logo fills the frame — tight padding, centered, uncropped */}
+      <div className="absolute inset-0 flex items-center justify-center px-[2%] py-[3%] sm:px-[1.5%] sm:py-[2%]">
         <img
           src={active.src}
           alt={active.label}
@@ -93,27 +102,11 @@ export function HeroStudioIdent() {
             transition: transitionMs
               ? `opacity ${transitionMs}ms cubic-bezier(0.4, 0, 0.2, 1)`
               : "none",
-            // Brighter, more vivid logo — readable on both light and dark backgrounds.
+            // Bright, vivid logo with chromatic aura.
             filter:
-              "brightness(1.15) contrast(1.12) saturate(1.45) drop-shadow(0 8px 20px rgba(20,24,34,0.25))",
+              "brightness(1.22) contrast(1.18) saturate(1.6) drop-shadow(0 0 22px hsl(var(--primary-glow) / 0.45)) drop-shadow(0 10px 24px rgba(20,24,34,0.22))",
           }}
         />
-      </div>
-
-      {/* Carousel dots */}
-      <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
-        {LOGOS.map((_, k) => (
-          <span
-            key={k}
-            data-testid={k === i ? "ident-dot-active" : "ident-dot"}
-            className="h-1.5 rounded-full transition-all duration-500"
-            style={{
-              width: k === i ? 18 : 6,
-              background:
-                k === i ? "hsl(var(--primary) / 0.85)" : "hsl(var(--muted-foreground) / 0.35)",
-            }}
-          />
-        ))}
       </div>
     </div>
   );

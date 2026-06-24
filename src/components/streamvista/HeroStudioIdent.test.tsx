@@ -36,19 +36,20 @@ describe("HeroStudioIdent", () => {
     expect(img.className).toContain("max-h-full");
   });
 
-  it("applies the brightness + contrast + saturate filter for vivid color", () => {
+  it("applies a brighter color treatment with chromatic aura", () => {
     render(<HeroStudioIdent />);
     const img = screen.getByRole("img", { name: /studio ident/i })
       .querySelector("img") as HTMLImageElement;
     const filter = img.style.filter;
-    expect(filter).toMatch(/brightness\(1\.15\)/);
-    expect(filter).toMatch(/contrast\(1\.12\)/);
-    expect(filter).toMatch(/saturate\(1\.45\)/);
+    expect(filter).toMatch(/brightness\(1\.22\)/);
+    expect(filter).toMatch(/contrast\(1\.18\)/);
+    expect(filter).toMatch(/saturate\(1\.6\)/);
+    expect(filter).toMatch(/drop-shadow/);
   });
 
-  it("shows one active carousel dot per logo set", () => {
+  it("renders no carousel dots", () => {
     render(<HeroStudioIdent />);
-    const active = screen.getAllByTestId("ident-dot-active");
-    expect(active).toHaveLength(1);
+    expect(screen.queryAllByTestId("ident-dot-active")).toHaveLength(0);
+    expect(screen.queryAllByTestId("ident-dot")).toHaveLength(0);
   });
 });

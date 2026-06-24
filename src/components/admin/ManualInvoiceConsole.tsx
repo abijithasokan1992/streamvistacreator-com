@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { Loader2, FileText, Plus, RefreshCw, CheckCircle2, X, Send, Pencil, Trash2 } from "lucide-react";
+import { Loader2, FileText, Plus, RefreshCw, CheckCircle2, X, Send, Pencil, Trash2, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -35,7 +35,13 @@ type MI = {
   issued_at: string | null;
   paid_at: string | null;
   created_at: string;
+  grants_plan_code: string | null;
+  grants_until: string | null;
+  entitlement_granted_at: string | null;
+  entitlement_assignment_id: string | null;
 };
+
+type PlanOption = { code: string; name: string; storage_gb: number; role: string; billing_cycle: string };
 
 const inr = (p: number) =>
   "₹" + (Number(p) / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -121,6 +127,28 @@ export default function ManualInvoiceConsole() {
     load();
   };
 
+  const grantEntitlement = async (r: MI) => {
+    const planLabel = r.grants_plan_code ?? "configured plan";
+    if (!window.confirm(
+      `Grant entitlement for ${planLabel} to the customer? This activates the plan assignment and storage allocation.`
+    )) return;
+    const { error } = await (supabase as any).rpc("admin_grant_invoice_entitlement", { _invoice_id: r.id });
+    if (error) return toast.error(error.message);
+    toast.success("Entitlement granted");
+    try {
+      const { notify } = await import("@/lib/notify");
+      await notify(
+        r.user_id,
+        "entitlement_granted",
+        `Plan activated: ${planLabel}`,
+        `Your ${planLabel} plan is now active${r.grants_until ? ` until ${new Date(r.grants_until).toLocaleDateString()}` : ""}. Invoice ${r.invoice_number}.`,
+      );
+    } catch (e) { console.warn("notify failed", e); }
+    load();
+  };
+
+
+
   return (
     <section className="rounded-2xl border border-border/50 bg-card p-5">
       <header className="flex flex-wrap items-center justify-between gap-3 mb-4">
@@ -182,7 +210,22 @@ export default function ManualInvoiceConsole() {
                         <div>{r.billed_to_email ?? "—"}</div>
                         <div className="text-[10px] text-muted-foreground">{r.billed_to_name ?? ""}</div>
                       </td>
-                      <td className="p-2 text-xs capitalize">{r.surface}</td>
+                      <td className="p-2 text-xs capitalize">
+                        {r.surface}
+                        {r.grants_plan_code && (
+                          <div className="mt-0.5">
+                            {r.entitlement_granted_at ? (
+                              <span className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 text-[10px] font-bold uppercase">
+                                Entitled · {r.grants_plan_code}
+                              </span>
+                            ) : (
+                              <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 text-[10px] font-bold uppercase">
+                                Grant pending · {r.grants_plan_code}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </td>
                       <td className="p-2 text-right font-mono font-semibold">{inr(r.total_paise)}</td>
                       <td className="p-2">
                         <StatusBadge s={r.status} />
@@ -200,6 +243,9 @@ export default function ManualInvoiceConsole() {
                           )}
                           {["issued", "overdue", "draft"].includes(r.status) && (
                             <Button size="sm" variant="ghost" onClick={() => markPaid(r)} title="Mark paid"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /></Button>
+                          )}
+                          {r.status === "paid" && r.grants_plan_code && !r.entitlement_granted_at && (
+                            <Button size="sm" variant="ghost" onClick={() => grantEntitlement(r)} title="Grant entitlement"><KeyRound className="w-3.5 h-3.5 text-emerald-600" /></Button>
                           )}
                           {r.status !== "paid" && r.status !== "void" && (
                             <Button size="sm" variant="ghost" onClick={() => voidIt(r.id)} title="Void"><X className="w-3.5 h-3.5 text-rose-600" /></Button>
@@ -267,9 +313,20 @@ function InvoiceEditor({
   const [paymentMethod, setPaymentMethod] = useState<string>("");
   const [paymentLink, setPaymentLink] = useState("");
   const [items, setItems] = useState<LineItem[]>([{ label: "", quantity: 1, unit_paise: 0 }]);
+  const [grantsPlanCode, setGrantsPlanCode] = useState<string>("");
+  const [grantsUntil, setGrantsUntil] = useState<string>("");
+  const [plans, setPlans] = useState<PlanOption[]>([]);
 
   useEffect(() => {
     if (!open) return;
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("plans")
+        .select("code, name, storage_gb, role, billing_cycle")
+        .eq("is_active", true)
+        .order("role").order("sort_order");
+      setPlans((data ?? []) as PlanOption[]);
+    })();
     if (editing) {
       setUserId(editing.user_id);
       setUserEmail(editing.billed_to_email ?? "");
@@ -282,6 +339,8 @@ function InvoiceEditor({
       setPaymentMethod(editing.payment_method ?? "");
       setPaymentLink(editing.payment_link_url ?? "");
       setItems(editing.line_items?.length ? editing.line_items : [{ label: "", quantity: 1, unit_paise: 0 }]);
+      setGrantsPlanCode(editing.grants_plan_code ?? "");
+      setGrantsUntil(editing.grants_until ?? "");
     } else {
       setUserId(presetUserId ?? "");
       setUserEmail("");
@@ -290,6 +349,7 @@ function InvoiceEditor({
       setGst(18); setTaxInc(false); setDueDate(""); setNotes("");
       setPaymentMethod(""); setPaymentLink("");
       setItems([{ label: "", quantity: 1, unit_paise: 0 }]);
+      setGrantsPlanCode(""); setGrantsUntil("");
     }
   }, [open, editing, presetUserId, presetSurface]);
 
@@ -315,6 +375,9 @@ function InvoiceEditor({
         _invoice_id: editing.id, _line_items: cleanItems, _gst_percent: gst, _tax_inclusive: taxInc,
         _due_date: dueDate || null, _notes: notes || null,
         _payment_method: paymentMethod || null, _payment_link_url: paymentLink || null,
+        _grants_plan_code: grantsPlanCode || null,
+        _grants_until: grantsUntil || null,
+        _clear_grant: !grantsPlanCode && !!editing.grants_plan_code,
       });
       if (error) return toast.error(error.message);
       toast.success("Updated"); onSaved(); return;
@@ -331,6 +394,8 @@ function InvoiceEditor({
       _document_type: docType, _surface: surface, _line_items: cleanItems,
       _gst_percent: gst, _tax_inclusive: taxInc, _due_date: dueDate || null, _notes: notes || null,
       _payment_method: paymentMethod || null, _payment_link_url: paymentLink || null,
+      _grants_plan_code: grantsPlanCode || null,
+      _grants_until: grantsUntil || null,
     });
     if (error) return toast.error(error.message);
     toast.success("Draft created"); onSaved();
@@ -442,6 +507,49 @@ function InvoiceEditor({
           <div>
             <Label className="text-xs">Internal / customer-visible notes</Label>
             <Textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} />
+          </div>
+
+          {/* Entitlement grant — Studio/enterprise plan activated on invoice paid */}
+          <div className="rounded-lg border border-border/40 bg-secondary/10 p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-semibold">Grants entitlement on payment</Label>
+              <span className="text-[10px] text-muted-foreground">
+                Optional · auto-activates plan + storage when marked paid
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Plan</Label>
+                <Select
+                  value={grantsPlanCode || "none"}
+                  onValueChange={(v) => setGrantsPlanCode(v === "none" ? "" : v)}
+                >
+                  <SelectTrigger><SelectValue placeholder="No plan grant" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">— No plan grant —</SelectItem>
+                    {plans.map(p => (
+                      <SelectItem key={p.code} value={p.code}>
+                        {p.name} · {p.role} · {p.storage_gb ? `${p.storage_gb} GB` : "no storage"} · {p.billing_cycle}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Access until (optional · lifetime if blank)</Label>
+                <Input
+                  type="date"
+                  value={grantsUntil}
+                  onChange={e => setGrantsUntil(e.target.value)}
+                  disabled={!grantsPlanCode}
+                />
+              </div>
+            </div>
+            {editing?.entitlement_granted_at && (
+              <div className="text-[10px] text-emerald-600">
+                Entitlement already granted on {new Date(editing.entitlement_granted_at).toLocaleString()}
+              </div>
+            )}
           </div>
 
           <div className="rounded-lg bg-secondary/30 p-3 grid grid-cols-3 gap-2 text-xs">

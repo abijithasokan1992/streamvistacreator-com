@@ -3327,6 +3327,10 @@ export type Database = {
           deal_memo_id: string | null
           document_type: string
           due_date: string | null
+          entitlement_assignment_id: string | null
+          entitlement_granted_at: string | null
+          grants_plan_code: string | null
+          grants_until: string | null
           gst_paise: number
           gst_percent: number
           id: string
@@ -3358,6 +3362,10 @@ export type Database = {
           deal_memo_id?: string | null
           document_type?: string
           due_date?: string | null
+          entitlement_assignment_id?: string | null
+          entitlement_granted_at?: string | null
+          grants_plan_code?: string | null
+          grants_until?: string | null
           gst_paise?: number
           gst_percent?: number
           id?: string
@@ -3389,6 +3397,10 @@ export type Database = {
           deal_memo_id?: string | null
           document_type?: string
           due_date?: string | null
+          entitlement_assignment_id?: string | null
+          entitlement_granted_at?: string | null
+          grants_plan_code?: string | null
+          grants_until?: string | null
           gst_paise?: number
           gst_percent?: number
           id?: string
@@ -3417,6 +3429,13 @@ export type Database = {
             columns: ["deal_memo_id"]
             isOneToOne: false
             referencedRelation: "deal_memos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manual_invoices_entitlement_assignment_id_fkey"
+            columns: ["entitlement_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "plan_assignments"
             referencedColumns: ["id"]
           },
           {
@@ -7554,6 +7573,8 @@ export type Database = {
         Args: {
           _document_type: string
           _due_date?: string
+          _grants_plan_code?: string
+          _grants_until?: string
           _gst_percent?: number
           _line_items: Json
           _notes?: string
@@ -7656,6 +7677,10 @@ export type Database = {
           _new_playback_url_expires_at?: string
         }
         Returns: undefined
+      }
+      admin_grant_invoice_entitlement: {
+        Args: { _invoice_id: string }
+        Returns: string
       }
       admin_grant_storage: {
         Args: { _gb: number; _note?: string; _user_id: string }
@@ -7821,7 +7846,10 @@ export type Database = {
       }
       admin_update_manual_invoice: {
         Args: {
+          _clear_grant?: boolean
           _due_date?: string
+          _grants_plan_code?: string
+          _grants_until?: string
           _gst_percent?: number
           _invoice_id: string
           _line_items: Json

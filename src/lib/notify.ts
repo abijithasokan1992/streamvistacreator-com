@@ -21,7 +21,8 @@ export type NotifyEvent =
   | "offer_rejected"
   | "screening_invite_created"
   | "edit_request_approved"
-  | "edit_request_rejected";
+  | "edit_request_rejected"
+  | "entitlement_granted";
 
 export async function notify(
   userId: string,

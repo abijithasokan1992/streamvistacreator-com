@@ -208,7 +208,7 @@ export default function CinematicOnboarding({ onComplete }: { onComplete: () => 
 
                 <p className="text-zinc-200 font-bold uppercase text-xs">Nilavara B: Automated Top-up</p>
 
-                <p className="mt-1 leading-relaxed">Overage expands dynamically at ₹767 per additional TB. No hard locks or interruption mid-render.</p>
+                <p className="mt-1 leading-relaxed">Overage expands dynamically at {payg.totalLabel} per additional TB. No hard locks or interruption mid-render.</p>
 
               </div>
 

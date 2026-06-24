@@ -7,7 +7,7 @@ export default function IPCopyright() {
   const path = pathname === "/dmca" ? "/dmca" : "/ip-copyright";
   return (
     <>
-      <Seo title={path === "/dmca" ? "DMCA & Copyright Policy — StreamVista" : "IP & Copyright Policy — StreamVista"} description="How to report copyright infringement on StreamVista Cloud X, our DMCA designated agent, and our IP protection process." path={path} />
+      <Seo title={path === "/dmca" ? "DMCA & Copyright Policy — StreamVista" : "IP & Copyright Policy — StreamVista"} description={path === "/dmca" ? "Report copyright infringement on StreamVista Cloud X. Submit a DMCA takedown notice to our designated agent and view our counter-notice and repeat-infringer procedures." : "StreamVista Cloud X intellectual property rights policy — how we protect creator IP, handle DMCA notices, counter-claims, and repeat infringement on our platform."} path={path} />
     <LegalLayout title="IP & Copyright (DMCA) Policy" eyebrow="Legal · IP & DMCA">
 
       <LegalSection title="1. Our Commitment">

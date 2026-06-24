@@ -12,89 +12,94 @@
    ============================================================= */
 
 @layer base {
-  /* ---------- LIGHT (operational) ---------- */
+  /* ---------- LIGHT (paired with dark — same brand DNA) ----------
+     Light = paper white surfaces, same primary/accent hues as dark so
+     the brand reads identically across themes. Calibrated for AA+ contrast. */
   :root {
-    --background: 40 30% 98%;
-    --foreground: 230 25% 12%;
+    --background: 225 30% 98.5%;
+    --foreground: 225 40% 8%;
 
-    --surface: 40 25% 96%;
+    --surface: 225 25% 96.5%;
     --surface-elevated: 0 0% 100%;
-    --surface-sunken: 40 20% 94%;
+    --surface-sunken: 225 22% 94%;
 
     --card: 0 0% 100%;
-    --card-foreground: 230 25% 12%;
+    --card-foreground: 225 40% 8%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 230 25% 12%;
+    --popover-foreground: 225 40% 8%;
 
-    --primary: 222 75% 48%;
+    /* Same hue as dark mode, deeper lightness for sRGB AA on white */
+    --primary: 218 92% 48%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 250 70% 55%;
+    --primary-glow: 250 88% 58%;
 
-    --secondary: 230 15% 92%;
-    --secondary-foreground: 230 25% 18%;
+    --secondary: 225 20% 93%;
+    --secondary-foreground: 225 40% 14%;
 
-    --muted: 230 15% 94%;
-    --muted-foreground: 230 10% 40%;
+    --muted: 225 18% 95%;
+    --muted-foreground: 225 14% 36%;
 
-    --accent: 38 90% 50%;
-    --accent-foreground: 230 30% 12%;
+    --accent: 42 95% 46%;
+    --accent-foreground: 225 40% 8%;
 
-    --destructive: 0 72% 50%;
+    --destructive: 0 78% 48%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 145 60% 38%;
+    --success: 148 68% 36%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 90% 48%;
-    --warning-foreground: 230 30% 12%;
-    --info: 210 85% 48%;
+    --warning: 38 95% 46%;
+    --warning-foreground: 225 40% 8%;
+    --info: 210 92% 46%;
     --info-foreground: 0 0% 100%;
 
-    --border: 230 15% 88%;
-    --border-subtle: 230 15% 92%;
-    --border-strong: 230 15% 78%;
-    --input: 230 15% 90%;
-    --ring: 222 75% 48%;
+    --border: 225 18% 88%;
+    --border-subtle: 225 18% 92%;
+    --border-strong: 225 18% 76%;
+    --input: 225 18% 90%;
+    --ring: 218 92% 48%;
 
-    --text-secondary: 230 12% 32%;
-    --text-tertiary: 230 10% 50%;
+    --text-secondary: 225 16% 28%;
+    --text-tertiary: 225 12% 46%;
 
-    --row-hover: 230 30% 96%;
-    --row-selected: 222 75% 95%;
+    --row-hover: 225 30% 96%;
+    --row-selected: 218 80% 94%;
 
-    --chart-1: 222 75% 48%;
-    --chart-2: 250 70% 55%;
-    --chart-3: 38 90% 50%;
-    --chart-4: 145 60% 38%;
-    --chart-5: 0 72% 50%;
-    --chart-6: 195 80% 42%;
+    --chart-1: 218 92% 48%;
+    --chart-2: 250 88% 58%;
+    --chart-3: 42 95% 46%;
+    --chart-4: 148 68% 36%;
+    --chart-5: 0 78% 48%;
+    --chart-6: 195 92% 42%;
 
     --radius: 0.75rem;
 
-    /* Light mode is operational — no neon, soft shadows only */
-    --gradient-hero: linear-gradient(180deg, hsl(40 30% 99%), hsl(40 25% 96%));
-    --gradient-primary: linear-gradient(135deg, hsl(222 75% 48%), hsl(250 70% 55%));
-    --gradient-gold: linear-gradient(135deg, hsl(38 90% 50%), hsl(28 90% 48%));
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(40 25% 97%));
-    --gradient-border: linear-gradient(135deg, hsl(222 75% 48% / 0.4), hsl(250 70% 55% / 0.25));
+    --gradient-hero: radial-gradient(ellipse 80% 60% at 50% -10%, hsl(218 92% 88% / 0.7), transparent 60%),
+                     radial-gradient(ellipse 60% 50% at 90% 110%, hsl(250 88% 90% / 0.55), transparent 60%),
+                     linear-gradient(180deg, hsl(225 30% 99%), hsl(225 25% 97%));
+    --gradient-primary: linear-gradient(135deg, hsl(218 92% 48%), hsl(250 88% 58%));
+    --gradient-gold: linear-gradient(135deg, hsl(42 95% 48%), hsl(32 95% 46%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(225 25% 97.5%));
+    --gradient-border: linear-gradient(135deg, hsl(218 92% 48% / 0.42), hsl(250 88% 58% / 0.28));
 
-    --shadow-glow: 0 1px 2px hsl(230 25% 12% / 0.05), 0 4px 12px hsl(230 25% 12% / 0.06);
-    --shadow-glow-purple: 0 1px 2px hsl(230 25% 12% / 0.05), 0 4px 12px hsl(230 25% 12% / 0.06);
-    --shadow-glow-gold: 0 1px 2px hsl(230 25% 12% / 0.05), 0 4px 12px hsl(230 25% 12% / 0.06);
-    --shadow-card: 0 1px 3px hsl(230 25% 12% / 0.06), 0 8px 24px -12px hsl(230 25% 12% / 0.08);
-    --shadow-elevated: 0 12px 32px -12px hsl(230 25% 12% / 0.12);
+    --shadow-glow: 0 1px 2px hsl(225 40% 8% / 0.06), 0 8px 24px -8px hsl(218 92% 48% / 0.18);
+    --shadow-glow-purple: 0 1px 2px hsl(225 40% 8% / 0.06), 0 8px 24px -8px hsl(250 88% 58% / 0.20);
+    --shadow-glow-gold: 0 1px 2px hsl(225 40% 8% / 0.06), 0 8px 24px -8px hsl(42 95% 48% / 0.20);
+    --shadow-card: 0 1px 0 hsl(0 0% 100% / 0.8) inset, 0 1px 3px hsl(225 40% 8% / 0.06), 0 10px 28px -14px hsl(225 40% 8% / 0.12);
+    --shadow-elevated: 0 1px 0 hsl(0 0% 100% / 0.8) inset, 0 18px 44px -18px hsl(225 40% 8% / 0.18);
 
     --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 230 25% 18%;
-    --sidebar-primary: 222 75% 48%;
+    --sidebar-foreground: 225 40% 14%;
+    --sidebar-primary: 218 92% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 230 15% 94%;
-    --sidebar-accent-foreground: 230 25% 18%;
-    --sidebar-border: 230 15% 88%;
-    --sidebar-ring: 222 75% 48%;
+    --sidebar-accent: 225 18% 95%;
+    --sidebar-accent-foreground: 225 40% 14%;
+    --sidebar-border: 225 18% 88%;
+    --sidebar-ring: 218 92% 48%;
   }
+
 
   /* ---------- DARK (cinematic, brand default — Baselight DI grade) ---------- */
   .dark {

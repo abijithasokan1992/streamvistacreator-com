@@ -247,9 +247,20 @@
   img, video, canvas { image-rendering: auto; }
   h1, h2, h3, h4 {
     font-family: 'Big Shoulders Display', 'Space Grotesk', system-ui, sans-serif;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.025em;
     font-feature-settings: "kern", "liga", "ss01";
+    font-weight: 800;
   }
+  h1 { font-weight: 900; letter-spacing: -0.035em; }
+  /* Bold & punchy lead paragraph — replaces meek body copy when the writer
+     wraps a sentence in <p class="lead"> or uses Tailwind .text-lead */
+  .lead, p.lead {
+    font-size: 1.0625rem;
+    line-height: 1.55;
+    color: hsl(var(--foreground) / 0.92);
+    font-weight: 500;
+  }
+
   .font-mono-tech { font-family: 'JetBrains Mono', ui-monospace, monospace; }
   /* Calibrated selection — brand-accurate on every display */
   ::selection { background: hsl(var(--primary) / 0.35); color: hsl(var(--foreground)); }

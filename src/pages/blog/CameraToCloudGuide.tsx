@@ -15,6 +15,7 @@ export default function CameraToCloudGuide() {
         description="A practical Camera to Cloud (C2C) workflow guide for indie filmmakers and small crews — compare hardware encoders, mobile rigs, NDI and software encoders, and ship dailies to the cloud cheaply."
         path={URL_PATH}
         type="article"
+        image="/og/camera-to-cloud-guide.jpg"
         jsonLd={[
           {
             "@context": "https://schema.org",

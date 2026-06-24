@@ -465,7 +465,7 @@ export default function StudioIngest() {
             Bring footage into your studio vault from local drives, camera cards, watch folders or archive
             bundles. Source folder structure is preserved by default — A_CAM / B_CAM / SOUND / day_01 stays intact.
           </p>
-          <p className="text-[10px] text-muted-foreground/60 mt-1.5 tracking-wide">
+          <p className="text-[10px] text-muted-foreground mt-1.5 tracking-wide">
             Powered by Crayons Bridge Ingest Engine
           </p>
         </div>

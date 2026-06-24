@@ -257,7 +257,7 @@ export default function Auth() {
                 </button>
               </form>
 
-              <div className="my-5 flex items-center gap-3 text-[10px] uppercase tracking-[0.25em] text-muted-foreground/60">
+              <div className="my-5 flex items-center gap-3 text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
                 <div className="h-px flex-1 bg-border/60" />
                 or
                 <div className="h-px flex-1 bg-border/60" />
@@ -349,7 +349,7 @@ function Input({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         autoComplete={autoComplete}
-        className="mt-1.5 w-full h-12 px-4 rounded-xl bg-input/40 border border-border/60 text-sm placeholder:text-muted-foreground/60 outline-none focus:border-accent/70 focus:bg-input/70"
+        className="mt-1.5 w-full h-12 px-4 rounded-xl bg-input/40 border border-border/60 text-sm placeholder:text-muted-foreground outline-none focus:border-accent/70 focus:bg-input/70"
       />
     </label>
   );

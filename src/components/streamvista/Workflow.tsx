@@ -9,60 +9,28 @@ import { Upload, Database, Wrench, ShieldCheck, FileSignature, ArrowRight } from
  */
 
 const STEPS = [
-  {
-    icon: Upload,
-    step: "01",
-    title: "Ingest",
-    body: "Camera-to-cloud pipelines, browser uploads and structured intake for masters, posters, metadata and legal docs.",
-  },
-  {
-    icon: Database,
-    step: "02",
-    title: "Store",
-    body: "Recurring 1 TB storage blocks on enterprise-grade infrastructure with full chain-of-custody for every asset.",
-  },
-  {
-    icon: Wrench,
-    step: "03",
-    title: "Prepare",
-    body: "Frame-accurate review, mastering, QC and delivery prep — handled in-platform with your post and production team.",
-  },
-  {
-    icon: ShieldCheck,
-    step: "04",
-    title: "Control access",
-    body: "NDA-gated screener links, watermarked previews, granular roles and timeline-tracked admin updates.",
-  },
-  {
-    icon: FileSignature,
-    step: "05",
-    title: "License",
-    body: "Buyer / OTT / distributor requests, deal-room exchange and audit-ready records — from first contact to signed deal.",
-  },
+  { icon: Upload, step: "01", title: "Ingest", body: "Masters, posters, metadata in." },
+  { icon: Database, step: "02", title: "Store", body: "Encrypted, versioned, auditable." },
+  { icon: Wrench, step: "03", title: "Prepare", body: "QC, mastering, delivery-ready." },
+  { icon: ShieldCheck, step: "04", title: "Control Access", body: "NDA-gated, role-scoped." },
+  { icon: FileSignature, step: "05", title: "License", body: "Screeners, requests, contracts." },
 ];
 
 export const Workflow = () => (
   <section id="workflow" className="py-24 border-b border-border/40 relative">
     <div className="container">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-14 animate-fade-in">
-        <div>
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-8 h-px bg-accent" />
-            <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">
-              How StreamVista runs
-            </span>
-          </div>
-          <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-4xl md:text-6xl">
-            One pipeline.
-            <br />
-            <span className="gradient-text">Intake to deal.</span>
-          </h2>
+      <div className="mb-14 animate-fade-in">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-8 h-px bg-accent" />
+          <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">
+            One pipeline
+          </span>
         </div>
-        <p className="text-muted-foreground max-w-sm text-sm leading-relaxed">
-          Every title moves through the same five operational stages — so nothing
-          gets lost between your editor, your vault, your legal team and your buyer.
-        </p>
+        <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-4xl md:text-6xl">
+          From intake <span className="gradient-text">to deal.</span>
+        </h2>
       </div>
+
 
       <ol className="grid md:grid-cols-2 lg:grid-cols-5 gap-px bg-border/60 border border-border/60 rounded-2xl overflow-hidden">
         {STEPS.map(({ icon: Icon, step, title, body }, idx) => (

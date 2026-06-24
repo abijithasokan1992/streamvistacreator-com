@@ -180,17 +180,17 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
             </div>
             <h2 className="font-display text-2xl md:text-3xl mt-1.5 leading-tight">
               {hasPaidVault
-                ? "Your studio vault is live."
+                ? "Vault is live."
                 : hasTesting
-                ? "Testing vault is live — 50 GB internal allowance."
-                : "Activate your studio vault."}
+                ? "Testing vault active."
+                : "Activate your vault."}
             </h2>
             <p className="text-sm text-muted-foreground mt-1.5 max-w-xl">
               {hasPaidVault
-                ? "Upload, browse and manage your studio's footage and masters from one place."
+                ? "Upload and manage your footage and masters."
                 : hasTesting
-                ? "Use the temporary 50 GB allowance to test uploads and the vault workspace. Buy 1 TB Studio Storage to activate real, recurring vault capacity."
-                : "Buy 1 TB Studio Storage to activate your vault and start uploading."}
+                ? "50 GB test allowance. Buy 1 TB to go live."
+                : "Buy 1 TB to start uploading."}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -205,7 +205,7 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
               className="bg-gradient-primary text-primary-foreground glow-primary"
             >
               <ShoppingCart className="w-4 h-4 mr-2" />
-              {hasPaidVault ? "Buy another 1 TB" : "Buy 1 TB Storage"}
+              {hasPaidVault ? "Add 1 TB" : "Buy 1 TB"}
             </Button>
           </div>
         </div>

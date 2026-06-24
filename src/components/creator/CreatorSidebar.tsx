@@ -3,6 +3,12 @@ import {
   Home, Film, Inbox, Bell, Wallet, LifeBuoy,
   BarChart3, Receipt, CalendarClock, Lock, Database,
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export type SectionId =
   | "home" | "titles" | "submissions" | "updates"
@@ -12,13 +18,15 @@ export type SectionId =
   // legacy alias kept for old URLs
   | "upgrade";
 
-export type SectionGroup = "workspace" | "delivery_vault" | "billing";
+export type SectionGroup = "main" | "storage" | "account";
 
 type SectionDef = {
   id: SectionId;
   label: string;
   heading: string;
   subhead?: string;
+  /** One-line hover tooltip for beginners. */
+  tip?: string;
   icon: React.ComponentType<{ className?: string }>;
   group: SectionGroup;
   /** Hidden for Free-tier creators (kept reachable via direct route for paid users). */
@@ -26,32 +34,27 @@ type SectionDef = {
 };
 
 export const SECTIONS: ReadonlyArray<SectionDef> = [
-  // Workspace — title prep, metadata, posters, trailers, review files
-  { id: "home",           label: "Home",            heading: "Creator Workspace", subhead: "Your titles, submissions and account at a glance.",                          icon: Home,    group: "workspace" },
-  { id: "titles",         label: "My Titles",       heading: "My Titles",         subhead: "Create, manage and prepare your catalog for submission.",                    icon: Film,    group: "workspace" },
-  { id: "submissions",    label: "Submissions",     heading: "Submissions",       subhead: "Cross-title view of submission state and review progress.",                  icon: Inbox,   group: "workspace" },
-  { id: "updates",        label: "Updates",         heading: "Updates",           subhead: "Announcements, review notes and admin messages.",                            icon: Bell,    group: "workspace" },
+  // Main
+  { id: "home",           label: "Home",         heading: "Home",         tip: "Your dashboard overview.",                              icon: Home,    group: "main" },
+  { id: "titles",         label: "Titles",       heading: "Titles",       tip: "Add and manage your films and shows.",                  icon: Film,    group: "main" },
+  { id: "submissions",    label: "Review Queue", heading: "Review Queue", tip: "Track which titles are being reviewed.",                icon: Inbox,   group: "main" },
+  { id: "updates",        label: "Inbox",        heading: "Inbox",        tip: "Messages and notes from our team.",                     icon: Bell,    group: "main" },
 
-  // Delivery Vault — master deliveries, archive copies, paid storage expansion
-  { id: "delivery_vault", label: "Delivery Vault",  heading: "Delivery Vault",    subhead: "Master delivery files, archive copies and paid storage expansion.",          icon: Database, group: "delivery_vault" },
+  // Storage
+  { id: "delivery_vault", label: "Vault",        heading: "Vault",        subhead: "Masters, deliveries, archives.", tip: "Secure storage for your master files.", icon: Database, group: "storage" },
 
-  // Billing — invoices, storage purchases, plans
-  { id: "billing",        label: "Storage & Billing", heading: "Storage & Billing", subhead: "Plans, invoices and self-serve storage add-ons.",                          icon: Wallet,  group: "billing" },
-  { id: "help",           label: "Help",            heading: "Help & Support",    subhead: "Contact us or submit a ticket.",                                              icon: LifeBuoy, group: "billing" },
+  // Account
+  { id: "billing",        label: "Billing",      heading: "Billing",      subhead: "Plan, storage, invoices.",       tip: "Your plan, storage and invoices.",       icon: Wallet,  group: "account" },
+  { id: "help",           label: "Help",         heading: "Help",         tip: "Contact us or get answers fast.",                         icon: LifeBuoy, group: "account" },
 
-  // Paid-only — hidden entirely from Free sidebar to reduce noise.
-  { id: "insights",       label: "Insights",        heading: "Insights",          subhead: "Catalog activity, performance and trends.",                                  icon: BarChart3,     group: "workspace", proOnly: true },
-  { id: "statements",     label: "Statements",      heading: "Statements",        subhead: "Invoices and account history.",                                              icon: Receipt,       group: "billing",   proOnly: true },
-  { id: "schedule",       label: "Schedule",        heading: "Schedule",          subhead: "Reviews, deadlines and delivery dates.",                                     icon: CalendarClock, group: "workspace", proOnly: true },
+  // Pro
+  { id: "insights",       label: "Stats",        heading: "Stats",        tip: "Activity and performance trends.",                       icon: BarChart3,     group: "main",    proOnly: true },
+  { id: "statements",     label: "Statements",   heading: "Statements",   tip: "Invoices and account history.",                          icon: Receipt,       group: "account", proOnly: true },
+  { id: "schedule",       label: "Calendar",     heading: "Calendar",     tip: "Reviews, deadlines and delivery dates.",                 icon: CalendarClock, group: "main",    proOnly: true },
 ];
 
-const GROUP_LABEL: Record<SectionGroup, string> = {
-  workspace: "Workspace",
-  delivery_vault: "Delivery Vault",
-  billing: "Billing",
-};
+const GROUP_ORDER: SectionGroup[] = ["main", "storage", "account"];
 
-const GROUP_ORDER: SectionGroup[] = ["workspace", "delivery_vault", "billing"];
 
 /** Items visible in the sidebar for a given tier. Pro-only items are hidden for Free. */
 export function visibleSections(isFree: boolean): ReadonlyArray<SectionDef & { locked: boolean }> {

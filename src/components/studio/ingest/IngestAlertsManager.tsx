@@ -150,6 +150,10 @@ export default function IngestAlertsManager({ workspaceId }: { workspaceId: stri
   };
 
   const startEdit = (rule: Rule) => {
+    if (!isPremium) {
+      toast.error("Editing alert rules requires a paid storage block");
+      return;
+    }
     setEditing(JSON.parse(JSON.stringify(rule)));
     setOpen(true);
   };

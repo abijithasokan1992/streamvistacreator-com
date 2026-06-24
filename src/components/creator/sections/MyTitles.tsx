@@ -104,9 +104,9 @@ export default function MyTitlesSection() {
         </div>
       )}
 
-      <div className="flex items-center justify-between gap-3 mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <p className="text-xs text-muted-foreground">
-          {loading ? "Loading…" : `${titles.length} title${titles.length === 1 ? "" : "s"}`}
+          {loading ? "Loading…" : `${visible.length} of ${titles.length} title${titles.length === 1 ? "" : "s"}`}
         </p>
         <button
           onClick={handleStartCreate}
@@ -123,6 +123,46 @@ export default function MyTitlesSection() {
           {freeLimitHit ? "New Title — Pro" : "New Title"}
         </button>
       </div>
+
+      {/* Filter chips + sort */}
+      {titles.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <div className="flex flex-wrap gap-1.5">
+            {([
+              ["all", "All"],
+              ["drafts", "Drafts"],
+              ["in_review", "In Review"],
+              ["approved", "Approved"],
+            ] as const).map(([id, label]) => (
+              <button
+                key={id}
+                onClick={() => setFilter(id)}
+                className={cn(
+                  "text-[11px] rounded-full border px-2.5 py-1 transition-colors",
+                  filter === id
+                    ? "border-accent/60 bg-accent/15 text-foreground"
+                    : "border-border/40 bg-secondary/5 text-muted-foreground hover:bg-secondary/20",
+                )}
+              >
+                {label} <span className="opacity-60">({counts[id]})</span>
+              </button>
+            ))}
+          </div>
+          <label className="text-[11px] text-muted-foreground inline-flex items-center gap-1.5">
+            Sort
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as typeof sort)}
+              className="bg-background border border-border/40 rounded-md text-[11px] px-2 py-1"
+            >
+              <option value="updated">Recently updated</option>
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+            </select>
+          </label>
+        </div>
+      )}
+
 
 
       {gating && (

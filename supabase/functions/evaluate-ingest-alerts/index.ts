@@ -347,6 +347,41 @@ Deno.serve(async (req) => {
       deliveryStatus.whatsapp = { sent, failed }
     }
 
+    // Webhook channel — POST signed JSON to internal systems
+    if (rule.channels.includes('webhook')) {
+      channelsAttempted.push('webhook')
+      const endpoints = (rule.recipients?.webhooks ?? []).filter(
+        (w) => w && typeof w.url === 'string' && /^https:\/\//i.test(w.url),
+      )
+      const sent: Array<{ url: string; status?: number }> = []
+      const failed: Array<{ url: string; error: string; status?: number }> = []
+      const firedAt = new Date().toISOString()
+      const webhookPayload = {
+        event: 'ingest.alert',
+        firedAt,
+        test: forceFire,
+        workspace: { id: rule.workspace_id, name: workspaceName },
+        rule: {
+          id: rule.id,
+          name: rule.name,
+          type: rule.rule_type,
+          threshold: rule.threshold,
+        },
+        summary: decision.summary,
+        metrics: decision.metrics,
+        details: decision.payload,
+        dashboardUrl: 'https://streamvistacreator.com/dashboard/studio',
+      }
+      for (const ep of endpoints) {
+        const r = await sendWebhook(ep, webhookPayload)
+        if (r.ok) sent.push({ url: ep.url, status: r.status })
+        else failed.push({ url: ep.url, error: r.error ?? 'unknown', status: r.status })
+      }
+      deliveryStatus.webhook = { sent, failed }
+    }
+
+
+
     await admin.from('ingest_alert_events').insert({
       rule_id: rule.id,
       workspace_id: rule.workspace_id,

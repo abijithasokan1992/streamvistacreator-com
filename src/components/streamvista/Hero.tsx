@@ -1,6 +1,7 @@
 import { ArrowRight, Film, Layers, Briefcase, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { TrustBadges } from "./TrustBadges";
+import { HeroSilverScreen } from "./HeroSilverScreen";
 
 /**
  * Public hero — three-audience platform statement.

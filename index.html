@@ -3,6 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Security headers (meta fallback; CDN/edge headers in public/_headers take precedence when honored) -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-9rFs1ES28oA1D/ggBWr2XTRJQigvfW3QtKKNuZOGIKU=' https://checkout.razorpay.com https://*.razorpay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.razorpay.com https://lumberjack.razorpay.com https://*.razorpay.com https://*.oraclecloud.com https://storage.googleapis.com https://fonts.googleapis.com https://fonts.gstatic.com; frame-src https://*.razorpay.com https://checkout.razorpay.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';" />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), interest-cohort=()" />
+
     <title>StreamVista Cloud X — Creator Studio Cloud Storage</title>
     <meta name="description" content="StreamVista Cloud X is the secure creator studio cloud platform for media professionals to onboard, store, share and monetise content.">
     <meta name="author" content="StreamVista" />

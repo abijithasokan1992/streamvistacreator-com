@@ -233,13 +233,13 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
         {hasTesting && !hasPaidVault && (
           <p className="text-[11px] text-muted-foreground mt-3">
             <ShieldCheck className="w-3 h-3 inline mr-1 text-amber-300" />
-            Includes a {q.testingOverrideGb} GB testing allowance — internal QA only. Buy 1 TB Studio Storage to activate real vault capacity.
+            {q.testingOverrideGb} GB test allowance. Buy 1 TB to activate real capacity.
           </p>
         )}
 
         {!liveSku && (
           <p className="text-[11px] text-amber-300 mt-3">
-            Studio storage product is not available right now. Please refresh, or contact support if this persists.
+            Storage unavailable right now. Try refreshing.
           </p>
         )}
       </section>

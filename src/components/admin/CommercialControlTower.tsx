@@ -714,6 +714,40 @@ function EmptyRow({ label }: { label: string }) {
   return <div className="p-6 text-center text-xs text-muted-foreground">{label}</div>;
 }
 
+function BuyerBrief({ row }: { row: CommercialRow }) {
+  const t = (row.terms ?? {}) as Record<string, unknown>;
+  const cat = (t.category as string) ?? null;
+  const fields: Array<[string, unknown]> = [
+    ["Category", cat],
+    ["Territory", t.territory],
+    ["Rights", t.rights_category],
+    ["Platform", t.platform_type],
+    ["Exclusivity", t.exclusivity],
+    ["Term", t.term_bucket],
+    ["Urgency", t.urgency],
+    ["Screener", t.screener_needed === true ? "Requested" : t.screener_needed === false ? "Not needed" : null],
+    ["NDA", t.nda_ready === true ? "Ready" : t.nda_ready === false ? "Not yet" : null],
+    ["Languages", Array.isArray(t.languages) && (t.languages as string[]).length ? (t.languages as string[]).join(", ") : null],
+    ["Genres", Array.isArray(t.genres) && (t.genres as string[]).length ? (t.genres as string[]).join(", ") : null],
+    ["Formats", Array.isArray(t.formats) && (t.formats as string[]).length ? (t.formats as string[]).join(", ") : null],
+  ].filter(([, v]) => v != null && v !== "");
+  if (fields.length === 0 && !row.interest_summary) return null;
+  return (
+    <div className="rounded-lg border border-border/30 bg-background/40 p-3">
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">Buyer brief</div>
+      {row.interest_summary && <div className="text-xs text-foreground/90 mb-2">{row.interest_summary}</div>}
+      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+        {fields.map(([k, v]) => (
+          <div key={k} className="flex items-start justify-between gap-2">
+            <span className="text-muted-foreground">{k}</span>
+            <span className="text-right text-foreground/90 truncate">{String(v)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function LinkTitleRow({ row, onLinked }: { row: CommercialRow; onLinked: (titleId: string | null) => void }) {
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<{ id: string; title: string }[]>([]);

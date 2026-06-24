@@ -1,118 +1,80 @@
 
-# Stream 11.4 — StreamVista Design OS
+# StreamVista AI Agent Network — Build Plan
 
-A staged refactor of the visual & UX layer of the existing StreamVista app. No payment, security, routing, or auth rewrites. Working Razorpay / Studio Vault / billing flows remain untouched — only the chrome and theming around them change.
+Goal: ship 5 communicating AI agents across StreamVista, with a Chief AI in the Admin Panel that speaks audio reports to Abijith Asokan (Founder / MD / Architect). All four surface agents (Home, Creator, Studio, Buyer/Licensing) report up to the Chief.
 
-This is a multi-phase stream. Each phase is independently shippable. I will execute them sequentially in subsequent turns, not all in one giant patch (it would be unsafe and unreviewable across the existing ~50+ pages).
+## Architecture
 
----
+```text
+                         ┌─────────────────────────────┐
+                         │  CHIEF AI (Admin Panel)     │
+                         │  • Voice reports → Abijith  │
+                         │  • Reads agent_events       │
+                         │  • Realtime subscribe       │
+                         └──────────────┬──────────────┘
+                                        │ summarize + speak
+                  ┌─────────────────────┼─────────────────────┐
+                  │                     │                     │
+       ┌──────────┴──────┐   ┌──────────┴──────┐   ┌──────────┴──────┐   ┌──────────────┐
+       │ HOME AGENT      │   │ CREATOR AGENT   │   │ STUDIO AGENT    │   │ BUYER AGENT  │
+       │ public concierge│   │ creator dash    │   │ studio dash     │   │ licensing    │
+       └─────────┬───────┘   └────────┬────────┘   └────────┬────────┘   └──────┬───────┘
+                 │                    │                     │                   │
+                 └────────────────────┴──── agent_events ───┴───────────────────┘
+                                  (persisted + realtime)
+```
 
-## Phase A — Theme Token Foundation + Dark/Light/System
+## Scope (this pass)
 
-Goal: a single semantic token system that works in both modes, with a runtime ThemeProvider.
+### 1. Backend — Lovable Cloud
+- **Migration**: new tables (with GRANTs + RLS)
+  - `agent_events` — id, agent (enum: home/creator/studio/buyer/chief), severity (info/warn/critical), title, summary, payload jsonb, workspace_id?, created_by?, created_at
+  - `agent_reports` — Chief-generated digests (text + audio_url + created_at)
+  - `app_role` enum: add `founder` value (keep existing admin/etc).
+- **Realtime**: `ALTER PUBLICATION supabase_realtime ADD TABLE agent_events`
+- **Auth gating**: `has_role(uid, 'founder')` security-definer used by Chief-only RLS. Seed Abijith's user with `founder` role (we'll prompt for his email/uid post-plan if not already assigned).
 
-1. Rewrite `src/index.css`:
-   - Keep current dark palette as `.dark` (default).
-   - Add a new `:root` light palette tuned for "operational comfort" (warm off-white canvas, near-black ink, restrained primary, no neon glows).
-   - Introduce semantic layer tokens beyond shadcn defaults:
-     - `--surface`, `--surface-elevated`, `--surface-sunken`
-     - `--border-subtle`, `--border-strong`
-     - `--text-secondary`, `--text-tertiary`
-     - `--state-success / warning / danger / info` (+ `-foreground`, `-soft`)
-     - `--row-hover`, `--row-selected`
-     - `--chart-1..6`
-   - Demote glow/gradient utilities so they only fire in cinematic surfaces, not on every page.
-2. Extend `tailwind.config.ts` to expose the new tokens as utilities (`bg-surface`, `bg-surface-elevated`, `text-secondary`, `border-subtle`, etc.).
-3. Add `src/components/theme/ThemeProvider.tsx` + `useTheme()` hook:
-   - Modes: `dark` | `light` | `system`.
-   - Persists to `localStorage` (`sv.theme`).
-   - Reacts to `prefers-color-scheme` when `system`.
-   - Mounts class on `<html>`.
-4. Add `ThemeToggle` (segmented Sun / Moon / Monitor) and wire into the app header + admin header.
-5. Default mode by surface family:
-   - Marketing, Creator home, Vault library, Review = `dark` (cinematic).
-   - Admin, Billing, Invoices, Settings, Account = follows user preference, default `system`.
+### 2. Edge functions
+- `agent-chat` — generic chat endpoint. Body: `{ surface, messages }`. Calls Lovable AI (`google/gemini-2.5-flash`) with surface-specific system prompt. Logs structured events to `agent_events` when the model emits a `report:` tag.
+- `chief-report` — founder-only. Reads recent `agent_events`, asks `google/gemini-2.5-pro` to synthesize a briefing, persists row in `agent_reports`, returns text.
+- `chief-voice` — founder-only. Takes `text` (or report_id), calls **ElevenLabs TTS** (`eleven_turbo_v2_5`, voice George `JBFqnCBsd6RMkjVDRZzb`), returns MP3 stream. Requires ElevenLabs connector (we'll trigger connect flow during build).
 
----
+### 3. Frontend
+- `src/components/agents/AgentChat.tsx` — reusable chat panel (markdown render, streaming-style UI, tied to `agent-chat` with a `surface` prop).
+- `src/components/agents/AgentDock.tsx` — floating launcher used on Home, Creator dashboard, Studio dashboard, Buyer/Licensing pages with surface-specific persona + greeting.
+- `src/components/admin/ChiefBriefing.tsx` — Admin-only widget:
+  - "Generate briefing" → calls `chief-report`
+  - "🔊 Speak to Abijith" → plays returned MP3
+  - Live feed of `agent_events` via realtime subscription
+  - Severity filter + agent filter
+- Mount AgentDock on `/` (home), `/creator/*`, `/studio/*`, `/licensing/*` (detect existing routes; gracefully fallback).
+- Mount ChiefBriefing in the existing admin panel route (will identify exact path during build).
 
-## Phase B — Primitive Component Audit
+### 4. Personas (system prompts, locked in code)
+- **Home Agent — "Vista"**: friendly concierge, explains 3 surfaces, routes user to Creator/Studio/Licensing CTAs.
+- **Creator Agent — "Aria"**: helps filmmakers with intake, metadata, storage upgrades.
+- **Studio Agent — "Orion"**: post-ops assistant — ingest, mastering, QC, delivery.
+- **Buyer Agent — "Atlas"**: NDA-gated; helps acquisitions, screener requests, deal status.
+- **Chief AI — "Sovereign"**: reports only to Abijith Asokan, Founder / MD / Architect & top decision maker. Synthesizes activity from the other 4 agents, flags risks, speaks aloud.
 
-Goal: every shared primitive reads from semantic tokens, not literals.
+### 5. Security
+- `agent_events` RLS: agents (via edge functions w/ service_role) write; founders read all; surface users read only their own events.
+- `agent_reports` & `chief-voice` / `chief-report` edge functions: verify JWT → check `has_role(uid,'founder')`. Reject otherwise.
+- Hardcoded email allowlist explicitly rejected; we use the `founder` role.
 
-1. Sweep `src/components/ui/*` for hardcoded `bg-white`, `bg-black`, `text-white`, `bg-[#...]`, neon glow defaults; replace with tokens.
-2. Normalize variants on: `Button`, `Card`, `Input`, `Select`, `Textarea`, `Badge`, `Table`, `Dialog`, `Sheet`, `Tabs`, `Tooltip`, `Alert`, `Skeleton`.
-3. Add missing primitives we keep re-inventing across pages:
-   - `PageHeader` (title, eyebrow, description, actions slot)
-   - `StatTile` (label, value, delta, icon)
-   - `SectionCard` (header + body + footer)
-   - `EmptyState`
-   - `DataTable` density variants (`comfortable` | `compact`)
-   - `SegmentedControl`
+## Out of scope (this pass)
+- Two-way live voice (user speaking back to Chief) — Lovable AI + ElevenLabs TTS is one-way per your choice. Can upgrade to ElevenLabs Conversational later.
+- Per-agent fine-tuned tool calling beyond reading/writing `agent_events`.
+- Dashboard redesigns — agents drop into existing dashboards.
 
----
+## Sequence
+1. ElevenLabs connector check/link (will prompt if missing).
+2. Migration: enum + 2 tables + GRANTs + RLS + realtime publication.
+3. Edge functions: `agent-chat`, `chief-report`, `chief-voice`.
+4. Frontend components: `AgentChat`, `AgentDock`, `ChiefBriefing`.
+5. Wire mounts on Home / Creator / Studio / Licensing / Admin.
+6. Grant Abijith the `founder` role (need his auth user id/email).
 
-## Phase C — App Shells
-
-Goal: one shell per surface family, OS-consistent.
-
-1. `AppShell` (creator/studio): cinematic top bar + collapsible sidebar, dark by default.
-2. `AdminShell`: operational layout — fixed sidebar, breadcrumbs, search, density toggle. Honors theme.
-3. `BillingShell` / `AccountShell`: light-mode-first, generous whitespace, no glows.
-4. Consistent route header pattern using `PageHeader` everywhere.
-
----
-
-## Phase D — Surface Refits (page-by-page, additive)
-
-In order of business value:
-1. Index / marketing landing — polish without redesign.
-2. Creator dashboard (`pages/dashboards/*`) — token sweep + `StatTile` / `SectionCard`.
-3. Vault — keep cinematic, tighten density.
-4. Admin — biggest cleanup; tables, filters, modals, finance views.
-5. Invoice / Receipt / Checkout return — operational light surfaces.
-6. Auth / Reset / Onboarding — calmer hierarchy.
-
-Each page change is a token + layout swap; no behavioral changes to data fetching, mutations, or payments.
-
----
-
-## Phase E — Email Presentation Layer
-
-1. Shared HTML email layout under `supabase/functions/_shared/email/layout.ts` (header bar, logo, body card, footer, dual light/dark friendly).
-2. Refactor existing transactional templates to use it (invoice, receipt, manual-payment-received, welcome, password reset).
-3. No deliverability changes — same `from`, same routes, same triggers.
-
----
-
-## Phase F — QA Pass
-
-1. Visual sweep of every route in both themes via the preview.
-2. Verify Studio Vault checkout flow still completes in both themes.
-3. Verify admin tables render correctly with new density.
-4. Lighthouse contrast spot-check on critical light-mode pages.
-
----
-
-## Technical notes
-
-- No new dependencies required; theming via class + CSS vars (already wired through shadcn).
-- `next-themes` is NOT used (Vite project) — custom 60-line provider is enough.
-- Migrations: none. This is presentation-only.
-- Edge functions touched only in Phase E (email layout) — no signature or invocation changes.
-- Types: `src/integrations/supabase/types.ts` untouched (auto-gen).
-
----
-
-## Out of scope (explicit)
-
-- Razorpay / billing core / entitlements logic
-- RLS, security posture, scanner findings
-- Routing tree changes
-- Auth provider changes
-- New product features
-
----
-
-## Execution order in this stream
-
-I will start with **Phase A** in the next turn (tokens + ThemeProvider + toggle), confirm the preview renders both modes cleanly, then proceed phase by phase. Each phase ends with a short status note so you can pause or redirect the stream.
+## What I need from you to finish wiring
+- **Abijith's login email** (the email he uses to sign into StreamVista) so we can grant the `founder` role on first run. If he hasn't signed up yet, sign in once and tell me the email.
+- Confirm I should trigger the **ElevenLabs connector** link flow when we start (required for Chief voice).

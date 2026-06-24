@@ -219,7 +219,7 @@ export function StorageQuotaProvider({ children }: { children: React.ReactNode }
           <DialogFooter className="flex-col sm:flex-col gap-2">
             <Button onClick={upgrade} disabled={paying} size="lg" className="w-full bg-gradient-primary text-primary-foreground glow-primary">
               {paying ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ArrowUpRight className="w-4 h-4 mr-2" />}
-              Upgrade · pay ₹{PAYG_TB_INR}
+              Upgrade · pay {paygLabel}
             </Button>
             <button onClick={() => setOpen(false)} className="text-xs text-muted-foreground hover:text-foreground">
               Not now — I'll free up space

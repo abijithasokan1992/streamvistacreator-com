@@ -7913,6 +7913,7 @@ export type Database = {
         Returns: number
       }
       fulfill_billing_order: { Args: { _order_id: string }; Returns: Json }
+      get_canonical_payg_price: { Args: never; Returns: Json }
       get_creator_storage_entitlement: {
         Args: { _user_id: string }
         Returns: {

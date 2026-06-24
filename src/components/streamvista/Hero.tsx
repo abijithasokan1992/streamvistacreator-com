@@ -1,6 +1,7 @@
 import { ArrowRight, Film, Layers, Briefcase, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { TrustBadges } from "./TrustBadges";
+import { HeroSilverScreen } from "./HeroSilverScreen";
 
 /**
  * Public hero — three-audience platform statement.
@@ -36,9 +37,19 @@ export const Hero = () => (
             <br />
             <span className="gradient-text">FROM INTAKE TO DEAL.</span>
           </h1>
+
+          {/* IMAX silver-screen studio ident — anamorphic, ARRI Master Anamorphic tone */}
+          <div className="mt-10 lg:hidden">
+            <HeroSilverScreen />
+          </div>
         </div>
 
+
         <div className="space-y-7 max-w-md">
+          <div className="hidden lg:block -mt-4">
+            <HeroSilverScreen />
+          </div>
+
           <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
             StreamVista is the operating layer for cinema and series IP — title intake,
             recurring storage, post / vault workflows and commercial requests for buyers,

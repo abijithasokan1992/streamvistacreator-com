@@ -9,6 +9,7 @@ import { useAuth, dashboardForRole } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { getAppOrigin } from "@/lib/site";
 import { Seo } from "@/components/Seo";
+import { playMailVoice, prewarmMailVoice } from "@/lib/mailVoice";
 
 /**
  * Passwordless magic-link auth.
@@ -123,6 +124,7 @@ export default function Auth() {
       } catch { /* noop */ }
     }
     setSent(true);
+    void playMailVoice();
   };
 
   const handleGoogle = async () => {

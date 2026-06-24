@@ -1,7 +1,7 @@
 import { ArrowRight, Film, Layers, Briefcase, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { TrustBadges } from "./TrustBadges";
-import { HeroSilverScreen } from "./HeroSilverScreen";
+import { HeroStudioIdent } from "./HeroStudioIdent";
 
 /**
  * Public hero — three-audience platform statement.
@@ -38,16 +38,16 @@ export const Hero = () => (
             <span className="gradient-text">FROM INTAKE TO DEAL.</span>
           </h1>
 
-          {/* IMAX silver-screen studio ident — anamorphic, ARRI Master Anamorphic tone */}
+          {/* Studio ident — cycling logo showcase */}
           <div className="mt-10 lg:hidden">
-            <HeroSilverScreen />
+            <HeroStudioIdent />
           </div>
         </div>
 
 
         <div className="space-y-7 max-w-md">
           <div className="hidden lg:block -mt-4">
-            <HeroSilverScreen />
+            <HeroStudioIdent />
           </div>
 
           <p className="text-base md:text-lg text-muted-foreground leading-relaxed">

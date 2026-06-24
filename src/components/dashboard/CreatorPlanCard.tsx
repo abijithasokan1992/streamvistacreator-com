@@ -35,6 +35,7 @@ const BENEFITS = [
 
 export default function CreatorPlanCard({ onPurchased }: { onPurchased?: () => void }) {
   const { user } = useAuth();
+  const payg = useCreatorPaygPrice();
   const [busy, setBusy] = useState(false);
 
   const checkout = async () => {

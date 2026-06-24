@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Plus, Loader2, Pencil, Eye, Lock, Crown, AlertTriangle, X, Film } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,6 +25,8 @@ export default function MyTitlesSection() {
   const [gating, setGating] = useState(false);
   const [editorId, setEditorId] = useState<string | null>(null);
   const [editorMode, setEditorMode] = useState<"edit" | "view">("edit");
+  const [filter, setFilter] = useState<"all" | "drafts" | "in_review" | "approved">("all");
+  const [sort, setSort] = useState<"newest" | "oldest" | "updated">("updated");
 
   const reload = useCallback(async () => {
     if (!user) return;
@@ -56,6 +58,31 @@ export default function MyTitlesSection() {
   };
 
   const freeLimitHit = !!tier?.is_free && tier.lifecycle_count >= 1 && !tier.can_create_draft;
+
+  const FILTERS = useMemo(() => ({
+    all: (_: TitleRow) => true,
+    drafts: (t: TitleRow) => ["draft", "incomplete", "changes_requested"].includes(t.status),
+    in_review: (t: TitleRow) => ["submitted", "in_review", "qc_review", "legal_review", "hold"].includes(t.status),
+    approved: (t: TitleRow) => ["approved", "ready_for_distribution", "published"].includes(t.status),
+  }), []);
+
+  const counts = useMemo(() => ({
+    all: titles.length,
+    drafts: titles.filter(FILTERS.drafts).length,
+    in_review: titles.filter(FILTERS.in_review).length,
+    approved: titles.filter(FILTERS.approved).length,
+  }), [titles, FILTERS]);
+
+  const visible = useMemo(() => {
+    const filtered = titles.filter(FILTERS[filter]);
+    const sorted = [...filtered].sort((a, b) => {
+      if (sort === "newest") return +new Date(b.created_at) - +new Date(a.created_at);
+      if (sort === "oldest") return +new Date(a.created_at) - +new Date(b.created_at);
+      return +new Date(b.updated_at) - +new Date(a.updated_at);
+    });
+    return sorted;
+  }, [titles, filter, sort, FILTERS]);
+
 
   return (
     <div>

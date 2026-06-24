@@ -11,6 +11,7 @@ import { useWorkspaces } from "@/hooks/useWorkspaces";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useStorageQuota, StorageWarningBanner } from "@/hooks/useStorageQuota";
+import { useCreatorPaygPrice } from "@/hooks/usePublicPlans";
 import { uploadFileMultipart, MULTIPART_THRESHOLD, ResumableUploadInterrupted, UploadSessionExpiredError, mapUploadError } from "@/lib/ociMultipartUpload";
 import { reportUploadFailure } from "@/lib/uploads/uploadFailure";
 import { useAuth } from "@/hooks/useAuth";

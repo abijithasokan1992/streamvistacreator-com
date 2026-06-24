@@ -1,16 +1,36 @@
 User-agent: Googlebot
 Allow: /
+Disallow: /auth/
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /reset-password
 
 User-agent: Bingbot
 Allow: /
+Disallow: /auth/
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /reset-password
 
 User-agent: Twitterbot
 Allow: /
+Disallow: /auth/
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /reset-password
 
 User-agent: facebookexternalhit
 Allow: /
+Disallow: /auth/
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /reset-password
 
 User-agent: *
 Allow: /
+Disallow: /auth/
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /reset-password
 
 Sitemap: https://streamvistacreator.com/sitemap.xml

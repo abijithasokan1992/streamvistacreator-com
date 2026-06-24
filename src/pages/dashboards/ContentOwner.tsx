@@ -38,6 +38,21 @@ export default function ContentOwnerDashboard() {
     })();
   }, [user?.id]);
 
+  // First-visit guided tour (desktop only — sidebar is hidden under a menu on mobile)
+  useEffect(() => {
+    if (!user) return;
+    if (hasSeenCreatorTour()) return;
+    if (typeof window !== "undefined" && window.innerWidth < 768) return;
+    const t = setTimeout(() => setTourOpen(true), 600);
+    return () => clearTimeout(t);
+  }, [user?.id]);
+
+  // Auto-complete onboarding step when Vault is opened
+  useEffect(() => {
+    if (section === "delivery_vault") markOnboardingStep("vaultOpened");
+    if (section === "billing") markOnboardingStep("accessAuthorized");
+  }, [section]);
+
   if (loading) {
     return (
       <main className="min-h-dvh grid place-items-center bg-background text-foreground">
@@ -56,6 +71,7 @@ export default function ContentOwnerDashboard() {
     setParams(next, { replace: false });
     setMobileOpen(false);
   };
+
 
   // Free-tier: pro-only sections redirect to Storage & Billing rather than rendering empty.
   const def = SECTIONS.find((s) => s.id === section) ?? SECTIONS[0];

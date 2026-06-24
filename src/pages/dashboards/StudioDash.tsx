@@ -341,13 +341,13 @@ function VaultWorkspace({ rows, loading, onGoBuy, onGoIngest }: { rows: AllocRow
           <div>
             <h3 className="font-semibold text-sm flex items-center gap-2"><Wrench className="w-4 h-4 text-accent" /> Vault Services</h3>
             <p className="text-xs text-muted-foreground mt-1 max-w-lg">
-              Proxy generation, QC review, restore, delivery prep and archive handling. Available as founder-assisted services — we scope and price before any paid work begins.
+              Proxies, QC, restore, delivery and archive — founder-assisted.
             </p>
           </div>
           <StudioRequestService />
         </div>
         <div className="flex flex-wrap gap-1.5 mt-3 text-[11px] text-muted-foreground">
-          {["Proxy generation", "QC review", "Restore", "Delivery prep", "Archive handling"].map((s) => (
+          {["Proxies", "QC", "Restore", "Delivery", "Archive"].map((s) => (
             <span key={s} className="rounded-full border border-border/50 px-2 py-0.5">{s}</span>
           ))}
         </div>

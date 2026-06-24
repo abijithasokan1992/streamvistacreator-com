@@ -278,6 +278,55 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ ok: true, par: data, url: fullUrl }), { headers: cors });
     }
 
+    if (action === "change-storage-tier") {
+      // OCI updateObjectStorageTier — POST /n/{ns}/b/{bucket}/actions/updateObjectStorageTier
+      // body: { objectName, storageTier: "Archive"|"InfrequentAccess"|"Standard" }
+      const objectName = String(body.objectName ?? "");
+      const storageTier = String(body.storageTier ?? "Archive");
+      if (!objectName) {
+        return new Response(JSON.stringify({ ok: false, error: "objectName required" }), { status: 400, headers: cors });
+      }
+      const payload = JSON.stringify({ objectName, storageTier });
+      const r = await ociFetch({
+        method: "POST",
+        host,
+        path: `/n/${ns}/b/${bucket}/actions/updateObjectStorageTier`,
+        body: payload,
+        contentType: "application/json",
+        keyId,
+        privateKey,
+      });
+      const text = await r.text().catch(() => "");
+      if (!r.ok) {
+        return new Response(JSON.stringify({ ok: false, status: r.status, error: text || r.statusText }), { status: 200, headers: cors });
+      }
+      return new Response(JSON.stringify({ ok: true, objectName, storageTier }), { headers: cors });
+    }
+
+    if (action === "restore-objects") {
+      // OCI restoreObjects — POST /n/{ns}/b/{bucket}/actions/restoreObjects
+      const objectName = String(body.objectName ?? "");
+      const hours = Number(body.hours ?? 24);
+      if (!objectName) {
+        return new Response(JSON.stringify({ ok: false, error: "objectName required" }), { status: 400, headers: cors });
+      }
+      const payload = JSON.stringify({ objectName, hours });
+      const r = await ociFetch({
+        method: "POST",
+        host,
+        path: `/n/${ns}/b/${bucket}/actions/restoreObjects`,
+        body: payload,
+        contentType: "application/json",
+        keyId,
+        privateKey,
+      });
+      const text = await r.text().catch(() => "");
+      if (!r.ok && r.status !== 200 && r.status !== 202) {
+        return new Response(JSON.stringify({ ok: false, status: r.status, error: text || r.statusText }), { status: 200, headers: cors });
+      }
+      return new Response(JSON.stringify({ ok: true, objectName, hours, status: r.status }), { headers: cors });
+    }
+
     return new Response(JSON.stringify({ ok: false, error: `Unknown action: ${action}` }), {
       status: 400, headers: cors,
     });

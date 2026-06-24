@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import crayonsPictures from "@/assets/crayons-pictures-3d.png";
 import crayonsBridge from "@/assets/crayons-bridge-3d.png";
 import crayonsLoop from "@/assets/crayons-loop-3d.png";

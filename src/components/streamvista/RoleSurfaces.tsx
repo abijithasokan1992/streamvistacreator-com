@@ -87,10 +87,8 @@ export const RoleSurfaces = () => (
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-14 animate-fade-in">
         <div>
           <div className="flex items-center gap-3 mb-5">
-            <div className="w-8 h-px bg-accent" />
-            <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">
-              Three surfaces · One platform
-            </span>
+            <div className="w-8 h-px" style={{ background: "var(--gradient-primary)" }} />
+            <span className="eyebrow">Three surfaces · One platform</span>
           </div>
           <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-4xl md:text-6xl">
             Built for the people
@@ -98,48 +96,55 @@ export const RoleSurfaces = () => (
             <span className="gradient-text">who actually move IP.</span>
           </h2>
         </div>
-        <p className="text-muted-foreground max-w-sm text-sm leading-relaxed">
+        <p className="text-text-secondary max-w-sm text-[15px] leading-relaxed font-medium">
           StreamVista is honest about how each surface works. Some flows are self-serve;
           others are founder-assisted because the commercial fit matters more than a checkout button.
         </p>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-px bg-border/60 border border-border/60 rounded-2xl overflow-hidden">
+      <div className="grid lg:grid-cols-3 gap-px bg-border/60 border border-border-strong/60 rounded-2xl overflow-hidden">
         {SURFACES.map(({ key, tag, title, icon: Icon, pitch, bullets, model, primary, secondary }) => (
-          <article key={key} className="bg-card p-7 md:p-8 flex flex-col">
+          <article key={key} className="group relative bg-card p-7 md:p-9 flex flex-col transition-colors hover:bg-card/60">
+            <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="flex items-center justify-between mb-5">
-              <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-                {tag}
-              </span>
-              <Icon className="w-5 h-5 text-primary" />
+              <span className="eyebrow text-text-tertiary">{tag}</span>
+              <div
+                className="w-11 h-11 rounded-xl grid place-items-center text-primary-foreground border border-primary/30"
+                style={{
+                  backgroundImage: "var(--gradient-primary)",
+                  boxShadow: "0 1px 0 hsl(0 0% 100% / 0.25) inset, 0 -2px 0 hsl(225 60% 6% / 0.18) inset, 0 8px 22px -10px hsl(var(--primary) / 0.6)",
+                }}
+              >
+                <Icon className="w-5 h-5" />
+              </div>
             </div>
-            <h3 className="font-display text-3xl font-black uppercase mb-2">{title}</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed mb-5">{pitch}</p>
+            <h3 className="font-display text-3xl md:text-4xl font-black uppercase mb-2 tracking-tight">{title}</h3>
+            <p className="text-[15px] text-text-secondary leading-relaxed mb-5 font-medium">{pitch}</p>
 
             <ul className="space-y-2.5 text-sm mb-6">
               {bullets.map((b) => (
                 <li key={b} className="flex items-start gap-2.5">
-                  <Check className="w-3.5 h-3.5 text-primary mt-1 shrink-0" />
-                  <span className="text-muted-foreground">{b}</span>
+                  <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                  <span className="text-text-secondary">{b}</span>
                 </li>
               ))}
             </ul>
 
             <div className="mt-auto space-y-3">
-              <div className="text-[10px] font-mono-tech uppercase tracking-[0.22em] text-accent border-t border-border/60 pt-4">
+              <div className="text-[10px] font-mono-tech uppercase tracking-[0.22em] text-primary border-t border-border-subtle pt-4">
                 {model}
               </div>
               <Link
                 to={primary.to}
-                className="cta-guide group h-11 w-full inline-flex items-center justify-center gap-2 bg-gradient-primary text-primary-foreground font-semibold uppercase tracking-[0.18em] text-[11px] rounded-md"
+                className="btn-emboss group/btn h-11 w-full inline-flex items-center justify-center gap-2 font-bold uppercase tracking-[0.18em] text-[11px] rounded-md"
               >
                 <span>{primary.label}</span>
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-1 transition-transform" />
               </Link>
               {secondary && (
                 <Link
                   to={secondary.to}
-                  className="h-10 w-full inline-flex items-center justify-center gap-2 border border-border/60 hover:border-accent/60 hover:bg-accent/5 text-muted-foreground hover:text-foreground font-medium uppercase tracking-[0.18em] text-[11px] rounded-md transition-colors"
+                  className="h-10 w-full inline-flex items-center justify-center gap-2 border border-border-strong/60 hover:border-primary/60 hover:bg-primary/5 text-text-secondary hover:text-foreground font-semibold uppercase tracking-[0.18em] text-[11px] rounded-md transition-colors"
                 >
                   {secondary.label}
                 </Link>
@@ -148,6 +153,7 @@ export const RoleSurfaces = () => (
           </article>
         ))}
       </div>
+
     </div>
   </section>
 );

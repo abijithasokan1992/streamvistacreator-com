@@ -101,6 +101,7 @@ function fmtINR(paise: number) {
 
 export default function UpgradeSection() {
   const { user } = useAuth();
+  const payg = useCreatorPaygPrice();
   const [plan, setPlan] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [titleCount, setTitleCount] = useState<number | null>(null);

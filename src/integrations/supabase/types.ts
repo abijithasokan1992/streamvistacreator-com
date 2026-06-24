@@ -651,7 +651,10 @@ export type Database = {
           api_rate_paise_per_1k: number
           auto_charge_enabled: boolean
           bandwidth_rate_paise_per_gb: number
+          creator_basic_archive_after_days: number
           creator_tier_tb: number
+          egress_free_gb: number
+          egress_overage_rate_paise_per_gb: number
           free_tier_gb: number
           id: number
           idle_flag_days: number
@@ -663,7 +666,10 @@ export type Database = {
           api_rate_paise_per_1k?: number
           auto_charge_enabled?: boolean
           bandwidth_rate_paise_per_gb?: number
+          creator_basic_archive_after_days?: number
           creator_tier_tb?: number
+          egress_free_gb?: number
+          egress_overage_rate_paise_per_gb?: number
           free_tier_gb?: number
           id?: number
           idle_flag_days?: number
@@ -675,7 +681,10 @@ export type Database = {
           api_rate_paise_per_1k?: number
           auto_charge_enabled?: boolean
           bandwidth_rate_paise_per_gb?: number
+          creator_basic_archive_after_days?: number
           creator_tier_tb?: number
+          egress_free_gb?: number
+          egress_overage_rate_paise_per_gb?: number
           free_tier_gb?: number
           id?: number
           idle_flag_days?: number
@@ -4649,6 +4658,7 @@ export type Database = {
           file_name: string
           file_size: number
           id: string
+          last_accessed_at: string
           mime_type: string | null
           namespace: string
           object_key: string
@@ -4661,6 +4671,7 @@ export type Database = {
           project_id: string | null
           region: string
           status: string
+          storage_tier: string
           updated_at: string
           user_id: string
           workspace_id: string
@@ -4674,6 +4685,7 @@ export type Database = {
           file_name: string
           file_size?: number
           id?: string
+          last_accessed_at?: string
           mime_type?: string | null
           namespace: string
           object_key: string
@@ -4686,6 +4698,7 @@ export type Database = {
           project_id?: string | null
           region: string
           status?: string
+          storage_tier?: string
           updated_at?: string
           user_id: string
           workspace_id: string
@@ -4699,6 +4712,7 @@ export type Database = {
           file_name?: string
           file_size?: number
           id?: string
+          last_accessed_at?: string
           mime_type?: string | null
           namespace?: string
           object_key?: string
@@ -4711,6 +4725,7 @@ export type Database = {
           project_id?: string | null
           region?: string
           status?: string
+          storage_tier?: string
           updated_at?: string
           user_id?: string
           workspace_id?: string
@@ -7852,6 +7867,20 @@ export type Database = {
         }
         Returns: string
       }
+      compute_inactive_creator_basic_uploads: {
+        Args: { p_days?: number }
+        Returns: {
+          bucket: string
+          file_size: number
+          last_accessed_at: string
+          namespace: string
+          object_key: string
+          region: string
+          upload_id: string
+          user_id: string
+          workspace_id: string
+        }[]
+      }
       create_manual_vault_order: {
         Args: {
           _billing_interval_months: number
@@ -7908,6 +7937,7 @@ export type Database = {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
       }
+      enqueue_archive_job: { Args: { p_upload_id: string }; Returns: string }
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
@@ -7949,6 +7979,10 @@ export type Database = {
           support_contact: string
           upi_id: string
         }[]
+      }
+      get_workspace_entitlement_snapshot: {
+        Args: { p_user_id: string }
+        Returns: Json
       }
       get_workspace_storage_entitlement: {
         Args: { _user_id: string }
@@ -8083,6 +8117,14 @@ export type Database = {
       }
       screening_resolve: { Args: { _token: string }; Returns: Json }
       set_initial_role: { Args: { _role: string }; Returns: boolean }
+      stage_egress_overage_invoices: {
+        Args: { p_period?: string }
+        Returns: {
+          invoice_id: string
+          overage_gb: number
+          user_id: string
+        }[]
+      }
       studio_vault_calculate_price: {
         Args: { _months?: number; _product_id: string; _tb: number }
         Returns: Json

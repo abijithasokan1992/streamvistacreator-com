@@ -34,6 +34,8 @@ type CommercialRow = {
   title_query: string | null;
   message: string | null;
   admin_notes: string | null;
+  interest_summary?: string | null;
+  terms?: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
 };

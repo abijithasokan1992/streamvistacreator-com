@@ -61,19 +61,22 @@ export default function CameraToCloudGuide() {
         </Link>
 
         <header className="mt-8 mb-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass text-xs uppercase tracking-[0.2em] text-accent mb-5">
+          <div className="inline-flex items-center gap-2 mb-5 pill-attention">
             <Cloud className="w-3.5 h-3.5" /> Guide · Production Workflow
           </div>
-          <h1 className="font-display text-4xl md:text-5xl font-bold mb-4 leading-tight">
-            Camera to Cloud Workflow for Indie Filmmakers
+          <h1 className="font-display text-4xl md:text-6xl font-black mb-4 leading-[1.02] tracking-tight">
+            Camera to Cloud Workflow <span className="gradient-text">for Indie Filmmakers</span>
           </h1>
-          <p className="text-muted-foreground text-base md:text-lg">
+          <p className="text-text-secondary text-base md:text-lg leading-relaxed font-medium">
             A practical guide to setting up a Camera to Cloud (C2C) pipeline for independent
             productions — what gear you actually need, how to keep costs sane, and how to ship
             dailies straight from set to your editor without a runner with a hard drive.
           </p>
-          <p className="text-xs text-muted-foreground mt-4">Published {new Date(PUBLISHED).toLocaleDateString("en-IN", { year: "numeric", month: "long", day: "numeric" })} · 8 min read</p>
+          <p className="text-[10px] text-text-tertiary mt-4 font-mono-tech uppercase tracking-[0.22em]">
+            Published {new Date(PUBLISHED).toLocaleDateString("en-IN", { year: "numeric", month: "long", day: "numeric" })} · 8 min read
+          </p>
         </header>
+
 
         <section className="prose-content space-y-10 text-sm md:text-base leading-relaxed text-muted-foreground">
           <div className="glass-strong rounded-2xl p-6 border border-border/40">

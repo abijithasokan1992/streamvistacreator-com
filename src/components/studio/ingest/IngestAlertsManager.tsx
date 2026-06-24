@@ -96,6 +96,8 @@ function relTime(iso: string | null): string {
 
 export default function IngestAlertsManager({ workspaceId }: { workspaceId: string | null }) {
   const { user } = useAuth();
+  const quota = useStorageQuota();
+  const isPremium = !quota.isBasic; // paid storage block, admin bonus, or testing override unlocks
   const [rules, setRules] = useState<Rule[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(false);

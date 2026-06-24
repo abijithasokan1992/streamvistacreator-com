@@ -210,7 +210,22 @@ export default function ManualInvoiceConsole() {
                         <div>{r.billed_to_email ?? "—"}</div>
                         <div className="text-[10px] text-muted-foreground">{r.billed_to_name ?? ""}</div>
                       </td>
-                      <td className="p-2 text-xs capitalize">{r.surface}</td>
+                      <td className="p-2 text-xs capitalize">
+                        {r.surface}
+                        {r.grants_plan_code && (
+                          <div className="mt-0.5">
+                            {r.entitlement_granted_at ? (
+                              <span className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 text-[10px] font-bold uppercase">
+                                Entitled · {r.grants_plan_code}
+                              </span>
+                            ) : (
+                              <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 text-[10px] font-bold uppercase">
+                                Grant pending · {r.grants_plan_code}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </td>
                       <td className="p-2 text-right font-mono font-semibold">{inr(r.total_paise)}</td>
                       <td className="p-2">
                         <StatusBadge s={r.status} />
@@ -228,6 +243,9 @@ export default function ManualInvoiceConsole() {
                           )}
                           {["issued", "overdue", "draft"].includes(r.status) && (
                             <Button size="sm" variant="ghost" onClick={() => markPaid(r)} title="Mark paid"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /></Button>
+                          )}
+                          {r.status === "paid" && r.grants_plan_code && !r.entitlement_granted_at && (
+                            <Button size="sm" variant="ghost" onClick={() => grantEntitlement(r)} title="Grant entitlement"><KeyRound className="w-3.5 h-3.5 text-emerald-600" /></Button>
                           )}
                           {r.status !== "paid" && r.status !== "void" && (
                             <Button size="sm" variant="ghost" onClick={() => voidIt(r.id)} title="Void"><X className="w-3.5 h-3.5 text-rose-600" /></Button>

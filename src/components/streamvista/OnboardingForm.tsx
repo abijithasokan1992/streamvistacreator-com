@@ -45,6 +45,8 @@ export const OnboardingForm = ({ selectedCycle = "free" }: Props) => {
   const navigate = useNavigate();
   const plan = planByCycle(selectedCycle);
   const isPaid = plan.cycle !== "free";
+  const payg = useCreatorPaygPrice();
+  const priceLabel = isPaid ? payg.totalLabel : plan.priceLabel;
 
   const [clientName, setClientName] = useState("");
   const [professionalRole, setProfessionalRole] = useState("");

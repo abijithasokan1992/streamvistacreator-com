@@ -329,6 +329,72 @@ export type Database = {
           },
         ]
       }
+      agent_events: {
+        Row: {
+          agent: Database["public"]["Enums"]["agent_surface"]
+          created_at: string
+          created_by: string | null
+          id: string
+          payload: Json
+          severity: Database["public"]["Enums"]["agent_severity"]
+          summary: string | null
+          title: string
+        }
+        Insert: {
+          agent: Database["public"]["Enums"]["agent_surface"]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          payload?: Json
+          severity?: Database["public"]["Enums"]["agent_severity"]
+          summary?: string | null
+          title: string
+        }
+        Update: {
+          agent?: Database["public"]["Enums"]["agent_surface"]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          payload?: Json
+          severity?: Database["public"]["Enums"]["agent_severity"]
+          summary?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      agent_reports: {
+        Row: {
+          audio_base64: string | null
+          body: string
+          created_at: string
+          event_window_end: string | null
+          event_window_start: string | null
+          generated_by: string | null
+          id: string
+          title: string
+        }
+        Insert: {
+          audio_base64?: string | null
+          body: string
+          created_at?: string
+          event_window_end?: string | null
+          event_window_start?: string | null
+          generated_by?: string | null
+          id?: string
+          title: string
+        }
+        Update: {
+          audio_base64?: string | null
+          body?: string
+          created_at?: string
+          event_window_end?: string | null
+          event_window_start?: string | null
+          generated_by?: string | null
+          id?: string
+          title?: string
+        }
+        Relationships: []
+      }
       alumni: {
         Row: {
           converted_at: string | null
@@ -8228,6 +8294,8 @@ export type Database = {
         | "countered"
         | "withdrawn"
       admin_division: "ops" | "finance" | "dev" | "marketing"
+      agent_severity: "info" | "warn" | "critical"
+      agent_surface: "home" | "creator" | "studio" | "buyer" | "chief"
       app_role:
         | "admin"
         | "moderator"
@@ -8248,6 +8316,7 @@ export type Database = {
         | "studio_archive_manager"
         | "qc_reviewer"
         | "legal_reviewer"
+        | "founder"
       billing_attempt_status:
         | "initiated"
         | "succeeded"
@@ -8541,6 +8610,8 @@ export const Constants = {
         "withdrawn",
       ],
       admin_division: ["ops", "finance", "dev", "marketing"],
+      agent_severity: ["info", "warn", "critical"],
+      agent_surface: ["home", "creator", "studio", "buyer", "chief"],
       app_role: [
         "admin",
         "moderator",
@@ -8561,6 +8632,7 @@ export const Constants = {
         "studio_archive_manager",
         "qc_reviewer",
         "legal_reviewer",
+        "founder",
       ],
       billing_attempt_status: [
         "initiated",

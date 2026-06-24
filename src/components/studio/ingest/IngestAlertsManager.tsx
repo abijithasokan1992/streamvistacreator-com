@@ -126,6 +126,13 @@ export default function IngestAlertsManager({ workspaceId }: { workspaceId: stri
   useEffect(() => { refresh(); }, [refresh]);
 
   const startCreate = () => {
+    if (!isPremium) {
+      toast.error("Alert rules require a paid storage block", {
+        description: "Add a 1 TB Creator block (₹767/mo incl GST) to enable ingest alerts.",
+        action: { label: "Upgrade", onClick: () => quota.openPaywall() },
+      });
+      return;
+    }
     setEditing({
       id: "",
       workspace_id: workspaceId ?? "",

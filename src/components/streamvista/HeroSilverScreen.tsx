@@ -63,19 +63,19 @@ export function HeroSilverScreen() {
     let cleanup: (() => void) | void;
     const run = () => {
       // hold → fade out → silver → swap → fade in → hold
-      cleanup = next("fading-out", HOLD, () => {
-        cleanup = next("silver", FADE_OUT, () => {
+      cleanup = next("fading-out", timing.hold, () => {
+        cleanup = next("silver", timing.fadeOut, () => {
           if (cancelled) return;
           setI((x) => (x + 1) % LOGOS.length);
-          cleanup = next("fading-in", SILVER_HOLD, () => {
-            cleanup = next("hold", FADE_IN, run);
+          cleanup = next("fading-in", timing.silverHold, () => {
+            cleanup = next("hold", timing.fadeIn, run);
           });
         });
       });
     };
     run();
     return () => { cancelled = true; if (cleanup) cleanup(); };
-  }, []);
+  }, [timing]);
 
   const logoOpacity =
     phase === "hold" ? 1 :

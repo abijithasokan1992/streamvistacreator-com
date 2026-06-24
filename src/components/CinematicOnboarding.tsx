@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 
 import { Film, CheckCircle, ShieldCheck, ArrowRight, Loader2 } from 'lucide-react';
+import { useCreatorPaygPrice } from '@/hooks/usePublicPlans';
 
 export default function CinematicOnboarding({ onComplete }: { onComplete: () => void }) {
+  const payg = useCreatorPaygPrice();
 
   const [step, setStep] = useState(0); 
 

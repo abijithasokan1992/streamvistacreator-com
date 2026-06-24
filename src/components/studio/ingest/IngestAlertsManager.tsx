@@ -15,8 +15,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   BellRing, Plus, Trash2, Mail, MessageCircle, Play, Loader2,
-  AlertTriangle, Zap, Gauge, Power, History,
+  AlertTriangle, Zap, Gauge, Power, History, Webhook,
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -42,7 +43,11 @@ type Rule = {
   enabled: boolean;
   threshold: Record<string, number>;
   channels: string[];
-  recipients: { emails?: string[]; phones?: string[] };
+  recipients: {
+    emails?: string[];
+    phones?: string[];
+    webhooks?: Array<{ url: string; secret?: string }>;
+  };
   cooldown_minutes: number;
   last_fired_at: string | null;
   last_evaluated_at: string | null;
@@ -126,7 +131,7 @@ export default function IngestAlertsManager({ workspaceId }: { workspaceId: stri
       enabled: true,
       threshold: { ...RULE_META.error_spike.defaults },
       channels: ["email"],
-      recipients: { emails: user?.email ? [user.email] : [], phones: [] },
+      recipients: { emails: user?.email ? [user.email] : [], phones: [], webhooks: [] },
       cooldown_minutes: 30,
       last_fired_at: null,
       last_evaluated_at: null,
@@ -145,11 +150,17 @@ export default function IngestAlertsManager({ workspaceId }: { workspaceId: stri
     if (editing.channels.length === 0) { toast.error("Pick at least one notification channel"); return; }
     const emails = editing.recipients.emails ?? [];
     const phones = editing.recipients.phones ?? [];
+    const webhooks = (editing.recipients.webhooks ?? []).filter(
+      (w) => w.url && /^https?:\/\//i.test(w.url),
+    );
     if (editing.channels.includes("email") && emails.length === 0) {
       toast.error("Add at least one email recipient"); return;
     }
     if (editing.channels.includes("whatsapp") && phones.length === 0) {
       toast.error("Add at least one WhatsApp number"); return;
+    }
+    if (editing.channels.includes("webhook") && webhooks.length === 0) {
+      toast.error("Add at least one webhook URL (https://…)"); return;
     }
 
     const payload = {
@@ -160,7 +171,7 @@ export default function IngestAlertsManager({ workspaceId }: { workspaceId: stri
       enabled: editing.enabled,
       threshold: editing.threshold,
       channels: editing.channels,
-      recipients: { emails, phones },
+      recipients: { emails, phones, webhooks },
       cooldown_minutes: Math.max(5, Math.min(1440, Number(editing.cooldown_minutes) || 30)),
     };
 
@@ -243,6 +254,7 @@ export default function IngestAlertsManager({ workspaceId }: { workspaceId: stri
                       <Badge variant="outline" className="text-[10px] font-mono">{meta.label}</Badge>
                       {rule.channels.includes("email") && <Badge variant="outline" className="text-[10px]"><Mail className="w-2.5 h-2.5 mr-1" />email</Badge>}
                       {rule.channels.includes("whatsapp") && <Badge variant="outline" className="text-[10px]"><MessageCircle className="w-2.5 h-2.5 mr-1" />whatsapp</Badge>}
+                      {rule.channels.includes("webhook") && <Badge variant="outline" className="text-[10px]"><Webhook className="w-2.5 h-2.5 mr-1" />webhook</Badge>}
                       {!rule.enabled && <Badge variant="outline" className="text-[10px] text-muted-foreground">disabled</Badge>}
                     </div>
                     <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
@@ -348,6 +360,18 @@ export default function IngestAlertsManager({ workspaceId }: { workspaceId: stri
                     />
                     <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
                   </label>
+                  <label className="flex items-center gap-2 text-xs cursor-pointer">
+                    <Switch
+                      checked={editing.channels.includes("webhook")}
+                      onCheckedChange={(v) => setEditing({
+                        ...editing,
+                        channels: v
+                          ? Array.from(new Set([...editing.channels, "webhook"]))
+                          : editing.channels.filter((c) => c !== "webhook"),
+                      })}
+                    />
+                    <Webhook className="w-3.5 h-3.5" /> Webhook
+                  </label>
                 </div>
               </div>
 
@@ -388,6 +412,50 @@ export default function IngestAlertsManager({ workspaceId }: { workspaceId: stri
                   </p>
                 </div>
               )}
+
+              {editing.channels.includes("webhook") && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Webhook endpoints (one per line)</Label>
+                  <Textarea
+                    rows={3}
+                    className="font-mono text-[11px]"
+                    value={(editing.recipients.webhooks ?? []).map((w) => w.url).join("\n")}
+                    onChange={(e) => {
+                      const urls = e.target.value.split("\n").map((s) => s.trim()).filter(Boolean);
+                      const existing = editing.recipients.webhooks ?? [];
+                      const next = urls.map((url) => {
+                        const prev = existing.find((w) => w.url === url);
+                        return prev ?? { url, secret: existing[0]?.secret };
+                      });
+                      setEditing({
+                        ...editing,
+                        recipients: { ...editing.recipients, webhooks: next },
+                      });
+                    }}
+                    placeholder={"https://hooks.studio.com/ingest\nhttps://ops.internal/alerts"}
+                  />
+                  <Label className="text-xs pt-1">Shared secret (optional)</Label>
+                  <Input
+                    type="password"
+                    placeholder="Used to sign X-StreamVista-Signature (HMAC-SHA256)"
+                    value={editing.recipients.webhooks?.[0]?.secret ?? ""}
+                    onChange={(e) => {
+                      const secret = e.target.value;
+                      const next = (editing.recipients.webhooks ?? []).map((w) => ({ ...w, secret }));
+                      setEditing({
+                        ...editing,
+                        recipients: { ...editing.recipients, webhooks: next },
+                      });
+                    }}
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    POSTs JSON to each URL. If a secret is set, requests include
+                    <code className="mx-1">X-StreamVista-Signature: sha256=…</code>
+                    computed over the raw body. Only https:// endpoints are accepted.
+                  </p>
+                </div>
+              )}
+
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">

@@ -71,6 +71,8 @@ export function useStorageQuota(): Quota {
 
 export function StorageQuotaProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const payg = useCreatorPaygPrice();
+  const paygLabel = payg.totalLabel;
   const [loading, setLoading] = useState(true);
   const [ent, setEnt] = useState<any>(null);
   const [open, setOpen] = useState(false);

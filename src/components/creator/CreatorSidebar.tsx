@@ -94,6 +94,7 @@ export function CreatorSidebar({
                     <Tooltip key={s.id}>
                       <TooltipTrigger asChild>
                         <button
+                          data-tour={s.id}
                           onClick={() => onSelect(s.id)}
                           className={cn(
                             "w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors text-left",

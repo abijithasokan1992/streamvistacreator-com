@@ -52,6 +52,7 @@ type Phase = "hold" | "fading-out" | "silver" | "fading-in";
 export function HeroSilverScreen() {
   const [i, setI] = useState(0);
   const [phase, setPhase] = useState<Phase>("hold");
+  const timing = useCinemaTiming();
 
   useEffect(() => {
     let cancelled = false;

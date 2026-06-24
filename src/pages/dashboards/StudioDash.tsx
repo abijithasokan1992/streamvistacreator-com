@@ -296,26 +296,23 @@ function VaultWorkspace({ rows, loading, onGoBuy, onGoIngest }: { rows: AllocRow
     return (
       <div className="rounded-2xl border border-dashed border-border/50 bg-secondary/10 p-10 text-center">
         <Database className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
-        <h3 className="font-semibold">No active storage</h3>
+        <h3 className="font-semibold">No storage yet</h3>
         <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
-          Activate vault storage before you can upload, ingest or snapshot. Pick a class on the Buy Storage tab.
+          Buy storage to start uploading.
         </p>
         <div className="mt-4">
           <Button onClick={onGoBuy} className="bg-gradient-primary text-primary-foreground glow-primary">
-            <ShoppingCart className="w-4 h-4 mr-2" /> Choose storage
+            <ShoppingCart className="w-4 h-4 mr-2" /> Buy Storage
           </Button>
         </div>
       </div>
     );
   }
 
-  // Tiles route serious ingest flows into the unified Studio Ingest tab so
-  // Camera-to-Cloud, Archive Snapshot and Hard-disk Import all share one
-  // queue, one folder-structure model, and one upload meter.
   const tiles: Array<{ label: string; desc: string; icon: JSX.Element; onClick?: () => void; to?: string }> = [
-    { label: "Upload to Vault", desc: "Browser upload now", to: "/vault", icon: <ArrowUpRight className="w-4 h-4" /> },
-    { label: "Camera-to-Cloud", desc: "Live ingest from set", onClick: onGoIngest, icon: <Cloud className="w-4 h-4" /> },
-    { label: "Archive Intake", desc: "Master / archive bundle", onClick: onGoIngest, icon: <Snowflake className="w-4 h-4" /> },
+    { label: "Upload", desc: "From browser", to: "/vault", icon: <ArrowUpRight className="w-4 h-4" /> },
+    { label: "Camera-to-Cloud", desc: "Live from set", onClick: onGoIngest, icon: <Cloud className="w-4 h-4" /> },
+    { label: "Archive Intake", desc: "Master bundle", onClick: onGoIngest, icon: <Snowflake className="w-4 h-4" /> },
   ];
 
   return (

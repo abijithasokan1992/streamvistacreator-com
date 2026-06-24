@@ -8,6 +8,7 @@ import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
 import { extractFnError, reportBillingFailure } from "@/lib/payments/billingFailure";
 import ManualInvoicesList from "@/components/billing/ManualInvoicesList";
 import CreatorDistributionOffers from "@/components/creator/CreatorDistributionOffers";
+import { useCreatorPaygPrice } from "@/hooks/usePublicPlans";
 
 /**
  * Creator Upgrade — two clearly separated commercial surfaces:

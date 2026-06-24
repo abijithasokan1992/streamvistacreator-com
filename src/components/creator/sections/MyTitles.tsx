@@ -209,9 +209,20 @@ export default function MyTitlesSection() {
           </button>
         </div>
 
+      ) : visible.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border/50 bg-secondary/5 p-8 text-center">
+          <p className="text-sm font-medium">Nothing matches this filter</p>
+          <p className="text-xs text-muted-foreground mt-1">Try another filter or clear it to see all titles.</p>
+          <button
+            onClick={() => setFilter("all")}
+            className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-border/50 text-xs px-3 py-1.5 hover:bg-secondary/30"
+          >
+            Show All
+          </button>
+        </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {titles.map((t) => (
+          {visible.map((t) => (
             <article key={t.id} className="rounded-xl border border-border/40 bg-secondary/5 p-4 flex flex-col gap-3 min-w-0">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">

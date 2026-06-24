@@ -21,6 +21,7 @@ import BuyerDashboard from "./pages/dashboards/Buyer.tsx";
 import LocalizationDashboard from "./pages/dashboards/Localization.tsx";
 import DistributionDashboard from "./pages/dashboards/Distribution.tsx";
 import AdminErrorBoundary from "./components/admin/AdminErrorBoundary";
+import AdminOperations from "./pages/AdminOperations.tsx";
 import KammattamPopout from "./pages/KammattamPopout.tsx";
 import Terms from "./pages/Terms.tsx";
 import Privacy from "./pages/Privacy.tsx";
@@ -97,6 +98,7 @@ const AdminRoutes = () => (
     <Route path="/admin/finance" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/reports" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/kammattam" element={<KammattamPopout />} />
+    <Route path="/admin/operations" element={<AdminErrorBoundary><RoleGate allow={["admin"]}><AdminOperations /></RoleGate></AdminErrorBoundary>} />
 
     {/* Anything else on the admin host = wrong portal */}
     <Route path="*" element={<WrongPortal expected="public" />} />
@@ -157,6 +159,7 @@ const PublicRoutes = () => (
     <Route path="/admin/finance" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/reports" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/kammattam" element={<KammattamPopout />} />
+    <Route path="/admin/operations" element={<AdminErrorBoundary><RoleGate allow={["admin"]}><AdminOperations /></RoleGate></AdminErrorBoundary>} />
 
 
     <Route path="/launching-special-plan" element={<LaunchingSpecialPlan />} />

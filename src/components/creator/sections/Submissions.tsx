@@ -62,12 +62,17 @@ export default function SubmissionsSection({ onNavigate }: { onNavigate: (s: Sec
 
       {filtered.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border/50 bg-secondary/5 p-10 text-center">
-          <Inbox className="w-5 h-5 text-muted-foreground mx-auto mb-2" />
-          <p className="text-sm">Nothing in this queue.</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Create or continue a title in{" "}
-            <button className="underline" onClick={() => onNavigate("titles")}>My Titles</button>.
+          <Inbox className="w-6 h-6 text-muted-foreground mx-auto mb-3" />
+          <p className="text-sm font-medium">Nothing here yet</p>
+          <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+            Once you submit a title, you'll track its review status here.
           </p>
+          <button
+            onClick={() => onNavigate("titles")}
+            className="mt-4 inline-flex items-center gap-1 text-xs text-accent hover:underline"
+          >
+            Open Titles <ArrowRight className="w-3 h-3" />
+          </button>
         </div>
       ) : (
         <ul className="divide-y divide-border/30 rounded-xl border border-border/40 bg-secondary/5">
@@ -85,7 +90,7 @@ export default function SubmissionsSection({ onNavigate }: { onNavigate: (s: Sec
                   onClick={() => onNavigate("titles")}
                   className="inline-flex items-center gap-1 text-xs text-accent hover:underline"
                 >
-                  Open Workspace <ArrowRight className="w-3 h-3" />
+                  Open <ArrowRight className="w-3 h-3" />
                 </button>
               </div>
             </li>

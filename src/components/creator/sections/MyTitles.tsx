@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Loader2, Pencil, Eye, Lock, Crown, AlertTriangle, X } from "lucide-react";
+import { Plus, Loader2, Pencil, Eye, Lock, Crown, AlertTriangle, X, Film } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspaces } from "@/hooks/useWorkspaces";
 import {
@@ -278,7 +278,7 @@ function CreateTitleModal({
             className="inline-flex items-center gap-1.5 rounded-md bg-accent text-accent-foreground text-xs px-3 py-1.5 disabled:opacity-50"
           >
             {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-            Create draft
+            Start Draft
           </button>
         </div>
       </div>

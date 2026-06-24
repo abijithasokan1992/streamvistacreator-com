@@ -13,6 +13,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useStorageQuota } from "@/hooks/useStorageQuota";
 import {
   BellRing, Plus, Trash2, Mail, MessageCircle, Play, Loader2,
   AlertTriangle, Zap, Gauge, Power, History, Webhook,
@@ -95,6 +96,8 @@ function relTime(iso: string | null): string {
 
 export default function IngestAlertsManager({ workspaceId }: { workspaceId: string | null }) {
   const { user } = useAuth();
+  const quota = useStorageQuota();
+  const isPremium = !quota.isBasic; // paid storage block, admin bonus, or testing override unlocks
   const [rules, setRules] = useState<Rule[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(false);
@@ -123,6 +126,13 @@ export default function IngestAlertsManager({ workspaceId }: { workspaceId: stri
   useEffect(() => { refresh(); }, [refresh]);
 
   const startCreate = () => {
+    if (!isPremium) {
+      toast.error("Alert rules require a paid storage block", {
+        description: "Add a 1 TB Creator block (₹767/mo incl GST) to enable ingest alerts.",
+        action: { label: "Upgrade", onClick: () => quota.openPaywall() },
+      });
+      return;
+    }
     setEditing({
       id: "",
       workspace_id: workspaceId ?? "",
@@ -140,6 +150,10 @@ export default function IngestAlertsManager({ workspaceId }: { workspaceId: stri
   };
 
   const startEdit = (rule: Rule) => {
+    if (!isPremium) {
+      toast.error("Editing alert rules requires a paid storage block");
+      return;
+    }
     setEditing(JSON.parse(JSON.stringify(rule)));
     setOpen(true);
   };

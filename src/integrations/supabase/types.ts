@@ -7118,11 +7118,14 @@ export type Database = {
           created_at: string
           effective_from: string
           effective_to: string | null
+          grant_reason: string | null
+          granted_by: string | null
           hard_stop_threshold_pct: number
           id: string
           included_storage_gb: number
           paid_storage_gb: number
           plan_code: string
+          source: string
           storage_addon_blocks: number
           total_storage_gb: number | null
           updated_at: string
@@ -7138,11 +7141,14 @@ export type Database = {
           created_at?: string
           effective_from?: string
           effective_to?: string | null
+          grant_reason?: string | null
+          granted_by?: string | null
           hard_stop_threshold_pct?: number
           id?: string
           included_storage_gb?: number
           paid_storage_gb?: number
           plan_code?: string
+          source?: string
           storage_addon_blocks?: number
           total_storage_gb?: number | null
           updated_at?: string
@@ -7158,11 +7164,14 @@ export type Database = {
           created_at?: string
           effective_from?: string
           effective_to?: string | null
+          grant_reason?: string | null
+          granted_by?: string | null
           hard_stop_threshold_pct?: number
           id?: string
           included_storage_gb?: number
           paid_storage_gb?: number
           plan_code?: string
+          source?: string
           storage_addon_blocks?: number
           total_storage_gb?: number | null
           updated_at?: string
@@ -7957,6 +7966,10 @@ export type Database = {
           _perm: Database["public"]["Enums"]["internal_permission"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      has_premium_storage_entitlement: {
+        Args: { _user_id: string }
         Returns: boolean
       }
       has_role: {

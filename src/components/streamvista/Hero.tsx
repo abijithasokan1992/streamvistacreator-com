@@ -46,6 +46,10 @@ export const Hero = () => (
 
 
         <div className="space-y-7 max-w-md">
+          <div className="hidden lg:block -mt-4">
+            <HeroSilverScreen />
+          </div>
+
           <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
             StreamVista is the operating layer for cinema and series IP — title intake,
             recurring storage, post / vault workflows and commercial requests for buyers,

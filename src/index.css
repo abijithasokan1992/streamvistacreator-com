@@ -196,19 +196,65 @@
 
 @layer base {
   * { @apply border-border; }
-  html { scroll-behavior: smooth; }
+  html {
+    scroll-behavior: smooth;
+    /* Calibrated text rendering — crisp on Retina/4K/8K, balanced on standard DPI */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "kern", "liga", "calt", "ss01", "cv11";
+    font-variant-ligatures: common-ligatures contextual;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    color-scheme: dark light;
+  }
   body {
     @apply bg-background text-foreground font-sans antialiased;
     background: var(--gradient-hero);
     background-attachment: fixed;
     font-family: 'Inter', system-ui, sans-serif;
+    font-synthesis: none;
+    /* Accurate color across displays */
+    -webkit-tap-highlight-color: transparent;
   }
+  /* Subtle film vignette + grain — only on cinematic dark mode, GPU-cheap */
+  .dark body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    background:
+      radial-gradient(ellipse at center, transparent 55%, hsl(225 60% 1% / 0.45) 100%);
+    mix-blend-mode: multiply;
+  }
+  .dark body::after {
+    content: "";
+    position: fixed;
+    inset: -50%;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.035;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.6 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+  /* Images should render as accurately as possible across displays */
+  img, video, canvas { image-rendering: auto; }
   h1, h2, h3, h4 {
     font-family: 'Big Shoulders Display', 'Space Grotesk', system-ui, sans-serif;
     letter-spacing: -0.02em;
+    font-feature-settings: "kern", "liga", "ss01";
   }
   .font-mono-tech { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+  /* Calibrated selection — brand-accurate on every display */
+  ::selection { background: hsl(var(--primary) / 0.35); color: hsl(var(--foreground)); }
+  /* Refined focus ring — accessible, not jarring */
+  :focus-visible { outline: 2px solid hsl(var(--ring) / 0.7); outline-offset: 2px; border-radius: 4px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
 }
+
 
 @layer components {
   .input {

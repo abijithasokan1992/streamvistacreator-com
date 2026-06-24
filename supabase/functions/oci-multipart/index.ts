@@ -75,9 +75,12 @@ const CATEGORY_PREFIX: Record<string, string> = {
 };
 
 // ---------- Phase 7: Plan-level total storage quotas (bytes) ----------
+// Defense-in-depth fallback only — primary path reads workspace_storage_entitlements
+// via get_workspace_storage_entitlement RPC. Free tier is 5 GB per the canonical
+// plans.creator_basic row and free_tier_config.
 const TB = 1024 * GB;
 const PLAN_QUOTA: Record<string, number> = {
-  free: 100 * GB,
+  free: 5 * GB,
   creator: 1 * TB,
   monthly: 5 * TB,
   quarterly: 5 * TB,

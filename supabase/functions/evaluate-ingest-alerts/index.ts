@@ -172,6 +172,52 @@ async function sendWhatsApp(phone: string, body: string): Promise<{ ok: boolean;
   }
 }
 
+async function sendWebhook(
+  endpoint: { url: string; secret?: string },
+  payload: Record<string, unknown>,
+): Promise<{ ok: boolean; status?: number; error?: string }> {
+  if (!/^https:\/\//i.test(endpoint.url)) {
+    return { ok: false, error: 'webhook_url_must_be_https' }
+  }
+  const body = JSON.stringify(payload)
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'User-Agent': 'StreamVista-Ingest-Alerts/1.0',
+    'X-StreamVista-Event': 'ingest.alert',
+    'X-StreamVista-Delivery': crypto.randomUUID(),
+  }
+  if (endpoint.secret) {
+    try {
+      const key = await crypto.subtle.importKey(
+        'raw',
+        new TextEncoder().encode(endpoint.secret),
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign'],
+      )
+      const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(body))
+      const hex = Array.from(new Uint8Array(sig))
+        .map((b) => b.toString(16).padStart(2, '0')).join('')
+      headers['X-StreamVista-Signature'] = `sha256=${hex}`
+    } catch (e) {
+      return { ok: false, error: `sign_failed: ${(e as Error).message}` }
+    }
+  }
+  try {
+    const ctrl = new AbortController()
+    const t = setTimeout(() => ctrl.abort(), 8000)
+    const res = await fetch(endpoint.url, { method: 'POST', headers, body, signal: ctrl.signal })
+    clearTimeout(t)
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
+      return { ok: false, status: res.status, error: text.slice(0, 200) || `http_${res.status}` }
+    }
+    return { ok: true, status: res.status }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 

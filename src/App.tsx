@@ -102,6 +102,7 @@ const AdminRoutes = () => (
     <Route path="/admin/reports" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/kammattam" element={<KammattamPopout />} />
     <Route path="/admin/operations" element={<AdminErrorBoundary><RoleGate allow={["admin"]}><AdminOperations /></RoleGate></AdminErrorBoundary>} />
+    <Route path="/admin/chief" element={<AdminErrorBoundary><AdminChief /></AdminErrorBoundary>} />
 
     {/* Anything else on the admin host = wrong portal */}
     <Route path="*" element={<WrongPortal expected="public" />} />

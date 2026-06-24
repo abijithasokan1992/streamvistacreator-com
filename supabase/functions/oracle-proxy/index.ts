@@ -127,28 +127,34 @@ Deno.serve(async (req) => {
 
   const cors = { ...buildCorsHeaders(req), "Content-Type": "application/json" };
 
-  // Verify caller is an authenticated admin
-  const authHeader = req.headers.get("authorization") ?? "";
-  const token = authHeader.replace(/^Bearer\s+/i, "");
-  if (!token) {
-    return new Response(JSON.stringify({ error: "unauthenticated" }), {
-      status: 401, headers: cors,
-    });
-  }
-
+  // Internal sweep bypass: allow trusted server-to-server calls (archive-sweep
+  // edge function) that present the service role key as a special header.
+  const internal = req.headers.get("x-sv-internal") ?? "";
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
-  const { data: userRes } = await admin.auth.getUser(token);
-  const userId = userRes?.user?.id;
-  if (!userId) {
-    return new Response(JSON.stringify({ error: "invalid token" }), {
-      status: 401, headers: cors,
-    });
-  }
-  const { data: isAdmin } = await admin.rpc("has_role", { _user_id: userId, _role: "admin" });
-  if (!isAdmin) {
-    return new Response(JSON.stringify({ error: "forbidden" }), {
-      status: 403, headers: cors,
-    });
+  const isInternal = !!internal && internal === SERVICE_ROLE;
+
+  if (!isInternal) {
+    // Verify caller is an authenticated admin
+    const authHeader = req.headers.get("authorization") ?? "";
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+    if (!token) {
+      return new Response(JSON.stringify({ error: "unauthenticated" }), {
+        status: 401, headers: cors,
+      });
+    }
+    const { data: userRes } = await admin.auth.getUser(token);
+    const userId = userRes?.user?.id;
+    if (!userId) {
+      return new Response(JSON.stringify({ error: "invalid token" }), {
+        status: 401, headers: cors,
+      });
+    }
+    const { data: isAdmin } = await admin.rpc("has_role", { _user_id: userId, _role: "admin" });
+    if (!isAdmin) {
+      return new Response(JSON.stringify({ error: "forbidden" }), {
+        status: 403, headers: cors,
+      });
+    }
   }
 
   let body: any = {};

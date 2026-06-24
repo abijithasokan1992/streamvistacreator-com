@@ -39,50 +39,59 @@ export default function EcosystemAbout() {
   return (
     <div className="space-y-16">
       {v.hero && (
-        <section className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-secondary/30 via-background to-background p-8 md:p-12">
-          <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-accent/10 blur-3xl pointer-events-none" />
+        <section className="relative overflow-hidden rounded-3xl border border-border-strong/60 glass p-8 md:p-12">
+          <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full blur-3xl pointer-events-none" style={{ background: "hsl(var(--primary-glow) / 0.20)" }} />
+          <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full blur-3xl pointer-events-none" style={{ background: "hsl(var(--primary) / 0.18)" }} />
           <div className="relative space-y-4 max-w-3xl">
-            <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-accent">
-              <Building2 className="w-4 h-4" /> About the Ecosystem
+            <div className="pill-attention">
+              <Building2 className="w-3.5 h-3.5" /> About the Ecosystem
             </div>
-            <h1 className="font-display text-4xl md:text-5xl font-bold tracking-tight">
-              {profile.parent_company_name} — Integrated Media Infrastructure
+            <h1 className="font-display text-4xl md:text-6xl font-black tracking-tight leading-[1.02]">
+              {profile.parent_company_name} — <span className="gradient-text">Integrated Media Infrastructure</span>
             </h1>
-            <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+            <p className="text-base md:text-lg text-text-secondary leading-relaxed font-medium">
               {profile.parent_company_description}
             </p>
           </div>
         </section>
       )}
 
+
       {v.brands && profile.brands?.length > 0 && (
         <section className="space-y-6">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <div className="text-[11px] uppercase tracking-[0.2em] text-accent">Operating Brands</div>
-              <h2 className="font-display text-2xl md:text-3xl font-bold mt-1">
-                Three brands. One ecosystem.
+              <div className="eyebrow">Operating Brands</div>
+              <h2 className="font-display text-2xl md:text-4xl font-black mt-1 tracking-tight">
+                Three brands. <span className="gradient-text">One ecosystem.</span>
               </h2>
             </div>
+
           </div>
           <div className="grid md:grid-cols-3 gap-4">
             {profile.brands.map((b) => (
               <div
                 key={b.key}
-                className="group relative rounded-2xl border border-border/60 bg-gradient-to-b from-secondary/30 to-background p-6 hover:border-accent/60 transition-colors"
+                className="group relative rounded-2xl border border-border-strong/60 glass p-6 hover:border-primary/60 hover:-translate-y-1 transition-all duration-500"
               >
-                <div className="w-10 h-10 rounded-xl bg-accent/10 text-accent grid place-items-center mb-4">
+                <div
+                  className="w-11 h-11 rounded-xl text-primary-foreground grid place-items-center mb-4 border border-primary/30"
+                  style={{
+                    backgroundImage: "var(--gradient-primary)",
+                    boxShadow: "0 1px 0 hsl(0 0% 100% / 0.25) inset, 0 -2px 0 hsl(225 60% 6% / 0.18) inset, 0 8px 22px -10px hsl(var(--primary) / 0.6)",
+                  }}
+                >
                   {brandIcon[b.key] ?? <Sparkles className="w-5 h-5" />}
                 </div>
-                <h3 className="font-display text-lg font-bold">{b.title}</h3>
-                <div className="text-xs uppercase tracking-wider text-muted-foreground mt-1">
+                <h3 className="font-display text-xl font-black tracking-tight">{b.title}</h3>
+                <div className="text-[10px] font-mono-tech uppercase tracking-[0.22em] text-primary mt-1">
                   {b.one_liner}
                 </div>
-                <p className="text-sm text-muted-foreground mt-3 leading-relaxed">{b.description}</p>
+                <p className="text-sm text-text-secondary mt-3 leading-relaxed">{b.description}</p>
                 {b.link && (
                   <a
                     href={b.link}
-                    className="inline-block mt-4 text-xs font-semibold text-accent hover:underline"
+                    className="inline-block mt-4 text-xs font-bold uppercase tracking-[0.18em] text-primary hover:underline"
                   >
                     Explore →
                   </a>
@@ -90,6 +99,7 @@ export default function EcosystemAbout() {
               </div>
             ))}
           </div>
+
         </section>
       )}
 
@@ -110,10 +120,11 @@ export default function EcosystemAbout() {
             )}
           </div>
           <div className="space-y-4">
-            <div className="text-[11px] uppercase tracking-[0.2em] text-accent">Founder</div>
-            <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight">
+            <div className="eyebrow">Founder</div>
+            <h2 className="font-display text-3xl md:text-5xl font-black tracking-tight leading-[1.02]">
               {profile.founder_name}
             </h2>
+
             <div className="text-sm text-muted-foreground leading-relaxed">
               {profile.founder_role_line}
             </div>
@@ -136,11 +147,12 @@ export default function EcosystemAbout() {
       {v.works && works.length > 0 && (
         <section id="selected-works" className="space-y-6 scroll-mt-24">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.2em] text-accent">Filmography</div>
-            <h2 className="font-display text-2xl md:text-3xl font-bold mt-1">
-              Selected works & milestones
+            <div className="eyebrow">Filmography</div>
+            <h2 className="font-display text-2xl md:text-4xl font-black mt-1 tracking-tight">
+              Selected works <span className="gradient-text">& milestones</span>
             </h2>
           </div>
+
           <div className="grid md:grid-cols-2 gap-4">
             {works.map((w) => (
               <article
@@ -175,15 +187,17 @@ export default function EcosystemAbout() {
       )}
 
       {v.thesis && (
-        <section className="rounded-3xl border border-border/60 bg-gradient-to-br from-accent/10 via-secondary/30 to-background p-8 md:p-12">
-          <div className="max-w-3xl space-y-3">
-            <div className="text-[11px] uppercase tracking-[0.2em] text-accent">Why this ecosystem exists</div>
-            <p className="text-lg md:text-xl font-display leading-relaxed text-foreground/90">
+        <section className="relative overflow-hidden rounded-3xl border border-border-strong/60 glass p-8 md:p-12">
+          <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full blur-3xl pointer-events-none" style={{ background: "hsl(var(--primary-glow) / 0.20)" }} />
+          <div className="relative max-w-3xl space-y-3">
+            <div className="eyebrow">Why this ecosystem exists</div>
+            <p className="text-xl md:text-2xl font-display font-bold leading-snug text-foreground">
               {profile.ecosystem_thesis}
             </p>
           </div>
         </section>
       )}
+
     </div>
   );
 }

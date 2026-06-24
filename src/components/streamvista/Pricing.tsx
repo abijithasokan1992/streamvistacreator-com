@@ -220,16 +220,24 @@ function PriceCard({
       style={{ animationDelay: `${index * 100}ms` }}
     >
       {(highlight || badgeOverride) && (
-        <div className="absolute top-0 right-0 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] bg-accent/20 text-accent">
+        <div className="absolute top-0 right-0 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-primary-foreground" style={{ backgroundImage: "var(--gradient-primary)" }}>
           {badgeOverride ?? "Live · Self-serve"}
         </div>
       )}
 
       <div className="flex items-center justify-between mb-7">
-        <div className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+        <div className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-text-tertiary">
           {String(index + 1).padStart(2, "0")} · {pill}
         </div>
-        <Icon className="w-4 h-4 text-primary" />
+        <div
+          className="w-10 h-10 rounded-xl grid place-items-center text-primary-foreground border border-primary/30"
+          style={{
+            backgroundImage: "var(--gradient-primary)",
+            boxShadow: "0 1px 0 hsl(0 0% 100% / 0.25) inset, 0 -2px 0 hsl(225 60% 6% / 0.18) inset, 0 8px 22px -10px hsl(var(--primary) / 0.6)",
+          }}
+        >
+          <Icon className="w-4 h-4" />
+        </div>
       </div>
 
       <div className="mb-1 flex items-baseline gap-2 min-h-[3.5rem]">
@@ -237,28 +245,28 @@ function PriceCard({
           <Loader2 className="w-7 h-7 animate-spin text-muted-foreground" />
         ) : (
           <>
-            <span className="font-display font-black text-4xl md:text-5xl tracking-tight">
+            <span className="stat-bold text-5xl md:text-6xl">
               {priceValue}
             </span>
             {priceSuffix && (
-              <span className="font-mono-tech text-[11px] uppercase tracking-widest text-muted-foreground">
+              <span className="font-mono-tech text-[11px] uppercase tracking-widest text-text-tertiary">
                 {priceSuffix}
               </span>
             )}
           </>
         )}
       </div>
-      <div className="font-display text-lg font-bold mb-4 text-foreground/90">{name}</div>
+      <div className="font-display text-lg font-black mb-4 text-foreground">{name}</div>
 
-      <p className="text-sm text-muted-foreground mb-6 leading-relaxed border-t border-border/60 pt-5">
+      <p className="text-[15px] text-text-secondary mb-6 leading-relaxed border-t border-border-subtle pt-5 font-medium">
         {tagline}
       </p>
 
       <ul className="space-y-2.5 text-sm mb-8">
         {bullets.map((f) => (
           <li key={f} className="flex items-start gap-3">
-            <Check className="w-3.5 h-3.5 text-primary mt-1 shrink-0" />
-            <span className="text-muted-foreground">{f}</span>
+            <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+            <span className="text-text-secondary">{f}</span>
           </li>
         ))}
       </ul>
@@ -267,17 +275,18 @@ function PriceCard({
         <Link
           to={cta.to}
           className={cn(
-            "group/btn h-12 w-full inline-flex items-center justify-center gap-2 font-semibold uppercase tracking-[0.18em] text-xs rounded-md transition-colors",
+            "group/btn h-12 w-full inline-flex items-center justify-center gap-2 font-bold uppercase tracking-[0.18em] text-xs rounded-md transition-colors",
             cta.intent === "primary"
-              ? "cta-guide bg-gradient-primary text-primary-foreground"
-              : "border border-border/60 hover:border-accent/60 hover:bg-accent/5 text-foreground",
+              ? "btn-emboss"
+              : "border border-border-strong/60 hover:border-primary/60 hover:bg-primary/5 text-foreground",
           )}
         >
           <span>{cta.label}</span>
           <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
         </Link>
-        <p className="text-[10px] text-muted-foreground text-center">{note}</p>
+        <p className="text-[10px] text-text-tertiary text-center">{note}</p>
       </div>
     </div>
   );
 }
+

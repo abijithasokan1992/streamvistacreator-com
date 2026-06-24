@@ -84,8 +84,8 @@ export function HeroSilverScreen() {
     /* fading-in */ 1;
 
   const transitionMs =
-    phase === "fading-out" ? FADE_OUT :
-    phase === "fading-in"  ? FADE_IN  :
+    phase === "fading-out" ? timing.fadeOut :
+    phase === "fading-in"  ? timing.fadeIn  :
     0;
 
   const active = LOGOS[i];

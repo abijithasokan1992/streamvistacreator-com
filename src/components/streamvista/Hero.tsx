@@ -51,9 +51,7 @@ export const Hero = () => (
           </div>
 
           <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-            StreamVista is the operating layer for cinema and series IP — title intake,
-            recurring storage, post / vault workflows and commercial requests for buyers,
-            built for creators, studios and acquisition teams in one platform.
+            The operating layer for cinema and series IP — intake, storage, post and commercial workflows, in one platform.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3">

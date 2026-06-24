@@ -187,7 +187,7 @@ export default function CreatorPlanCard({ onPurchased }: { onPurchased?: () => v
           <Archive className="w-3 h-3 inline -mt-0.5 mr-1 text-accent" />
           <b className="text-foreground">Overage policy:</b> Free plan bandwidth overage is billed only when you exceed{" "}
           <b>500 GB / month at ₹10 / GB</b>. Creator Plan auto-scales storage — each extra TB is added on demand at{" "}
-          <b>₹650 + 18% GST</b>. No commitments, cancel anytime.
+          <b>{payg.baseLabel} + {payg.gstPercent}% GST</b>. No commitments, cancel anytime.
         </p>
       </div>
     </div>

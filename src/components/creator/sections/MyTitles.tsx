@@ -63,17 +63,16 @@ export default function MyTitlesSection() {
         <div className="mb-4 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 flex items-start gap-3 text-xs sm:text-sm">
           <Crown className="w-4 h-4 text-amber-300 mt-0.5 shrink-0" />
           <div className="min-w-0 flex-1">
-            <div className="font-medium">Creator Basic</div>
+            <div className="font-medium">Free plan</div>
             <div className="text-muted-foreground mt-0.5">
-              {tier.draft_count}/1 draft · {tier.lifecycle_count}/1 submission used.
-              Request a plan change for more titles, storage and priority review.
+              {tier.draft_count}/1 draft · {tier.lifecycle_count}/1 submission used. Upgrade for more.
             </div>
           </div>
           <a
             href="?section=billing"
             className="text-[11px] rounded-md border border-amber-500/40 px-2.5 py-1 hover:bg-amber-500/10 whitespace-nowrap"
           >
-            Storage & Billing
+            Open Billing
           </a>
         </div>
       )}
@@ -85,7 +84,7 @@ export default function MyTitlesSection() {
         <button
           onClick={handleStartCreate}
           disabled={freeLimitHit}
-          title={freeLimitHit ? "Free plan limit reached — request a plan change to add more titles" : undefined}
+          title={freeLimitHit ? "Free plan limit reached — upgrade to add more titles" : undefined}
           className={cn(
             "inline-flex items-center gap-1.5 rounded-md text-xs px-3 py-1.5 transition-colors",
             freeLimitHit
@@ -94,9 +93,10 @@ export default function MyTitlesSection() {
           )}
         >
           {freeLimitHit ? <Lock className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-          {freeLimitHit ? "Add Title — Pro" : "Add Title"}
+          {freeLimitHit ? "New Title — Pro" : "New Title"}
         </button>
       </div>
+
 
       {gating && (
         <AgreementGate
@@ -128,9 +128,20 @@ export default function MyTitlesSection() {
         </div>
       ) : titles.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border/50 bg-secondary/5 p-6 sm:p-10 text-center">
+          <Film className="w-6 h-6 text-muted-foreground mx-auto mb-3" />
           <p className="font-semibold">No titles yet</p>
-          <p className="text-sm text-muted-foreground mt-1">Add your first title to begin.</p>
+          <p className="text-sm text-muted-foreground mt-1 max-w-sm mx-auto">
+            Tap <span className="text-foreground font-medium">New Title</span> above to start your first one. It only takes a name to begin — you can add files later.
+          </p>
+          <button
+            onClick={handleStartCreate}
+            disabled={freeLimitHit}
+            className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-accent text-accent-foreground text-xs px-3 py-1.5 disabled:opacity-50"
+          >
+            <Plus className="w-3.5 h-3.5" /> New Title
+          </button>
         </div>
+
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {titles.map((t) => (

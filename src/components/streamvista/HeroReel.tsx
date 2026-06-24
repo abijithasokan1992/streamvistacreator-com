@@ -98,7 +98,10 @@ export function HeroReel() {
                 <img
                   src={url}
                   alt=""
+                  width={1920}
+                  height={1080}
                   loading={k === 0 ? "eager" : "lazy"}
+                  fetchPriority={isActive ? "high" : "auto"}
                   className="absolute inset-0 w-full h-full object-cover will-change-transform animate-[reel-pan_14s_ease-in-out_infinite_alternate]"
                   style={{ filter: "saturate(1.05) contrast(1.05)" }}
                 />

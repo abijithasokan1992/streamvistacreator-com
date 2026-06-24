@@ -23,11 +23,29 @@ const LOGOS = [
   { src: crayonsLoop,     label: "Crayons Loop"     },
 ];
 
-// Timings (ms)
-const HOLD = 3200;          // logo on-screen, fully visible
-const FADE_OUT = 900;       // logo fades to silver
-const SILVER_HOLD = 420;    // pure silver screen between idents
-const FADE_IN = 900;        // next logo fades up from silver
+// Responsive IMAX / ARRI Master Anamorphic pacing constants
+// Desktop = slower, majestic; Mobile = snappier but still cinematic
+function useCinemaTiming() {
+  const isMobile = useIsMobile();
+  return useMemo(() => {
+    if (isMobile) {
+      return {
+        hold: 2600,        // shorter hold for mobile attention
+        fadeOut: 750,      // faster fade to silver
+        silverHold: 350,   // quick silver flash
+        fadeIn: 750,       // faster reveal
+        grainOpacity: 0.05,
+      };
+    }
+    return {
+      hold: 4800,          // long, majestic hold on desktop
+      fadeOut: 1400,       // slow, elegant fade to silver
+      silverHold: 700,     // generous silver interlude
+      fadeIn: 1400,        // slow, dramatic reveal
+      grainOpacity: 0.10,
+    };
+  }, [isMobile]);
+}
 
 type Phase = "hold" | "fading-out" | "silver" | "fading-in";
 

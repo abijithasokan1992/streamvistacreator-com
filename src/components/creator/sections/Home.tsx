@@ -8,6 +8,7 @@ import ReviewNotesInbox from "@/components/creator/ReviewNotesInbox";
 import { UploadDiagnostics } from "@/components/creator/UploadDiagnostics";
 import Buy1TBCard from "@/components/shared/Buy1TBCard";
 import { Button } from "@/components/ui/button";
+import OnboardingChecklist from "@/components/creator/OnboardingChecklist";
 import type { SectionId } from "@/components/creator/CreatorSidebar";
 
 type UpdateRow = { id: string; title: string; message: string | null; created_at: string };
@@ -58,6 +59,9 @@ export default function HomeSection({ onNavigate }: { onNavigate: (s: SectionId)
       </div>
 
       <WorkspaceWelcome />
+
+      {/* One-time onboarding checklist */}
+      <OnboardingChecklist hasTitles={titles.length > 0} onNavigate={onNavigate} />
 
       {/* Primary action */}
       <button

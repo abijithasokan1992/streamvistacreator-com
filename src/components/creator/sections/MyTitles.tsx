@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Plus, Loader2, Pencil, Eye, Lock, Crown, AlertTriangle, X, Film } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,6 +25,8 @@ export default function MyTitlesSection() {
   const [gating, setGating] = useState(false);
   const [editorId, setEditorId] = useState<string | null>(null);
   const [editorMode, setEditorMode] = useState<"edit" | "view">("edit");
+  const [filter, setFilter] = useState<"all" | "drafts" | "in_review" | "approved">("all");
+  const [sort, setSort] = useState<"newest" | "oldest" | "updated">("updated");
 
   const reload = useCallback(async () => {
     if (!user) return;
@@ -57,6 +59,31 @@ export default function MyTitlesSection() {
 
   const freeLimitHit = !!tier?.is_free && tier.lifecycle_count >= 1 && !tier.can_create_draft;
 
+  const FILTERS = useMemo(() => ({
+    all: (_: TitleRow) => true,
+    drafts: (t: TitleRow) => ["draft", "incomplete", "changes_requested"].includes(t.status),
+    in_review: (t: TitleRow) => ["submitted", "in_review", "qc_review", "legal_review", "hold"].includes(t.status),
+    approved: (t: TitleRow) => ["approved", "ready_for_distribution", "published"].includes(t.status),
+  }), []);
+
+  const counts = useMemo(() => ({
+    all: titles.length,
+    drafts: titles.filter(FILTERS.drafts).length,
+    in_review: titles.filter(FILTERS.in_review).length,
+    approved: titles.filter(FILTERS.approved).length,
+  }), [titles, FILTERS]);
+
+  const visible = useMemo(() => {
+    const filtered = titles.filter(FILTERS[filter]);
+    const sorted = [...filtered].sort((a, b) => {
+      if (sort === "newest") return +new Date(b.created_at) - +new Date(a.created_at);
+      if (sort === "oldest") return +new Date(a.created_at) - +new Date(b.created_at);
+      return +new Date(b.updated_at) - +new Date(a.updated_at);
+    });
+    return sorted;
+  }, [titles, filter, sort, FILTERS]);
+
+
   return (
     <div>
       {tier?.is_free && (
@@ -77,9 +104,9 @@ export default function MyTitlesSection() {
         </div>
       )}
 
-      <div className="flex items-center justify-between gap-3 mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <p className="text-xs text-muted-foreground">
-          {loading ? "Loading…" : `${titles.length} title${titles.length === 1 ? "" : "s"}`}
+          {loading ? "Loading…" : `${visible.length} of ${titles.length} title${titles.length === 1 ? "" : "s"}`}
         </p>
         <button
           onClick={handleStartCreate}
@@ -96,6 +123,46 @@ export default function MyTitlesSection() {
           {freeLimitHit ? "New Title — Pro" : "New Title"}
         </button>
       </div>
+
+      {/* Filter chips + sort */}
+      {titles.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <div className="flex flex-wrap gap-1.5">
+            {([
+              ["all", "All"],
+              ["drafts", "Drafts"],
+              ["in_review", "In Review"],
+              ["approved", "Approved"],
+            ] as const).map(([id, label]) => (
+              <button
+                key={id}
+                onClick={() => setFilter(id)}
+                className={cn(
+                  "text-[11px] rounded-full border px-2.5 py-1 transition-colors",
+                  filter === id
+                    ? "border-accent/60 bg-accent/15 text-foreground"
+                    : "border-border/40 bg-secondary/5 text-muted-foreground hover:bg-secondary/20",
+                )}
+              >
+                {label} <span className="opacity-60">({counts[id]})</span>
+              </button>
+            ))}
+          </div>
+          <label className="text-[11px] text-muted-foreground inline-flex items-center gap-1.5">
+            Sort
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as typeof sort)}
+              className="bg-background border border-border/40 rounded-md text-[11px] px-2 py-1"
+            >
+              <option value="updated">Recently updated</option>
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+            </select>
+          </label>
+        </div>
+      )}
+
 
 
       {gating && (
@@ -142,9 +209,20 @@ export default function MyTitlesSection() {
           </button>
         </div>
 
+      ) : visible.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border/50 bg-secondary/5 p-8 text-center">
+          <p className="text-sm font-medium">Nothing matches this filter</p>
+          <p className="text-xs text-muted-foreground mt-1">Try another filter or clear it to see all titles.</p>
+          <button
+            onClick={() => setFilter("all")}
+            className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-border/50 text-xs px-3 py-1.5 hover:bg-secondary/30"
+          >
+            Show All
+          </button>
+        </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {titles.map((t) => (
+          {visible.map((t) => (
             <article key={t.id} className="rounded-xl border border-border/40 bg-secondary/5 p-4 flex flex-col gap-3 min-w-0">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">

@@ -17,12 +17,15 @@ import EntitlementChip from "@/components/creator/EntitlementChip";
 import CreatorGuide from "@/components/creator/CreatorGuide";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { fetchFreeTierStatus } from "@/lib/creator/titleApi";
+import CreatorTour, { hasSeenCreatorTour } from "@/components/creator/CreatorTour";
+import { markOnboardingStep } from "@/components/creator/OnboardingChecklist";
 
 export default function ContentOwnerDashboard() {
   const { user, role, dashboardRole, loading, signOut } = useAuth();
   const [params, setParams] = useSearchParams();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isFree, setIsFree] = useState<boolean>(true);
+  const [tourOpen, setTourOpen] = useState(false);
   const raw = (params.get("section") as SectionId) || "home";
   // Backward-compat: legacy `?section=upgrade` deep links resolve to Storage & Billing.
   const section: SectionId = raw === "upgrade" ? "billing" : raw;

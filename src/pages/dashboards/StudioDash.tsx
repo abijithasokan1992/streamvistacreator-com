@@ -62,20 +62,20 @@ function OneClickBuyCard({
     <section className="rounded-2xl border border-accent/40 bg-gradient-to-br from-accent/10 to-secondary/10 p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 max-w-xl">
-          <span className="text-[11px] uppercase tracking-[0.25em] text-accent font-mono">One-click purchase</span>
+          <span className="text-[11px] uppercase tracking-[0.25em] text-accent font-mono">One-click</span>
           <h3 className="font-display text-2xl mt-1.5">
-            {hasPaid ? "Add another 1 TB Studio Storage" : "Start with 1 TB Studio Storage"}
+            {hasPaid ? "Add 1 TB" : "Start with 1 TB"}
           </h3>
           <p className="text-sm text-muted-foreground mt-1.5">
-            Secure recurring vault storage for studio uploads, working media, masters and archive copies.
+            Recurring vault storage for uploads, masters and archives.
           </p>
           <p className="text-sm mt-3">
             <span className="font-display text-2xl">₹{totalRupees}</span>
             <span className="text-muted-foreground"> / month</span>
-            <span className="text-xs text-muted-foreground ml-2">(₹{baseRupees} + {product.gst_percent}% GST)</span>
+            <span className="text-xs text-muted-foreground ml-2">(incl. {product.gst_percent}% GST)</span>
           </p>
           <p className="text-[11px] text-muted-foreground mt-1">
-            Billed monthly. Storage activates immediately after successful payment.
+            Activates right after payment.
           </p>
         </div>
         <div className="flex flex-col items-end gap-2">
@@ -85,10 +85,10 @@ function OneClickBuyCard({
             className="bg-gradient-primary text-primary-foreground glow-primary"
           >
             <ShoppingCart className="w-4 h-4 mr-2" />
-            {hasPaid ? "Buy another 1 TB" : "Buy 1 TB Now"}
+            {hasPaid ? "Add 1 TB" : "Buy 1 TB"}
           </Button>
           <Link to="/contact" className="text-[11px] text-muted-foreground hover:text-accent">
-            Need a larger setup? Contact StreamVista →
+            Need more? Contact us →
           </Link>
         </div>
       </div>

@@ -2,6 +2,15 @@ import { supabase } from "@/integrations/supabase/client";
 
 const clientToken = import.meta.env.VITE_PAYMENTS_CLIENT_TOKEN as string | undefined;
 
+/**
+ * StreamVista payment-rail policy (Phase 1 lockdown):
+ *   Razorpay is the only publicly visible rail. Paddle code stays in the repo
+ *   but is dormant behind this flag — flip VITE_ENABLE_PADDLE=true in env when
+ *   non-India billing is production-ready (catalog, prices, webhook, entitlement).
+ */
+export const PADDLE_ENABLED =
+  (import.meta.env.VITE_ENABLE_PADDLE as string | undefined) === "true";
+
 declare global {
   interface Window {
     Paddle: any;
@@ -15,6 +24,9 @@ export function getPaddleEnvironment(): "sandbox" | "live" {
 let paddleInitialized = false;
 
 export async function initializePaddle(): Promise<void> {
+  if (!PADDLE_ENABLED) {
+    throw new Error("Paddle is disabled. Set VITE_ENABLE_PADDLE=true to enable.");
+  }
   if (paddleInitialized) return;
   if (!clientToken) throw new Error("VITE_PAYMENTS_CLIENT_TOKEN is not set");
 
@@ -39,6 +51,9 @@ export async function initializePaddle(): Promise<void> {
 }
 
 export async function getPaddlePriceId(priceId: string): Promise<string> {
+  if (!PADDLE_ENABLED) {
+    throw new Error("Paddle is disabled. Set VITE_ENABLE_PADDLE=true to enable.");
+  }
   const environment = getPaddleEnvironment();
   const { data, error } = await supabase.functions.invoke("get-paddle-price", {
     body: { priceId, environment },

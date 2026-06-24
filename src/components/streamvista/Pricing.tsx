@@ -135,6 +135,35 @@ export const Pricing = () => {
           />
         </div>
 
+        {/* International billing — Paddle rail is dormant; route to founder-assisted contact */}
+        <div className="mt-8 rounded-2xl border border-border/60 bg-card/40 p-6 md:p-8 flex flex-col md:flex-row md:items-center gap-6 animate-fade-in">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-6 h-px bg-accent" />
+              <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">
+                International billing
+              </span>
+            </div>
+            <h3 className="font-display text-xl md:text-2xl font-bold tracking-tight mb-1">
+              Outside India? Talk to StreamVista.
+            </h3>
+            <p className="text-sm text-muted-foreground max-w-xl leading-relaxed">
+              Self-serve checkout is currently India / INR only via Razorpay. International billing
+              for Creator, Studio and enterprise customers is handled directly by our team while we
+              finish onboarding the global rail.
+            </p>
+          </div>
+          <Link
+            to="/contact?topic=international-billing"
+            className="shrink-0 inline-flex items-center justify-center gap-2 rounded-full border border-border/60 px-5 py-2.5 text-sm font-medium hover:bg-accent/10 hover:border-accent/40 transition-colors"
+          >
+            Talk to StreamVista
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+
+
+
         <p className="text-center text-xs text-muted-foreground mt-8 max-w-2xl mx-auto">
           {payg && paygPrice ? (
             <>

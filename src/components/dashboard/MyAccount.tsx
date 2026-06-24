@@ -14,6 +14,7 @@ import { useBranding, uploadBrandingFile, fetchBranding } from "@/lib/branding";
 import { cn } from "@/lib/utils";
 import { PLANS, planByCycle, type Cycle } from "@/components/streamvista/plans";
 import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
+import { useCreatorPaygPrice } from "@/hooks/usePublicPlans";
 
 interface Profile {
   user_id: string;

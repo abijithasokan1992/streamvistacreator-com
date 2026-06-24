@@ -272,6 +272,7 @@ function UpgradeSection({ currentTier, email, name, userId, onUpgraded }: { curr
   const [selected, setSelected] = useState<Cycle>("creator");
   const [tbCount, setTbCount] = useState<number>(1);
   const [busy, setBusy] = useState(false);
+  const payg = useCreatorPaygPrice();
 
   const plan = planByCycle(selected);
   const subtotal = plan.price * tbCount; // ₹650 per TB pre-GST × TB

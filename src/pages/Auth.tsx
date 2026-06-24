@@ -73,6 +73,9 @@ export default function Auth() {
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
 
+  // Pre-fetch the mail-voice TTS so playback is instant after send.
+  useEffect(() => { prewarmMailVoice(); }, []);
+
   // Already signed in → bounce to role dashboard.
   useEffect(() => {
     if (loading || !user) return;

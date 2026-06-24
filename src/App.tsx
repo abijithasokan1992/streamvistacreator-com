@@ -53,6 +53,8 @@ import ManualInvoiceReceipt from "./pages/ManualInvoiceReceipt.tsx";
 import ScreeningRoom from "./pages/ScreeningRoom.tsx";
 
 import ReferralCapture from "./components/ReferralCapture.tsx";
+import AdminChief from "./pages/AdminChief.tsx";
+import { RouteAgentDock } from "./components/agents/RouteAgentDock.tsx";
 import WrongPortal from "./components/WrongPortal.tsx";
 import { SystemMessageProvider } from "./components/system/SystemMessageProvider.tsx";
 import GlobalErrorListener from "./components/system/GlobalErrorListener.tsx";
@@ -161,6 +163,7 @@ const PublicRoutes = () => (
     <Route path="/admin/reports" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/kammattam" element={<KammattamPopout />} />
     <Route path="/admin/operations" element={<AdminErrorBoundary><RoleGate allow={["admin"]}><AdminOperations /></RoleGate></AdminErrorBoundary>} />
+    <Route path="/admin/chief" element={<AdminErrorBoundary><AdminChief /></AdminErrorBoundary>} />
 
 
     <Route path="/launching-special-plan" element={<LaunchingSpecialPlan />} />
@@ -212,6 +215,7 @@ const App = () => (
                   <ReferralCapture />
                   <ErrorBoundary>
                     <HostAwareRoutes />
+                    <RouteAgentDock />
                   </ErrorBoundary>
                 </StorageQuotaProvider>
               </SystemMessageProvider>

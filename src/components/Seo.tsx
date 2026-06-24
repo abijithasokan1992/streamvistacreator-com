@@ -5,13 +5,15 @@ interface SeoProps {
   description: string;
   path: string;
   type?: "website" | "article";
+  image?: string;
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
 }
 
 const SITE = "https://streamvistacreator.com";
 
-export function Seo({ title, description, path, type = "website", jsonLd }: SeoProps) {
+export function Seo({ title, description, path, type = "website", image, jsonLd }: SeoProps) {
   const url = `${SITE}${path}`;
+  const imageUrl = image ? `${SITE}${image}` : undefined;
   const ldArr = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
   return (
     <Helmet>
@@ -22,6 +24,15 @@ export function Seo({ title, description, path, type = "website", jsonLd }: SeoP
       <meta property="og:description" content={description} />
       <meta property="og:url" content={url} />
       <meta property="og:type" content={type} />
+      {imageUrl && (
+        <>
+          <meta property="og:image" content={imageUrl} />
+          <meta property="og:image:width" content="1216" />
+          <meta property="og:image:height" content="640" />
+          <meta name="twitter:image" content={imageUrl} />
+          <meta name="twitter:card" content="summary_large_image" />
+        </>
+      )}
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
       {ldArr.map((ld, i) => (

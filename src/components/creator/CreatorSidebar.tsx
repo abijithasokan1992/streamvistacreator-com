@@ -80,43 +80,51 @@ export function CreatorSidebar({
         "md:sticky md:top-[64px] md:self-start",
       )}
     >
-      <nav className="rounded-xl border border-border/50 bg-secondary/10 p-2 space-y-3">
-        {GROUP_ORDER.map((g) => {
-          const groupItems = items.filter((i) => i.group === g);
-          if (groupItems.length === 0) return null;
-          return (
-            <div key={g} className="space-y-0.5">
-              <p className="px-3 pt-1 pb-1 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                {GROUP_LABEL[g]}
-              </p>
-              {groupItems.map((s) => {
-                const Icon = s.icon;
-                const isActive = s.id === active;
-                return (
-                  <button
-                    key={s.id}
-                    onClick={() => onSelect(s.id)}
-                    className={cn(
-                      "w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors text-left",
-                      isActive
-                        ? "bg-accent/15 text-foreground"
-                        : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground",
-                    )}
-                  >
-                    <Icon className="w-4 h-4 shrink-0" />
-                    <span className="flex-1 truncate">{s.label}</span>
-                    {s.locked && (
-                      <span className="inline-flex items-center gap-1 text-[9px] uppercase tracking-wider text-amber-300/80">
-                        <Lock className="w-3 h-3" /> Pro
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          );
-        })}
-      </nav>
+      <TooltipProvider delayDuration={300}>
+        <nav className="rounded-xl border border-border/50 bg-secondary/10 p-2 space-y-2">
+          {GROUP_ORDER.map((g) => {
+            const groupItems = items.filter((i) => i.group === g);
+            if (groupItems.length === 0) return null;
+            return (
+              <div key={g} className="space-y-0.5">
+                {groupItems.map((s) => {
+                  const Icon = s.icon;
+                  const isActive = s.id === active;
+                  return (
+                    <Tooltip key={s.id}>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => onSelect(s.id)}
+                          className={cn(
+                            "w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors text-left",
+                            isActive
+                              ? "bg-accent/15 text-foreground"
+                              : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground",
+                          )}
+                        >
+                          <Icon className="w-4 h-4 shrink-0" />
+                          <span className="flex-1 truncate">{s.label}</span>
+                          {s.locked && (
+                            <span className="inline-flex items-center gap-1 text-[9px] uppercase tracking-wider text-amber-300/80">
+                              <Lock className="w-3 h-3" /> Pro
+                            </span>
+                          )}
+                        </button>
+                      </TooltipTrigger>
+                      {s.tip && (
+                        <TooltipContent side="right" className="max-w-[220px] text-xs">
+                          {s.tip}
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </nav>
+      </TooltipProvider>
+
     </aside>
   );
 }

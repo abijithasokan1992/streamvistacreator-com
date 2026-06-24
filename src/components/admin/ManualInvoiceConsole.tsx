@@ -313,9 +313,20 @@ function InvoiceEditor({
   const [paymentMethod, setPaymentMethod] = useState<string>("");
   const [paymentLink, setPaymentLink] = useState("");
   const [items, setItems] = useState<LineItem[]>([{ label: "", quantity: 1, unit_paise: 0 }]);
+  const [grantsPlanCode, setGrantsPlanCode] = useState<string>("");
+  const [grantsUntil, setGrantsUntil] = useState<string>("");
+  const [plans, setPlans] = useState<PlanOption[]>([]);
 
   useEffect(() => {
     if (!open) return;
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("plans")
+        .select("code, name, storage_gb, role, billing_cycle")
+        .eq("is_active", true)
+        .order("role").order("sort_order");
+      setPlans((data ?? []) as PlanOption[]);
+    })();
     if (editing) {
       setUserId(editing.user_id);
       setUserEmail(editing.billed_to_email ?? "");
@@ -328,6 +339,8 @@ function InvoiceEditor({
       setPaymentMethod(editing.payment_method ?? "");
       setPaymentLink(editing.payment_link_url ?? "");
       setItems(editing.line_items?.length ? editing.line_items : [{ label: "", quantity: 1, unit_paise: 0 }]);
+      setGrantsPlanCode(editing.grants_plan_code ?? "");
+      setGrantsUntil(editing.grants_until ?? "");
     } else {
       setUserId(presetUserId ?? "");
       setUserEmail("");
@@ -336,6 +349,7 @@ function InvoiceEditor({
       setGst(18); setTaxInc(false); setDueDate(""); setNotes("");
       setPaymentMethod(""); setPaymentLink("");
       setItems([{ label: "", quantity: 1, unit_paise: 0 }]);
+      setGrantsPlanCode(""); setGrantsUntil("");
     }
   }, [open, editing, presetUserId, presetSurface]);
 

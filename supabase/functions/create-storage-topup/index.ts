@@ -45,6 +45,19 @@ Deno.serve(async (req) => {
     if (!creds) return json({ error: "Razorpay not configured" }, 503);
 
     const priced = computeFinalPricePaise("topup", null, tb);
+
+    // Canonical price cross-check: the active plans.creator_payg_1tb row is the
+    // single source of truth. If the shared pricing helper ever drifts, abort
+    // before charging anyone. (Defense in depth for Sprint 1.)
+    const { data: canonical } = await admin.rpc("get_canonical_payg_price");
+    if (canonical && (canonical as any).total_paise) {
+      const expectedPerTb = Number((canonical as any).total_paise);
+      const perTb = Math.round(priced.finalPaise / tb);
+      if (Math.abs(perTb - expectedPerTb) > 1) {
+        console.error("price drift detected", { expectedPerTb, perTb });
+        return json({ error: "Pricing temporarily unavailable, please retry." }, 503);
+      }
+    }
     const amountPaise = priced.finalPaise; // 76,700 paise per TB (incl. GST)
 
     // Insert ledger row (service role)

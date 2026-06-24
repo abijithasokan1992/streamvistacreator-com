@@ -205,12 +205,12 @@ export function StorageQuotaProvider({ children }: { children: React.ReactNode }
               <Sparkles className="w-3.5 h-3.5" /> Creator Plan
             </div>
             <div className="flex items-baseline gap-1">
-              <span className="font-display text-3xl font-bold">₹{PAYG_TB_INR}</span>
+              <span className="font-display text-3xl font-bold">{paygLabel}</span>
               <span className="text-sm text-muted-foreground">/ month</span>
             </div>
             <ul className="text-xs text-muted-foreground mt-3 space-y-1.5">
               <li>• <b className="text-foreground">1 TB</b> cinema-grade storage (20× your current cap)</li>
-              <li>• Pay-As-You-Go — next TB auto-unlocks at ₹{PAYG_TB_INR}</li>
+              <li>• Pay-As-You-Go — next TB auto-unlocks at {paygLabel}</li>
               <li>• Frame-accurate review · Camera-to-cloud ingest</li>
               <li>• Cancel anytime · no commitments</li>
             </ul>

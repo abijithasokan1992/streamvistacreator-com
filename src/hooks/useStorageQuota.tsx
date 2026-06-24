@@ -234,6 +234,7 @@ export function StorageQuotaProvider({ children }: { children: React.ReactNode }
 /** Inline alert banner — surfaces warning / urgent / hard-stop based on real entitlement. */
 export function StorageWarningBanner() {
   const q = useStorageQuota();
+  const payg = useCreatorPaygPrice();
   if (q.loading) return null;
   if (!q.warning && !q.urgent && !q.locked) return null;
   const usedGb = (q.usedMb / MB_PER_GB).toFixed(1);
@@ -256,7 +257,7 @@ export function StorageWarningBanner() {
             : `You're at ${usedGb} GB of ${totalGb} GB (${q.percent}%). Plan ahead — add 1 TB before you hit the cap.`}
         </div>
         <button onClick={q.openPaywall} className="underline underline-offset-2 hover:opacity-80 mt-1 text-xs">
-          Add 1 TB storage · ₹{PAYG_TB_INR} / month →
+          Add 1 TB storage · {payg.totalLabel} / month →
         </button>
       </div>
     </div>

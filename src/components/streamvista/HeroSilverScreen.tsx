@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import crayonsPictures from "@/assets/crayons-pictures-3d.png";
 import crayonsBridge from "@/assets/crayons-bridge-3d.png";
 import crayonsLoop from "@/assets/crayons-loop-3d.png";
@@ -22,17 +23,36 @@ const LOGOS = [
   { src: crayonsLoop,     label: "Crayons Loop"     },
 ];
 
-// Timings (ms)
-const HOLD = 3200;          // logo on-screen, fully visible
-const FADE_OUT = 900;       // logo fades to silver
-const SILVER_HOLD = 420;    // pure silver screen between idents
-const FADE_IN = 900;        // next logo fades up from silver
+// Responsive IMAX / ARRI Master Anamorphic pacing constants
+// Desktop = slower, majestic; Mobile = snappier but still cinematic
+function useCinemaTiming() {
+  const isMobile = useIsMobile();
+  return useMemo(() => {
+    if (isMobile) {
+      return {
+        hold: 2600,        // shorter hold for mobile attention
+        fadeOut: 750,      // faster fade to silver
+        silverHold: 350,   // quick silver flash
+        fadeIn: 750,       // faster reveal
+        grainOpacity: 0.05,
+      };
+    }
+    return {
+      hold: 4800,          // long, majestic hold on desktop
+      fadeOut: 1400,       // slow, elegant fade to silver
+      silverHold: 700,     // generous silver interlude
+      fadeIn: 1400,        // slow, dramatic reveal
+      grainOpacity: 0.10,
+    };
+  }, [isMobile]);
+}
 
 type Phase = "hold" | "fading-out" | "silver" | "fading-in";
 
 export function HeroSilverScreen() {
   const [i, setI] = useState(0);
   const [phase, setPhase] = useState<Phase>("hold");
+  const timing = useCinemaTiming();
 
   useEffect(() => {
     let cancelled = false;
@@ -43,19 +63,19 @@ export function HeroSilverScreen() {
     let cleanup: (() => void) | void;
     const run = () => {
       // hold → fade out → silver → swap → fade in → hold
-      cleanup = next("fading-out", HOLD, () => {
-        cleanup = next("silver", FADE_OUT, () => {
+      cleanup = next("fading-out", timing.hold, () => {
+        cleanup = next("silver", timing.fadeOut, () => {
           if (cancelled) return;
           setI((x) => (x + 1) % LOGOS.length);
-          cleanup = next("fading-in", SILVER_HOLD, () => {
-            cleanup = next("hold", FADE_IN, run);
+          cleanup = next("fading-in", timing.silverHold, () => {
+            cleanup = next("hold", timing.fadeIn, run);
           });
         });
       });
     };
     run();
     return () => { cancelled = true; if (cleanup) cleanup(); };
-  }, []);
+  }, [timing]);
 
   const logoOpacity =
     phase === "hold" ? 1 :
@@ -64,8 +84,8 @@ export function HeroSilverScreen() {
     /* fading-in */ 1;
 
   const transitionMs =
-    phase === "fading-out" ? FADE_OUT :
-    phase === "fading-in"  ? FADE_IN  :
+    phase === "fading-out" ? timing.fadeOut :
+    phase === "fading-in"  ? timing.fadeIn  :
     0;
 
   const active = LOGOS[i];
@@ -159,8 +179,9 @@ export function HeroSilverScreen() {
         {/* Film grain */}
         <div
           aria-hidden
-          className="absolute inset-0 pointer-events-none opacity-[0.07] mix-blend-overlay"
+          className="absolute inset-0 pointer-events-none mix-blend-overlay"
           style={{
+            opacity: timing.grainOpacity,
             backgroundImage:
               "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.6'/></svg>\")",
           }}

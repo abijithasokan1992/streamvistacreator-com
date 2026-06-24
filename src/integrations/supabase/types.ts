@@ -8248,6 +8248,7 @@ export type Database = {
         | "studio_archive_manager"
         | "qc_reviewer"
         | "legal_reviewer"
+        | "founder"
       billing_attempt_status:
         | "initiated"
         | "succeeded"
@@ -8561,6 +8562,7 @@ export const Constants = {
         "studio_archive_manager",
         "qc_reviewer",
         "legal_reviewer",
+        "founder",
       ],
       billing_attempt_status: [
         "initiated",

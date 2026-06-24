@@ -82,9 +82,16 @@ export function CmsFeaturedFilms() {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
         {films.map(f => (
           <a key={f.id} href={f.link_url ?? "#"} className="group block rounded-2xl overflow-hidden border border-border/50 bg-secondary/30 hover:border-accent/50 transition">
-            {f.poster_url
-              ? <img src={f.poster_url} alt={f.title} className="w-full aspect-[2/3] object-cover group-hover:scale-[1.03] transition" />
-              : <div className="w-full aspect-[2/3] bg-secondary" />}
+            <div className="relative w-full aspect-[2/3] bg-secondary overflow-hidden">
+              {f.poster_url && (
+                <img
+                  src={f.poster_url}
+                  alt={f.title}
+                  loading="lazy"
+                  className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-[1.03] transition"
+                />
+              )}
+            </div>
             <div className="p-4 space-y-1">
               <div className="font-semibold text-sm">{f.title}</div>
               {f.blurb && <p className="text-xs text-muted-foreground line-clamp-2">{f.blurb}</p>}

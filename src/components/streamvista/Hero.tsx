@@ -37,7 +37,13 @@ export const Hero = () => (
             <br />
             <span className="gradient-text">FROM INTAKE TO DEAL.</span>
           </h1>
+
+          {/* IMAX silver-screen studio ident — anamorphic, ARRI Master Anamorphic tone */}
+          <div className="mt-10 lg:hidden">
+            <HeroSilverScreen />
+          </div>
         </div>
+
 
         <div className="space-y-7 max-w-md">
           <p className="text-base md:text-lg text-muted-foreground leading-relaxed">

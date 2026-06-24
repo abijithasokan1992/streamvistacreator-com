@@ -60,6 +60,9 @@ export default function HomeSection({ onNavigate }: { onNavigate: (s: SectionId)
 
       <WorkspaceWelcome />
 
+      {/* One-time onboarding checklist */}
+      <OnboardingChecklist hasTitles={titles.length > 0} onNavigate={onNavigate} />
+
       {/* Primary action */}
       <button
         onClick={() => onNavigate("titles")}

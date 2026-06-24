@@ -51,32 +51,13 @@ export default function HomeSection({ onNavigate }: { onNavigate: (s: SectionId)
 
   return (
     <div className="space-y-6">
-      {/* Hero / welcome — plan + storage + titles summary already lives here */}
-      <WorkspaceWelcome />
-
-      {/* Direct storage actions — make billing + Delivery Vault one-click reachable */}
-      <div className="rounded-2xl border border-border/40 bg-secondary/5 p-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-sm font-medium">Storage & Delivery Vault</p>
-          <p className="text-[11px] text-muted-foreground">
-            Workspace storage = title prep, posters, trailers. Delivery Vault = masters, delivery files and archive copies.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" onClick={() => onNavigate("billing")}>
-            <Wallet className="w-3.5 h-3.5 mr-1.5" /> Open Storage & Billing
-          </Button>
-          <Button size="sm" onClick={() => onNavigate("delivery_vault")} className="bg-gradient-primary text-primary-foreground">
-            <Database className="w-3.5 h-3.5 mr-1.5" /> Open Delivery Vault
-          </Button>
-        </div>
+      {/* Welcome line — plan + storage chips already inside WorkspaceWelcome */}
+      <div>
+        <h1 className="font-display text-2xl md:text-3xl">Welcome back.</h1>
+        <p className="text-sm text-muted-foreground mt-1">Your titles, storage and plan at a glance.</p>
       </div>
 
-      {/* Direct one-click 1 TB purchase — reuses existing Razorpay flow */}
-      <Buy1TBCard
-        variant="compact"
-        headline="Need more space? Add 1 TB Delivery Vault Storage"
-      />
+      <WorkspaceWelcome />
 
       {/* Primary action */}
       <button
@@ -85,49 +66,65 @@ export default function HomeSection({ onNavigate }: { onNavigate: (s: SectionId)
       >
         <Plus className="w-5 h-5 text-accent" />
         <div className="flex-1">
-          <p className="font-semibold">Create or continue a title</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Draft, upload assets and submit for admin review.</p>
+          <p className="font-semibold">New Title</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Start a draft. Add files. Submit.</p>
         </div>
         <ArrowRight className="w-4 h-4 text-muted-foreground" />
       </button>
 
-      {/* Four operational cards */}
+      {/* Storage row — compact */}
+      <div className="rounded-2xl border border-border/40 bg-secondary/5 p-4 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm font-medium">Storage</p>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={() => onNavigate("billing")}>
+            <Wallet className="w-3.5 h-3.5 mr-1.5" /> Billing
+          </Button>
+          <Button size="sm" onClick={() => onNavigate("delivery_vault")} className="bg-gradient-primary text-primary-foreground">
+            <Database className="w-3.5 h-3.5 mr-1.5" /> Open Vault
+          </Button>
+        </div>
+      </div>
+
+      {/* 1 TB add-on — short headline */}
+      <Buy1TBCard variant="compact" headline="Add 1 TB to Vault" />
+
+      {/* Four operational cards — short copy */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <OpCard
           icon={HardDrive}
           label="Storage"
-          value="Workspace usage"
-          hint="View allowance, add 1 TB blocks, manage recurring billing."
-          cta="Open Storage & Billing"
+          value="Usage"
+          hint="View and add storage."
+          cta="Open Billing"
           onClick={() => onNavigate("billing")}
         />
         <OpCard
           icon={Film}
-          label="Draft titles"
+          label="Drafts"
           value={loading ? "…" : `${drafts} draft${drafts === 1 ? "" : "s"}`}
-          hint="Titles still missing metadata or assets."
-          cta="Continue titles"
+          hint="Titles still in progress."
+          cta="Open Titles"
           onClick={() => onNavigate("titles")}
         />
         <OpCard
           icon={Inbox}
-          label="Submissions"
+          label="Review Queue"
           value={loading ? "…" : `${inReview} in review · ${approved} approved`}
-          hint="Cross-title view of submission state."
-          cta="Open Submissions"
+          hint="Submission status."
+          cta="Open Queue"
           onClick={() => onNavigate("submissions")}
         />
         <OpCard
           icon={Bell}
-          label="Updates"
+          label="Inbox"
           value={loading ? "…" : `${updates.length} recent`}
-          hint="Admin messages and review notes."
-          cta="View Updates"
+          hint="Messages from our team."
+          cta="Open Inbox"
           onClick={() => onNavigate("updates")}
         />
       </div>
 
-      {/* Inline operational signals — kept compact */}
+      {/* Operational signals */}
       <UploadDiagnostics />
       <ReviewNotesInbox />
     </div>

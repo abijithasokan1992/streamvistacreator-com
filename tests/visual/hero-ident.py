@@ -1,11 +1,11 @@
-/**
- * Visual assertions for the hero studio ident — measures rendered logo
- * brightness, saturation, and chromatic-aura intensity at multiple
- * viewports × themes by sampling pixels directly from screenshots.
- *
- * Run manually:   python3 tests/visual/hero-ident.py
- * (Exits non-zero if any sample falls below the minimum thresholds.)
- */
+"""
+Visual assertions for the hero studio ident — measures rendered logo
+brightness, saturation, and chromatic-aura intensity at multiple
+viewports x themes by sampling pixels directly from screenshots.
+
+Run manually:   python3 tests/visual/hero-ident.py
+Exits non-zero if any sample falls below the minimum thresholds.
+"""
 
 import asyncio, sys, json
 from pathlib import Path

@@ -35,7 +35,13 @@ type MI = {
   issued_at: string | null;
   paid_at: string | null;
   created_at: string;
+  grants_plan_code: string | null;
+  grants_until: string | null;
+  entitlement_granted_at: string | null;
+  entitlement_assignment_id: string | null;
 };
+
+type PlanOption = { code: string; name: string; storage_gb: number; role: string; billing_cycle: string };
 
 const inr = (p: number) =>
   "₹" + (Number(p) / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });

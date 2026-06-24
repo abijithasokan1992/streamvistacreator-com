@@ -101,7 +101,7 @@ export function HeroStudioIdent() {
           height={900}
           loading="eager"
           decoding="async"
-          className="relative block w-full h-full object-contain"
+          className="relative block w-full h-full object-contain scale-[1.18] sm:scale-[1.3] md:scale-[1.5] lg:scale-[1.7] xl:scale-[1.85] origin-center will-change-transform"
           style={{
             opacity: logoOpacity,
             transition: transitionMs
@@ -112,6 +112,7 @@ export function HeroStudioIdent() {
               "brightness(1.22) contrast(1.18) saturate(1.6) drop-shadow(0 0 22px hsl(var(--primary-glow) / 0.45)) drop-shadow(0 10px 24px rgba(20,24,34,0.22))",
           }}
         />
+
       </div>
     </div>
   );

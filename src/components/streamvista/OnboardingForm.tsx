@@ -165,7 +165,7 @@ export const OnboardingForm = ({ selectedCycle = "free" }: Props) => {
             <Sparkles className="w-3.5 h-3.5 text-accent" />
             <span className="font-mono-tech text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Selected</span>
             <span className="font-semibold">{plan.label}</span>
-            <span className="text-accent font-display">{plan.priceLabel}</span>
+            <span className="text-accent font-display">{priceLabel}</span>
             <span className="text-muted-foreground text-xs">{plan.cadence}</span>
           </div>
         </div>

@@ -51,9 +51,7 @@ export const Hero = () => (
           </div>
 
           <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-            StreamVista is the operating layer for cinema and series IP — title intake,
-            recurring storage, post / vault workflows and commercial requests for buyers,
-            built for creators, studios and acquisition teams in one platform.
+            The operating layer for cinema and series IP — intake, storage, post and commercial workflows, in one platform.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3">
@@ -82,19 +80,19 @@ export const Hero = () => (
             icon: Film,
             step: "Creator",
             title: "Submit titles",
-            body: "Bring films, metadata, posters, trailers and master files into one secure pipeline. Start free with 5 GB; add recurring 1 TB storage blocks as your catalog grows.",
+            body: "Films, metadata, posters and masters in one secure pipeline. 5 GB free, +1 TB blocks as you grow.",
           },
           {
             icon: Layers,
             step: "Studio",
             title: "Run operations",
-            body: "Vault, ingest, mastering and delivery workflows for post houses and production teams. Plan changes handled by our team.",
+            body: "Vault, ingest, mastering and delivery for post and production teams.",
           },
           {
             icon: Briefcase,
             step: "Licensing",
             title: "Request rights",
-            body: "Acquisition teams, OTT and distributors submit screener, licensing and rights requests behind an NDA gate and track every conversation.",
+            body: "Screener, licensing and rights requests behind an NDA gate — every conversation tracked.",
           },
         ].map(({ icon: Icon, step, title, body }) => (
           <div

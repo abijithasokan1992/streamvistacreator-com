@@ -75,20 +75,25 @@ export function HeroStudioIdent() {
       data-testid="hero-studio-ident"
       role="img"
       aria-label={`Studio ident — ${active.label}`}
-      className="relative w-full aspect-[2.39/1] md:aspect-[2/1.1] rounded-xl overflow-hidden select-none bg-background"
+      className="relative w-full aspect-[16/9] rounded-xl overflow-hidden select-none bg-background"
     >
-      {/* Soft primary aura behind the logo */}
+      {/* Locked 16:9 stage — matches source-logo intrinsic ratio so the logo
+          always fills the same pixels at every breakpoint, and the aura stays
+          perfectly aligned to it. No padding that could shift placement. */}
       <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(60% 55% at 50% 50%, hsl(var(--primary-glow) / 0.22) 0%, hsl(var(--primary) / 0.10) 35%, transparent 70%)",
-        }}
-      />
+        data-testid="ident-stage"
+        className="absolute inset-0 grid place-items-center"
+      >
+        {/* Aura — sized to the stage so it tracks the logo exactly */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(58% 52% at 50% 50%, hsl(var(--primary-glow) / 0.28) 0%, hsl(var(--primary) / 0.12) 38%, transparent 72%)",
+          }}
+        />
 
-      {/* Logo fills the frame — tight padding, centered, uncropped */}
-      <div className="absolute inset-0 flex items-center justify-center px-[2%] py-[3%] sm:px-[1.5%] sm:py-[2%]">
         <img
           src={active.src}
           alt={active.label}
@@ -96,7 +101,7 @@ export function HeroStudioIdent() {
           height={900}
           loading="eager"
           decoding="async"
-          className="block w-auto h-auto max-w-full max-h-full object-contain mx-auto will-change-[opacity]"
+          className="relative block w-full h-full object-contain"
           style={{
             opacity: logoOpacity,
             transition: transitionMs

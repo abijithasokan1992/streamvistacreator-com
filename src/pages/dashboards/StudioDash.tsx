@@ -20,6 +20,7 @@ import ManualInvoicesList from "@/components/billing/ManualInvoicesList";
 import HardDiskIntakeDialog from "@/components/studio/HardDiskIntakeDialog";
 import StudioIngest from "@/components/studio/ingest/StudioIngest";
 import type { VaultProduct } from "@/lib/studioVault";
+import { useCreatorPaygPrice } from "@/hooks/usePublicPlans";
 
 type AllocRow = { id: string; allocated_gb: number; used_gb: number; source: string };
 

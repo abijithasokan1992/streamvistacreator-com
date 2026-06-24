@@ -6,7 +6,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
 import { extractFnError, reportBillingFailure } from "@/lib/payments/billingFailure";
 import {
-  PAYG_TB_INR,
   FREE_STORAGE_GB,
   FREE_BANDWIDTH_GB,
   FREE_BANDWIDTH_OVERAGE_INR_PER_GB,

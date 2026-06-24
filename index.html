@@ -3,6 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Security headers (meta fallback; CDN/edge headers in public/_headers take precedence when honored) -->
+    <!-- Security headers: CSP is enforced via HTTP headers in public/_headers (dev/HMR needs unrestricted scripts; production hosting applies the strict CSP). -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), interest-cohort=()" />
+
     <title>StreamVista Cloud X — Creator Studio Cloud Storage</title>
     <meta name="description" content="StreamVista Cloud X is the secure creator studio cloud platform for media professionals to onboard, store, share and monetise content.">
     <meta name="author" content="StreamVista" />

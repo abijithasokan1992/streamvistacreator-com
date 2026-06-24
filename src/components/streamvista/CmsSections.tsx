@@ -77,9 +77,9 @@ export function CmsFeaturedFilms() {
   return (
     <section className="container py-12">
       <div className="flex items-end justify-between mb-6">
-        <h2 className="font-display text-2xl md:text-3xl font-bold tracking-tight">Featured films & projects</h2>
+        <h2 className="font-display text-2xl md:text-3xl font-bold tracking-tight">Our Licensed Film Portfolio</h2>
       </div>
-      <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
         {films.map(f => (
           <a key={f.id} href={f.link_url ?? "#"} className="group block rounded-2xl overflow-hidden border border-border/50 bg-secondary/30 hover:border-accent/50 transition">
             {f.poster_url

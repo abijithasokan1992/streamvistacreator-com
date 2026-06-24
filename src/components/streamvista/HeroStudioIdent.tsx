@@ -75,7 +75,7 @@ export function HeroStudioIdent() {
       data-testid="hero-studio-ident"
       role="img"
       aria-label={`Studio ident — ${active.label}`}
-      className="relative w-full aspect-[16/9] rounded-xl overflow-hidden select-none bg-background"
+      className="relative w-full aspect-[16/9] rounded-xl select-none bg-background"
     >
       {/* Locked 16:9 stage — matches source-logo intrinsic ratio so the logo
           always fills the same pixels at every breakpoint, and the aura stays
@@ -101,7 +101,7 @@ export function HeroStudioIdent() {
           height={900}
           loading="eager"
           decoding="async"
-          className="relative block w-full h-full object-contain scale-[1.18] sm:scale-[1.3] md:scale-[1.5] lg:scale-[1.7] xl:scale-[1.85] origin-center will-change-transform"
+          className="relative block w-full h-full object-contain origin-center will-change-transform"
           style={{
             opacity: logoOpacity,
             transition: transitionMs

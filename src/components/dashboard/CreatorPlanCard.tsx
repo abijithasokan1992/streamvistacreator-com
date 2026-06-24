@@ -179,7 +179,7 @@ export default function CreatorPlanCard({ onPurchased }: { onPurchased?: () => v
         )}
       >
         {busy ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5" />}
-        {busy ? "Opening Razorpay…" : "Get 1 TB · ₹767 / mo"}
+        {busy ? "Opening Razorpay…" : `Get 1 TB · ${payg.totalLabel} / mo`}
       </button>
 
       <div className="relative mt-4 p-3 rounded-lg bg-muted/30 border border-border/50">

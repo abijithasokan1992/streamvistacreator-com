@@ -63,8 +63,8 @@ const PACKAGES: ReadonlyArray<{
   },
 ];
 
-const STORAGE_PRICE_BASE_INR = 650;
-const STORAGE_PRICE_INC_GST_INR = 767; // ₹650 + 18% GST — display only; server is source of truth.
+// Price comes from useCreatorPaygPrice() (canonical `plans.creator_payg_1tb`).
+// No hardcoded ₹767 in the UI — server remains the source of truth for checkout.
 
 type StorageEntitlement = {
   included_gb: number;

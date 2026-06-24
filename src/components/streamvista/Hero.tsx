@@ -74,9 +74,9 @@ export const Hero = () => (
         </div>
       </div>
 
-      {/* 3-surface strip — Creator / Studio / Buyer */}
-      <h2 className="sr-only">Three surfaces: Creator, Studio, Buyer</h2>
-      <div className="mt-16 grid md:grid-cols-3 gap-px bg-border/60 border border-border/60 rounded-2xl overflow-hidden animate-fade-in">
+      {/* 3-surface strip — Creator / Studio / Licensing (Projection Glass) */}
+      <h2 className="sr-only">Three surfaces: Creator, Studio, Licensing</h2>
+      <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 animate-fade-in">
         {[
           {
             icon: Film,
@@ -97,13 +97,31 @@ export const Hero = () => (
             body: "Acquisition teams, OTT and distributors submit screener, licensing and rights requests behind an NDA gate and track every conversation.",
           },
         ].map(({ icon: Icon, step, title, body }) => (
-          <div key={step} className="bg-background p-6 md:p-7">
-            <div className="flex items-center justify-between mb-4">
-              <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">{step}</span>
-              <Icon className="w-5 h-5 text-primary" />
+          <div
+            key={step}
+            className="group relative overflow-hidden rounded-2xl border border-border bg-foreground/[0.02] p-7 md:p-8 transition-all duration-500 hover:border-primary-glow hover:-translate-y-1 hover:shadow-[0_0_40px_-10px_hsl(var(--primary-glow))]"
+          >
+            {/* Projection-glass top-light sheen */}
+            <div
+              aria-hidden
+              className="absolute inset-0 bg-gradient-to-br from-foreground/[0.05] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+            />
+            <div className="relative z-10 space-y-6">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-accent/10 text-primary border border-foreground/10">
+                <Icon className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="font-mono-tech text-[10px] tracking-[0.25em] uppercase font-semibold text-muted-foreground mb-2">
+                  {step}
+                </p>
+                <h3 className="font-display text-2xl font-bold text-foreground tracking-tight mb-3">
+                  {title}
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {body}
+                </p>
+              </div>
             </div>
-            <h3 className="font-display text-lg font-bold mb-1.5">{title}</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">{body}</p>
           </div>
         ))}
       </div>

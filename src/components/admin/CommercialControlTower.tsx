@@ -730,7 +730,7 @@ function BuyerBrief({ row }: { row: CommercialRow }) {
     ["Languages", Array.isArray(t.languages) && (t.languages as string[]).length ? (t.languages as string[]).join(", ") : null],
     ["Genres", Array.isArray(t.genres) && (t.genres as string[]).length ? (t.genres as string[]).join(", ") : null],
     ["Formats", Array.isArray(t.formats) && (t.formats as string[]).length ? (t.formats as string[]).join(", ") : null],
-  ].filter(([, v]) => v != null && v !== "");
+  ].filter((entry): entry is [string, unknown] => entry[1] != null && entry[1] !== "");
   if (fields.length === 0 && !row.interest_summary) return null;
   return (
     <div className="rounded-lg border border-border/30 bg-background/40 p-3">

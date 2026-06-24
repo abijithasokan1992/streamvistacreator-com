@@ -151,11 +151,11 @@ export default function CreatorPlanCard({ onPurchased }: { onPurchased?: () => v
 
         <div className="text-right shrink-0">
           <div className="font-display text-3xl font-extrabold leading-none">
-            ₹650<span className="text-base font-semibold text-muted-foreground">/TB</span>
+            {payg.baseLabel}<span className="text-base font-semibold text-muted-foreground">/TB</span>
           </div>
-          <div className="text-[11px] text-muted-foreground mt-1">+ 18% GST</div>
+          <div className="text-[11px] text-muted-foreground mt-1">+ {payg.gstPercent}% GST</div>
           <div className="text-xs font-semibold text-accent mt-0.5">
-            Total ₹767 / mo
+            Total {payg.totalLabel} / mo
           </div>
         </div>
       </div>

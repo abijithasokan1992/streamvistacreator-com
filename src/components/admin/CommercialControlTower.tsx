@@ -672,7 +672,8 @@ function CommercialQueue() {
               </summary>
 
               <div className="mt-3 grid gap-3 text-sm">
-                {r.message && <p className="whitespace-pre-wrap text-foreground/90">{r.message}</p>}
+                <BuyerBrief row={r} />
+                {r.message && <p className="whitespace-pre-wrap text-foreground/90 text-xs">{r.message}</p>}
                 {r.admin_notes && (
                   <div className="text-xs border-l-2 border-accent/40 pl-2 text-foreground">
                     <span className="text-[10px] uppercase tracking-wider text-accent">Admin note · </span>

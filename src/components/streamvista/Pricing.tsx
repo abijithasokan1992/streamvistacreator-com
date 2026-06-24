@@ -1,190 +1,254 @@
-import { Check, ArrowRight, Crown, HardDrive, Layers } from "lucide-react";
+import { Check, ArrowRight, Crown, HardDrive, Layers, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { usePublicPlans, withGst } from "@/hooks/usePublicPlans";
 
 /**
  * Public pricing — three commercial blocks that match what the MVP actually does.
  *
  *   1. Creator plans              → founder-assisted. CTA = request.
- *   2. Creator storage add-ons    → self-serve recurring 1 TB blocks.
+ *   2. Creator storage add-ons    → self-serve recurring 1 TB blocks. Price + GST
+ *                                    are read live from the canonical `plans` row
+ *                                    `creator_payg_1tb`. Never hardcode a ₹ figure.
  *   3. Studio / Enterprise        → founder-assisted commercial conversation.
  *
- * Buyer is intentionally NOT a column here — buyers don't subscribe.
- * The Buyer entry block lives in <BuyerEntry />.
- *
- * Numbers shown:
- *   • Creator Basic       free, 5 GB workspace
- *   • Storage add-on       ₹650 + 18% GST = ₹767 per TB / month (already live)
- *   • Studio / Creator Pro / Studio plans → priced on conversation
+ * Free tier copy ("5 GB workspace") is also driven by the canonical `creator_basic`
+ * row so the DB stays the single source of truth.
  */
 
-type Block = {
-  key: "creator-plans" | "creator-storage" | "studio";
+export const Pricing = () => {
+  const { byCode, loading } = usePublicPlans();
+  const basic = byCode("creator_basic");
+  const payg = byCode("creator_payg_1tb");
+
+  // Storage block pricing — derived from DB, never hardcoded.
+  const paygPrice = payg
+    ? withGst(payg.price_amount, payg.gst_percent)
+    : null;
+  const paygTbSize = payg?.storage_gb ? Math.round(payg.storage_gb / 1024) : 1;
+
+  const basicStorageLabel = basic?.storage_gb
+    ? `${basic.storage_gb} GB workspace`
+    : "Workspace";
+
+  const storageBlockBullets = payg
+    ? (payg.features.length
+        ? payg.features
+        : [
+            `${paygTbSize} TB per block, recurring monthly via Razorpay`,
+            "Add multiple blocks — each cancels independently",
+            "Cancellation takes effect at cycle end, files are never auto-deleted",
+            "Server-enforced quota: uploads stop cleanly when limit is reached",
+          ])
+    : [];
+
+  const creatorPlansBullets = basic
+    ? [
+        `Creator Basic — ${basicStorageLabel}, 1 active title, standard review`,
+        "Creator Pro (managed) — up to 10 active titles, priority review, named contact",
+        "Creator Studio (managed) — custom commercial terms for larger catalogs",
+        "Plan upgrades are handled by our team — no surprise checkout",
+      ]
+    : [];
+
+  return (
+    <section id="pricing" className="py-28 relative border-b border-border/40">
+      <div className="container">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16 animate-fade-in">
+          <div>
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-8 h-px bg-accent" />
+              <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">
+                Honest commercial model
+              </span>
+            </div>
+            <h1 className="font-display font-black uppercase leading-[0.9] tracking-tight text-5xl md:text-7xl">
+              Plans you talk about.
+              <br />
+              <span className="gradient-text">Storage you buy yourself.</span>
+            </h1>
+          </div>
+          <p className="text-muted-foreground max-w-sm text-sm leading-relaxed">
+            StreamVista uses a hybrid model on purpose. Creator and Studio plans are founder-assisted
+            because the right fit matters. Storage is self-serve and recurring because capacity is
+            a commodity. Buyers don't pay to open a conversation.
+          </p>
+        </div>
+
+        <div className="grid lg:grid-cols-3 gap-px bg-border/60 border border-border/60 rounded-2xl overflow-hidden">
+          {/* Block 1 — Creator plans (founder-assisted) */}
+          <PriceCard
+            index={0}
+            pill="Creator plans"
+            icon={Crown}
+            name="Basic · Pro · Studio"
+            priceValue={basic ? "Free" : "—"}
+            priceSuffix=" → managed"
+            tagline={
+              basic?.description ??
+              "Start free on Creator Basic. Upgrade to Pro or Studio when your catalog grows — our team confirms pricing based on titles, storage and workflow needs."
+            }
+            bullets={creatorPlansBullets}
+            cta={{ label: "Get started free", to: "/auth?intent=signup&role=content_owner", intent: "primary" }}
+            note="Sign up free, request an upgrade from inside your workspace."
+            loading={loading && !basic}
+          />
+
+          {/* Block 2 — Storage add-on (self-serve, canonical DB price) */}
+          <PriceCard
+            index={1}
+            pill="Storage add-ons · Self-serve"
+            icon={HardDrive}
+            name={`Recurring ${paygTbSize} TB blocks`}
+            priceValue={paygPrice ? paygPrice.totalLabel : "—"}
+            priceSuffix={payg ? `/TB · ${shortCycle(payg.billing_cycle)}` : ""}
+            tagline={
+              payg
+                ? `Pure storage capacity, billed ${payg.billing_cycle}. ${paygPrice!.baseLabel} + ${payg.gst_percent}% GST = ${paygPrice!.totalLabel}, server-priced. Add a block when you need more room, cancel any block at end of cycle.`
+                : "Pure storage capacity, billed monthly. Add a block when you need more room, cancel any block at end of cycle."
+            }
+            bullets={storageBlockBullets}
+            cta={{ label: "Buy storage in dashboard", to: "/auth?intent=signup&role=content_owner", intent: "primary" }}
+            note="Available inside Storage & Billing after sign-in."
+            highlight
+            loading={loading && !payg}
+            badgeOverride={payg ? "Live · Self-serve" : undefined}
+          />
+
+          {/* Block 3 — Studio / Enterprise (founder-assisted) */}
+          <PriceCard
+            index={2}
+            pill="Studio & Enterprise"
+            icon={Layers}
+            name="Custom commercial"
+            priceValue="Talk to us"
+            priceSuffix=""
+            tagline="Vault, ingest, mastering, QC and delivery operations for studios, post houses and production teams. Plan changes are founder-assisted because the scope is real."
+            bullets={[
+              "Studio plan changes handled by StreamVista",
+              "Service requests for ingest, mastering, QC, delivery",
+              "Vault / heavy storage with operational support",
+              "Workspace access for production teams and operators",
+            ]}
+            cta={{ label: "Request a Studio plan", to: "/contact", intent: "ghost" }}
+            note="We reply by email with scope and pricing."
+          />
+        </div>
+
+        <p className="text-center text-xs text-muted-foreground mt-8 max-w-2xl mx-auto">
+          {payg && paygPrice ? (
+            <>
+              Storage block pricing is server-priced ({paygPrice.baseLabel} + {payg.gst_percent}% GST = {paygPrice.totalLabel}
+              {" "}per {paygTbSize} TB · {payg.billing_cycle}) and shown in your dashboard before checkout. Plan-related
+              conversations are handled by email — there is no surprise charge for talking to us.
+            </>
+          ) : (
+            <>Storage block pricing is server-priced and shown in your dashboard before checkout.</>
+          )}
+        </p>
+      </div>
+    </section>
+  );
+};
+
+function shortCycle(cycle: string) {
+  switch (cycle) {
+    case "monthly": return "month";
+    case "quarterly": return "quarter";
+    case "semiannual": return "6 months";
+    case "annual": return "year";
+    case "lifetime": return "forever";
+    default: return cycle;
+  }
+}
+
+type PriceCardProps = {
+  index: number;
   pill: string;
   icon: typeof Crown;
   name: string;
-  price: { value: string; suffix?: string };
+  priceValue: string;
+  priceSuffix?: string;
   tagline: string;
   bullets: string[];
   cta: { label: string; to: string; intent: "primary" | "ghost" };
   note: string;
   highlight?: boolean;
+  loading?: boolean;
+  badgeOverride?: string;
 };
 
-const BLOCKS: Block[] = [
-  {
-    key: "creator-plans",
-    pill: "Creator plans",
-    icon: Crown,
-    name: "Basic · Pro · Studio",
-    price: { value: "Free", suffix: " → managed" },
-    tagline:
-      "Start free on Creator Basic. Upgrade to Pro or Studio when your catalog grows — our team confirms pricing based on titles, storage and workflow needs.",
-    bullets: [
-      "Creator Basic — 5 GB workspace, 1 active title, standard review",
-      "Creator Pro (managed) — up to 10 active titles, priority review, named contact",
-      "Creator Studio (managed) — custom commercial terms for larger catalogs",
-      "Plan upgrades are handled by our team — no surprise checkout",
-    ],
-    cta: { label: "Get started free", to: "/auth?intent=signup&role=content_owner", intent: "primary" },
-    note: "Sign up free, request an upgrade from inside your workspace.",
-  },
-  {
-    key: "creator-storage",
-    pill: "Storage add-ons · Self-serve",
-    icon: HardDrive,
-    name: "Recurring 1 TB blocks",
-    price: { value: "₹767", suffix: "/TB · month" },
-    tagline:
-      "Pure storage capacity, billed monthly. Add a block when you need more room, cancel any block at end of cycle. ₹650 + 18% GST, server-priced.",
-    bullets: [
-      "1 TB per block, recurring monthly via Razorpay",
-      "Add multiple blocks — each cancels independently",
-      "Cancellation takes effect at cycle end, files are never auto-deleted",
-      "Server-enforced quota: uploads stop cleanly when limit is reached",
-    ],
-    cta: { label: "Buy storage in dashboard", to: "/auth?intent=signup&role=content_owner", intent: "primary" },
-    note: "Available inside Storage & Billing after sign-in.",
-    highlight: true,
-  },
-  {
-    key: "studio",
-    pill: "Studio & Enterprise",
-    icon: Layers,
-    name: "Custom commercial",
-    price: { value: "Talk to us", suffix: "" },
-    tagline:
-      "Vault, ingest, mastering, QC and delivery operations for studios, post houses and production teams. Plan changes are founder-assisted because the scope is real.",
-    bullets: [
-      "Studio plan changes handled by StreamVista",
-      "Service requests for ingest, mastering, QC, delivery",
-      "Vault / heavy storage with operational support",
-      "Workspace access for production teams and operators",
-    ],
-    cta: { label: "Request a Studio plan", to: "/contact", intent: "ghost" },
-    note: "We reply by email with scope and pricing.",
-  },
-];
-
-export const Pricing = () => (
-  <section id="pricing" className="py-28 relative border-b border-border/40">
-    <div className="container">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16 animate-fade-in">
-        <div>
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-8 h-px bg-accent" />
-            <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">
-              Honest commercial model
-            </span>
-          </div>
-          <h1 className="font-display font-black uppercase leading-[0.9] tracking-tight text-5xl md:text-7xl">
-            Plans you talk about.
-            <br />
-            <span className="gradient-text">Storage you buy yourself.</span>
-          </h1>
+function PriceCard({
+  index, pill, icon: Icon, name, priceValue, priceSuffix, tagline,
+  bullets, cta, note, highlight, loading, badgeOverride,
+}: PriceCardProps) {
+  return (
+    <div
+      className={cn(
+        "relative text-left p-7 md:p-9 bg-card flex flex-col animate-fade-in",
+        highlight && "ring-1 ring-accent/30",
+      )}
+      style={{ animationDelay: `${index * 100}ms` }}
+    >
+      {(highlight || badgeOverride) && (
+        <div className="absolute top-0 right-0 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] bg-accent/20 text-accent">
+          {badgeOverride ?? "Live · Self-serve"}
         </div>
-        <p className="text-muted-foreground max-w-sm text-sm leading-relaxed">
-          StreamVista uses a hybrid model on purpose. Creator and Studio plans are founder-assisted
-          because the right fit matters. Storage is self-serve and recurring because capacity is
-          a commodity. Buyers don't pay to open a conversation.
-        </p>
+      )}
+
+      <div className="flex items-center justify-between mb-7">
+        <div className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+          {String(index + 1).padStart(2, "0")} · {pill}
+        </div>
+        <Icon className="w-4 h-4 text-primary" />
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-px bg-border/60 border border-border/60 rounded-2xl overflow-hidden">
-        {BLOCKS.map((b, i) => {
-          const Icon = b.icon;
-          return (
-            <div
-              key={b.key}
-              className={cn(
-                "relative text-left p-7 md:p-9 bg-card flex flex-col animate-fade-in",
-                b.highlight && "ring-1 ring-accent/30",
-              )}
-              style={{ animationDelay: `${i * 100}ms` }}
-            >
-              {b.highlight && (
-                <div className="absolute top-0 right-0 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] bg-accent/20 text-accent">
-                  Live · Self-serve
-                </div>
-              )}
-
-              <div className="flex items-center justify-between mb-7">
-                <div className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-                  {String(i + 1).padStart(2, "0")} · {b.pill}
-                </div>
-                <Icon className="w-4 h-4 text-primary" />
-              </div>
-
-              <div className="mb-1 flex items-baseline gap-2">
-                <span className="font-display font-black text-4xl md:text-5xl tracking-tight">
-                  {b.price.value}
-                </span>
-                {b.price.suffix && (
-                  <span className="font-mono-tech text-[11px] uppercase tracking-widest text-muted-foreground">
-                    {b.price.suffix}
-                  </span>
-                )}
-              </div>
-              <div className="font-display text-lg font-bold mb-4 text-foreground/90">{b.name}</div>
-
-              <p className="text-sm text-muted-foreground mb-6 leading-relaxed border-t border-border/60 pt-5">
-                {b.tagline}
-              </p>
-
-              <ul className="space-y-2.5 text-sm mb-8">
-                {b.bullets.map((f) => (
-                  <li key={f} className="flex items-start gap-3">
-                    <Check className="w-3.5 h-3.5 text-primary mt-1 shrink-0" />
-                    <span className="text-muted-foreground">{f}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="mt-auto space-y-2">
-                <Link
-                  to={b.cta.to}
-                  className={cn(
-                    "group/btn h-12 w-full inline-flex items-center justify-center gap-2 font-semibold uppercase tracking-[0.18em] text-xs rounded-md transition-colors",
-                    b.cta.intent === "primary"
-                      ? "cta-guide bg-gradient-primary text-primary-foreground"
-                      : "border border-border/60 hover:border-accent/60 hover:bg-accent/5 text-foreground",
-                  )}
-                >
-                  <span>{b.cta.label}</span>
-                  <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                </Link>
-                <p className="text-[10px] text-muted-foreground text-center">{b.note}</p>
-              </div>
-            </div>
-          );
-        })}
+      <div className="mb-1 flex items-baseline gap-2 min-h-[3.5rem]">
+        {loading ? (
+          <Loader2 className="w-7 h-7 animate-spin text-muted-foreground" />
+        ) : (
+          <>
+            <span className="font-display font-black text-4xl md:text-5xl tracking-tight">
+              {priceValue}
+            </span>
+            {priceSuffix && (
+              <span className="font-mono-tech text-[11px] uppercase tracking-widest text-muted-foreground">
+                {priceSuffix}
+              </span>
+            )}
+          </>
+        )}
       </div>
+      <div className="font-display text-lg font-bold mb-4 text-foreground/90">{name}</div>
 
-      <p className="text-center text-xs text-muted-foreground mt-8 max-w-2xl mx-auto">
-        Storage block pricing is server-priced (₹650 + 18% GST = ₹767/month per 1 TB) and shown in your
-        dashboard before checkout. Plan-related conversations are handled by email — there is no
-        surprise charge for talking to us.
+      <p className="text-sm text-muted-foreground mb-6 leading-relaxed border-t border-border/60 pt-5">
+        {tagline}
       </p>
+
+      <ul className="space-y-2.5 text-sm mb-8">
+        {bullets.map((f) => (
+          <li key={f} className="flex items-start gap-3">
+            <Check className="w-3.5 h-3.5 text-primary mt-1 shrink-0" />
+            <span className="text-muted-foreground">{f}</span>
+          </li>
+        ))}
+      </ul>
+
+      <div className="mt-auto space-y-2">
+        <Link
+          to={cta.to}
+          className={cn(
+            "group/btn h-12 w-full inline-flex items-center justify-center gap-2 font-semibold uppercase tracking-[0.18em] text-xs rounded-md transition-colors",
+            cta.intent === "primary"
+              ? "cta-guide bg-gradient-primary text-primary-foreground"
+              : "border border-border/60 hover:border-accent/60 hover:bg-accent/5 text-foreground",
+          )}
+        >
+          <span>{cta.label}</span>
+          <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+        </Link>
+        <p className="text-[10px] text-muted-foreground text-center">{note}</p>
+      </div>
     </div>
-  </section>
-);
+  );
+}

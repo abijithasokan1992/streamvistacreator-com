@@ -45,6 +45,7 @@ import NotFound from "./pages/NotFound.tsx";
 import IngestTest from "./pages/IngestTest.tsx";
 import C2CSetupManual from "./pages/C2CSetupManual.tsx";
 import CameraToCloudGuide from "./pages/blog/CameraToCloudGuide.tsx";
+import StreamVistaVsFrameIO from "./pages/blog/StreamVistaVsFrameIO.tsx";
 import Unsubscribe from "./pages/Unsubscribe.tsx";
 import Contact from "./pages/Contact.tsx";
 import InvoiceReceipt from "./pages/InvoiceReceipt.tsx";
@@ -179,6 +180,7 @@ const PublicRoutes = () => (
     <Route path="/ingest-test" element={<IngestTest />} />
     <Route path="/c2c-setup" element={<C2CSetupManual />} />
     <Route path="/blog/camera-to-cloud-guide" element={<CameraToCloudGuide />} />
+    <Route path="/blog/streamvista-vs-frame-io-camera-to-cloud" element={<StreamVistaVsFrameIO />} />
     <Route path="/support" element={<Contact />} />
     <Route path="/contact" element={<Contact />} />
     <Route path="/unsubscribe" element={<Unsubscribe />} />

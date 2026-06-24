@@ -375,6 +375,9 @@ function InvoiceEditor({
         _invoice_id: editing.id, _line_items: cleanItems, _gst_percent: gst, _tax_inclusive: taxInc,
         _due_date: dueDate || null, _notes: notes || null,
         _payment_method: paymentMethod || null, _payment_link_url: paymentLink || null,
+        _grants_plan_code: grantsPlanCode || null,
+        _grants_until: grantsUntil || null,
+        _clear_grant: !grantsPlanCode && !!editing.grants_plan_code,
       });
       if (error) return toast.error(error.message);
       toast.success("Updated"); onSaved(); return;
@@ -391,6 +394,8 @@ function InvoiceEditor({
       _document_type: docType, _surface: surface, _line_items: cleanItems,
       _gst_percent: gst, _tax_inclusive: taxInc, _due_date: dueDate || null, _notes: notes || null,
       _payment_method: paymentMethod || null, _payment_link_url: paymentLink || null,
+      _grants_plan_code: grantsPlanCode || null,
+      _grants_until: grantsUntil || null,
     });
     if (error) return toast.error(error.message);
     toast.success("Draft created"); onSaved();

@@ -365,8 +365,8 @@ function BillingAndServices() {
       <section className="space-y-3">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <h2 className="font-display text-xl">Vault billing</h2>
-            <p className="text-xs text-muted-foreground">Active storage purchases, recurring blocks, receipts, and incomplete checkout recovery.</p>
+            <h2 className="font-display text-xl">Billing</h2>
+            <p className="text-xs text-muted-foreground">Purchases, receipts and pending checkouts.</p>
           </div>
         </div>
         <VaultBillingPanel />
@@ -375,8 +375,8 @@ function BillingAndServices() {
       <section className="space-y-3">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="font-display text-xl">Studio services & plan requests</h2>
-            <p className="text-xs text-muted-foreground">Workflow, SLAs, archive posture and team access changes are founder-assisted. Submit a request and our team scopes, prices and activates.</p>
+            <h2 className="font-display text-xl">Services & plan requests</h2>
+            <p className="text-xs text-muted-foreground">Founder-assisted. We scope, price and activate.</p>
           </div>
           <div className="flex gap-2">
             <StudioRequestService />
@@ -387,8 +387,8 @@ function BillingAndServices() {
 
       <section className="space-y-3">
         <div>
-          <h2 className="font-display text-xl flex items-center gap-2"><Receipt className="w-4 h-4 text-accent" /> Founder-issued invoices</h2>
-          <p className="text-xs text-muted-foreground">Invoices for services and custom plans issued by the StreamVista team.</p>
+          <h2 className="font-display text-xl flex items-center gap-2"><Receipt className="w-4 h-4 text-accent" /> Invoices</h2>
+          <p className="text-xs text-muted-foreground">Issued by the StreamVista team.</p>
         </div>
         <ManualInvoicesList surface="studio" />
       </section>

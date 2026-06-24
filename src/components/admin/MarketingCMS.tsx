@@ -39,7 +39,7 @@ export default function MarketingCMS() {
       <Section kind="reel" title="Homepage hero carousel (cinematic title reel)" icon={<Clapperboard className="w-4 h-4" />} />
       <Section kind="hero" title="Hero banners (legacy editorial)" icon={<ImageIcon className="w-4 h-4" />} />
       <Section kind="ad"   title="Advertisement zones"     icon={<Megaphone className="w-4 h-4" />} />
-      <Section kind="film" title="Featured films / projects" icon={<Film className="w-4 h-4" />} />
+      <Section kind="film" title="Licensed film portfolio" icon={<Film className="w-4 h-4" />} />
       <Section kind="news" title="News & events"           icon={<Newspaper className="w-4 h-4" />} />
     </div>
   );

@@ -8037,6 +8037,19 @@ export type Database = {
         Returns: number
       }
       fulfill_billing_order: { Args: { _order_id: string }; Returns: Json }
+      get_active_branding: {
+        Args: never
+        Returns: {
+          allow_user_logos: boolean
+          footer_logo_position: string
+          footer_logo_url: string
+          id: string
+          show_wordmark: boolean
+          site_logo_position: string
+          site_logo_url: string
+          user_logos_paid_only: boolean
+        }[]
+      }
       get_canonical_payg_price: { Args: never; Returns: Json }
       get_creator_storage_entitlement: {
         Args: { _user_id: string }

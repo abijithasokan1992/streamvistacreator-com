@@ -98,6 +98,7 @@ const AdminRoutes = () => (
     <Route path="/admin/finance" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/reports" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/kammattam" element={<KammattamPopout />} />
+    <Route path="/admin/operations" element={<AdminErrorBoundary><RoleGate allow={["admin"]}><AdminOperations /></RoleGate></AdminErrorBoundary>} />
 
     {/* Anything else on the admin host = wrong portal */}
     <Route path="*" element={<WrongPortal expected="public" />} />
@@ -158,6 +159,7 @@ const PublicRoutes = () => (
     <Route path="/admin/finance" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/reports" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/kammattam" element={<KammattamPopout />} />
+    <Route path="/admin/operations" element={<AdminErrorBoundary><RoleGate allow={["admin"]}><AdminOperations /></RoleGate></AdminErrorBoundary>} />
 
 
     <Route path="/launching-special-plan" element={<LaunchingSpecialPlan />} />

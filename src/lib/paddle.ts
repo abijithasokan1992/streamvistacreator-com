@@ -51,6 +51,9 @@ export async function initializePaddle(): Promise<void> {
 }
 
 export async function getPaddlePriceId(priceId: string): Promise<string> {
+  if (!PADDLE_ENABLED) {
+    throw new Error("Paddle is disabled. Set VITE_ENABLE_PADDLE=true to enable.");
+  }
   const environment = getPaddleEnvironment();
   const { data, error } = await supabase.functions.invoke("get-paddle-price", {
     body: { priceId, environment },

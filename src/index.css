@@ -96,86 +96,102 @@
     --sidebar-ring: 222 75% 48%;
   }
 
-  /* ---------- DARK (cinematic, brand default) ---------- */
+  /* ---------- DARK (cinematic, brand default — Baselight DI grade) ---------- */
   .dark {
-    --background: 230 45% 5%;
-    --foreground: 220 25% 96%;
+    /* Deep neutral black with a hint of blue — Netflix/Apple reference black */
+    --background: 225 35% 3.5%;
+    --foreground: 220 20% 98%;
 
-    --surface: 230 40% 7%;
-    --surface-elevated: 230 38% 10%;
-    --surface-sunken: 230 50% 4%;
+    --surface: 225 30% 6%;
+    --surface-elevated: 225 28% 9%;
+    --surface-sunken: 225 38% 2.5%;
 
-    --card: 230 40% 8%;
-    --card-foreground: 220 25% 96%;
+    --card: 225 30% 7%;
+    --card-foreground: 220 20% 98%;
 
-    --popover: 230 45% 7%;
-    --popover-foreground: 220 25% 96%;
+    --popover: 225 32% 6%;
+    --popover-foreground: 220 20% 98%;
 
-    --primary: 220 95% 62%;
-    --primary-foreground: 230 45% 5%;
-    --primary-glow: 250 95% 70%;
+    /* Calibrated primary — sits cleanly in sRGB and lifts in P3 */
+    --primary: 218 100% 64%;
+    --primary-foreground: 225 40% 4%;
+    --primary-glow: 250 100% 72%;
 
-    --secondary: 230 35% 14%;
-    --secondary-foreground: 220 25% 96%;
+    --secondary: 225 25% 13%;
+    --secondary-foreground: 220 20% 98%;
 
-    --muted: 230 30% 12%;
-    --muted-foreground: 220 15% 65%;
+    --muted: 225 22% 11%;
+    --muted-foreground: 220 14% 68%;
 
-    --accent: 45 95% 60%;
-    --accent-foreground: 230 45% 5%;
+    --accent: 42 100% 62%;
+    --accent-foreground: 225 40% 4%;
 
-    --destructive: 0 75% 60%;
-    --destructive-foreground: 220 25% 96%;
+    --destructive: 0 80% 62%;
+    --destructive-foreground: 220 20% 98%;
 
-    --success: 145 70% 50%;
-    --success-foreground: 230 45% 5%;
-    --warning: 38 95% 58%;
-    --warning-foreground: 230 45% 5%;
-    --info: 210 95% 62%;
-    --info-foreground: 230 45% 5%;
+    --success: 148 72% 52%;
+    --success-foreground: 225 40% 4%;
+    --warning: 38 100% 60%;
+    --warning-foreground: 225 40% 4%;
+    --info: 210 100% 64%;
+    --info-foreground: 225 40% 4%;
 
-    --border: 230 30% 18%;
-    --border-subtle: 230 30% 14%;
-    --border-strong: 230 30% 24%;
-    --input: 230 30% 14%;
-    --ring: 220 95% 62%;
+    --border: 225 22% 17%;
+    --border-subtle: 225 22% 13%;
+    --border-strong: 225 22% 24%;
+    --input: 225 22% 13%;
+    --ring: 218 100% 64%;
 
-    --text-secondary: 220 15% 78%;
-    --text-tertiary: 220 12% 60%;
+    --text-secondary: 220 14% 82%;
+    --text-tertiary: 220 12% 62%;
 
-    --row-hover: 230 35% 12%;
-    --row-selected: 220 60% 16%;
+    --row-hover: 225 28% 11%;
+    --row-selected: 218 60% 16%;
 
-    --chart-1: 220 95% 62%;
-    --chart-2: 250 95% 70%;
-    --chart-3: 45 95% 60%;
-    --chart-4: 145 70% 50%;
-    --chart-5: 0 75% 60%;
-    --chart-6: 195 95% 60%;
+    --chart-1: 218 100% 64%;
+    --chart-2: 250 100% 72%;
+    --chart-3: 42 100% 62%;
+    --chart-4: 148 72% 52%;
+    --chart-5: 0 80% 62%;
+    --chart-6: 195 100% 62%;
 
-    --gradient-hero: radial-gradient(ellipse at top, hsl(250 80% 25% / 0.6), transparent 60%),
-                     radial-gradient(ellipse at bottom right, hsl(220 90% 30% / 0.5), transparent 60%),
-                     linear-gradient(180deg, hsl(230 50% 6%), hsl(230 45% 4%));
-    --gradient-primary: linear-gradient(135deg, hsl(220 95% 62%), hsl(250 95% 70%));
-    --gradient-gold: linear-gradient(135deg, hsl(45 95% 60%), hsl(35 95% 55%));
-    --gradient-card: linear-gradient(145deg, hsl(230 40% 11% / 0.9), hsl(230 45% 7% / 0.7));
-    --gradient-border: linear-gradient(135deg, hsl(220 95% 62% / 0.5), hsl(250 95% 70% / 0.3), hsl(45 95% 60% / 0.4));
+    --gradient-hero: radial-gradient(ellipse 80% 60% at 50% -10%, hsl(250 80% 22% / 0.55), transparent 60%),
+                     radial-gradient(ellipse 60% 50% at 90% 110%, hsl(218 90% 28% / 0.45), transparent 60%),
+                     linear-gradient(180deg, hsl(225 40% 4.5%), hsl(225 38% 3%));
+    --gradient-primary: linear-gradient(135deg, hsl(218 100% 64%), hsl(250 100% 72%));
+    --gradient-gold: linear-gradient(135deg, hsl(42 100% 62%), hsl(32 100% 58%));
+    --gradient-card: linear-gradient(145deg, hsl(225 28% 10% / 0.92), hsl(225 32% 6% / 0.72));
+    --gradient-border: linear-gradient(135deg, hsl(218 100% 64% / 0.55), hsl(250 100% 72% / 0.32), hsl(42 100% 62% / 0.4));
 
-    --shadow-glow: 0 0 60px hsl(220 95% 62% / 0.35);
-    --shadow-glow-purple: 0 0 80px hsl(250 95% 70% / 0.4);
-    --shadow-glow-gold: 0 0 50px hsl(45 95% 60% / 0.3);
-    --shadow-card: 0 20px 60px -20px hsl(230 80% 2% / 0.8);
-    --shadow-elevated: 0 30px 80px -30px hsl(220 95% 50% / 0.5);
+    --shadow-glow: 0 0 64px hsl(218 100% 64% / 0.38);
+    --shadow-glow-purple: 0 0 84px hsl(250 100% 72% / 0.42);
+    --shadow-glow-gold: 0 0 56px hsl(42 100% 62% / 0.32);
+    --shadow-card: 0 1px 0 hsl(220 20% 98% / 0.04) inset, 0 22px 64px -22px hsl(225 80% 1% / 0.85);
+    --shadow-elevated: 0 1px 0 hsl(220 20% 98% / 0.06) inset, 0 32px 84px -30px hsl(218 100% 50% / 0.5);
 
-    --sidebar-background: 230 45% 5%;
-    --sidebar-foreground: 220 25% 96%;
-    --sidebar-primary: 220 95% 62%;
-    --sidebar-primary-foreground: 230 45% 5%;
-    --sidebar-accent: 230 35% 14%;
-    --sidebar-accent-foreground: 220 25% 96%;
-    --sidebar-border: 230 30% 18%;
-    --sidebar-ring: 220 95% 62%;
+    --sidebar-background: 225 35% 3.5%;
+    --sidebar-foreground: 220 20% 98%;
+    --sidebar-primary: 218 100% 64%;
+    --sidebar-primary-foreground: 225 40% 4%;
+    --sidebar-accent: 225 25% 13%;
+    --sidebar-accent-foreground: 220 20% 98%;
+    --sidebar-border: 225 22% 17%;
+    --sidebar-ring: 218 100% 64%;
   }
+
+  /* ---------- P3 wide-gamut calibration (Baselight DI feel) ----------
+     Browsers on Display P3 screens get richer, more saturated primaries
+     while sRGB displays fall back to the HSL above. No component changes. */
+  @supports (color: color(display-p3 1 1 1)) {
+    @media (color-gamut: p3) {
+      .dark {
+        --primary: 218 100% 66%;
+        --primary-glow: 252 100% 74%;
+        --accent: 42 100% 64%;
+      }
+    }
+  }
+
 }
 
 @layer base {

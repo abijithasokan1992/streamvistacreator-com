@@ -97,31 +97,45 @@ export const Hero = () => (
         ].map(({ icon: Icon, step, title, body }) => (
           <div
             key={step}
-            className="group relative overflow-hidden rounded-2xl border border-border bg-foreground/[0.02] p-7 md:p-8 transition-all duration-500 hover:border-primary-glow hover:-translate-y-1 hover:shadow-[0_0_40px_-10px_hsl(var(--primary-glow))]"
+            className="group relative overflow-hidden rounded-2xl border border-border-strong/60 glass p-7 md:p-9 transition-all duration-500 hover:border-primary/60 hover:-translate-y-1.5 hover:shadow-[0_24px_60px_-20px_hsl(var(--primary)/0.45)]"
           >
-            {/* Projection-glass top-light sheen */}
+            {/* Top-edge highlight — embossed lip */}
+            <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
+            {/* Projection-glass sheen */}
             <div
               aria-hidden
-              className="absolute inset-0 bg-gradient-to-br from-foreground/[0.05] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              className="absolute inset-0 bg-gradient-to-br from-foreground/[0.06] via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+            />
+            {/* Corner aura — picks up brand primary on hover */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -top-16 -right-16 w-48 h-48 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+              style={{ background: "radial-gradient(circle, hsl(var(--primary-glow) / 0.35), transparent 70%)" }}
             />
             <div className="relative z-10 space-y-6">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-accent/10 text-primary border border-foreground/10">
-                <Icon className="w-5 h-5" />
+              <div
+                className="inline-flex items-center justify-center w-14 h-14 rounded-xl text-primary-foreground border border-primary/30 transition-transform duration-500 group-hover:scale-105 group-hover:rotate-[-3deg]"
+                style={{
+                  backgroundImage: "var(--gradient-primary)",
+                  boxShadow:
+                    "0 1px 0 hsl(0 0% 100% / 0.25) inset, 0 -2px 0 hsl(225 60% 6% / 0.18) inset, 0 10px 24px -8px hsl(var(--primary) / 0.55)",
+                }}
+              >
+                <Icon className="w-6 h-6" />
               </div>
               <div>
-                <p className="font-mono-tech text-[10px] tracking-[0.25em] uppercase font-semibold text-muted-foreground mb-2">
-                  {step}
-                </p>
-                <h3 className="font-display text-2xl font-bold text-foreground tracking-tight mb-3">
+                <span className="pill-attention mb-3">{step}</span>
+                <h3 className="font-display text-3xl md:text-[2rem] font-black text-foreground tracking-tight mt-3 mb-3 leading-[1.05]">
                   {title}
                 </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
+                <p className="text-[15px] text-text-secondary leading-relaxed font-medium">
                   {body}
                 </p>
               </div>
             </div>
           </div>
         ))}
+
       </div>
 
       <div className="mt-12 flex flex-col items-center gap-4">

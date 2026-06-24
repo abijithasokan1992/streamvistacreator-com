@@ -9,6 +9,7 @@ import { useAuth, dashboardForRole } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { getAppOrigin } from "@/lib/site";
 import { Seo } from "@/components/Seo";
+import { playMailVoice, prewarmMailVoice } from "@/lib/mailVoice";
 
 /**
  * Passwordless magic-link auth.
@@ -72,6 +73,9 @@ export default function Auth() {
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
 
+  // Pre-fetch the mail-voice TTS so playback is instant after send.
+  useEffect(() => { prewarmMailVoice(); }, []);
+
   // Already signed in → bounce to role dashboard.
   useEffect(() => {
     if (loading || !user) return;
@@ -123,6 +127,7 @@ export default function Auth() {
       } catch { /* noop */ }
     }
     setSent(true);
+    void playMailVoice();
   };
 
   const handleGoogle = async () => {

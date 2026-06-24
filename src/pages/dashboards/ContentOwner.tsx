@@ -128,6 +128,8 @@ export default function ContentOwnerDashboard() {
           {effectiveSection === "help" && <HelpSection />}
         </section>
       </div>
+      {tourOpen && <CreatorTour onClose={() => setTourOpen(false)} />}
     </main>
   );
 }
+

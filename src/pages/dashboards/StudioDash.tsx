@@ -62,20 +62,20 @@ function OneClickBuyCard({
     <section className="rounded-2xl border border-accent/40 bg-gradient-to-br from-accent/10 to-secondary/10 p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 max-w-xl">
-          <span className="text-[11px] uppercase tracking-[0.25em] text-accent font-mono">One-click purchase</span>
+          <span className="text-[11px] uppercase tracking-[0.25em] text-accent font-mono">One-click</span>
           <h3 className="font-display text-2xl mt-1.5">
-            {hasPaid ? "Add another 1 TB Studio Storage" : "Start with 1 TB Studio Storage"}
+            {hasPaid ? "Add 1 TB" : "Start with 1 TB"}
           </h3>
           <p className="text-sm text-muted-foreground mt-1.5">
-            Secure recurring vault storage for studio uploads, working media, masters and archive copies.
+            Recurring vault storage for uploads, masters and archives.
           </p>
           <p className="text-sm mt-3">
             <span className="font-display text-2xl">₹{totalRupees}</span>
             <span className="text-muted-foreground"> / month</span>
-            <span className="text-xs text-muted-foreground ml-2">(₹{baseRupees} + {product.gst_percent}% GST)</span>
+            <span className="text-xs text-muted-foreground ml-2">(incl. {product.gst_percent}% GST)</span>
           </p>
           <p className="text-[11px] text-muted-foreground mt-1">
-            Billed monthly. Storage activates immediately after successful payment.
+            Activates right after payment.
           </p>
         </div>
         <div className="flex flex-col items-end gap-2">
@@ -85,10 +85,10 @@ function OneClickBuyCard({
             className="bg-gradient-primary text-primary-foreground glow-primary"
           >
             <ShoppingCart className="w-4 h-4 mr-2" />
-            {hasPaid ? "Buy another 1 TB" : "Buy 1 TB Now"}
+            {hasPaid ? "Add 1 TB" : "Buy 1 TB"}
           </Button>
           <Link to="/contact" className="text-[11px] text-muted-foreground hover:text-accent">
-            Need a larger setup? Contact StreamVista →
+            Need more? Contact us →
           </Link>
         </div>
       </div>
@@ -180,17 +180,17 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
             </div>
             <h2 className="font-display text-2xl md:text-3xl mt-1.5 leading-tight">
               {hasPaidVault
-                ? "Your studio vault is live."
+                ? "Vault is live."
                 : hasTesting
-                ? "Testing vault is live — 50 GB internal allowance."
-                : "Activate your studio vault."}
+                ? "Testing vault active."
+                : "Activate your vault."}
             </h2>
             <p className="text-sm text-muted-foreground mt-1.5 max-w-xl">
               {hasPaidVault
-                ? "Upload, browse and manage your studio's footage and masters from one place."
+                ? "Upload and manage your footage and masters."
                 : hasTesting
-                ? "Use the temporary 50 GB allowance to test uploads and the vault workspace. Buy 1 TB Studio Storage to activate real, recurring vault capacity."
-                : "Buy 1 TB Studio Storage to activate your vault and start uploading."}
+                ? "50 GB test allowance. Buy 1 TB to go live."
+                : "Buy 1 TB to start uploading."}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -205,7 +205,7 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
               className="bg-gradient-primary text-primary-foreground glow-primary"
             >
               <ShoppingCart className="w-4 h-4 mr-2" />
-              {hasPaidVault ? "Buy another 1 TB" : "Buy 1 TB Storage"}
+              {hasPaidVault ? "Add 1 TB" : "Buy 1 TB"}
             </Button>
           </div>
         </div>
@@ -233,13 +233,13 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
         {hasTesting && !hasPaidVault && (
           <p className="text-[11px] text-muted-foreground mt-3">
             <ShieldCheck className="w-3 h-3 inline mr-1 text-amber-300" />
-            Includes a {q.testingOverrideGb} GB testing allowance — internal QA only. Buy 1 TB Studio Storage to activate real vault capacity.
+            {q.testingOverrideGb} GB test allowance. Buy 1 TB to activate real capacity.
           </p>
         )}
 
         {!liveSku && (
           <p className="text-[11px] text-amber-300 mt-3">
-            Studio storage product is not available right now. Please refresh, or contact support if this persists.
+            Storage unavailable right now. Try refreshing.
           </p>
         )}
       </section>
@@ -269,9 +269,9 @@ function BuyStorage({ onPurchased }: { onPurchased: () => void }) {
   return (
     <div className="space-y-4">
       <header>
-        <h2 className="font-display text-2xl">1 TB Studio Storage</h2>
+        <h2 className="font-display text-2xl">1 TB Storage</h2>
         <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-          Secure recurring vault storage for studio uploads, working media, masters and archive copies. {payg.totalLabel}/month including GST.
+          {payg.totalLabel}/month. Recurring vault for masters and archives.
         </p>
       </header>
       <VaultPlanCards onPurchased={onPurchased} />
@@ -296,26 +296,23 @@ function VaultWorkspace({ rows, loading, onGoBuy, onGoIngest }: { rows: AllocRow
     return (
       <div className="rounded-2xl border border-dashed border-border/50 bg-secondary/10 p-10 text-center">
         <Database className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
-        <h3 className="font-semibold">No active storage</h3>
+        <h3 className="font-semibold">No storage yet</h3>
         <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
-          Activate vault storage before you can upload, ingest or snapshot. Pick a class on the Buy Storage tab.
+          Buy storage to start uploading.
         </p>
         <div className="mt-4">
           <Button onClick={onGoBuy} className="bg-gradient-primary text-primary-foreground glow-primary">
-            <ShoppingCart className="w-4 h-4 mr-2" /> Choose storage
+            <ShoppingCart className="w-4 h-4 mr-2" /> Buy Storage
           </Button>
         </div>
       </div>
     );
   }
 
-  // Tiles route serious ingest flows into the unified Studio Ingest tab so
-  // Camera-to-Cloud, Archive Snapshot and Hard-disk Import all share one
-  // queue, one folder-structure model, and one upload meter.
   const tiles: Array<{ label: string; desc: string; icon: JSX.Element; onClick?: () => void; to?: string }> = [
-    { label: "Upload to Vault", desc: "Browser upload now", to: "/vault", icon: <ArrowUpRight className="w-4 h-4" /> },
-    { label: "Camera-to-Cloud", desc: "Live ingest from set", onClick: onGoIngest, icon: <Cloud className="w-4 h-4" /> },
-    { label: "Archive Intake", desc: "Master / archive bundle", onClick: onGoIngest, icon: <Snowflake className="w-4 h-4" /> },
+    { label: "Upload", desc: "From browser", to: "/vault", icon: <ArrowUpRight className="w-4 h-4" /> },
+    { label: "Camera-to-Cloud", desc: "Live from set", onClick: onGoIngest, icon: <Cloud className="w-4 h-4" /> },
+    { label: "Archive Intake", desc: "Master bundle", onClick: onGoIngest, icon: <Snowflake className="w-4 h-4" /> },
   ];
 
   return (
@@ -344,13 +341,13 @@ function VaultWorkspace({ rows, loading, onGoBuy, onGoIngest }: { rows: AllocRow
           <div>
             <h3 className="font-semibold text-sm flex items-center gap-2"><Wrench className="w-4 h-4 text-accent" /> Vault Services</h3>
             <p className="text-xs text-muted-foreground mt-1 max-w-lg">
-              Proxy generation, QC review, restore, delivery prep and archive handling. Available as founder-assisted services — we scope and price before any paid work begins.
+              Proxies, QC, restore, delivery and archive — founder-assisted.
             </p>
           </div>
           <StudioRequestService />
         </div>
         <div className="flex flex-wrap gap-1.5 mt-3 text-[11px] text-muted-foreground">
-          {["Proxy generation", "QC review", "Restore", "Delivery prep", "Archive handling"].map((s) => (
+          {["Proxies", "QC", "Restore", "Delivery", "Archive"].map((s) => (
             <span key={s} className="rounded-full border border-border/50 px-2 py-0.5">{s}</span>
           ))}
         </div>
@@ -368,8 +365,8 @@ function BillingAndServices() {
       <section className="space-y-3">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <h2 className="font-display text-xl">Vault billing</h2>
-            <p className="text-xs text-muted-foreground">Active storage purchases, recurring blocks, receipts, and incomplete checkout recovery.</p>
+            <h2 className="font-display text-xl">Billing</h2>
+            <p className="text-xs text-muted-foreground">Purchases, receipts and pending checkouts.</p>
           </div>
         </div>
         <VaultBillingPanel />
@@ -378,8 +375,8 @@ function BillingAndServices() {
       <section className="space-y-3">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="font-display text-xl">Studio services & plan requests</h2>
-            <p className="text-xs text-muted-foreground">Workflow, SLAs, archive posture and team access changes are founder-assisted. Submit a request and our team scopes, prices and activates.</p>
+            <h2 className="font-display text-xl">Services & plan requests</h2>
+            <p className="text-xs text-muted-foreground">Founder-assisted. We scope, price and activate.</p>
           </div>
           <div className="flex gap-2">
             <StudioRequestService />
@@ -390,8 +387,8 @@ function BillingAndServices() {
 
       <section className="space-y-3">
         <div>
-          <h2 className="font-display text-xl flex items-center gap-2"><Receipt className="w-4 h-4 text-accent" /> Founder-issued invoices</h2>
-          <p className="text-xs text-muted-foreground">Invoices for services and custom plans issued by the StreamVista team.</p>
+          <h2 className="font-display text-xl flex items-center gap-2"><Receipt className="w-4 h-4 text-accent" /> Invoices</h2>
+          <p className="text-xs text-muted-foreground">Issued by the StreamVista team.</p>
         </div>
         <ManualInvoicesList surface="studio" />
       </section>
@@ -413,7 +410,7 @@ export default function StudioDashboard() {
   };
 
   const subtitle = useMemo(
-    () => "Home, storage, vault workspace and billing — all in one console.",
+    () => "Home · Ingest · Storage · Vault · Billing.",
     [],
   );
 
@@ -423,9 +420,9 @@ export default function StudioDashboard() {
         <TabsList className="grid grid-cols-3 sm:grid-cols-5 w-full max-w-3xl">
           <TabsTrigger value="home"><Sparkles className="w-3.5 h-3.5 mr-1.5" />Home</TabsTrigger>
           <TabsTrigger value="ingest"><UploadCloud className="w-3.5 h-3.5 mr-1.5" />Ingest</TabsTrigger>
-          <TabsTrigger value="buy"><ShoppingCart className="w-3.5 h-3.5 mr-1.5" />Buy Storage</TabsTrigger>
-          <TabsTrigger value="workspace"><Cloud className="w-3.5 h-3.5 mr-1.5" />Vault Workspace</TabsTrigger>
-          <TabsTrigger value="billing"><Receipt className="w-3.5 h-3.5 mr-1.5" />Billing & Services</TabsTrigger>
+          <TabsTrigger value="buy"><ShoppingCart className="w-3.5 h-3.5 mr-1.5" />Storage</TabsTrigger>
+          <TabsTrigger value="workspace"><Cloud className="w-3.5 h-3.5 mr-1.5" />Vault</TabsTrigger>
+          <TabsTrigger value="billing"><Receipt className="w-3.5 h-3.5 mr-1.5" />Billing</TabsTrigger>
         </TabsList>
 
         <TabsContent value="home" className="mt-6">

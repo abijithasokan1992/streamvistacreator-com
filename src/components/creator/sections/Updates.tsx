@@ -62,9 +62,11 @@ export default function UpdatesSection() {
   if (!items.length) {
     return (
       <div className="rounded-2xl border border-dashed border-border/50 bg-secondary/5 p-10 text-center">
-        <Bell className="w-5 h-5 text-muted-foreground mx-auto mb-2" />
-        <p className="text-sm">No updates yet.</p>
-        <p className="text-xs text-muted-foreground mt-1">Review notes and admin messages will appear here.</p>
+        <Bell className="w-6 h-6 text-muted-foreground mx-auto mb-3" />
+        <p className="text-sm font-medium">Your inbox is empty</p>
+        <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+          Review notes and messages from our team will show up here.
+        </p>
       </div>
     );
   }

@@ -72,7 +72,6 @@ export default function ContentOwnerDashboard() {
               <Menu className="w-4 h-4" />
             </button>
             <Link to="/" className="text-sm font-semibold tracking-tight">StreamVista</Link>
-            <span className="hidden md:inline text-xs text-muted-foreground/70">/ Creator</span>
           </div>
           <div className="flex items-center gap-3">
             <EntitlementChip />

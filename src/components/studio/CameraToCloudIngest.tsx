@@ -76,6 +76,7 @@ export default function CameraToCloudIngest() {
   const { workspaces, activeId, setActiveId, canWriteActive } = useWorkspaces();
   const { user } = useAuth();
   const quota = useStorageQuota();
+  const payg = useCreatorPaygPrice();
 
   const refresh = useCallback(async () => {
     if (!activeId) { setRecent([]); return; }

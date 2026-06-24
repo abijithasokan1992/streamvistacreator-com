@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { logCheckoutTelemetry } from "@/lib/paymentTelemetry";
 import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
+import { useCreatorPaygPrice } from "@/hooks/usePublicPlans";
 
 /**
  * CreatorPlanCard
@@ -34,6 +35,7 @@ const BENEFITS = [
 
 export default function CreatorPlanCard({ onPurchased }: { onPurchased?: () => void }) {
   const { user } = useAuth();
+  const payg = useCreatorPaygPrice();
   const [busy, setBusy] = useState(false);
 
   const checkout = async () => {
@@ -149,11 +151,11 @@ export default function CreatorPlanCard({ onPurchased }: { onPurchased?: () => v
 
         <div className="text-right shrink-0">
           <div className="font-display text-3xl font-extrabold leading-none">
-            ₹650<span className="text-base font-semibold text-muted-foreground">/TB</span>
+            {payg.baseLabel}<span className="text-base font-semibold text-muted-foreground">/TB</span>
           </div>
-          <div className="text-[11px] text-muted-foreground mt-1">+ 18% GST</div>
+          <div className="text-[11px] text-muted-foreground mt-1">+ {payg.gstPercent}% GST</div>
           <div className="text-xs font-semibold text-accent mt-0.5">
-            Total ₹767 / mo
+            Total {payg.totalLabel} / mo
           </div>
         </div>
       </div>
@@ -177,7 +179,7 @@ export default function CreatorPlanCard({ onPurchased }: { onPurchased?: () => v
         )}
       >
         {busy ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5" />}
-        {busy ? "Opening Razorpay…" : "Get 1 TB · ₹767 / mo"}
+        {busy ? "Opening Razorpay…" : `Get 1 TB · ${payg.totalLabel} / mo`}
       </button>
 
       <div className="relative mt-4 p-3 rounded-lg bg-muted/30 border border-border/50">
@@ -185,7 +187,7 @@ export default function CreatorPlanCard({ onPurchased }: { onPurchased?: () => v
           <Archive className="w-3 h-3 inline -mt-0.5 mr-1 text-accent" />
           <b className="text-foreground">Overage policy:</b> Free plan bandwidth overage is billed only when you exceed{" "}
           <b>500 GB / month at ₹10 / GB</b>. Creator Plan auto-scales storage — each extra TB is added on demand at{" "}
-          <b>₹650 + 18% GST</b>. No commitments, cancel anytime.
+          <b>{payg.baseLabel} + {payg.gstPercent}% GST</b>. No commitments, cancel anytime.
         </p>
       </div>
     </div>

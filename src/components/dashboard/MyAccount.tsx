@@ -14,6 +14,7 @@ import { useBranding, uploadBrandingFile, fetchBranding } from "@/lib/branding";
 import { cn } from "@/lib/utils";
 import { PLANS, planByCycle, type Cycle } from "@/components/streamvista/plans";
 import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
+import { useCreatorPaygPrice } from "@/hooks/usePublicPlans";
 
 interface Profile {
   user_id: string;
@@ -271,6 +272,7 @@ function UpgradeSection({ currentTier, email, name, userId, onUpgraded }: { curr
   const [selected, setSelected] = useState<Cycle>("creator");
   const [tbCount, setTbCount] = useState<number>(1);
   const [busy, setBusy] = useState(false);
+  const payg = useCreatorPaygPrice();
 
   const plan = planByCycle(selected);
   const subtotal = plan.price * tbCount; // ₹650 per TB pre-GST × TB
@@ -329,17 +331,20 @@ function UpgradeSection({ currentTier, email, name, userId, onUpgraded }: { curr
       <div>
         <div className="text-sm font-medium mb-2">Choose a plan</div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-          {PLANS.map((p) => (
-            <button key={p.cycle}
-              onClick={() => setSelected(p.cycle)}
-              className={cn("border rounded-xl p-3 text-left transition",
-                selected === p.cycle ? "border-primary bg-primary/5" : "border-border hover:bg-secondary/40",
-                currentTier === p.cycle && "ring-1 ring-accent")}>
-              <div className="text-xs uppercase text-muted-foreground">{p.label}</div>
-              <div className="font-semibold">{p.priceLabel}</div>
-              <div className="text-[11px] text-muted-foreground">{p.cadence}</div>
-            </button>
-          ))}
+          {PLANS.map((p) => {
+            const priceLabel = p.cycle === "creator" ? payg.totalLabel : p.priceLabel;
+            return (
+              <button key={p.cycle}
+                onClick={() => setSelected(p.cycle)}
+                className={cn("border rounded-xl p-3 text-left transition",
+                  selected === p.cycle ? "border-primary bg-primary/5" : "border-border hover:bg-secondary/40",
+                  currentTier === p.cycle && "ring-1 ring-accent")}>
+                <div className="text-xs uppercase text-muted-foreground">{p.label}</div>
+                <div className="font-semibold">{priceLabel}</div>
+                <div className="text-[11px] text-muted-foreground">{p.cadence}</div>
+              </button>
+            );
+          })}
         </div>
       </div>
 

@@ -14,6 +14,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useStorageQuota } from "@/hooks/useStorageQuota";
+import { useCreatorPaygPrice } from "@/hooks/usePublicPlans";
 import {
   BellRing, Plus, Trash2, Mail, MessageCircle, Play, Loader2,
   AlertTriangle, Zap, Gauge, Power, History, Webhook,
@@ -97,6 +98,7 @@ function relTime(iso: string | null): string {
 export default function IngestAlertsManager({ workspaceId }: { workspaceId: string | null }) {
   const { user } = useAuth();
   const quota = useStorageQuota();
+  const payg = useCreatorPaygPrice();
   const isPremium = !quota.isBasic; // paid storage block, admin bonus, or testing override unlocks
   const [rules, setRules] = useState<Rule[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
@@ -128,7 +130,7 @@ export default function IngestAlertsManager({ workspaceId }: { workspaceId: stri
   const startCreate = () => {
     if (!isPremium) {
       toast.error("Alert rules require a paid storage block", {
-        description: "Add a 1 TB Creator block (₹767/mo incl GST) to enable ingest alerts.",
+        description: `Add a 1 TB Creator block (${payg.totalLabel}/mo incl GST) to enable ingest alerts.`,
         action: { label: "Upgrade", onClick: () => quota.openPaywall() },
       });
       return;

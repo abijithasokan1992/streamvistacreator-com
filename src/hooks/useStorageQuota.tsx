@@ -6,7 +6,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { PAYG_TB_INR, FREE_STORAGE_GB } from "@/components/streamvista/plans";
+import { FREE_STORAGE_GB } from "@/components/streamvista/plans";
+import { useCreatorPaygPrice } from "@/hooks/usePublicPlans";
 
 /**
  * Storage entitlement & hard-stop (Part 11E)
@@ -70,6 +71,8 @@ export function useStorageQuota(): Quota {
 
 export function StorageQuotaProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const payg = useCreatorPaygPrice();
+  const paygLabel = payg.totalLabel;
   const [loading, setLoading] = useState(true);
   const [ent, setEnt] = useState<any>(null);
   const [open, setOpen] = useState(false);
@@ -202,12 +205,12 @@ export function StorageQuotaProvider({ children }: { children: React.ReactNode }
               <Sparkles className="w-3.5 h-3.5" /> Creator Plan
             </div>
             <div className="flex items-baseline gap-1">
-              <span className="font-display text-3xl font-bold">₹{PAYG_TB_INR}</span>
+              <span className="font-display text-3xl font-bold">{paygLabel}</span>
               <span className="text-sm text-muted-foreground">/ month</span>
             </div>
             <ul className="text-xs text-muted-foreground mt-3 space-y-1.5">
               <li>• <b className="text-foreground">1 TB</b> cinema-grade storage (20× your current cap)</li>
-              <li>• Pay-As-You-Go — next TB auto-unlocks at ₹{PAYG_TB_INR}</li>
+              <li>• Pay-As-You-Go — next TB auto-unlocks at {paygLabel}</li>
               <li>• Frame-accurate review · Camera-to-cloud ingest</li>
               <li>• Cancel anytime · no commitments</li>
             </ul>
@@ -216,7 +219,7 @@ export function StorageQuotaProvider({ children }: { children: React.ReactNode }
           <DialogFooter className="flex-col sm:flex-col gap-2">
             <Button onClick={upgrade} disabled={paying} size="lg" className="w-full bg-gradient-primary text-primary-foreground glow-primary">
               {paying ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ArrowUpRight className="w-4 h-4 mr-2" />}
-              Upgrade · pay ₹{PAYG_TB_INR}
+              Upgrade · pay {paygLabel}
             </Button>
             <button onClick={() => setOpen(false)} className="text-xs text-muted-foreground hover:text-foreground">
               Not now — I'll free up space
@@ -231,6 +234,7 @@ export function StorageQuotaProvider({ children }: { children: React.ReactNode }
 /** Inline alert banner — surfaces warning / urgent / hard-stop based on real entitlement. */
 export function StorageWarningBanner() {
   const q = useStorageQuota();
+  const payg = useCreatorPaygPrice();
   if (q.loading) return null;
   if (!q.warning && !q.urgent && !q.locked) return null;
   const usedGb = (q.usedMb / MB_PER_GB).toFixed(1);
@@ -253,7 +257,7 @@ export function StorageWarningBanner() {
             : `You're at ${usedGb} GB of ${totalGb} GB (${q.percent}%). Plan ahead — add 1 TB before you hit the cap.`}
         </div>
         <button onClick={q.openPaywall} className="underline underline-offset-2 hover:opacity-80 mt-1 text-xs">
-          Add 1 TB storage · ₹{PAYG_TB_INR} / month →
+          Add 1 TB storage · {payg.totalLabel} / month →
         </button>
       </div>
     </div>

@@ -11,6 +11,7 @@ import { useWorkspaces } from "@/hooks/useWorkspaces";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useStorageQuota, StorageWarningBanner } from "@/hooks/useStorageQuota";
+import { useCreatorPaygPrice } from "@/hooks/usePublicPlans";
 import { uploadFileMultipart, MULTIPART_THRESHOLD, ResumableUploadInterrupted, UploadSessionExpiredError, mapUploadError } from "@/lib/ociMultipartUpload";
 import { reportUploadFailure } from "@/lib/uploads/uploadFailure";
 import { useAuth } from "@/hooks/useAuth";
@@ -75,6 +76,7 @@ export default function CameraToCloudIngest() {
   const { workspaces, activeId, setActiveId, canWriteActive } = useWorkspaces();
   const { user } = useAuth();
   const quota = useStorageQuota();
+  const payg = useCreatorPaygPrice();
 
   const refresh = useCallback(async () => {
     if (!activeId) { setRecent([]); return; }
@@ -307,7 +309,7 @@ export default function CameraToCloudIngest() {
           <p className="mt-2 text-sm text-muted-foreground">
             Upgrade to the Creator Plan to keep ingesting. Existing footage stays viewable.
           </p>
-          <Button variant="default" className="mt-4">Upgrade · ₹767 / mo</Button>
+          <Button variant="default" className="mt-4">Upgrade · {payg.totalLabel} / mo</Button>
         </Card>
       ) : (
       <Card

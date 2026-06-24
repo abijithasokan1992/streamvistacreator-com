@@ -8,6 +8,7 @@ import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
 import { extractFnError, reportBillingFailure } from "@/lib/payments/billingFailure";
 import ManualInvoicesList from "@/components/billing/ManualInvoicesList";
 import CreatorDistributionOffers from "@/components/creator/CreatorDistributionOffers";
+import { useCreatorPaygPrice } from "@/hooks/usePublicPlans";
 
 /**
  * Creator Upgrade — two clearly separated commercial surfaces:
@@ -62,8 +63,8 @@ const PACKAGES: ReadonlyArray<{
   },
 ];
 
-const STORAGE_PRICE_BASE_INR = 650;
-const STORAGE_PRICE_INC_GST_INR = 767; // ₹650 + 18% GST — display only; server is source of truth.
+// Price comes from useCreatorPaygPrice() (canonical `plans.creator_payg_1tb`).
+// No hardcoded ₹767 in the UI — server remains the source of truth for checkout.
 
 type StorageEntitlement = {
   included_gb: number;
@@ -100,6 +101,7 @@ function fmtINR(paise: number) {
 
 export default function UpgradeSection() {
   const { user } = useAuth();
+  const payg = useCreatorPaygPrice();
   const [plan, setPlan] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [titleCount, setTitleCount] = useState<number | null>(null);
@@ -492,7 +494,7 @@ export default function UpgradeSection() {
                 <HardDrive className="w-4 h-4 text-accent" /> Creator Storage Add-on
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                1 TB per block · ₹{STORAGE_PRICE_BASE_INR} + 18% GST = <b className="text-foreground">₹{STORAGE_PRICE_INC_GST_INR}/month</b> · recurring monthly
+                1 TB per block · {payg.baseLabel} + {payg.gstPercent}% GST = <b className="text-foreground">{payg.totalLabel}/month</b> · recurring monthly
               </p>
               <p className="text-[11px] text-muted-foreground mt-1">
                 You explicitly add blocks — no silent auto-charge. Cancel any block at end of cycle.

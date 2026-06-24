@@ -82,3 +82,35 @@ export function withGst(price_amount: number, gst_percent: number) {
     new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
   return { base, gst, total, baseLabel: fmt(base), gstLabel: fmt(gst), totalLabel: fmt(total) };
 }
+
+/**
+ * Canonical 1 TB Creator pay-as-you-go price, read live from the `plans` table
+ * (code = `creator_payg_1tb`). Returns labels with INR + GST included so the
+ * UI can render a single source of truth without re-hardcoding ₹767.
+ *
+ * Falls back to the documented MVP values (₹650 + 18% GST = ₹767) only while
+ * the DB query is in-flight or if the row is missing — never as a substitute
+ * for a successful read.
+ */
+const FALLBACK_BASE_INR = 650;
+const FALLBACK_GST_PCT = 18;
+
+export function useCreatorPaygPrice() {
+  const { byCode, loading, error } = usePublicPlans();
+  const plan = byCode("creator_payg_1tb");
+  const base = plan?.price_amount ?? FALLBACK_BASE_INR;
+  const gstPct = plan?.gst_percent ?? FALLBACK_GST_PCT;
+  const priced = withGst(base, gstPct);
+  return {
+    loading,
+    error,
+    resolved: !!plan,
+    base: priced.base,
+    gst: priced.gst,
+    total: priced.total,
+    gstPercent: gstPct,
+    baseLabel: priced.baseLabel,
+    gstLabel: priced.gstLabel,
+    totalLabel: priced.totalLabel,
+  };
+}

@@ -509,6 +509,49 @@ function InvoiceEditor({
             <Textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} />
           </div>
 
+          {/* Entitlement grant — Studio/enterprise plan activated on invoice paid */}
+          <div className="rounded-lg border border-border/40 bg-secondary/10 p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-semibold">Grants entitlement on payment</Label>
+              <span className="text-[10px] text-muted-foreground">
+                Optional · auto-activates plan + storage when marked paid
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Plan</Label>
+                <Select
+                  value={grantsPlanCode || "none"}
+                  onValueChange={(v) => setGrantsPlanCode(v === "none" ? "" : v)}
+                >
+                  <SelectTrigger><SelectValue placeholder="No plan grant" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">— No plan grant —</SelectItem>
+                    {plans.map(p => (
+                      <SelectItem key={p.code} value={p.code}>
+                        {p.name} · {p.role} · {p.storage_gb ? `${p.storage_gb} GB` : "no storage"} · {p.billing_cycle}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Access until (optional · lifetime if blank)</Label>
+                <Input
+                  type="date"
+                  value={grantsUntil}
+                  onChange={e => setGrantsUntil(e.target.value)}
+                  disabled={!grantsPlanCode}
+                />
+              </div>
+            </div>
+            {editing?.entitlement_granted_at && (
+              <div className="text-[10px] text-emerald-600">
+                Entitlement already granted on {new Date(editing.entitlement_granted_at).toLocaleString()}
+              </div>
+            )}
+          </div>
+
           <div className="rounded-lg bg-secondary/30 p-3 grid grid-cols-3 gap-2 text-xs">
             <div>Subtotal: <strong className="font-mono">{inr(taxInc ? subtotal - gstAmt : subtotal)}</strong></div>
             <div>GST ({gst}%): <strong className="font-mono">{inr(gstAmt)}</strong></div>

@@ -205,7 +205,7 @@ function Field({
 function inputCls(err?: string) {
   return [
     "w-full h-11 px-3.5 rounded-md bg-secondary/30 border text-sm text-foreground",
-    "placeholder:text-muted-foreground/60",
+    "placeholder:text-muted-foreground",
     "focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/50 transition",
     err ? "border-destructive/60" : "border-border/60",
   ].join(" ");

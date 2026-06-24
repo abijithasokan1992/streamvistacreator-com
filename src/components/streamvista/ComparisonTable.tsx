@@ -76,4 +76,6 @@ export const ComparisonTable = () => {
       </p>
     </div>
   </section>
-);
+  );
+};
+

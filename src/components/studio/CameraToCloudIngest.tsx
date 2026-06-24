@@ -309,7 +309,7 @@ export default function CameraToCloudIngest() {
           <p className="mt-2 text-sm text-muted-foreground">
             Upgrade to the Creator Plan to keep ingesting. Existing footage stays viewable.
           </p>
-          <Button variant="default" className="mt-4">Upgrade · ₹767 / mo</Button>
+          <Button variant="default" className="mt-4">Upgrade · {payg.totalLabel} / mo</Button>
         </Card>
       ) : (
       <Card

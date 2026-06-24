@@ -127,6 +127,28 @@ export default function ManualInvoiceConsole() {
     load();
   };
 
+  const grantEntitlement = async (r: MI) => {
+    const planLabel = r.grants_plan_code ?? "configured plan";
+    if (!window.confirm(
+      `Grant entitlement for ${planLabel} to the customer? This activates the plan assignment and storage allocation.`
+    )) return;
+    const { error } = await (supabase as any).rpc("admin_grant_invoice_entitlement", { _invoice_id: r.id });
+    if (error) return toast.error(error.message);
+    toast.success("Entitlement granted");
+    try {
+      const { notify } = await import("@/lib/notify");
+      await notify(
+        r.user_id,
+        "entitlement_granted",
+        `Plan activated: ${planLabel}`,
+        `Your ${planLabel} plan is now active${r.grants_until ? ` until ${new Date(r.grants_until).toLocaleDateString()}` : ""}. Invoice ${r.invoice_number}.`,
+      );
+    } catch (e) { console.warn("notify failed", e); }
+    load();
+  };
+
+
+
   return (
     <section className="rounded-2xl border border-border/50 bg-card p-5">
       <header className="flex flex-wrap items-center justify-between gap-3 mb-4">

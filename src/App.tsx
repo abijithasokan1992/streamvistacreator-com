@@ -21,6 +21,7 @@ import BuyerDashboard from "./pages/dashboards/Buyer.tsx";
 import LocalizationDashboard from "./pages/dashboards/Localization.tsx";
 import DistributionDashboard from "./pages/dashboards/Distribution.tsx";
 import AdminErrorBoundary from "./components/admin/AdminErrorBoundary";
+import AdminOperations from "./pages/AdminOperations.tsx";
 import KammattamPopout from "./pages/KammattamPopout.tsx";
 import Terms from "./pages/Terms.tsx";
 import Privacy from "./pages/Privacy.tsx";

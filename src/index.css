@@ -298,6 +298,56 @@
   .glow-purple { box-shadow: var(--shadow-glow-purple); }
   .glow-gold   { box-shadow: var(--shadow-glow-gold); }
 
+  /* ===== Bold & punchy attention helpers (opt-in, no component churn) ===== */
+  /* Embossed/3D CTA — adds tactile depth to any button or anchor */
+  .btn-emboss {
+    background-image: var(--gradient-primary);
+    color: hsl(var(--primary-foreground));
+    box-shadow:
+      0 1px 0 hsl(0 0% 100% / 0.25) inset,
+      0 -2px 0 hsl(225 60% 6% / 0.18) inset,
+      0 8px 22px -8px hsl(var(--primary) / 0.55),
+      0 2px 6px -2px hsl(var(--primary) / 0.35);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
+  }
+  .btn-emboss:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      0 1px 0 hsl(0 0% 100% / 0.3) inset,
+      0 -2px 0 hsl(225 60% 6% / 0.22) inset,
+      0 14px 32px -8px hsl(var(--primary) / 0.65),
+      0 4px 10px -2px hsl(var(--primary-glow) / 0.45);
+  }
+  .btn-emboss:active { transform: translateY(0); }
+
+  /* Attention badge — small uppercase pill that pops above cards/headers */
+  .pill-attention {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] uppercase tracking-[0.22em] font-mono-tech;
+    background: hsl(var(--primary) / 0.12);
+    color: hsl(var(--primary));
+    border: 1px solid hsl(var(--primary) / 0.28);
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.05) inset;
+  }
+
+  /* Big bold numeric stat — for KPIs, prices, hero metrics */
+  .stat-bold {
+    font-family: 'Big Shoulders Display', 'Space Grotesk', system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    background-image: var(--gradient-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 1px 0 hsl(var(--primary) / 0.12);
+  }
+
+  /* Section eyebrow — uppercase label above bold headings */
+  .eyebrow {
+    @apply inline-block text-[11px] uppercase tracking-[0.28em] font-mono-tech;
+    color: hsl(var(--primary));
+  }
+
+
   .grid-bg {
     background-image:
       linear-gradient(hsl(var(--primary) / 0.06) 1px, transparent 1px),

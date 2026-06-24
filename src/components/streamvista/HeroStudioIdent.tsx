@@ -5,11 +5,11 @@ import crayonsBridge from "@/assets/crayons-bridge-3d.png";
 import crayonsLoop from "@/assets/crayons-loop-3d.png";
 
 /**
- * HeroSilverScreen
+ * HeroStudioIdent
  *
- * Studio-ident showcase. The logo cycles by fading OUT then a new logo fades
- * IN on a single unified background. No screen framing, no projection chrome,
- * no labels — just the logos, large and vivid.
+ * Studio-ident showcase. Logos cycle by fading OUT then fading IN on a single
+ * unified background. No screen framing, no projection chrome, no labels —
+ * just the logos, large, centered, and vivid in both light and dark themes.
  */
 
 const LOGOS = [
@@ -18,7 +18,7 @@ const LOGOS = [
   { src: crayonsLoop,     label: "Crayons Loop"     },
 ];
 
-function useCinemaTiming() {
+function useIdentTiming() {
   const isMobile = useIsMobile();
   return useMemo(() => {
     if (isMobile) {
@@ -30,10 +30,10 @@ function useCinemaTiming() {
 
 type Phase = "hold" | "fading-out" | "mid" | "fading-in";
 
-export function HeroSilverScreen() {
+export function HeroStudioIdent() {
   const [i, setI] = useState(0);
   const [phase, setPhase] = useState<Phase>("hold");
-  const timing = useCinemaTiming();
+  const timing = useIdentTiming();
 
   useEffect(() => {
     let cancelled = false;
@@ -61,7 +61,7 @@ export function HeroSilverScreen() {
     phase === "hold" ? 1 :
     phase === "fading-out" ? 0 :
     phase === "mid" ? 0 :
-    /* fading-in */ 1;
+    1;
 
   const transitionMs =
     phase === "fading-out" ? timing.fadeOut :
@@ -72,12 +72,14 @@ export function HeroSilverScreen() {
 
   return (
     <div
+      data-testid="hero-studio-ident"
       role="img"
       aria-label={`Studio ident — ${active.label}`}
       className="relative w-full aspect-[2.39/1] md:aspect-[2/1.1] rounded-xl overflow-hidden select-none bg-background"
     >
-      {/* Single unified backdrop — no silver screen, no IMAX frame */}
-      <div className="absolute inset-0 flex items-center justify-center p-[3%]">
+      {/* Single unified backdrop — responsive padding keeps the enlarged logo
+          centered and uncropped on narrow mobile widths. */}
+      <div className="absolute inset-0 flex items-center justify-center px-[4%] py-[6%] sm:px-[3%] sm:py-[4%]">
         <img
           src={active.src}
           alt={active.label}
@@ -85,13 +87,13 @@ export function HeroSilverScreen() {
           height={900}
           loading="eager"
           decoding="async"
-          className="max-w-[96%] max-h-[96%] w-auto h-auto object-contain will-change-[opacity]"
+          className="block w-auto h-auto max-w-full max-h-full object-contain mx-auto will-change-[opacity]"
           style={{
             opacity: logoOpacity,
             transition: transitionMs
               ? `opacity ${transitionMs}ms cubic-bezier(0.4, 0, 0.2, 1)`
               : "none",
-            // Brighter, more vivid logo color
+            // Brighter, more vivid logo — readable on both light and dark backgrounds.
             filter:
               "brightness(1.15) contrast(1.12) saturate(1.45) drop-shadow(0 8px 20px rgba(20,24,34,0.25))",
           }}
@@ -99,10 +101,11 @@ export function HeroSilverScreen() {
       </div>
 
       {/* Carousel dots */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+      <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
         {LOGOS.map((_, k) => (
           <span
             key={k}
+            data-testid={k === i ? "ident-dot-active" : "ident-dot"}
             className="h-1.5 rounded-full transition-all duration-500"
             style={{
               width: k === i ? 18 : 6,
@@ -116,4 +119,4 @@ export function HeroSilverScreen() {
   );
 }
 
-export default HeroSilverScreen;
+export default HeroStudioIdent;

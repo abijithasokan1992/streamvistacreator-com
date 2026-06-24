@@ -22,13 +22,9 @@ export async function fetchBranding(force = false): Promise<BrandingSettings | n
   if (cached && !force) return cached;
   if (inflight) return inflight;
   inflight = (async () => {
-    const { data } = await supabase
-      .from("branding_settings")
-      .select("*")
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-    cached = (data as BrandingSettings | null) ?? null;
+    const { data } = await (supabase as any).rpc("get_active_branding");
+    const row = Array.isArray(data) && data.length > 0 ? data[0] : null;
+    cached = (row as BrandingSettings | null) ?? null;
     inflight = null;
     return cached;
   })();

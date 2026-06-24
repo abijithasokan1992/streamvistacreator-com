@@ -6,7 +6,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { PAYG_TB_INR, FREE_STORAGE_GB } from "@/components/streamvista/plans";
+import { FREE_STORAGE_GB } from "@/components/streamvista/plans";
+import { useCreatorPaygPrice } from "@/hooks/usePublicPlans";
 
 /**
  * Storage entitlement & hard-stop (Part 11E)

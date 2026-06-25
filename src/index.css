@@ -460,18 +460,55 @@
   animation: fadeIn 0.6s ease-out both;
 }
 
-/* Homepage-only typography override (does not affect admin/dashboards/forms). */
-.home-serif,
+/* ------------------------------------------------------------------
+   Homepage-only premium typography (scoped to .home-serif on /).
+   Does NOT affect admin, dashboards, auth, or CMS forms.
+   - DM Serif Display → hero headline + major section headings (h1, h2)
+   - Inter → everything else (nav, subheadline, buttons, cards, body, footer)
+   ------------------------------------------------------------------ */
+.home-serif {
+  font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-feature-settings: "ss01", "cv11";
+}
 .home-serif h1,
-.home-serif h2,
+.home-serif h2 {
+  font-family: 'DM Serif Display', 'Times New Roman', Times, serif;
+  font-weight: 400;            /* DM Serif Display is a single-weight display face */
+  font-style: normal;
+  text-transform: none;        /* serifs read poorly in all-caps; literal-cased copy is preserved */
+  letter-spacing: -0.015em;
+  line-height: 1.02;
+  font-feature-settings: "liga", "dlig";
+}
+.home-serif h1 {
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+}
+/* Italic accent for any gradient-highlighted heading fragment */
+.home-serif h1 .gradient-text,
+.home-serif h2 .gradient-text {
+  font-style: italic;
+}
+/* Smaller card-level headings stay sans for clarity */
 .home-serif h3,
 .home-serif h4,
 .home-serif h5,
-.home-serif h6,
-.home-serif p,
-.home-serif span,
-.home-serif a,
-.home-serif li,
-.home-serif button {
-  font-family: "Times New Roman", Times, serif;
+.home-serif h6 {
+  font-family: 'Inter', system-ui, sans-serif;
+}
+/* Subheadline / lead paragraph readability — width + leading */
+.home-serif section p {
+  line-height: 1.65;
+}
+.home-serif section .max-w-md,
+.home-serif section .max-w-lg {
+  max-width: 38ch;
+}
+/* Section rhythm — a touch more breathing room between bands */
+.home-serif > section {
+  padding-top: clamp(4rem, 7vw, 7rem);
+  padding-bottom: clamp(4rem, 7vw, 7rem);
+}
+.home-serif > section:first-of-type {
+  padding-top: clamp(5rem, 8vw, 8.5rem);
 }

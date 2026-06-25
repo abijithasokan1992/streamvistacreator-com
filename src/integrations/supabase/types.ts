@@ -2374,6 +2374,358 @@ export type Database = {
         }
         Relationships: []
       }
+      entity_profile_buyer_ext: {
+        Row: {
+          acquisitions_contact_designation: string | null
+          acquisitions_contact_email: string | null
+          acquisitions_contact_name: string | null
+          acquisitions_contact_phone: string | null
+          app_store_url: string | null
+          channel_numbers: string[]
+          content_types: string[]
+          created_at: string
+          languages_acquired: string[]
+          licensing_email: string | null
+          ott_app_url: string | null
+          platform_type: string | null
+          play_store_url: string | null
+          profile_id: string
+          programming_email: string | null
+          territories: string[]
+          updated_at: string
+        }
+        Insert: {
+          acquisitions_contact_designation?: string | null
+          acquisitions_contact_email?: string | null
+          acquisitions_contact_name?: string | null
+          acquisitions_contact_phone?: string | null
+          app_store_url?: string | null
+          channel_numbers?: string[]
+          content_types?: string[]
+          created_at?: string
+          languages_acquired?: string[]
+          licensing_email?: string | null
+          ott_app_url?: string | null
+          platform_type?: string | null
+          play_store_url?: string | null
+          profile_id: string
+          programming_email?: string | null
+          territories?: string[]
+          updated_at?: string
+        }
+        Update: {
+          acquisitions_contact_designation?: string | null
+          acquisitions_contact_email?: string | null
+          acquisitions_contact_name?: string | null
+          acquisitions_contact_phone?: string | null
+          app_store_url?: string | null
+          channel_numbers?: string[]
+          content_types?: string[]
+          created_at?: string
+          languages_acquired?: string[]
+          licensing_email?: string | null
+          ott_app_url?: string | null
+          platform_type?: string | null
+          play_store_url?: string | null
+          profile_id?: string
+          programming_email?: string | null
+          territories?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entity_profile_buyer_ext_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "entity_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entity_profile_creator_ext: {
+        Row: {
+          banner_company_name: string | null
+          bio: string | null
+          created_at: string
+          imdb_url: string | null
+          languages: string[]
+          primary_genres: string[]
+          professional_name: string | null
+          profile_id: string
+          regions: string[]
+          updated_at: string
+          years_active: number | null
+        }
+        Insert: {
+          banner_company_name?: string | null
+          bio?: string | null
+          created_at?: string
+          imdb_url?: string | null
+          languages?: string[]
+          primary_genres?: string[]
+          professional_name?: string | null
+          profile_id: string
+          regions?: string[]
+          updated_at?: string
+          years_active?: number | null
+        }
+        Update: {
+          banner_company_name?: string | null
+          bio?: string | null
+          created_at?: string
+          imdb_url?: string | null
+          languages?: string[]
+          primary_genres?: string[]
+          professional_name?: string | null
+          profile_id?: string
+          regions?: string[]
+          updated_at?: string
+          years_active?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entity_profile_creator_ext_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "entity_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entity_profile_socials: {
+        Row: {
+          created_at: string
+          id: string
+          label: string | null
+          platform: string
+          profile_id: string
+          sort_order: number
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          platform: string
+          profile_id: string
+          sort_order?: number
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          platform?: string
+          profile_id?: string
+          sort_order?: number
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entity_profile_socials_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "entity_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entity_profile_studio_ext: {
+        Row: {
+          about: string | null
+          created_at: string
+          facility_capabilities: string[]
+          languages_served: string[]
+          primary_contact_designation: string | null
+          primary_contact_email: string | null
+          primary_contact_name: string | null
+          primary_contact_phone: string | null
+          profile_id: string
+          regions_served: string[]
+          services: string[]
+          updated_at: string
+          year_founded: number | null
+        }
+        Insert: {
+          about?: string | null
+          created_at?: string
+          facility_capabilities?: string[]
+          languages_served?: string[]
+          primary_contact_designation?: string | null
+          primary_contact_email?: string | null
+          primary_contact_name?: string | null
+          primary_contact_phone?: string | null
+          profile_id: string
+          regions_served?: string[]
+          services?: string[]
+          updated_at?: string
+          year_founded?: number | null
+        }
+        Update: {
+          about?: string | null
+          created_at?: string
+          facility_capabilities?: string[]
+          languages_served?: string[]
+          primary_contact_designation?: string | null
+          primary_contact_email?: string | null
+          primary_contact_name?: string | null
+          primary_contact_phone?: string | null
+          profile_id?: string
+          regions_served?: string[]
+          services?: string[]
+          updated_at?: string
+          year_founded?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entity_profile_studio_ext_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "entity_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entity_profiles: {
+        Row: {
+          address_line1: string | null
+          address_line2: string | null
+          avatar_url: string | null
+          billing_address_line1: string | null
+          billing_address_line2: string | null
+          billing_city: string | null
+          billing_country: string | null
+          billing_email: string | null
+          billing_legal_name: string | null
+          billing_notes: string | null
+          billing_phone: string | null
+          billing_postal_code: string | null
+          billing_state: string | null
+          cin_number: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          display_name: string | null
+          entity_type: string | null
+          gstin: string | null
+          id: string
+          is_gst_registered: boolean
+          kind: string
+          last_verified_at: string | null
+          legal_name: string | null
+          org_id: string | null
+          pan_number: string | null
+          place_of_supply_state: string | null
+          postal_code: string | null
+          primary_email: string | null
+          primary_phone: string | null
+          profile_completion_pct: number
+          state: string | null
+          tan_number: string | null
+          updated_at: string
+          user_id: string | null
+          verification_notes: string | null
+          verification_status: string
+          website: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
+          avatar_url?: string | null
+          billing_address_line1?: string | null
+          billing_address_line2?: string | null
+          billing_city?: string | null
+          billing_country?: string | null
+          billing_email?: string | null
+          billing_legal_name?: string | null
+          billing_notes?: string | null
+          billing_phone?: string | null
+          billing_postal_code?: string | null
+          billing_state?: string | null
+          cin_number?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          display_name?: string | null
+          entity_type?: string | null
+          gstin?: string | null
+          id?: string
+          is_gst_registered?: boolean
+          kind: string
+          last_verified_at?: string | null
+          legal_name?: string | null
+          org_id?: string | null
+          pan_number?: string | null
+          place_of_supply_state?: string | null
+          postal_code?: string | null
+          primary_email?: string | null
+          primary_phone?: string | null
+          profile_completion_pct?: number
+          state?: string | null
+          tan_number?: string | null
+          updated_at?: string
+          user_id?: string | null
+          verification_notes?: string | null
+          verification_status?: string
+          website?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          address_line1?: string | null
+          address_line2?: string | null
+          avatar_url?: string | null
+          billing_address_line1?: string | null
+          billing_address_line2?: string | null
+          billing_city?: string | null
+          billing_country?: string | null
+          billing_email?: string | null
+          billing_legal_name?: string | null
+          billing_notes?: string | null
+          billing_phone?: string | null
+          billing_postal_code?: string | null
+          billing_state?: string | null
+          cin_number?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          display_name?: string | null
+          entity_type?: string | null
+          gstin?: string | null
+          id?: string
+          is_gst_registered?: boolean
+          kind?: string
+          last_verified_at?: string | null
+          legal_name?: string | null
+          org_id?: string | null
+          pan_number?: string | null
+          place_of_supply_state?: string | null
+          postal_code?: string | null
+          primary_email?: string | null
+          primary_phone?: string | null
+          profile_completion_pct?: number
+          state?: string | null
+          tan_number?: string | null
+          updated_at?: string
+          user_id?: string | null
+          verification_notes?: string | null
+          verification_status?: string
+          website?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entity_profiles_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fastlink_payments: {
         Row: {
           amount_inr: number
@@ -7967,7 +8319,23 @@ export type Database = {
         Args: { _topup_id: string }
         Returns: string
       }
+      can_edit_entity_profile: {
+        Args: { _kind: string; _org_id: string; _user_id: string }
+        Returns: boolean
+      }
+      can_edit_entity_profile_by_id: {
+        Args: { _profile_id: string }
+        Returns: boolean
+      }
       can_signup_as: { Args: { _role: string }; Returns: boolean }
+      can_view_entity_profile: {
+        Args: { _kind: string; _org_id: string; _user_id: string }
+        Returns: boolean
+      }
+      can_view_entity_profile_by_id: {
+        Args: { _profile_id: string }
+        Returns: boolean
+      }
       can_write_workspace: {
         Args: { _user_id: string; _workspace_id: string }
         Returns: boolean

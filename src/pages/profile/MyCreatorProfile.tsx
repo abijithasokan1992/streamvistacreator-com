@@ -34,7 +34,7 @@ function commaSplit(s: string) {
   return s.split(",").map((x) => x.trim()).filter(Boolean);
 }
 
-export default function MyCreatorProfile() {
+export default function MyCreatorProfile({ embedded = false }: { embedded?: boolean } = {}) {
   const { user, loading: authLoading } = useAuth();
   const {
     profile, creatorExt, socials, loading, saving,

@@ -459,3 +459,19 @@
 .animate-fade-in {
   animation: fadeIn 0.6s ease-out both;
 }
+
+/* Homepage-only typography override (does not affect admin/dashboards/forms). */
+.home-serif,
+.home-serif h1,
+.home-serif h2,
+.home-serif h3,
+.home-serif h4,
+.home-serif h5,
+.home-serif h6,
+.home-serif p,
+.home-serif span,
+.home-serif a,
+.home-serif li,
+.home-serif button {
+  font-family: "Times New Roman", Times, serif;
+}

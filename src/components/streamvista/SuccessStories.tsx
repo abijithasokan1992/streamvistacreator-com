@@ -51,13 +51,13 @@ export const SuccessStories = () => {
             <div className="flex items-center gap-3 mb-5">
               <div className="w-8 h-px bg-accent" />
               <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">
-                Success stories
+                Licensed catalogue
               </span>
             </div>
             <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-4xl md:text-6xl">
-              Titles moving
+              Successfully Licensed
               <br />
-              <span className="gradient-text">through StreamVista.</span>
+              <span className="gradient-text">Contents by StreamVista</span>
             </h2>
           </div>
           {films.length > 0 && (

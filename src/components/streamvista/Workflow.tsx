@@ -27,7 +27,7 @@ export const Workflow = () => (
           </span>
         </div>
         <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-4xl md:text-6xl">
-          From intake <span className="gradient-text">to deal.</span>
+          From intake <span className="gradient-text">to deal</span>
         </h2>
       </div>
 

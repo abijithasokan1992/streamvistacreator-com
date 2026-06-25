@@ -51,7 +51,7 @@ export const RoleSurfaces = () => (
           <span className="eyebrow">Three surfaces · One platform</span>
         </div>
         <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-4xl md:text-6xl">
-          Choose your <span className="gradient-text">door.</span>
+          Choose your <span className="gradient-text">door</span>
         </h2>
       </div>
 

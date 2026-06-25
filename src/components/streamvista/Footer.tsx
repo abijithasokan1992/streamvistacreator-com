@@ -12,7 +12,7 @@ const LEGAL_LINKS = [
 
 const TRUST: { icon: LucideIcon; label: string }[] = [
   { icon: Lock, label: "256-bit SSL" },
-  { icon: Cloud, label: "Oracle Cloud" },
+  { icon: Cloud, label: "StreamVista Cloud X" },
   { icon: ShieldCheck, label: "DMCA Protected" },
 ];
 

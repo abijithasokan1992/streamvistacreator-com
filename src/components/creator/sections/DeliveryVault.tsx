@@ -22,7 +22,7 @@ export default function DeliveryVaultSection() {
         <div className="flex items-start gap-3">
           <Database className="w-5 h-5 text-accent mt-0.5 shrink-0" />
           <div className="space-y-1">
-            <h2 className="font-display text-lg">Delivery Vault</h2>
+            <h2 className="font-display text-lg">My Library</h2>
             <p className="text-sm text-muted-foreground max-w-2xl">
               Use this area for larger delivery masters, archive copies and paid
               storage expansion. Your day-to-day title prep (metadata, posters,
@@ -39,12 +39,12 @@ export default function DeliveryVaultSection() {
 
       {/* One-click 1 TB purchase — primary commercial CTA */}
       <Buy1TBCard
-        headline="1 TB Delivery Vault Storage"
-        subline="Secure recurring vault storage for masters, delivery files, archive copies and buyer-facing delivery materials."
+        headline="1 TB Library Storage"
+        subline="Secure recurring storage for masters, delivery files, archive copies and buyer-facing delivery materials."
       />
 
       <section className="space-y-3">
-        <h3 className="font-display text-base">Your vault</h3>
+        <h3 className="font-display text-base">Your library</h3>
         <MyVaultSummary />
       </section>
 

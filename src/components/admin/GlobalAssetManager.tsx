@@ -112,7 +112,7 @@ export default function GlobalAssetManager() {
         userId: uploadFor, fileName: uploadFile.name, fileSize: uploadFile.size,
         mimeType: uploadFile.type, objectKey: par.objectKey,
       });
-      toast.success("Uploaded into user vault");
+      toast.success("Uploaded into user repository");
       setUploadFile(null); refresh();
     } catch (e: any) { toast.error(e.message); }
     setUploading(false);
@@ -125,7 +125,7 @@ export default function GlobalAssetManager() {
           <h3 className="text-lg font-semibold flex items-center gap-2">
             <ShieldCheck className="h-5 w-5 text-purple-400" /> Global Asset Manager
           </h3>
-          <p className="text-sm text-muted-foreground">God-mode CRUD across every StreamVista vault.</p>
+          <p className="text-sm text-muted-foreground">God-mode CRUD across the StreamVista Global Repository.</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <div className="relative">
@@ -149,7 +149,7 @@ export default function GlobalAssetManager() {
               <DialogHeader><DialogTitle>Upload on behalf of a user</DialogTitle></DialogHeader>
               <div className="space-y-3">
                 <Select value={uploadFor} onValueChange={setUploadFor}>
-                  <SelectTrigger><SelectValue placeholder="Pick user vault" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Pick user repository" /></SelectTrigger>
                   <SelectContent>
                     {users.map((u) => (
                       <SelectItem key={u.id} value={u.id}>{u.profile?.studio_name || u.profile?.display_name || u.email}</SelectItem>
@@ -161,7 +161,7 @@ export default function GlobalAssetManager() {
               <DialogFooter>
                 <Button onClick={submitUpload} disabled={uploading}>
                   {uploading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
-                  Upload to vault
+                  Upload to repository
                 </Button>
               </DialogFooter>
             </DialogContent>

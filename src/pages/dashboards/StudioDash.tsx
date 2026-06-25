@@ -173,17 +173,17 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-[11px] uppercase tracking-[0.25em] text-accent font-mono">Studio Vault</span>
+              <span className="text-[11px] uppercase tracking-[0.25em] text-accent font-mono">Studio Storage</span>
               {hasPaidVault && <StatusPill tone="ok">Active</StatusPill>}
               {!hasPaidVault && hasTesting && <StatusPill tone="warn">Testing allowance</StatusPill>}
               {!hasUsable && <StatusPill tone="muted">Not activated</StatusPill>}
             </div>
             <h2 className="font-display text-2xl md:text-3xl mt-1.5 leading-tight">
               {hasPaidVault
-                ? "Vault is live."
+                ? "Storage is live."
                 : hasTesting
-                ? "Testing vault active."
-                : "Activate your vault."}
+                ? "Testing storage active."
+                : "Activate your storage."}
             </h2>
             <p className="text-sm text-muted-foreground mt-1.5 max-w-xl">
               {hasPaidVault
@@ -196,7 +196,7 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
           <div className="flex flex-wrap gap-2">
             {hasUsable && (
               <Button onClick={onGoVault} variant={hasPaidVault ? "default" : "outline"} className={hasPaidVault ? "bg-gradient-primary text-primary-foreground glow-primary" : ""}>
-                <Cloud className="w-4 h-4 mr-2" /> Open Vault
+                <Cloud className="w-4 h-4 mr-2" /> Open Storage
               </Button>
             )}
             <Button
@@ -271,7 +271,7 @@ function BuyStorage({ onPurchased }: { onPurchased: () => void }) {
       <header>
         <h2 className="font-display text-2xl">1 TB Storage</h2>
         <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-          {payg.totalLabel}/month. Recurring vault for masters and archives.
+          {payg.totalLabel}/month. Recurring storage for masters and archives.
         </p>
       </header>
       <VaultPlanCards onPurchased={onPurchased} />
@@ -339,7 +339,7 @@ function VaultWorkspace({ rows, loading, onGoBuy, onGoIngest }: { rows: AllocRow
       <section className="rounded-xl border border-border/40 bg-secondary/5 p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h3 className="font-semibold text-sm flex items-center gap-2"><Wrench className="w-4 h-4 text-accent" /> Vault Services</h3>
+            <h3 className="font-semibold text-sm flex items-center gap-2"><Wrench className="w-4 h-4 text-accent" /> Storage Services</h3>
             <p className="text-xs text-muted-foreground mt-1 max-w-lg">
               Proxies, QC, restore, delivery and archive — founder-assisted.
             </p>
@@ -410,12 +410,12 @@ export default function StudioDashboard() {
   };
 
   const subtitle = useMemo(
-    () => "Home · Ingest · Storage · Vault · Billing.",
+    () => "Home · Ingest · Storage · Library · Billing.",
     [],
   );
 
   return (
-    <RoleDashboardShell expectedRole="studio" title="Studio Vault" subtitle={subtitle}>
+    <RoleDashboardShell expectedRole="studio" title="Studio Storage" subtitle={subtitle}>
       <div className="mb-4 flex justify-end">
         <Link
           to="/dashboard/studio/profile"
@@ -429,7 +429,7 @@ export default function StudioDashboard() {
           <TabsTrigger value="home"><Sparkles className="w-3.5 h-3.5 mr-1.5" />Home</TabsTrigger>
           <TabsTrigger value="ingest"><UploadCloud className="w-3.5 h-3.5 mr-1.5" />Ingest</TabsTrigger>
           <TabsTrigger value="buy"><ShoppingCart className="w-3.5 h-3.5 mr-1.5" />Storage</TabsTrigger>
-          <TabsTrigger value="workspace"><Cloud className="w-3.5 h-3.5 mr-1.5" />Vault</TabsTrigger>
+          <TabsTrigger value="workspace"><Cloud className="w-3.5 h-3.5 mr-1.5" />Library</TabsTrigger>
           <TabsTrigger value="billing"><Receipt className="w-3.5 h-3.5 mr-1.5" />Billing</TabsTrigger>
         </TabsList>
 

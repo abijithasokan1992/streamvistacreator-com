@@ -86,16 +86,14 @@ export default function WorkspaceWelcome() {
     <section className="rounded-2xl border border-border/40 bg-gradient-to-br from-secondary/15 to-secondary/5 p-5 md:p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.25em] text-muted-foreground/70">
-            <Building2 className="w-3 h-3" /> Workspace
-          </div>
-          <h2 className="font-display text-xl md:text-2xl mt-1.5 truncate max-w-[42ch]">
-            Welcome back, <span className="text-accent">{s.displayName}</span>
+          <h2 className="font-display text-xl md:text-2xl truncate max-w-[42ch] flex items-center gap-2">
+            <Building2 className="w-4 h-4 text-muted-foreground/70 shrink-0" />
+            <span>Welcome back, <span className="text-accent">{s.displayName}</span></span>
           </h2>
           <p className="text-xs text-muted-foreground mt-1">
             {s.isFree
               ? "You're on Creator Basic — request a plan change any time from Storage & Billing."
-              : "Your account is in good standing."}
+              : "Your titles, storage and plan at a glance."}
           </p>
         </div>
         <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-xs">

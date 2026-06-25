@@ -92,12 +92,6 @@ export default function ContentOwnerDashboard() {
           </div>
           <div className="flex items-center gap-3">
             <EntitlementChip />
-            <Link
-              to="/dashboard/profile/creator"
-              className="text-xs text-muted-foreground hover:text-foreground"
-            >
-              My Profile
-            </Link>
             <CreatorGuide />
             <ThemeToggle />
             <button

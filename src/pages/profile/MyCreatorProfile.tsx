@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useEntityProfile, type EntityProfile, type CreatorExt } from "@/hooks/useEntityProfile";
 import { FieldGroup } from "@/components/profile/FieldGroup";
 import { SocialLinksGrid } from "@/components/profile/SocialLinksGrid";
-import { AccountSecurityCard } from "@/components/profile/AccountSecurityCard";
+// AccountSecurityCard intentionally removed from Creator profile — magic link auth, no password UI here.
 import { VerificationBadge } from "@/components/profile/VerificationBadge";
 import { ProfileSaveBar } from "@/components/profile/ProfileSaveBar";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
@@ -43,6 +44,7 @@ export default function MyCreatorProfile({ embedded = false }: { embedded?: bool
 
   const [pForm, setPForm] = useState<Partial<EntityProfile>>({});
   const [eForm, setEForm] = useState<Partial<CreatorExt> & { _genres?: string; _languages?: string; _regions?: string }>({});
+  const [billingSameAsAddress, setBillingSameAsAddress] = useState(true);
 
   useEffect(() => { if (profile) setPForm({}); }, [profile?.id]);
   useEffect(() => { if (creatorExt) setEForm({}); }, [creatorExt?.profile_id]);
@@ -73,7 +75,21 @@ export default function MyCreatorProfile({ embedded = false }: { embedded?: bool
 
   const handleSave = async () => {
     try {
-      if (Object.keys(pForm).length) await saveProfile(pForm);
+      // If "same address for billing" is checked, mirror the primary address into the billing address fields on save.
+      let pPatch: Partial<EntityProfile> = pForm;
+      if (billingSameAsAddress) {
+        const src = { ...(profile ?? {}), ...pForm } as EntityProfile;
+        pPatch = {
+          ...pForm,
+          billing_address_line1: src.address_line1 ?? null,
+          billing_address_line2: src.address_line2 ?? null,
+          billing_city: src.city ?? null,
+          billing_state: src.state ?? null,
+          billing_postal_code: src.postal_code ?? null,
+          billing_country: src.country ?? null,
+        } as Partial<EntityProfile>;
+      }
+      if (Object.keys(pPatch).length) await saveProfile(pPatch);
       if (creatorExt && Object.keys(eForm).length) {
         const extPatch: Partial<CreatorExt> = { ...eForm } as Partial<CreatorExt>;
         if (eForm._genres !== undefined) extPatch.primary_genres = commaSplit(eForm._genres);
@@ -90,6 +106,7 @@ export default function MyCreatorProfile({ embedded = false }: { embedded?: bool
       toast.error((e as Error).message);
     }
   };
+
 
   const handleReset = () => { setPForm({}); setEForm({}); };
 
@@ -236,6 +253,20 @@ export default function MyCreatorProfile({ embedded = false }: { embedded?: bool
         </FieldGroup>
 
         <FieldGroup title="Billing identity" description="Used on invoices issued by StreamVista.">
+          <div className="md:col-span-2 flex items-start gap-2 rounded-md border border-border/40 bg-secondary/10 p-3">
+            <Checkbox
+              id="billing-same-as-address"
+              checked={billingSameAsAddress}
+              onCheckedChange={(v) => setBillingSameAsAddress(v === true)}
+              className="mt-0.5"
+            />
+            <Label htmlFor="billing-same-as-address" className="text-xs leading-relaxed cursor-pointer">
+              Use this address for billing and invoicing
+              <span className="block text-[11px] text-muted-foreground mt-0.5">
+                When on, your primary address above is used for billing and invoices.
+              </span>
+            </Label>
+          </div>
           <div className="space-y-1.5">
             <Label className="text-xs">Billing legal name</Label>
             <Input value={merged.billing_legal_name ?? ""} onChange={(e) => setP("billing_legal_name", e.target.value)} />
@@ -248,35 +279,40 @@ export default function MyCreatorProfile({ embedded = false }: { embedded?: bool
             <Label className="text-xs">Billing phone</Label>
             <Input value={merged.billing_phone ?? ""} onChange={(e) => setP("billing_phone", e.target.value)} />
           </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Billing country</Label>
-            <Input value={merged.billing_country ?? ""} onChange={(e) => setP("billing_country", e.target.value)} />
-          </div>
-          <div className="md:col-span-2 space-y-1.5">
-            <Label className="text-xs">Billing address line 1</Label>
-            <Input value={merged.billing_address_line1 ?? ""} onChange={(e) => setP("billing_address_line1", e.target.value)} />
-          </div>
-          <div className="md:col-span-2 space-y-1.5">
-            <Label className="text-xs">Billing address line 2</Label>
-            <Input value={merged.billing_address_line2 ?? ""} onChange={(e) => setP("billing_address_line2", e.target.value)} />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">City</Label>
-            <Input value={merged.billing_city ?? ""} onChange={(e) => setP("billing_city", e.target.value)} />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">State</Label>
-            <Input value={merged.billing_state ?? ""} onChange={(e) => setP("billing_state", e.target.value)} />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Postal code</Label>
-            <Input value={merged.billing_postal_code ?? ""} onChange={(e) => setP("billing_postal_code", e.target.value)} />
-          </div>
+          {!billingSameAsAddress && (
+            <>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Billing country</Label>
+                <Input value={merged.billing_country ?? ""} onChange={(e) => setP("billing_country", e.target.value)} />
+              </div>
+              <div className="md:col-span-2 space-y-1.5">
+                <Label className="text-xs">Billing address line 1</Label>
+                <Input value={merged.billing_address_line1 ?? ""} onChange={(e) => setP("billing_address_line1", e.target.value)} />
+              </div>
+              <div className="md:col-span-2 space-y-1.5">
+                <Label className="text-xs">Billing address line 2</Label>
+                <Input value={merged.billing_address_line2 ?? ""} onChange={(e) => setP("billing_address_line2", e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">City</Label>
+                <Input value={merged.billing_city ?? ""} onChange={(e) => setP("billing_city", e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">State</Label>
+                <Input value={merged.billing_state ?? ""} onChange={(e) => setP("billing_state", e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Postal code</Label>
+                <Input value={merged.billing_postal_code ?? ""} onChange={(e) => setP("billing_postal_code", e.target.value)} />
+              </div>
+            </>
+          )}
           <div className="md:col-span-2 space-y-1.5">
             <Label className="text-xs">Billing notes (optional)</Label>
             <Textarea rows={2} value={merged.billing_notes ?? ""} onChange={(e) => setP("billing_notes", e.target.value)} />
           </div>
         </FieldGroup>
+
 
         <FieldGroup title="Creator details" description="Helps us match your titles with the right buyers.">
           <div className="space-y-1.5">
@@ -344,7 +380,7 @@ export default function MyCreatorProfile({ embedded = false }: { embedded?: bool
           </div>
         </FieldGroup>
 
-        <AccountSecurityCard />
+        {/* Account & Security removed — magic-link auth, no password UI in profile. */}
       </div>
       <ProfileSaveBar dirty={dirty} saving={saving} onSave={handleSave} onReset={handleReset} />
     </>

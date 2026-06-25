@@ -52,12 +52,7 @@ export default function HomeSection({ onNavigate }: { onNavigate: (s: SectionId)
 
   return (
     <div className="space-y-6">
-      {/* Welcome line — plan + storage chips already inside WorkspaceWelcome */}
-      <div>
-        <h1 className="font-display text-2xl md:text-3xl">Welcome back.</h1>
-        <p className="text-sm text-muted-foreground mt-1">Your titles, storage and plan at a glance.</p>
-      </div>
-
+      {/* Single welcome block — name + plan + storage live inside WorkspaceWelcome */}
       <WorkspaceWelcome />
 
       {/* One-time onboarding checklist */}
@@ -84,13 +79,13 @@ export default function HomeSection({ onNavigate }: { onNavigate: (s: SectionId)
             <Wallet className="w-3.5 h-3.5 mr-1.5" /> Billing
           </Button>
           <Button size="sm" onClick={() => onNavigate("delivery_vault")} className="bg-gradient-primary text-primary-foreground">
-            <Database className="w-3.5 h-3.5 mr-1.5" /> Open Vault
+            <Database className="w-3.5 h-3.5 mr-1.5" /> Open My Library
           </Button>
         </div>
       </div>
 
       {/* 1 TB add-on — short headline */}
-      <Buy1TBCard variant="compact" headline="Add 1 TB to Vault" />
+      <Buy1TBCard variant="compact" headline="Add 1 TB to My Library" />
 
       {/* Four operational cards — short copy */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

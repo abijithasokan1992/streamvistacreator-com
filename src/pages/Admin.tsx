@@ -1,61 +1,48 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { Loader2, LogOut, ShieldCheck, Crown, RefreshCw, Mail, Phone, Tag, History, Copy, Check, Briefcase, Wallet, Code2, Megaphone, Inbox, Users as UsersIcon, LayoutDashboard, Film, HardDrive, ShieldAlert, Wrench, Package, LifeBuoy, Settings as SettingsIcon, ArrowRight, UserCog, BarChart3 } from "lucide-react";
-import AdminTeamManager from "@/components/admin/AdminTeamManager";
-import AdminFinanceConsole from "@/components/admin/AdminFinanceConsole";
-import AdminReportsConsole from "@/components/admin/AdminReportsConsole";
-
-import PlatformOwnerConsole from "@/components/admin/PlatformOwnerConsole";
+import { Loader2, LogOut, ShieldCheck, Crown, RefreshCw, Copy, Check, Wallet, Inbox, Users as UsersIcon, LayoutDashboard, HardDrive, LifeBuoy, Settings as SettingsIcon, ArrowRight, Package, FileText, ClipboardCheck } from "lucide-react";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
-import PlatformOverview from "@/components/admin/PlatformOverview";
-import ProductsAndPlans from "@/components/admin/ProductsAndPlans";
-import OracleStorageMonitor from "@/components/admin/OracleStorageMonitor";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useBackGuard } from "@/hooks/useBackGuard";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import PremiumInvitations from "@/components/admin/PremiumInvitations";
-import CommissionsTracker from "@/components/admin/CommissionsTracker";
-import OracleOciStorageCard from "@/components/admin/OracleOciStorageCard";
-import RazorpayAuditLog from "@/components/admin/RazorpayAuditLog";
-import FreeTierConfig from "@/components/admin/FreeTierConfig";
-import BrandingSettings from "@/components/admin/BrandingSettings";
-import SupportInbox from "@/components/admin/SupportInbox";
-import ContactInbox from "@/components/admin/ContactInbox";
-import OnboardingApprovals from "@/components/admin/OnboardingApprovals";
-import PartnerLogos from "@/components/admin/PartnerLogos";
+
+// Kept (MVP 8 buckets)
+import PlatformOverview from "@/components/admin/PlatformOverview";
 import RolesManager from "@/components/admin/RolesManager";
-import RazorpayCredentials from "@/components/admin/RazorpayCredentials";
-import RazorpayTestCheckout from "@/components/admin/RazorpayTestCheckout";
-import RazorpayConnectivityStatus from "@/components/admin/RazorpayConnectivityStatus";
-import RazorpayOpsBanner from "@/components/admin/RazorpayOpsBanner";
-import ResendCredentials from "@/components/admin/ResendCredentials";
-import AdminCredentials from "@/components/admin/AdminCredentials";
-import GlobalAssetManager from "@/components/admin/GlobalAssetManager";
-import UniversalBroadcast from "@/components/admin/UniversalBroadcast";
-import EmailLogMonitor from "@/components/admin/EmailLogMonitor";
 import UsersAndCredentials from "@/components/admin/UsersAndCredentials";
-import KammattamMeter from "@/components/admin/KammattamMeter";
-import MarketingCMS from "@/components/admin/MarketingCMS";
-import AiMcpControlCenter from "@/components/admin/AiMcpControlCenter";
+import AdminTeamManager from "@/components/admin/AdminTeamManager";
+import OnboardingApprovals from "@/components/admin/OnboardingApprovals";
 import ContentReviewWorkflow from "@/components/admin/ContentReviewWorkflow";
 import TitleEditRequestsInbox from "@/components/admin/TitleEditRequestsInbox";
+import ProductsAndPlans from "@/components/admin/ProductsAndPlans";
+import StudioVaultPricing from "@/components/admin/StudioVaultPricing";
+import FreeTierConfig from "@/components/admin/FreeTierConfig";
+import GlobalAssetManager from "@/components/admin/GlobalAssetManager";
 import AdminInvoices from "@/components/admin/AdminInvoices";
 import ManualInvoiceConsole from "@/components/admin/ManualInvoiceConsole";
-import PaymentSecurityEvents from "@/components/admin/PaymentSecurityEvents";
-import PaymentTrace from "@/components/admin/PaymentTrace";
-import StudioVaultPricing from "@/components/admin/StudioVaultPricing";
-import AdminStudioVaultPurchases from "@/components/admin/AdminStudioVaultPurchases";
-import CompanyProfileSettings from "@/components/admin/CompanyProfileSettings";
 import BillingOperations from "@/components/admin/BillingOperations";
-import CommercialControlTower from "@/components/admin/CommercialControlTower";
-import TitleCommercialOpsConsole from "@/components/admin/TitleCommercialOpsConsole";
-import ScreeningOpsConsole from "@/components/admin/ScreeningOpsConsole";
-import DistributionOffersConsole from "@/components/admin/DistributionOffersConsole";
-import DealOperationsConsole from "@/components/admin/DealOperationsConsole";
+import AdminFinanceConsole from "@/components/admin/AdminFinanceConsole";
+import RazorpayOpsBanner from "@/components/admin/RazorpayOpsBanner";
+import RazorpayAuditLog from "@/components/admin/RazorpayAuditLog";
+import PaymentTrace from "@/components/admin/PaymentTrace";
+import OracleStorageMonitor from "@/components/admin/OracleStorageMonitor";
+import AdminStudioVaultPurchases from "@/components/admin/AdminStudioVaultPurchases";
+import OracleOciStorageCard from "@/components/admin/OracleOciStorageCard";
+import SupportInbox from "@/components/admin/SupportInbox";
+import ContactInbox from "@/components/admin/ContactInbox";
+import EmailLogMonitor from "@/components/admin/EmailLogMonitor";
+import UniversalBroadcast from "@/components/admin/UniversalBroadcast";
+import BrandingSettings from "@/components/admin/BrandingSettings";
+import CompanyProfileSettings from "@/components/admin/CompanyProfileSettings";
+import PartnerLogos from "@/components/admin/PartnerLogos";
+import ResendCredentials from "@/components/admin/ResendCredentials";
+import AdminCredentials from "@/components/admin/AdminCredentials";
+import RazorpayCredentials from "@/components/admin/RazorpayCredentials";
+import RazorpayConnectivityStatus from "@/components/admin/RazorpayConnectivityStatus";
+import AdminReportsConsole from "@/components/admin/AdminReportsConsole";
+import PaymentSecurityEvents from "@/components/admin/PaymentSecurityEvents";
 
 interface Row {
   id: string;
@@ -73,22 +60,22 @@ interface Row {
   created_at: string;
 }
 
-const STATUSES = ["pending", "contacted", "activated", "rejected"];
+const TAB_KEYS = ["overview", "users", "approvals", "catalog", "billing", "storage", "comms", "settings", "audit"] as const;
+type TabKey = typeof TAB_KEYS[number];
 
-function pathToTab(path: string, search: URLSearchParams, isSuperAdmin: boolean): string {
-  const q = search.get("tab");
-  if (q) return q;
+function pathToTab(path: string, search: URLSearchParams): TabKey {
+  const q = search.get("tab") as TabKey | null;
+  if (q && (TAB_KEYS as readonly string[]).includes(q)) return q;
   const p = path.toLowerCase();
-  if (p.startsWith("/admin/super")) return "overview";
-  if (p.startsWith("/admin/content") || p.startsWith("/admin/legal") || p.startsWith("/admin/qc")) return "content";
-  if (p.startsWith("/admin/team")) return "team";
-  if (p.startsWith("/admin/finance")) return "finance";
-  if (p.startsWith("/admin/reports")) return "reports";
-  if (p.startsWith("/admin/users")) return "users";
+  // New MVP buckets
+  if (p.startsWith("/admin/users") || p.startsWith("/admin/team")) return "users";
+  if (p.startsWith("/admin/approvals") || p.startsWith("/admin/content") || p.startsWith("/admin/qc") || p.startsWith("/admin/legal")) return "approvals";
+  if (p.startsWith("/admin/catalog") || p.startsWith("/admin/products") || p.startsWith("/admin/plans") || p.startsWith("/admin/rights")) return "catalog";
+  if (p.startsWith("/admin/billing") || p.startsWith("/admin/finance") || p.startsWith("/admin/business")) return "billing";
   if (p.startsWith("/admin/storage")) return "storage";
-  if (p.startsWith("/admin/business") || p.startsWith("/admin/billing")) return "business";
-  if (p.startsWith("/admin/support")) return "support";
-  if (p.startsWith("/admin/settings") || p.startsWith("/admin/ops") || p.startsWith("/admin/security") || p.startsWith("/admin/audit") || p.startsWith("/admin/rights") || p.startsWith("/admin/dev") || p.startsWith("/admin/products") || p.startsWith("/admin/plans")) return "settings";
+  if (p.startsWith("/admin/comms") || p.startsWith("/admin/support")) return "comms";
+  if (p.startsWith("/admin/settings")) return "settings";
+  if (p.startsWith("/admin/audit") || p.startsWith("/admin/reports") || p.startsWith("/admin/security")) return "audit";
   return "overview";
 }
 

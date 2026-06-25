@@ -108,8 +108,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setRole(pickPrimary(roles));
   };
 
+  const handleRefreshFailure = () => {
+    try {
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith("sb-") || k.includes("supabase.auth"))
+        .forEach((k) => localStorage.removeItem(k));
+      Object.keys(sessionStorage)
+        .filter((k) => k.startsWith("sb-") || k.includes("supabase.auth"))
+        .forEach((k) => sessionStorage.removeItem(k));
+    } catch { /* ignore */ }
+    setSession(null);
+    setUser(null);
+    setRole(null);
+    setLoading(false);
+    if (typeof window !== "undefined" && window.location.pathname !== "/auth") {
+      window.location.replace("/auth");
+    }
+  };
+
+  const isRefreshTokenError = (err: unknown): boolean => {
+    const msg = (err as any)?.message?.toLowerCase?.() ?? "";
+    const code = (err as any)?.code?.toLowerCase?.() ?? "";
+    return (
+      code === "refresh_token_not_found" ||
+      msg.includes("refresh token not found") ||
+      msg.includes("invalid refresh token") ||
+      msg.includes("refresh_token_not_found")
+    );
+  };
+
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((evt, s) => {
+      if (evt === "SIGNED_OUT" || (evt === "TOKEN_REFRESHED" && !s)) {
+        if (!s) { handleRefreshFailure(); return; }
+      }
       setSession(s);
       setUser(s?.user ?? null);
       setTimeout(() => checkRole(s?.user?.id), 0);
@@ -124,13 +156,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }, 0);
       }
     });
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (error && isRefreshTokenError(error)) {
+        handleRefreshFailure();
+        return;
+      }
       setSession(data.session);
       setUser(data.session?.user ?? null);
       checkRole(data.session?.user?.id).finally(() => setLoading(false));
+    }).catch((err) => {
+      if (isRefreshTokenError(err)) handleRefreshFailure();
+      else setLoading(false);
     });
-    return () => sub.subscription.unsubscribe();
+
+    // Catch async refresh failures fired outside getSession()
+    const onUnhandled = (e: PromiseRejectionEvent) => {
+      if (isRefreshTokenError(e.reason)) {
+        e.preventDefault();
+        handleRefreshFailure();
+      }
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("unhandledrejection", onUnhandled);
+    }
+    return () => {
+      sub.subscription.unsubscribe();
+      if (typeof window !== "undefined") {
+        window.removeEventListener("unhandledrejection", onUnhandled);
+      }
+    };
   }, []);
+
 
   const signOut = async () => {
     try { await supabase.auth.signOut(); } catch { /* ignore */ }

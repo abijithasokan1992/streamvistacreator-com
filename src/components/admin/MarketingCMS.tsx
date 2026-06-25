@@ -270,6 +270,8 @@ function Section({ kind, title, icon, helper }: { kind: Kind; title: string; ico
         </p>
       )}
 
+      {kind === "hero" && <HeroModeControl />}
+
       {dndEnabled && !loading && (
         <HeroReelPreview items={rows} />
       )}

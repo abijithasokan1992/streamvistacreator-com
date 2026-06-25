@@ -352,7 +352,7 @@ export default function Admin() {
           </TabsContent>
 
           <TabsContent value="storage" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<HardDrive className="w-5 h-5" />} title="Storage" desc="Storage health, vault purchases and OCI admin." />
+            <DeptHeader icon={<HardDrive className="w-5 h-5" />} title="Storage" desc="Storage health, Global Repository purchases and OCI admin." />
             <OracleStorageMonitor />
             <AdminStudioVaultPurchases />
             <details className="rounded-2xl border border-border/40 bg-secondary/10 p-4">
@@ -410,7 +410,7 @@ function QuickNav({ navigate }: { navigate: (p: string) => void }) {
     { path: "/admin/homepage",  icon: <ImageIcon className="w-5 h-5" />,      label: "Homepage CMS",  desc: "Hero banners, licensed contents" },
     { path: "/admin/catalog",   icon: <Package className="w-5 h-5" />,        label: "Catalog",       desc: "Plans, pricing, assets" },
     { path: "/admin/billing",   icon: <Wallet className="w-5 h-5" />,         label: "Billing",       desc: "Invoices, Razorpay" },
-    { path: "/admin/storage",   icon: <HardDrive className="w-5 h-5" />,      label: "Storage",       desc: "Uploads, vault, OCI" },
+    { path: "/admin/storage",   icon: <HardDrive className="w-5 h-5" />,      label: "Storage",       desc: "Uploads, Global Repository, OCI" },
     { path: "/admin/comms",     icon: <Inbox className="w-5 h-5" />,          label: "Comms",         desc: "Support, contact, email" },
     { path: "/admin/settings",  icon: <SettingsIcon className="w-5 h-5" />,   label: "Settings",      desc: "Branding, credentials" },
     { path: "/admin/audit",     icon: <FileText className="w-5 h-5" />,       label: "Audit",         desc: "Reports & security" },

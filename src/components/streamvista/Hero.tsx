@@ -42,19 +42,33 @@ export const Hero = () => {
     };
   }, []);
 
+  // Treat empty strings from admin form fields as "use fallback"
+  const nonEmpty = (v: string | null | undefined) => (v && v.trim() ? v : null);
   const subtitle =
-    banner?.subheadline ??
+    nonEmpty(banner?.subheadline) ??
     "Intake, storage, operations and licensing in one secure operating layer";
-  const ctaLabel = banner?.cta_label ?? "Get Started";
-  const ctaHref = banner?.cta_url ?? "/auth?intent=signup";
-  const cta2Label = banner?.cta2_label ?? "Talk to StreamVista";
-  const cta2Href = banner?.cta2_url ?? "/contact";
+  const ctaLabel = nonEmpty(banner?.cta_label) ?? "Get Started";
+  const ctaHref = nonEmpty(banner?.cta_url) ?? "/auth?intent=signup";
+  const cta2Label = nonEmpty(banner?.cta2_label) ?? "Talk to StreamVista";
+  const cta2Href = nonEmpty(banner?.cta2_url) ?? "/contact";
+  const heroImage = nonEmpty(banner?.image_url);
 
   return (
   <section className="relative pt-28 pb-20 md:pb-28 overflow-hidden border-b border-border/40">
+    {heroImage && (
+      <div className="absolute inset-0">
+        <img
+          src={heroImage}
+          alt={banner?.headline ?? "StreamVista hero"}
+          className="absolute inset-0 w-full h-full object-cover opacity-30"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/60 to-background" />
+      </div>
+    )}
     <div className="absolute inset-0 grid-bg opacity-60" />
     <div className="absolute top-0 -left-32 w-[40rem] h-[40rem] rounded-full bg-primary/15 blur-[120px]" />
     <div className="absolute bottom-0 -right-32 w-[36rem] h-[36rem] rounded-full bg-primary-glow/10 blur-[140px]" />
+
 
     <div className="container relative">
       <div className="flex flex-wrap items-center gap-2 mb-8 animate-fade-in">

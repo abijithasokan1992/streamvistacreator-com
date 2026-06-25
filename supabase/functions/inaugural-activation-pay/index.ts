@@ -48,6 +48,59 @@ async function hasCompletedInaugural(admin: any, uid: string): Promise<{ paid: b
   return { paid: !!row, row };
 }
 
+/**
+ * Safe retry for the inaugural confirmation email.
+ *
+ * Idempotency is preserved end-to-end because every attempt re-uses the SAME
+ * `idempotencyKey` (`inaugural-activation-${paymentId}`). The downstream
+ * `send-transactional-email` function de-duplicates on that key, so retries
+ * never produce a second delivery — they only recover from transient failures
+ * (cold start, 5xx, network blip) on the first send.
+ *
+ * Returns { ok, attempts, lastError } so callers can log/report without
+ * throwing — failure here must never roll back the verified payment.
+ */
+async function sendInauguralEmailWithRetry(
+  admin: any,
+  args: { recipient: string; paymentId: string; displayName: string },
+  opts: { attempts?: number; baseDelayMs?: number } = {},
+): Promise<{ ok: boolean; attempts: number; lastError: string | null }> {
+  const maxAttempts = Math.max(1, opts.attempts ?? 3);
+  const baseDelay = Math.max(50, opts.baseDelayMs ?? 400);
+  const idempotencyKey = `inaugural-activation-${args.paymentId}`;
+
+  let lastError: string | null = null;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const { data, error } = await admin.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "inaugural-activation",
+          recipientEmail: args.recipient,
+          idempotencyKey,
+          templateData: { displayName: args.displayName },
+        },
+      });
+      if (!error) {
+        if (attempt > 1) {
+          console.log(`inaugural email recovered on attempt ${attempt}`, { paymentId: args.paymentId });
+        }
+        return { ok: true, attempts: attempt, lastError: null };
+      }
+      lastError = typeof error === "string" ? error : (error?.message ?? JSON.stringify(error));
+      console.warn(`inaugural email attempt ${attempt}/${maxAttempts} failed`, lastError, data);
+    } catch (e) {
+      lastError = e instanceof Error ? e.message : String(e);
+      console.warn(`inaugural email attempt ${attempt}/${maxAttempts} threw`, lastError);
+    }
+    if (attempt < maxAttempts) {
+      // Exponential backoff with light jitter — same idempotency key throughout.
+      const delay = baseDelay * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 150);
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+  return { ok: false, attempts: maxAttempts, lastError };
+}
+
 function json(body: unknown, status = 200, req?: Request) {
   return new Response(JSON.stringify(body), {
     status,

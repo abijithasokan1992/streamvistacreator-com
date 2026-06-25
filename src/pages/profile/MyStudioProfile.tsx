@@ -430,11 +430,17 @@ export default function MyStudioProfile() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Billing email</Label>
-                <Input disabled={!canEdit} type="email" value={merged.billing_email ?? ""} onChange={(e) => setP("billing_email", e.target.value)} />
+                <Input disabled={!canEdit} type="email" inputMode="email" maxLength={255}
+                  value={merged.billing_email ?? ""}
+                  onChange={(e) => setP("billing_email", e.target.value.trim())} />
+                <FieldError result={errors.billingEmail} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Billing phone</Label>
-                <Input disabled={!canEdit} value={merged.billing_phone ?? ""} onChange={(e) => setP("billing_phone", e.target.value)} />
+                <Input disabled={!canEdit} inputMode="tel" maxLength={20}
+                  value={merged.billing_phone ?? ""}
+                  onChange={(e) => setP("billing_phone", formatPhone(e.target.value))} />
+                <FieldError result={errors.billingPhone} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Billing country</Label>
@@ -458,7 +464,10 @@ export default function MyStudioProfile() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Postal code</Label>
-                <Input disabled={!canEdit} value={merged.billing_postal_code ?? ""} onChange={(e) => setP("billing_postal_code", e.target.value)} />
+                <Input disabled={!canEdit} inputMode="numeric" maxLength={6}
+                  value={merged.billing_postal_code ?? ""}
+                  onChange={(e) => setP("billing_postal_code", formatDigits(e.target.value, 6))} />
+                <FieldError result={errors.billingPincode} />
               </div>
               <div className="md:col-span-2 space-y-1.5">
                 <Label className="text-xs">Billing notes (optional)</Label>

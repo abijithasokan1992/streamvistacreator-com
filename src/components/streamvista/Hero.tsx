@@ -103,10 +103,10 @@ export const Hero = () => {
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link
-              to="/contact"
+              to={cta2Href}
               className="group relative h-14 inline-flex items-center justify-center gap-3 px-6 border border-border/60 hover:border-accent/60 hover:bg-accent/5 text-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md flex-1 transition-colors"
             >
-              <span>Talk to StreamVista</span>
+              <span>{cta2Label}</span>
             </Link>
           </div>
         </div>

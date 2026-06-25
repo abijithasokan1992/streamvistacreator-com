@@ -14,6 +14,7 @@ import {
 } from "@/lib/creator/titleSchema";
 import { AssetUploader, AssetList } from "./AssetUploader";
 import { StatusBadge } from "./StatusBadge";
+import { RightsAvailabilityPanel } from "./RightsAvailabilityPanel";
 import RequestEditButton from "@/components/creator/RequestEditButton";
 import { useTitleLock } from "@/hooks/useTitleLock";
 
@@ -363,6 +364,7 @@ export function TitleEditor({
                   <AssetTab cat="ownership_documents" label="Ownership Documents"
                     assets={byCat(["ownership_documents", "ownership"])} titleId={title.id}
                     locked={assetsLockedFor("ownership_documents")} onUploaded={reload} accept="application/pdf,image/*" />
+                  <RightsAvailabilityPanel meta={meta} setMeta={setMeta} readOnly={metadataLocked} />
                 </div>
               )}
               {tab === "submission" && (
@@ -440,6 +442,15 @@ function SubmissionTab({
     ownership_documents: local.hasOwnership,
   };
 
+  const commercial = meta?.commercial;
+  const rightsAvailableCount = commercial
+    ? Object.values(commercial.rights).filter((v) => v === "available").length
+    : 0;
+  const territoriesAvailableCount = commercial
+    ? Object.values(commercial.territories).filter((v) => v === "available").length
+    : 0;
+  const engagementSet = !!commercial && commercial.engagement_mode !== "unspecified";
+
   // Creator-facing readiness — completeness, not verification.
   const items: { key: string; label: string; ok: boolean; goto: TabId }[] = [
     { key: "title", label: "Add a title name",                 ok: !!local.hasTitle,                              goto: "metadata" },
@@ -452,6 +463,9 @@ function SubmissionTab({
     { key: "poster", label: "Upload poster artwork",           ok: !!(has.poster ?? local.hasPoster),             goto: "assets" },
     { key: "censor_certificate", label: "Upload censor certificate", ok: !!(has.censor_certificate ?? local.hasCensor), goto: "legal" },
     { key: "ownership_documents", label: "Upload ownership documents", ok: !!(has.ownership_documents ?? local.hasOwnership), goto: "legal" },
+    { key: "engagement_mode", label: "Choose a commercial path (Free / Premium)", ok: engagementSet, goto: "legal" },
+    { key: "rights_available", label: "Mark at least one right as available",     ok: rightsAvailableCount > 0,  goto: "legal" },
+    { key: "territory_available", label: "Mark at least one territory as available", ok: territoriesAvailableCount > 0, goto: "legal" },
   ];
   const done = items.filter((i) => i.ok).length;
   const total = items.length;

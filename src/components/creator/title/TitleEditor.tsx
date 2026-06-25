@@ -364,6 +364,7 @@ export function TitleEditor({
                   <AssetTab cat="ownership_documents" label="Ownership Documents"
                     assets={byCat(["ownership_documents", "ownership"])} titleId={title.id}
                     locked={assetsLockedFor("ownership_documents")} onUploaded={reload} accept="application/pdf,image/*" />
+                  <RightsAvailabilityPanel meta={meta} setMeta={setMeta} readOnly={metadataLocked} />
                 </div>
               )}
               {tab === "submission" && (

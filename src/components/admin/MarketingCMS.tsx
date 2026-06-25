@@ -7,6 +7,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { HeroReelPreview } from "./HeroReelPreview";
+import { HeroModeControl } from "./HeroModeControl";
 
 type AnyRow = Record<string, any> & { id: string };
 

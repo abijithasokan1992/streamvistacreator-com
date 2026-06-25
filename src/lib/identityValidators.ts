@@ -1,7 +1,7 @@
 // Identity field validators + formatters for Indian tax/billing inputs.
 // All validators accept null/undefined/empty as "no value" (valid).
 
-export type ValidationResult = { ok: true } | { ok: false; message: string };
+export type ValidationResult = { ok: true; message?: undefined } | { ok: false; message: string };
 
 const ok: ValidationResult = { ok: true };
 const err = (message: string): ValidationResult => ({ ok: false, message });

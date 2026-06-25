@@ -10,12 +10,15 @@ type HeroBanner = {
   image_url: string | null;
   cta_label: string | null;
   cta_url: string | null;
+  cta2_label: string | null;
+  cta2_url: string | null;
 };
 
 /**
  * Public hero — minimal, premium, single-slide.
- * Optionally overlays an admin-managed `hero_banners` row (first active by
- * sort_order). Falls back to the static StreamVista flagship copy.
+ * Renders the single admin-managed `hero_banners` row that is
+ * Published + Active with the lowest sort_order. Falls back to the
+ * static StreamVista flagship copy if none exists.
  */
 export const Hero = () => {
   const [banner, setBanner] = useState<HeroBanner | null>(null);
@@ -24,7 +27,7 @@ export const Hero = () => {
     let active = true;
     (supabase as any)
       .from("hero_banners")
-      .select("id,headline,subheadline,image_url,cta_label,cta_url")
+      .select("id,headline,subheadline,image_url,cta_label,cta_url,cta2_label,cta2_url")
       .eq("is_active", true)
       .eq("status", "published")
       .order("sort_order")
@@ -44,6 +47,8 @@ export const Hero = () => {
     "Intake, storage, operations and licensing in one secure operating layer";
   const ctaLabel = banner?.cta_label ?? "Get Started";
   const ctaHref = banner?.cta_url ?? "/auth?intent=signup";
+  const cta2Label = banner?.cta2_label ?? "Talk to StreamVista";
+  const cta2Href = banner?.cta2_url ?? "/contact";
 
   return (
   <section className="relative pt-28 pb-20 md:pb-28 overflow-hidden border-b border-border/40">

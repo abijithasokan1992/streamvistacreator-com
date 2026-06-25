@@ -103,6 +103,11 @@ export const Workflow = () => (
             "inset 0 1px 0 hsl(var(--accent) / 0.15), 0 24px 64px -24px hsl(var(--primary) / 0.25)",
         }}
       >
+        {/* Corner accent marks — schematic diagram feel */}
+        <div aria-hidden className="absolute top-3 left-3 w-4 h-4 border-t border-l border-primary/30 rounded-tl-sm" />
+        <div aria-hidden className="absolute top-3 right-3 w-4 h-4 border-t border-r border-primary/30 rounded-tr-sm" />
+        <div aria-hidden className="absolute bottom-3 left-3 w-4 h-4 border-b border-l border-primary/30 rounded-bl-sm" />
+        <div aria-hidden className="absolute bottom-3 right-3 w-4 h-4 border-b border-r border-primary/30 rounded-br-sm" />
         {/* ===== Security & Trust perimeter badge ===== */}
         <div
           className="absolute -top-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-4 py-1.5 rounded-full border border-accent/40 backdrop-blur-md"

@@ -64,14 +64,6 @@ export const Hero = () => {
             StreamVista Cloud X
           </span>
         </div>
-        {banner?.headline?.startsWith("STREAMVISTA HERO DEMO") && (
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-amber-500/50 bg-amber-500/10">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-            <span className="font-mono-tech text-[10px] uppercase tracking-[0.25em] text-amber-400">
-              Demo hero from CMS
-            </span>
-          </div>
-        )}
       </div>
 
       <div className="grid lg:grid-cols-[1.4fr_1fr] gap-12 lg:gap-20 items-end animate-fade-in">

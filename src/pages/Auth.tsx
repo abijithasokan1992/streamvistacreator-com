@@ -56,6 +56,7 @@ export default function Auth() {
   const navigate = useNavigate();
   const [search] = useSearchParams();
   const { user, role, loading } = useAuth();
+  const blockedBrowser = search.get("in_app_error") === "1";
 
   const intentParam = search.get("intent");
   const roleParam = search.get("role");
@@ -170,7 +171,9 @@ export default function Auth() {
         </Link>
 
         <div className="glass-strong rounded-3xl p-8 md:p-10 border border-white/5">
-          {sent ? (
+          {blockedBrowser ? (
+            <OpenInBrowserNotice prominent />
+          ) : sent ? (
             <SentState email={email} onAnother={() => setSent(false)} />
           ) : (
             <>
@@ -184,10 +187,6 @@ export default function Auth() {
                     : "Enter your email and we'll send a magic link."}
                 </p>
               </header>
-
-              {search.get("in_app_error") === "1" && (
-                <OpenInBrowserNotice prominent />
-              )}
 
               <div className="mb-6 grid grid-cols-2 gap-1 p-1 rounded-xl bg-input/30 border border-border/50">
                 <TabButton active={view === "login"} onClick={() => setView("login")}>Log in</TabButton>
@@ -268,7 +267,7 @@ export default function Auth() {
                 <div className="h-px flex-1 bg-border/60" />
               </div>
 
-              {isInAppBrowser() && search.get("in_app_error") !== "1" && (
+              {isInAppBrowser() && (
                 <OpenInBrowserNotice />
               )}
 

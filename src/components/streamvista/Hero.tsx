@@ -125,6 +125,9 @@ export const Hero = () => {
               src={img}
               alt={s.headline ?? "StreamVista hero"}
               className="absolute inset-0 w-full h-full object-cover object-center opacity-90"
+              loading={i === 0 ? "eager" : "lazy"}
+              fetchPriority={i === 0 ? "high" : "low"}
+              decoding="async"
             />
             <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/10 to-background md:from-background/10 md:via-background/5" />
           </div>

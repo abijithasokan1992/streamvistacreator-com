@@ -86,8 +86,37 @@ Deno.serve(async (req) => {
     const action = String(body?.action ?? "");
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
+
+    // Status probe — lets the client detect "already completed" without
+    // starting a new Razorpay order.
+    if (action === "status") {
+      const { paid, row } = await hasCompletedInaugural(admin, uid);
+      return j({
+        completed: paid,
+        amount_paise: AMOUNT_PAISE,
+        paid_at: row?.created_at ?? null,
+        order_id: row?.order_id ?? null,
+        payment_id: row?.payment_id ?? null,
+      });
+    }
+
     const creds = await loadRazorpayCreds(admin);
     if (!creds) return j({ error: "Razorpay not configured" }, 503);
+
+    // Duplicate-guard — inaugural payment is a one-time ceremonial charge.
+    if (action === "create" || action === "verify") {
+      const { paid, row } = await hasCompletedInaugural(admin, uid);
+      if (paid) {
+        return j({
+          error: "Inaugural activation already completed",
+          completed: true,
+          amount_paise: AMOUNT_PAISE,
+          paid_at: row?.created_at ?? null,
+          order_id: row?.order_id ?? null,
+          payment_id: row?.payment_id ?? null,
+        }, 409);
+      }
+    }
 
     if (action === "create") {
       const safeKeyId = creds.keyId.trim().replace(/[^\x20-\x7E]/g, "");

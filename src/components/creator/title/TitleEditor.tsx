@@ -366,7 +366,7 @@ export function TitleEditor({
                 </div>
               )}
               {tab === "submission" && (
-                <OverviewTab title={title} readiness={readiness} local={localChecklist!} assets={assets} meta={meta} timeline={timeline} />
+                <SubmissionTab title={title} readiness={readiness} local={localChecklist!} assets={assets} meta={meta} onJumpTab={setTab} />
               )}
             </>
 

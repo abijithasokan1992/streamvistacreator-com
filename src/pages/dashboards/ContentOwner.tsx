@@ -10,6 +10,7 @@ import UpdatesSection from "@/components/creator/sections/Updates";
 import StatementsSection from "@/components/creator/sections/Statements";
 import DeliveryVaultSection from "@/components/creator/sections/DeliveryVault";
 import HelpSection from "@/components/creator/sections/Help";
+import MyCreatorProfile from "@/pages/profile/MyCreatorProfile";
 import EntitlementChip from "@/components/creator/EntitlementChip";
 import CreatorGuide from "@/components/creator/CreatorGuide";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";

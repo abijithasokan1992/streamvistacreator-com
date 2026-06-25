@@ -402,6 +402,13 @@ export default function Admin() {
             <AdminReportsConsole />
             <PaymentSecurityEvents />
           </TabsContent>
+
+          {isSuperAdmin && (
+            <TabsContent value="vault" className="space-y-8 mt-0 animate-fade-in">
+              <DeptHeader icon={<Crown className="w-5 h-5" />} title="Founder Vault" desc="Private Platform Owner storage — masters, contracts, investor & legal documents. Separately passphrase-locked and audit-logged." />
+              <FounderVault />
+            </TabsContent>
+          )}
         </Tabs>
       </section>
     </main>

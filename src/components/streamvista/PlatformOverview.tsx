@@ -102,7 +102,7 @@ export const PlatformOverview = () => (
           {STEPS.map(({ icon: Icon, step, title }, idx) => (
             <li key={step} className="bg-card p-5 md:p-6 flex flex-col relative">
               <div className="flex items-center justify-between mb-4">
-                <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">{step}</span>
+                <span className="font-mono-tech text-[10px] font-bold uppercase tracking-[0.3em] text-foreground">{step}</span>
                 <Icon className="w-4 h-4 text-primary" />
               </div>
               <h3 className="font-display text-base md:text-lg font-bold uppercase">{title}</h3>

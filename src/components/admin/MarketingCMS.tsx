@@ -308,10 +308,13 @@ function RowCard({ kind, row, isLive, onChange, onSave, onDelete, onUpload, onSe
           </Field>
         </>)}
         {kind === "hero" && (<>
-          <Field label="Headline"><input className={cls} value={row.headline ?? ""} onChange={e => onChange({ headline: e.target.value })} /></Field>
-          <Field label="Subheadline"><input className={cls} value={row.subheadline ?? ""} onChange={e => onChange({ subheadline: e.target.value })} /></Field>
-          <Field label="CTA label"><input className={cls} value={row.cta_label ?? ""} onChange={e => onChange({ cta_label: e.target.value })} /></Field>
-          <Field label="CTA URL"><input className={cls} value={row.cta_url ?? ""} onChange={e => onChange({ cta_url: e.target.value })} /></Field>
+          <Field label="Internal label (admin only, e.g. Homepage Hero 01)" full><input className={cls} value={row.internal_label ?? ""} onChange={e => onChange({ internal_label: e.target.value })} /></Field>
+          <Field label="Hero title (headline)"><input className={cls} value={row.headline ?? ""} onChange={e => onChange({ headline: e.target.value })} /></Field>
+          <Field label="Hero subtitle (subheadline)"><input className={cls} value={row.subheadline ?? ""} onChange={e => onChange({ subheadline: e.target.value })} /></Field>
+          <Field label="CTA 1 label"><input className={cls} value={row.cta_label ?? ""} onChange={e => onChange({ cta_label: e.target.value })} /></Field>
+          <Field label="CTA 1 link"><input className={cls} value={row.cta_url ?? ""} onChange={e => onChange({ cta_url: e.target.value })} /></Field>
+          <Field label="CTA 2 label"><input className={cls} value={row.cta2_label ?? ""} onChange={e => onChange({ cta2_label: e.target.value })} /></Field>
+          <Field label="CTA 2 link"><input className={cls} value={row.cta2_url ?? ""} onChange={e => onChange({ cta2_url: e.target.value })} /></Field>
         </>)}
         {kind === "ad" && (<>
           <Field label="Slot">
@@ -324,6 +327,10 @@ function RowCard({ kind, row, isLive, onChange, onSave, onDelete, onUpload, onSe
         </>)}
         {kind === "film" && (<>
           <Field label="Title"><input className={cls} value={row.title ?? ""} onChange={e => onChange({ title: e.target.value })} /></Field>
+          <Field label="Subtitle / caption"><input className={cls} value={row.subtitle ?? ""} onChange={e => onChange({ subtitle: e.target.value })} /></Field>
+          <Field label="Content type (e.g. Feature, Series, Short)"><input className={cls} value={row.content_type ?? ""} onChange={e => onChange({ content_type: e.target.value })} /></Field>
+          <Field label="Year"><input type="number" className={cls} value={row.year ?? ""} onChange={e => onChange({ year: e.target.value ? Number(e.target.value) : null })} /></Field>
+          <Field label="Partner / platform"><input className={cls} value={row.partner ?? ""} onChange={e => onChange({ partner: e.target.value })} /></Field>
           <Field label="Link URL"><input className={cls} value={row.link_url ?? ""} onChange={e => onChange({ link_url: e.target.value })} /></Field>
           <Field label="Blurb" full><textarea rows={2} className={cls} value={row.blurb ?? ""} onChange={e => onChange({ blurb: e.target.value })} /></Field>
         </>)}

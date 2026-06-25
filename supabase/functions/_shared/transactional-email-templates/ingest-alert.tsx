@@ -2,6 +2,7 @@ import * as React from 'npm:react@18.3.1'
 import {
   Body, Container, Head, Heading, Hr, Html, Preview, Section, Text,
 } from 'npm:@react-email/components@0.0.22'
+import { BrandLogos } from '../email-templates/brand-logos.tsx'
 import type { TemplateEntry } from './registry.ts'
 
 interface Props {
@@ -64,7 +65,8 @@ const Email = ({
             You're receiving this because an Ingest Diagnostics alert rule fired in your workspace.
             Manage alert rules from Studio Ingest → Ingest Diagnostics. Powered by Crayons Bridge Ingest Engine.
           </Text>
-        </Container>
+                <BrandLogos />
+      </Container>
       </Body>
     </Html>
   )

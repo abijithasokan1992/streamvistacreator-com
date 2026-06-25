@@ -2,6 +2,7 @@ import * as React from 'npm:react@18.3.1'
 import {
   Body, Container, Head, Heading, Html, Preview, Section, Text, Hr, Link, Row, Column,
 } from 'npm:@react-email/components@0.0.22'
+import { BrandLogos } from '../email-templates/brand-logos.tsx'
 import type { TemplateEntry } from './registry.ts'
 
 interface Props {
@@ -71,7 +72,8 @@ const Email = ({
           <Text style={fineprint}>
             This receipt is a tax invoice issued by StreamVista. Keep it for your records.
           </Text>
-        </Container>
+                <BrandLogos />
+      </Container>
       </Body>
     </Html>
   )

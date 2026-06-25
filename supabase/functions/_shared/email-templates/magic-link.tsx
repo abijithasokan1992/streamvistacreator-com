@@ -11,6 +11,7 @@ import {
   Preview,
   Text,
 } from 'npm:@react-email/components@0.0.22'
+import { BrandLogos } from './brand-logos.tsx'
 
 interface MagicLinkEmailProps {
   siteName: string
@@ -38,6 +39,7 @@ export const MagicLinkEmail = ({ confirmationUrl }: MagicLinkEmailProps) => (
         <Text style={footer}>
           Didn't request this? You can safely ignore this email.
         </Text>
+              <BrandLogos />
       </Container>
     </Body>
   </Html>

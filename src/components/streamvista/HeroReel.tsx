@@ -124,13 +124,13 @@ export function HeroReel() {
           <div className="container pb-14 md:pb-20 relative">
             {current && (
               <div key={current.id} className="max-w-3xl animate-[reel-rise_900ms_ease-out_both]">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="font-mono-tech text-[10px] uppercase tracking-[0.32em] text-accent">
+                <div className="flex items-center gap-3 mb-5">
+                  <span className="inline-flex items-center gap-2 font-mono-tech text-[11px] uppercase tracking-[0.28em] text-accent px-3 py-1.5 rounded-full border border-accent/30 bg-accent/10 backdrop-blur-sm">
                     Featured Title · {String(i + 1).padStart(2, "0")} / {String(items.length).padStart(2, "0")}
                   </span>
                   {current.is_featured && (
-                    <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.2em] text-amber-400">
-                      <Star className="w-3 h-3 fill-amber-400" /> Spotlight
+                    <span className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.2em] text-amber-300 px-3 py-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 backdrop-blur-sm shadow-[0_0_20px_-4px_rgba(251,191,36,0.25)]">
+                      <Star className="w-3.5 h-3.5 fill-amber-300" /> Spotlight
                     </span>
                   )}
                 </div>

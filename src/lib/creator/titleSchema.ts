@@ -166,3 +166,70 @@ export const CONTENT_TYPE_OPTIONS: ReadonlyArray<{
 export const CONTENT_TYPE_LABEL: Record<string, string> = Object.fromEntries(
   CONTENT_TYPE_OPTIONS.map((o) => [o.value, o.label]),
 );
+
+/* -------- Rights Availability & Distribution Preferences -------- */
+
+export type RightStatus = "none" | "available" | "sold" | "not_available" | "discuss" | "premium_required";
+export type TerritoryStatus = "none" | "available" | "sold" | "blocked" | "discuss";
+export type EngagementMode = "free_listing" | "go_free" | "upgrade_premium" | "unspecified";
+
+export const RIGHTS_CATALOG: ReadonlyArray<{
+  key: string;
+  label: string;
+  group: "core" | "premium";
+  hint?: string;
+}> = [
+  // Core — included in free listing scope
+  { key: "digital_ott",   label: "Digital / OTT",                 group: "core" },
+  { key: "satellite",     label: "Satellite / TV Broadcast",      group: "core" },
+  { key: "youtube_avod",  label: "YouTube / AVOD / Free Digital", group: "core" },
+  { key: "svod",          label: "SVOD",                          group: "core" },
+  { key: "tvod_ppv",      label: "TVOD / Pay-Per-View",           group: "core" },
+  { key: "fast",          label: "FAST / Free streaming channels", group: "core" },
+  // Premium — managed rights-sales (paid plan)
+  { key: "dubbing",       label: "Dubbing rights",                group: "premium" },
+  { key: "remake",        label: "Remake rights",                 group: "premium" },
+  { key: "inflight",      label: "In-flight / Airline rights",    group: "premium" },
+  { key: "ship_cruise",   label: "Ship / Cruise / Seaways rights", group: "premium" },
+  { key: "hospitality",   label: "Hotel / Hospitality / Non-theatrical", group: "premium" },
+  { key: "educational",   label: "Educational / Institutional screening", group: "premium" },
+  { key: "intl_tv",       label: "International TV rights",       group: "premium" },
+  { key: "clip_license",  label: "Clip / excerpt licensing",      group: "premium" },
+  { key: "soundtrack",    label: "Audio / soundtrack exploitation", group: "premium" },
+  { key: "merchandising", label: "Ancillary / merchandising",     group: "premium" },
+];
+
+export const TERRITORY_CATALOG: ReadonlyArray<{ key: string; label: string }> = [
+  { key: "worldwide",     label: "Worldwide" },
+  { key: "india",         label: "India" },
+  { key: "gulf_me",       label: "Gulf / Middle East" },
+  { key: "north_america", label: "North America" },
+  { key: "uk_europe",     label: "United Kingdom & Europe" },
+  { key: "anz",           label: "Australia / New Zealand" },
+  { key: "sea",           label: "South East Asia" },
+  { key: "row",           label: "Rest of World" },
+];
+
+export const RIGHT_STATUS_LABEL: Record<RightStatus, string> = {
+  none: "—",
+  available: "Available",
+  sold: "Already Sold",
+  not_available: "Not Available",
+  discuss: "Discuss with StreamVista",
+  premium_required: "Premium Service Required",
+};
+
+export const TERRITORY_STATUS_LABEL: Record<TerritoryStatus, string> = {
+  none: "—",
+  available: "Available",
+  sold: "Already Sold",
+  blocked: "Blocked / Unavailable",
+  discuss: "Reserved / Discuss",
+};
+
+export const PREMIUM_PLAN_TIERS: ReadonlyArray<{ value: string; label: string }> = [
+  { value: "tier_25k",  label: "₹25,000 + GST" },
+  { value: "tier_50k",  label: "₹50,000 + GST" },
+  { value: "tier_100k", label: "₹1,00,000 + GST" },
+];
+

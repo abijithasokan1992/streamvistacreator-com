@@ -93,6 +93,40 @@ export function TitleEditor({
 
   useEffect(() => { reload(); }, [reload]);
 
+  // Best-effort fetch creator profile defaults (Rights Owner / Production Company auto-fill).
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await (supabase as any)
+          .from("entity_profiles")
+          .select("legal_name, display_name")
+          .eq("user_id", user.id)
+          .eq("kind", "creator")
+          .maybeSingle();
+        if (cancelled || !data) return;
+        setProfileDefaults({
+          rights_owner: (data.legal_name as string) || (data.display_name as string) || "",
+          production_company: (data.display_name as string) || (data.legal_name as string) || "",
+        });
+      } catch { /* non-fatal */ }
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
+  // Auto-fill empty rights_owner / production_company once metadata + defaults are ready.
+  useEffect(() => {
+    if (!meta || !loadedRef.current) return;
+    if (!profileDefaults.rights_owner && !profileDefaults.production_company) return;
+    const patch: Partial<TitleMetadata> = {};
+    if (!meta.rights_owner?.trim() && profileDefaults.rights_owner) patch.rights_owner = profileDefaults.rights_owner;
+    if (!meta.production_company?.trim() && profileDefaults.production_company) patch.production_company = profileDefaults.production_company;
+    if (Object.keys(patch).length > 0) setMeta({ ...meta, ...patch });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileDefaults, meta?.rights_owner, meta?.production_company]);
+
+
   const doSave = useCallback(async (silent = false) => {
     if (!title || !meta) return;
     setSaving(true);

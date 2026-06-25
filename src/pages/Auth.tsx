@@ -369,7 +369,16 @@ function GoogleMark() {
 
 function OpenInBrowserNotice({ prominent = false }: { prominent?: boolean }) {
   const [copied, setCopied] = useState(false);
-  const url = typeof window !== "undefined" ? window.location.href : "";
+  // Prefer the preserved original auth callback URL (with hash tokens / query)
+  // stashed by AuthCallback before it bounced here. Fall back to current URL.
+  const url = (() => {
+    if (typeof window === "undefined") return "";
+    try {
+      const stashed = sessionStorage.getItem("sv_pending_auth_url");
+      if (stashed) return stashed;
+    } catch { /* noop */ }
+    return window.location.href;
+  })();
 
   const handleCopy = async () => {
     try {

@@ -91,9 +91,9 @@ export default function MyTitlesSection() {
         <div className="mb-4 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 flex items-start gap-3 text-xs sm:text-sm">
           <Crown className="w-4 h-4 text-amber-300 mt-0.5 shrink-0" />
           <div className="min-w-0 flex-1">
-            <div className="font-medium">Free plan</div>
+            <div className="font-medium">Free plan — 1 title only</div>
             <div className="text-muted-foreground mt-0.5">
-              {tier.draft_count}/1 draft · {tier.lifecycle_count}/1 submission used. Upgrade for more.
+              {tier.draft_count}/1 draft · {tier.lifecycle_count}/1 submission used. Upgrade to 5 TB plan (₹25,000 + 18% GST) for additional submissions.
             </div>
           </div>
           <a
@@ -102,6 +102,15 @@ export default function MyTitlesSection() {
           >
             Open Billing
           </a>
+        </div>
+      )}
+
+      {freeLimitHit && (
+        <div className="mb-4">
+          <UpgradeCreatorPlanCard
+            variant="compact"
+            reason="You have reached the free plan limit of 1 title."
+          />
         </div>
       )}
 

@@ -5,7 +5,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, dashboardForRole, useAuth } from "@/hooks/useAuth";
-import RoleGate from "@/components/RoleGate";
 
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
@@ -19,8 +18,6 @@ import ContentOwnerDashboard from "./pages/dashboards/ContentOwner.tsx";
 import StudioDashboard from "./pages/dashboards/StudioDash.tsx";
 import BuyerDashboard from "./pages/dashboards/Buyer.tsx";
 import AdminErrorBoundary from "./components/admin/AdminErrorBoundary";
-import AdminOperations from "./pages/AdminOperations.tsx";
-import KammattamPopout from "./pages/KammattamPopout.tsx";
 import Terms from "./pages/Terms.tsx";
 import Privacy from "./pages/Privacy.tsx";
 import IPCopyright from "./pages/IPCopyright.tsx";
@@ -43,7 +40,6 @@ import ManualInvoiceReceipt from "./pages/ManualInvoiceReceipt.tsx";
 import ScreeningRoom from "./pages/ScreeningRoom.tsx";
 
 import ReferralCapture from "./components/ReferralCapture.tsx";
-import AdminChief from "./pages/AdminChief.tsx";
 import { RouteAgentDock } from "./components/agents/RouteAgentDock.tsx";
 import WrongPortal from "./components/WrongPortal.tsx";
 import { SystemMessageProvider } from "./components/system/SystemMessageProvider.tsx";
@@ -74,25 +70,18 @@ const AdminRoutes = () => (
     <Route path="/auth/callback" element={<AuthCallback />} />
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/admin" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/super" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/content" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/users" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/storage" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/business" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/support" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/security" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/approvals" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/catalog" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/billing" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/storage" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/comms" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/settings" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/legal" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/qc" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/rights" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/audit" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/team" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/finance" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    {/* Legacy admin paths — Admin.tsx pathToTab maps these to the new buckets */}
+    <Route path="/admin/content" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/support" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/reports" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/kammattam" element={<KammattamPopout />} />
-    <Route path="/admin/operations" element={<AdminErrorBoundary><RoleGate allow={["admin"]}><AdminOperations /></RoleGate></AdminErrorBoundary>} />
-    <Route path="/admin/chief" element={<AdminErrorBoundary><AdminChief /></AdminErrorBoundary>} />
 
     {/* Anything else on the admin host = wrong portal */}
     <Route path="*" element={<WrongPortal expected="public" />} />
@@ -135,25 +124,18 @@ const PublicRoutes = () => (
 
     {/* Admin console is also reachable on the main domain until the admin subdomain DNS is fully configured. */}
     <Route path="/admin" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/super" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/content" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/users" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/storage" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/business" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/support" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/security" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/approvals" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/catalog" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/billing" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/storage" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/comms" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/settings" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/legal" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/qc" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/rights" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/audit" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/team" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/finance" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    {/* Legacy admin paths — Admin.tsx pathToTab maps these to the new buckets */}
+    <Route path="/admin/content" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/support" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/reports" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/kammattam" element={<KammattamPopout />} />
-    <Route path="/admin/operations" element={<AdminErrorBoundary><RoleGate allow={["admin"]}><AdminOperations /></RoleGate></AdminErrorBoundary>} />
-    <Route path="/admin/chief" element={<AdminErrorBoundary><AdminChief /></AdminErrorBoundary>} />
 
 
 

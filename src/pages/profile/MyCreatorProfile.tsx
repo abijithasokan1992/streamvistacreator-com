@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useEntityProfile, type EntityProfile, type CreatorExt } from "@/hooks/useEntityProfile";
 import { FieldGroup } from "@/components/profile/FieldGroup";
 import { SocialLinksGrid } from "@/components/profile/SocialLinksGrid";
-import { AccountSecurityCard } from "@/components/profile/AccountSecurityCard";
+// AccountSecurityCard intentionally removed from Creator profile — magic link auth, no password UI here.
 import { VerificationBadge } from "@/components/profile/VerificationBadge";
 import { ProfileSaveBar } from "@/components/profile/ProfileSaveBar";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
@@ -43,6 +44,7 @@ export default function MyCreatorProfile({ embedded = false }: { embedded?: bool
 
   const [pForm, setPForm] = useState<Partial<EntityProfile>>({});
   const [eForm, setEForm] = useState<Partial<CreatorExt> & { _genres?: string; _languages?: string; _regions?: string }>({});
+  const [billingSameAsAddress, setBillingSameAsAddress] = useState(true);
 
   useEffect(() => { if (profile) setPForm({}); }, [profile?.id]);
   useEffect(() => { if (creatorExt) setEForm({}); }, [creatorExt?.profile_id]);

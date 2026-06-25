@@ -68,6 +68,14 @@ function Section({ kind, title, icon, helper }: { kind: Kind; title: string; ico
   const [reordering, setReordering] = useState(false);
   const dndEnabled = kind === "reel";
 
+  // For hero kind, identify the single banner that the public homepage will render:
+  // first row that is both published AND active, sorted by sort_order ascending.
+  const liveHeroId = kind === "hero"
+    ? [...rows]
+        .filter(r => r.status === "published" && r.is_active && !r.id.startsWith("new-"))
+        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))[0]?.id ?? null
+    : null;
+
   const load = useCallback(async () => {
     setLoading(true);
     const { data, error } = await (supabase as any).from(table).select("*").order("sort_order").order("created_at", { ascending: false });

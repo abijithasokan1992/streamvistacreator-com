@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import {
-  Home, Film, Inbox, Bell, Wallet, LifeBuoy, Lock, Database,
+  Home, Film, Inbox, Bell, Wallet, LifeBuoy, Lock, Database, UserCircle,
 } from "lucide-react";
 import {
   Tooltip,
@@ -12,6 +12,7 @@ import {
 export type SectionId =
   | "home" | "titles" | "submissions" | "updates"
   | "delivery_vault"
+  | "profile"
   | "billing" | "help"
   // legacy aliases kept so old URLs resolve cleanly
   | "insights" | "statements" | "schedule" | "upgrade";
@@ -42,6 +43,7 @@ export const SECTIONS: ReadonlyArray<SectionDef> = [
   { id: "delivery_vault", label: "Vault",        heading: "Vault",        subhead: "Masters, deliveries, archives.", tip: "Secure storage for your master files.", icon: Database, group: "storage" },
 
   // Account
+  { id: "profile",        label: "My Profile",   heading: "My Profile",   subhead: "Identity, contact, tax and billing details.", tip: "Your identity, contact, tax and billing details.", icon: UserCircle, group: "account" },
   { id: "billing",        label: "Billing",      heading: "Billing",      subhead: "Plan, storage, invoices.",       tip: "Your plan, storage and invoices.",       icon: Wallet,  group: "account" },
   { id: "help",           label: "Help",         heading: "Help",         tip: "Contact us or get answers fast.",                         icon: LifeBuoy, group: "account" },
 ];

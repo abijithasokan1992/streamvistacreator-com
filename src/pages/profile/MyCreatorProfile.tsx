@@ -34,7 +34,7 @@ function commaSplit(s: string) {
   return s.split(",").map((x) => x.trim()).filter(Boolean);
 }
 
-export default function MyCreatorProfile() {
+export default function MyCreatorProfile({ embedded = false }: { embedded?: boolean } = {}) {
   const { user, loading: authLoading } = useAuth();
   const {
     profile, creatorExt, socials, loading, saving,
@@ -111,23 +111,12 @@ export default function MyCreatorProfile() {
     );
   }
 
-  return (
-    <main className="min-h-dvh bg-background text-foreground">
-      <header className="border-b border-border/40 sticky top-0 z-30 bg-background/80 backdrop-blur">
-        <div className="max-w-5xl mx-auto px-4 md:px-6 py-3.5 flex items-center justify-between gap-3">
-          <Link to="/dashboard/content" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
-            <ChevronLeft className="w-3.5 h-3.5" /> Back to dashboard
-          </Link>
-          <div className="flex items-center gap-3">
-            <VerificationBadge status={merged.verification_status} />
-            <ThemeToggle />
-          </div>
-        </div>
-      </header>
-
+  const body = (
+    <>
       <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 space-y-6 pb-24">
         <section className="flex items-start justify-between gap-4">
           <div>
+
             <h1 className="text-xl md:text-2xl font-semibold tracking-tight inline-flex items-center gap-2">
               <BadgeCheck className="w-5 h-5 text-primary" /> My Creator Profile
             </h1>
@@ -357,8 +346,27 @@ export default function MyCreatorProfile() {
 
         <AccountSecurityCard />
       </div>
-
       <ProfileSaveBar dirty={dirty} saving={saving} onSave={handleSave} onReset={handleReset} />
+    </>
+  );
+
+  if (embedded) return body;
+
+  return (
+    <main className="min-h-dvh bg-background text-foreground">
+      <header className="border-b border-border/40 sticky top-0 z-30 bg-background/80 backdrop-blur">
+        <div className="max-w-5xl mx-auto px-4 md:px-6 py-3.5 flex items-center justify-between gap-3">
+          <Link to="/dashboard/content" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+            <ChevronLeft className="w-3.5 h-3.5" /> Back to dashboard
+          </Link>
+          <div className="flex items-center gap-3">
+            <VerificationBadge status={merged.verification_status} />
+            <ThemeToggle />
+          </div>
+        </div>
+      </header>
+      {body}
     </main>
   );
 }
+

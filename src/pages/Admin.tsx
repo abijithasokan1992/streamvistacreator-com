@@ -295,10 +295,11 @@ export default function Admin() {
           defaultValue={pathToTab(location.pathname, searchParams)}
           className="w-full"
         >
-          <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-1.5 sm:gap-2 h-auto p-1 sm:p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-6 sm:mb-8">
+          <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-10 gap-1.5 sm:gap-2 h-auto p-1 sm:p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-6 sm:mb-8">
             <DeptTab value="overview"  icon={<LayoutDashboard className="w-4 h-4" />} label="Home" />
             <DeptTab value="users"     icon={<UsersIcon className="w-4 h-4" />}       label="Users & Roles" />
             <DeptTab value="approvals" icon={<ClipboardCheck className="w-4 h-4" />}  label="Approvals" />
+            <DeptTab value="homepage"  icon={<ImageIcon className="w-4 h-4" />}       label="Homepage CMS" />
             <DeptTab value="catalog"   icon={<Package className="w-4 h-4" />}         label="Catalog" />
             <DeptTab value="billing"   icon={<Wallet className="w-4 h-4" />}          label="Billing" />
             <DeptTab value="storage"   icon={<HardDrive className="w-4 h-4" />}       label="Storage" />

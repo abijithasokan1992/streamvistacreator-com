@@ -62,6 +62,33 @@ export const TitleMetadataSchema = z.object({
     exclusivity: z.enum(["exclusive", "non_exclusive", "unspecified"]).default("unspecified"),
     notes: z.string().max(2000).default(""),
   }).default({ territories: [], windows: "", exclusivity: "unspecified", notes: "" }),
+  commercial: z.object({
+    engagement_mode: z.enum(["free_listing", "go_free", "upgrade_premium", "unspecified"]).default("free_listing"),
+    exclusivity: z.enum(["exclusive", "non_exclusive", "unspecified"]).default("non_exclusive"),
+    deal_model: z.enum(["revenue_share", "mg", "outright", "open", "unspecified"]).default("revenue_share"),
+    min_deal_value: z.number().min(0).max(1_000_000_000).nullable().default(null),
+    open_to_investors: z.boolean().default(false),
+    rights: z.record(z.string(), z.enum([
+      "none", "available", "sold", "not_available", "discuss", "premium_required",
+    ])).default({
+      digital_ott: "available",
+      satellite: "available",
+      youtube_avod: "available",
+    }),
+    territories: z.record(z.string(), z.enum([
+      "none", "available", "sold", "blocked", "discuss",
+    ])).default({ worldwide: "available" }),
+    notes: z.string().max(2000).default(""),
+  }).default({
+    engagement_mode: "free_listing",
+    exclusivity: "non_exclusive",
+    deal_model: "revenue_share",
+    min_deal_value: null,
+    open_to_investors: false,
+    rights: { digital_ott: "available", satellite: "available", youtube_avod: "available" },
+    territories: { worldwide: "available" },
+    notes: "",
+  }),
   tags: z.array(z.string().trim().max(60)).default([]),
   notes: z.string().max(5000).default(""),
 });

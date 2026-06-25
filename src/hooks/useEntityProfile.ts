@@ -66,6 +66,20 @@ export type CreatorExt = {
   imdb_url: string | null;
 };
 
+export type StudioExt = {
+  profile_id: string;
+  about: string | null;
+  services: string[];
+  facility_capabilities: string[];
+  languages_served: string[];
+  regions_served: string[];
+  primary_contact_name: string | null;
+  primary_contact_designation: string | null;
+  primary_contact_email: string | null;
+  primary_contact_phone: string | null;
+  year_founded: number | null;
+};
+
 export type SocialLink = {
   id: string;
   profile_id: string;
@@ -81,26 +95,53 @@ export function useEntityProfile({ kind, userId, orgId }: Args) {
   const { user, role } = useAuth();
   const [profile, setProfile] = useState<EntityProfile | null>(null);
   const [creatorExt, setCreatorExt] = useState<CreatorExt | null>(null);
+  const [studioExt, setStudioExt] = useState<StudioExt | null>(null);
   const [socials, setSocials] = useState<SocialLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [canEdit, setCanEdit] = useState(false);
 
   const effUser = userId ?? (kind === "creator" ? user?.id ?? null : null);
+  const effOrg = orgId ?? null;
   const isAdmin = role === "admin" || role === "super_admin";
   const isOwner =
     (kind === "creator" && !!effUser && effUser === user?.id) || isAdmin;
 
   const load = useCallback(async () => {
     if (!user) return;
+    if (kind !== "creator" && !effOrg) {
+      setProfile(null);
+      setStudioExt(null);
+      setSocials([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
 
     let query = supabase.from("entity_profiles").select("*").eq("kind", kind);
     if (kind === "creator") query = query.eq("user_id", effUser!);
-    else if (orgId) query = query.eq("org_id", orgId);
+    else query = query.eq("org_id", effOrg!);
 
     const { data: existing } = await query.maybeSingle();
 
     let row = existing as EntityProfile | null;
+
+    // Determine edit capability for this org (studio/buyer)
+    let editable = isAdmin;
+    if (kind !== "creator" && effOrg) {
+      const { data: wm } = await supabase
+        .from("workspace_members")
+        .select("role")
+        .eq("workspace_id", effOrg)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      const r = (wm as { role?: string } | null)?.role ?? null;
+      editable = editable || r === "owner" || r === "admin";
+    } else if (kind === "creator") {
+      editable = effUser === user.id || isAdmin;
+    }
+    setCanEdit(editable);
+
     if (!row && kind === "creator" && effUser === user.id) {
       const { data: created, error } = await supabase
         .from("entity_profiles")
@@ -109,6 +150,23 @@ export function useEntityProfile({ kind, userId, orgId }: Args) {
           user_id: user.id,
           primary_email: user.email,
           display_name: user.email?.split("@")[0] ?? null,
+        })
+        .select("*")
+        .single();
+      if (!error) row = created as EntityProfile;
+    } else if (!row && kind !== "creator" && effOrg && editable) {
+      // Seed display_name from workspace name when possible
+      const { data: ws } = await supabase
+        .from("workspaces")
+        .select("name")
+        .eq("id", effOrg)
+        .maybeSingle();
+      const { data: created, error } = await supabase
+        .from("entity_profiles")
+        .insert({
+          kind,
+          org_id: effOrg,
+          display_name: (ws as { name?: string } | null)?.name ?? null,
         })
         .select("*")
         .single();
@@ -135,6 +193,24 @@ export function useEntityProfile({ kind, userId, orgId }: Args) {
       }
     }
 
+    if (row && kind === "studio") {
+      const { data: ext } = await supabase
+        .from("entity_profile_studio_ext")
+        .select("*")
+        .eq("profile_id", row.id)
+        .maybeSingle();
+      if (!ext && editable) {
+        const { data: createdExt } = await supabase
+          .from("entity_profile_studio_ext")
+          .insert({ profile_id: row.id })
+          .select("*")
+          .single();
+        setStudioExt(createdExt as StudioExt);
+      } else {
+        setStudioExt((ext ?? null) as StudioExt | null);
+      }
+    }
+
     if (row) {
       const { data: links } = await supabase
         .from("entity_profile_socials")
@@ -145,7 +221,7 @@ export function useEntityProfile({ kind, userId, orgId }: Args) {
     }
 
     setLoading(false);
-  }, [user?.id, kind, effUser, orgId]);
+  }, [user?.id, kind, effUser, effOrg, isAdmin]);
 
   useEffect(() => {
     load();
@@ -179,6 +255,21 @@ export function useEntityProfile({ kind, userId, orgId }: Args) {
     if (error) throw error;
     setCreatorExt(data as CreatorExt);
     return data as CreatorExt;
+  };
+
+  const saveStudioExt = async (patch: Partial<StudioExt>) => {
+    if (!profile || !studioExt) return;
+    setSaving(true);
+    const { data, error } = await supabase
+      .from("entity_profile_studio_ext")
+      .update(patch)
+      .eq("profile_id", profile.id)
+      .select("*")
+      .single();
+    setSaving(false);
+    if (error) throw error;
+    setStudioExt(data as StudioExt);
+    return data as StudioExt;
   };
 
   const upsertSocial = async (link: Partial<SocialLink> & { platform: string; url: string }) => {
@@ -215,14 +306,17 @@ export function useEntityProfile({ kind, userId, orgId }: Args) {
   return {
     profile,
     creatorExt,
+    studioExt,
     socials,
     loading,
     saving,
     isOwner,
     isAdmin,
+    canEdit,
     refresh: load,
     saveProfile,
     saveCreatorExt,
+    saveStudioExt,
     upsertSocial,
     removeSocial,
   };

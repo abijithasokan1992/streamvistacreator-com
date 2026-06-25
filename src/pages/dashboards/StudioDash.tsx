@@ -416,6 +416,14 @@ export default function StudioDashboard() {
 
   return (
     <RoleDashboardShell expectedRole="studio" title="Studio Vault" subtitle={subtitle}>
+      <div className="mb-4 flex justify-end">
+        <Link
+          to="/dashboard/studio/profile"
+          className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 rounded-md border border-border/40 px-3 py-1.5"
+        >
+          <ShieldCheck className="w-3.5 h-3.5" /> My Studio Profile
+        </Link>
+      </div>
       <Tabs value={tab} onValueChange={setTab} className="w-full">
         <TabsList className="grid grid-cols-3 sm:grid-cols-5 w-full max-w-3xl">
           <TabsTrigger value="home"><Sparkles className="w-3.5 h-3.5 mr-1.5" />Home</TabsTrigger>

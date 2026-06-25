@@ -35,6 +35,7 @@ export function TitleEditor({
   onClose: () => void;
   onSubmitted: () => void;
 }) {
+  const { user } = useAuth();
   const [title, setTitle] = useState<TitleRow | null>(null);
   const [assets, setAssets] = useState<TitleAsset[]>([]);
   const [readiness, setReadiness] = useState<ServerReadiness | null>(null);
@@ -46,6 +47,7 @@ export function TitleEditor({
   const [submitting, setSubmitting] = useState(false);
   const [name, setName] = useState("");
   const [meta, setMeta] = useState<TitleMetadata | null>(null);
+  const [profileDefaults, setProfileDefaults] = useState<{ rights_owner: string; production_company: string }>({ rights_owner: "", production_company: "" });
 
   const lockState = useTitleLock(titleId);
   const titleLocked = !!title?.locked || lockState.isLocked;

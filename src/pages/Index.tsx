@@ -18,7 +18,7 @@ const Index = () => {
   if (user) return <Navigate to={dashboardForRole(role)} replace />;
 
   return (
-    <main className="min-h-dvh">
+    <main className="min-h-dvh home-serif">
       <Seo
         title="StreamVista — Secure cinema & content cloud, intake to deal"
         description="One secure cinema and content cloud for creators, studios and licensing teams — ingest, store, prepare, control access and license your titles end-to-end."
@@ -36,6 +36,7 @@ const Index = () => {
       <Hero />
       <RoleSurfaces />
       <Workflow />
+      <SuccessStories />
       <SecuritySection />
       <FinalCta />
       <Footer />

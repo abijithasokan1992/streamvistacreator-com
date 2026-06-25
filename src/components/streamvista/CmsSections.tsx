@@ -31,7 +31,7 @@ export function CmsHeroBanners() {
   return (
     <section className="container py-10">
       <div className="relative overflow-hidden rounded-3xl glass-strong border border-border/40">
-        {b.image_url && <img src={b.image_url} alt={b.headline} className="absolute inset-0 w-full h-full object-cover opacity-40" />}
+        {b.image_url && <img src={b.image_url} alt={b.headline} className="absolute inset-0 w-full h-full object-cover opacity-90" />}
         <div className="relative p-8 md:p-14 max-w-3xl">
           <h2 className="font-display text-3xl md:text-5xl font-bold tracking-tight">{b.headline}</h2>
           {b.subheadline && <p className="mt-3 text-base md:text-lg text-muted-foreground">{b.subheadline}</p>}

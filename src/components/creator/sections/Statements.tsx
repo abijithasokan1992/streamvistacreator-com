@@ -51,6 +51,10 @@ export default function StatementsSection() {
 
   return (
     <div className="space-y-6">
+      <div className="rounded-lg border border-border/40 bg-secondary/5 px-4 py-3 text-[11px] text-muted-foreground">
+        Free Creator plan includes <span className="text-foreground font-medium">5 GB</span> of storage.
+        Paid and managed-service plans unlock premium review handling, dedicated inbox support, and advanced licensing controls.
+      </div>
       <CreatorInvoices />
 
       {/* Storage allocation history — read-only record of past changes */}

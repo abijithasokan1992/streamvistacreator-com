@@ -52,6 +52,10 @@ export default function HelpSection() {
 
   return (
     <div className="space-y-5">
+      <div className="rounded-lg border border-border/40 bg-secondary/5 px-4 py-3 text-[11px] text-muted-foreground">
+        Free creators can submit tickets and we'll do our best to respond. Paid / managed plans receive priority handling
+        and faster turnaround — free-tier requests follow standard response times.
+      </div>
       <div className="grid sm:grid-cols-2 gap-3">
         <div className="rounded-xl border border-border/40 bg-secondary/5 p-5">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">

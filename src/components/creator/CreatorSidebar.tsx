@@ -40,7 +40,7 @@ export const SECTIONS: ReadonlyArray<SectionDef> = [
   { id: "updates",        label: "Inbox",        heading: "Inbox",        tip: "Messages and notes from our team.",                     icon: Bell,    group: "main" },
 
   // Storage
-  { id: "delivery_vault", label: "Vault",        heading: "Vault",        subhead: "Masters, deliveries, archives.", tip: "Secure storage for your master files.", icon: Database, group: "storage" },
+  { id: "delivery_vault", label: "My Library",   heading: "My Library",   subhead: "Masters, deliveries, archives.", tip: "Secure storage for your master files.", icon: Database, group: "storage" },
 
   // Account
   { id: "profile",        label: "My Profile",   heading: "My Profile",   subhead: "Identity, contact, tax and billing details.", tip: "Your identity, contact, tax and billing details.", icon: UserCircle, group: "account" },
@@ -94,7 +94,7 @@ export function CreatorSidebar({
                           className={cn(
                             "w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors text-left",
                             isActive
-                              ? "bg-accent/15 text-foreground"
+                              ? "bg-accent/[0.07] text-foreground ring-1 ring-inset ring-accent/20"
                               : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground",
                           )}
                         >

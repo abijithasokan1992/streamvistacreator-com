@@ -26,9 +26,8 @@ import {
 } from "@/lib/identityValidators";
 
 function FieldError({ result }: { result: ValidationResult }) {
-  if (result.ok) return null;
-  const msg = result.message;
-  return <p className="text-[11px] text-destructive mt-1">{msg}</p>;
+  if (result.ok === true) return null;
+  return <p className="text-[11px] text-destructive mt-1">{result.message}</p>;
 }
 
 const ENTITY_TYPES = [

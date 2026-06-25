@@ -18,7 +18,7 @@ const STEPS: Step[] = [
   { id: "updates",        title: "Inbox",        body: "Messages and review notes from our team land here." },
   { id: "delivery_vault", title: "Vault",        body: "Secure storage for your master files and final deliveries." },
   { id: "billing",        title: "Billing",      body: "Your plan, storage usage and invoices." },
-  { id: "schedule",       title: "Calendar",     body: "Review dates and delivery deadlines (Pro)." },
+  { id: "help",           title: "Help",         body: "Find guides or contact us when you're stuck." },
 ];
 
 export function hasSeenCreatorTour(): boolean {

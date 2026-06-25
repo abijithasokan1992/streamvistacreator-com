@@ -15,6 +15,7 @@ import {
   Section,
   Text,
 } from 'npm:@react-email/components@0.0.22'
+import { BrandLogos } from './brand-logos.tsx'
 
 interface EmailChangeEmailProps {
   siteName: string
@@ -58,6 +59,7 @@ export const EmailChangeEmail = ({
         <Text style={footer}>
           Didn't request this? Please secure your account immediately by signing in and changing your password.
         </Text>
+              <BrandLogos />
       </Container>
     </Body>
   </Html>

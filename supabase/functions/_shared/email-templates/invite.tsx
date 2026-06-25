@@ -15,6 +15,7 @@ import {
   Section,
   Text,
 } from 'npm:@react-email/components@0.0.22'
+import { BrandLogos } from './brand-logos.tsx'
 
 interface InviteEmailProps {
   siteName: string
@@ -50,6 +51,7 @@ export const InviteEmail = ({ siteUrl, confirmationUrl }: InviteEmailProps) => (
         <Text style={footer}>
           Not expecting an invite? You can safely ignore this email.
         </Text>
+              <BrandLogos />
       </Container>
     </Body>
   </Html>

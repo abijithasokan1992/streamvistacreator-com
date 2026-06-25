@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import {
-  Home, Film, Inbox, Bell, Wallet, LifeBuoy, Lock, Database,
+  Home, Film, Inbox, Bell, Wallet, LifeBuoy, Lock, Database, UserCircle,
 } from "lucide-react";
 import {
   Tooltip,

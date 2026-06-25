@@ -2374,6 +2374,59 @@ export type Database = {
         }
         Relationships: []
       }
+      entity_profile_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_role: string | null
+          changed_fields: string[]
+          created_at: string
+          id: string
+          kind: string
+          new_values: Json
+          old_values: Json
+          org_id: string | null
+          profile_id: string
+          source_table: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_role?: string | null
+          changed_fields?: string[]
+          created_at?: string
+          id?: string
+          kind: string
+          new_values?: Json
+          old_values?: Json
+          org_id?: string | null
+          profile_id: string
+          source_table: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_role?: string | null
+          changed_fields?: string[]
+          created_at?: string
+          id?: string
+          kind?: string
+          new_values?: Json
+          old_values?: Json
+          org_id?: string | null
+          profile_id?: string
+          source_table?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entity_profile_audit_log_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "entity_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       entity_profile_buyer_ext: {
         Row: {
           acquisitions_contact_designation: string | null

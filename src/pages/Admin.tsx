@@ -327,6 +327,11 @@ export default function Admin() {
             <TitleEditRequestsInbox />
           </TabsContent>
 
+          <TabsContent value="homepage" className="space-y-8 mt-0 animate-fade-in">
+            <DeptHeader icon={<ImageIcon className="w-5 h-5" />} title="Homepage CMS" desc="Hero banners, Successfully Licensed Contents carousel, cinematic reel, ad zones and news shown on the public homepage." />
+            <MarketingCMS />
+          </TabsContent>
+
           <TabsContent value="catalog" className="space-y-8 mt-0 animate-fade-in">
             <DeptHeader icon={<Package className="w-5 h-5" />} title="Catalog" desc="Plans, pricing, free-tier limits and shared marketing assets." />
             <ProductsAndPlans />

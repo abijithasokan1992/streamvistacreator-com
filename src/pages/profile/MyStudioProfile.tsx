@@ -366,7 +366,10 @@ export default function MyStudioProfile() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Postal code</Label>
-                <Input disabled={!canEdit} value={merged.postal_code ?? ""} onChange={(e) => setP("postal_code", e.target.value)} />
+                <Input disabled={!canEdit} inputMode="numeric" maxLength={6}
+                  value={merged.postal_code ?? ""}
+                  onChange={(e) => setP("postal_code", formatDigits(e.target.value, 6))} />
+                <FieldError result={errors.pincode} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Country</Label>

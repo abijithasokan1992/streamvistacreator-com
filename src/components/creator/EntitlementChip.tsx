@@ -11,7 +11,7 @@ type Entitlement = {
   pct: number;
 };
 
-const FREE_TIER_GB = 50;
+const FREE_TIER_GB = 5;
 
 /**
  * Reads canonical entitlement (plan_assignments + storage_allocations + invoices/topups).

@@ -11,11 +11,17 @@ export const FestivalSchema = z.object({
   name: z.string().trim().min(1).max(200),
   year: z.number().int().min(1900).max(2100).optional().nullable(),
   award: z.string().trim().max(200).optional().default(""),
+  selection_type: z.string().trim().max(80).optional().default(""),
+  location: z.string().trim().max(160).optional().default(""),
+  url: z.string().trim().max(500).optional().default(""),
 });
 
 export const AwardSchema = z.object({
   name: z.string().trim().min(1).max(200),
   year: z.number().int().min(1900).max(2100).optional().nullable(),
+  category: z.string().trim().max(200).optional().default(""),
+  result: z.string().trim().max(80).optional().default(""),
+  notes: z.string().trim().max(500).optional().default(""),
 });
 
 export const TitleMetadataSchema = z.object({

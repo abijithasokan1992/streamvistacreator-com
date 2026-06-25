@@ -15,8 +15,8 @@ const ACCEPT_MAP: Record<string, { exts: string[]; mimes: string[]; maxBytes: nu
   trailer:             { exts: ["mp4","mov"],                   mimes: ["video/mp4","video/quicktime"],                            maxBytes: 5 * GB,   label: "Trailer" },
   feature_film:        { exts: ["mp4","mov","mxf","mov"],       mimes: ["video/mp4","video/quicktime","application/mxf","video/x-prores"], maxBytes: 50 * GB,  label: "Feature Film" },
   poster:              { exts: ["png","jpg","jpeg","webp"],     mimes: ["image/png","image/jpeg","image/webp"],                    maxBytes: 500 * MB, label: "Poster" },
-  censor_certificate:  { exts: ["pdf"],                         mimes: ["application/pdf"],                                        maxBytes: 200 * MB, label: "Censor Certificate" },
-  ownership_documents: { exts: ["pdf"],                         mimes: ["application/pdf"],                                        maxBytes: 500 * MB, label: "Ownership Documents" },
+  censor_certificate:  { exts: ["pdf"],                         mimes: ["application/pdf"],                                        maxBytes: 10 * MB,  label: "Censor Certificate" },
+  ownership_documents: { exts: ["pdf"],                         mimes: ["application/pdf"],                                        maxBytes: 20 * MB,  label: "Ownership Documents" },
 };
 const FORBIDDEN_EXTS = new Set(["exe","bat","dll","sh","cmd","js","msi","jar","vbs"]);
 

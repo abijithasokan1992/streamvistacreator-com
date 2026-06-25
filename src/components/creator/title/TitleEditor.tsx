@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { X, Loader2, Send, Lock, ShieldCheck, Clock, CheckCircle2, Circle, ArrowRight, Check, Unlock } from "lucide-react";
+import { X, Loader2, Send, Lock, ShieldCheck, Clock, Check, Unlock, Plus, Trash2, CheckCircle2, Circle as CircleIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import {
   getTitle, listAssets, saveTitleMetadata, submitTitle,
   evaluateChecklist, fetchReadiness, fetchTitleTimeline, fetchFreeTierStatus,
@@ -33,6 +35,7 @@ export function TitleEditor({
   onClose: () => void;
   onSubmitted: () => void;
 }) {
+  const { user } = useAuth();
   const [title, setTitle] = useState<TitleRow | null>(null);
   const [assets, setAssets] = useState<TitleAsset[]>([]);
   const [readiness, setReadiness] = useState<ServerReadiness | null>(null);
@@ -44,6 +47,7 @@ export function TitleEditor({
   const [submitting, setSubmitting] = useState(false);
   const [name, setName] = useState("");
   const [meta, setMeta] = useState<TitleMetadata | null>(null);
+  const [profileDefaults, setProfileDefaults] = useState<{ rights_owner: string; production_company: string }>({ rights_owner: "", production_company: "" });
 
   const lockState = useTitleLock(titleId);
   const titleLocked = !!title?.locked || lockState.isLocked;
@@ -88,6 +92,40 @@ export function TitleEditor({
   }, [titleId]);
 
   useEffect(() => { reload(); }, [reload]);
+
+  // Best-effort fetch creator profile defaults (Rights Owner / Production Company auto-fill).
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await (supabase as any)
+          .from("entity_profiles")
+          .select("legal_name, display_name")
+          .eq("user_id", user.id)
+          .eq("kind", "creator")
+          .maybeSingle();
+        if (cancelled || !data) return;
+        setProfileDefaults({
+          rights_owner: (data.legal_name as string) || (data.display_name as string) || "",
+          production_company: (data.display_name as string) || (data.legal_name as string) || "",
+        });
+      } catch { /* non-fatal */ }
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
+  // Auto-fill empty rights_owner / production_company once metadata + defaults are ready.
+  useEffect(() => {
+    if (!meta || !loadedRef.current) return;
+    if (!profileDefaults.rights_owner && !profileDefaults.production_company) return;
+    const patch: Partial<TitleMetadata> = {};
+    if (!meta.rights_owner?.trim() && profileDefaults.rights_owner) patch.rights_owner = profileDefaults.rights_owner;
+    if (!meta.production_company?.trim() && profileDefaults.production_company) patch.production_company = profileDefaults.production_company;
+    if (Object.keys(patch).length > 0) setMeta({ ...meta, ...patch });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileDefaults, meta?.rights_owner, meta?.production_company]);
+
 
   const doSave = useCallback(async (silent = false) => {
     if (!title || !meta) return;
@@ -328,7 +366,7 @@ export function TitleEditor({
                 </div>
               )}
               {tab === "submission" && (
-                <OverviewTab title={title} readiness={readiness} local={localChecklist!} assets={assets} meta={meta} timeline={timeline} />
+                <SubmissionTab title={title} readiness={readiness} local={localChecklist!} assets={assets} meta={meta} onJumpTab={setTab} />
               )}
             </>
 
@@ -341,69 +379,8 @@ export function TitleEditor({
 
 /* ---------------- Sub-tabs ---------------- */
 
-const JOURNEY_STAGES: { key: ContentStatus; label: string }[] = [
-  { key: "draft", label: "Created" },
-  { key: "submitted", label: "Submitted" },
-  { key: "in_review", label: "In Review" },
-  { key: "qc_review", label: "QC Review" },
-  { key: "legal_review", label: "Legal Review" },
-  { key: "approved", label: "Approved" },
-  { key: "ready_for_distribution", label: "Ready For Distribution" },
-];
-
-const NEXT_STEP: Record<string, { next: string; eta: string }> = {
-  draft:                  { next: "Complete metadata and upload assets, then Submit.", eta: "Self-paced" },
-  incomplete:             { next: "Complete missing requirements and Submit.", eta: "Self-paced" },
-  submitted:              { next: "Review team assignment.", eta: "1–3 business days" },
-  in_review:              { next: "Quality Control review.", eta: "1–2 business days" },
-  qc_review:              { next: "Legal review.", eta: "1–2 business days" },
-  legal_review:           { next: "Final approval decision.", eta: "1–2 business days" },
-  approved:               { next: "Marked Ready for Distribution.", eta: "Within 1 business day" },
-  ready_for_distribution: { next: "Distribution & publishing.", eta: "Scheduled by ops" },
-  changes_requested:      { next: "Apply changes and re-submit.", eta: "Self-paced" },
-  hold:                   { next: "Awaiting review team follow-up.", eta: "Variable" },
-  rejected:               { next: "See review note for details.", eta: "—" },
-  published:              { next: "Archived (legacy state).", eta: "—" },
-  archived:               { next: "Archived.", eta: "—" },
-};
-
-function FilmJourney({ status, timeline }: { status: ContentStatus; timeline: TitleTimelineEntry[] }) {
-  const visitedSet = new Set<string>(["draft", ...timeline.map(t => t.to_status)]);
-  const stages = JOURNEY_STAGES;
-  const currentIdx = (() => {
-    const i = stages.findIndex(s => s.key === status);
-    return i === -1 ? 0 : i;
-  })();
-  return (
-    <div className="rounded-lg border border-border/40 p-4 bg-card/30">
-      <div className="text-xs font-semibold mb-3 text-foreground/90">Review Pipeline</div>
-      <ol className="flex flex-wrap items-center gap-2">
-        {stages.map((s, i) => {
-          const done = visitedSet.has(s.key) || i < currentIdx;
-          const current = s.key === status;
-          return (
-            <li key={s.key} className="flex items-center gap-2">
-              <span className={cn(
-                "inline-flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-md border",
-                current ? "bg-accent/15 border-accent/40 text-accent-foreground font-medium"
-                : done ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
-                       : "bg-secondary/20 border-border/40 text-muted-foreground"
-              )}>
-                {done ? <CheckCircle2 className="w-3 h-3" /> : <Circle className="w-3 h-3" />}
-                {s.label}
-              </span>
-              {i < stages.length - 1 && <ArrowRight className="w-3 h-3 text-muted-foreground" />}
-            </li>
-          );
-        })}
-      </ol>
-    </div>
-  );
-}
-
 /**
  * OverviewSnapshot — light, read-only summary surface for the Overview tab.
- * Detailed status / readiness lives in the Submission tab.
  */
 function OverviewSnapshot({
   title, meta, assets, timeline,
@@ -418,7 +395,7 @@ function OverviewSnapshot({
         <dl className="grid sm:grid-cols-2 gap-3 text-xs">
           <div><dt className="text-muted-foreground">Title</dt><dd className="truncate">{title.title}</dd></div>
           <div><dt className="text-muted-foreground">Format</dt><dd>{title.metadata.format}</dd></div>
-          <div><dt className="text-muted-foreground">Runtime</dt><dd>{meta?.runtime_minutes || 0} min</dd></div>
+          <div><dt className="text-muted-foreground">Runtime</dt><dd>{formatRuntime(meta?.runtime_minutes ?? 0)}</dd></div>
           <div><dt className="text-muted-foreground">Genres</dt><dd className="truncate">{meta?.genres.join(", ") || "—"}</dd></div>
           <div><dt className="text-muted-foreground">Production company</dt><dd className="truncate">{meta?.production_company || "—"}</dd></div>
           <div><dt className="text-muted-foreground">Current status</dt><dd><StatusBadge status={title.status} /></dd></div>
@@ -433,71 +410,27 @@ function OverviewSnapshot({
         )}
       </section>
       <p className="text-[11px] text-muted-foreground">
-        Detailed readiness, checklist and review history live in the <span className="text-foreground">Submission</span> tab.
+        Submission readiness, missing items and the final review summary live in the <span className="text-foreground">Submission</span> tab.
       </p>
     </div>
   );
 }
 
-
-function readinessScore(local: ReturnType<typeof evaluateChecklist>, readiness: ServerReadiness | null) {
-  const has = readiness?.has ?? {};
-  const items = [
-    !!local.hasTitle,
-    !!local.hasSynopsis,
-    !!(has.feature_film ?? local.hasFilm),
-    !!(has.trailer ?? local.hasTrailer),
-    !!(has.poster ?? local.hasPoster),
-    !!(has.censor_certificate ?? local.hasCensor),
-    !!(has.ownership_documents ?? local.hasOwnership),
-  ];
-  const done = items.filter(Boolean).length;
-  return Math.round((done / items.length) * 100);
-}
-
-function metadataQuality(meta: TitleMetadata | null) {
-  if (!meta) return 0;
-  const checks = [
-    !!meta.synopsis?.trim(),
-    (meta.genres?.length ?? 0) > 0,
-    !!meta.original_language?.trim(),
-    !!meta.country_of_origin?.trim(),
-    (meta.runtime_minutes ?? 0) > 0,
-    !!meta.rights_owner?.trim(),
-    !!meta.production_company?.trim(),
-    (meta.cast?.length ?? 0) > 0,
-    (meta.crew?.length ?? 0) > 0,
-    !!meta.production_year,
-  ];
-  return Math.round((checks.filter(Boolean).length / checks.length) * 100);
-}
-
-function ScoreCard({ label, value, hint }: { label: string; value: number; hint?: string }) {
-  const tone = value >= 90 ? "text-emerald-300" : value >= 60 ? "text-sky-300" : "text-amber-300";
-  return (
-    <div className="rounded-lg border border-border/40 p-3 bg-card/30">
-      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className={cn("text-2xl font-semibold mt-1", tone)}>{value}%</div>
-      {hint && <div className="text-[11px] text-muted-foreground mt-0.5">{hint}</div>}
-      <div className="mt-2 h-1.5 rounded-full bg-secondary/40 overflow-hidden">
-        <div className={cn(
-          "h-full transition-all",
-          value >= 90 ? "bg-emerald-400" : value >= 60 ? "bg-sky-400" : "bg-amber-400"
-        )} style={{ width: `${value}%` }} />
-      </div>
-    </div>
-  );
-}
-
-function OverviewTab({
-  title, readiness, local, assets, meta, timeline,
+/**
+ * SubmissionTab — creator-facing only.
+ * Three blocks: Readiness · Missing checklist · Final review summary.
+ * Internal QC / verification matrix and review pipeline stage tracker live
+ * elsewhere (admin) and are intentionally hidden from the creator.
+ */
+function SubmissionTab({
+  title, readiness, local, assets, meta, onJumpTab,
 }: {
   title: TitleRow;
   readiness: ServerReadiness | null;
   local: ReturnType<typeof evaluateChecklist>;
   assets: TitleAsset[];
   meta: TitleMetadata | null;
-  timeline: TitleTimelineEntry[];
+  onJumpTab: (t: TabId) => void;
 }) {
   const has = readiness?.has ?? {
     feature_film: local.hasFilm,
@@ -506,120 +439,107 @@ function OverviewTab({
     censor_certificate: local.hasCensor,
     ownership_documents: local.hasOwnership,
   };
-  const verified = (cat: string) =>
-    assets.some((a) => a.category === cat && a.is_primary && a.upload?.status === "verified");
 
-  const rows: { key: string; label: string }[] = [
-    { key: "title", label: "Title name" },
-    { key: "synopsis", label: "Synopsis" },
-    { key: "feature_film", label: "Master File" },
-    { key: "trailer", label: "Trailer" },
-    { key: "poster", label: "Poster" },
-    { key: "censor_certificate", label: "Censor Certificate" },
-    { key: "ownership_documents", label: "Ownership Documents" },
+  // Creator-facing readiness — completeness, not verification.
+  const items: { key: string; label: string; ok: boolean; goto: TabId }[] = [
+    { key: "title", label: "Add a title name",                 ok: !!local.hasTitle,                              goto: "metadata" },
+    { key: "synopsis", label: "Add a synopsis",                ok: !!local.hasSynopsis,                           goto: "metadata" },
+    { key: "genres", label: "Pick at least one genre",         ok: (meta?.genres?.length ?? 0) > 0,               goto: "metadata" },
+    { key: "language", label: "Set the original language",     ok: !!meta?.original_language?.trim(),             goto: "metadata" },
+    { key: "runtime", label: "Set the runtime",                ok: (meta?.runtime_minutes ?? 0) > 0,              goto: "metadata" },
+    { key: "rights_owner", label: "Confirm rights owner",      ok: !!meta?.rights_owner?.trim(),                  goto: "metadata" },
+    { key: "feature_film", label: "Upload the master file",    ok: !!(has.feature_film ?? local.hasFilm),         goto: "assets" },
+    { key: "poster", label: "Upload poster artwork",           ok: !!(has.poster ?? local.hasPoster),             goto: "assets" },
+    { key: "censor_certificate", label: "Upload censor certificate", ok: !!(has.censor_certificate ?? local.hasCensor), goto: "legal" },
+    { key: "ownership_documents", label: "Upload ownership documents", ok: !!(has.ownership_documents ?? local.hasOwnership), goto: "legal" },
   ];
+  const done = items.filter((i) => i.ok).length;
+  const total = items.length;
+  const pct = Math.round((done / total) * 100);
+  const missing = items.filter((i) => !i.ok);
 
-  const state = (r: { key: string; label: string }) => {
-    if (r.key === "title") return { uploaded: local.hasTitle, verified: local.hasTitle };
-    if (r.key === "synopsis") return { uploaded: local.hasSynopsis, verified: local.hasSynopsis };
-    return { uploaded: !!has[r.key], verified: verified(r.key) };
-  };
-
-  const score = readinessScore(local, readiness);
-  const metaScore = metadataQuality(meta);
-  const verifiedCount = ["feature_film","trailer","poster","censor_certificate","ownership_documents"]
-    .filter(verified).length;
-  const deliveryScore = Math.round((verifiedCount / 5) * 100);
-  const rightsScore = Math.round(
-    ([!!meta?.rights_owner?.trim(), !!meta?.production_company?.trim(), has.ownership_documents, has.censor_certificate]
-      .filter(Boolean).length / 4) * 100
-  );
-  const next = NEXT_STEP[title.status] ?? { next: "—", eta: "—" };
+  const posterAsset = assets.find((a) => a.category === "poster" && a.is_primary);
 
   return (
-    <div className="space-y-5">
-      <FilmJourney status={title.status} timeline={timeline} />
-
-      <section>
-        <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-3">
-          <ScoreCard label="Submission Readiness" value={score} hint={score === 100 ? "Ready to submit" : `${local.missing.length} missing`} />
-          <ScoreCard label="Metadata Quality" value={metaScore} />
-          <ScoreCard label="Rights Information" value={rightsScore} />
-          <ScoreCard label="Delivery Readiness" value={deliveryScore} hint={`${verifiedCount}/5 verified`} />
+    <div className="space-y-6">
+      {/* A. Submission Readiness */}
+      <section className="rounded-lg border border-border/40 p-4 bg-card/30">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-xs font-semibold">Submission readiness</div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">
+              {pct === 100 ? "Everything is in place. You can submit to Admin." : `${missing.length} item${missing.length === 1 ? "" : "s"} left.`}
+            </div>
+          </div>
+          <div className={cn("text-2xl font-semibold tabular-nums", pct === 100 ? "text-emerald-300" : pct >= 60 ? "text-sky-300" : "text-amber-300")}>
+            {pct}%
+          </div>
+        </div>
+        <div className="mt-3 h-2 rounded-full bg-secondary/40 overflow-hidden">
+          <div
+            className={cn(
+              "h-full transition-all",
+              pct === 100 ? "bg-emerald-400" : pct >= 60 ? "bg-sky-400" : "bg-amber-400",
+            )}
+            style={{ width: `${pct}%` }}
+          />
         </div>
       </section>
 
-      <section className="rounded-lg border border-sky-500/20 bg-sky-500/5 p-4">
-        <div className="text-[10px] uppercase tracking-wider text-sky-300 font-semibold">Submission Flow</div>
-        <div className="mt-2 grid sm:grid-cols-3 gap-3 text-xs">
-          <div>
-            <div className="text-muted-foreground">Current Status</div>
-            <div className="mt-1"><StatusBadge status={title.status} /></div>
-          </div>
-          <div>
-            <div className="text-muted-foreground">Next Step</div>
-            <div className="mt-1 text-foreground/90">{next.next}</div>
-          </div>
-          <div>
-            <div className="text-muted-foreground">Expected Time</div>
-            <div className="mt-1 text-foreground/90">{next.eta}</div>
-          </div>
-        </div>
+      {/* B. Missing items checklist */}
+      <section>
+        <h3 className="text-sm font-semibold">What's left</h3>
+        <ul className="mt-3 space-y-1.5">
+          {items.map((i) => (
+            <li key={i.key} className="text-xs flex items-center gap-2 rounded-md border border-border/40 px-3 py-2">
+              {i.ok ? (
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              ) : (
+                <CircleIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              )}
+              <span className={cn("flex-1", i.ok && "text-muted-foreground line-through")}>{i.label}</span>
+              {!i.ok && (
+                <button
+                  type="button"
+                  onClick={() => onJumpTab(i.goto)}
+                  className="text-[11px] text-accent-foreground bg-accent/15 hover:bg-accent/25 rounded px-2 py-0.5"
+                >
+                  Open
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
       </section>
 
-      <section>
-        <h3 className="text-sm font-semibold">Submission readiness</h3>
-        <p className="text-[11px] text-muted-foreground mt-1">
-          Live checklist from <code className="text-[10px]">title_submission_readiness()</code>.
+      {/* C. Final review summary */}
+      <section className="rounded-lg border border-border/40 p-4 bg-card/30">
+        <div className="text-xs font-semibold mb-3">Final review</div>
+        <div className="grid sm:grid-cols-[120px_1fr] gap-4 items-start">
+          <div className="rounded-md border border-border/40 bg-secondary/10 aspect-[2/3] grid place-items-center text-[10px] text-muted-foreground overflow-hidden">
+            {posterAsset?.upload?.file_name ? (
+              <div className="p-2 text-center">
+                <div className="font-medium text-foreground truncate">{posterAsset.upload.file_name}</div>
+                <div className="mt-1">Poster attached</div>
+              </div>
+            ) : (
+              <span>No poster yet</span>
+            )}
+          </div>
+          <dl className="text-xs grid sm:grid-cols-2 gap-y-2 gap-x-4">
+            <div><dt className="text-muted-foreground">Title</dt><dd className="truncate">{title.title || "—"}</dd></div>
+            <div><dt className="text-muted-foreground">Format</dt><dd>{title.metadata.format}</dd></div>
+            <div><dt className="text-muted-foreground">Runtime</dt><dd>{formatRuntime(meta?.runtime_minutes ?? 0)}</dd></div>
+            <div><dt className="text-muted-foreground">Genres</dt><dd className="truncate">{meta?.genres?.join(", ") || "—"}</dd></div>
+            <div><dt className="text-muted-foreground">Production company</dt><dd className="truncate">{meta?.production_company || "—"}</dd></div>
+            <div><dt className="text-muted-foreground">Rights owner</dt><dd className="truncate">{meta?.rights_owner || "—"}</dd></div>
+            <div><dt className="text-muted-foreground">Files attached</dt><dd>{assets.length}</dd></div>
+            <div><dt className="text-muted-foreground">Current status</dt><dd><StatusBadge status={title.status} /></dd></div>
+          </dl>
+        </div>
+        <p className="text-[11px] text-muted-foreground mt-3">
+          Use the <span className="text-foreground">Submit to Admin</span> button at the top right when you're ready.
         </p>
-        <div className="mt-3 rounded-lg border border-border/40 overflow-hidden">
-          <table className="w-full text-xs">
-            <thead className="bg-secondary/10 text-muted-foreground">
-              <tr>
-                <th className="text-left font-normal px-3 py-2">Requirement</th>
-                <th className="text-left font-normal px-3 py-2">Uploaded</th>
-                <th className="text-left font-normal px-3 py-2">Verified</th>
-                <th className="text-left font-normal px-3 py-2">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => {
-                const s = state(r);
-                return (
-                  <tr key={r.key} className="border-t border-border/30">
-                    <td className="px-3 py-2">{r.label}</td>
-                    <td className="px-3 py-2">{s.uploaded ? "✓" : "—"}</td>
-                    <td className="px-3 py-2">{s.verified ? "✓" : "—"}</td>
-                    <td className="px-3 py-2">
-                      {title.locked ? (
-                        <span className="inline-flex items-center gap-1 text-amber-300">
-                          <Lock className="w-3 h-3" /> Locked
-                        </span>
-                      ) : s.verified ? (
-                        <span className="text-emerald-300">Ready</span>
-                      ) : s.uploaded ? (
-                        <span className="text-sky-300">Pending verification</span>
-                      ) : (
-                        <span className="text-muted-foreground">Missing</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section>
-        <h3 className="text-sm font-semibold">Snapshot</h3>
-        <dl className="grid sm:grid-cols-2 gap-3 mt-2 text-xs">
-          <div><dt className="text-muted-foreground">Format</dt><dd>{title.metadata.format}</dd></div>
-          <div><dt className="text-muted-foreground">Runtime</dt><dd>{title.metadata.runtime_minutes || 0} min</dd></div>
-          <div><dt className="text-muted-foreground">Genres</dt><dd>{title.metadata.genres.join(", ") || "—"}</dd></div>
-          <div><dt className="text-muted-foreground">Production company</dt><dd>{title.metadata.production_company || "—"}</dd></div>
-          <div><dt className="text-muted-foreground">Total files</dt><dd>{assets.length}</dd></div>
-        </dl>
       </section>
     </div>
   );
@@ -653,28 +573,177 @@ function AssetTab({
 
 /* ----- Metadata tab ----- */
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+const LANGUAGE_OPTIONS = [
+  "English", "Hindi", "Malayalam", "Tamil", "Telugu", "Kannada", "Marathi", "Bengali",
+  "Punjabi", "Gujarati", "Urdu", "Spanish", "French", "German", "Italian", "Portuguese",
+  "Japanese", "Korean", "Mandarin", "Arabic", "Russian", "Other",
+];
+const COUNTRY_OPTIONS = [
+  "India", "United States", "United Kingdom", "Canada", "Australia", "France", "Germany",
+  "Spain", "Italy", "Japan", "South Korea", "China", "Brazil", "Mexico", "UAE", "Singapore", "Other",
+];
+const GENRE_OPTIONS = [
+  "Action", "Adventure", "Animation", "Biography", "Comedy", "Crime", "Documentary", "Drama",
+  "Family", "Fantasy", "History", "Horror", "Music", "Musical", "Mystery", "Romance",
+  "Sci-Fi", "Sport", "Thriller", "War", "Western",
+];
+const SYNOPSIS_WORD_LIMIT = 250;
+
+function formatRuntime(totalMin: number): string {
+  const safe = Math.max(0, Math.floor(totalMin || 0));
+  if (safe === 0) return "—";
+  const h = Math.floor(safe / 60);
+  const m = safe % 60;
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+function splitRuntime(totalMin: number): { hh: number; mm: number } {
+  const safe = Math.max(0, Math.floor(totalMin || 0));
+  return { hh: Math.floor(safe / 60), mm: safe % 60 };
+}
+
+function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
   return (
     <label className="block">
       <span className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</span>
       <div className="mt-1">{children}</div>
+      {hint && <span className="text-[10px] text-muted-foreground/80 mt-1 block">{hint}</span>}
     </label>
   );
 }
 function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} className="w-full bg-background border border-border/40 rounded-md px-3 py-1.5 text-sm disabled:opacity-60" />;
+  return <input {...props} className={cn("w-full bg-background border border-border/40 rounded-md px-3 py-1.5 text-sm disabled:opacity-60", props.className)} />;
 }
 function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return <textarea {...props} className="w-full bg-background border border-border/40 rounded-md px-3 py-2 text-sm disabled:opacity-60" />;
 }
-function CSVInput({ value, onChange, disabled, placeholder }: { value: string[]; onChange: (v: string[]) => void; disabled?: boolean; placeholder?: string }) {
+function SelectInput({ value, onChange, disabled, options, placeholder }: {
+  value: string; onChange: (v: string) => void; disabled?: boolean;
+  options: string[]; placeholder?: string;
+}) {
   return (
-    <TextInput
-      value={value.join(", ")}
-      placeholder={placeholder ?? "Comma separated"}
+    <select
+      value={value}
       disabled={disabled}
-      onChange={(e) => onChange(e.target.value.split(",").map((s) => s.trim()).filter(Boolean))}
-    />
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full bg-background border border-border/40 rounded-md px-3 py-1.5 text-sm disabled:opacity-60"
+    >
+      <option value="">{placeholder ?? "Select…"}</option>
+      {options.map((o) => <option key={o} value={o}>{o}</option>)}
+    </select>
+  );
+}
+
+/** Chip / tag input with autocomplete suggestions. */
+function TagInput({
+  value, onChange, disabled, suggestions, placeholder,
+}: {
+  value: string[]; onChange: (v: string[]) => void; disabled?: boolean;
+  suggestions?: string[]; placeholder?: string;
+}) {
+  const [draft, setDraft] = useState("");
+  const add = (raw: string) => {
+    const t = raw.trim();
+    if (!t) return;
+    if (value.includes(t)) { setDraft(""); return; }
+    onChange([...value, t]);
+    setDraft("");
+  };
+  const remove = (t: string) => onChange(value.filter((v) => v !== t));
+  const filtered = (suggestions ?? []).filter(
+    (s) => s.toLowerCase().includes(draft.toLowerCase()) && !value.includes(s),
+  ).slice(0, 8);
+  return (
+    <div className={cn("rounded-md border border-border/40 bg-background px-2 py-1.5 text-sm flex flex-wrap gap-1.5 min-h-[36px]", disabled && "opacity-60")}>
+      {value.map((t) => (
+        <span key={t} className="inline-flex items-center gap-1 bg-accent/15 text-accent-foreground rounded px-1.5 py-0.5 text-xs">
+          {t}
+          {!disabled && (
+            <button type="button" onClick={() => remove(t)} className="hover:text-rose-400" aria-label={`Remove ${t}`}>
+              <X className="w-3 h-3" />
+            </button>
+          )}
+        </span>
+      ))}
+      <div className="relative flex-1 min-w-[120px]">
+        <input
+          value={draft}
+          disabled={disabled}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === ",") { e.preventDefault(); add(draft); }
+            else if (e.key === "Backspace" && !draft && value.length) { remove(value[value.length - 1]); }
+          }}
+          onBlur={() => { if (draft) add(draft); }}
+          placeholder={placeholder ?? "Type and press Enter"}
+          className="w-full bg-transparent outline-none text-sm py-0.5"
+        />
+        {!disabled && draft && filtered.length > 0 && (
+          <div className="absolute z-20 mt-1 left-0 right-0 max-h-40 overflow-y-auto rounded-md border border-border/60 bg-popover shadow-md text-xs">
+            {filtered.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onMouseDown={(e) => { e.preventDefault(); add(s); }}
+                className="w-full text-left px-2 py-1 hover:bg-accent/15"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RuntimeInput({ value, onChange, disabled }: {
+  value: number; onChange: (totalMinutes: number) => void; disabled?: boolean;
+}) {
+  const { hh, mm } = splitRuntime(value);
+  const upd = (nh: number, nm: number) => onChange(Math.max(0, nh) * 60 + Math.min(59, Math.max(0, nm)));
+  return (
+    <div className="flex items-center gap-1.5">
+      <TextInput type="number" min={0} max={48} value={hh} disabled={disabled}
+        onChange={(e) => upd(Number(e.target.value || 0), mm)} className="w-16" />
+      <span className="text-xs text-muted-foreground">h</span>
+      <TextInput type="number" min={0} max={59} value={mm} disabled={disabled}
+        onChange={(e) => upd(hh, Number(e.target.value || 0))} className="w-16" />
+      <span className="text-xs text-muted-foreground">m</span>
+      <span className="text-[11px] text-muted-foreground ml-2">({formatRuntime(value)})</span>
+    </div>
+  );
+}
+
+function RepeatList<T>({
+  items, onChange, disabled, blank, render, addLabel,
+}: {
+  items: T[]; onChange: (v: T[]) => void; disabled?: boolean;
+  blank: () => T; render: (item: T, set: (v: T) => void) => React.ReactNode; addLabel: string;
+}) {
+  const update = (i: number, v: T) => onChange(items.map((it, idx) => idx === i ? v : it));
+  const remove = (i: number) => onChange(items.filter((_, idx) => idx !== i));
+  return (
+    <div className="space-y-2">
+      {items.map((it, i) => (
+        <div key={i} className="rounded-md border border-border/40 p-2 grid grid-cols-[1fr_auto] gap-2 items-start">
+          <div className="min-w-0">{render(it, (v) => update(i, v))}</div>
+          {!disabled && (
+            <button type="button" onClick={() => remove(i)} className="text-muted-foreground hover:text-rose-400 p-1" aria-label="Remove">
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      ))}
+      {!disabled && (
+        <button
+          type="button"
+          onClick={() => onChange([...items, blank()])}
+          className="inline-flex items-center gap-1 text-xs rounded-md border border-border/50 px-2 py-1 hover:bg-secondary/30"
+        >
+          <Plus className="w-3 h-3" /> {addLabel}
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -682,123 +751,183 @@ function MetadataTab({
   meta, setMeta, readOnly,
 }: { meta: TitleMetadata; setMeta: (m: TitleMetadata) => void; readOnly: boolean }) {
   const upd = <K extends keyof TitleMetadata>(k: K, v: TitleMetadata[K]) => setMeta({ ...meta, [k]: v });
-  return (
-    <div className="grid sm:grid-cols-2 gap-4">
-      <Field label="Synopsis">
-        <TextArea rows={5} value={meta.synopsis} disabled={readOnly} onChange={(e) => upd("synopsis", e.target.value)} />
-      </Field>
-      <Field label="Notes">
-        <TextArea rows={5} value={meta.notes} disabled={readOnly} onChange={(e) => upd("notes", e.target.value)} />
-      </Field>
-      <Field label="Genre (comma separated)">
-        <CSVInput value={meta.genres} disabled={readOnly} onChange={(v) => upd("genres", v)} />
-      </Field>
-      <Field label="Keywords">
-        <CSVInput value={meta.keywords} disabled={readOnly} onChange={(v) => upd("keywords", v)} />
-      </Field>
-      <Field label="Original Language">
-        <TextInput value={meta.original_language} disabled={readOnly}
-          placeholder="e.g. Malayalam, Tamil, English"
-          onChange={(e) => upd("original_language", e.target.value)} />
-      </Field>
-      <Field label="Production Year">
-        <TextInput type="number" min={1900} max={2100} value={meta.production_year ?? ""} disabled={readOnly}
-          onChange={(e) => upd("production_year", e.target.value ? Number(e.target.value) : null)} />
-      </Field>
-      <Field label="Country Of Origin">
-        <TextInput value={meta.country_of_origin} disabled={readOnly}
-          placeholder="e.g. India"
-          onChange={(e) => upd("country_of_origin", e.target.value)} />
-      </Field>
-      <Field label="Runtime (minutes)">
-        <TextInput type="number" min={0} value={meta.runtime_minutes} disabled={readOnly}
-          onChange={(e) => upd("runtime_minutes", Number(e.target.value || 0))} />
-      </Field>
-      <Field label="Rights Owner">
-        <TextInput value={meta.rights_owner} disabled={readOnly}
-          onChange={(e) => upd("rights_owner", e.target.value)} />
-      </Field>
-      <Field label="Production Company">
-        <TextInput value={meta.production_company} disabled={readOnly} onChange={(e) => upd("production_company", e.target.value)} />
-      </Field>
-      <Field label="IMDb ID">
-        <TextInput value={meta.imdb_id} disabled={readOnly} onChange={(e) => upd("imdb_id", e.target.value)} />
-      </Field>
-      <Field label="TMDb ID">
-        <TextInput value={meta.tmdb_id} disabled={readOnly} onChange={(e) => upd("tmdb_id", e.target.value)} />
-      </Field>
-      <Field label="Cast (comma separated names)">
-        <CSVInput
-          value={meta.cast.map((c) => c.name)}
-          disabled={readOnly}
-          onChange={(v) => upd("cast", v.map((name) => ({ name, role: "" })))}
-        />
-      </Field>
-      <Field label="Crew (comma separated names)">
-        <CSVInput
-          value={meta.crew.map((c) => c.name)}
-          disabled={readOnly}
-          onChange={(v) => upd("crew", v.map((name) => ({ name, role: "" })))}
-        />
-      </Field>
-      <Field label="Festival Information">
-        <TextArea
-          rows={3}
-          value={meta.festivals.map((f) => `${f.name}${f.year ? ` (${f.year})` : ""}${f.award ? ` — ${f.award}` : ""}`).join("\n")}
-          disabled={readOnly}
-          onChange={(e) => upd("festivals",
-            e.target.value.split("\n").map((s) => s.trim()).filter(Boolean).map((line) => ({ name: line, year: null, award: "" })),
-          )}
-        />
-      </Field>
-      <Field label="Awards">
-        <TextArea
-          rows={3}
-          value={meta.awards.map((a) => `${a.name}${a.year ? ` (${a.year})` : ""}`).join("\n")}
-          disabled={readOnly}
-          onChange={(e) => upd("awards",
-            e.target.value.split("\n").map((s) => s.trim()).filter(Boolean).map((line) => ({ name: line, year: null })),
-          )}
-        />
-      </Field>
-    </div>
-  );
-}
+  const synopsisWords = (meta.synopsis || "").trim().split(/\s+/).filter(Boolean).length;
+  const overLimit = synopsisWords > SYNOPSIS_WORD_LIMIT;
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from({ length: currentYear - 1900 + 5 }, (_, i) => String(currentYear + 4 - i));
+  const releaseDate = (meta as any).release_date ?? "";
 
-function StatusTab({ title, timeline }: { title: TitleRow; timeline: TitleTimelineEntry[] }) {
   return (
-    <div className="space-y-4 text-sm">
-      <div className="flex items-center gap-2">
-        <span className="text-muted-foreground text-xs">Current status:</span>
-        <StatusBadge status={title.status} />
+    <div className="space-y-6">
+      <div className="grid sm:grid-cols-2 gap-4">
+        <Field label="Synopsis" hint={`${synopsisWords} / ${SYNOPSIS_WORD_LIMIT} words${overLimit ? " — over limit" : ""}`}>
+          <TextArea
+            rows={5}
+            value={meta.synopsis}
+            disabled={readOnly}
+            onChange={(e) => upd("synopsis", e.target.value)}
+            className={overLimit ? "border-rose-500/60" : undefined as any}
+          />
+        </Field>
+        <Field label="Genres" hint="Choose one or more.">
+          <TagInput
+            value={meta.genres}
+            disabled={readOnly}
+            suggestions={GENRE_OPTIONS}
+            placeholder="Search genres…"
+            onChange={(v) => upd("genres", v)}
+          />
+        </Field>
+        <Field label="Keywords" hint="Press Enter or comma to add a tag.">
+          <TagInput
+            value={meta.keywords}
+            disabled={readOnly}
+            placeholder="Add a keyword…"
+            onChange={(v) => upd("keywords", v)}
+          />
+        </Field>
+        <Field label="Original language">
+          <SelectInput value={meta.original_language} disabled={readOnly}
+            options={LANGUAGE_OPTIONS}
+            placeholder="Select language…"
+            onChange={(v) => upd("original_language", v)} />
+        </Field>
+        <Field label="Production year">
+          <SelectInput value={meta.production_year ? String(meta.production_year) : ""} disabled={readOnly}
+            options={yearOptions}
+            placeholder="Select year…"
+            onChange={(v) => upd("production_year", v ? Number(v) : null)} />
+        </Field>
+        <Field label="Release date">
+          <TextInput type="date" value={releaseDate} disabled={readOnly}
+            onChange={(e) => setMeta({ ...meta, ...(({ release_date: e.target.value }) as any) })} />
+        </Field>
+        <Field label="Country of origin">
+          <SelectInput value={meta.country_of_origin} disabled={readOnly}
+            options={COUNTRY_OPTIONS}
+            placeholder="Select country…"
+            onChange={(v) => upd("country_of_origin", v)} />
+        </Field>
+        <Field label="Runtime">
+          <RuntimeInput value={meta.runtime_minutes} disabled={readOnly}
+            onChange={(total) => upd("runtime_minutes", total)} />
+        </Field>
+        <Field label="Rights owner" hint="Auto-filled from your profile — editable.">
+          <TextInput value={meta.rights_owner} disabled={readOnly}
+            placeholder="Legal entity that owns rights"
+            onChange={(e) => upd("rights_owner", e.target.value)} />
+        </Field>
+        <Field label="Production company" hint="Auto-filled from your profile — editable.">
+          <TextInput value={meta.production_company} disabled={readOnly}
+            placeholder="Banner / production company"
+            onChange={(e) => upd("production_company", e.target.value)} />
+        </Field>
+        <Field label="IMDb ID or URL">
+          <TextInput value={meta.imdb_id} disabled={readOnly}
+            placeholder="tt1234567 or imdb.com/title/…"
+            onChange={(e) => upd("imdb_id", e.target.value)} />
+        </Field>
+        <Field label="TMDb ID or URL">
+          <TextInput value={meta.tmdb_id} disabled={readOnly}
+            placeholder="12345 or themoviedb.org/movie/…"
+            onChange={(e) => upd("tmdb_id", e.target.value)} />
+        </Field>
       </div>
-      <ul className="text-xs space-y-1.5 text-muted-foreground">
-        <li>Created: {new Date(title.created_at).toLocaleString()}</li>
-        <li>Last updated: {new Date(title.updated_at).toLocaleString()}</li>
-        {title.submitted_at && <li>Submitted: {new Date(title.submitted_at).toLocaleString()}</li>}
-        {title.approved_at && <li>Approved: {new Date(title.approved_at).toLocaleString()}</li>}
-        {title.published_at && <li>Published (legacy): {new Date(title.published_at).toLocaleString()}</li>}
-        {title.locked && <li className="text-amber-300">Locked — content, metadata, documents and rights are read-only.</li>}
-      </ul>
-      <div>
-        <div className="text-xs font-semibold mb-2">Review History</div>
-        {timeline.length === 0 ? (
-          <div className="text-xs text-muted-foreground">No status changes yet.</div>
-        ) : (
-          <ol className="space-y-2">
-            {timeline.slice().reverse().map((t) => (
-              <li key={t.id} className="rounded-md border border-border/40 p-2 text-xs">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-medium">
-                    {(t.from_status ?? "—").replace(/_/g," ")} → {t.to_status.replace(/_/g," ")}
-                  </span>
-                  <span className="text-muted-foreground">{new Date(t.created_at).toLocaleString()}</span>
-                </div>
-                {t.note && <div className="text-muted-foreground mt-1">{t.note}</div>}
-              </li>
-            ))}
-          </ol>
-        )}
+
+      {/* People */}
+      <div className="grid md:grid-cols-2 gap-6">
+        <section>
+          <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Cast</h4>
+          <RepeatList
+            items={meta.cast}
+            disabled={readOnly}
+            onChange={(v) => upd("cast", v as any)}
+            blank={() => ({ name: "", role: "" })}
+            addLabel="Add cast member"
+            render={(c, set) => (
+              <div className="grid sm:grid-cols-2 gap-2">
+                <TextInput placeholder="Name" value={c.name} disabled={readOnly}
+                  onChange={(e) => set({ ...c, name: e.target.value })} />
+                <TextInput placeholder="Character / role" value={c.role} disabled={readOnly}
+                  onChange={(e) => set({ ...c, role: e.target.value })} />
+              </div>
+            )}
+          />
+        </section>
+        <section>
+          <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Crew</h4>
+          <RepeatList
+            items={meta.crew}
+            disabled={readOnly}
+            onChange={(v) => upd("crew", v as any)}
+            blank={() => ({ name: "", role: "" })}
+            addLabel="Add crew member"
+            render={(c, set) => (
+              <div className="grid sm:grid-cols-2 gap-2">
+                <TextInput placeholder="Name" value={c.name} disabled={readOnly}
+                  onChange={(e) => set({ ...c, name: e.target.value })} />
+                <TextInput placeholder="Role (e.g. Director, DOP)" value={c.role} disabled={readOnly}
+                  onChange={(e) => set({ ...c, role: e.target.value })} />
+              </div>
+            )}
+          />
+        </section>
+      </div>
+
+      {/* Festivals + Awards */}
+      <div className="grid md:grid-cols-2 gap-6">
+        <section>
+          <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Festival information</h4>
+          <RepeatList
+            items={meta.festivals}
+            disabled={readOnly}
+            onChange={(v) => upd("festivals", v as any)}
+            blank={() => ({ name: "", year: null, award: "", selection_type: "", location: "", url: "" } as any)}
+            addLabel="Add festival"
+            render={(f: any, set) => (
+              <div className="grid sm:grid-cols-2 gap-2">
+                <TextInput placeholder="Festival name" value={f.name} disabled={readOnly}
+                  onChange={(e) => set({ ...f, name: e.target.value })} />
+                <TextInput type="number" min={1900} max={2100} placeholder="Year / edition"
+                  value={f.year ?? ""} disabled={readOnly}
+                  onChange={(e) => set({ ...f, year: e.target.value ? Number(e.target.value) : null })} />
+                <TextInput placeholder="Selection (e.g. Official Selection)" value={f.selection_type ?? ""} disabled={readOnly}
+                  onChange={(e) => set({ ...f, selection_type: e.target.value })} />
+                <TextInput placeholder="Location (optional)" value={f.location ?? ""} disabled={readOnly}
+                  onChange={(e) => set({ ...f, location: e.target.value })} />
+                <TextInput placeholder="URL (optional)" value={f.url ?? ""} disabled={readOnly}
+                  onChange={(e) => set({ ...f, url: e.target.value })} className="sm:col-span-2" />
+              </div>
+            )}
+          />
+        </section>
+        <section>
+          <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Awards</h4>
+          <RepeatList
+            items={meta.awards}
+            disabled={readOnly}
+            onChange={(v) => upd("awards", v as any)}
+            blank={() => ({ name: "", year: null, category: "", result: "", notes: "" } as any)}
+            addLabel="Add award"
+            render={(a: any, set) => (
+              <div className="grid sm:grid-cols-2 gap-2">
+                <TextInput placeholder="Award / festival" value={a.name} disabled={readOnly}
+                  onChange={(e) => set({ ...a, name: e.target.value })} />
+                <TextInput placeholder="Category" value={a.category ?? ""} disabled={readOnly}
+                  onChange={(e) => set({ ...a, category: e.target.value })} />
+                <TextInput type="number" min={1900} max={2100} placeholder="Year"
+                  value={a.year ?? ""} disabled={readOnly}
+                  onChange={(e) => set({ ...a, year: e.target.value ? Number(e.target.value) : null })} />
+                <SelectInput value={a.result ?? ""} disabled={readOnly}
+                  options={["Won", "Nominated", "Shortlisted", "Honourable Mention"]}
+                  placeholder="Result"
+                  onChange={(v) => set({ ...a, result: v })} />
+                <TextInput placeholder="Notes (optional)" value={a.notes ?? ""} disabled={readOnly}
+                  onChange={(e) => set({ ...a, notes: e.target.value })} className="sm:col-span-2" />
+              </div>
+            )}
+          />
+        </section>
       </div>
     </div>
   );

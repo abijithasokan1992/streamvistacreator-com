@@ -255,9 +255,9 @@ function RowCard({ kind, row, isLive, onChange, onSave, onDelete, onUpload, onSe
   const isPublished = row.status === "published";
   const isNew = row.id.startsWith("new-");
   return (
-    <div className={`rounded-xl border p-4 space-y-3 ${isPublished ? "border-emerald-500/30 bg-emerald-500/[0.03]" : "border-amber-500/30 bg-amber-500/[0.03]"}`}>
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+    <div className={`rounded-xl border p-4 space-y-3 ${isLive ? "border-emerald-500/60 bg-emerald-500/[0.06] ring-1 ring-emerald-500/40" : isPublished ? "border-emerald-500/30 bg-emerald-500/[0.03]" : "border-amber-500/30 bg-amber-500/[0.03]"}`}>
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           {dragHandleProps && (
             <div
               {...dragHandleProps}
@@ -270,6 +270,14 @@ function RowCard({ kind, row, isLive, onChange, onSave, onDelete, onUpload, onSe
           <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${isPublished ? "bg-emerald-500/15 text-emerald-500" : "bg-amber-500/15 text-amber-500"}`}>
             {isPublished ? <><Globe className="w-3 h-3" /> Published</> : <><FileEdit className="w-3 h-3" /> Draft</>}
           </span>
+          {isLive && (
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live on Homepage
+            </span>
+          )}
+          {kind === "hero" && row.internal_label && (
+            <span className="text-[11px] text-muted-foreground">{row.internal_label}</span>
+          )}
         </div>
         {!isNew && (
           isPublished

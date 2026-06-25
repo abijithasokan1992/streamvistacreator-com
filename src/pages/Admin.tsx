@@ -79,6 +79,7 @@ function pathToTab(path: string, search: URLSearchParams): TabKey {
   if (p.startsWith("/admin/comms") || p.startsWith("/admin/support")) return "comms";
   if (p.startsWith("/admin/settings")) return "settings";
   if (p.startsWith("/admin/audit") || p.startsWith("/admin/reports") || p.startsWith("/admin/security")) return "audit";
+  if (p.startsWith("/admin/vault") || p.startsWith("/admin/founder-vault")) return "vault";
   return "overview";
 }
 

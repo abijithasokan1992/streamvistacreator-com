@@ -18,8 +18,6 @@ import Admin from "./pages/Admin.tsx";
 import ContentOwnerDashboard from "./pages/dashboards/ContentOwner.tsx";
 import StudioDashboard from "./pages/dashboards/StudioDash.tsx";
 import BuyerDashboard from "./pages/dashboards/Buyer.tsx";
-import LocalizationDashboard from "./pages/dashboards/Localization.tsx";
-import DistributionDashboard from "./pages/dashboards/Distribution.tsx";
 import AdminErrorBoundary from "./components/admin/AdminErrorBoundary";
 import AdminOperations from "./pages/AdminOperations.tsx";
 import KammattamPopout from "./pages/KammattamPopout.tsx";
@@ -28,21 +26,13 @@ import Privacy from "./pages/Privacy.tsx";
 import IPCopyright from "./pages/IPCopyright.tsx";
 import Refund from "./pages/Refund.tsx";
 import About from "./pages/About.tsx";
-
-
-import LaunchingSpecialPlan from "./pages/LaunchingSpecialPlan.tsx";
 import CheckoutReturn from "./pages/CheckoutReturn.tsx";
 import CheckoutStorage from "./pages/CheckoutStorage.tsx";
 import PricingPage from "./pages/Pricing.tsx";
 import OrderStatus from "./pages/OrderStatus.tsx";
-import Vault from "./pages/Vault.tsx";
-import Studio from "./pages/Studio.tsx";
-import MasterArchive from "./pages/MasterArchive.tsx";
-import Team from "./pages/Team.tsx";
 import Review from "./pages/Review.tsx";
 import Share from "./pages/Share.tsx";
 import NotFound from "./pages/NotFound.tsx";
-import IngestTest from "./pages/IngestTest.tsx";
 import C2CSetupManual from "./pages/C2CSetupManual.tsx";
 import CameraToCloudGuide from "./pages/blog/CameraToCloudGuide.tsx";
 import StreamVistaVsFrameIO from "./pages/blog/StreamVistaVsFrameIO.tsx";
@@ -113,7 +103,6 @@ const AdminRoutes = () => (
 const PublicRoutes = () => (
   <Routes>
     <Route path="/" element={<Index />} />
-    <Route path="/home" element={<Index />} />
     <Route path="/auth" element={<Auth />} />
     <Route path="/auth/callback" element={<AuthCallback />} />
     <Route path="/reset-password" element={<ResetPassword />} />

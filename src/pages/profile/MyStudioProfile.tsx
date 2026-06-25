@@ -546,7 +546,14 @@ export default function MyStudioProfile() {
         )}
       </div>
 
-      <ProfileSaveBar dirty={dirty && canEdit} saving={saving} onSave={handleSave} onReset={handleReset} />
+      <ProfileSaveBar
+        dirty={dirty && canEdit}
+        saving={saving}
+        onSave={handleSave}
+        onReset={handleReset}
+        disabled={!!invalidMessage}
+        invalidMessage={invalidMessage}
+      />
     </main>
   );
 }

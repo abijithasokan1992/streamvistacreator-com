@@ -297,7 +297,7 @@ export default function Admin() {
           defaultValue={pathToTab(location.pathname, searchParams)}
           className="w-full"
         >
-          <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-10 gap-1.5 sm:gap-2 h-auto p-1 sm:p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-6 sm:mb-8">
+          <TabsList className={`grid grid-cols-2 sm:grid-cols-3 ${isSuperAdmin ? "lg:grid-cols-11" : "lg:grid-cols-10"} gap-1.5 sm:gap-2 h-auto p-1 sm:p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-6 sm:mb-8`}>
             <DeptTab value="overview"  icon={<LayoutDashboard className="w-4 h-4" />} label="Home" />
             <DeptTab value="users"     icon={<UsersIcon className="w-4 h-4" />}       label="Users & Roles" />
             <DeptTab value="approvals" icon={<ClipboardCheck className="w-4 h-4" />}  label="Approvals" />
@@ -308,6 +308,9 @@ export default function Admin() {
             <DeptTab value="comms"     icon={<Inbox className="w-4 h-4" />}           label="Comms" />
             <DeptTab value="settings"  icon={<SettingsIcon className="w-4 h-4" />}    label="Settings" />
             <DeptTab value="audit"     icon={<FileText className="w-4 h-4" />}        label="Audit" />
+            {isSuperAdmin && (
+              <DeptTab value="vault"   icon={<Crown className="w-4 h-4" />}           label="Founder Vault" />
+            )}
           </TabsList>
 
           <TabsContent value="overview" className="space-y-8 mt-0 animate-fade-in">

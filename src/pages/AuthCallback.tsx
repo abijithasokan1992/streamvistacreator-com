@@ -25,9 +25,16 @@ export default function AuthCallback() {
       const params = new URLSearchParams(window.location.hash.slice(1));
       const err = params.get("error_description") || params.get("error");
       if (err) toast.error(decodeURIComponent(err));
+      // Preserve the full original callback URL (with hash tokens / query params)
+      // so the blocked-browser recovery UI can re-open it in Safari / Chrome.
+      try {
+        sessionStorage.setItem("sv_pending_auth_url", window.location.href);
+      } catch { /* noop */ }
       navigate(`/auth?in_app_error=1${err ? "&err=" + encodeURIComponent(err) : ""}`, { replace: true });
       return;
     }
+    // Clear any stale recovery stash once we have a real session.
+    try { sessionStorage.removeItem("sv_pending_auth_url"); } catch { /* noop */ }
 
     let cancelled = false;
     (async () => {

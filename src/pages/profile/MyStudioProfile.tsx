@@ -18,6 +18,17 @@ import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import {
+  formatTaxId, formatDigits, formatPhone,
+  validatePAN, validateGSTIN, validateTAN, validateCIN,
+  validateEmail, validatePhone, validatePincode,
+  validateGstRegistration, type ValidationResult,
+} from "@/lib/identityValidators";
+
+function FieldError({ result }: { result: ValidationResult }) {
+  if (result.ok) return null;
+  return <p className="text-[11px] text-destructive mt-1">{result.message}</p>;
+}
 
 const ENTITY_TYPES = [
   ["proprietorship", "Proprietorship"],

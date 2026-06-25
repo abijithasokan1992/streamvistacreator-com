@@ -2416,45 +2416,57 @@ export type Database = {
       featured_films: {
         Row: {
           blurb: string | null
+          content_type: string | null
           created_at: string
           ends_at: string | null
           id: string
           is_active: boolean
           link_url: string | null
+          partner: string | null
           poster_url: string | null
           sort_order: number
           starts_at: string | null
           status: string
+          subtitle: string | null
           title: string
           updated_at: string
+          year: number | null
         }
         Insert: {
           blurb?: string | null
+          content_type?: string | null
           created_at?: string
           ends_at?: string | null
           id?: string
           is_active?: boolean
           link_url?: string | null
+          partner?: string | null
           poster_url?: string | null
           sort_order?: number
           starts_at?: string | null
           status?: string
+          subtitle?: string | null
           title: string
           updated_at?: string
+          year?: number | null
         }
         Update: {
           blurb?: string | null
+          content_type?: string | null
           created_at?: string
           ends_at?: string | null
           id?: string
           is_active?: boolean
           link_url?: string | null
+          partner?: string | null
           poster_url?: string | null
           sort_order?: number
           starts_at?: string | null
           status?: string
+          subtitle?: string | null
           title?: string
           updated_at?: string
+          year?: number | null
         }
         Relationships: []
       }
@@ -2622,10 +2634,13 @@ export type Database = {
           created_at: string
           cta_label: string | null
           cta_url: string | null
+          cta2_label: string | null
+          cta2_url: string | null
           ends_at: string | null
           headline: string
           id: string
           image_url: string | null
+          internal_label: string | null
           is_active: boolean
           sort_order: number
           starts_at: string | null
@@ -2637,10 +2652,13 @@ export type Database = {
           created_at?: string
           cta_label?: string | null
           cta_url?: string | null
+          cta2_label?: string | null
+          cta2_url?: string | null
           ends_at?: string | null
           headline: string
           id?: string
           image_url?: string | null
+          internal_label?: string | null
           is_active?: boolean
           sort_order?: number
           starts_at?: string | null
@@ -2652,10 +2670,13 @@ export type Database = {
           created_at?: string
           cta_label?: string | null
           cta_url?: string | null
+          cta2_label?: string | null
+          cta2_url?: string | null
           ends_at?: string | null
           headline?: string
           id?: string
           image_url?: string | null
+          internal_label?: string | null
           is_active?: boolean
           sort_order?: number
           starts_at?: string | null

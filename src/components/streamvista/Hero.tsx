@@ -10,12 +10,15 @@ type HeroBanner = {
   image_url: string | null;
   cta_label: string | null;
   cta_url: string | null;
+  cta2_label: string | null;
+  cta2_url: string | null;
 };
 
 /**
  * Public hero — minimal, premium, single-slide.
- * Optionally overlays an admin-managed `hero_banners` row (first active by
- * sort_order). Falls back to the static StreamVista flagship copy.
+ * Renders the single admin-managed `hero_banners` row that is
+ * Published + Active with the lowest sort_order. Falls back to the
+ * static StreamVista flagship copy if none exists.
  */
 export const Hero = () => {
   const [banner, setBanner] = useState<HeroBanner | null>(null);
@@ -24,7 +27,7 @@ export const Hero = () => {
     let active = true;
     (supabase as any)
       .from("hero_banners")
-      .select("id,headline,subheadline,image_url,cta_label,cta_url")
+      .select("id,headline,subheadline,image_url,cta_label,cta_url,cta2_label,cta2_url")
       .eq("is_active", true)
       .eq("status", "published")
       .order("sort_order")
@@ -44,6 +47,8 @@ export const Hero = () => {
     "Intake, storage, operations and licensing in one secure operating layer";
   const ctaLabel = banner?.cta_label ?? "Get Started";
   const ctaHref = banner?.cta_url ?? "/auth?intent=signup";
+  const cta2Label = banner?.cta2_label ?? "Talk to StreamVista";
+  const cta2Href = banner?.cta2_url ?? "/contact";
 
   return (
   <section className="relative pt-28 pb-20 md:pb-28 overflow-hidden border-b border-border/40">
@@ -98,10 +103,10 @@ export const Hero = () => {
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link
-              to="/contact"
+              to={cta2Href}
               className="group relative h-14 inline-flex items-center justify-center gap-3 px-6 border border-border/60 hover:border-accent/60 hover:bg-accent/5 text-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md flex-1 transition-colors"
             >
-              <span>Talk to StreamVista</span>
+              <span>{cta2Label}</span>
             </Link>
           </div>
         </div>

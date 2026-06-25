@@ -13,9 +13,13 @@ import { supabase } from "@/integrations/supabase/client";
 type Film = {
   id: string;
   title: string;
+  subtitle: string | null;
   blurb: string | null;
   poster_url: string | null;
   link_url: string | null;
+  content_type: string | null;
+  year: number | null;
+  partner: string | null;
 };
 
 export const SuccessStories = () => {
@@ -27,6 +31,8 @@ export const SuccessStories = () => {
     (supabase as any)
       .from("featured_films")
       .select("*")
+      .eq("is_active", true)
+      .eq("status", "published")
       .order("sort_order")
       .order("created_at", { ascending: false })
       .then(({ data }: any) => {
@@ -115,6 +121,14 @@ export const SuccessStories = () => {
                     <div className="font-display text-base font-bold uppercase tracking-tight">
                       {f.title}
                     </div>
+                    {(f.content_type || f.year || f.partner) && (
+                      <div className="text-[10px] uppercase tracking-[0.18em] text-accent mt-1">
+                        {[f.content_type, f.year, f.partner].filter(Boolean).join(" · ")}
+                      </div>
+                    )}
+                    {f.subtitle && (
+                      <div className="text-xs text-foreground/80 mt-1">{f.subtitle}</div>
+                    )}
                     {f.blurb && (
                       <p className="text-xs text-muted-foreground line-clamp-2 mt-1 leading-relaxed">
                         {f.blurb}

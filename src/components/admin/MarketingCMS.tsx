@@ -18,39 +18,47 @@ type Kind = keyof typeof TABLES;
 
 const BLANK: Record<Kind, AnyRow> = {
   reel: { id: "", title: "", subtitle: "", poster_url: "", backdrop_url: "", image_url: "", cta_label: "", cta_url: "", sort_order: 0, is_active: true, is_featured: false, status: "published", starts_at: null, ends_at: null },
-  hero: { id: "", headline: "", subheadline: "", image_url: "", cta_label: "", cta_url: "", sort_order: 0, is_active: true, status: "draft", starts_at: null, ends_at: null },
+  hero: { id: "", internal_label: "", headline: "", subheadline: "", image_url: "", cta_label: "", cta_url: "", cta2_label: "", cta2_url: "", sort_order: 0, is_active: true, status: "draft", starts_at: null, ends_at: null },
   ad:   { id: "", slot: "top", title: "", image_url: "", link_url: "", sort_order: 0, is_active: true, status: "draft", starts_at: null, ends_at: null },
-  film: { id: "", title: "", blurb: "", poster_url: "", link_url: "", sort_order: 0, is_active: true, status: "draft", starts_at: null, ends_at: null },
+  film: { id: "", title: "", subtitle: "", blurb: "", content_type: "", year: null, partner: "", poster_url: "", link_url: "", sort_order: 0, is_active: true, status: "draft", starts_at: null, ends_at: null },
   news: { id: "", kind: "news", title: "", summary: "", image_url: "", link_url: "", event_date: null, location: "", sort_order: 0, is_active: true, status: "draft", starts_at: null, ends_at: null },
 };
 
 export default function MarketingCMS() {
   return (
-    <div className="glass rounded-2xl p-6 space-y-8">
+    <div className="glass rounded-2xl p-6 space-y-10">
       <div className="flex items-start gap-3">
         <div className="w-11 h-11 rounded-xl bg-accent/10 text-accent grid place-items-center shrink-0">
           <Sparkles className="w-5 h-5" />
         </div>
         <div>
           <h2 className="font-display text-2xl font-bold">Homepage CMS</h2>
-          <p className="text-sm text-muted-foreground">Manage hero banners, advertisement zones, featured films and news / events on the public landing.</p>
+          <p className="text-sm text-muted-foreground">Everything visible on the public StreamVista homepage is controlled from this page — hero, licensed content carousel, ads and news.</p>
         </div>
       </div>
-      <Section kind="reel" title="Homepage hero carousel (cinematic title reel)" icon={<Clapperboard className="w-4 h-4" />} />
-      <div className="space-y-2">
-        <p className="text-[11px] text-muted-foreground border-l-2 border-accent/50 pl-3">
-          <strong className="text-foreground/80">Homepage Hero:</strong> the public homepage renders the <em>first published &amp; active</em> hero banner by sort order. Change <code>sort_order</code>, toggle <code>Active</code>, or unpublish to switch which banner is live.
-        </p>
-        <Section kind="hero" title="Hero banners (homepage)" icon={<ImageIcon className="w-4 h-4" />} />
-      </div>
+
+      <Section
+        kind="hero"
+        title="Homepage Hero Banners"
+        icon={<ImageIcon className="w-4 h-4" />}
+        helper={<>The public homepage renders the <strong>single hero banner</strong> that is <strong>Published</strong> AND <strong>Active</strong> with the <strong>lowest Sort order</strong>. To switch the live hero from admin: lower the Sort order of the banner you want, or Unpublish/deactivate the current winner. The row currently shown on the homepage is marked <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-500 text-[10px] font-semibold uppercase">Live on Homepage</span>.</>}
+      />
+
+      <Section
+        kind="film"
+        title="Homepage Licensed Contents"
+        icon={<Film className="w-4 h-4" />}
+        helper={<>Controls the homepage strip <em>"Successfully Licensed Contents by StreamVista"</em>. Only items that are <strong>Published</strong> AND <strong>Active</strong> appear publicly. <strong>Sort order</strong> (low → high) controls left-to-right order in the carousel.</>}
+      />
+
+      <Section kind="reel" title="Homepage hero carousel (legacy cinematic reel)" icon={<Clapperboard className="w-4 h-4" />} />
       <Section kind="ad"   title="Advertisement zones"     icon={<Megaphone className="w-4 h-4" />} />
-      <Section kind="film" title="Licensed film portfolio" icon={<Film className="w-4 h-4" />} />
       <Section kind="news" title="News & events"           icon={<Newspaper className="w-4 h-4" />} />
     </div>
   );
 }
 
-function Section({ kind, title, icon }: { kind: Kind; title: string; icon: React.ReactNode }) {
+function Section({ kind, title, icon, helper }: { kind: Kind; title: string; icon: React.ReactNode; helper?: React.ReactNode }) {
   const table = TABLES[kind];
   const [rows, setRows] = useState<AnyRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,6 +67,14 @@ function Section({ kind, title, icon }: { kind: Kind; title: string; icon: React
   const [overIdx, setOverIdx] = useState<number | null>(null);
   const [reordering, setReordering] = useState(false);
   const dndEnabled = kind === "reel";
+
+  // For hero kind, identify the single banner that the public homepage will render:
+  // first row that is both published AND active, sorted by sort_order ascending.
+  const liveHeroId = kind === "hero"
+    ? [...rows]
+        .filter(r => r.status === "published" && r.is_active && !r.id.startsWith("new-"))
+        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))[0]?.id ?? null
+    : null;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -172,6 +188,12 @@ function Section({ kind, title, icon }: { kind: Kind; title: string; icon: React
         </button>
       </div>
 
+      {helper && (
+        <p className="text-[11px] text-muted-foreground border-l-2 border-accent/50 pl-3 leading-relaxed">
+          {helper}
+        </p>
+      )}
+
       {dndEnabled && !loading && (
         <HeroReelPreview items={rows} />
       )}
@@ -198,6 +220,7 @@ function Section({ kind, title, icon }: { kind: Kind; title: string; icon: React
               <RowCard
                 kind={kind}
                 row={row}
+                isLive={kind === "hero" && row.id === liveHeroId}
                 onChange={(patch) => update(row.id, patch)}
                 onSave={() => save(row)}
                 onDelete={() => remove(row.id)}
@@ -218,8 +241,9 @@ function Section({ kind, title, icon }: { kind: Kind; title: string; icon: React
   );
 }
 
-function RowCard({ kind, row, onChange, onSave, onDelete, onUpload, onSetStatus, saving, dragHandleProps }: {
+function RowCard({ kind, row, isLive, onChange, onSave, onDelete, onUpload, onSetStatus, saving, dragHandleProps }: {
   kind: Kind; row: AnyRow;
+  isLive?: boolean;
   onChange: (p: Partial<AnyRow>) => void;
   onSave: () => void; onDelete: () => void;
   onUpload: (field: string, file: File) => void;
@@ -231,9 +255,9 @@ function RowCard({ kind, row, onChange, onSave, onDelete, onUpload, onSetStatus,
   const isPublished = row.status === "published";
   const isNew = row.id.startsWith("new-");
   return (
-    <div className={`rounded-xl border p-4 space-y-3 ${isPublished ? "border-emerald-500/30 bg-emerald-500/[0.03]" : "border-amber-500/30 bg-amber-500/[0.03]"}`}>
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+    <div className={`rounded-xl border p-4 space-y-3 ${isLive ? "border-emerald-500/60 bg-emerald-500/[0.06] ring-1 ring-emerald-500/40" : isPublished ? "border-emerald-500/30 bg-emerald-500/[0.03]" : "border-amber-500/30 bg-amber-500/[0.03]"}`}>
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           {dragHandleProps && (
             <div
               {...dragHandleProps}
@@ -246,6 +270,14 @@ function RowCard({ kind, row, onChange, onSave, onDelete, onUpload, onSetStatus,
           <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${isPublished ? "bg-emerald-500/15 text-emerald-500" : "bg-amber-500/15 text-amber-500"}`}>
             {isPublished ? <><Globe className="w-3 h-3" /> Published</> : <><FileEdit className="w-3 h-3" /> Draft</>}
           </span>
+          {isLive && (
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live on Homepage
+            </span>
+          )}
+          {kind === "hero" && row.internal_label && (
+            <span className="text-[11px] text-muted-foreground">{row.internal_label}</span>
+          )}
         </div>
         {!isNew && (
           isPublished
@@ -276,10 +308,13 @@ function RowCard({ kind, row, onChange, onSave, onDelete, onUpload, onSetStatus,
           </Field>
         </>)}
         {kind === "hero" && (<>
-          <Field label="Headline"><input className={cls} value={row.headline ?? ""} onChange={e => onChange({ headline: e.target.value })} /></Field>
-          <Field label="Subheadline"><input className={cls} value={row.subheadline ?? ""} onChange={e => onChange({ subheadline: e.target.value })} /></Field>
-          <Field label="CTA label"><input className={cls} value={row.cta_label ?? ""} onChange={e => onChange({ cta_label: e.target.value })} /></Field>
-          <Field label="CTA URL"><input className={cls} value={row.cta_url ?? ""} onChange={e => onChange({ cta_url: e.target.value })} /></Field>
+          <Field label="Internal label (admin only, e.g. Homepage Hero 01)" full><input className={cls} value={row.internal_label ?? ""} onChange={e => onChange({ internal_label: e.target.value })} /></Field>
+          <Field label="Hero title (headline)"><input className={cls} value={row.headline ?? ""} onChange={e => onChange({ headline: e.target.value })} /></Field>
+          <Field label="Hero subtitle (subheadline)"><input className={cls} value={row.subheadline ?? ""} onChange={e => onChange({ subheadline: e.target.value })} /></Field>
+          <Field label="CTA 1 label"><input className={cls} value={row.cta_label ?? ""} onChange={e => onChange({ cta_label: e.target.value })} /></Field>
+          <Field label="CTA 1 link"><input className={cls} value={row.cta_url ?? ""} onChange={e => onChange({ cta_url: e.target.value })} /></Field>
+          <Field label="CTA 2 label"><input className={cls} value={row.cta2_label ?? ""} onChange={e => onChange({ cta2_label: e.target.value })} /></Field>
+          <Field label="CTA 2 link"><input className={cls} value={row.cta2_url ?? ""} onChange={e => onChange({ cta2_url: e.target.value })} /></Field>
         </>)}
         {kind === "ad" && (<>
           <Field label="Slot">
@@ -292,6 +327,10 @@ function RowCard({ kind, row, onChange, onSave, onDelete, onUpload, onSetStatus,
         </>)}
         {kind === "film" && (<>
           <Field label="Title"><input className={cls} value={row.title ?? ""} onChange={e => onChange({ title: e.target.value })} /></Field>
+          <Field label="Subtitle / caption"><input className={cls} value={row.subtitle ?? ""} onChange={e => onChange({ subtitle: e.target.value })} /></Field>
+          <Field label="Content type (e.g. Feature, Series, Short)"><input className={cls} value={row.content_type ?? ""} onChange={e => onChange({ content_type: e.target.value })} /></Field>
+          <Field label="Year"><input type="number" className={cls} value={row.year ?? ""} onChange={e => onChange({ year: e.target.value ? Number(e.target.value) : null })} /></Field>
+          <Field label="Partner / platform"><input className={cls} value={row.partner ?? ""} onChange={e => onChange({ partner: e.target.value })} /></Field>
           <Field label="Link URL"><input className={cls} value={row.link_url ?? ""} onChange={e => onChange({ link_url: e.target.value })} /></Field>
           <Field label="Blurb" full><textarea rows={2} className={cls} value={row.blurb ?? ""} onChange={e => onChange({ blurb: e.target.value })} /></Field>
         </>)}

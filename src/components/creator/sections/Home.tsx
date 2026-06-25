@@ -125,6 +125,8 @@ export default function HomeSection({ onNavigate, isFree }: { onNavigate: (s: Se
             onClick={() => onNavigate("updates")}
           />
         )}
+      </div>
+
 
       {/* Operational signals */}
       <UploadDiagnostics />

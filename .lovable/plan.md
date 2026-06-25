@@ -1,88 +1,103 @@
 
-## Step 1 — Route + Creator Section Cleanup
+## Step 2 — Admin Console Collapse (current 10 tabs + ~40 panels → 8 MVP tabs)
 
-Goal: one dashboard system (`/dashboard/{role}`), one Creator sidebar (7 sections). No behavior change to admin, billing, public, or share/review tokens.
-
----
-
-### 1. Routes — exact actions (src/App.tsx, PublicRoutes block)
-
-**Remove (delete route + import):**
-- `/home` (duplicate of `/`)
-- `/vault` → legacy `Vault.tsx`
-- `/studio` → legacy `Studio.tsx`
-- `/archive` → `MasterArchive.tsx`
-- `/team` → `Team.tsx`
-- `/dashboard/localization` → `LocalizationDashboard`
-- `/dashboard/distribution` → `DistributionDashboard`
-- `/ingest-test` → `IngestTest`
-- `/launching-special-plan` → `LaunchingSpecialPlan`
-
-**Redirect to canonical (`<CanonicalDashboardRedirect />`, already used for `/producer`, `/client`, `/projects`):**
-- `/vault`, `/studio`, `/archive`, `/team`, `/dashboard/localization`, `/dashboard/distribution`
-- Keep `/producer`, `/client`, `/projects` redirects (already correct).
-
-**Keep as-is:**
-- `/dashboard`, `/dashboard/content`, `/dashboard/studio`, `/dashboard/buyer`
-- `/onboarding`, `/auth*`, `/reset-password`, `/admin/*`
-- `/checkout/*`, `/billing/status/:topupId`, `/invoice/*`
-- `/s/:token`, `/review/:token`, `/screening/:token`
-- `/pricing`, `/about`, `/contact`, `/support`, `/terms`, `/privacy`, `/refund`, `/ip-copyright`, `/dmca`, `/unsubscribe`
-- `/blog/*`, `/c2c-setup`
-
-**Files to delete (no remaining importers after route cut):**
-- `src/pages/Vault.tsx`
-- `src/pages/Studio.tsx`
-- `src/pages/MasterArchive.tsx`
-- `src/pages/Team.tsx`
-- `src/pages/IngestTest.tsx`
-- `src/pages/LaunchingSpecialPlan.tsx`
-- `src/pages/dashboards/Localization.tsx`
-- `src/pages/dashboards/Distribution.tsx`
-
-Verify zero remaining imports with `rg` before delete; if any internal link points at them, swap to `/dashboard/content` (or remove).
+Goal: one tab list, 8 buckets, no duplicate panels, no admin-only feature surfaces that aren't earning. Single file: `src/pages/Admin.tsx` + the `/admin/*` route table.
 
 ---
 
-### 2. Creator sections — keep / hide / remove
+### 1. The 8 MVP buckets and what goes in each
 
-**Keep (MVP sidebar, 7 items):**
-`Home`, `MyTitles`, `Submissions`, `Updates`, `DeliveryVault`, `Statements` (Billing), `Help`
+| Tab (URL) | Components kept | Source bucket(s) absorbed |
+|---|---|---|
+| **Users & Roles** `/admin/users` | `RolesManager`, `UsersAndCredentials`, `AdminTeamManager` | old `users` + `team` |
+| **Approvals** `/admin/approvals` | `OnboardingApprovals`, `ContentReviewWorkflow`, `TitleEditRequestsInbox` | from old `content` + `support` |
+| **Catalog** `/admin/catalog` | `ProductsAndPlans`, `StudioVaultPricing`, `FreeTierConfig`, `GlobalAssetManager` | from old `settings` + `storage` |
+| **Billing** `/admin/billing` | `AdminInvoices`, `ManualInvoiceConsole`, `BillingOperations`, `AdminFinanceConsole`, `RazorpayOpsBanner`, `RazorpayAuditLog`, `PaymentTrace` | old `finance` + `business` (kept slice) |
+| **Storage** `/admin/storage` | `OracleStorageMonitor`, `AdminStudioVaultPurchases`, `OracleOciStorageCard` (in `<details>`) | old `storage` |
+| **Comms** `/admin/comms` | `SupportInbox`, `ContactInbox`, `EmailLogMonitor`, `UniversalBroadcast` | old `support` |
+| **Settings** `/admin/settings` | `BrandingSettings`, `CompanyProfileSettings`, `PartnerLogos`, `ResendCredentials`, `AdminCredentials`, `RazorpayCredentials`, `RazorpayConnectivityStatus`, `DomainHostingPanel` | old `settings` (advanced kept in `<details>`) |
+| **Audit** `/admin/audit` | `AdminReportsConsole`, `PaymentSecurityEvents` | old `reports` |
 
-**Remove (delete file + import + sidebar entry):**
-- `src/components/creator/sections/Insights.tsx`
-- `src/components/creator/sections/Schedule.tsx`
-- `src/components/creator/sections/Upgrade.tsx` (CTA moves into `Statements`/Home checklist)
-- `src/components/creator/sections/ComingSoonGrid.tsx`
-
----
-
-### 3. Files to edit
-
-1. **`src/App.tsx`** — drop 8 routes + matching imports, add 6 redirects to `CanonicalDashboardRedirect`.
-2. **`src/pages/dashboards/ContentOwner.tsx`** — remove imports + switch cases for `insights`, `schedule`, `upgrade`, `comingsoon`; default unknown section → `home`.
-3. **`src/components/creator/CreatorSidebar.tsx`** — prune nav array to the 7 kept sections; update `CreatorTour` step IDs if any reference removed tabs.
-4. **`src/components/creator/CreatorTour.tsx`** — drop steps tied to removed sections (insights/schedule/upgrade), keep tour to ≤6 stops.
-5. **`src/components/creator/sections/Home.tsx`** — replace any `setSection("upgrade")` / `"insights"` links with `"billing"` or remove the card.
-6. **Delete files** listed in sections 1 + 2.
+Tab #1 stays the **Overview/Home** above this tab list (it's the landing `PlatformOverview` + QuickNav, not a 9th bucket).
 
 ---
 
-### 4. Patch order (single PR, safe sequence)
+### 2. Panels hidden for MVP (kept in repo, not mounted)
 
-1. `rg` sweep for importers of each legacy page/section → list collateral.
-2. Edit `App.tsx` (routes + imports).
-3. Edit `ContentOwner.tsx` (sections registry).
-4. Edit `CreatorSidebar.tsx` + `CreatorTour.tsx` + `Home.tsx` (nav/CTA refs).
-5. `rm` the 12 dead files.
-6. Build check — fix any stray import surfaced by the compiler.
+Removed from any tab but file kept for Phase 2:
+- `PlatformOwnerConsole`
+- `AiMcpControlCenter`
+- `KammattamMeter`
+- `CommissionsTracker`
+- `CommercialControlTower`
+- `TitleCommercialOpsConsole`
+- `ScreeningOpsConsole`
+- `DistributionOffersConsole`
+- `DealOperationsConsole`
+- `PremiumInvitations`
+- `MarketingCMS`
+- `ChiefBriefing`
+- `HeroReelPreview`
+- `EntitlementExplorer`, `UserEntitlementDrillIn`, `StorageGrantPanel`, `TitleReviewPanel` (already not on any tab — verify)
+- `LegacyOnboardingFunnel`, `MarketingAnalytics` (in-file helpers — drop calls)
+
+### 3. Panels removed entirely (delete files)
+
+- `src/components/admin/RazorpayTestCheckout.tsx` — dev-only checkout.
+- `src/pages/AdminChief.tsx` + `/admin/chief` route — AI burn, no revenue.
+- `src/pages/KammattamPopout.tsx` + `/admin/kammattam` route — vanity meter.
+- `src/pages/AdminOperations.tsx` + `/admin/operations` route — superseded by the 8 buckets.
+
+(`ChiefBriefing.tsx` and `AiMcpControlCenter.tsx` only get unmounted — kept in repo per "hide, don't delete" for AI features.)
 
 ---
 
-### 5. Out of scope (next steps)
+### 4. Routes — exact changes (both `AdminRoutes` and `PublicRoutes` in `src/App.tsx`)
 
-- Step 2: Admin panel collapse (50 → 8).
-- Step 3: Payment provider trim (Razorpay + manual only).
+**Keep:**
+- `/admin` (Home)
+- `/admin/users`, `/admin/billing`, `/admin/storage`, `/admin/settings`
+
+**Rename / add:**
+- `/admin/content` → `/admin/approvals` (legacy `/admin/content` redirects via `pathToTab` mapping)
+- `/admin/support` → `/admin/comms`
+- `/admin/reports` → `/admin/audit`
+- new: `/admin/catalog`
+
+**Remove (routes + page files):**
+- `/admin/super`, `/admin/business`, `/admin/finance`, `/admin/legal`, `/admin/qc`, `/admin/rights`, `/admin/team`, `/admin/kammattam`, `/admin/operations`, `/admin/chief`
+
+Legacy paths above are redirected to their new bucket inside `pathToTab` so old bookmarks still land on the right tab. Drop dead routes from the route table.
+
+---
+
+### 5. Exact files to edit
+
+1. **`src/App.tsx`** — drop 8 admin imports (`AdminChief`, `KammattamPopout`, `AdminOperations`, plus 7 dead route lines × 2 route blocks). Add catalog/comms/approvals/audit. Mirror in `AdminRoutes` and `PublicRoutes`.
+2. **`src/pages/Admin.tsx`** —
+   - Trim imports to the kept components only.
+   - Replace `TabsList` with 8 `DeptTab`s.
+   - Rewrite `pathToTab` to map legacy paths → new buckets.
+   - Rewrite the 7 `TabsContent` blocks to match the table in §1.
+   - Delete `LegacyOnboardingFunnel`, `MarketingAnalytics`, and `rows`-fetching state (no longer rendered).
+   - Update `QuickNav` tiles to the 8 buckets.
+3. **Delete files:** `src/pages/AdminChief.tsx`, `src/pages/KammattamPopout.tsx`, `src/pages/AdminOperations.tsx`, `src/components/admin/RazorpayTestCheckout.tsx`.
+
+---
+
+### 6. Patch order
+
+1. Edit `Admin.tsx` (single biggest change — tabs, content, helpers, imports).
+2. Edit `App.tsx` route tables + drop dead imports.
+3. `rm` the 4 dead files.
+4. Build check; fix any stale imports the compiler surfaces.
+
+---
+
+### 7. Out of scope (next steps)
+
+- Step 3: Payment provider trim (Razorpay + manual only — `Paddle`, `Fastlink` cuts).
 - Step 4: Storage table consolidation.
+- Step 5: Edge function disablement.
 
-Reply **"go"** to execute, or call out anything to keep that I marked for removal.
+Reply **"go"** to execute.

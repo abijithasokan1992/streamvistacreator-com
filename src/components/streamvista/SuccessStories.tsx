@@ -13,9 +13,13 @@ import { supabase } from "@/integrations/supabase/client";
 type Film = {
   id: string;
   title: string;
+  subtitle: string | null;
   blurb: string | null;
   poster_url: string | null;
   link_url: string | null;
+  content_type: string | null;
+  year: number | null;
+  partner: string | null;
 };
 
 export const SuccessStories = () => {
@@ -27,6 +31,8 @@ export const SuccessStories = () => {
     (supabase as any)
       .from("featured_films")
       .select("*")
+      .eq("is_active", true)
+      .eq("status", "published")
       .order("sort_order")
       .order("created_at", { ascending: false })
       .then(({ data }: any) => {

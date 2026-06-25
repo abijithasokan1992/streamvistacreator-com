@@ -155,6 +155,10 @@ export default function MyStudioProfile() {
     canEdit && setEForm((f) => ({ ...f, [k]: v as never }));
 
   const handleSave = async () => {
+    if (invalidMessage) {
+      toast.error(invalidMessage);
+      return;
+    }
     try {
       if (Object.keys(pForm).length) await saveProfile(pForm);
       if (studioExt && Object.keys(eForm).length) {

@@ -56,6 +56,7 @@ export default function Auth() {
   const navigate = useNavigate();
   const [search] = useSearchParams();
   const { user, role, loading } = useAuth();
+  const blockedBrowser = search.get("in_app_error") === "1";
 
   const intentParam = search.get("intent");
   const roleParam = search.get("role");

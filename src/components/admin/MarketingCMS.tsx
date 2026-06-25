@@ -241,8 +241,9 @@ function Section({ kind, title, icon, helper }: { kind: Kind; title: string; ico
   );
 }
 
-function RowCard({ kind, row, onChange, onSave, onDelete, onUpload, onSetStatus, saving, dragHandleProps }: {
+function RowCard({ kind, row, isLive, onChange, onSave, onDelete, onUpload, onSetStatus, saving, dragHandleProps }: {
   kind: Kind; row: AnyRow;
+  isLive?: boolean;
   onChange: (p: Partial<AnyRow>) => void;
   onSave: () => void; onDelete: () => void;
   onUpload: (field: string, file: File) => void;

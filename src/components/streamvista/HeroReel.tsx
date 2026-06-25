@@ -84,10 +84,11 @@ export function HeroReel() {
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      <div className="relative h-[58vh] min-h-[440px] max-h-[760px] w-full overflow-hidden border-y border-border/40">
+      <div className="relative h-[78vh] min-h-[520px] max-h-[820px] sm:h-[68vh] sm:min-h-[480px] md:h-[58vh] md:min-h-[440px] md:max-h-[760px] w-full overflow-hidden border-y border-border/40">
         {/* Layered cinematic backdrops with slow crossfade */}
         {items.map((it, k) => {
           const url = backdrop(it);
+          const mUrl = mobileImage(it);
           const isActive = k === i;
           return (
             <div
@@ -96,17 +97,20 @@ export function HeroReel() {
               className="absolute inset-0 transition-opacity duration-[1800ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
               style={{ opacity: isActive ? 1 : 0 }}
             >
-              {url ? (
-                <img
-                  src={url}
-                  alt=""
-                  width={1920}
-                  height={1080}
-                  loading={k === 0 ? "eager" : "lazy"}
-                  fetchPriority={isActive ? "high" : "auto"}
-                  className="absolute inset-0 w-full h-full object-cover will-change-transform animate-[reel-pan_14s_ease-in-out_infinite_alternate]"
-                  style={{ filter: "saturate(1.05) contrast(1.05)" }}
-                />
+              {url || mUrl ? (
+                <picture>
+                  <source media="(max-width: 767px)" srcSet={mUrl || url} />
+                  <img
+                    src={url || mUrl}
+                    alt=""
+                    width={1920}
+                    height={1080}
+                    loading={k === 0 ? "eager" : "lazy"}
+                    fetchPriority={isActive ? "high" : "auto"}
+                    className="absolute inset-0 w-full h-full object-cover object-center will-change-transform animate-[reel-pan_14s_ease-in-out_infinite_alternate]"
+                    style={{ filter: "saturate(1.05) contrast(1.05)" }}
+                  />
+                </picture>
               ) : (
                 <div className="absolute inset-0 bg-secondary" />
               )}

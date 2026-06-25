@@ -46,7 +46,7 @@ export default function MarketingCMS() {
         kind="hero"
         title="Homepage Hero Banners"
         icon={<ImageIcon className="w-4 h-4" />}
-        helper={<>The public homepage renders the <strong>single hero banner</strong> that is <strong>Published</strong> AND <strong>Active</strong> with the <strong>lowest Sort order</strong>. New rows save as <strong>Draft</strong> — click <strong>Publish</strong> on the row to make it eligible to go live.</>}
+        helper={<>Set the <strong>Hero Mode</strong> below. In <strong>Single</strong> mode the homepage renders only the <strong>Published</strong> + <strong>Active</strong> banner with the <strong>lowest Sort order</strong>. In <strong>Slider</strong> mode it fades through <em>all</em> Published + Active banners in Sort order. New rows save as <strong>Draft</strong> — click <strong>Publish</strong> to make a row eligible.</>}
       />
 
       <Section

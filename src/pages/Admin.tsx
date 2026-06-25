@@ -44,6 +44,7 @@ import RazorpayConnectivityStatus from "@/components/admin/RazorpayConnectivityS
 import AdminReportsConsole from "@/components/admin/AdminReportsConsole";
 import PaymentSecurityEvents from "@/components/admin/PaymentSecurityEvents";
 import MarketingCMS from "@/components/admin/MarketingCMS";
+import FounderVault from "@/components/admin/FounderVault";
 
 interface Row {
   id: string;
@@ -61,7 +62,7 @@ interface Row {
   created_at: string;
 }
 
-const TAB_KEYS = ["overview", "users", "approvals", "homepage", "catalog", "billing", "storage", "comms", "settings", "audit"] as const;
+const TAB_KEYS = ["overview", "users", "approvals", "homepage", "catalog", "billing", "storage", "comms", "settings", "audit", "vault"] as const;
 type TabKey = typeof TAB_KEYS[number];
 
 function pathToTab(path: string, search: URLSearchParams): TabKey {
@@ -78,6 +79,7 @@ function pathToTab(path: string, search: URLSearchParams): TabKey {
   if (p.startsWith("/admin/comms") || p.startsWith("/admin/support")) return "comms";
   if (p.startsWith("/admin/settings")) return "settings";
   if (p.startsWith("/admin/audit") || p.startsWith("/admin/reports") || p.startsWith("/admin/security")) return "audit";
+  if (p.startsWith("/admin/vault") || p.startsWith("/admin/founder-vault")) return "vault";
   return "overview";
 }
 
@@ -295,7 +297,7 @@ export default function Admin() {
           defaultValue={pathToTab(location.pathname, searchParams)}
           className="w-full"
         >
-          <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-10 gap-1.5 sm:gap-2 h-auto p-1 sm:p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-6 sm:mb-8">
+          <TabsList className={`grid grid-cols-2 sm:grid-cols-3 ${isSuperAdmin ? "lg:grid-cols-11" : "lg:grid-cols-10"} gap-1.5 sm:gap-2 h-auto p-1 sm:p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-6 sm:mb-8`}>
             <DeptTab value="overview"  icon={<LayoutDashboard className="w-4 h-4" />} label="Home" />
             <DeptTab value="users"     icon={<UsersIcon className="w-4 h-4" />}       label="Users & Roles" />
             <DeptTab value="approvals" icon={<ClipboardCheck className="w-4 h-4" />}  label="Approvals" />
@@ -306,6 +308,9 @@ export default function Admin() {
             <DeptTab value="comms"     icon={<Inbox className="w-4 h-4" />}           label="Comms" />
             <DeptTab value="settings"  icon={<SettingsIcon className="w-4 h-4" />}    label="Settings" />
             <DeptTab value="audit"     icon={<FileText className="w-4 h-4" />}        label="Audit" />
+            {isSuperAdmin && (
+              <DeptTab value="vault"   icon={<Crown className="w-4 h-4" />}           label="Founder Vault" />
+            )}
           </TabsList>
 
           <TabsContent value="overview" className="space-y-8 mt-0 animate-fade-in">
@@ -397,6 +402,13 @@ export default function Admin() {
             <AdminReportsConsole />
             <PaymentSecurityEvents />
           </TabsContent>
+
+          {isSuperAdmin && (
+            <TabsContent value="vault" className="space-y-8 mt-0 animate-fade-in">
+              <DeptHeader icon={<Crown className="w-5 h-5" />} title="Founder Vault" desc="Private Platform Owner storage — masters, contracts, investor & legal documents. Separately passphrase-locked and audit-logged." />
+              <FounderVault />
+            </TabsContent>
+          )}
         </Tabs>
       </section>
     </main>

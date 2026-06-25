@@ -251,25 +251,65 @@ Deno.serve(async (req) => {
       // Custom confirmation email — always delivered to the founder mailbox
       // for this inaugural ceremonial payment (auth email is used only as a
       // fallback CC-style alternative if the founder address is ever cleared).
-      try {
-        const recipient = ARUNA_FOUNDER_EMAIL || userRes.user.email || "";
-        if (recipient) {
-          await admin.functions.invoke("send-transactional-email", {
-            body: {
-              templateName: "inaugural-activation",
-              recipientEmail: recipient,
-              idempotencyKey: `inaugural-activation-${paymentId}`,
-              templateData: {
-                displayName: userRes.user.user_metadata?.full_name?.split(" ")?.[0] ?? "Aruna",
-              },
-            },
-          });
+      //
+      // Send is wrapped in a bounded retry. Idempotency is preserved because
+      // every attempt uses the SAME `inaugural-activation-${paymentId}` key,
+      // so the downstream email worker de-duplicates across retries — at most
+      // one delivery, even on transient 5xx / cold-start failures.
+      const recipient = ARUNA_FOUNDER_EMAIL || userRes.user.email || "";
+      let emailResult: { ok: boolean; attempts: number; lastError: string | null } = { ok: false, attempts: 0, lastError: null };
+      if (recipient) {
+        emailResult = await sendInauguralEmailWithRetry(admin, {
+          recipient,
+          paymentId,
+          displayName: userRes.user.user_metadata?.full_name?.split(" ")?.[0] ?? "Aruna",
+        });
+        if (!emailResult.ok) {
+          console.error("inaugural email send failed after retries", emailResult);
+          // Record a non-fatal audit entry — payment stays verified; client
+          // can call action:"resend_email" later to recover delivery without
+          // any duplicate-charge or duplicate-email risk.
+          try {
+            await (admin as any).from("razorpay_audit_log").insert({
+              user_id: uid,
+              event_type: EVENT_TYPE,
+              status: "email_send_failed",
+              amount_paise: AMOUNT_PAISE,
+              order_id: orderId,
+              payment_id: paymentId,
+              source: "inaugural-activation-pay",
+              signature_valid: true,
+            });
+          } catch (_) { /* swallow — best-effort audit */ }
         }
-      } catch (e) {
-        console.error("inaugural email invoke failed", e);
       }
 
-      return j({ verified: true });
+      return j({
+        verified: true,
+        email: { sent: emailResult.ok, attempts: emailResult.attempts, error: emailResult.lastError },
+      });
+    }
+
+    // Safe, idempotent retry of the inaugural confirmation email.
+    // Only valid after the inaugural payment is `paid`. Re-uses the same
+    // idempotency key as the original verify-time send.
+    if (action === "resend_email") {
+      const { paid, row } = await hasCompletedInaugural(admin, uid);
+      if (!paid || !row?.payment_id) {
+        return j({ error: "No completed inaugural payment to resend email for" }, 409);
+      }
+      const recipient = ARUNA_FOUNDER_EMAIL || userRes.user.email || "";
+      if (!recipient) return j({ error: "No recipient email available" }, 400);
+
+      const result = await sendInauguralEmailWithRetry(admin, {
+        recipient,
+        paymentId: String(row.payment_id),
+        displayName: userRes.user.user_metadata?.full_name?.split(" ")?.[0] ?? "Aruna",
+      });
+      return j(
+        { ok: result.ok, attempts: result.attempts, error: result.lastError, recipient },
+        result.ok ? 200 : 502,
+      );
     }
 
     return j({ error: "Unknown action" }, 400);

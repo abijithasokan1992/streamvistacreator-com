@@ -15,7 +15,7 @@ export const FinalCta = () => (
         <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-4xl md:text-6xl lg:text-7xl">
           Move your catalogue
           <br />
-          <span className="gradient-text">into one secure cloud.</span>
+          <span className="gradient-text">into one secure cloud</span>
         </h2>
         <p className="mt-6 text-base md:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
           Built in India for cinema operators worldwide.

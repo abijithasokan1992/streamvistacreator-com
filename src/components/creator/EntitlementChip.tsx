@@ -13,6 +13,14 @@ type Entitlement = {
 
 const FREE_TIER_GB = 5;
 
+// Founder-direct premium override (see titleApi.ts). Mirrors the
+// premium-equivalent entitlement display for founder-granted accounts
+// even when no plan_assignment / storage_allocation row exists yet.
+const FOUNDER_PREMIUM_USER_IDS = new Set<string>([
+  "6d6680c4-156c-4d57-833d-951f56101879",
+]);
+const FOUNDER_PREMIUM_GB = 5 * 1024; // 5 TB
+
 /**
  * Reads canonical entitlement (plan_assignments + storage_allocations + invoices/topups).
  * Falls back to legacy user_profiles fields when no canonical rows exist (new accounts

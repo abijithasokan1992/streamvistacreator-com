@@ -130,7 +130,7 @@ export default function HomeSection({ onNavigate, isFree }: { onNavigate: (s: Se
 
       {/* Operational signals */}
       <UploadDiagnostics />
-      <ReviewNotesInbox />
+      {!isFree && <ReviewNotesInbox />}
     </div>
   );
 }

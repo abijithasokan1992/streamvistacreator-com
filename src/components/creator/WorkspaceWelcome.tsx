@@ -14,7 +14,7 @@ type Summary = {
   titleLimit: number | null;
 };
 
-const FREE_TIER_GB = 50;
+const FREE_TIER_GB = 5;
 
 /**
  * Workspace identity + at-a-glance summary card.

@@ -1,25 +1,30 @@
+import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { AgentDock } from "./AgentDock";
 import type { AgentSurface } from "./AgentChat";
 import { useAuth } from "@/hooks/useAuth";
+import { fetchFreeTierStatus } from "@/lib/creator/titleApi";
 
 /**
  * Route-aware launcher: mounts the right surface agent based on the URL.
- * - "/" or "/home" → Vista (concierge) — authenticated visitors only,
- *   because agent-chat requires a bearer token on every surface.
- * - "/dashboard/content" or any creator workspace → Aria
- * - "/dashboard/studio" or "/studio" → Orion
- * - "/dashboard/buyer" → Atlas
- * - "/admin/*" → no surface agent (Chief AI lives inside Admin → Chief tab)
+ * Free Creator users do not get Aria (the Creator AI surface) — paid surface only.
  */
 export function RouteAgentDock() {
   const { pathname } = useLocation();
-  const { session, loading } = useAuth();
+  const { session, loading, user } = useAuth();
+  const [isFree, setIsFree] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!user) { setIsFree(null); return; }
+    let cancelled = false;
+    (async () => {
+      const t = await fetchFreeTierStatus();
+      if (!cancelled) setIsFree(!!t?.is_free);
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   if (pathname.startsWith("/admin") || pathname.startsWith("/auth")) return null;
-
-  // Do not mount any agent dock for unauthenticated visitors — the underlying
-  // edge function (`agent-chat`) is auth-gated and would 401 on every send.
   if (loading) return null;
   if (!session) return null;
 
@@ -30,5 +35,9 @@ export function RouteAgentDock() {
   else if (pathname.startsWith("/dashboard/buyer") || pathname.startsWith("/screening")) surface = "buyer";
   else surface = "home";
 
+  // Aria/Creator AI is a paid surface — hide for free-tier creators.
+  if (surface === "creator" && isFree) return null;
+
   return <AgentDock surface={surface} />;
 }
+

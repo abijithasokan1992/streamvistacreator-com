@@ -36,8 +36,8 @@ export const SECTIONS: ReadonlyArray<SectionDef> = [
   // Main
   { id: "home",           label: "Home",         heading: "Home",         tip: "Your dashboard overview.",                              icon: Home,    group: "main" },
   { id: "titles",         label: "Titles",       heading: "Titles",       tip: "Add and manage your films and shows.",                  icon: Film,    group: "main" },
-  { id: "submissions",    label: "Review Queue", heading: "Review Queue", tip: "Track which titles are being reviewed.",                icon: Inbox,   group: "main" },
-  { id: "updates",        label: "Inbox",        heading: "Inbox",        tip: "Messages and notes from our team.",                     icon: Bell,    group: "main" },
+  { id: "submissions",    label: "Review Queue", heading: "Review Queue", tip: "Track which titles are being reviewed.",                icon: Inbox,   group: "main", proOnly: true },
+  { id: "updates",        label: "Inbox",        heading: "Inbox",        tip: "Messages and notes from our team.",                     icon: Bell,    group: "main", proOnly: true },
 
   // Storage
   { id: "delivery_vault", label: "My Library",   heading: "My Library",   subhead: "Masters, deliveries, archives.", tip: "Secure storage for your master files.", icon: Database, group: "storage" },

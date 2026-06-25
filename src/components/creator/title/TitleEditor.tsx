@@ -15,6 +15,7 @@ import {
 import { AssetUploader, AssetList } from "./AssetUploader";
 import { StatusBadge } from "./StatusBadge";
 import { RightsAvailabilityPanel } from "./RightsAvailabilityPanel";
+import { FreeSubmissionTermsModal } from "./FreeSubmissionTermsModal";
 import RequestEditButton from "@/components/creator/RequestEditButton";
 import { useTitleLock } from "@/hooks/useTitleLock";
 
@@ -46,6 +47,8 @@ export function TitleEditor({
   const [autoSavedAt, setAutoSavedAt] = useState<number | null>(null);
   const [dirty, setDirty] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [termsOpen, setTermsOpen] = useState(false);
+  const [pendingFreeSubmit, setPendingFreeSubmit] = useState(false);
   const [name, setName] = useState("");
   const [meta, setMeta] = useState<TitleMetadata | null>(null);
   const [profileDefaults, setProfileDefaults] = useState<{ rights_owner: string; production_company: string }>({ rights_owner: "", production_company: "" });
@@ -181,6 +184,18 @@ export function TitleEditor({
   const ready = readiness?.ready ?? localChecklist?.ready ?? false;
   const missing = readiness?.missing ?? localChecklist?.missing ?? [];
 
+  const doSubmit = async () => {
+    if (!title) return;
+    setSubmitting(true);
+    try {
+      await submitTitle(title.id);
+      setTermsOpen(false);
+      onSubmitted();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Submit failed.");
+    } finally { setSubmitting(false); }
+  };
+
   const handleSubmit = async () => {
     if (!title) return;
     if (!ready) {
@@ -195,13 +210,13 @@ export function TitleEditor({
       toast.error("Free plan allows 1 submission. Request a plan change from Storage & Billing to submit more titles.");
       return;
     }
-    setSubmitting(true);
-    try {
-      await submitTitle(title.id);
-      onSubmitted();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Submit failed.");
-    } finally { setSubmitting(false); }
+    // Free-tier: require explicit acknowledgement of commercial submission terms.
+    if (t?.is_free) {
+      setPendingFreeSubmit(true);
+      setTermsOpen(true);
+      return;
+    }
+    await doSubmit();
   };
 
   const byCat = (cats: AssetCategory[]) => assets.filter((a) => cats.includes(a.category));
@@ -375,6 +390,12 @@ export function TitleEditor({
           )}
         </div>
       </div>
+      <FreeSubmissionTermsModal
+        open={termsOpen}
+        submitting={submitting}
+        onCancel={() => { setTermsOpen(false); setPendingFreeSubmit(false); }}
+        onConfirm={() => { if (pendingFreeSubmit) void doSubmit(); }}
+      />
     </div>
   );
 }

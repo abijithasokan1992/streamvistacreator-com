@@ -195,9 +195,11 @@ Deno.serve(async (req) => {
         console.error("notification insert failed", e);
       }
 
-      // Custom confirmation email — invoked but does not block the response.
+      // Custom confirmation email — always delivered to the founder mailbox
+      // for this inaugural ceremonial payment (auth email is used only as a
+      // fallback CC-style alternative if the founder address is ever cleared).
       try {
-        const recipient = userRes.user.email ?? "";
+        const recipient = ARUNA_FOUNDER_EMAIL || userRes.user.email || "";
         if (recipient) {
           await admin.functions.invoke("send-transactional-email", {
             body: {

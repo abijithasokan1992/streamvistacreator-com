@@ -144,9 +144,9 @@ export const Pricing = () => {
                 International billing
               </span>
             </div>
-            <h3 className="font-display text-xl md:text-2xl font-bold tracking-tight mb-1">
+            <h2 className="font-display text-xl md:text-2xl font-bold tracking-tight mb-1">
               Outside India? Talk to StreamVista.
-            </h3>
+            </h2>
             <p className="text-sm text-muted-foreground max-w-xl leading-relaxed">
               Self-serve checkout is currently India / INR only via Razorpay. International billing
               for Creator, Studio and enterprise customers is handled directly by our team while we

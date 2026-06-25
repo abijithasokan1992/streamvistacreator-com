@@ -38,6 +38,7 @@ import Contact from "./pages/Contact.tsx";
 import InvoiceReceipt from "./pages/InvoiceReceipt.tsx";
 import ManualInvoiceReceipt from "./pages/ManualInvoiceReceipt.tsx";
 import ScreeningRoom from "./pages/ScreeningRoom.tsx";
+import MyCreatorProfile from "./pages/profile/MyCreatorProfile.tsx";
 
 import ReferralCapture from "./components/ReferralCapture.tsx";
 import { RouteAgentDock } from "./components/agents/RouteAgentDock.tsx";
@@ -105,6 +106,7 @@ const PublicRoutes = () => (
     <Route path="/dashboard/content" element={<ContentOwnerDashboard />} />
     <Route path="/dashboard/studio" element={<StudioDashboard />} />
     <Route path="/dashboard/buyer" element={<BuyerDashboard />} />
+    <Route path="/dashboard/profile/creator" element={<MyCreatorProfile />} />
     <Route path="/dashboard/localization" element={<CanonicalDashboardRedirect />} />
     <Route path="/dashboard/distribution" element={<CanonicalDashboardRedirect />} />
 

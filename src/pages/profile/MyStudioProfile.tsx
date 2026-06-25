@@ -27,7 +27,8 @@ import {
 
 function FieldError({ result }: { result: ValidationResult }) {
   if (result.ok) return null;
-  return <p className="text-[11px] text-destructive mt-1">{result.message}</p>;
+  const msg = result.message;
+  return <p className="text-[11px] text-destructive mt-1">{msg}</p>;
 }
 
 const ENTITY_TYPES = [

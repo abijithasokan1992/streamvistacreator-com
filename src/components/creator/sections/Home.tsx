@@ -21,7 +21,7 @@ const SUBMITTED_STATES = new Set(["submitted", "in_review", "qc_review", "legal_
  * Answers: what plan, what storage, which titles need work, what is submitted,
  * any admin updates to act on. Not a marketing page.
  */
-export default function HomeSection({ onNavigate }: { onNavigate: (s: SectionId) => void; isFree: boolean }) {
+export default function HomeSection({ onNavigate, isFree }: { onNavigate: (s: SectionId) => void; isFree: boolean }) {
   const { user } = useAuth();
   const [titles, setTitles] = useState<TitleRow[]>([]);
   const [updates, setUpdates] = useState<UpdateRow[]>([]);
@@ -105,23 +105,26 @@ export default function HomeSection({ onNavigate }: { onNavigate: (s: SectionId)
           cta="Open Titles"
           onClick={() => onNavigate("titles")}
         />
-        <OpCard
-          icon={Inbox}
-          label="Review Queue"
-          value={loading ? "…" : `${inReview} in review · ${approved} approved`}
-          hint="Submission status."
-          cta="Open Queue"
-          onClick={() => onNavigate("submissions")}
-        />
-        <OpCard
-          icon={Bell}
-          label="Inbox"
-          value={loading ? "…" : `${updates.length} recent`}
-          hint="Messages from our team."
-          cta="Open Inbox"
-          onClick={() => onNavigate("updates")}
-        />
-      </div>
+        {!isFree && (
+          <OpCard
+            icon={Inbox}
+            label="Review Queue"
+            value={loading ? "…" : `${inReview} in review · ${approved} approved`}
+            hint="Submission status."
+            cta="Open Queue"
+            onClick={() => onNavigate("submissions")}
+          />
+        )}
+        {!isFree && (
+          <OpCard
+            icon={Bell}
+            label="Inbox"
+            value={loading ? "…" : `${updates.length} recent`}
+            hint="Messages from our team."
+            cta="Open Inbox"
+            onClick={() => onNavigate("updates")}
+          />
+        )}
 
       {/* Operational signals */}
       <UploadDiagnostics />

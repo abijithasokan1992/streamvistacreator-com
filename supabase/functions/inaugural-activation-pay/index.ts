@@ -31,6 +31,23 @@ const AMOUNT_PAISE = 88500;
 
 const EVENT_TYPE = "inaugural_founder_activation";
 
+// Hard-coded founder recipient — ceremonial inaugural completion email must
+// always reach this mailbox even if the auth user email is ever rotated.
+const ARUNA_FOUNDER_EMAIL = "Arunasankarca@gmail.com";
+
+async function hasCompletedInaugural(admin: any, uid: string): Promise<{ paid: boolean; row: any | null }> {
+  const { data } = await admin
+    .from("razorpay_audit_log")
+    .select("id, status, amount_paise, order_id, payment_id, created_at")
+    .eq("user_id", uid)
+    .eq("event_type", EVENT_TYPE)
+    .eq("status", "paid")
+    .order("created_at", { ascending: false })
+    .limit(1);
+  const row = Array.isArray(data) && data.length ? data[0] : null;
+  return { paid: !!row, row };
+}
+
 function json(body: unknown, status = 200, req?: Request) {
   return new Response(JSON.stringify(body), {
     status,
@@ -69,8 +86,37 @@ Deno.serve(async (req) => {
     const action = String(body?.action ?? "");
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
+
+    // Status probe — lets the client detect "already completed" without
+    // starting a new Razorpay order.
+    if (action === "status") {
+      const { paid, row } = await hasCompletedInaugural(admin, uid);
+      return j({
+        completed: paid,
+        amount_paise: AMOUNT_PAISE,
+        paid_at: row?.created_at ?? null,
+        order_id: row?.order_id ?? null,
+        payment_id: row?.payment_id ?? null,
+      });
+    }
+
     const creds = await loadRazorpayCreds(admin);
     if (!creds) return j({ error: "Razorpay not configured" }, 503);
+
+    // Duplicate-guard — inaugural payment is a one-time ceremonial charge.
+    if (action === "create" || action === "verify") {
+      const { paid, row } = await hasCompletedInaugural(admin, uid);
+      if (paid) {
+        return j({
+          error: "Inaugural activation already completed",
+          completed: true,
+          amount_paise: AMOUNT_PAISE,
+          paid_at: row?.created_at ?? null,
+          order_id: row?.order_id ?? null,
+          payment_id: row?.payment_id ?? null,
+        }, 409);
+      }
+    }
 
     if (action === "create") {
       const safeKeyId = creds.keyId.trim().replace(/[^\x20-\x7E]/g, "");
@@ -149,9 +195,11 @@ Deno.serve(async (req) => {
         console.error("notification insert failed", e);
       }
 
-      // Custom confirmation email — invoked but does not block the response.
+      // Custom confirmation email — always delivered to the founder mailbox
+      // for this inaugural ceremonial payment (auth email is used only as a
+      // fallback CC-style alternative if the founder address is ever cleared).
       try {
-        const recipient = userRes.user.email ?? "";
+        const recipient = ARUNA_FOUNDER_EMAIL || userRes.user.email || "";
         if (recipient) {
           await admin.functions.invoke("send-transactional-email", {
             body: {

@@ -26,25 +26,33 @@ const BLANK: Record<Kind, AnyRow> = {
 
 export default function MarketingCMS() {
   return (
-    <div className="glass rounded-2xl p-6 space-y-8">
+    <div className="glass rounded-2xl p-6 space-y-10">
       <div className="flex items-start gap-3">
         <div className="w-11 h-11 rounded-xl bg-accent/10 text-accent grid place-items-center shrink-0">
           <Sparkles className="w-5 h-5" />
         </div>
         <div>
           <h2 className="font-display text-2xl font-bold">Homepage CMS</h2>
-          <p className="text-sm text-muted-foreground">Manage hero banners, advertisement zones, featured films and news / events on the public landing.</p>
+          <p className="text-sm text-muted-foreground">Everything visible on the public StreamVista homepage is controlled from this page — hero, licensed content carousel, ads and news.</p>
         </div>
       </div>
-      <Section kind="reel" title="Homepage hero carousel (cinematic title reel)" icon={<Clapperboard className="w-4 h-4" />} />
-      <div className="space-y-2">
-        <p className="text-[11px] text-muted-foreground border-l-2 border-accent/50 pl-3">
-          <strong className="text-foreground/80">Homepage Hero:</strong> the public homepage renders the <em>first published &amp; active</em> hero banner by sort order. Change <code>sort_order</code>, toggle <code>Active</code>, or unpublish to switch which banner is live.
-        </p>
-        <Section kind="hero" title="Hero banners (homepage)" icon={<ImageIcon className="w-4 h-4" />} />
-      </div>
+
+      <Section
+        kind="hero"
+        title="Homepage Hero Banners"
+        icon={<ImageIcon className="w-4 h-4" />}
+        helper={<>The public homepage renders the <strong>single hero banner</strong> that is <strong>Published</strong> AND <strong>Active</strong> with the <strong>lowest Sort order</strong>. To switch the live hero from admin: lower the Sort order of the banner you want, or Unpublish/deactivate the current winner. The row currently shown on the homepage is marked <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-500 text-[10px] font-semibold uppercase">Live on Homepage</span>.</>}
+      />
+
+      <Section
+        kind="film"
+        title="Homepage Licensed Contents"
+        icon={<Film className="w-4 h-4" />}
+        helper={<>Controls the homepage strip <em>"Successfully Licensed Contents by StreamVista"</em>. Only items that are <strong>Published</strong> AND <strong>Active</strong> appear publicly. <strong>Sort order</strong> (low → high) controls left-to-right order in the carousel.</>}
+      />
+
+      <Section kind="reel" title="Homepage hero carousel (legacy cinematic reel)" icon={<Clapperboard className="w-4 h-4" />} />
       <Section kind="ad"   title="Advertisement zones"     icon={<Megaphone className="w-4 h-4" />} />
-      <Section kind="film" title="Licensed film portfolio" icon={<Film className="w-4 h-4" />} />
       <Section kind="news" title="News & events"           icon={<Newspaper className="w-4 h-4" />} />
     </div>
   );

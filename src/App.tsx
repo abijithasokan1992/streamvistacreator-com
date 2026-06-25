@@ -5,7 +5,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, dashboardForRole, useAuth } from "@/hooks/useAuth";
-import RoleGate from "@/components/RoleGate";
 
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
@@ -19,8 +18,6 @@ import ContentOwnerDashboard from "./pages/dashboards/ContentOwner.tsx";
 import StudioDashboard from "./pages/dashboards/StudioDash.tsx";
 import BuyerDashboard from "./pages/dashboards/Buyer.tsx";
 import AdminErrorBoundary from "./components/admin/AdminErrorBoundary";
-import AdminOperations from "./pages/AdminOperations.tsx";
-import KammattamPopout from "./pages/KammattamPopout.tsx";
 import Terms from "./pages/Terms.tsx";
 import Privacy from "./pages/Privacy.tsx";
 import IPCopyright from "./pages/IPCopyright.tsx";
@@ -43,7 +40,6 @@ import ManualInvoiceReceipt from "./pages/ManualInvoiceReceipt.tsx";
 import ScreeningRoom from "./pages/ScreeningRoom.tsx";
 
 import ReferralCapture from "./components/ReferralCapture.tsx";
-import AdminChief from "./pages/AdminChief.tsx";
 import { RouteAgentDock } from "./components/agents/RouteAgentDock.tsx";
 import WrongPortal from "./components/WrongPortal.tsx";
 import { SystemMessageProvider } from "./components/system/SystemMessageProvider.tsx";

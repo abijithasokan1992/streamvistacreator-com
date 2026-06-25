@@ -62,18 +62,34 @@ export default function HomeSection({ onNavigate, isFree }: { onNavigate: (s: Se
       {/* One-time onboarding checklist */}
       <OnboardingChecklist hasTitles={titles.length > 0} onNavigate={onNavigate} />
 
-      {/* Primary action */}
-      <button
-        onClick={() => onNavigate("titles")}
-        className="w-full rounded-xl border border-accent/40 bg-accent/10 hover:bg-accent/15 p-5 text-left flex items-center gap-3"
-      >
-        <Plus className="w-5 h-5 text-accent" />
-        <div className="flex-1">
-          <p className="font-semibold">New Title</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Start a draft. Add files. Submit.</p>
-        </div>
-        <ArrowRight className="w-4 h-4 text-muted-foreground" />
-      </button>
+      {/* Primary action — gated on free plan when 1-title limit is hit */}
+      {isFree && tier && !tier.can_create_draft && tier.lifecycle_count >= 1 ? (
+        <button
+          onClick={() => onNavigate("billing")}
+          className="w-full rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/15 p-5 text-left flex items-center gap-3"
+        >
+          <Crown className="w-5 h-5 text-amber-300" />
+          <div className="flex-1">
+            <p className="font-semibold">Upgrade to add more titles</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Free plan allows 1 title. Upgrade for 5 TB storage + multiple submissions (₹25,000 + 18% GST).
+            </p>
+          </div>
+          <ArrowRight className="w-4 h-4 text-muted-foreground" />
+        </button>
+      ) : (
+        <button
+          onClick={() => onNavigate("titles")}
+          className="w-full rounded-xl border border-accent/40 bg-accent/10 hover:bg-accent/15 p-5 text-left flex items-center gap-3"
+        >
+          <Plus className="w-5 h-5 text-accent" />
+          <div className="flex-1">
+            <p className="font-semibold">New Title</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Start a draft. Add files. Submit.</p>
+          </div>
+          <ArrowRight className="w-4 h-4 text-muted-foreground" />
+        </button>
+      )}
 
       {/* Storage row — compact */}
       <div className="rounded-2xl border border-border/40 bg-secondary/5 p-4 flex flex-wrap items-center justify-between gap-3">

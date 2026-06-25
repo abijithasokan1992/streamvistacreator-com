@@ -308,23 +308,38 @@ export default function MyStudioProfile() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Contact email</Label>
-                <Input disabled={!canEdit} type="email" value={mergedExt.primary_contact_email ?? ""} onChange={(e) => setE("primary_contact_email", e.target.value)} />
+                <Input disabled={!canEdit} type="email" inputMode="email" autoComplete="email" maxLength={255}
+                  value={mergedExt.primary_contact_email ?? ""}
+                  onChange={(e) => setE("primary_contact_email", e.target.value.trim())} />
+                <FieldError result={errors.contactEmail} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Contact phone</Label>
-                <Input disabled={!canEdit} value={mergedExt.primary_contact_phone ?? ""} onChange={(e) => setE("primary_contact_phone", e.target.value)} />
+                <Input disabled={!canEdit} inputMode="tel" autoComplete="tel" maxLength={20}
+                  value={mergedExt.primary_contact_phone ?? ""}
+                  onChange={(e) => setE("primary_contact_phone", formatPhone(e.target.value))} />
+                <FieldError result={errors.contactPhone} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Studio email</Label>
-                <Input disabled={!canEdit} type="email" value={merged.primary_email ?? ""} onChange={(e) => setP("primary_email", e.target.value)} />
+                <Input disabled={!canEdit} type="email" inputMode="email" maxLength={255}
+                  value={merged.primary_email ?? ""}
+                  onChange={(e) => setP("primary_email", e.target.value.trim())} />
+                <FieldError result={errors.studioEmail} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Studio phone</Label>
-                <Input disabled={!canEdit} value={merged.primary_phone ?? ""} onChange={(e) => setP("primary_phone", e.target.value)} />
+                <Input disabled={!canEdit} inputMode="tel" maxLength={20}
+                  value={merged.primary_phone ?? ""}
+                  onChange={(e) => setP("primary_phone", formatPhone(e.target.value))} />
+                <FieldError result={errors.studioPhone} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">WhatsApp</Label>
-                <Input disabled={!canEdit} value={merged.whatsapp ?? ""} onChange={(e) => setP("whatsapp", e.target.value)} />
+                <Input disabled={!canEdit} inputMode="tel" maxLength={20}
+                  value={merged.whatsapp ?? ""}
+                  onChange={(e) => setP("whatsapp", formatPhone(e.target.value))} />
+                <FieldError result={errors.whatsapp} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Website</Label>

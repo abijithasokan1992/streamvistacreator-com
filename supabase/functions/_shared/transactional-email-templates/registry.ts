@@ -6,6 +6,7 @@ import { template as loginAlert } from './login-alert.tsx'
 import { template as titleStatusUpdate } from './title-status-update.tsx'
 import { template as invoiceReceipt } from './invoice-receipt.tsx'
 import { template as ingestAlert } from './ingest-alert.tsx'
+import { template as inauguralActivation } from './inaugural-activation.tsx'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -23,4 +24,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'title-status-update': titleStatusUpdate,
   'invoice-receipt': invoiceReceipt,
   'ingest-alert': ingestAlert,
+  'inaugural-activation': inauguralActivation,
 }

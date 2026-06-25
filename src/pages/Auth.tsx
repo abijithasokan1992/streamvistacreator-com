@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Loader2, Mail, ArrowRight, CheckCircle2, ExternalLink } from "lucide-react";
+import { Loader2, Mail, ArrowRight, CheckCircle2, ExternalLink, Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth, dashboardForRole } from "@/hooks/useAuth";
@@ -376,32 +376,59 @@ function OpenInBrowserNotice({ prominent = false }: { prominent?: boolean }) {
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
-      toast.success("Link copied — paste it into Safari or Chrome to sign in.");
+      toast.success("Link copied. Open it in Safari or Chrome to continue.");
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error("Could not copy link. Please copy the address bar manually.");
     }
   };
 
+  if (prominent) {
+    return (
+      <div className="rounded-xl border border-accent/40 bg-accent/10 p-5 mb-6">
+        <h3 className="text-base font-semibold text-foreground">
+          Open StreamVista in your browser to continue
+        </h3>
+        <p className="text-sm text-muted-foreground mt-1.5">
+          Secure sign-in is blocked inside this app browser.
+          Open this page in Safari on iPhone or Chrome on Android, then continue sign-in there.
+        </p>
+
+        <div className="mt-4 flex flex-col gap-2">
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full h-11 rounded-xl bg-gradient-primary text-primary-foreground font-semibold inline-flex items-center justify-center gap-2 glow-primary"
+          >
+            <ExternalLink className="w-4 h-4" />
+            Open in Browser
+          </a>
+
+          <button
+            onClick={handleCopy}
+            className="w-full h-10 rounded-xl border border-border/60 bg-input/20 hover:bg-input/40 text-sm font-medium inline-flex items-center justify-center gap-2 transition-colors"
+          >
+            {copied ? <CheckCircle2 className="w-4 h-4 text-accent" /> : <Copy className="w-4 h-4" />}
+            {copied ? "Link copied!" : "Copy link"}
+          </button>
+        </div>
+
+        <p className="mt-3 text-[11px] text-muted-foreground/70 leading-relaxed">
+          If you opened this from WhatsApp, Gmail, Instagram, or another app, use that app's browser menu and choose Open in Browser.
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className={cn(
-      "rounded-xl border p-4 mb-6",
-      prominent
-        ? "border-accent/40 bg-accent/10"
-        : "border-border/60 bg-input/20"
-    )}>
+    <div className="rounded-xl border border-border/60 bg-input/20 p-4 mb-6">
       <div className="flex items-start gap-3">
-        <ExternalLink className={cn("w-4 h-4 mt-0.5 shrink-0", prominent ? "text-accent" : "text-muted-foreground")} />
+        <ExternalLink className="w-4 h-4 mt-0.5 shrink-0 text-muted-foreground" />
         <div className="flex-1">
-          <p className={cn("text-sm font-medium", prominent ? "text-foreground" : "text-muted-foreground")}>
-            {prominent
-              ? "Sign-in was blocked by this browser."
-              : "In-app browser detected."}
-          </p>
+          <p className="text-sm font-medium text-muted-foreground">In-app browser detected.</p>
           <p className="text-xs text-muted-foreground mt-1">
-            {prominent
-              ? "Please open this page in Safari (iOS) or Chrome (Android) and try again."
-              : "For the best sign-in experience, open this page in your device's default browser."}
+            For the best sign-in experience, open this page in your device's default browser.
           </p>
           <button
             onClick={handleCopy}

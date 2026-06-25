@@ -180,6 +180,12 @@ function Section({ kind, title, icon, helper }: { kind: Kind; title: string; ico
         </button>
       </div>
 
+      {helper && (
+        <p className="text-[11px] text-muted-foreground border-l-2 border-accent/50 pl-3 leading-relaxed">
+          {helper}
+        </p>
+      )}
+
       {dndEnabled && !loading && (
         <HeroReelPreview items={rows} />
       )}

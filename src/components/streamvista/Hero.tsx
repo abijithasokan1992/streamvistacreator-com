@@ -124,9 +124,9 @@ export const Hero = () => {
             <img
               src={img}
               alt={s.headline ?? "StreamVista hero"}
-              className="absolute inset-0 w-full h-full object-cover opacity-55"
+              className="absolute inset-0 w-full h-full object-cover opacity-90"
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-background/45 via-background/30 to-background" />
+            <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-background/5 to-background" />
           </div>
         );
       })}

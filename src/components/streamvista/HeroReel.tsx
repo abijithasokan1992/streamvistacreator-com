@@ -113,7 +113,7 @@ export function HeroReel() {
         })}
 
         {/* Cinematic overlays: bottom-to-top, vignette, film grain */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-background/10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background/20 via-background/10 to-transparent" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,hsl(var(--background))_100%)]" />
         <div className="pointer-events-none absolute inset-0 mix-blend-overlay opacity-[0.07]"
              style={{ backgroundImage:
@@ -184,7 +184,7 @@ export function HeroReel() {
                   ) : (
                     <div className="absolute inset-0 bg-secondary" />
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/30 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/20 via-background/10 to-transparent" />
                   <div className="absolute inset-x-0 bottom-0 p-2 text-left">
                     <div className="text-[10px] uppercase tracking-wider text-muted-foreground line-clamp-1">
                       {String(k + 1).padStart(2, "0")}

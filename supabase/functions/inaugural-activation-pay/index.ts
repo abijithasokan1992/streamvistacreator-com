@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
         event_type: EVENT_TYPE,
         status: "created",
         amount_paise: AMOUNT_PAISE,
-        razorpay_order_id: order.id,
+        order_id: order.id, source: "inaugural-activation-pay",
       });
 
       return j({
@@ -125,14 +125,14 @@ Deno.serve(async (req) => {
       if (expected !== signature) {
         await (admin as any).from("razorpay_audit_log").insert({
           user_id: uid, event_type: EVENT_TYPE, status: "signature_mismatch",
-          amount_paise: AMOUNT_PAISE, razorpay_order_id: orderId, razorpay_payment_id: paymentId,
+          amount_paise: AMOUNT_PAISE, order_id: orderId, payment_id: paymentId, source: "inaugural-activation-pay", signature_valid: true,
         });
         return j({ verified: false, error: "Signature mismatch" }, 400);
       }
 
       await (admin as any).from("razorpay_audit_log").insert({
         user_id: uid, event_type: EVENT_TYPE, status: "paid",
-        amount_paise: AMOUNT_PAISE, razorpay_order_id: orderId, razorpay_payment_id: paymentId,
+        amount_paise: AMOUNT_PAISE, order_id: orderId, payment_id: paymentId, source: "inaugural-activation-pay", signature_valid: true,
       });
 
       // Custom in-app notification — replaces the generic billing toast.

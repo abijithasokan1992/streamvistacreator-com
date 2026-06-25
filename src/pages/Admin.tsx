@@ -43,6 +43,7 @@ import RazorpayCredentials from "@/components/admin/RazorpayCredentials";
 import RazorpayConnectivityStatus from "@/components/admin/RazorpayConnectivityStatus";
 import AdminReportsConsole from "@/components/admin/AdminReportsConsole";
 import PaymentSecurityEvents from "@/components/admin/PaymentSecurityEvents";
+import MarketingCMS from "@/components/admin/MarketingCMS";
 
 interface Row {
   id: string;

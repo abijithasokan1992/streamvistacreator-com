@@ -62,7 +62,7 @@ const TRUST = [
 ];
 
 export const Workflow = () => (
-  <section id="workflow" className="py-24 border-b border-border/40 relative overflow-hidden">
+  <section id="workflow" className="py-16 sm:py-20 lg:py-24 border-b border-border/40 relative overflow-hidden">
     {/* ambient backdrop */}
     <div
       aria-hidden
@@ -74,17 +74,17 @@ export const Workflow = () => (
     />
 
     <div className="container relative">
-      <div className="mb-14 animate-fade-in">
-        <div className="flex items-center gap-3 mb-5">
+      <div className="mb-10 sm:mb-12 lg:mb-14 animate-fade-in">
+        <div className="flex items-center gap-3 mb-4 sm:mb-5">
           <div className="w-8 h-px bg-accent" />
           <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">
             One pipeline
           </span>
         </div>
-        <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-4xl md:text-6xl">
+        <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-3xl sm:text-4xl md:text-5xl lg:text-6xl">
           From intake <span className="gradient-text">to deal</span>
         </h2>
-        <p className="mt-5 max-w-2xl text-sm md:text-base text-muted-foreground">
+        <p className="mt-4 sm:mt-5 max-w-2xl text-sm md:text-base text-muted-foreground">
           Five stages, one secure rail. Content moves left to right — every step
           wrapped by the same trust layer.
         </p>
@@ -103,14 +103,14 @@ export const Workflow = () => (
           }}
         />
 
-        <ol className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 lg:gap-6 relative">
+        <ol className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 sm:gap-6 lg:gap-6 relative">
           {STEPS.map(({ icon: Icon, step, title, body }) => (
             <li key={step} className="relative group">
               {/* isometric stage tile */}
               <div className="relative flex flex-col items-center text-center">
                 {/* glyph block */}
                 <div
-                  className="relative w-[120px] h-[120px] mb-5 transition-transform duration-500 group-hover:-translate-y-1"
+                  className="relative w-[100px] h-[100px] sm:w-[110px] sm:h-[110px] lg:w-[120px] lg:h-[120px] mb-4 sm:mb-5 transition-transform duration-500 group-hover:-translate-y-1"
                   style={{ perspective: "600px" }}
                 >
                   <div
@@ -136,8 +136,8 @@ export const Workflow = () => (
                     }}
                   />
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <Icon className="w-9 h-9 text-primary drop-shadow-[0_0_10px_hsl(var(--primary)/0.55)]" />
-                    <span className="mt-2 font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">
+                    <Icon className="w-7 h-7 sm:w-8 sm:h-8 lg:w-9 lg:h-9 text-primary drop-shadow-[0_0_10px_hsl(var(--primary)/0.55)]" />
+                    <span className="mt-1.5 sm:mt-2 font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">
                       {step}
                     </span>
                   </div>
@@ -150,10 +150,10 @@ export const Workflow = () => (
                   style={{ boxShadow: "0 0 0 4px hsl(var(--background)), 0 0 16px hsl(var(--accent))" }}
                 />
 
-                <h3 className="font-display text-lg font-bold uppercase mt-2">
+                <h3 className="font-display text-base sm:text-lg font-bold uppercase mt-1 sm:mt-2">
                   {title}
                 </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed mt-1 max-w-[18ch]">
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mt-1 max-w-[24ch] sm:max-w-[20ch] lg:max-w-[18ch]">
                   {body}
                 </p>
               </div>
@@ -163,8 +163,8 @@ export const Workflow = () => (
       </div>
 
       {/* ===== Security & Trust band ===== */}
-      <div className="mt-16 relative">
-        <div className="flex items-center gap-3 mb-5">
+      <div className="mt-12 sm:mt-14 lg:mt-16 relative">
+        <div className="flex items-center gap-3 mb-4 sm:mb-5">
           <div className="w-8 h-px bg-accent" />
           <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">
             Security & Trust · wraps every stage
@@ -172,31 +172,31 @@ export const Workflow = () => (
         </div>
 
         <div
-          className="rounded-2xl border border-border/60 p-4 md:p-5 backdrop-blur-sm"
+          className="rounded-2xl border border-border/60 p-3 sm:p-4 md:p-5 backdrop-blur-sm"
           style={{
             background:
               "linear-gradient(180deg, hsl(var(--card) / 0.85), hsl(var(--background) / 0.6))",
             boxShadow: "inset 0 1px 0 hsl(var(--accent) / 0.18)",
           }}
         >
-          <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+          <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
             {TRUST.map(({ icon: Icon, label, body }) => (
               <li
                 key={label}
-                className="group flex items-start gap-3 rounded-xl border border-border/50 bg-background/60 p-3 md:p-4 transition-colors hover:border-accent/60"
+                className="group flex flex-col sm:flex-row items-center sm:items-start gap-2.5 sm:gap-3 rounded-xl border border-border/50 bg-background/60 p-2.5 sm:p-3 md:p-4 transition-colors hover:border-accent/60 text-center sm:text-left"
               >
                 <div
-                  className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center"
+                  className="shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center"
                   style={{
                     background:
                       "linear-gradient(135deg, hsl(var(--primary) / 0.18), hsl(var(--accent) / 0.18))",
                     boxShadow: "inset 0 0 0 1px hsl(var(--accent) / 0.3)",
                   }}
                 >
-                  <Icon className="w-4 h-4 text-accent" />
+                  <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-accent" />
                 </div>
                 <div className="min-w-0">
-                  <div className="font-display text-xs md:text-sm font-bold uppercase tracking-wide">
+                  <div className="font-display text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wide">
                     {label}
                   </div>
                   <div className="text-[11px] md:text-xs text-muted-foreground leading-snug mt-0.5">

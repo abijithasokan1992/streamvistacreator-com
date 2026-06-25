@@ -69,10 +69,59 @@ export function AgentChat({ surface, className }: { surface: AgentSurface; class
     setInput("");
     setLoading(true);
     try {
+      // Session preflight — protected surfaces require an authenticated user.
+      if (surface !== "home") {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!sessionData?.session) {
+          setMessages([
+            ...next,
+            {
+              role: "assistant",
+              content: `⚠️ Please sign in again to use **${g.name}**. Your session has expired.`,
+            },
+          ]);
+          setLoading(false);
+          return;
+        }
+      }
+
       const { data, error } = await supabase.functions.invoke("agent-chat", {
         body: { surface, messages: next.map((m) => ({ role: m.role, content: m.content })) },
       });
-      if (error) throw error;
+      if (error) {
+        // Surface the real edge-function error body instead of supabase-js's generic wrapper.
+        let detail = error?.message ?? "Request failed";
+        try {
+          const ctx: any = (error as any).context;
+          if (ctx?.body) {
+            // body can be a ReadableStream or string
+            const raw =
+              typeof ctx.body === "string"
+                ? ctx.body
+                : typeof ctx.text === "function"
+                ? await ctx.text()
+                : await new Response(ctx.body).text();
+            if (raw) {
+              try {
+                const parsed = JSON.parse(raw);
+                detail = parsed?.error || parsed?.message || raw;
+              } catch {
+                detail = raw;
+              }
+            }
+          } else if (typeof (error as any).context?.text === "function") {
+            detail = await (error as any).context.text();
+          }
+        } catch {
+          /* keep generic detail */
+        }
+        const status = (error as any)?.context?.status;
+        if (status === 401 || status === 403) {
+          detail = `Please sign in again to use ${g.name}.`;
+        }
+        setMessages([...next, { role: "assistant", content: `⚠️ ${detail}` }]);
+        return;
+      }
       setMessages([...next, { role: "assistant", content: data?.content ?? "(no response)" }]);
     } catch (e: any) {
       setMessages([...next, { role: "assistant", content: `⚠️ ${e?.message ?? "Request failed"}` }]);

@@ -12,6 +12,7 @@ import {
 export type SectionId =
   | "home" | "titles" | "submissions" | "updates"
   | "delivery_vault"
+  | "profile"
   | "billing" | "help"
   // legacy aliases kept so old URLs resolve cleanly
   | "insights" | "statements" | "schedule" | "upgrade";

@@ -8327,6 +8327,10 @@ export type Database = {
         Args: { _profile_id: string }
         Returns: boolean
       }
+      can_manage_org_entity_profile: {
+        Args: { _kind: string; _org_id: string }
+        Returns: boolean
+      }
       can_signup_as: { Args: { _role: string }; Returns: boolean }
       can_view_entity_profile: {
         Args: { _kind: string; _org_id: string; _user_id: string }

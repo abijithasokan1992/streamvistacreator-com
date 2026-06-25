@@ -390,6 +390,12 @@ export function TitleEditor({
           )}
         </div>
       </div>
+      <FreeSubmissionTermsModal
+        open={termsOpen}
+        submitting={submitting}
+        onCancel={() => { setTermsOpen(false); setPendingFreeSubmit(false); }}
+        onConfirm={() => { if (pendingFreeSubmit) void doSubmit(); }}
+      />
     </div>
   );
 }

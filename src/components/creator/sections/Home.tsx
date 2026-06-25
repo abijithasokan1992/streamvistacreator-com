@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { Plus, ArrowRight, Bell, Film, Inbox, HardDrive, Database, Wallet } from "lucide-react";
+import { Plus, ArrowRight, Bell, Film, Inbox, HardDrive, Database, Wallet, Crown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { listTitles, type TitleRow } from "@/lib/creator/titleApi";
+import { listTitles, fetchFreeTierStatus, type TitleRow, type FreeTierStatus } from "@/lib/creator/titleApi";
 import WorkspaceWelcome from "@/components/creator/WorkspaceWelcome";
 import ReviewNotesInbox from "@/components/creator/ReviewNotesInbox";
 import { UploadDiagnostics } from "@/components/creator/UploadDiagnostics";
 import Buy1TBCard from "@/components/shared/Buy1TBCard";
+import UpgradeCreatorPlanCard from "@/components/creator/UpgradeCreatorPlanCard";
 import { Button } from "@/components/ui/button";
 import OnboardingChecklist from "@/components/creator/OnboardingChecklist";
 import type { SectionId } from "@/components/creator/CreatorSidebar";
@@ -25,6 +26,7 @@ export default function HomeSection({ onNavigate, isFree }: { onNavigate: (s: Se
   const { user } = useAuth();
   const [titles, setTitles] = useState<TitleRow[]>([]);
   const [updates, setUpdates] = useState<UpdateRow[]>([]);
+  const [tier, setTier] = useState<FreeTierStatus | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,16 +34,18 @@ export default function HomeSection({ onNavigate, isFree }: { onNavigate: (s: Se
     (async () => {
       setLoading(true);
       try {
-        const [t, n] = await Promise.all([
+        const [t, n, fs] = await Promise.all([
           listTitles(user.id),
           (supabase as any).from("notifications")
             .select("id, title, message, created_at")
             .eq("user_id", user.id)
             .order("created_at", { ascending: false })
             .limit(3),
+          fetchFreeTierStatus().catch(() => null),
         ]);
         setTitles(t);
         setUpdates((n.data ?? []) as UpdateRow[]);
+        setTier(fs);
       } finally { setLoading(false); }
     })();
   }, [user]);
@@ -58,18 +62,34 @@ export default function HomeSection({ onNavigate, isFree }: { onNavigate: (s: Se
       {/* One-time onboarding checklist */}
       <OnboardingChecklist hasTitles={titles.length > 0} onNavigate={onNavigate} />
 
-      {/* Primary action */}
-      <button
-        onClick={() => onNavigate("titles")}
-        className="w-full rounded-xl border border-accent/40 bg-accent/10 hover:bg-accent/15 p-5 text-left flex items-center gap-3"
-      >
-        <Plus className="w-5 h-5 text-accent" />
-        <div className="flex-1">
-          <p className="font-semibold">New Title</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Start a draft. Add files. Submit.</p>
-        </div>
-        <ArrowRight className="w-4 h-4 text-muted-foreground" />
-      </button>
+      {/* Primary action — gated on free plan when 1-title limit is hit */}
+      {isFree && tier && !tier.can_create_draft && tier.lifecycle_count >= 1 ? (
+        <button
+          onClick={() => onNavigate("billing")}
+          className="w-full rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/15 p-5 text-left flex items-center gap-3"
+        >
+          <Crown className="w-5 h-5 text-amber-300" />
+          <div className="flex-1">
+            <p className="font-semibold">Upgrade to add more titles</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Free plan allows 1 title. Upgrade for 5 TB storage + multiple submissions (₹25,000 + 18% GST).
+            </p>
+          </div>
+          <ArrowRight className="w-4 h-4 text-muted-foreground" />
+        </button>
+      ) : (
+        <button
+          onClick={() => onNavigate("titles")}
+          className="w-full rounded-xl border border-accent/40 bg-accent/10 hover:bg-accent/15 p-5 text-left flex items-center gap-3"
+        >
+          <Plus className="w-5 h-5 text-accent" />
+          <div className="flex-1">
+            <p className="font-semibold">New Title</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Start a draft. Add files. Submit.</p>
+          </div>
+          <ArrowRight className="w-4 h-4 text-muted-foreground" />
+        </button>
+      )}
 
       {/* Storage row — compact */}
       <div className="rounded-2xl border border-border/40 bg-secondary/5 p-4 flex flex-wrap items-center justify-between gap-3">

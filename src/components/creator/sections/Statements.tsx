@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import CreatorInvoices from "@/components/creator/CreatorInvoices";
+import UpgradeCreatorPlanCard from "@/components/creator/UpgradeCreatorPlanCard";
 import { HardDrive, ChevronDown, ChevronUp, LifeBuoy } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -52,9 +53,10 @@ export default function StatementsSection() {
   return (
     <div className="space-y-6">
       <div className="rounded-lg border border-border/40 bg-secondary/5 px-4 py-3 text-[11px] text-muted-foreground">
-        Free Creator plan includes <span className="text-foreground font-medium">5 GB</span> of storage.
-        Paid and managed-service plans unlock premium review handling, dedicated inbox support, and advanced licensing controls.
+        Free Creator plan includes <span className="text-foreground font-medium">5 GB</span> of storage and <span className="text-foreground font-medium">1 title / 1 draft</span>.
+        Paid and managed-service plans unlock additional title submissions, 5 TB storage, premium review handling, dedicated inbox support, and advanced licensing controls.
       </div>
+      <UpgradeCreatorPlanCard />
       <CreatorInvoices />
 
       {/* Storage allocation history — read-only record of past changes */}

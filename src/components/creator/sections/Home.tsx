@@ -26,6 +26,7 @@ export default function HomeSection({ onNavigate, isFree }: { onNavigate: (s: Se
   const { user } = useAuth();
   const [titles, setTitles] = useState<TitleRow[]>([]);
   const [updates, setUpdates] = useState<UpdateRow[]>([]);
+  const [tier, setTier] = useState<FreeTierStatus | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,16 +34,18 @@ export default function HomeSection({ onNavigate, isFree }: { onNavigate: (s: Se
     (async () => {
       setLoading(true);
       try {
-        const [t, n] = await Promise.all([
+        const [t, n, fs] = await Promise.all([
           listTitles(user.id),
           (supabase as any).from("notifications")
             .select("id, title, message, created_at")
             .eq("user_id", user.id)
             .order("created_at", { ascending: false })
             .limit(3),
+          fetchFreeTierStatus().catch(() => null),
         ]);
         setTitles(t);
         setUpdates((n.data ?? []) as UpdateRow[]);
+        setTier(fs);
       } finally { setLoading(false); }
     })();
   }, [user]);

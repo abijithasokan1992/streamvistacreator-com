@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { Loader2, LogOut, ShieldCheck, Crown, RefreshCw, Copy, Check, Wallet, Inbox, Users as UsersIcon, LayoutDashboard, HardDrive, LifeBuoy, Settings as SettingsIcon, ArrowRight, Package, FileText, ClipboardCheck, Megaphone, Code2 } from "lucide-react";
+import { Loader2, LogOut, ShieldCheck, Crown, RefreshCw, Copy, Check, Wallet, Inbox, Users as UsersIcon, LayoutDashboard, HardDrive, LifeBuoy, Settings as SettingsIcon, ArrowRight, Package, FileText, ClipboardCheck, Megaphone, Code2, Image as ImageIcon } from "lucide-react";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,6 +43,7 @@ import RazorpayCredentials from "@/components/admin/RazorpayCredentials";
 import RazorpayConnectivityStatus from "@/components/admin/RazorpayConnectivityStatus";
 import AdminReportsConsole from "@/components/admin/AdminReportsConsole";
 import PaymentSecurityEvents from "@/components/admin/PaymentSecurityEvents";
+import MarketingCMS from "@/components/admin/MarketingCMS";
 
 interface Row {
   id: string;
@@ -60,7 +61,7 @@ interface Row {
   created_at: string;
 }
 
-const TAB_KEYS = ["overview", "users", "approvals", "catalog", "billing", "storage", "comms", "settings", "audit"] as const;
+const TAB_KEYS = ["overview", "users", "approvals", "homepage", "catalog", "billing", "storage", "comms", "settings", "audit"] as const;
 type TabKey = typeof TAB_KEYS[number];
 
 function pathToTab(path: string, search: URLSearchParams): TabKey {
@@ -70,6 +71,7 @@ function pathToTab(path: string, search: URLSearchParams): TabKey {
   // New MVP buckets
   if (p.startsWith("/admin/users") || p.startsWith("/admin/team")) return "users";
   if (p.startsWith("/admin/approvals") || p.startsWith("/admin/content") || p.startsWith("/admin/qc") || p.startsWith("/admin/legal")) return "approvals";
+  if (p.startsWith("/admin/homepage") || p.startsWith("/admin/marketing") || p.startsWith("/admin/cms")) return "homepage";
   if (p.startsWith("/admin/catalog") || p.startsWith("/admin/products") || p.startsWith("/admin/plans") || p.startsWith("/admin/rights")) return "catalog";
   if (p.startsWith("/admin/billing") || p.startsWith("/admin/finance") || p.startsWith("/admin/business")) return "billing";
   if (p.startsWith("/admin/storage")) return "storage";
@@ -293,10 +295,11 @@ export default function Admin() {
           defaultValue={pathToTab(location.pathname, searchParams)}
           className="w-full"
         >
-          <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-1.5 sm:gap-2 h-auto p-1 sm:p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-6 sm:mb-8">
+          <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-10 gap-1.5 sm:gap-2 h-auto p-1 sm:p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-6 sm:mb-8">
             <DeptTab value="overview"  icon={<LayoutDashboard className="w-4 h-4" />} label="Home" />
             <DeptTab value="users"     icon={<UsersIcon className="w-4 h-4" />}       label="Users & Roles" />
             <DeptTab value="approvals" icon={<ClipboardCheck className="w-4 h-4" />}  label="Approvals" />
+            <DeptTab value="homepage"  icon={<ImageIcon className="w-4 h-4" />}       label="Homepage CMS" />
             <DeptTab value="catalog"   icon={<Package className="w-4 h-4" />}         label="Catalog" />
             <DeptTab value="billing"   icon={<Wallet className="w-4 h-4" />}          label="Billing" />
             <DeptTab value="storage"   icon={<HardDrive className="w-4 h-4" />}       label="Storage" />
@@ -322,6 +325,11 @@ export default function Admin() {
             <OnboardingApprovals />
             <ContentReviewWorkflow />
             <TitleEditRequestsInbox />
+          </TabsContent>
+
+          <TabsContent value="homepage" className="space-y-8 mt-0 animate-fade-in">
+            <DeptHeader icon={<ImageIcon className="w-5 h-5" />} title="Homepage CMS" desc="Hero banners, Successfully Licensed Contents carousel, cinematic reel, ad zones and news shown on the public homepage." />
+            <MarketingCMS />
           </TabsContent>
 
           <TabsContent value="catalog" className="space-y-8 mt-0 animate-fade-in">
@@ -399,6 +407,7 @@ function QuickNav({ navigate }: { navigate: (p: string) => void }) {
   const tiles = [
     { path: "/admin/users",     icon: <UsersIcon className="w-5 h-5" />,      label: "Users & Roles", desc: "Roles, invites, team" },
     { path: "/admin/approvals", icon: <ClipboardCheck className="w-5 h-5" />, label: "Approvals",     desc: "Onboarding & titles" },
+    { path: "/admin/homepage",  icon: <ImageIcon className="w-5 h-5" />,      label: "Homepage CMS",  desc: "Hero banners, licensed contents" },
     { path: "/admin/catalog",   icon: <Package className="w-5 h-5" />,        label: "Catalog",       desc: "Plans, pricing, assets" },
     { path: "/admin/billing",   icon: <Wallet className="w-5 h-5" />,         label: "Billing",       desc: "Invoices, Razorpay" },
     { path: "/admin/storage",   icon: <HardDrive className="w-5 h-5" />,      label: "Storage",       desc: "Uploads, vault, OCI" },

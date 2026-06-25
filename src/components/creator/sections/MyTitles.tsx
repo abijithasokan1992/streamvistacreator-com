@@ -11,6 +11,7 @@ import { CONTENT_TYPE_OPTIONS, CONTENT_TYPE_LABEL, type TitleMetadata } from "@/
 import { StatusBadge } from "@/components/creator/title/StatusBadge";
 import { TitleEditor } from "@/components/creator/title/TitleEditor";
 import { AgreementGate } from "@/components/legal/AgreementGate";
+import UpgradeCreatorPlanCard from "@/components/creator/UpgradeCreatorPlanCard";
 import { cn } from "@/lib/utils";
 
 type Format = TitleMetadata["format"];

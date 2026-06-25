@@ -251,6 +251,20 @@ export const Workflow = () => (
           </ul>
         </div>
       </div>
+
+      {/* ===== Onboarding CTA ===== */}
+      <div className="mt-10 sm:mt-12 lg:mt-14 flex flex-col items-center text-center animate-fade-in">
+        <a
+          href="/onboarding"
+          className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-gradient-primary text-primary-foreground font-semibold text-sm glow-primary transition-transform hover:scale-[1.02]"
+        >
+          Start your onboarding
+          <ArrowRight className="w-4 h-4" />
+        </a>
+        <p className="mt-3 text-xs text-muted-foreground max-w-xs">
+          Two fields. 30 seconds. No credit card.
+        </p>
+      </div>
     </div>
   </section>
 );

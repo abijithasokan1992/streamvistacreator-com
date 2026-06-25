@@ -180,7 +180,7 @@ export const useAuth = () => useContext(Ctx);
 export function dashboardForRole(r: AppRole | null): string {
   const d = toDashboardRole(r);
   switch (d) {
-    case "super_admin": return "/admin/super";
+    case "super_admin": return "/admin";
     case "admin": return "/admin";
     case "qc_reviewer": return "/admin/qc";
     case "legal_reviewer": return "/admin/legal";

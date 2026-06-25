@@ -70,6 +70,7 @@ const AdminRoutes = () => (
     <Route path="/auth/callback" element={<AuthCallback />} />
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/admin" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/super" element={<Navigate to="/admin" replace />} />
     <Route path="/admin/users" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/approvals" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/catalog" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
@@ -124,6 +125,7 @@ const PublicRoutes = () => (
 
     {/* Admin console is also reachable on the main domain until the admin subdomain DNS is fully configured. */}
     <Route path="/admin" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/super" element={<Navigate to="/admin" replace />} />
     <Route path="/admin/users" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/approvals" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/catalog" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />

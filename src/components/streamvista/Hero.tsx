@@ -60,25 +60,31 @@ export const Hero = () => {
       </div>
 
       <div className="grid lg:grid-cols-[1.4fr_1fr] gap-12 lg:gap-20 items-end animate-fade-in">
-        <h1 className="font-display font-black uppercase leading-[0.88] tracking-tight text-[clamp(2.4rem,8.4vw,7rem)]">
-          ONE SECURE CLOUD
-          <br />
-          FOR CINEMA &amp;
-          <br />
-          <span className="gradient-text">SERIES IP.</span>
-        </h1>
+        {banner?.headline ? (
+          <h1 className="font-display font-black uppercase leading-[0.88] tracking-tight text-[clamp(2.4rem,8.4vw,7rem)]">
+            {banner.headline}
+          </h1>
+        ) : (
+          <h1 className="font-display font-black uppercase leading-[0.88] tracking-tight text-[clamp(2.4rem,8.4vw,7rem)]">
+            ONE SECURE CLOUD
+            <br />
+            FOR FILMS, SERIES
+            <br />
+            <span className="gradient-text">&amp; SHOWS</span>
+          </h1>
+        )}
 
         <div className="space-y-7 max-w-md">
           <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-            Intake, storage, operations and licensing — in one operating layer.
+            {subtitle}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3">
             <Link
-              to="/auth?intent=signup"
+              to={ctaHref}
               className="cta-guide group relative h-14 inline-flex items-center justify-center gap-3 px-6 bg-gradient-primary text-primary-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md flex-1"
             >
-              <span>Get Started</span>
+              <span>{ctaLabel}</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link
@@ -92,4 +98,5 @@ export const Hero = () => {
       </div>
     </div>
   </section>
-);
+  );
+};

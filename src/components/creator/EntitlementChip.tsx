@@ -64,10 +64,18 @@ export default function EntitlementChip() {
       const canonAllocated = allocRows.reduce((s, a) => s + Number(a.allocated_gb || 0), 0);
       const planBaseline = Number(pa.data?.plan?.storage_gb || 0);
       const legacyTopupGb = Number(prof.data?.topup_tb || 0) * 1024;
-      const allocatedGb =
+      let allocatedGb =
         canonAllocated > 0 ? canonAllocated + planBaseline
         : planBaseline > 0 ? planBaseline
         : FREE_TIER_GB + legacyTopupGb;
+
+      // Founder-direct premium override — guarantees 5 TB visibility and a
+      // premium plan label even before any canonical assignment exists.
+      let effectivePlanName = planName;
+      if (FOUNDER_PREMIUM_USER_IDS.has(user.id)) {
+        allocatedGb = Math.max(allocatedGb, FOUNDER_PREMIUM_GB);
+        if (!pa.data?.plan?.name) effectivePlanName = "Creator Pro · Founder";
+      }
 
       // Used GB: derive from verified uploads (recent_uploads.file_size).
       const usedBytes = (uploads.data ?? [])

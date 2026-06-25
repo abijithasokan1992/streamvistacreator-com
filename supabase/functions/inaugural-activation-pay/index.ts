@@ -31,6 +31,23 @@ const AMOUNT_PAISE = 88500;
 
 const EVENT_TYPE = "inaugural_founder_activation";
 
+// Hard-coded founder recipient — ceremonial inaugural completion email must
+// always reach this mailbox even if the auth user email is ever rotated.
+const ARUNA_FOUNDER_EMAIL = "Arunasankarca@gmail.com";
+
+async function hasCompletedInaugural(admin: any, uid: string): Promise<{ paid: boolean; row: any | null }> {
+  const { data } = await admin
+    .from("razorpay_audit_log")
+    .select("id, status, amount_paise, order_id, payment_id, created_at")
+    .eq("user_id", uid)
+    .eq("event_type", EVENT_TYPE)
+    .eq("status", "paid")
+    .order("created_at", { ascending: false })
+    .limit(1);
+  const row = Array.isArray(data) && data.length ? data[0] : null;
+  return { paid: !!row, row };
+}
+
 function json(body: unknown, status = 200, req?: Request) {
   return new Response(JSON.stringify(body), {
     status,

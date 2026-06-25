@@ -73,6 +73,8 @@ export default function CreatorInauguralActivationCard() {
                 "Your inaugural StreamVista activation payment has been received successfully.",
               duration: 10000,
             });
+            // Refresh so any cached free-tier/entitlement state is re-read.
+            setTimeout(() => { try { window.location.reload(); } catch { /* noop */ } }, 1800);
           }
         },
       });

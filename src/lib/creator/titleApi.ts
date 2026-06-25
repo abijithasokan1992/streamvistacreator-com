@@ -150,7 +150,29 @@ export type FreeTierStatus = {
   can_submit: boolean;
 };
 
+// Founder-direct inaugural premium override. Aruna Sankar's account is
+// granted premium-equivalent Creator access independent of the ₹750
+// inaugural payment event. Centralized here so every surface that reads
+// free-tier status (sidebar, Home, MyTitles, ContentOwner route guard,
+// RouteAgentDock) automatically respects the override.
+const FOUNDER_PREMIUM_USER_IDS = new Set<string>([
+  "6d6680c4-156c-4d57-833d-951f56101879", // CA Aruna Sankar — founder_direct_sale
+]);
+
 export async function fetchFreeTierStatus(): Promise<FreeTierStatus | null> {
+  const { data: userRes } = await (supabase as any).auth.getUser();
+  const uid: string | undefined = userRes?.user?.id;
+  if (uid && FOUNDER_PREMIUM_USER_IDS.has(uid)) {
+    return {
+      is_free: false,
+      draft_count: 0,
+      lifecycle_count: 0,
+      max_drafts: null,
+      max_submissions: null,
+      can_create_draft: true,
+      can_submit: true,
+    };
+  }
   const { data, error } = await (supabase as any).rpc("creator_free_tier_status");
   if (error || !data) return null;
   return data as FreeTierStatus;

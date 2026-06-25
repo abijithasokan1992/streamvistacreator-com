@@ -220,6 +220,7 @@ function Section({ kind, title, icon, helper }: { kind: Kind; title: string; ico
               <RowCard
                 kind={kind}
                 row={row}
+                isLive={kind === "hero" && row.id === liveHeroId}
                 onChange={(patch) => update(row.id, patch)}
                 onSave={() => save(row)}
                 onDelete={() => remove(row.id)}

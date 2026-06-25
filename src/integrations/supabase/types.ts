@@ -3151,6 +3151,39 @@ export type Database = {
         }
         Relationships: []
       }
+      homepage_hero_settings: {
+        Row: {
+          autoplay: boolean
+          id: boolean
+          interval_ms: number
+          mode: string
+          pause_on_hover: boolean
+          transition: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          autoplay?: boolean
+          id?: boolean
+          interval_ms?: number
+          mode?: string
+          pause_on_hover?: boolean
+          transition?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          autoplay?: boolean
+          id?: boolean
+          interval_ms?: number
+          mode?: string
+          pause_on_hover?: boolean
+          transition?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       ingest_alert_events: {
         Row: {
           channels_attempted: string[]

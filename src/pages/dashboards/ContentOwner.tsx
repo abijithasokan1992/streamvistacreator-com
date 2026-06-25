@@ -117,10 +117,7 @@ export default function ContentOwnerDashboard() {
           {effectiveSection === "titles" && <MyTitlesSection />}
           {effectiveSection === "submissions" && <SubmissionsSection onNavigate={setSection} />}
           {effectiveSection === "updates" && <UpdatesSection />}
-          {effectiveSection === "insights" && <InsightsSection isFree={isFree} />}
-          {effectiveSection === "statements" && <StatementsSection />}
-          {effectiveSection === "schedule" && <ScheduleSection />}
-          {effectiveSection === "billing" && <UpgradeSection />}
+          {(effectiveSection === "statements" || effectiveSection === "billing") && <StatementsSection />}
           {effectiveSection === "delivery_vault" && <DeliveryVaultSection />}
           {effectiveSection === "help" && <HelpSection />}
         </section>

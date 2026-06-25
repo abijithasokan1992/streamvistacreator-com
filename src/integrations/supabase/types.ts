@@ -2875,6 +2875,54 @@ export type Database = {
         }
         Relationships: []
       }
+      founder_vault_audit: {
+        Row: {
+          action: string
+          actor: string | null
+          created_at: string
+          details: Json
+          id: string
+        }
+        Insert: {
+          action: string
+          actor?: string | null
+          created_at?: string
+          details?: Json
+          id?: string
+        }
+        Update: {
+          action?: string
+          actor?: string | null
+          created_at?: string
+          details?: Json
+          id?: string
+        }
+        Relationships: []
+      }
+      founder_vault_config: {
+        Row: {
+          key: string
+          password_hash: string | null
+          set_at: string | null
+          set_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          key?: string
+          password_hash?: string | null
+          set_at?: string | null
+          set_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          key?: string
+          password_hash?: string | null
+          set_at?: string | null
+          set_by?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       founder_works: {
         Row: {
           achievement: string | null
@@ -8515,6 +8563,18 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      founder_vault_log: {
+        Args: { action: string; details?: Json }
+        Returns: undefined
+      }
+      founder_vault_set_password: {
+        Args: { new_password: string }
+        Returns: undefined
+      }
+      founder_vault_verify_password: {
+        Args: { candidate: string }
+        Returns: boolean
+      }
       fulfill_billing_order: { Args: { _order_id: string }; Returns: Json }
       get_active_branding: {
         Args: never
@@ -8608,7 +8668,9 @@ export type Database = {
         Returns: boolean
       }
       is_qc_reviewer: { Args: { _user_id: string }; Returns: boolean }
-      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_super_admin:
+        | { Args: never; Returns: boolean }
+        | { Args: { _user_id: string }; Returns: boolean }
       is_workspace_admin: {
         Args: { _user_id: string; _workspace_id: string }
         Returns: boolean

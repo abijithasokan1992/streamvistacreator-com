@@ -52,7 +52,7 @@ export default function MyTitlesSection() {
         setEditorMode("edit");
         return;
       }
-      toast.error("Free plan limit reached. Request a plan change from Storage & Billing to add more titles.");
+      toast.error("Free plan limit reached. Upgrade to the 5 TB plan (₹25,000 + 18% GST) from Storage & Billing to add more titles.");
       return;
     }
     setGating(true);

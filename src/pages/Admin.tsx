@@ -62,7 +62,7 @@ interface Row {
   created_at: string;
 }
 
-const TAB_KEYS = ["overview", "users", "approvals", "homepage", "catalog", "billing", "storage", "comms", "settings", "audit"] as const;
+const TAB_KEYS = ["overview", "users", "approvals", "homepage", "catalog", "billing", "storage", "comms", "settings", "audit", "vault"] as const;
 type TabKey = typeof TAB_KEYS[number];
 
 function pathToTab(path: string, search: URLSearchParams): TabKey {

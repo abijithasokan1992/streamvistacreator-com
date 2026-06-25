@@ -52,11 +52,21 @@ export const Hero = () => {
     <div className="absolute bottom-0 -right-32 w-[36rem] h-[36rem] rounded-full bg-primary-glow/10 blur-[140px]" />
 
     <div className="container relative">
-      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-accent/40 bg-accent/5 mb-8 animate-fade-in">
-        <Sparkles className="w-3 h-3 text-accent" />
-        <span className="font-mono-tech text-[10px] uppercase tracking-[0.25em] text-accent">
-          StreamVista Cloud X
-        </span>
+      <div className="flex flex-wrap items-center gap-2 mb-8 animate-fade-in">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-accent/40 bg-accent/5">
+          <Sparkles className="w-3 h-3 text-accent" />
+          <span className="font-mono-tech text-[10px] uppercase tracking-[0.25em] text-accent">
+            StreamVista Cloud X
+          </span>
+        </div>
+        {banner?.headline?.startsWith("STREAMVISTA HERO DEMO") && (
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-amber-500/50 bg-amber-500/10">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+            <span className="font-mono-tech text-[10px] uppercase tracking-[0.25em] text-amber-400">
+              Demo hero from CMS
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="grid lg:grid-cols-[1.4fr_1fr] gap-12 lg:gap-20 items-end animate-fade-in">

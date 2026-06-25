@@ -37,7 +37,12 @@ export default function MarketingCMS() {
         </div>
       </div>
       <Section kind="reel" title="Homepage hero carousel (cinematic title reel)" icon={<Clapperboard className="w-4 h-4" />} />
-      <Section kind="hero" title="Hero banners (legacy editorial)" icon={<ImageIcon className="w-4 h-4" />} />
+      <div className="space-y-2">
+        <p className="text-[11px] text-muted-foreground border-l-2 border-accent/50 pl-3">
+          <strong className="text-foreground/80">Homepage Hero:</strong> the public homepage renders the <em>first published &amp; active</em> hero banner by sort order. Change <code>sort_order</code>, toggle <code>Active</code>, or unpublish to switch which banner is live.
+        </p>
+        <Section kind="hero" title="Hero banners (homepage)" icon={<ImageIcon className="w-4 h-4" />} />
+      </div>
       <Section kind="ad"   title="Advertisement zones"     icon={<Megaphone className="w-4 h-4" />} />
       <Section kind="film" title="Licensed film portfolio" icon={<Film className="w-4 h-4" />} />
       <Section kind="news" title="News & events"           icon={<Newspaper className="w-4 h-4" />} />

@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { HeroReelPreview } from "./HeroReelPreview";
 import { HeroModeControl } from "./HeroModeControl";
+import { HeroLivePreview } from "./HeroLivePreview";
 
 type AnyRow = Record<string, any> & { id: string };
 
@@ -271,6 +272,7 @@ function Section({ kind, title, icon, helper }: { kind: Kind; title: string; ico
       )}
 
       {kind === "hero" && <HeroModeControl />}
+      {kind === "hero" && <HeroLivePreview />}
 
       {dndEnabled && !loading && (
         <HeroReelPreview items={rows} />

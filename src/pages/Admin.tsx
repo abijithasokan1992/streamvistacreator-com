@@ -290,69 +290,63 @@ export default function Admin() {
 
         <Tabs
           key={location.pathname + (searchParams.get("tab") ?? "")}
-          defaultValue={pathToTab(location.pathname, searchParams, isSuperAdmin)}
+          defaultValue={pathToTab(location.pathname, searchParams)}
           className="w-full"
         >
-          <TabsList className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-1.5 sm:gap-2 h-auto p-1 sm:p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-6 sm:mb-8">
-            <DeptTab value="overview" icon={<LayoutDashboard className="w-4 h-4" />} label="Home" />
-            <DeptTab value="content" icon={<Film className="w-4 h-4" />} label="Content Review" />
-            <DeptTab value="users" icon={<UsersIcon className="w-4 h-4" />} label="Users" />
-            <DeptTab value="team" icon={<UserCog className="w-4 h-4" />} label="Admin Team" />
-            <DeptTab value="finance" icon={<Wallet className="w-4 h-4" />} label="Finance" />
-            <DeptTab value="reports" icon={<BarChart3 className="w-4 h-4" />} label="Reports" />
-            <DeptTab value="storage" icon={<HardDrive className="w-4 h-4" />} label="Storage" />
-            <DeptTab value="business" icon={<Briefcase className="w-4 h-4" />} label="Business" />
-            <DeptTab value="support" icon={<LifeBuoy className="w-4 h-4" />} label="Support" />
-            <DeptTab value="settings" icon={<SettingsIcon className="w-4 h-4" />} label="Settings" />
+          <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-1.5 sm:gap-2 h-auto p-1 sm:p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-6 sm:mb-8">
+            <DeptTab value="overview"  icon={<LayoutDashboard className="w-4 h-4" />} label="Home" />
+            <DeptTab value="users"     icon={<UsersIcon className="w-4 h-4" />}       label="Users & Roles" />
+            <DeptTab value="approvals" icon={<ClipboardCheck className="w-4 h-4" />}  label="Approvals" />
+            <DeptTab value="catalog"   icon={<Package className="w-4 h-4" />}         label="Catalog" />
+            <DeptTab value="billing"   icon={<Wallet className="w-4 h-4" />}          label="Billing" />
+            <DeptTab value="storage"   icon={<HardDrive className="w-4 h-4" />}       label="Storage" />
+            <DeptTab value="comms"     icon={<Inbox className="w-4 h-4" />}           label="Comms" />
+            <DeptTab value="settings"  icon={<SettingsIcon className="w-4 h-4" />}    label="Settings" />
+            <DeptTab value="audit"     icon={<FileText className="w-4 h-4" />}        label="Audit" />
           </TabsList>
 
-
-          {/* 1. Home / Command Center — compact snapshot + quick nav only */}
           <TabsContent value="overview" className="space-y-8 mt-0 animate-fade-in">
             <PlatformOverview />
-            <QuickNav navigate={navigate} isSuperAdmin={isSuperAdmin} />
+            <QuickNav navigate={navigate} />
           </TabsContent>
 
-          {/* 2. Content Review */}
-          <TabsContent value="content" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<Film className="w-5 h-5" />} title="Content Review" desc="Title submissions, review workspace, QC and legal queues." />
+          <TabsContent value="users" className="space-y-8 mt-0 animate-fade-in">
+            <DeptHeader icon={<UsersIcon className="w-5 h-5" />} title="Users & Roles" desc="Creators, studios, buyers and internal staff. Roles, invitations and team permissions." />
+            <RolesManager />
+            <UsersAndCredentials />
+            <AdminTeamManager />
+          </TabsContent>
+
+          <TabsContent value="approvals" className="space-y-8 mt-0 animate-fade-in">
+            <DeptHeader icon={<ClipboardCheck className="w-5 h-5" />} title="Approvals" desc="Onboarding requests, title submissions and edit requests waiting on review." />
+            <OnboardingApprovals />
             <ContentReviewWorkflow />
             <TitleEditRequestsInbox />
           </TabsContent>
 
-          {/* 3. Users & Access */}
-          <TabsContent value="users" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<UsersIcon className="w-5 h-5" />} title="Users & Access" desc="Creators, studios, buyers, admins. Roles, invitations and entitlement drill-in." />
-            <RolesManager />
-            <UsersAndCredentials />
-            <PremiumInvitations />
+          <TabsContent value="catalog" className="space-y-8 mt-0 animate-fade-in">
+            <DeptHeader icon={<Package className="w-5 h-5" />} title="Catalog" desc="Plans, pricing, free-tier limits and shared marketing assets." />
+            <ProductsAndPlans />
+            <StudioVaultPricing />
+            <FreeTierConfig />
+            <GlobalAssetManager />
           </TabsContent>
 
-          {/* 3b. Internal Admin Team (MVP) */}
-          <TabsContent value="team" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<UserCog className="w-5 h-5" />} title="Internal Admin Team" desc="Department, designation and permission bundles for StreamVista staff. Layered on top of admin / super_admin / qc_reviewer / legal_reviewer." />
-            <AdminTeamManager />
-          </TabsContent>
-
-          {/* 3c. Finance Operations (MVP) */}
-          <TabsContent value="finance" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<Wallet className="w-5 h-5" />} title="Finance Operations" desc="Subscriptions, invoices, refunds and payment traces — scoped for finance staff." />
+          <TabsContent value="billing" className="space-y-8 mt-0 animate-fade-in">
+            <DeptHeader icon={<Wallet className="w-5 h-5" />} title="Billing" desc="Invoices, manual invoices, finance ops and Razorpay activity." />
+            <RazorpayOpsBanner />
             <AdminFinanceConsole />
+            <BillingOperations />
+            <AdminInvoices />
+            <ManualInvoiceConsole />
+            <PaymentTrace />
+            <RazorpayAuditLog />
           </TabsContent>
-
-          {/* 3d. Reports & Audit (MVP) */}
-          <TabsContent value="reports" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<BarChart3 className="w-5 h-5" />} title="Reports & Audit" desc="Finance reports, management summary and admin audit log. Read-only." />
-            <AdminReportsConsole />
-          </TabsContent>
-
-          {/* 4. Storage & Media Operations */}
 
           <TabsContent value="storage" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<HardDrive className="w-5 h-5" />} title="Storage & Media Operations" desc="Storage health, failed uploads, vault purchases and OCI admin." />
+            <DeptHeader icon={<HardDrive className="w-5 h-5" />} title="Storage" desc="Storage health, vault purchases and OCI admin." />
             <OracleStorageMonitor />
             <AdminStudioVaultPurchases />
-            <GlobalAssetManager />
             <details className="rounded-2xl border border-border/40 bg-secondary/10 p-4">
               <summary className="cursor-pointer text-sm font-semibold text-muted-foreground hover:text-foreground">
                 Advanced storage settings · OCI credentials & buckets
@@ -363,62 +357,37 @@ export default function Admin() {
             </details>
           </TabsContent>
 
-          {/* 5. Business & Revenue */}
-          <TabsContent value="business" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<Wallet className="w-5 h-5" />} title="Business & Revenue" desc="Commercial requests, deals, invoices, payouts and Razorpay activity." />
-            <CommercialControlTower />
-            <TitleCommercialOpsConsole />
-            <ScreeningOpsConsole />
-            <DealOperationsConsole />
-            <DistributionOffersConsole />
-            <RazorpayOpsBanner />
-            <BillingOperations />
-            <ManualInvoiceConsole />
-            <AdminInvoices />
-            <PaymentTrace />
-            <KammattamMeter />
-            <CommissionsTracker />
-            <RazorpayAuditLog />
-            <LegacyOnboardingFunnel rows={rows} />
-          </TabsContent>
-
-          {/* 6. Support / Contact / Onboarding Inbox */}
-          <TabsContent value="support" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<LifeBuoy className="w-5 h-5" />} title="Support Inbox" desc="Contact messages, support tickets and onboarding approvals — one inbox." />
+          <TabsContent value="comms" className="space-y-8 mt-0 animate-fade-in">
+            <DeptHeader icon={<Inbox className="w-5 h-5" />} title="Comms" desc="Support inbox, contact form, email log and broadcast." />
             <SupportInbox />
             <ContactInbox />
-            <OnboardingApprovals />
             <EmailLogMonitor />
             <UniversalBroadcast />
           </TabsContent>
 
-          {/* 7. Platform Settings / Advanced Controls */}
           <TabsContent value="settings" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<SettingsIcon className="w-5 h-5" />} title="Platform Settings" desc="Non-daily controls: plans, pricing, branding, policies and developer tools." />
-            {isSuperAdmin && <PlatformOwnerConsole />}
-            <ProductsAndPlans />
-            <StudioVaultPricing />
-            <FreeTierConfig />
+            <DeptHeader icon={<SettingsIcon className="w-5 h-5" />} title="Settings" desc="Branding, company profile and developer credentials." />
             <BrandingSettings />
             <CompanyProfileSettings />
             <PartnerLogos />
-            <MarketingCMS />
-            <PaymentSecurityEvents />
             <details className="rounded-2xl border border-border/40 bg-secondary/10 p-4">
               <summary className="cursor-pointer text-sm font-semibold text-muted-foreground hover:text-foreground">
-                Advanced · AI / MCP, domain hosting & developer credentials
+                Advanced · domain hosting & developer credentials
               </summary>
               <div className="pt-4 space-y-6">
-                <AiMcpControlCenter />
                 <DomainHostingPanel />
                 <RazorpayCredentials />
                 <RazorpayConnectivityStatus />
-                <RazorpayTestCheckout />
                 <ResendCredentials />
                 <AdminCredentials />
               </div>
             </details>
-            <MarketingAnalytics rows={rows} />
+          </TabsContent>
+
+          <TabsContent value="audit" className="space-y-8 mt-0 animate-fade-in">
+            <DeptHeader icon={<FileText className="w-5 h-5" />} title="Audit" desc="Finance reports, management summary and payment security events." />
+            <AdminReportsConsole />
+            <PaymentSecurityEvents />
           </TabsContent>
         </Tabs>
       </section>
@@ -426,14 +395,16 @@ export default function Admin() {
   );
 }
 
-function QuickNav({ navigate, isSuperAdmin }: { navigate: (p: string) => void; isSuperAdmin: boolean }) {
+function QuickNav({ navigate }: { navigate: (p: string) => void }) {
   const tiles = [
-    { path: "/admin/content", icon: <Film className="w-5 h-5" />, label: "Content Review", desc: "Submissions, QC, legal" },
-    { path: "/admin/users", icon: <UsersIcon className="w-5 h-5" />, label: "Users", desc: "Roles, invites, entitlements" },
-    { path: "/admin/storage", icon: <HardDrive className="w-5 h-5" />, label: "Storage", desc: "Uploads, vault, OCI" },
-    { path: "/admin/business", icon: <Wallet className="w-5 h-5" />, label: "Business & Revenue", desc: "Deals, invoices, payouts" },
-    { path: "/admin/support", icon: <LifeBuoy className="w-5 h-5" />, label: "Support Inbox", desc: "Contact, support, onboarding" },
-    { path: "/admin/settings", icon: <SettingsIcon className="w-5 h-5" />, label: "Settings", desc: "Plans, branding, advanced" },
+    { path: "/admin/users",     icon: <UsersIcon className="w-5 h-5" />,      label: "Users & Roles", desc: "Roles, invites, team" },
+    { path: "/admin/approvals", icon: <ClipboardCheck className="w-5 h-5" />, label: "Approvals",     desc: "Onboarding & titles" },
+    { path: "/admin/catalog",   icon: <Package className="w-5 h-5" />,        label: "Catalog",       desc: "Plans, pricing, assets" },
+    { path: "/admin/billing",   icon: <Wallet className="w-5 h-5" />,         label: "Billing",       desc: "Invoices, Razorpay" },
+    { path: "/admin/storage",   icon: <HardDrive className="w-5 h-5" />,      label: "Storage",       desc: "Uploads, vault, OCI" },
+    { path: "/admin/comms",     icon: <Inbox className="w-5 h-5" />,          label: "Comms",         desc: "Support, contact, email" },
+    { path: "/admin/settings",  icon: <SettingsIcon className="w-5 h-5" />,   label: "Settings",      desc: "Branding, credentials" },
+    { path: "/admin/audit",     icon: <FileText className="w-5 h-5" />,       label: "Audit",         desc: "Reports & security" },
   ];
   return (
     <section className="space-y-3">
@@ -441,7 +412,7 @@ function QuickNav({ navigate, isSuperAdmin }: { navigate: (p: string) => void; i
         <h3 className="font-display text-lg font-semibold">Jump to a section</h3>
         <span className="text-xs text-muted-foreground">Open the right department to act on pending work.</span>
       </div>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {tiles.map(t => (
           <button
             key={t.path}
@@ -484,58 +455,6 @@ function DeptHeader({ icon, title, desc }: { icon: React.ReactNode; title: strin
   );
 }
 
-// FinanceOverview removed — platform revenue is now invoice-backed in AdminInvoices.
-// The legacy MFI lead funnel is preserved below under LegacyOnboardingFunnel with
-// an explicit "legacy" label so it cannot be mistaken for platform revenue.
-
-
-
-function LegacyOnboardingFunnel({ rows }: { rows: Row[] }) {
-  // Explicitly labeled legacy MFI onboarding funnel — NOT platform revenue.
-  // Platform revenue is invoice-backed via AdminInvoices + PlatformOverview.
-  const paid = rows.filter(r => r.payment_status === "paid");
-  const revenue = paid.reduce((s, r) => s + Number(r.final_price || 0), 0);
-  const pending = rows.filter(r => r.payment_status !== "paid" && r.payment_status !== "failed").length;
-  const withPromo = rows.filter(r => r.promo_code).length;
-  const conversion = rows.length ? Math.round((paid.length / rows.length) * 100) : 0;
-  return (
-    <section className="rounded-2xl border border-border/40 bg-secondary/5 p-5">
-      <div className="flex items-center gap-2 mb-3">
-        <h3 className="text-sm font-semibold">Legacy onboarding funnel (MFI)</h3>
-        <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-muted text-muted-foreground border border-border/60">Legacy · not platform revenue</span>
-      </div>
-      <div className="grid sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <MetricCard label="Onboarding revenue (legacy)" value={`₹${revenue.toLocaleString("en-IN")}`} />
-        <MetricCard label="Paid onboardings" value={paid.length.toString()} />
-        <MetricCard label="Pending onboardings" value={pending.toString()} />
-        <MetricCard label="Promo redemptions" value={withPromo.toString()} />
-        <MetricCard label="Lead → Paid %" value={`${conversion}%`} />
-      </div>
-    </section>
-  );
-}
-
-function MarketingAnalytics({ rows }: { rows: Row[] }) {
-  const withPromo = rows.filter(r => r.promo_code).length;
-  const conversion = rows.length ? Math.round((rows.filter(r => r.payment_status === "paid").length / rows.length) * 100) : 0;
-  return (
-    <div className="grid sm:grid-cols-3 gap-4">
-      <MetricCard label="Total Leads" value={rows.length.toString()} />
-      <MetricCard label="Promo Redemptions" value={withPromo.toString()} />
-      <MetricCard label="Lead → Paid %" value={`${conversion}%`} />
-    </div>
-  );
-}
-
-function MetricCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="glass rounded-2xl p-5">
-      <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className="font-display text-3xl font-bold mt-2">{value}</div>
-    </div>
-  );
-}
-
 function DomainHostingPanel() {
   const DEFAULT_PRIMARY = "https://streamvistacreator.com";
   const DEFAULT_EXTRA = "https://www.streamvistacreator.com, https://streamvista-creator.lovable.app";
@@ -573,8 +492,6 @@ function DomainHostingPanel() {
         .maybeSingle();
       if (!error && data) {
         const p = data.primary_domain?.trim();
-        // If the stored value is a deprecated app domain, snap operator
-        // UI to the new canonical production domain (does not auto-save).
         setPrimary(p && !DEPRECATED.includes(p) ? p : DEFAULT_PRIMARY);
         setExtra((data.extra_origins ?? []).filter((o: string) => !DEPRECATED.includes(o)).join(", "));
       }
@@ -591,8 +508,7 @@ function DomainHostingPanel() {
   const onSave = async () => {
     setSaving(true);
     const primary_domain = normalize(primary);
-    const extra_origins = extra
-      .split(",").map(normalize).filter(Boolean);
+    const extra_origins = extra.split(",").map(normalize).filter(Boolean);
     if (DEPRECATED.includes(primary_domain) || extra_origins.some(o => DEPRECATED.includes(o))) {
       setSaving(false);
       toast.error("This domain is deprecated. Use https://streamvistacreator.com instead.");
@@ -617,23 +533,6 @@ function DomainHostingPanel() {
         </p>
       </div>
 
-      <div className="grid sm:grid-cols-3 gap-3 text-xs">
-        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3">
-          <div className="text-[10px] uppercase tracking-wider text-emerald-300">Production app + payment</div>
-          <div className="font-mono text-foreground mt-1 break-all">https://streamvistacreator.com</div>
-        </div>
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
-          <div className="text-[10px] uppercase tracking-wider text-amber-300">Preview only</div>
-          <div className="font-mono text-foreground mt-1 break-all">https://streamvista-creator.lovable.app</div>
-          <div className="text-muted-foreground mt-1">Not the canonical payment domain.</div>
-        </div>
-        <div className="rounded-xl border border-border/40 bg-secondary/20 p-3">
-          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Corporate site</div>
-          <div className="font-mono text-foreground mt-1 break-all">https://www.crayonspictures.com</div>
-          <div className="text-muted-foreground mt-1">Parent brand, not an app callback.</div>
-        </div>
-      </div>
-
       {loading ? (
         <div className="py-8 grid place-items-center"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
       ) : (
@@ -655,84 +554,6 @@ function DomainHostingPanel() {
           >{saving && <Loader2 className="w-4 h-4 animate-spin" />} Save & Apply</button>
         </>
       )}
-
-      <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-4 text-xs space-y-1">
-        <p className="font-semibold text-red-300">Deprecated — do not use as the app/payment/auth domain:</p>
-        {DEPRECATED.map(d => (
-          <p key={d} className="font-mono text-foreground/70 line-through">{d}</p>
-        ))}
-        <p className="text-muted-foreground pt-1">These were previously used for app callbacks and are no longer the active production domain. Remove them from Razorpay, OAuth providers, and any email templates.</p>
-      </div>
-
-      <div className="rounded-xl border border-border/40 bg-secondary/20 p-4 text-xs text-muted-foreground space-y-1">
-        <p className="font-semibold text-foreground">DNS records (point your registrar here):</p>
-        <p>A · @ → <span className="font-mono text-foreground">185.158.133.1</span></p>
-        <p>A · www → <span className="font-mono text-foreground">185.158.133.1</span></p>
-        <p>TXT · _lovable → from Project Settings → Domains</p>
-      </div>
     </div>
-  );
-}
-
-interface AuditEntry {
-  id: string;
-  field_name: string;
-  old_value: string | null;
-  new_value: string | null;
-  changed_by_email: string | null;
-  created_at: string;
-}
-
-function AuditTrail({ requestId, clientName }: { requestId: string; clientName: string }) {
-  const [entries, setEntries] = useState<AuditEntry[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  const load = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("onboarding_audit_log")
-      .select("*")
-      .eq("onboarding_request_id", requestId)
-      .order("created_at", { ascending: false });
-    setLoading(false);
-    if (error) { toast.error(error.message); return; }
-    setEntries((data as AuditEntry[]) ?? []);
-  };
-
-  return (
-    <Dialog onOpenChange={(o) => { if (o) load(); }}>
-      <DialogTrigger asChild>
-        <button className="w-full h-9 rounded-md border border-border hover:bg-secondary text-xs flex items-center justify-center gap-1.5">
-          <History className="w-3.5 h-3.5" /> Audit trail
-        </button>
-      </DialogTrigger>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Audit trail · {clientName}</DialogTitle>
-        </DialogHeader>
-        {loading ? (
-          <div className="py-10 grid place-items-center"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
-        ) : entries.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-6 text-center">No status changes recorded yet.</p>
-        ) : (
-          <ul className="space-y-3 max-h-[60vh] overflow-y-auto">
-            {entries.map(e => (
-              <li key={e.id} className="border border-border rounded-lg p-3 text-sm">
-                <div className="flex justify-between gap-2 text-xs text-muted-foreground mb-1">
-                  <span className="uppercase tracking-wider">{e.field_name.replace("_", " ")}</span>
-                  <span>{new Date(e.created_at).toLocaleString()}</span>
-                </div>
-                <div className="font-medium">
-                  <span className="text-muted-foreground">{e.old_value ?? "—"}</span>
-                  <span className="mx-2 text-accent">→</span>
-                  <span>{e.new_value ?? "—"}</span>
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">by {e.changed_by_email ?? "system"}</div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </DialogContent>
-    </Dialog>
   );
 }

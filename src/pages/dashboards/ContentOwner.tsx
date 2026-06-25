@@ -127,6 +127,7 @@ export default function ContentOwnerDashboard() {
           {(effectiveSection === "statements" || effectiveSection === "billing") && <StatementsSection />}
           {effectiveSection === "delivery_vault" && <DeliveryVaultSection />}
           {effectiveSection === "help" && <HelpSection />}
+          {effectiveSection === "profile" && <MyCreatorProfile embedded />}
         </section>
       </div>
       {tourOpen && <CreatorTour onClose={() => setTourOpen(false)} />}

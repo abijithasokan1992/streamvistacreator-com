@@ -489,6 +489,14 @@
 .home-serif h2 .gradient-text {
   font-style: italic;
 }
+/* Product-explainer section headings — Inter for functional/product feel */
+.home-serif #for h2,
+.home-serif #workflow h2 {
+  font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 0.95;
+}
 /* Smaller card-level headings stay sans for clarity */
 .home-serif h3,
 .home-serif h4,

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import CreatorInvoices from "@/components/creator/CreatorInvoices";
+import UpgradeCreatorPlanCard from "@/components/creator/UpgradeCreatorPlanCard";
 import { HardDrive, ChevronDown, ChevronUp, LifeBuoy } from "lucide-react";
 import { Link } from "react-router-dom";
 

@@ -44,6 +44,7 @@ import RazorpayConnectivityStatus from "@/components/admin/RazorpayConnectivityS
 import AdminReportsConsole from "@/components/admin/AdminReportsConsole";
 import PaymentSecurityEvents from "@/components/admin/PaymentSecurityEvents";
 import MarketingCMS from "@/components/admin/MarketingCMS";
+import FounderVault from "@/components/admin/FounderVault";
 
 interface Row {
   id: string;

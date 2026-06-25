@@ -18,9 +18,9 @@ type Kind = keyof typeof TABLES;
 
 const BLANK: Record<Kind, AnyRow> = {
   reel: { id: "", title: "", subtitle: "", poster_url: "", backdrop_url: "", image_url: "", cta_label: "", cta_url: "", sort_order: 0, is_active: true, is_featured: false, status: "published", starts_at: null, ends_at: null },
-  hero: { id: "", headline: "", subheadline: "", image_url: "", cta_label: "", cta_url: "", sort_order: 0, is_active: true, status: "draft", starts_at: null, ends_at: null },
+  hero: { id: "", internal_label: "", headline: "", subheadline: "", image_url: "", cta_label: "", cta_url: "", cta2_label: "", cta2_url: "", sort_order: 0, is_active: true, status: "draft", starts_at: null, ends_at: null },
   ad:   { id: "", slot: "top", title: "", image_url: "", link_url: "", sort_order: 0, is_active: true, status: "draft", starts_at: null, ends_at: null },
-  film: { id: "", title: "", blurb: "", poster_url: "", link_url: "", sort_order: 0, is_active: true, status: "draft", starts_at: null, ends_at: null },
+  film: { id: "", title: "", subtitle: "", blurb: "", content_type: "", year: null, partner: "", poster_url: "", link_url: "", sort_order: 0, is_active: true, status: "draft", starts_at: null, ends_at: null },
   news: { id: "", kind: "news", title: "", summary: "", image_url: "", link_url: "", event_date: null, location: "", sort_order: 0, is_active: true, status: "draft", starts_at: null, ends_at: null },
 };
 

@@ -86,7 +86,7 @@ export default function EntitlementChip() {
       const remainingGb = Math.max(0, +(allocatedGb - usedGb).toFixed(2));
       const pct = allocatedGb > 0 ? Math.min(100, Math.round((usedGb / allocatedGb) * 100)) : 0;
 
-      if (!cancelled) setEnt({ planName, allocatedGb, usedGb, remainingGb, pct });
+      if (!cancelled) setEnt({ planName: effectivePlanName, allocatedGb, usedGb, remainingGb, pct });
     })();
     return () => { cancelled = true; };
   }, [user?.id]);

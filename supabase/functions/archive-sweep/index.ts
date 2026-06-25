@@ -25,26 +25,35 @@ Deno.serve(async (req) => {
     auth: { persistSession: false },
   });
 
-  // Authorize: cron (no JWT, anon) is allowed because verify_jwt=false; for
-  // manual ops calls require admin role.
+  // Authorize: require either a matching CRON_SECRET bearer (used by pg_cron)
+  // or an admin user JWT (manual ops invocation). Anonymous calls are rejected.
   const authHeader = req.headers.get("authorization") ?? "";
   const token = authHeader.replace(/^Bearer\s+/i, "");
+  const cronSecret = Deno.env.get("CRON_SECRET");
   let invokedByAdminUser = false;
-  if (token && token.split(".").length === 3) {
+  let authorized = false;
+
+  if (cronSecret && token && token === cronSecret) {
+    authorized = true;
+  } else if (token && token.split(".").length === 3) {
     const { data: u } = await admin.auth.getUser(token);
     if (u?.user?.id) {
       const { data: ok } = await admin.rpc("has_role", {
         _user_id: u.user.id,
         _role: "admin",
       });
-      if (!ok) {
-        return new Response(JSON.stringify({ ok: false, error: "forbidden" }), {
-          status: 403,
-          headers: cors,
-        });
+      if (ok) {
+        authorized = true;
+        invokedByAdminUser = true;
       }
-      invokedByAdminUser = true;
     }
+  }
+
+  if (!authorized) {
+    return new Response(JSON.stringify({ ok: false, error: "unauthorized" }), {
+      status: 403,
+      headers: cors,
+    });
   }
 
   const { data: candidates, error: candErr } = await admin.rpc(

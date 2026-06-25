@@ -1,7 +1,6 @@
 import { cn } from "@/lib/utils";
 import {
-  Home, Film, Inbox, Bell, Wallet, LifeBuoy,
-  BarChart3, Receipt, CalendarClock, Lock, Database,
+  Home, Film, Inbox, Bell, Wallet, LifeBuoy, Lock, Database,
 } from "lucide-react";
 import {
   Tooltip,
@@ -14,9 +13,8 @@ export type SectionId =
   | "home" | "titles" | "submissions" | "updates"
   | "delivery_vault"
   | "billing" | "help"
-  | "insights" | "statements" | "schedule"
-  // legacy alias kept for old URLs
-  | "upgrade";
+  // legacy aliases kept so old URLs resolve cleanly
+  | "insights" | "statements" | "schedule" | "upgrade";
 
 export type SectionGroup = "main" | "storage" | "account";
 
@@ -46,11 +44,6 @@ export const SECTIONS: ReadonlyArray<SectionDef> = [
   // Account
   { id: "billing",        label: "Billing",      heading: "Billing",      subhead: "Plan, storage, invoices.",       tip: "Your plan, storage and invoices.",       icon: Wallet,  group: "account" },
   { id: "help",           label: "Help",         heading: "Help",         tip: "Contact us or get answers fast.",                         icon: LifeBuoy, group: "account" },
-
-  // Pro
-  { id: "insights",       label: "Stats",        heading: "Stats",        tip: "Activity and performance trends.",                       icon: BarChart3,     group: "main",    proOnly: true },
-  { id: "statements",     label: "Statements",   heading: "Statements",   tip: "Invoices and account history.",                          icon: Receipt,       group: "account", proOnly: true },
-  { id: "schedule",       label: "Calendar",     heading: "Calendar",     tip: "Reviews, deadlines and delivery dates.",                 icon: CalendarClock, group: "main",    proOnly: true },
 ];
 
 const GROUP_ORDER: SectionGroup[] = ["main", "storage", "account"];

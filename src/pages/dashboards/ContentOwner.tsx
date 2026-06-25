@@ -7,10 +7,7 @@ import HomeSection from "@/components/creator/sections/Home";
 import MyTitlesSection from "@/components/creator/sections/MyTitles";
 import SubmissionsSection from "@/components/creator/sections/Submissions";
 import UpdatesSection from "@/components/creator/sections/Updates";
-import InsightsSection from "@/components/creator/sections/Insights";
 import StatementsSection from "@/components/creator/sections/Statements";
-import ScheduleSection from "@/components/creator/sections/Schedule";
-import UpgradeSection from "@/components/creator/sections/Upgrade";
 import DeliveryVaultSection from "@/components/creator/sections/DeliveryVault";
 import HelpSection from "@/components/creator/sections/Help";
 import EntitlementChip from "@/components/creator/EntitlementChip";
@@ -120,10 +117,7 @@ export default function ContentOwnerDashboard() {
           {effectiveSection === "titles" && <MyTitlesSection />}
           {effectiveSection === "submissions" && <SubmissionsSection onNavigate={setSection} />}
           {effectiveSection === "updates" && <UpdatesSection />}
-          {effectiveSection === "insights" && <InsightsSection isFree={isFree} />}
-          {effectiveSection === "statements" && <StatementsSection />}
-          {effectiveSection === "schedule" && <ScheduleSection />}
-          {effectiveSection === "billing" && <UpgradeSection />}
+          {(effectiveSection === "statements" || effectiveSection === "billing") && <StatementsSection />}
           {effectiveSection === "delivery_vault" && <DeliveryVaultSection />}
           {effectiveSection === "help" && <HelpSection />}
         </section>

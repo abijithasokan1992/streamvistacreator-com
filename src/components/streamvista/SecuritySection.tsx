@@ -4,8 +4,7 @@ import { ShieldCheck, Lock, KeyRound, History, Cloud, Fingerprint } from "lucide
  * Security & trust section — the controls a rights-holder cares about before
  * they hand over a master file or open a screener.
  *
- * Mentions Oracle Cloud as the underlying storage vendor (already used elsewhere
- * for trust signaling). Presentation-only; no data fetch.
+ * Presentation-only; no data fetch. Public copy avoids vendor branding.
  */
 
 const PILLARS = [
@@ -13,8 +12,8 @@ const PILLARS = [
   { icon: KeyRound, title: "Controlled Access", body: "Role-scoped, watermarked links." },
   { icon: Lock, title: "Secure Storage", body: "Encrypted at rest, chain-of-custody." },
   { icon: History, title: "Audit Timeline", body: "Every status, every exchange logged." },
-  { icon: Cloud, title: "Oracle Cloud", body: "Enterprise durability and residency." },
-  { icon: Fingerprint, title: "IP Protection", body: "DMCA and takedown built in." },
+  { icon: Cloud, title: "StreamVista Cloud X", body: "Enterprise-grade durability, secure residency and managed storage infrastructure." },
+  { icon: Fingerprint, title: "Intellectual Property Protection", body: "DMCA and takedown built in." },
 ];
 
 export const SecuritySection = () => (
@@ -30,7 +29,7 @@ export const SecuritySection = () => (
           </span>
         </div>
         <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-4xl md:text-6xl">
-          Built for IP <span className="gradient-text">that can't leak.</span>
+          Built for intellectual property <span className="gradient-text">that can't leak</span>
         </h2>
       </div>
 

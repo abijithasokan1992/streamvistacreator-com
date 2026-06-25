@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, dashboardForRole, useAuth } from "@/hooks/useAuth";
 import RoleGate from "@/components/RoleGate";
-import OnboardingGate from "@/components/OnboardingGate";
+
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import Onboarding from "./pages/Onboarding.tsx";

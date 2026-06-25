@@ -380,30 +380,46 @@ export default function MyStudioProfile() {
             <FieldGroup title="Tax identity" description="PAN, GST, TAN and CIN as applicable.">
               <div className="space-y-1.5">
                 <Label className="text-xs">PAN</Label>
-                <Input disabled={!canEdit} value={merged.pan_number ?? ""} onChange={(e) => setP("pan_number", e.target.value.toUpperCase())} maxLength={10} />
+                <Input disabled={!canEdit} value={merged.pan_number ?? ""}
+                  onChange={(e) => setP("pan_number", formatTaxId(e.target.value))}
+                  maxLength={10} placeholder="AAAAA9999A" autoCapitalize="characters" />
+                <FieldError result={errors.pan} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">GSTIN</Label>
-                <Input disabled={!canEdit} value={merged.gstin ?? ""} onChange={(e) => setP("gstin", e.target.value.toUpperCase())} maxLength={15} />
+                <Input disabled={!canEdit} value={merged.gstin ?? ""}
+                  onChange={(e) => setP("gstin", formatTaxId(e.target.value))}
+                  maxLength={15} placeholder="22AAAAA0000A1Z5" autoCapitalize="characters" />
+                <FieldError result={errors.gstin} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">TAN</Label>
-                <Input disabled={!canEdit} value={merged.tan_number ?? ""} onChange={(e) => setP("tan_number", e.target.value.toUpperCase())} maxLength={10} />
+                <Input disabled={!canEdit} value={merged.tan_number ?? ""}
+                  onChange={(e) => setP("tan_number", formatTaxId(e.target.value))}
+                  maxLength={10} placeholder="AAAA99999A" autoCapitalize="characters" />
+                <FieldError result={errors.tan} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">CIN</Label>
-                <Input disabled={!canEdit} value={merged.cin_number ?? ""} onChange={(e) => setP("cin_number", e.target.value.toUpperCase())} maxLength={21} />
+                <Input disabled={!canEdit} value={merged.cin_number ?? ""}
+                  onChange={(e) => setP("cin_number", formatTaxId(e.target.value))}
+                  maxLength={21} placeholder="U12345MH2020PTC123456" autoCapitalize="characters" />
+                <FieldError result={errors.cin} />
               </div>
-              <div className="flex items-center justify-between rounded-md border border-border/40 p-3 md:col-span-2">
-                <div>
-                  <div className="text-sm">Registered under GST</div>
-                  <div className="text-xs text-muted-foreground">Toggle on if this studio has a valid GSTIN.</div>
+              <div className="md:col-span-2 space-y-1.5">
+                <div className="flex items-center justify-between rounded-md border border-border/40 p-3">
+                  <div>
+                    <div className="text-sm">Registered under GST</div>
+                    <div className="text-xs text-muted-foreground">Toggle on if this studio has a valid GSTIN.</div>
+                  </div>
+                  <Switch disabled={!canEdit} checked={!!merged.is_gst_registered} onCheckedChange={(v) => setP("is_gst_registered", v)} />
                 </div>
-                <Switch disabled={!canEdit} checked={!!merged.is_gst_registered} onCheckedChange={(v) => setP("is_gst_registered", v)} />
+                <FieldError result={errors.gstReg} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Place of supply (state)</Label>
-                <Input disabled={!canEdit} value={merged.place_of_supply_state ?? ""} onChange={(e) => setP("place_of_supply_state", e.target.value)} />
+                <Input disabled={!canEdit} value={merged.place_of_supply_state ?? ""}
+                  onChange={(e) => setP("place_of_supply_state", e.target.value)} />
               </div>
             </FieldGroup>
 

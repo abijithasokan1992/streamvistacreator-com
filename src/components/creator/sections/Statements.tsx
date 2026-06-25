@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import CreatorInvoices from "@/components/creator/CreatorInvoices";
 import UpgradeCreatorPlanCard from "@/components/creator/UpgradeCreatorPlanCard";
+import CreatorInauguralActivationCard from "@/components/creator/CreatorInauguralActivationCard";
 import { HardDrive, ChevronDown, ChevronUp, LifeBuoy } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -56,6 +57,7 @@ export default function StatementsSection() {
         Free Creator plan includes <span className="text-foreground font-medium">5 GB</span> of storage and <span className="text-foreground font-medium">1 title / 1 draft</span>.
         Paid and managed-service plans unlock additional title submissions, 5 TB storage, premium review handling, dedicated inbox support, and advanced licensing controls.
       </div>
+      <CreatorInauguralActivationCard />
       <UpgradeCreatorPlanCard />
       <CreatorInvoices />
 

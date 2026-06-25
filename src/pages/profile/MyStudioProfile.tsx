@@ -119,6 +119,35 @@ export default function MyStudioProfile() {
 
   const dirty = Object.keys(pForm).length > 0 || Object.keys(eForm).length > 0;
 
+  // Real-time validation results for tax + billing identity inputs.
+  const errors = useMemo(() => {
+    if (!merged || !mergedExt) {
+      return {} as Record<string, ValidationResult>;
+    }
+    return {
+      pan: validatePAN(merged.pan_number),
+      gstin: validateGSTIN(merged.gstin),
+      gstReg: validateGstRegistration(merged.is_gst_registered, merged.gstin),
+      tan: validateTAN(merged.tan_number),
+      cin: validateCIN(merged.cin_number),
+      pincode: validatePincode(merged.postal_code),
+      billingPincode: validatePincode(merged.billing_postal_code),
+      billingEmail: validateEmail(merged.billing_email),
+      billingPhone: validatePhone(merged.billing_phone),
+      studioEmail: validateEmail(merged.primary_email),
+      studioPhone: validatePhone(merged.primary_phone),
+      whatsapp: validatePhone(merged.whatsapp),
+      contactEmail: validateEmail(mergedExt.primary_contact_email),
+      contactPhone: validatePhone(mergedExt.primary_contact_phone),
+    } satisfies Record<string, ValidationResult>;
+  }, [merged, mergedExt]);
+
+  const firstError = Object.values(errors).find((e) => e && e.ok === false);
+  const invalidMessage = firstError && firstError.ok === false
+    ? firstError.message
+    : null;
+
+
   const setP = <K extends keyof EntityProfile>(k: K, v: EntityProfile[K]) =>
     canEdit && setPForm((f) => ({ ...f, [k]: v }));
 

@@ -62,6 +62,8 @@ export function HeroReel() {
 
   const backdrop = (it: ReelItem) =>
     it.backdrop_url || it.image_url || it.poster_url || "";
+  const mobileImage = (it: ReelItem) =>
+    it.poster_url || it.image_url || it.backdrop_url || "";
 
   const onTouchStart = (e: React.TouchEvent) => { touchX.current = e.touches[0].clientX; };
   const onTouchEnd = (e: React.TouchEvent) => {

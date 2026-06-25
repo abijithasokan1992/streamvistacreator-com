@@ -92,7 +92,7 @@ export const SuccessStories = () => {
           <div className="rounded-2xl border border-dashed border-border/60 bg-card/40 p-10 text-center">
             <FilmIcon className="w-8 h-8 mx-auto mb-3 text-muted-foreground" aria-hidden />
             <p className="text-sm text-muted-foreground">
-              Featured posters appear here once our team publishes them from the admin panel.
+              Licensed titles and catalogue highlights will appear here as StreamVista publishes them.
             </p>
           </div>
         ) : (

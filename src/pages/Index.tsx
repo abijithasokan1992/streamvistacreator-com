@@ -34,9 +34,9 @@ const Index = () => {
       />
       <Navbar />
       <Hero />
+      <SuccessStories />
       <RoleSurfaces />
       <Workflow />
-      <SuccessStories />
       <SecuritySection />
       <FinalCta />
       <Footer />

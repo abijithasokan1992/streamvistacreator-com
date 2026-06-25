@@ -61,7 +61,7 @@ interface Row {
   created_at: string;
 }
 
-const TAB_KEYS = ["overview", "users", "approvals", "catalog", "billing", "storage", "comms", "settings", "audit"] as const;
+const TAB_KEYS = ["overview", "users", "approvals", "homepage", "catalog", "billing", "storage", "comms", "settings", "audit"] as const;
 type TabKey = typeof TAB_KEYS[number];
 
 function pathToTab(path: string, search: URLSearchParams): TabKey {
@@ -71,6 +71,7 @@ function pathToTab(path: string, search: URLSearchParams): TabKey {
   // New MVP buckets
   if (p.startsWith("/admin/users") || p.startsWith("/admin/team")) return "users";
   if (p.startsWith("/admin/approvals") || p.startsWith("/admin/content") || p.startsWith("/admin/qc") || p.startsWith("/admin/legal")) return "approvals";
+  if (p.startsWith("/admin/homepage") || p.startsWith("/admin/marketing") || p.startsWith("/admin/cms")) return "homepage";
   if (p.startsWith("/admin/catalog") || p.startsWith("/admin/products") || p.startsWith("/admin/plans") || p.startsWith("/admin/rights")) return "catalog";
   if (p.startsWith("/admin/billing") || p.startsWith("/admin/finance") || p.startsWith("/admin/business")) return "billing";
   if (p.startsWith("/admin/storage")) return "storage";

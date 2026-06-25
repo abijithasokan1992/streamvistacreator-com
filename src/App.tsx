@@ -114,8 +114,8 @@ const PublicRoutes = () => (
     <Route path="/dashboard/content" element={<ContentOwnerDashboard />} />
     <Route path="/dashboard/studio" element={<StudioDashboard />} />
     <Route path="/dashboard/buyer" element={<BuyerDashboard />} />
-    <Route path="/dashboard/localization" element={<LocalizationDashboard />} />
-    <Route path="/dashboard/distribution" element={<DistributionDashboard />} />
+    <Route path="/dashboard/localization" element={<CanonicalDashboardRedirect />} />
+    <Route path="/dashboard/distribution" element={<CanonicalDashboardRedirect />} />
 
     {/* Legacy shared dashboard entry — always normalize to the role dashboard. */}
     <Route path="/dashboard" element={<CanonicalDashboardRedirect />} />
@@ -126,12 +126,12 @@ const PublicRoutes = () => (
         OnboardingGate enforces the linear flow, RoleGate keeps the
         wrong UI off the screen. */}
     <Route path="/producer" element={<CanonicalDashboardRedirect />} />
-    <Route path="/vault" element={<OnboardingGate><RoleGate allow={["creator", "content_owner", "admin"]}><Vault /></RoleGate></OnboardingGate>} />
-    <Route path="/studio" element={<OnboardingGate><RoleGate allow={["creator", "content_owner", "executive_producer", "studio", "admin"]}><Studio /></RoleGate></OnboardingGate>} />
+    <Route path="/vault" element={<CanonicalDashboardRedirect />} />
+    <Route path="/studio" element={<CanonicalDashboardRedirect />} />
     <Route path="/client" element={<CanonicalDashboardRedirect />} />
     <Route path="/projects" element={<CanonicalDashboardRedirect />} />
-    <Route path="/archive" element={<OnboardingGate><RoleGate allow={["creator", "content_owner", "executive_producer", "studio", "admin"]}><MasterArchive /></RoleGate></OnboardingGate>} />
-    <Route path="/team" element={<OnboardingGate><RoleGate allow={["creator", "content_owner", "executive_producer", "studio", "admin"]}><Team /></RoleGate></OnboardingGate>} />
+    <Route path="/archive" element={<CanonicalDashboardRedirect />} />
+    <Route path="/team" element={<CanonicalDashboardRedirect />} />
 
     {/* Admin console is also reachable on the main domain until the admin subdomain DNS is fully configured. */}
     <Route path="/admin" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
@@ -156,7 +156,7 @@ const PublicRoutes = () => (
     <Route path="/admin/chief" element={<AdminErrorBoundary><AdminChief /></AdminErrorBoundary>} />
 
 
-    <Route path="/launching-special-plan" element={<LaunchingSpecialPlan />} />
+
     <Route path="/checkout/return" element={<CheckoutReturn />} />
     <Route path="/checkout/storage" element={<CheckoutStorage />} />
     <Route path="/billing/status/:topupId" element={<OrderStatus />} />
@@ -170,7 +170,7 @@ const PublicRoutes = () => (
     <Route path="/refund" element={<Refund />} />
     <Route path="/pricing" element={<PricingPage />} />
     <Route path="/about" element={<About />} />
-    <Route path="/ingest-test" element={<IngestTest />} />
+
     <Route path="/c2c-setup" element={<C2CSetupManual />} />
     <Route path="/blog/camera-to-cloud-guide" element={<CameraToCloudGuide />} />
     <Route path="/blog/streamvista-vs-frame-io-camera-to-cloud" element={<StreamVistaVsFrameIO />} />

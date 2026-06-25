@@ -58,7 +58,7 @@ export default function MarketingCMS() {
   );
 }
 
-function Section({ kind, title, icon }: { kind: Kind; title: string; icon: React.ReactNode }) {
+function Section({ kind, title, icon, helper }: { kind: Kind; title: string; icon: React.ReactNode; helper?: React.ReactNode }) {
   const table = TABLES[kind];
   const [rows, setRows] = useState<AnyRow[]>([]);
   const [loading, setLoading] = useState(true);

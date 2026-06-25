@@ -1,9 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
 
 type Surface = "home" | "creator" | "studio" | "buyer" | "chief";
 
@@ -46,45 +42,65 @@ You are NOT a public assistant — refuse anything outside founder-level operati
 
 const SURFACE_VALUES = new Set<Surface>(["home", "creator", "studio", "buyer", "chief"]);
 
+const MAX_MESSAGES = 20;
+const MAX_TOTAL_CHARS = 10_000;
+const MAX_SINGLE_CHARS = 4_000;
+
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const cors = buildCorsHeaders(req);
+  if (req.method === "OPTIONS") return handleOptions(req);
+
+  const json = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
 
   try {
     const body = await req.json();
     const surface = body.surface as Surface;
     const messages = body.messages as Array<{ role: string; content: string }>;
     if (!SURFACE_VALUES.has(surface) || !Array.isArray(messages)) {
-      return new Response(JSON.stringify({ error: "Invalid body" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Invalid body" }, 400);
+    }
+    if (messages.length === 0 || messages.length > MAX_MESSAGES) {
+      return json({ error: `messages must contain 1..${MAX_MESSAGES} items` }, 400);
+    }
+    let totalChars = 0;
+    for (const m of messages) {
+      if (!m || typeof m.role !== "string" || typeof m.content !== "string") {
+        return json({ error: "Invalid message shape" }, 400);
+      }
+      if (m.content.length > MAX_SINGLE_CHARS) {
+        return json({ error: `Single message exceeds ${MAX_SINGLE_CHARS} chars` }, 400);
+      }
+      totalChars += m.content.length;
+    }
+    if (totalChars > MAX_TOTAL_CHARS) {
+      return json({ error: `Total messages exceed ${MAX_TOTAL_CHARS} chars` }, 400);
     }
 
     const persona = PERSONAS[surface];
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      return new Response(JSON.stringify({ error: "AI not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (!LOVABLE_API_KEY) return json({ error: "AI not configured" }, 500);
 
-    // Chief access guard
+    // Authentication — required for ALL surfaces to prevent anonymous credit drain.
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const authHeader = req.headers.get("Authorization") ?? "";
+    if (!authHeader.toLowerCase().startsWith("bearer ")) {
+      return json({ error: "Unauthorized" }, 401);
+    }
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: userData } = await userClient.auth.getUser();
+    const { data: userData, error: userErr } = await userClient.auth.getUser();
     const userId = userData?.user?.id ?? null;
+    if (userErr || !userId) return json({ error: "Unauthorized" }, 401);
 
     if (surface === "chief") {
-      if (!userId) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       const { data: isFounder } = await userClient.rpc("has_role", { _user_id: userId, _role: "founder" });
-      if (!isFounder) {
-        return new Response(JSON.stringify({ error: "Founder access required" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
+      if (!isFounder) return json({ error: "Founder access required" }, 403);
     }
 
     const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -99,27 +115,21 @@ Deno.serve(async (req) => {
       }),
     });
 
-    if (aiResp.status === 429) {
-      return new Response(JSON.stringify({ error: "Rate limited, try again shortly." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-    if (aiResp.status === 402) {
-      return new Response(JSON.stringify({ error: "AI credits exhausted." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
+    if (aiResp.status === 429) return json({ error: "Rate limited, try again shortly." }, 429);
+    if (aiResp.status === 402) return json({ error: "AI credits exhausted." }, 402);
     if (!aiResp.ok) {
       const t = await aiResp.text();
-      return new Response(JSON.stringify({ error: "AI error", detail: t }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return json({ error: "AI error", detail: t }, 500);
     }
 
     const data = await aiResp.json();
     const content: string = data.choices?.[0]?.message?.content ?? "";
 
-    // Detect REPORT[severity=xxx]: line and persist
     const reportMatch = content.match(/REPORT\[severity=(info|warn|critical)\]:\s*(.+)/i);
     if (reportMatch && surface !== "chief") {
       const severity = reportMatch[1].toLowerCase();
       const summary = reportMatch[2].trim();
       const lastUser = [...messages].reverse().find((m) => m.role === "user")?.content?.slice(0, 200) ?? "";
-      // Use service role to insert (created_by may be null for anon home visitors)
       const svc = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
       await svc.from("agent_events").insert({
         agent: surface,
@@ -133,13 +143,11 @@ Deno.serve(async (req) => {
 
     const cleaned = content.replace(/REPORT\[severity=[^\]]+\]:.*$/i, "").trim();
 
-    return new Response(JSON.stringify({ content: cleaned, persona: persona.name }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ content: cleaned, persona: persona.name });
   } catch (e) {
     return new Response(JSON.stringify({ error: String(e) }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   }
 });

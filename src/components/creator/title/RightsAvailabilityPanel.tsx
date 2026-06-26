@@ -28,10 +28,10 @@ const TERRITORY_STATUS_OPTIONS: TerritoryStatus[] = [
   "none", "available", "sold", "blocked", "discuss",
 ];
 
-export function RightsAvailabilityPanel({ meta, setMeta, readOnly }: Props) {
+export function RightsAvailabilityPanel({ meta, setMeta, readOnly, isFree = false }: Props) {
   const c = meta.commercial;
-  const isPremium = c.engagement_mode === "upgrade_premium";
-  const isFreePath = c.engagement_mode === "free_listing" || c.engagement_mode === "go_free";
+  const isPremium = !isFree && c.engagement_mode === "upgrade_premium";
+  const isFreePath = isFree || c.engagement_mode === "free_listing" || c.engagement_mode === "go_free";
 
   const update = (patch: Partial<TitleMetadata["commercial"]>) =>
     setMeta({ ...meta, commercial: { ...c, ...patch } });

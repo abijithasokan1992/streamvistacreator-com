@@ -58,6 +58,7 @@ const GROUP_ORDER: SectionGroup[] = ["main", "storage", "account"];
 /** Items visible in the sidebar for a given tier. Pro-only items are hidden for Free. */
 export function visibleSections(isFree: boolean): ReadonlyArray<SectionDef & { locked: boolean }> {
   return SECTIONS
+    .filter((s) => !s.hidden)
     .filter((s) => !(isFree && s.proOnly))
     .map((s) => ({ ...s, locked: false }));
 }

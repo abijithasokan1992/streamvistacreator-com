@@ -55,6 +55,7 @@ export const TitleMetadataSchema = z.object({
     system: z.string().max(60).default(""),
   }).default({ imdb: null, system: "" }),
   advisory: z.string().max(2000).default(""),
+  certification: z.enum(["U", "U/A", "A", "S", "unrated", "other", ""]).default(""),
   copyright: z.string().max(500).default(""),
   rights: z.object({
     territories: z.array(z.string().trim().max(60)).default([]),

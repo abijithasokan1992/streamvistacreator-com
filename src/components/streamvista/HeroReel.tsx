@@ -107,7 +107,7 @@ export function HeroReel() {
                     height={1080}
                     loading={k === 0 ? "eager" : "lazy"}
                     fetchPriority={isActive ? "high" : "auto"}
-                    className="absolute inset-0 w-full h-full object-cover object-center will-change-transform animate-[reel-pan_14s_ease-in-out_infinite_alternate]"
+                    className="absolute inset-0 w-full h-full object-cover object-[center_22%] md:object-center will-change-transform animate-[reel-pan_14s_ease-in-out_infinite_alternate]"
                     style={{ filter: "saturate(1.05) contrast(1.05)" }}
                   />
                 </picture>
@@ -118,9 +118,11 @@ export function HeroReel() {
           );
         })}
 
-        {/* Cinematic overlays: bottom-to-top, vignette, film grain */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background/20 via-background/10 to-transparent" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,hsl(var(--background))_100%)]" />
+        {/* Cinematic overlays: bottom-to-top, vignette, film grain.
+            Mobile gets a much stronger bottom scrim so the title card
+            never has to fight the poster artwork sitting behind it. */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[72%] md:h-[55%] bg-gradient-to-t from-background via-background/80 md:via-background/55 to-transparent" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_60%,hsl(var(--background))_100%)] opacity-70 md:opacity-100" />
         <div className="pointer-events-none absolute inset-0 mix-blend-overlay opacity-[0.07]"
              style={{ backgroundImage:
                "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.5'/></svg>\")" }} />

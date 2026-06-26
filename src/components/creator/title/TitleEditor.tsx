@@ -617,16 +617,18 @@ function SubmissionTab({
 }
 
 function AssetTab({
-  cat, label, assets, titleId, locked, onUploaded, accept,
+  cat, label, description, assets, titleId, locked, onUploaded, accept,
 }: {
-  cat: AssetCategory; label: string;
+  cat: AssetCategory; label: string; description?: string;
   assets: TitleAsset[]; titleId: string; locked: boolean;
   onUploaded: () => void; accept?: string;
 }) {
   return (
     <section>
       <h3 className="text-sm font-semibold">{label}</h3>
-      <p className="text-xs text-muted-foreground mt-1">Category: {CATEGORY_LABEL[cat]}.</p>
+      <p className="text-xs text-muted-foreground mt-1">
+        {description ?? `Category: ${CATEGORY_LABEL[cat]}.`}
+      </p>
       <div className="mt-3">
         <AssetUploader
           titleId={titleId}
@@ -634,6 +636,86 @@ function AssetTab({
           locked={locked}
           accept={accept}
           label={`Upload ${label.toLowerCase()}`}
+          onUploaded={onUploaded}
+        />
+        <AssetList assets={assets} />
+      </div>
+    </section>
+  );
+}
+
+/**
+ * PosterGrid — Renders 4 artwork slots. Slot 1 is the live primary poster
+ * uploader; slots 2-4 are visual placeholders for future artwork variants
+ * (alt poster, banner, square) without changing the existing single-poster
+ * schema.
+ */
+function PosterGrid({
+  titleId, assets, locked, onUploaded,
+}: {
+  titleId: string; assets: TitleAsset[]; locked: boolean; onUploaded: () => void;
+}) {
+  const primary = assets.find((a) => a.is_primary) ?? assets[0];
+  const u: any = primary?.upload ?? null;
+  const fileName: string | null = u?.file_name ?? null;
+  const fileSizeMb: string | null = u?.file_size
+    ? `${(Number(u.file_size) / (1024 * 1024)).toFixed(1)} MB`
+    : null;
+  const placeholders = [
+    { label: "Alt poster", hint: "Secondary key art" },
+    { label: "Banner", hint: "Horizontal hero art" },
+    { label: "Square", hint: "Tile / thumbnail" },
+  ];
+  return (
+    <section>
+      <div className="flex items-baseline justify-between">
+        <h3 className="text-sm font-semibold">Poster</h3>
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">4 artwork slots</span>
+      </div>
+      <p className="text-xs text-muted-foreground mt-1">
+        Primary poster lives in slot 1. Additional artwork slots are reserved for upcoming variants.
+      </p>
+      <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3">
+        {/* Slot 1 — live primary poster */}
+        <div className="rounded-lg border border-border/60 bg-card/40 p-2 flex flex-col">
+          <div className="aspect-[2/3] rounded-md border border-border/40 bg-secondary/10 overflow-hidden grid place-items-center text-[10px] text-muted-foreground">
+            {fileName ? (
+              <div className="p-2 text-center w-full">
+                <ImageIcon className="w-5 h-5 mx-auto text-accent" />
+                <div className="mt-1 font-medium text-foreground truncate">{fileName}</div>
+                {fileSizeMb && <div className="mt-0.5 text-[10px]">{fileSizeMb}</div>}
+                <div className="mt-0.5 inline-flex items-center gap-1 text-emerald-400 text-[10px]">
+                  <CheckCircle2 className="w-3 h-3" /> Attached
+                </div>
+              </div>
+            ) : (
+              <span className="text-center px-2">Primary poster<br/><span className="text-muted-foreground/70">Upload below</span></span>
+            )}
+          </div>
+          <div className="mt-2 text-[10px] uppercase tracking-wider text-accent">Primary</div>
+        </div>
+        {/* Slots 2-4 — visual placeholders */}
+        {placeholders.map((p) => (
+          <div key={p.label} className="rounded-lg border border-dashed border-border/50 bg-background/30 p-2 flex flex-col opacity-70">
+            <div className="aspect-[2/3] rounded-md border border-border/30 bg-secondary/5 grid place-items-center text-center px-2">
+              <div>
+                <ImageIcon className="w-5 h-5 mx-auto text-muted-foreground/60" />
+                <div className="mt-1 text-[10px] text-muted-foreground">{p.hint}</div>
+              </div>
+            </div>
+            <div className="mt-2 text-[10px] uppercase tracking-wider text-muted-foreground inline-flex items-center gap-1">
+              <Lock className="w-2.5 h-2.5" /> {p.label}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4">
+        <AssetUploader
+          titleId={titleId}
+          category="poster"
+          locked={locked}
+          accept="image/*"
+          label="Upload primary poster"
           onUploaded={onUploaded}
         />
         <AssetList assets={assets} />

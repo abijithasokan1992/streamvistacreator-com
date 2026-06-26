@@ -482,7 +482,7 @@ function OverviewSnapshot({
  * elsewhere (admin) and are intentionally hidden from the creator.
  */
 function SubmissionTab({
-  title, readiness, local, assets, meta, onJumpTab,
+  title, readiness, local, assets, meta, onJumpTab, isFree,
 }: {
   title: TitleRow;
   readiness: ServerReadiness | null;
@@ -490,6 +490,7 @@ function SubmissionTab({
   assets: TitleAsset[];
   meta: TitleMetadata | null;
   onJumpTab: (t: TabId) => void;
+  isFree: boolean;
 }) {
   const has = readiness?.has ?? {
     feature_film: local.hasFilm,
@@ -509,7 +510,9 @@ function SubmissionTab({
   const engagementSet = !!commercial && commercial.engagement_mode !== "unspecified";
 
   // Creator-facing readiness — completeness, not verification.
-  const items: { key: string; label: string; ok: boolean; goto: TabId }[] = [
+  // Free creators don't see premium-only commercial fields, so we don't gate
+  // their submission on them either.
+  const baseItems: { key: string; label: string; ok: boolean; goto: TabId }[] = [
     { key: "title", label: "Add a title name",                 ok: !!local.hasTitle,                              goto: "metadata" },
     { key: "synopsis", label: "Add a synopsis",                ok: !!local.hasSynopsis,                           goto: "metadata" },
     { key: "genres", label: "Pick at least one genre",         ok: (meta?.genres?.length ?? 0) > 0,               goto: "metadata" },
@@ -519,11 +522,14 @@ function SubmissionTab({
     { key: "feature_film", label: "Upload the master file",    ok: !!(has.feature_film ?? local.hasFilm),         goto: "assets" },
     { key: "poster", label: "Upload poster artwork",           ok: !!(has.poster ?? local.hasPoster),             goto: "assets" },
     { key: "censor_certificate", label: "Upload censor certificate", ok: !!(has.censor_certificate ?? local.hasCensor), goto: "legal" },
-    { key: "ownership_documents", label: "Upload ownership documents", ok: !!(has.ownership_documents ?? local.hasOwnership), goto: "legal" },
+    { key: "ownership_documents", label: "Upload existing contracts", ok: !!(has.ownership_documents ?? local.hasOwnership), goto: "assets" },
+  ];
+  const premiumItems: { key: string; label: string; ok: boolean; goto: TabId }[] = [
     { key: "engagement_mode", label: "Choose a commercial path (Free / Premium)", ok: engagementSet, goto: "legal" },
     { key: "rights_available", label: "Mark at least one right as available",     ok: rightsAvailableCount > 0,  goto: "legal" },
     { key: "territory_available", label: "Mark at least one territory as available", ok: territoriesAvailableCount > 0, goto: "legal" },
   ];
+  const items = isFree ? baseItems : [...baseItems, ...premiumItems];
   const done = items.filter((i) => i.ok).length;
   const total = items.length;
   const pct = Math.round((done / total) * 100);

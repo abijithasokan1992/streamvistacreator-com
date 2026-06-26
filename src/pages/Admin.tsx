@@ -64,25 +64,41 @@ interface Row {
   created_at: string;
 }
 
-const TAB_KEYS = ["overview", "users", "approvals", "homepage", "catalog", "billing", "storage", "comms", "settings", "audit", "vault"] as const;
-type TabKey = typeof TAB_KEYS[number];
+// ============================================================
+// New department-based IA. Sub-sections live inside each dept.
+// Legacy `?tab=` and `/admin/<old>` URLs are still resolved
+// by mapping them to the equivalent new department.
+// ============================================================
+const DEPT_KEYS = ["dashboard", "operations", "accounts", "commerce", "storage", "comms", "system"] as const;
+type DeptKey = typeof DEPT_KEYS[number];
 
-function pathToTab(path: string, search: URLSearchParams): TabKey {
-  const q = search.get("tab") as TabKey | null;
-  if (q && (TAB_KEYS as readonly string[]).includes(q)) return q;
+const LEGACY_TAB_TO_DEPT: Record<string, DeptKey> = {
+  overview: "dashboard",
+  users: "accounts",
+  approvals: "operations",
+  catalog: "commerce",
+  billing: "commerce",
+  storage: "storage",
+  comms: "comms",
+  homepage: "system",
+  settings: "system",
+  audit: "system",
+  vault: "system",
+};
+
+function pathToDept(path: string, search: URLSearchParams): DeptKey {
+  const q = search.get("dept") as DeptKey | null;
+  if (q && (DEPT_KEYS as readonly string[]).includes(q)) return q;
+  const legacyTab = search.get("tab");
+  if (legacyTab && LEGACY_TAB_TO_DEPT[legacyTab]) return LEGACY_TAB_TO_DEPT[legacyTab];
   const p = path.toLowerCase();
-  // New MVP buckets
-  if (p.startsWith("/admin/users") || p.startsWith("/admin/team")) return "users";
-  if (p.startsWith("/admin/approvals") || p.startsWith("/admin/content") || p.startsWith("/admin/qc") || p.startsWith("/admin/legal")) return "approvals";
-  if (p.startsWith("/admin/homepage") || p.startsWith("/admin/marketing") || p.startsWith("/admin/cms")) return "homepage";
-  if (p.startsWith("/admin/catalog") || p.startsWith("/admin/products") || p.startsWith("/admin/plans") || p.startsWith("/admin/rights")) return "catalog";
-  if (p.startsWith("/admin/billing") || p.startsWith("/admin/finance") || p.startsWith("/admin/business")) return "billing";
-  if (p.startsWith("/admin/storage")) return "storage";
-  if (p.startsWith("/admin/comms") || p.startsWith("/admin/support")) return "comms";
-  if (p.startsWith("/admin/settings")) return "settings";
-  if (p.startsWith("/admin/audit") || p.startsWith("/admin/reports") || p.startsWith("/admin/security")) return "audit";
-  if (p.startsWith("/admin/vault") || p.startsWith("/admin/founder-vault")) return "vault";
-  return "overview";
+  if (p.startsWith("/admin/operations") || p.startsWith("/admin/approvals") || p.startsWith("/admin/content") || p.startsWith("/admin/qc") || p.startsWith("/admin/legal") || p.startsWith("/admin/pipeline")) return "operations";
+  if (p.startsWith("/admin/accounts") || p.startsWith("/admin/users") || p.startsWith("/admin/team") || p.startsWith("/admin/roles")) return "accounts";
+  if (p.startsWith("/admin/commerce") || p.startsWith("/admin/catalog") || p.startsWith("/admin/products") || p.startsWith("/admin/plans") || p.startsWith("/admin/billing") || p.startsWith("/admin/finance") || p.startsWith("/admin/entitlements") || p.startsWith("/admin/rights")) return "commerce";
+  if (p.startsWith("/admin/storage") || p.startsWith("/admin/delivery") || p.startsWith("/admin/vault-delivery")) return "storage";
+  if (p.startsWith("/admin/comms") || p.startsWith("/admin/support") || p.startsWith("/admin/email") || p.startsWith("/admin/notifications")) return "comms";
+  if (p.startsWith("/admin/system") || p.startsWith("/admin/homepage") || p.startsWith("/admin/cms") || p.startsWith("/admin/marketing") || p.startsWith("/admin/settings") || p.startsWith("/admin/audit") || p.startsWith("/admin/reports") || p.startsWith("/admin/security") || p.startsWith("/admin/vault") || p.startsWith("/admin/founder-vault")) return "system";
+  return "dashboard";
 }
 
 

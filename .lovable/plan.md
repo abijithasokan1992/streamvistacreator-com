@@ -1,103 +1,118 @@
+# Dashboard IA + Guided Tools Refactor
 
-## Step 2 — Admin Console Collapse (current 10 tabs + ~40 panels → 8 MVP tabs)
+This is a large, multi-dashboard restructure. To keep it safe (no business-logic rewrites, no auth/payments/storage backend churn), I'll ship it in **4 phased patches**, one dashboard per patch, plus a small shared primitives patch first. Each phase is independently shippable — you can pause or redirect between phases.
 
-Goal: one tab list, 8 buckets, no duplicate panels, no admin-only feature surfaces that aren't earning. Single file: `src/pages/Admin.tsx` + the `/admin/*` route table.
+## Phase 0 — Shared primitives (small)
 
----
+Add a thin, reusable tools-layer kit used by every dashboard. Pure presentation, no business logic.
 
-### 1. The 8 MVP buckets and what goes in each
+New files under `src/components/shared/tools/`:
+- `QuickActionCard.tsx` — icon + title + 1-line desc + CTA
+- `QuickActionGrid.tsx` — responsive 2/3/4 col grid
+- `GuidedWizard.tsx` — multi-step shell (steps, progress, back/next/finish) — wraps existing form inputs, owns no state beyond step index
+- `StatusSummaryCard.tsx` — label/value + status pill + optional progress bar
+- `HelpDrawer.tsx` — right-side drawer for contextual help content
+- `PlanVisibilityCard.tsx` — plan name + tier pill + quota line + upgrade/request CTA (role-agnostic, takes props)
 
-| Tab (URL) | Components kept | Source bucket(s) absorbed |
-|---|---|---|
-| **Users & Roles** `/admin/users` | `RolesManager`, `UsersAndCredentials`, `AdminTeamManager` | old `users` + `team` |
-| **Approvals** `/admin/approvals` | `OnboardingApprovals`, `ContentReviewWorkflow`, `TitleEditRequestsInbox` | from old `content` + `support` |
-| **Catalog** `/admin/catalog` | `ProductsAndPlans`, `StudioVaultPricing`, `FreeTierConfig`, `GlobalAssetManager` | from old `settings` + `storage` |
-| **Billing** `/admin/billing` | `AdminInvoices`, `ManualInvoiceConsole`, `BillingOperations`, `AdminFinanceConsole`, `RazorpayOpsBanner`, `RazorpayAuditLog`, `PaymentTrace` | old `finance` + `business` (kept slice) |
-| **Storage** `/admin/storage` | `OracleStorageMonitor`, `AdminStudioVaultPurchases`, `OracleOciStorageCard` (in `<details>`) | old `storage` |
-| **Comms** `/admin/comms` | `SupportInbox`, `ContactInbox`, `EmailLogMonitor`, `UniversalBroadcast` | old `support` |
-| **Settings** `/admin/settings` | `BrandingSettings`, `CompanyProfileSettings`, `PartnerLogos`, `ResendCredentials`, `AdminCredentials`, `RazorpayCredentials`, `RazorpayConnectivityStatus`, `DomainHostingPanel` | old `settings` (advanced kept in `<details>`) |
-| **Audit** `/admin/audit` | `AdminReportsConsole`, `PaymentSecurityEvents` | old `reports` |
+These are pure UI; existing role logic feeds them.
 
-Tab #1 stays the **Overview/Home** above this tab list (it's the landing `PlatformOverview` + QuickNav, not a 9th bucket).
+## Phase 1 — Creator dashboard
 
----
+Final IA (left nav, in this order):
+```text
+Home · Titles · Library · Billing · Help
+```
 
-### 2. Panels hidden for MVP (kept in repo, not mounted)
+Changes:
+- `CreatorSidebar.tsx` — collapse `submissions`, `updates`, `profile` out of the top nav. Profile moves under Home as a card link; Review Queue + Inbox surface inside Home as widgets (no route loss; old `SectionId`s still resolve).
+- Creator Home gets a **Creator Tools** strip (QuickActionGrid):
+  - New Title Wizard (deep-link → Titles → new)
+  - Submission Readiness Checker (opens HelpDrawer with checklist driven by existing readiness logic)
+  - Metadata / Asset Upload Guide (HelpDrawer)
+  - Commercial Path Summary (StatusSummaryCard)
+  - Upgrade / Plan Help (links to Billing)
+  - Support Shortcut (links to Help)
+- Plan visibility: `PlanVisibilityCard` pinned at top of Home and top of Billing — shows plan name, storage used/total, submission path state, tier pill (Free/Paid/Managed/Founder/Custom).
 
-Removed from any tab but file kept for Phase 2:
-- `PlatformOwnerConsole`
-- `AiMcpControlCenter`
-- `KammattamMeter`
-- `CommissionsTracker`
-- `CommercialControlTower`
-- `TitleCommercialOpsConsole`
-- `ScreeningOpsConsole`
-- `DistributionOffersConsole`
-- `DealOperationsConsole`
-- `PremiumInvitations`
-- `MarketingCMS`
-- `ChiefBriefing`
-- `HeroReelPreview`
-- `EntitlementExplorer`, `UserEntitlementDrillIn`, `StorageGrantPanel`, `TitleReviewPanel` (already not on any tab — verify)
-- `LegacyOnboardingFunnel`, `MarketingAnalytics` (in-file helpers — drop calls)
+Touched files (approx): `CreatorSidebar.tsx`, `pages/dashboards/ContentOwner.tsx` (Creator shell), 1 new `CreatorQuickActions.tsx`, 1 new `CreatorPlanStrip.tsx`.
 
-### 3. Panels removed entirely (delete files)
+## Phase 2 — Studio dashboard
 
-- `src/components/admin/RazorpayTestCheckout.tsx` — dev-only checkout.
-- `src/pages/AdminChief.tsx` + `/admin/chief` route — AI burn, no revenue.
-- `src/pages/KammattamPopout.tsx` + `/admin/kammattam` route — vanity meter.
-- `src/pages/AdminOperations.tsx` + `/admin/operations` route — superseded by the 8 buckets.
+Final IA:
+```text
+Home · Ingest · Storage · Library · Billing
+```
 
-(`ChiefBriefing.tsx` and `AiMcpControlCenter.tsx` only get unmounted — kept in repo per "hide, don't delete" for AI features.)
+Changes:
+- `pages/dashboards/StudioDash.tsx` — regroup existing sections into the 5 above (Ingest = camera-to-cloud + hard-disk intake; Storage = Oracle/OCI monitor + planner; Library = vault).
+- Studio Tools strip (QuickActionGrid) on Home:
+  - Ingest Setup Wizard (GuidedWizard wrapping existing `CameraToCloudIngest` config screens)
+  - Storage Planner (StatusSummaryCard + helper drawer; uses existing storage figures)
+  - Service Request Wizard (wraps existing `StudioRequestService`)
+  - Upload / Ingest Diagnostics Helper (HelpDrawer)
+  - Plan / Storage Request shortcut (opens existing `StudioRequestPlanChange`)
+- Plan visibility: `PlanVisibilityCard` on Home + Billing (plan, storage used/total, request-plan CTA).
 
----
+## Phase 3 — Buyer / Licensing dashboard
 
-### 4. Routes — exact changes (both `AdminRoutes` and `PublicRoutes` in `src/App.tsx`)
+Final IA:
+```text
+Overview · My Requests · New Request · Billing
+```
+(Billing tab hidden if no buyer billing entitlement.)
 
-**Keep:**
-- `/admin` (Home)
-- `/admin/users`, `/admin/billing`, `/admin/storage`, `/admin/settings`
+Changes:
+- `pages/dashboards/Buyer.tsx` — restructure tabs to the 4 above.
+- Buyer Tools strip on Overview:
+  - New Request Wizard (GuidedWizard wrapping current request form)
+  - Rights Scope Helper (HelpDrawer)
+  - Screener Request Guide (HelpDrawer + CTA)
+  - Commercial Note Builder (small templated note generator, pure FE)
+  - Catalog / Acquisition Request shortcut
+- Plan visibility: `PlanVisibilityCard` on Overview — buyer tier, screener state, active requests count.
 
-**Rename / add:**
-- `/admin/content` → `/admin/approvals` (legacy `/admin/content` redirects via `pathToTab` mapping)
-- `/admin/support` → `/admin/comms`
-- `/admin/reports` → `/admin/audit`
-- new: `/admin/catalog`
+## Phase 4 — Admin dashboard
 
-**Remove (routes + page files):**
-- `/admin/super`, `/admin/business`, `/admin/finance`, `/admin/legal`, `/admin/qc`, `/admin/rights`, `/admin/team`, `/admin/kammattam`, `/admin/operations`, `/admin/chief`
+Final IA — **7 slim top-level departments** in main sidebar:
+```text
+Dashboard · Operations · Accounts · Commerce
+Storage & Delivery · Comms · System
+```
 
-Legacy paths above are redirected to their new bucket inside `pathToTab` so old bookmarks still land on the right tab. Drop dead routes from the route table.
+Section mapping (secondary nav inside each page, not in main sidebar):
+- **Operations** → Approvals, Pipeline, Catalog Ops (TitleReviewPanel, OnboardingApprovals, ContentReviewWorkflow, DealOperationsConsole, ScreeningOpsConsole, TitleCommercialOpsConsole, TitleEditRequestsInbox, CommercialControlTower)
+- **Accounts** → Users, Organizations, Roles & Access (UsersAndCredentials, AdminTeamManager, RolesManager, UserEntitlementDrillIn)
+- **Commerce** → Plans & Pricing, Billing, Entitlements, Commercial Requests (ProductsAndPlans, StudioVaultPricing, FreeTierConfig, BillingOperations, AdminFinanceConsole, AdminInvoices, ManualInvoiceConsole, EntitlementExplorer, CommissionsTracker, DistributionOffersConsole, PremiumInvitations)
+- **Storage & Delivery** → Storage, Uploads, Vault/Delivery (OracleOciStorageCard, OracleStorageMonitor, StorageGrantPanel, GlobalAssetManager, AdminStudioVaultPurchases)
+- **Comms** → Notifications, Email, Support (UniversalBroadcast, EmailLogMonitor, ResendCredentials, ContactInbox, SupportInbox, PaymentSecurityEvents, RazorpayAuditLog, RazorpayOpsBanner)
+- **System** → Homepage CMS, Settings, Audit, **Founder Vault** (MarketingCMS, HeroModeControl/HeroLivePreview/HeroReelPreview, PartnerLogos, BrandingSettings, CompanyProfileSettings, AdminCredentials, RazorpayCredentials, RazorpayConnectivityStatus, AiMcpControlCenter, PaymentTrace, PlatformOverview, PlatformOwnerConsole, ChiefBriefing, KammattamMeter, FounderVault)
 
----
+Changes:
+- `pages/Admin.tsx` — main sidebar reduced to the 7 departments. Each department page renders a secondary tab bar with its sub-sections. No component logic rewritten — components are reparented only.
+- New `AdminCommandBar.tsx` — top command/search bar (Cmd+K) that fuzzy-searches across all admin sub-section names and jumps to `?dept=…&section=…`.
+- RBAC, scanner, and admin business components are untouched (only their parent location changes).
 
-### 5. Exact files to edit
+## What stays untouched
 
-1. **`src/App.tsx`** — drop 8 admin imports (`AdminChief`, `KammattamPopout`, `AdminOperations`, plus 7 dead route lines × 2 route blocks). Add catalog/comms/approvals/audit. Mirror in `AdminRoutes` and `PublicRoutes`.
-2. **`src/pages/Admin.tsx`** —
-   - Trim imports to the kept components only.
-   - Replace `TabsList` with 8 `DeptTab`s.
-   - Rewrite `pathToTab` to map legacy paths → new buckets.
-   - Rewrite the 7 `TabsContent` blocks to match the table in §1.
-   - Delete `LegacyOnboardingFunnel`, `MarketingAnalytics`, and `rows`-fetching state (no longer rendered).
-   - Update `QuickNav` tiles to the 8 buckets.
-3. **Delete files:** `src/pages/AdminChief.tsx`, `src/pages/KammattamPopout.tsx`, `src/pages/AdminOperations.tsx`, `src/components/admin/RazorpayTestCheckout.tsx`.
+- Auth, payments, Razorpay/Stripe wiring, storage backend, RLS, edge functions
+- Public homepage, pricing page, legal pages, blog
+- Entitlement evaluation logic
+- The Creator Title Editor (recently refactored)
+- All existing routes/URLs continue to resolve via legacy aliases
 
----
+## Technical notes
 
-### 6. Patch order
+- All new components use existing shadcn primitives + lucide icons + design tokens — no new deps.
+- Wizards wrap **existing** forms; they don't reimplement submit logic.
+- Plan/quota figures are read from the same hooks each dashboard already uses.
+- Admin command bar is a pure FE index over the new department/section map; no new backend.
 
-1. Edit `Admin.tsx` (single biggest change — tabs, content, helpers, imports).
-2. Edit `App.tsx` route tables + drop dead imports.
-3. `rm` the 4 dead files.
-4. Build check; fix any stale imports the compiler surfaces.
+## Suggested execution order
 
----
+1. Phase 0 (shared primitives) — required by all later phases
+2. Phase 1 (Creator)
+3. Phase 2 (Studio)
+4. Phase 3 (Buyer)
+5. Phase 4 (Admin) — largest; ship last
 
-### 7. Out of scope (next steps)
-
-- Step 3: Payment provider trim (Razorpay + manual only — `Paddle`, `Fastlink` cuts).
-- Step 4: Storage table consolidation.
-- Step 5: Edge function disablement.
-
-Reply **"go"** to execute.
+Reply with **"go"** to execute all phases in order, or name specific phases to start with (e.g. "Phase 0 + 1 only").

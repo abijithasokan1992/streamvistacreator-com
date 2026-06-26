@@ -10,6 +10,8 @@ import Buy1TBCard from "@/components/shared/Buy1TBCard";
 import UpgradeCreatorPlanCard from "@/components/creator/UpgradeCreatorPlanCard";
 import { Button } from "@/components/ui/button";
 import OnboardingChecklist from "@/components/creator/OnboardingChecklist";
+import CreatorPlanStrip from "@/components/creator/CreatorPlanStrip";
+import CreatorQuickActions from "@/components/creator/CreatorQuickActions";
 import type { SectionId } from "@/components/creator/CreatorSidebar";
 
 type UpdateRow = { id: string; title: string; message: string | null; created_at: string };
@@ -56,8 +58,24 @@ export default function HomeSection({ onNavigate, isFree }: { onNavigate: (s: Se
 
   return (
     <div className="space-y-6">
+      {/* Plan & quota visibility — top of Home */}
+      <CreatorPlanStrip
+        isFree={isFree}
+        tier={tier}
+        titles={titles}
+        onUpgrade={() => onNavigate("billing")}
+      />
+
       {/* Single welcome block — name + plan + storage live inside WorkspaceWelcome */}
       <WorkspaceWelcome />
+
+      {/* Creator Tools / Quick Actions strip */}
+      <CreatorQuickActions
+        onNavigate={onNavigate}
+        isFree={isFree}
+        tier={tier}
+        titles={titles}
+      />
 
       {/* One-time onboarding checklist */}
       <OnboardingChecklist hasTitles={titles.length > 0} onNavigate={onNavigate} />

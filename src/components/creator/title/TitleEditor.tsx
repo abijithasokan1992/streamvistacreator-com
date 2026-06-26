@@ -235,27 +235,35 @@ export function TitleEditor({
   const byCat = (cats: AssetCategory[]) => assets.filter((a) => cats.includes(a.category));
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm grid place-items-stretch">
-      <div className="bg-background border-l border-border/50 w-full sm:max-w-5xl sm:ml-auto h-dvh flex flex-col">
-        {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-2 px-3 sm:px-5 py-3 border-b border-border/40">
-          <div className="min-w-0 flex items-center gap-2 sm:gap-3 flex-1">
-            <button onClick={onClose} className="p-1.5 rounded hover:bg-secondary/30" aria-label="Close">
+    <div className="fixed inset-0 z-50 bg-background">
+      <div className="bg-background w-full h-dvh flex flex-col">
+        {/* === Workspace command shell — 3-zone header === */}
+        <div className="border-b border-border/40 bg-card/30 backdrop-blur-sm">
+          {/* Row 1 · title/status (left) · actions (right) */}
+          <div className="flex flex-wrap items-center gap-3 px-4 sm:px-6 lg:px-8 py-3">
+            <button onClick={onClose} className="p-1.5 rounded hover:bg-secondary/30 shrink-0" aria-label="Close workspace">
               <X className="w-4 h-4" />
             </button>
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground/70">Title Workspace</p>
+              <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground/70">Title Workspace</p>
               {readOnly ? (
-                <p className="font-semibold truncate">{title?.title ?? "Loading…"}</p>
+                <p className="font-display font-semibold text-lg sm:text-xl truncate">{title?.title ?? "Loading…"}</p>
               ) : (
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-transparent font-semibold text-base outline-none border-b border-transparent focus:border-border/60"
+                  placeholder="Untitled"
+                  className="w-full bg-transparent font-display font-semibold text-lg sm:text-xl outline-none border-b border-transparent focus:border-border/60"
                 />
               )}
-              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
                 {title && <StatusBadge status={title.status} />}
+                {isFree && (
+                  <span className="text-[10px] uppercase tracking-wider rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5">Free</span>
+                )}
+                {!isFree && (
+                  <span className="text-[10px] uppercase tracking-wider rounded bg-amber-500/10 text-amber-300 border border-amber-500/30 px-1.5 py-0.5">Premium</span>
+                )}
                 {title?.locked && (
                   <span className="text-[10px] text-muted-foreground inline-flex items-center gap-1">
                     <Lock className="w-3 h-3" /> Locked
@@ -266,7 +274,7 @@ export function TitleEditor({
                     {saving ? (
                       <><Loader2 className="w-3 h-3 animate-spin" /> Saving…</>
                     ) : dirty ? (
-                      <>Unsaved changes</>
+                      <span className="text-amber-300">● Unsaved changes</span>
                     ) : autoSavedAt ? (
                       <><Check className="w-3 h-3 text-emerald-400" /> Auto-saved</>
                     ) : null}
@@ -274,36 +282,58 @@ export function TitleEditor({
                 )}
               </div>
             </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {mode === "edit" && (!titleLocked || lockState.unlocks.length > 0) && (
+                <button
+                  onClick={save}
+                  disabled={saving}
+                  className="rounded-md border border-border/60 text-xs px-3.5 py-2 hover:bg-secondary/30 disabled:opacity-50 font-medium"
+                >
+                  {saving ? "Saving…" : titleLocked ? "Save unlocked" : "Save"}
+                </button>
+              )}
+              {mode === "edit" && !titleLocked && (
+                <button
+                  onClick={handleSubmit}
+                  disabled={submitting || !ready}
+                  className="inline-flex items-center gap-1.5 rounded-md bg-accent text-accent-foreground text-xs font-semibold px-3.5 py-2 disabled:opacity-40"
+                  title={ready ? "Submit for review" : `Missing: ${missing.join(", ")}`}
+                >
+                  {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                  <span className="hidden sm:inline">Submit to Admin</span>
+                  <span className="sm:hidden">Submit</span>
+                </button>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {mode === "edit" && (!titleLocked || lockState.unlocks.length > 0) && (
-              <button
-                onClick={save}
-                disabled={saving}
-                className="rounded-md border border-border/50 text-xs px-3 py-1.5 hover:bg-secondary/30 disabled:opacity-50"
-              >
-                {saving ? "Saving…" : titleLocked ? "Save unlocked sections" : "Save"}
-              </button>
-            )}
-            {mode === "edit" && !titleLocked && (
-              <button
-                onClick={handleSubmit}
-                disabled={submitting || !ready}
-                className="inline-flex items-center gap-1.5 rounded-md bg-accent text-accent-foreground text-xs px-3 py-1.5 disabled:opacity-40"
-                title={ready ? "Submit for review" : `Missing: ${missing.join(", ")}`}
-              >
-                {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                <span className="hidden sm:inline">Submit to Admin</span>
-                <span className="sm:hidden">Submit</span>
-              </button>
-            )}
+
+          {/* Row 2 · workspace tab navigation */}
+          <div className="px-2 sm:px-4 lg:px-6 overflow-x-auto">
+            <div className="flex gap-1 py-1.5 min-w-max">
+              {TABS.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setTab(t.id)}
+                  className={cn(
+                    "relative text-sm px-4 py-2 rounded-md whitespace-nowrap font-medium transition-colors",
+                    tab === t.id
+                      ? "text-foreground bg-accent/15"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/30",
+                  )}
+                >
+                  {t.label}
+                  {tab === t.id && (
+                    <span className="absolute -bottom-1.5 left-3 right-3 h-0.5 bg-accent rounded-full" />
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-
         {/* Locked banner + section unlocks + edit request */}
         {titleLocked && (
-          <div className="px-3 sm:px-5 py-3 border-b border-border/40 bg-amber-500/5">
+          <div className="px-4 sm:px-6 lg:px-8 py-3 border-b border-border/40 bg-amber-500/5">
             <div className="flex flex-wrap items-center gap-2 text-sm">
               <ShieldCheck className="w-4 h-4 text-amber-300" />
               <span className="font-medium">Submitted For Review</span>
@@ -338,24 +368,6 @@ export function TitleEditor({
             )}
           </div>
         )}
-
-        {/* Tabs */}
-        <div className="border-b border-border/40 overflow-x-auto">
-          <div className="flex gap-1 px-3 py-2 min-w-max">
-            {TABS.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                className={cn(
-                  "text-xs px-3 py-1.5 rounded-md whitespace-nowrap",
-                  tab === t.id ? "bg-accent/15 text-foreground" : "text-muted-foreground hover:bg-secondary/30",
-                )}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-3 sm:px-5 py-4 sm:py-5">

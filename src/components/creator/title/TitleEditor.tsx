@@ -619,6 +619,72 @@ function SubmissionTab({
           Use the <span className="text-foreground">Submit to Admin</span> button at the top right when you're ready.
         </p>
       </section>
+      </div>
+      {/* Right-rail · Commercial Path summary (always visible in Submission). */}
+      <aside className="lg:sticky lg:top-4 self-start space-y-4">
+        <CommercialSummaryCard meta={meta} isFree={isFree} />
+      </aside>
+    </div>
+  );
+}
+
+/**
+ * CommercialSummaryCard — locked commercial overview shown in Submission.
+ * Free creators see a concise locked summary (Worldwide / Non-exclusive /
+ * Revenue Share / managed by StreamVista). Paid creators see the same
+ * overview plus a pointer back to the full rights matrix.
+ */
+function CommercialSummaryCard({ meta, isFree }: { meta: TitleMetadata | null; isFree: boolean }) {
+  const c = meta?.commercial;
+  if (isFree) {
+    return (
+      <section className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <BadgeCheck className="w-4 h-4 text-emerald-300" />
+          <h3 className="text-sm font-semibold">Commercial Path</h3>
+          <span className="ml-auto text-[10px] uppercase tracking-wider text-emerald-300">Free submission</span>
+        </div>
+        <dl className="text-xs space-y-2">
+          <Row label="Deal model" value="Revenue Share" />
+          <Row label="Territory" value={<span className="inline-flex items-center gap-1"><Globe2 className="w-3 h-3" /> Worldwide</span>} />
+          <Row label="Exclusivity" value="Non-exclusive" />
+          <Row label="Handling" value="Managed by StreamVista internal review & sales workflow" />
+        </dl>
+        <p className="text-[11px] text-muted-foreground border-t border-border/30 pt-2">
+          Submit the title — StreamVista handles the commercial routing and review flow on your behalf.
+        </p>
+      </section>
+    );
+  }
+  const rightsAvailable = c ? Object.values(c.rights).filter((v) => v === "available").length : 0;
+  const territoriesAvailable = c ? Object.values(c.territories).filter((v) => v === "available").length : 0;
+  return (
+    <section className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <Sparkles className="w-4 h-4 text-amber-300" />
+        <h3 className="text-sm font-semibold">Commercial Path</h3>
+        <span className="ml-auto text-[10px] uppercase tracking-wider text-amber-300">Premium / managed</span>
+      </div>
+      <dl className="text-xs space-y-2">
+        <Row label="Engagement" value={c?.engagement_mode?.replace(/_/g, " ") || "—"} />
+        <Row label="Deal model" value={c?.deal_model?.replace(/_/g, " ") || "—"} />
+        <Row label="Exclusivity" value={c?.exclusivity?.replace(/_/g, " ") || "—"} />
+        <Row label="Rights available" value={`${rightsAvailable} marked`} />
+        <Row label="Territories available" value={`${territoriesAvailable} marked`} />
+        {c?.min_deal_value ? <Row label="Min deal value" value={`₹${c.min_deal_value.toLocaleString()}`} /> : null}
+      </dl>
+      <p className="text-[11px] text-muted-foreground border-t border-border/30 pt-2">
+        Configure the full rights matrix in <span className="text-foreground">Legal & Rights</span>.
+      </p>
+    </section>
+  );
+}
+
+function Row({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="text-right text-foreground capitalize">{value}</dd>
     </div>
   );
 }

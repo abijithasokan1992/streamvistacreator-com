@@ -35,6 +35,9 @@ export default function Onboarding() {
   const [professionalRole, setProfessionalRole] = useState("");
   const [studioName, setStudioName] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
+  const [accessCode, setAccessCode] = useState("");
+
+  const accessCodeRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (loading) return;
@@ -42,7 +45,7 @@ export default function Onboarding() {
     (async () => {
       const { data } = await supabase
         .from("user_profiles")
-        .select("first_name,last_name,studio_name,whatsapp,professional_role,onboarding_step")
+        .select("first_name,last_name,studio_name,whatsapp,professional_role,onboarding_step,access_authorization_code")
         .eq("user_id", user.id)
         .maybeSingle();
       if (data) {
@@ -51,6 +54,7 @@ export default function Onboarding() {
         setStudioName(data.studio_name ?? "");
         setWhatsapp(data.whatsapp ?? "");
         setProfessionalRole((data as any).professional_role ?? "");
+        setAccessCode((data as any).access_authorization_code ?? "");
         if (data.onboarding_step === "done") {
           navigate(dashboardForRole(role ?? "client"), { replace: true });
           return;
@@ -59,6 +63,13 @@ export default function Onboarding() {
       setHydrating(false);
     })();
   }, [user, loading, role, navigate]);
+
+  // Auto-focus the Access Authorization Code once the form is visible.
+  useEffect(() => {
+    if (hydrating || showCinematic) return;
+    const t = window.setTimeout(() => accessCodeRef.current?.focus(), 80);
+    return () => window.clearTimeout(t);
+  }, [hydrating, showCinematic]);
 
   const finish = async () => {
     if (!user) return;

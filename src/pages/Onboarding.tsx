@@ -119,6 +119,7 @@ export default function Onboarding() {
       first_name: firstName.trim() || "Creator",
       display_name: firstName.trim() || "Creator",
       professional_role: professionalRole || "Creator",
+      access_authorization_code: accessCode.trim() || null,
       plan_tier: "free",
       onboarding_step: "done",
     }, { onConflict: "user_id" });

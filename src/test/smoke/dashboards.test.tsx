@@ -24,7 +24,7 @@ describe("Creator dashboard smoke", () => {
       />,
     );
     expect(screen.getByText(/current plan/i)).toBeInTheDocument();
-    expect(screen.getByText(/free/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/free/i).length).toBeGreaterThan(0);
     const cta = screen.getByRole("button", { name: /upgrade|manage/i });
     fireEvent.click(cta);
     expect(onUpgrade).toHaveBeenCalled();

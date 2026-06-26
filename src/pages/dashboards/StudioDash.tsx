@@ -170,6 +170,25 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
 
   return (
     <div className="space-y-6">
+      {/* Plan & quota visibility — top of Studio Home */}
+      <StudioPlanStrip
+        hasPaidVault={hasPaidVault}
+        hasTesting={hasTesting}
+        totalGb={totalGb}
+        usedGb={usedGbTotal}
+        onUpgrade={hasPaidVault ? onGoBilling : openBuy}
+      />
+
+      {/* Studio Tools / Quick Actions */}
+      <StudioQuickActions
+        hasUsable={hasUsable}
+        totalGb={totalGb}
+        usedGb={usedGbTotal}
+        onOpenIngest={onGoVault}
+        onOpenBilling={onGoBilling}
+        onOpenLibrary={onGoVault}
+      />
+
       {/* Status card */}
       <section className="rounded-2xl border border-border/50 bg-secondary/10 p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">

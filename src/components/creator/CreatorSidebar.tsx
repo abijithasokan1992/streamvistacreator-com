@@ -30,6 +30,8 @@ type SectionDef = {
   group: SectionGroup;
   /** Hidden for Free-tier creators (kept reachable via direct route for paid users). */
   proOnly?: boolean;
+  /** Hidden from the sidebar entirely, but still routable via section id. */
+  hidden?: boolean;
 };
 
 export const SECTIONS: ReadonlyArray<SectionDef> = [

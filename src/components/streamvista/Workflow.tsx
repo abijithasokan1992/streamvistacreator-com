@@ -135,73 +135,114 @@ export const Workflow = () => (
           }}
         />
 
-        {/* ===== Pipeline nodes ===== */}
-        <ol className="relative z-[1] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 sm:gap-5 lg:gap-4">
-          {STEPS.map(({ icon: Icon, step, title, body }, i) => (
-            <li key={step} className="relative group">
-              {/* Arrow connector between nodes (mobile + sm) */}
-              {i < STEPS.length - 1 && (
+        {/* ===== Pipeline nodes =====
+            Mobile: horizontal snap-scroll carousel (purpose-built, no awkward stacking).
+            Tablet (sm): 2-col stacked with arrow connectors.
+            Desktop (lg): 5-col rail. */}
+        <div className="relative z-[1] -mx-6 sm:mx-0">
+          <ol
+            className="
+              flex sm:hidden gap-4 overflow-x-auto snap-x snap-mandatory
+              px-6 pb-4 -mb-4 scroll-smooth
+              [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
+            "
+            aria-label="Pipeline stages"
+          >
+            {STEPS.map(({ icon: Icon, step, title, body }) => (
+              <li
+                key={step}
+                className="snap-center shrink-0 basis-[78%] xs:basis-[68%] max-w-[280px]"
+              >
                 <div
-                  aria-hidden
-                  className="lg:hidden absolute left-1/2 -translate-x-1/2 bottom-[-22px] z-10 flex items-center justify-center w-6 h-6"
+                  className="h-full flex flex-col items-center text-center rounded-2xl border border-border/50 p-5"
+                  style={{
+                    background:
+                      "linear-gradient(180deg, hsl(var(--surface-elevated) / 0.7), hsl(var(--surface) / 0.4))",
+                    boxShadow: "inset 0 1px 0 hsl(var(--accent) / 0.15)",
+                  }}
                 >
-                  <ArrowRight className="w-4 h-4 text-primary/50 rotate-90" />
-                </div>
-              )}
-
-              <div className="relative flex flex-col items-center text-center">
-                {/* Node circle */}
-                <div className="relative mb-4 sm:mb-5">
-                  {/* Outer glow ring */}
                   <div
-                    aria-hidden
-                    className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                    style={{
-                      transform: "scale(1.25)",
-                      background:
-                        "radial-gradient(circle, hsl(var(--primary) / 0.25), transparent 70%)",
-                    }}
-                  />
-
-                  {/* Node body */}
-                  <div
-                    className="relative w-[88px] h-[88px] sm:w-[96px] sm:h-[96px] lg:w-[104px] lg:h-[104px] rounded-full flex flex-col items-center justify-center border-2 transition-all duration-500 group-hover:scale-105"
+                    className="relative w-[84px] h-[84px] rounded-full flex flex-col items-center justify-center border-2 mb-4"
                     style={{
                       borderColor: "hsl(var(--primary) / 0.45)",
                       background:
                         "linear-gradient(145deg, hsl(var(--surface-elevated) / 0.9), hsl(var(--surface) / 0.7))",
                       boxShadow:
-                        "0 12px 32px -10px hsl(var(--primary) / 0.35), inset 0 1px 0 hsl(var(--accent) / 0.25), 0 0 0 1px hsl(var(--primary) / 0.15)",
+                        "0 12px 32px -10px hsl(var(--primary) / 0.35), inset 0 1px 0 hsl(var(--accent) / 0.25)",
                     }}
                   >
-                    <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-primary drop-shadow-[0_0_8px_hsl(var(--primary)/0.5)]" />
-                    <span className="mt-1 font-mono-tech text-[9px] sm:text-[10px] uppercase tracking-[0.25em] text-accent">
+                    <Icon className="w-6 h-6 text-primary drop-shadow-[0_0_8px_hsl(var(--primary)/0.5)]" />
+                    <span className="mt-1 font-mono-tech text-[9px] uppercase tracking-[0.25em] text-accent">
                       {step}
                     </span>
                   </div>
+                  <h3 className="font-display text-sm font-bold uppercase tracking-tight">
+                    {title}
+                  </h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed mt-1">
+                    {body}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ol>
 
-                  {/* Desktop arrow to next node */}
-                  {i < STEPS.length - 1 && (
+          {/* Mobile scroll hint dots */}
+          <div className="sm:hidden flex items-center justify-center gap-1.5 mt-3" aria-hidden>
+            {STEPS.map((s) => (
+              <span key={s.step} className="w-1.5 h-1.5 rounded-full bg-primary/30" />
+            ))}
+          </div>
+
+          <ol className="hidden sm:grid relative grid-cols-2 lg:grid-cols-5 gap-6 sm:gap-5 lg:gap-4">
+            {STEPS.map(({ icon: Icon, step, title, body }, i) => (
+              <li key={step} className="relative group">
+                <div className="relative flex flex-col items-center text-center">
+                  <div className="relative mb-4 sm:mb-5">
                     <div
                       aria-hidden
-                      className="hidden lg:block absolute top-1/2 -translate-y-1/2 left-[calc(100%+8px)]"
+                      className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                      style={{
+                        transform: "scale(1.25)",
+                        background:
+                          "radial-gradient(circle, hsl(var(--primary) / 0.25), transparent 70%)",
+                      }}
+                    />
+                    <div
+                      className="relative w-[92px] h-[92px] lg:w-[104px] lg:h-[104px] rounded-full flex flex-col items-center justify-center border-2 transition-all duration-500 group-hover:scale-105"
+                      style={{
+                        borderColor: "hsl(var(--primary) / 0.45)",
+                        background:
+                          "linear-gradient(145deg, hsl(var(--surface-elevated) / 0.9), hsl(var(--surface) / 0.7))",
+                        boxShadow:
+                          "0 12px 32px -10px hsl(var(--primary) / 0.35), inset 0 1px 0 hsl(var(--accent) / 0.25), 0 0 0 1px hsl(var(--primary) / 0.15)",
+                      }}
                     >
-                      <ArrowRight className="w-4 h-4 text-primary/40" />
+                      <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-primary drop-shadow-[0_0_8px_hsl(var(--primary)/0.5)]" />
+                      <span className="mt-1 font-mono-tech text-[10px] uppercase tracking-[0.25em] text-accent">
+                        {step}
+                      </span>
                     </div>
-                  )}
+                    {i < STEPS.length - 1 && (
+                      <div
+                        aria-hidden
+                        className="hidden lg:block absolute top-1/2 -translate-y-1/2 left-[calc(100%+8px)]"
+                      >
+                        <ArrowRight className="w-4 h-4 text-primary/40" />
+                      </div>
+                    )}
+                  </div>
+                  <h3 className="font-display text-sm sm:text-base font-bold uppercase tracking-tight">
+                    {title}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mt-1 max-w-[26ch]">
+                    {body}
+                  </p>
                 </div>
-
-                {/* Label below node */}
-                <h3 className="font-display text-sm sm:text-base font-bold uppercase tracking-tight">
-                  {title}
-                </h3>
-                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mt-1 max-w-[26ch]">
-                  {body}
-                </p>
-              </div>
-            </li>
-          ))}
-        </ol>
+              </li>
+            ))}
+          </ol>
+        </div>
 
         {/* ===== Security & Trust perimeter band ===== */}
         <div
@@ -212,7 +253,6 @@ export const Workflow = () => (
             boxShadow: "inset 0 1px 0 hsl(var(--accent) / 0.12)",
           }}
         >
-          {/* perimeter glow line */}
           <div
             aria-hidden
             className="absolute top-0 left-0 right-0 h-[1px]"
@@ -222,7 +262,43 @@ export const Workflow = () => (
             }}
           />
 
-          <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+          {/* Mobile: horizontal snap carousel; sm+: responsive grid */}
+          <ul
+            className="
+              flex sm:hidden gap-3 overflow-x-auto snap-x snap-mandatory
+              -mx-4 px-4 pb-1
+              [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
+            "
+            aria-label="Security and trust controls"
+          >
+            {TRUST.map(({ icon: Icon, label, body }) => (
+              <li
+                key={label}
+                className="snap-start shrink-0 basis-[72%] xs:basis-[60%] max-w-[260px] flex items-center gap-3 rounded-lg border border-border/40 bg-background/50 p-3"
+              >
+                <div
+                  className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, hsl(var(--primary) / 0.15), hsl(var(--accent) / 0.15))",
+                    boxShadow: "inset 0 0 0 1px hsl(var(--accent) / 0.25)",
+                  }}
+                >
+                  <Icon className="w-4 h-4 text-accent" />
+                </div>
+                <div className="min-w-0 text-left">
+                  <div className="font-display text-[11px] font-bold uppercase tracking-wide">
+                    {label}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground leading-snug mt-0.5">
+                    {body}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <ul className="hidden sm:grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
             {TRUST.map(({ icon: Icon, label, body }) => (
               <li
                 key={label}

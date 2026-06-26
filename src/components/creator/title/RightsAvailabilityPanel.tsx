@@ -17,6 +17,8 @@ type Props = {
   meta: TitleMetadata;
   setMeta: (m: TitleMetadata) => void;
   readOnly: boolean;
+  /** Free creators see a reduced commercial surface (no premium rights matrix, no min-deal, no territory grid beyond Worldwide). */
+  isFree?: boolean;
 };
 
 const RIGHT_STATUS_OPTIONS: RightStatus[] = [

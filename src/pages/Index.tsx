@@ -38,6 +38,7 @@ const Index = () => {
       <HeroReel />
       <SuccessStories />
       <PlatformOverview />
+      <Workflow />
       <Partners />
       <WhyStreamVista />
       <FinalCta />

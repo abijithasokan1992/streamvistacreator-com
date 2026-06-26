@@ -62,63 +62,65 @@ export function RightsAvailabilityPanel({ meta, setMeta, readOnly, isFree = fals
         </p>
       </header>
 
-      {/* 1. Engagement mode */}
-      <div className="space-y-2">
-        <SectionLabel>How should StreamVista handle this title commercially?</SectionLabel>
-        <div className="grid sm:grid-cols-3 gap-2">
-          <EngagementCard
-            active={c.engagement_mode === "free_listing"}
-            disabled={readOnly}
-            onClick={() => update({ engagement_mode: "free_listing" })}
-            title="Free Listing / Revenue Share"
-            body="Default for free creators. After QC & legal review, your title may be listed on the StreamVista marketplace for buyer discovery on a non-exclusive revenue share."
-            tag="Free"
-          />
-          <EngagementCard
-            active={c.engagement_mode === "go_free"}
-            disabled={readOnly}
-            onClick={() => update({ engagement_mode: "go_free" })}
-            title="Go with Free"
-            body="Stay on the free path and accept its scope. No managed premium rights-sales support."
-            tag="Free"
-          />
-          <EngagementCard
-            active={c.engagement_mode === "upgrade_premium"}
-            disabled={readOnly}
-            onClick={() => update({ engagement_mode: "upgrade_premium" })}
-            title="Upgrade for Premium Rights Sales"
-            body="Unlock managed rights sales: dubbing, remake, in-flight, channel/territory blocking, bespoke campaigns."
-            tag="Premium"
-            premium
-          />
-        </div>
-
-        {isPremium && (
-          <div className="rounded-md border border-amber-400/30 bg-amber-400/5 p-3 mt-2">
-            <div className="text-[11px] uppercase tracking-wider text-amber-300 mb-2 inline-flex items-center gap-1.5">
-              <Sparkles className="w-3 h-3" /> Premium Rights-Sales Plans
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {PREMIUM_PLAN_TIERS.map((p) => (
-                <span key={p.value} className="text-xs rounded-md border border-amber-400/40 bg-amber-400/10 px-3 py-1 text-amber-100">
-                  {p.label}
-                </span>
-              ))}
-            </div>
-            <p className="text-[11px] text-muted-foreground mt-2">
-              Plan selection & invoicing is handled by Storage & Billing after submission.
-              You can keep editing rights below — premium-only rights will be actively pursued under your selected plan.
-            </p>
+      {/* 1. Engagement mode — hidden for free creators (single fixed path). */}
+      {!isFree && (
+        <div className="space-y-2">
+          <SectionLabel>How should StreamVista handle this title commercially?</SectionLabel>
+          <div className="grid sm:grid-cols-3 gap-2">
+            <EngagementCard
+              active={c.engagement_mode === "free_listing"}
+              disabled={readOnly}
+              onClick={() => update({ engagement_mode: "free_listing" })}
+              title="Free Listing / Revenue Share"
+              body="Default for free creators. After QC & legal review, your title may be listed on the StreamVista marketplace for buyer discovery on a non-exclusive revenue share."
+              tag="Free"
+            />
+            <EngagementCard
+              active={c.engagement_mode === "go_free"}
+              disabled={readOnly}
+              onClick={() => update({ engagement_mode: "go_free" })}
+              title="Go with Free"
+              body="Stay on the free path and accept its scope. No managed premium rights-sales support."
+              tag="Free"
+            />
+            <EngagementCard
+              active={c.engagement_mode === "upgrade_premium"}
+              disabled={readOnly}
+              onClick={() => update({ engagement_mode: "upgrade_premium" })}
+              title="Upgrade for Premium Rights Sales"
+              body="Unlock managed rights sales: dubbing, remake, in-flight, channel/territory blocking, bespoke campaigns."
+              tag="Premium"
+              premium
+            />
           </div>
-        )}
 
-        {isFreePath && (
-          <p className="text-[11px] text-muted-foreground inline-flex items-start gap-1.5 mt-1">
-            <Info className="w-3 h-3 mt-0.5 shrink-0" />
-            Free path defaults: non-exclusive, revenue share, worldwide, with core digital rights available. Specialist managed-sales rights (dubbing, remake, in-flight, cruise, channel/territory blocking) are marked as premium services.
-          </p>
-        )}
-      </div>
+          {isPremium && (
+            <div className="rounded-md border border-amber-400/30 bg-amber-400/5 p-3 mt-2">
+              <div className="text-[11px] uppercase tracking-wider text-amber-300 mb-2 inline-flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3" /> Premium Rights-Sales Plans
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {PREMIUM_PLAN_TIERS.map((p) => (
+                  <span key={p.value} className="text-xs rounded-md border border-amber-400/40 bg-amber-400/10 px-3 py-1 text-amber-100">
+                    {p.label}
+                  </span>
+                ))}
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-2">
+                Plan selection & invoicing is handled by Storage & Billing after submission.
+                You can keep editing rights below — premium-only rights will be actively pursued under your selected plan.
+              </p>
+            </div>
+          )}
+
+          {isFreePath && (
+            <p className="text-[11px] text-muted-foreground inline-flex items-start gap-1.5 mt-1">
+              <Info className="w-3 h-3 mt-0.5 shrink-0" />
+              Free path defaults: non-exclusive, revenue share, worldwide, with core digital rights available. Specialist managed-sales rights (dubbing, remake, in-flight, cruise, channel/territory blocking) are marked as premium services.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* 2. Rights availability matrix */}
       <div className="space-y-3">

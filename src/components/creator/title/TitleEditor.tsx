@@ -98,6 +98,18 @@ export function TitleEditor({
 
   useEffect(() => { reload(); }, [reload]);
 
+  // Detect free vs paid creator to drive commercial UI gating.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const s = await fetchFreeTierStatus();
+        if (!cancelled) setIsFree(s?.is_free ?? true);
+      } catch { /* default to free on failure */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   // Best-effort fetch creator profile defaults (Rights Owner / Production Company auto-fill).
   useEffect(() => {
     if (!user?.id) return;

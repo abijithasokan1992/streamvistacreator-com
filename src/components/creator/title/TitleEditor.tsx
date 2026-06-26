@@ -425,7 +425,7 @@ export function TitleEditor({
           </div>
         </div>
       </div>
-      </div>
+
       <FreeSubmissionTermsModal
         open={termsOpen}
         submitting={submitting}

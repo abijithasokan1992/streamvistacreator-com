@@ -137,59 +137,80 @@ export function RightsAvailabilityPanel({ meta, setMeta, readOnly, isFree = fals
           readOnly={readOnly}
         />
 
-        <RightsGroup
-          title="Premium / managed rights"
-          subtitle={isPremium
-            ? "Actively pursued under your premium plan"
-            : "Available as a premium service — upgrade to have StreamVista actively sell these"}
-          items={RIGHTS_CATALOG.filter((r) => r.group === "premium")}
-          rights={c.rights}
-          onChange={setRight}
-          readOnly={readOnly}
-          locked={!isPremium}
-        />
-      </div>
-
-      {/* 3. Territories */}
-      <div className="space-y-3">
-        <SectionLabel>
-          <span className="inline-flex items-center gap-1.5">
-            <Globe2 className="w-3.5 h-3.5" /> Territory availability
-          </span>
-          <span className="text-muted-foreground font-normal"> · {counts.tAvail} marked available</span>
-        </SectionLabel>
-        <div className="grid sm:grid-cols-2 gap-2">
-          {TERRITORY_CATALOG.map((t) => {
-            const status = (c.territories[t.key] as TerritoryStatus) ?? "none";
-            const lockedAdvanced = !isPremium && t.key !== "worldwide" && t.key !== "india";
-            return (
-              <div key={t.key} className="flex items-center gap-2 rounded-md border border-border/40 px-3 py-2">
-                <span className="text-xs flex-1 truncate">{t.label}</span>
-                <select
-                  disabled={readOnly}
-                  value={status}
-                  onChange={(e) => setTerritory(t.key, e.target.value as TerritoryStatus)}
-                  className="text-[11px] bg-background border border-border/40 rounded px-2 py-1 disabled:opacity-60"
-                >
-                  {TERRITORY_STATUS_OPTIONS.map((s) => (
-                    <option key={s} value={s}>{TERRITORY_STATUS_LABEL[s]}</option>
-                  ))}
-                </select>
-                {lockedAdvanced && status === "blocked" && (
-                  <span className="text-[10px] inline-flex items-center gap-1 rounded bg-amber-500/15 text-amber-300 px-1.5 py-0.5">
-                    <Lock className="w-2.5 h-2.5" /> Premium
-                  </span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-        {!isPremium && (
-          <p className="text-[11px] text-muted-foreground">
-            Territory blocking / carve-outs are actively managed only on premium plans. Free creators can still mark territories as available, sold or reserved for discussion.
-          </p>
+        {/* Premium / managed rights are hidden entirely for free creators. */}
+        {!isFree && (
+          <RightsGroup
+            title="Premium / managed rights"
+            subtitle={isPremium
+              ? "Actively pursued under your premium plan"
+              : "Available as a premium service — upgrade to have StreamVista actively sell these"}
+            items={RIGHTS_CATALOG.filter((r) => r.group === "premium")}
+            rights={c.rights}
+            onChange={setRight}
+            readOnly={readOnly}
+            locked={!isPremium}
+          />
         )}
       </div>
+
+      {/* 3. Territories — free creators see a locked Worldwide=Available summary. */}
+      {isFree ? (
+        <div className="space-y-2">
+          <SectionLabel>
+            <span className="inline-flex items-center gap-1.5">
+              <Globe2 className="w-3.5 h-3.5" /> Territory availability
+            </span>
+          </SectionLabel>
+          <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-xs flex items-center gap-2">
+            <Globe2 className="w-3.5 h-3.5 text-emerald-300" />
+            <span className="flex-1">Worldwide</span>
+            <span className="text-[10px] uppercase tracking-wider text-emerald-300">Available</span>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Free plan ships with Worldwide availability. Territory carve-outs are a premium-managed feature.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <SectionLabel>
+            <span className="inline-flex items-center gap-1.5">
+              <Globe2 className="w-3.5 h-3.5" /> Territory availability
+            </span>
+            <span className="text-muted-foreground font-normal"> · {counts.tAvail} marked available</span>
+          </SectionLabel>
+          <div className="grid sm:grid-cols-2 gap-2">
+            {TERRITORY_CATALOG.map((t) => {
+              const status = (c.territories[t.key] as TerritoryStatus) ?? "none";
+              const lockedAdvanced = !isPremium && t.key !== "worldwide" && t.key !== "india";
+              return (
+                <div key={t.key} className="flex items-center gap-2 rounded-md border border-border/40 px-3 py-2">
+                  <span className="text-xs flex-1 truncate">{t.label}</span>
+                  <select
+                    disabled={readOnly}
+                    value={status}
+                    onChange={(e) => setTerritory(t.key, e.target.value as TerritoryStatus)}
+                    className="text-[11px] bg-background border border-border/40 rounded px-2 py-1 disabled:opacity-60"
+                  >
+                    {TERRITORY_STATUS_OPTIONS.map((s) => (
+                      <option key={s} value={s}>{TERRITORY_STATUS_LABEL[s]}</option>
+                    ))}
+                  </select>
+                  {lockedAdvanced && status === "blocked" && (
+                    <span className="text-[10px] inline-flex items-center gap-1 rounded bg-amber-500/15 text-amber-300 px-1.5 py-0.5">
+                      <Lock className="w-2.5 h-2.5" /> Premium
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {!isPremium && (
+            <p className="text-[11px] text-muted-foreground">
+              Territory blocking / carve-outs are actively managed only on premium plans. Free creators can still mark territories as available, sold or reserved for discussion.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* 4. Exclusivity & deal preference */}
       <div className="grid sm:grid-cols-2 gap-4">

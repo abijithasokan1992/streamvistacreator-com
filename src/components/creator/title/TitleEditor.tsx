@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { X, Loader2, Send, Lock, ShieldCheck, Clock, Check, Unlock, Plus, Trash2, CheckCircle2, Circle as CircleIcon } from "lucide-react";
+import { X, Loader2, Send, Lock, ShieldCheck, Clock, Check, Unlock, Plus, Trash2, CheckCircle2, Circle as CircleIcon, Globe2, BadgeCheck, Sparkles, Image as ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -51,6 +51,7 @@ export function TitleEditor({
   const [pendingFreeSubmit, setPendingFreeSubmit] = useState(false);
   const [name, setName] = useState("");
   const [meta, setMeta] = useState<TitleMetadata | null>(null);
+  const [isFree, setIsFree] = useState<boolean>(true);
   const [profileDefaults, setProfileDefaults] = useState<{ rights_owner: string; production_company: string }>({ rights_owner: "", production_company: "" });
 
   const lockState = useTitleLock(titleId);
@@ -96,6 +97,18 @@ export function TitleEditor({
   }, [titleId]);
 
   useEffect(() => { reload(); }, [reload]);
+
+  // Detect free vs paid creator to drive commercial UI gating.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const s = await fetchFreeTierStatus();
+        if (!cancelled) setIsFree(s?.is_free ?? true);
+      } catch { /* default to free on failure */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   // Best-effort fetch creator profile defaults (Rights Owner / Production Company auto-fill).
   useEffect(() => {
@@ -222,27 +235,35 @@ export function TitleEditor({
   const byCat = (cats: AssetCategory[]) => assets.filter((a) => cats.includes(a.category));
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm grid place-items-stretch">
-      <div className="bg-background border-l border-border/50 w-full sm:max-w-5xl sm:ml-auto h-dvh flex flex-col">
-        {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-2 px-3 sm:px-5 py-3 border-b border-border/40">
-          <div className="min-w-0 flex items-center gap-2 sm:gap-3 flex-1">
-            <button onClick={onClose} className="p-1.5 rounded hover:bg-secondary/30" aria-label="Close">
+    <div className="fixed inset-0 z-50 bg-background">
+      <div className="bg-background w-full h-dvh flex flex-col">
+        {/* === Workspace command shell — 3-zone header === */}
+        <div className="border-b border-border/40 bg-card/30 backdrop-blur-sm">
+          {/* Row 1 · title/status (left) · actions (right) */}
+          <div className="flex flex-wrap items-center gap-3 px-4 sm:px-6 lg:px-8 py-3">
+            <button onClick={onClose} className="p-1.5 rounded hover:bg-secondary/30 shrink-0" aria-label="Close workspace">
               <X className="w-4 h-4" />
             </button>
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground/70">Title Workspace</p>
+              <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground/70">Title Workspace</p>
               {readOnly ? (
-                <p className="font-semibold truncate">{title?.title ?? "Loading…"}</p>
+                <p className="font-display font-semibold text-lg sm:text-xl truncate">{title?.title ?? "Loading…"}</p>
               ) : (
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-transparent font-semibold text-base outline-none border-b border-transparent focus:border-border/60"
+                  placeholder="Untitled"
+                  className="w-full bg-transparent font-display font-semibold text-lg sm:text-xl outline-none border-b border-transparent focus:border-border/60"
                 />
               )}
-              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
                 {title && <StatusBadge status={title.status} />}
+                {isFree && (
+                  <span className="text-[10px] uppercase tracking-wider rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5">Free</span>
+                )}
+                {!isFree && (
+                  <span className="text-[10px] uppercase tracking-wider rounded bg-amber-500/10 text-amber-300 border border-amber-500/30 px-1.5 py-0.5">Premium</span>
+                )}
                 {title?.locked && (
                   <span className="text-[10px] text-muted-foreground inline-flex items-center gap-1">
                     <Lock className="w-3 h-3" /> Locked
@@ -253,7 +274,7 @@ export function TitleEditor({
                     {saving ? (
                       <><Loader2 className="w-3 h-3 animate-spin" /> Saving…</>
                     ) : dirty ? (
-                      <>Unsaved changes</>
+                      <span className="text-amber-300">● Unsaved changes</span>
                     ) : autoSavedAt ? (
                       <><Check className="w-3 h-3 text-emerald-400" /> Auto-saved</>
                     ) : null}
@@ -261,36 +282,58 @@ export function TitleEditor({
                 )}
               </div>
             </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {mode === "edit" && (!titleLocked || lockState.unlocks.length > 0) && (
+                <button
+                  onClick={save}
+                  disabled={saving}
+                  className="rounded-md border border-border/60 text-xs px-3.5 py-2 hover:bg-secondary/30 disabled:opacity-50 font-medium"
+                >
+                  {saving ? "Saving…" : titleLocked ? "Save unlocked" : "Save"}
+                </button>
+              )}
+              {mode === "edit" && !titleLocked && (
+                <button
+                  onClick={handleSubmit}
+                  disabled={submitting || !ready}
+                  className="inline-flex items-center gap-1.5 rounded-md bg-accent text-accent-foreground text-xs font-semibold px-3.5 py-2 disabled:opacity-40"
+                  title={ready ? "Submit for review" : `Missing: ${missing.join(", ")}`}
+                >
+                  {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                  <span className="hidden sm:inline">Submit to Admin</span>
+                  <span className="sm:hidden">Submit</span>
+                </button>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {mode === "edit" && (!titleLocked || lockState.unlocks.length > 0) && (
-              <button
-                onClick={save}
-                disabled={saving}
-                className="rounded-md border border-border/50 text-xs px-3 py-1.5 hover:bg-secondary/30 disabled:opacity-50"
-              >
-                {saving ? "Saving…" : titleLocked ? "Save unlocked sections" : "Save"}
-              </button>
-            )}
-            {mode === "edit" && !titleLocked && (
-              <button
-                onClick={handleSubmit}
-                disabled={submitting || !ready}
-                className="inline-flex items-center gap-1.5 rounded-md bg-accent text-accent-foreground text-xs px-3 py-1.5 disabled:opacity-40"
-                title={ready ? "Submit for review" : `Missing: ${missing.join(", ")}`}
-              >
-                {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                <span className="hidden sm:inline">Submit to Admin</span>
-                <span className="sm:hidden">Submit</span>
-              </button>
-            )}
+
+          {/* Row 2 · workspace tab navigation */}
+          <div className="px-2 sm:px-4 lg:px-6 overflow-x-auto">
+            <div className="flex gap-1 py-1.5 min-w-max">
+              {TABS.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setTab(t.id)}
+                  className={cn(
+                    "relative text-sm px-4 py-2 rounded-md whitespace-nowrap font-medium transition-colors",
+                    tab === t.id
+                      ? "text-foreground bg-accent/15"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/30",
+                  )}
+                >
+                  {t.label}
+                  {tab === t.id && (
+                    <span className="absolute -bottom-1.5 left-3 right-3 h-0.5 bg-accent rounded-full" />
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-
         {/* Locked banner + section unlocks + edit request */}
         {titleLocked && (
-          <div className="px-3 sm:px-5 py-3 border-b border-border/40 bg-amber-500/5">
+          <div className="px-4 sm:px-6 lg:px-8 py-3 border-b border-border/40 bg-amber-500/5">
             <div className="flex flex-wrap items-center gap-2 text-sm">
               <ShieldCheck className="w-4 h-4 text-amber-300" />
               <span className="font-medium">Submitted For Review</span>
@@ -326,70 +369,63 @@ export function TitleEditor({
           </div>
         )}
 
-        {/* Tabs */}
-        <div className="border-b border-border/40 overflow-x-auto">
-          <div className="flex gap-1 px-3 py-2 min-w-max">
-            {TABS.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                className={cn(
-                  "text-xs px-3 py-1.5 rounded-md whitespace-nowrap",
-                  tab === t.id ? "bg-accent/15 text-foreground" : "text-muted-foreground hover:bg-secondary/30",
+        {/* Body — full workspace width */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="px-4 sm:px-6 lg:px-8 py-5 sm:py-6 max-w-[1600px] mx-auto w-full">
+            {!title || !meta ? (
+              <div className="grid place-items-center py-16">
+                <Loader2 className="w-4 h-4 animate-spin text-accent" />
+              </div>
+            ) : (
+              <>
+                {tab === "overview" && (
+                  <OverviewSnapshot title={title} meta={meta} assets={assets} timeline={timeline} />
                 )}
-              >
-                {t.label}
-              </button>
-            ))}
+                {tab === "metadata" && (
+                  <MetadataTab meta={meta} setMeta={setMeta} readOnly={metadataLocked} />
+                )}
+                {tab === "assets" && (
+                  <div className="space-y-8">
+                    {/* 1. Trailer */}
+                    <AssetTab cat="trailer" label="Trailer"
+                      assets={byCat(["trailer"])} titleId={title.id}
+                      locked={assetsLockedFor("trailer")} onUploaded={reload} accept="video/*" />
+                    {/* 2. Poster — 4-slot artwork grid (slot 1 live, slots 2-4 reserved). */}
+                    <PosterGrid
+                      titleId={title.id}
+                      assets={byCat(["poster"])}
+                      locked={assetsLockedFor("poster")}
+                      onUploaded={reload}
+                    />
+                    {/* 3. Master File */}
+                    <AssetTab cat="feature_film" label="Master File"
+                      assets={byCat(["feature_film"])} titleId={title.id}
+                      locked={assetsLockedFor("feature_film")} onUploaded={reload} accept="video/*" />
+                    {/* 4. Existing Contracts (renamed from Ownership Documents) */}
+                    <AssetTab cat="ownership_documents" label="Existing Contracts"
+                      description="Contracts, agreements, chain-of-title and existing rights paperwork."
+                      assets={byCat(["ownership_documents", "ownership"])} titleId={title.id}
+                      locked={assetsLockedFor("ownership_documents")} onUploaded={reload}
+                      accept="application/pdf,image/*" />
+                  </div>
+                )}
+                {tab === "legal" && (
+                  <div className="space-y-8">
+                    <AssetTab cat="censor_certificate" label="Censor Certificate"
+                      assets={byCat(["censor_certificate", "censor_cert"])} titleId={title.id}
+                      locked={assetsLockedFor("censor_certificate")} onUploaded={reload} accept="application/pdf,image/*" />
+                    <RightsAvailabilityPanel meta={meta} setMeta={setMeta} readOnly={metadataLocked} isFree={isFree} />
+                  </div>
+                )}
+                {tab === "submission" && (
+                  <SubmissionTab title={title} readiness={readiness} local={localChecklist!} assets={assets} meta={meta} onJumpTab={setTab} isFree={isFree} />
+                )}
+              </>
+            )}
           </div>
         </div>
-
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto px-3 sm:px-5 py-4 sm:py-5">
-          {!title || !meta ? (
-            <div className="grid place-items-center py-16">
-              <Loader2 className="w-4 h-4 animate-spin text-accent" />
-            </div>
-          ) : (
-            <>
-              {tab === "overview" && (
-                <OverviewSnapshot title={title} meta={meta} assets={assets} timeline={timeline} />
-              )}
-              {tab === "metadata" && (
-                <MetadataTab meta={meta} setMeta={setMeta} readOnly={metadataLocked} />
-              )}
-              {tab === "assets" && (
-                <div className="space-y-8">
-                  <AssetTab cat="feature_film" label="Master File"
-                    assets={byCat(["feature_film"])} titleId={title.id}
-                    locked={assetsLockedFor("feature_film")} onUploaded={reload} accept="video/*" />
-                  <AssetTab cat="trailer" label="Trailer"
-                    assets={byCat(["trailer"])} titleId={title.id}
-                    locked={assetsLockedFor("trailer")} onUploaded={reload} accept="video/*" />
-                  <AssetTab cat="poster" label="Poster"
-                    assets={byCat(["poster"])} titleId={title.id}
-                    locked={assetsLockedFor("poster")} onUploaded={reload} accept="image/*" />
-                </div>
-              )}
-              {tab === "legal" && (
-                <div className="space-y-8">
-                  <AssetTab cat="censor_certificate" label="Censor Certificate"
-                    assets={byCat(["censor_certificate", "censor_cert"])} titleId={title.id}
-                    locked={assetsLockedFor("censor_certificate")} onUploaded={reload} accept="application/pdf,image/*" />
-                  <AssetTab cat="ownership_documents" label="Ownership Documents"
-                    assets={byCat(["ownership_documents", "ownership"])} titleId={title.id}
-                    locked={assetsLockedFor("ownership_documents")} onUploaded={reload} accept="application/pdf,image/*" />
-                  <RightsAvailabilityPanel meta={meta} setMeta={setMeta} readOnly={metadataLocked} />
-                </div>
-              )}
-              {tab === "submission" && (
-                <SubmissionTab title={title} readiness={readiness} local={localChecklist!} assets={assets} meta={meta} onJumpTab={setTab} />
-              )}
-            </>
-
-          )}
-        </div>
       </div>
+
       <FreeSubmissionTermsModal
         open={termsOpen}
         submitting={submitting}
@@ -446,7 +482,7 @@ function OverviewSnapshot({
  * elsewhere (admin) and are intentionally hidden from the creator.
  */
 function SubmissionTab({
-  title, readiness, local, assets, meta, onJumpTab,
+  title, readiness, local, assets, meta, onJumpTab, isFree,
 }: {
   title: TitleRow;
   readiness: ServerReadiness | null;
@@ -454,6 +490,7 @@ function SubmissionTab({
   assets: TitleAsset[];
   meta: TitleMetadata | null;
   onJumpTab: (t: TabId) => void;
+  isFree: boolean;
 }) {
   const has = readiness?.has ?? {
     feature_film: local.hasFilm,
@@ -473,7 +510,9 @@ function SubmissionTab({
   const engagementSet = !!commercial && commercial.engagement_mode !== "unspecified";
 
   // Creator-facing readiness — completeness, not verification.
-  const items: { key: string; label: string; ok: boolean; goto: TabId }[] = [
+  // Free creators don't see premium-only commercial fields, so we don't gate
+  // their submission on them either.
+  const baseItems: { key: string; label: string; ok: boolean; goto: TabId }[] = [
     { key: "title", label: "Add a title name",                 ok: !!local.hasTitle,                              goto: "metadata" },
     { key: "synopsis", label: "Add a synopsis",                ok: !!local.hasSynopsis,                           goto: "metadata" },
     { key: "genres", label: "Pick at least one genre",         ok: (meta?.genres?.length ?? 0) > 0,               goto: "metadata" },
@@ -483,11 +522,14 @@ function SubmissionTab({
     { key: "feature_film", label: "Upload the master file",    ok: !!(has.feature_film ?? local.hasFilm),         goto: "assets" },
     { key: "poster", label: "Upload poster artwork",           ok: !!(has.poster ?? local.hasPoster),             goto: "assets" },
     { key: "censor_certificate", label: "Upload censor certificate", ok: !!(has.censor_certificate ?? local.hasCensor), goto: "legal" },
-    { key: "ownership_documents", label: "Upload ownership documents", ok: !!(has.ownership_documents ?? local.hasOwnership), goto: "legal" },
+    { key: "ownership_documents", label: "Upload existing contracts", ok: !!(has.ownership_documents ?? local.hasOwnership), goto: "assets" },
+  ];
+  const premiumItems: { key: string; label: string; ok: boolean; goto: TabId }[] = [
     { key: "engagement_mode", label: "Choose a commercial path (Free / Premium)", ok: engagementSet, goto: "legal" },
     { key: "rights_available", label: "Mark at least one right as available",     ok: rightsAvailableCount > 0,  goto: "legal" },
     { key: "territory_available", label: "Mark at least one territory as available", ok: territoriesAvailableCount > 0, goto: "legal" },
   ];
+  const items = isFree ? baseItems : [...baseItems, ...premiumItems];
   const done = items.filter((i) => i.ok).length;
   const total = items.length;
   const pct = Math.round((done / total) * 100);
@@ -496,7 +538,8 @@ function SubmissionTab({
   const posterAsset = assets.find((a) => a.category === "poster" && a.is_primary);
 
   return (
-    <div className="space-y-6">
+    <div className="grid lg:grid-cols-[1fr_320px] gap-6">
+      <div className="space-y-6 min-w-0">
       {/* A. Submission Readiness */}
       <section className="rounded-lg border border-border/40 p-4 bg-card/30">
         <div className="flex items-center justify-between gap-3">
@@ -576,21 +619,89 @@ function SubmissionTab({
           Use the <span className="text-foreground">Submit to Admin</span> button at the top right when you're ready.
         </p>
       </section>
+      </div>
+      {/* Right-rail · Commercial Path summary (always visible in Submission). */}
+      <aside className="lg:sticky lg:top-4 self-start space-y-4">
+        <CommercialSummaryCard meta={meta} isFree={isFree} />
+      </aside>
+    </div>
+  );
+}
+
+/**
+ * CommercialSummaryCard — locked commercial overview shown in Submission.
+ * Free creators see a concise locked summary (Worldwide / Non-exclusive /
+ * Revenue Share / managed by StreamVista). Paid creators see the same
+ * overview plus a pointer back to the full rights matrix.
+ */
+function CommercialSummaryCard({ meta, isFree }: { meta: TitleMetadata | null; isFree: boolean }) {
+  const c = meta?.commercial;
+  if (isFree) {
+    return (
+      <section className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <BadgeCheck className="w-4 h-4 text-emerald-300" />
+          <h3 className="text-sm font-semibold">Commercial Path</h3>
+          <span className="ml-auto text-[10px] uppercase tracking-wider text-emerald-300">Free submission</span>
+        </div>
+        <dl className="text-xs space-y-2">
+          <Row label="Deal model" value="Revenue Share" />
+          <Row label="Territory" value={<span className="inline-flex items-center gap-1"><Globe2 className="w-3 h-3" /> Worldwide</span>} />
+          <Row label="Exclusivity" value="Non-exclusive" />
+          <Row label="Handling" value="Managed by StreamVista internal review & sales workflow" />
+        </dl>
+        <p className="text-[11px] text-muted-foreground border-t border-border/30 pt-2">
+          Submit the title — StreamVista handles the commercial routing and review flow on your behalf.
+        </p>
+      </section>
+    );
+  }
+  const rightsAvailable = c ? Object.values(c.rights).filter((v) => v === "available").length : 0;
+  const territoriesAvailable = c ? Object.values(c.territories).filter((v) => v === "available").length : 0;
+  return (
+    <section className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <Sparkles className="w-4 h-4 text-amber-300" />
+        <h3 className="text-sm font-semibold">Commercial Path</h3>
+        <span className="ml-auto text-[10px] uppercase tracking-wider text-amber-300">Premium / managed</span>
+      </div>
+      <dl className="text-xs space-y-2">
+        <Row label="Engagement" value={c?.engagement_mode?.replace(/_/g, " ") || "—"} />
+        <Row label="Deal model" value={c?.deal_model?.replace(/_/g, " ") || "—"} />
+        <Row label="Exclusivity" value={c?.exclusivity?.replace(/_/g, " ") || "—"} />
+        <Row label="Rights available" value={`${rightsAvailable} marked`} />
+        <Row label="Territories available" value={`${territoriesAvailable} marked`} />
+        {c?.min_deal_value ? <Row label="Min deal value" value={`₹${c.min_deal_value.toLocaleString()}`} /> : null}
+      </dl>
+      <p className="text-[11px] text-muted-foreground border-t border-border/30 pt-2">
+        Configure the full rights matrix in <span className="text-foreground">Legal & Rights</span>.
+      </p>
+    </section>
+  );
+}
+
+function Row({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="text-right text-foreground capitalize">{value}</dd>
     </div>
   );
 }
 
 function AssetTab({
-  cat, label, assets, titleId, locked, onUploaded, accept,
+  cat, label, description, assets, titleId, locked, onUploaded, accept,
 }: {
-  cat: AssetCategory; label: string;
+  cat: AssetCategory; label: string; description?: string;
   assets: TitleAsset[]; titleId: string; locked: boolean;
   onUploaded: () => void; accept?: string;
 }) {
   return (
     <section>
       <h3 className="text-sm font-semibold">{label}</h3>
-      <p className="text-xs text-muted-foreground mt-1">Category: {CATEGORY_LABEL[cat]}.</p>
+      <p className="text-xs text-muted-foreground mt-1">
+        {description ?? `Category: ${CATEGORY_LABEL[cat]}.`}
+      </p>
       <div className="mt-3">
         <AssetUploader
           titleId={titleId}
@@ -598,6 +709,86 @@ function AssetTab({
           locked={locked}
           accept={accept}
           label={`Upload ${label.toLowerCase()}`}
+          onUploaded={onUploaded}
+        />
+        <AssetList assets={assets} />
+      </div>
+    </section>
+  );
+}
+
+/**
+ * PosterGrid — Renders 4 artwork slots. Slot 1 is the live primary poster
+ * uploader; slots 2-4 are visual placeholders for future artwork variants
+ * (alt poster, banner, square) without changing the existing single-poster
+ * schema.
+ */
+function PosterGrid({
+  titleId, assets, locked, onUploaded,
+}: {
+  titleId: string; assets: TitleAsset[]; locked: boolean; onUploaded: () => void;
+}) {
+  const primary = assets.find((a) => a.is_primary) ?? assets[0];
+  const u: any = primary?.upload ?? null;
+  const fileName: string | null = u?.file_name ?? null;
+  const fileSizeMb: string | null = u?.file_size
+    ? `${(Number(u.file_size) / (1024 * 1024)).toFixed(1)} MB`
+    : null;
+  const placeholders = [
+    { label: "Alt poster", hint: "Secondary key art" },
+    { label: "Banner", hint: "Horizontal hero art" },
+    { label: "Square", hint: "Tile / thumbnail" },
+  ];
+  return (
+    <section>
+      <div className="flex items-baseline justify-between">
+        <h3 className="text-sm font-semibold">Poster</h3>
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">4 artwork slots</span>
+      </div>
+      <p className="text-xs text-muted-foreground mt-1">
+        Primary poster lives in slot 1. Additional artwork slots are reserved for upcoming variants.
+      </p>
+      <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3">
+        {/* Slot 1 — live primary poster */}
+        <div className="rounded-lg border border-border/60 bg-card/40 p-2 flex flex-col">
+          <div className="aspect-[2/3] rounded-md border border-border/40 bg-secondary/10 overflow-hidden grid place-items-center text-[10px] text-muted-foreground">
+            {fileName ? (
+              <div className="p-2 text-center w-full">
+                <ImageIcon className="w-5 h-5 mx-auto text-accent" />
+                <div className="mt-1 font-medium text-foreground truncate">{fileName}</div>
+                {fileSizeMb && <div className="mt-0.5 text-[10px]">{fileSizeMb}</div>}
+                <div className="mt-0.5 inline-flex items-center gap-1 text-emerald-400 text-[10px]">
+                  <CheckCircle2 className="w-3 h-3" /> Attached
+                </div>
+              </div>
+            ) : (
+              <span className="text-center px-2">Primary poster<br/><span className="text-muted-foreground/70">Upload below</span></span>
+            )}
+          </div>
+          <div className="mt-2 text-[10px] uppercase tracking-wider text-accent">Primary</div>
+        </div>
+        {/* Slots 2-4 — visual placeholders */}
+        {placeholders.map((p) => (
+          <div key={p.label} className="rounded-lg border border-dashed border-border/50 bg-background/30 p-2 flex flex-col opacity-70">
+            <div className="aspect-[2/3] rounded-md border border-border/30 bg-secondary/5 grid place-items-center text-center px-2">
+              <div>
+                <ImageIcon className="w-5 h-5 mx-auto text-muted-foreground/60" />
+                <div className="mt-1 text-[10px] text-muted-foreground">{p.hint}</div>
+              </div>
+            </div>
+            <div className="mt-2 text-[10px] uppercase tracking-wider text-muted-foreground inline-flex items-center gap-1">
+              <Lock className="w-2.5 h-2.5" /> {p.label}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4">
+        <AssetUploader
+          titleId={titleId}
+          category="poster"
+          locked={locked}
+          accept="image/*"
+          label="Upload primary poster"
           onUploaded={onUploaded}
         />
         <AssetList assets={assets} />
@@ -847,6 +1038,28 @@ function MetadataTab({
           <RuntimeInput value={meta.runtime_minutes} disabled={readOnly}
             onChange={(total) => upd("runtime_minutes", total)} />
         </Field>
+        <Field label="Certification" hint="Censor / age rating issued for the title.">
+          {(() => {
+            const stored = (meta as any).certification ?? "";
+            const toLabel: Record<string, string> = {
+              "U": "U", "U/A": "U/A", "A": "A", "S": "S",
+              "unrated": "Unrated / Not certified", "other": "Other",
+            };
+            const fromLabel: Record<string, string> = {
+              "U": "U", "U/A": "U/A", "A": "A", "S": "S",
+              "Unrated / Not certified": "unrated", "Other": "other",
+            };
+            return (
+              <SelectInput
+                value={toLabel[stored] ?? ""}
+                disabled={readOnly}
+                options={["U", "U/A", "A", "S", "Unrated / Not certified", "Other"]}
+                placeholder="Select certification…"
+                onChange={(v) => setMeta({ ...meta, ...({ certification: (fromLabel[v] ?? "") } as any) })}
+              />
+            );
+          })()}
+        </Field>
         <Field label="Rights owner" hint="Auto-filled from your profile — editable.">
           <TextInput value={meta.rights_owner} disabled={readOnly}
             placeholder="Legal entity that owns rights"
@@ -909,33 +1122,8 @@ function MetadataTab({
         </section>
       </div>
 
-      {/* Festivals + Awards */}
+      {/* Awards */}
       <div className="grid md:grid-cols-2 gap-6">
-        <section>
-          <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Festival information</h4>
-          <RepeatList
-            items={meta.festivals}
-            disabled={readOnly}
-            onChange={(v) => upd("festivals", v as any)}
-            blank={() => ({ name: "", year: null, award: "", selection_type: "", location: "", url: "" } as any)}
-            addLabel="Add festival"
-            render={(f: any, set) => (
-              <div className="grid sm:grid-cols-2 gap-2">
-                <TextInput placeholder="Festival name" value={f.name} disabled={readOnly}
-                  onChange={(e) => set({ ...f, name: e.target.value })} />
-                <TextInput type="number" min={1900} max={2100} placeholder="Year / edition"
-                  value={f.year ?? ""} disabled={readOnly}
-                  onChange={(e) => set({ ...f, year: e.target.value ? Number(e.target.value) : null })} />
-                <TextInput placeholder="Selection (e.g. Official Selection)" value={f.selection_type ?? ""} disabled={readOnly}
-                  onChange={(e) => set({ ...f, selection_type: e.target.value })} />
-                <TextInput placeholder="Location (optional)" value={f.location ?? ""} disabled={readOnly}
-                  onChange={(e) => set({ ...f, location: e.target.value })} />
-                <TextInput placeholder="URL (optional)" value={f.url ?? ""} disabled={readOnly}
-                  onChange={(e) => set({ ...f, url: e.target.value })} className="sm:col-span-2" />
-              </div>
-            )}
-          />
-        </section>
         <section>
           <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Awards</h4>
           <RepeatList

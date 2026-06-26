@@ -17,6 +17,8 @@ type Props = {
   meta: TitleMetadata;
   setMeta: (m: TitleMetadata) => void;
   readOnly: boolean;
+  /** Free creators see a reduced commercial surface (no premium rights matrix, no min-deal, no territory grid beyond Worldwide). */
+  isFree?: boolean;
 };
 
 const RIGHT_STATUS_OPTIONS: RightStatus[] = [
@@ -26,10 +28,10 @@ const TERRITORY_STATUS_OPTIONS: TerritoryStatus[] = [
   "none", "available", "sold", "blocked", "discuss",
 ];
 
-export function RightsAvailabilityPanel({ meta, setMeta, readOnly }: Props) {
+export function RightsAvailabilityPanel({ meta, setMeta, readOnly, isFree = false }: Props) {
   const c = meta.commercial;
-  const isPremium = c.engagement_mode === "upgrade_premium";
-  const isFreePath = c.engagement_mode === "free_listing" || c.engagement_mode === "go_free";
+  const isPremium = !isFree && c.engagement_mode === "upgrade_premium";
+  const isFreePath = isFree || c.engagement_mode === "free_listing" || c.engagement_mode === "go_free";
 
   const update = (patch: Partial<TitleMetadata["commercial"]>) =>
     setMeta({ ...meta, commercial: { ...c, ...patch } });
@@ -60,63 +62,65 @@ export function RightsAvailabilityPanel({ meta, setMeta, readOnly }: Props) {
         </p>
       </header>
 
-      {/* 1. Engagement mode */}
-      <div className="space-y-2">
-        <SectionLabel>How should StreamVista handle this title commercially?</SectionLabel>
-        <div className="grid sm:grid-cols-3 gap-2">
-          <EngagementCard
-            active={c.engagement_mode === "free_listing"}
-            disabled={readOnly}
-            onClick={() => update({ engagement_mode: "free_listing" })}
-            title="Free Listing / Revenue Share"
-            body="Default for free creators. After QC & legal review, your title may be listed on the StreamVista marketplace for buyer discovery on a non-exclusive revenue share."
-            tag="Free"
-          />
-          <EngagementCard
-            active={c.engagement_mode === "go_free"}
-            disabled={readOnly}
-            onClick={() => update({ engagement_mode: "go_free" })}
-            title="Go with Free"
-            body="Stay on the free path and accept its scope. No managed premium rights-sales support."
-            tag="Free"
-          />
-          <EngagementCard
-            active={c.engagement_mode === "upgrade_premium"}
-            disabled={readOnly}
-            onClick={() => update({ engagement_mode: "upgrade_premium" })}
-            title="Upgrade for Premium Rights Sales"
-            body="Unlock managed rights sales: dubbing, remake, in-flight, channel/territory blocking, bespoke campaigns."
-            tag="Premium"
-            premium
-          />
-        </div>
-
-        {isPremium && (
-          <div className="rounded-md border border-amber-400/30 bg-amber-400/5 p-3 mt-2">
-            <div className="text-[11px] uppercase tracking-wider text-amber-300 mb-2 inline-flex items-center gap-1.5">
-              <Sparkles className="w-3 h-3" /> Premium Rights-Sales Plans
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {PREMIUM_PLAN_TIERS.map((p) => (
-                <span key={p.value} className="text-xs rounded-md border border-amber-400/40 bg-amber-400/10 px-3 py-1 text-amber-100">
-                  {p.label}
-                </span>
-              ))}
-            </div>
-            <p className="text-[11px] text-muted-foreground mt-2">
-              Plan selection & invoicing is handled by Storage & Billing after submission.
-              You can keep editing rights below — premium-only rights will be actively pursued under your selected plan.
-            </p>
+      {/* 1. Engagement mode — hidden for free creators (single fixed path). */}
+      {!isFree && (
+        <div className="space-y-2">
+          <SectionLabel>How should StreamVista handle this title commercially?</SectionLabel>
+          <div className="grid sm:grid-cols-3 gap-2">
+            <EngagementCard
+              active={c.engagement_mode === "free_listing"}
+              disabled={readOnly}
+              onClick={() => update({ engagement_mode: "free_listing" })}
+              title="Free Listing / Revenue Share"
+              body="Default for free creators. After QC & legal review, your title may be listed on the StreamVista marketplace for buyer discovery on a non-exclusive revenue share."
+              tag="Free"
+            />
+            <EngagementCard
+              active={c.engagement_mode === "go_free"}
+              disabled={readOnly}
+              onClick={() => update({ engagement_mode: "go_free" })}
+              title="Go with Free"
+              body="Stay on the free path and accept its scope. No managed premium rights-sales support."
+              tag="Free"
+            />
+            <EngagementCard
+              active={c.engagement_mode === "upgrade_premium"}
+              disabled={readOnly}
+              onClick={() => update({ engagement_mode: "upgrade_premium" })}
+              title="Upgrade for Premium Rights Sales"
+              body="Unlock managed rights sales: dubbing, remake, in-flight, channel/territory blocking, bespoke campaigns."
+              tag="Premium"
+              premium
+            />
           </div>
-        )}
 
-        {isFreePath && (
-          <p className="text-[11px] text-muted-foreground inline-flex items-start gap-1.5 mt-1">
-            <Info className="w-3 h-3 mt-0.5 shrink-0" />
-            Free path defaults: non-exclusive, revenue share, worldwide, with core digital rights available. Specialist managed-sales rights (dubbing, remake, in-flight, cruise, channel/territory blocking) are marked as premium services.
-          </p>
-        )}
-      </div>
+          {isPremium && (
+            <div className="rounded-md border border-amber-400/30 bg-amber-400/5 p-3 mt-2">
+              <div className="text-[11px] uppercase tracking-wider text-amber-300 mb-2 inline-flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3" /> Premium Rights-Sales Plans
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {PREMIUM_PLAN_TIERS.map((p) => (
+                  <span key={p.value} className="text-xs rounded-md border border-amber-400/40 bg-amber-400/10 px-3 py-1 text-amber-100">
+                    {p.label}
+                  </span>
+                ))}
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-2">
+                Plan selection & invoicing is handled by Storage & Billing after submission.
+                You can keep editing rights below — premium-only rights will be actively pursued under your selected plan.
+              </p>
+            </div>
+          )}
+
+          {isFreePath && (
+            <p className="text-[11px] text-muted-foreground inline-flex items-start gap-1.5 mt-1">
+              <Info className="w-3 h-3 mt-0.5 shrink-0" />
+              Free path defaults: non-exclusive, revenue share, worldwide, with core digital rights available. Specialist managed-sales rights (dubbing, remake, in-flight, cruise, channel/territory blocking) are marked as premium services.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* 2. Rights availability matrix */}
       <div className="space-y-3">
@@ -133,141 +137,175 @@ export function RightsAvailabilityPanel({ meta, setMeta, readOnly }: Props) {
           readOnly={readOnly}
         />
 
-        <RightsGroup
-          title="Premium / managed rights"
-          subtitle={isPremium
-            ? "Actively pursued under your premium plan"
-            : "Available as a premium service — upgrade to have StreamVista actively sell these"}
-          items={RIGHTS_CATALOG.filter((r) => r.group === "premium")}
-          rights={c.rights}
-          onChange={setRight}
-          readOnly={readOnly}
-          locked={!isPremium}
-        />
-      </div>
-
-      {/* 3. Territories */}
-      <div className="space-y-3">
-        <SectionLabel>
-          <span className="inline-flex items-center gap-1.5">
-            <Globe2 className="w-3.5 h-3.5" /> Territory availability
-          </span>
-          <span className="text-muted-foreground font-normal"> · {counts.tAvail} marked available</span>
-        </SectionLabel>
-        <div className="grid sm:grid-cols-2 gap-2">
-          {TERRITORY_CATALOG.map((t) => {
-            const status = (c.territories[t.key] as TerritoryStatus) ?? "none";
-            const lockedAdvanced = !isPremium && t.key !== "worldwide" && t.key !== "india";
-            return (
-              <div key={t.key} className="flex items-center gap-2 rounded-md border border-border/40 px-3 py-2">
-                <span className="text-xs flex-1 truncate">{t.label}</span>
-                <select
-                  disabled={readOnly}
-                  value={status}
-                  onChange={(e) => setTerritory(t.key, e.target.value as TerritoryStatus)}
-                  className="text-[11px] bg-background border border-border/40 rounded px-2 py-1 disabled:opacity-60"
-                >
-                  {TERRITORY_STATUS_OPTIONS.map((s) => (
-                    <option key={s} value={s}>{TERRITORY_STATUS_LABEL[s]}</option>
-                  ))}
-                </select>
-                {lockedAdvanced && status === "blocked" && (
-                  <span className="text-[10px] inline-flex items-center gap-1 rounded bg-amber-500/15 text-amber-300 px-1.5 py-0.5">
-                    <Lock className="w-2.5 h-2.5" /> Premium
-                  </span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-        {!isPremium && (
-          <p className="text-[11px] text-muted-foreground">
-            Territory blocking / carve-outs are actively managed only on premium plans. Free creators can still mark territories as available, sold or reserved for discussion.
-          </p>
+        {/* Premium / managed rights are hidden entirely for free creators. */}
+        {!isFree && (
+          <RightsGroup
+            title="Premium / managed rights"
+            subtitle={isPremium
+              ? "Actively pursued under your premium plan"
+              : "Available as a premium service — upgrade to have StreamVista actively sell these"}
+            items={RIGHTS_CATALOG.filter((r) => r.group === "premium")}
+            rights={c.rights}
+            onChange={setRight}
+            readOnly={readOnly}
+            locked={!isPremium}
+          />
         )}
       </div>
 
-      {/* 4. Exclusivity & deal preference */}
-      <div className="grid sm:grid-cols-2 gap-4">
-        <div>
-          <SectionLabel>Exclusivity</SectionLabel>
-          <div className="flex flex-wrap gap-2 mt-1">
-            {(["non_exclusive", "exclusive"] as const).map((v) => (
-              <button
-                key={v}
-                type="button"
-                disabled={readOnly}
-                onClick={() => update({ exclusivity: v })}
-                className={cn(
-                  "text-xs px-3 py-1.5 rounded-md border transition",
-                  c.exclusivity === v
-                    ? "bg-accent/20 border-accent/50 text-foreground"
-                    : "border-border/40 text-muted-foreground hover:bg-secondary/30",
-                  readOnly && "opacity-60",
-                )}
-              >
-                {v === "non_exclusive" ? "Non-exclusive" : "Exclusive"}
-              </button>
-            ))}
+      {/* 3. Territories — free creators see a locked Worldwide=Available summary. */}
+      {isFree ? (
+        <div className="space-y-2">
+          <SectionLabel>
+            <span className="inline-flex items-center gap-1.5">
+              <Globe2 className="w-3.5 h-3.5" /> Territory availability
+            </span>
+          </SectionLabel>
+          <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-xs flex items-center gap-2">
+            <Globe2 className="w-3.5 h-3.5 text-emerald-300" />
+            <span className="flex-1">Worldwide</span>
+            <span className="text-[10px] uppercase tracking-wider text-emerald-300">Available</span>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Free plan ships with Worldwide availability. Territory carve-outs are a premium-managed feature.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <SectionLabel>
+            <span className="inline-flex items-center gap-1.5">
+              <Globe2 className="w-3.5 h-3.5" /> Territory availability
+            </span>
+            <span className="text-muted-foreground font-normal"> · {counts.tAvail} marked available</span>
+          </SectionLabel>
+          <div className="grid sm:grid-cols-2 gap-2">
+            {TERRITORY_CATALOG.map((t) => {
+              const status = (c.territories[t.key] as TerritoryStatus) ?? "none";
+              const lockedAdvanced = !isPremium && t.key !== "worldwide" && t.key !== "india";
+              return (
+                <div key={t.key} className="flex items-center gap-2 rounded-md border border-border/40 px-3 py-2">
+                  <span className="text-xs flex-1 truncate">{t.label}</span>
+                  <select
+                    disabled={readOnly}
+                    value={status}
+                    onChange={(e) => setTerritory(t.key, e.target.value as TerritoryStatus)}
+                    className="text-[11px] bg-background border border-border/40 rounded px-2 py-1 disabled:opacity-60"
+                  >
+                    {TERRITORY_STATUS_OPTIONS.map((s) => (
+                      <option key={s} value={s}>{TERRITORY_STATUS_LABEL[s]}</option>
+                    ))}
+                  </select>
+                  {lockedAdvanced && status === "blocked" && (
+                    <span className="text-[10px] inline-flex items-center gap-1 rounded bg-amber-500/15 text-amber-300 px-1.5 py-0.5">
+                      <Lock className="w-2.5 h-2.5" /> Premium
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {!isPremium && (
+            <p className="text-[11px] text-muted-foreground">
+              Territory blocking / carve-outs are actively managed only on premium plans. Free creators can still mark territories as available, sold or reserved for discussion.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* 4. Exclusivity & deal preference — free path locks to Non-exclusive + Revenue Share. */}
+      {isFree ? (
+        <div className="grid sm:grid-cols-2 gap-3">
+          <div className="rounded-md border border-border/40 bg-background/40 px-3 py-2">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Exclusivity</div>
+            <div className="text-sm font-medium mt-0.5">Non-exclusive</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-background/40 px-3 py-2">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Deal model</div>
+            <div className="text-sm font-medium mt-0.5">Revenue Share</div>
           </div>
         </div>
-
-        <div>
-          <SectionLabel>Deal model</SectionLabel>
-          <div className="flex flex-wrap gap-2 mt-1">
-            {([
-              { v: "revenue_share", l: "Revenue Share" },
-              { v: "mg", l: "Minimum Guarantee" },
-              { v: "outright", l: "Outright Sale" },
-              { v: "open", l: "Open to Discussion" },
-            ] as const).map(({ v, l }) => (
-              <button
-                key={v}
-                type="button"
-                disabled={readOnly}
-                onClick={() => update({ deal_model: v })}
-                className={cn(
-                  "text-xs px-3 py-1.5 rounded-md border transition",
-                  c.deal_model === v
-                    ? "bg-accent/20 border-accent/50 text-foreground"
-                    : "border-border/40 text-muted-foreground hover:bg-secondary/30",
-                  readOnly && "opacity-60",
-                )}
-              >
-                {l}
-              </button>
-            ))}
+      ) : (
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <SectionLabel>Exclusivity</SectionLabel>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {(["non_exclusive", "exclusive"] as const).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  disabled={readOnly}
+                  onClick={() => update({ exclusivity: v })}
+                  className={cn(
+                    "text-xs px-3 py-1.5 rounded-md border transition",
+                    c.exclusivity === v
+                      ? "bg-accent/20 border-accent/50 text-foreground"
+                      : "border-border/40 text-muted-foreground hover:bg-secondary/30",
+                    readOnly && "opacity-60",
+                  )}
+                >
+                  {v === "non_exclusive" ? "Non-exclusive" : "Exclusive"}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
 
-        <div>
-          <SectionLabel>Minimum expected deal value (optional)</SectionLabel>
-          <input
-            type="number"
-            min={0}
-            disabled={readOnly}
-            value={c.min_deal_value ?? ""}
-            onChange={(e) =>
-              update({ min_deal_value: e.target.value ? Number(e.target.value) : null })
-            }
-            placeholder="e.g. 500000"
-            className="w-full bg-background border border-border/40 rounded-md px-3 py-1.5 text-sm disabled:opacity-60"
-          />
-        </div>
+          <div>
+            <SectionLabel>Deal model</SectionLabel>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {([
+                { v: "revenue_share", l: "Revenue Share" },
+                { v: "mg", l: "Minimum Guarantee" },
+                { v: "outright", l: "Outright Sale" },
+                { v: "open", l: "Open to Discussion" },
+              ] as const).map(({ v, l }) => (
+                <button
+                  key={v}
+                  type="button"
+                  disabled={readOnly}
+                  onClick={() => update({ deal_model: v })}
+                  className={cn(
+                    "text-xs px-3 py-1.5 rounded-md border transition",
+                    c.deal_model === v
+                      ? "bg-accent/20 border-accent/50 text-foreground"
+                      : "border-border/40 text-muted-foreground hover:bg-secondary/30",
+                    readOnly && "opacity-60",
+                  )}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
+          </div>
 
-        <div className="flex items-end">
-          <label className="inline-flex items-center gap-2 text-xs cursor-pointer select-none">
+          <div>
+            <SectionLabel>Minimum expected deal value (optional)</SectionLabel>
             <input
-              type="checkbox"
+              type="number"
+              min={0}
               disabled={readOnly}
-              checked={c.open_to_investors}
-              onChange={(e) => update({ open_to_investors: e.target.checked })}
-              className="accent-accent"
+              value={c.min_deal_value ?? ""}
+              onChange={(e) =>
+                update({ min_deal_value: e.target.value ? Number(e.target.value) : null })
+              }
+              placeholder="e.g. 500000"
+              className="w-full bg-background border border-border/40 rounded-md px-3 py-1.5 text-sm disabled:opacity-60"
             />
-            Open to investor discussions
-          </label>
+          </div>
+
+          <div className="flex items-end">
+            <label className="inline-flex items-center gap-2 text-xs cursor-pointer select-none">
+              <input
+                type="checkbox"
+                disabled={readOnly}
+                checked={c.open_to_investors}
+                onChange={(e) => update({ open_to_investors: e.target.checked })}
+                className="accent-accent"
+              />
+              Open to investor discussions
+            </label>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 5. Notes */}
       <div>

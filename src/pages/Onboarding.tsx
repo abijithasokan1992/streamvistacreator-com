@@ -182,6 +182,27 @@ export default function Onboarding() {
             </select>
           </div>
 
+          <div className="mt-3">
+            <label htmlFor="access-auth-code" className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.2em] text-muted-foreground mb-1.5 font-mono">
+              <KeyRound className="w-3 h-3 text-accent" />
+              Access Authorization Code
+            </label>
+            <input
+              id="access-auth-code"
+              ref={accessCodeRef}
+              type="text"
+              autoComplete="off"
+              spellCheck={false}
+              value={accessCode}
+              onChange={(e) => setAccessCode(e.target.value.slice(0, 64))}
+              placeholder="Optional — enter if you were issued one"
+              className="w-full h-12 px-4 rounded-xl bg-input/40 border border-accent/30 text-sm font-mono tracking-wider placeholder:font-sans placeholder:tracking-normal placeholder:text-muted-foreground outline-none focus:border-accent/70 focus:bg-input/70"
+            />
+            <p className="mt-1 text-[10px] text-muted-foreground/70">
+              Stored privately with your onboarding record for admin review.
+            </p>
+          </div>
+
           {!showOptional ? (
             <button
               type="button"

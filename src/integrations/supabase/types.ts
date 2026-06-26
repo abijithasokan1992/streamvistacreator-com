@@ -7392,6 +7392,7 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          access_authorization_code: string | null
           avatar_url: string | null
           bandwidth_overage_inr_per_gb: number
           bandwidth_quota_gb: number
@@ -7421,6 +7422,7 @@ export type Database = {
           whatsapp: string | null
         }
         Insert: {
+          access_authorization_code?: string | null
           avatar_url?: string | null
           bandwidth_overage_inr_per_gb?: number
           bandwidth_quota_gb?: number
@@ -7450,6 +7452,7 @@ export type Database = {
           whatsapp?: string | null
         }
         Update: {
+          access_authorization_code?: string | null
           avatar_url?: string | null
           bandwidth_overage_inr_per_gb?: number
           bandwidth_quota_gb?: number

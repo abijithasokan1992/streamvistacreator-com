@@ -11,6 +11,8 @@ import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AgreementGate } from "@/components/legal/AgreementGate";
+import BuyerQuickActions from "@/components/buyer/BuyerQuickActions";
+import BuyerPlanStrip from "@/components/buyer/BuyerPlanStrip";
 
 /* ---------------------------------------------------------------------------
    Buyer Workspace v1 — Phase 1

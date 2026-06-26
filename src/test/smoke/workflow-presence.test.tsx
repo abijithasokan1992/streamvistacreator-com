@@ -19,17 +19,41 @@ vi.mock("@/hooks/useAuth", () => ({
 }));
 
 // Avoid hitting any client-side analytics/observers from child components.
-vi.mock("@/integrations/supabase/client", () => ({
-  supabase: {
-    auth: {
-      getSession: async () => ({ data: { session: null } }),
-      onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
+vi.mock("@/integrations/supabase/client", () => {
+  // Fully chainable query builder that resolves to an empty result for any call.
+  const makeBuilder = () => {
+    const result = Promise.resolve({ data: [], error: null, count: 0 });
+    const builder: Record<string, unknown> = {
+      then: (resolve: (v: unknown) => unknown, reject?: (e: unknown) => unknown) =>
+        result.then(resolve, reject),
+      maybeSingle: async () => ({ data: null, error: null }),
+      single: async () => ({ data: null, error: null }),
+    };
+    const passthrough = new Proxy(builder, {
+      get(target, prop) {
+        if (prop in target) return (target as Record<string, unknown>)[prop as string];
+        // Any unknown method (.eq, .select, .order, .limit, .in, .gte, .lte, ...) returns the builder.
+        return () => passthrough;
+      },
+    });
+    return passthrough;
+  };
+  return {
+    supabase: {
+      auth: {
+        getSession: async () => ({ data: { session: null }, error: null }),
+        getUser: async () => ({ data: { user: null }, error: null }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
+      },
+      from: () => makeBuilder(),
+      rpc: () => makeBuilder(),
+      channel: () => ({ on: () => ({ subscribe: () => ({ unsubscribe() {} }) }) }),
+      removeChannel: () => {},
+      functions: { invoke: async () => ({ data: null, error: null }) },
+      storage: { from: () => ({ getPublicUrl: () => ({ data: { publicUrl: "" } }) }) },
     },
-    from: () => ({
-      select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null }) }) }),
-    }),
-  },
-}));
+  };
+});
 
 import Index from "@/pages/Index";
 

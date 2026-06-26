@@ -10,6 +10,8 @@ import Buy1TBCard from "@/components/shared/Buy1TBCard";
 import UpgradeCreatorPlanCard from "@/components/creator/UpgradeCreatorPlanCard";
 import { Button } from "@/components/ui/button";
 import OnboardingChecklist from "@/components/creator/OnboardingChecklist";
+import CreatorPlanStrip from "@/components/creator/CreatorPlanStrip";
+import CreatorQuickActions from "@/components/creator/CreatorQuickActions";
 import type { SectionId } from "@/components/creator/CreatorSidebar";
 
 type UpdateRow = { id: string; title: string; message: string | null; created_at: string };

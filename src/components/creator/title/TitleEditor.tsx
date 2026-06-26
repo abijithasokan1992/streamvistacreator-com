@@ -51,6 +51,7 @@ export function TitleEditor({
   const [pendingFreeSubmit, setPendingFreeSubmit] = useState(false);
   const [name, setName] = useState("");
   const [meta, setMeta] = useState<TitleMetadata | null>(null);
+  const [isFree, setIsFree] = useState<boolean>(true);
   const [profileDefaults, setProfileDefaults] = useState<{ rights_owner: string; production_company: string }>({ rights_owner: "", production_company: "" });
 
   const lockState = useTitleLock(titleId);

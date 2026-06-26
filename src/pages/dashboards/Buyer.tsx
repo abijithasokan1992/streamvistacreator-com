@@ -192,6 +192,20 @@ export default function BuyerDashboard() {
 
         {/* ----------------------------- Overview ----------------------------- */}
         <TabsContent value="overview" className="mt-6 space-y-6">
+          {/* Plan visibility — buyer tier + screener state + active requests */}
+          <BuyerPlanStrip
+            openRequests={counts.open}
+            activeConversations={counts.active}
+            approvedScreeners={screenerCount}
+            onNewRequest={() => setTab("new")}
+          />
+
+          {/* Buyer Tools / Quick Actions */}
+          <BuyerQuickActions
+            onNewRequest={() => setTab("new")}
+            onCatalogRequest={() => setTab("new")}
+          />
+
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <Metric icon={Inbox} label="Open requests" value={counts.open} />
             <Metric icon={Film} label="Approved screeners" value={screenerCount} />

@@ -298,73 +298,108 @@ export default function Admin() {
       </header>
 
 
-      <section className="container py-10">
-        <div className="mb-8">
-          <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight">
-            {isSuperAdmin ? "Platform Owner · Media Operations" : "Admin Console"}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {isSuperAdmin
-              ? "Operate the platform: pipeline, storage, revenue, and platform health at a glance."
-              : "All controls grouped by operational area."}
-          </p>
-        </div>
+      <AdminMainPanel
+        isSuperAdmin={isSuperAdmin}
+        location={location}
+        searchParams={searchParams}
+        navigate={navigate}
+      />
+    </main>
+  );
+}
 
-        <Tabs
-          key={location.pathname + (searchParams.get("tab") ?? "")}
-          defaultValue={pathToTab(location.pathname, searchParams)}
-          className="w-full"
-        >
-          <TabsList className={`grid grid-cols-2 sm:grid-cols-3 ${isSuperAdmin ? "lg:grid-cols-11" : "lg:grid-cols-10"} gap-1.5 sm:gap-2 h-auto p-1 sm:p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-6 sm:mb-8`}>
-            <DeptTab value="overview"  icon={<LayoutDashboard className="w-4 h-4" />} label="Home" />
-            <DeptTab value="users"     icon={<UsersIcon className="w-4 h-4" />}       label="Users & Roles" />
-            <DeptTab value="approvals" icon={<ClipboardCheck className="w-4 h-4" />}  label="Approvals" />
-            <DeptTab value="homepage"  icon={<ImageIcon className="w-4 h-4" />}       label="Homepage CMS" />
-            <DeptTab value="catalog"   icon={<Package className="w-4 h-4" />}         label="Catalog" />
-            <DeptTab value="billing"   icon={<Wallet className="w-4 h-4" />}          label="Billing" />
-            <DeptTab value="storage"   icon={<HardDrive className="w-4 h-4" />}       label="Storage" />
-            <DeptTab value="comms"     icon={<Inbox className="w-4 h-4" />}           label="Comms" />
-            <DeptTab value="settings"  icon={<SettingsIcon className="w-4 h-4" />}    label="Settings" />
-            <DeptTab value="audit"     icon={<FileText className="w-4 h-4" />}        label="Audit" />
-            {isSuperAdmin && (
-              <DeptTab value="vault"   icon={<Crown className="w-4 h-4" />}           label="Founder Vault" />
-            )}
-          </TabsList>
+/* ============================================================
+ * Department + sub-section registry
+ * Sub-sections render existing admin components untouched —
+ * only their grouping/parent location changes.
+ * ============================================================ */
+function buildDepartments(args: {
+  isSuperAdmin: boolean;
+  navigate: (p: string) => void;
+}): Array<{ id: DeptKey; label: string; icon: JSX.Element; desc: string; sections: DeptSubSection[] }> {
+  const { isSuperAdmin, navigate } = args;
 
-          <TabsContent value="overview" className="space-y-8 mt-0 animate-fade-in">
-            <PlatformOverview />
-            <QuickNav navigate={navigate} />
-          </TabsContent>
+  const systemSections: DeptSubSection[] = [
+    { id: "homepage", label: "Homepage CMS", hint: "Hero, carousel, ad zones", content: <MarketingCMS /> },
+    { id: "settings", label: "Settings", hint: "Branding, company profile, partners", content: (
+      <div className="space-y-6">
+        <BrandingSettings />
+        <CompanyProfileSettings />
+        <PartnerLogos />
+        <details className="rounded-2xl border border-border/40 bg-secondary/10 p-4">
+          <summary className="cursor-pointer text-sm font-semibold text-muted-foreground hover:text-foreground">
+            Advanced · domain hosting & developer credentials
+          </summary>
+          <div className="pt-4 space-y-6">
+            <DomainHostingPanel />
+            <RazorpayCredentials />
+            <RazorpayConnectivityStatus />
+            <ResendCredentials />
+            <AdminCredentials />
+          </div>
+        </details>
+      </div>
+    )},
+    { id: "audit", label: "Audit", hint: "Finance reports, payment security", content: (
+      <div className="space-y-6"><AdminReportsConsole /><PaymentSecurityEvents /></div>
+    )},
+  ];
+  if (isSuperAdmin) {
+    systemSections.push({
+      id: "founder-vault",
+      label: "Founder Vault",
+      hint: "Platform Owner private storage",
+      content: <FounderVault />,
+    });
+  }
 
-          <TabsContent value="users" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<UsersIcon className="w-5 h-5" />} title="Users & Roles" desc="Creators, studios, buyers and internal staff. Roles, invitations and team permissions." />
-            <RolesManager />
-            <UsersAndCredentials />
-            <AdminTeamManager />
-          </TabsContent>
-
-          <TabsContent value="approvals" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<ClipboardCheck className="w-5 h-5" />} title="Approvals" desc="Onboarding requests, title submissions and edit requests waiting on review." />
-            <OnboardingApprovals />
-            <ContentReviewWorkflow />
-            <TitleEditRequestsInbox />
-          </TabsContent>
-
-          <TabsContent value="homepage" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<ImageIcon className="w-5 h-5" />} title="Homepage CMS" desc="Hero banners, Successfully Licensed Contents carousel, cinematic reel, ad zones and news shown on the public homepage." />
-            <MarketingCMS />
-          </TabsContent>
-
-          <TabsContent value="catalog" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<Package className="w-5 h-5" />} title="Catalog" desc="Plans, pricing, free-tier limits and shared marketing assets." />
-            <ProductsAndPlans />
-            <StudioVaultPricing />
-            <FreeTierConfig />
-            <GlobalAssetManager />
-          </TabsContent>
-
-          <TabsContent value="billing" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<Wallet className="w-5 h-5" />} title="Billing" desc="Invoices, manual invoices, finance ops and Razorpay activity." />
+  return [
+    {
+      id: "dashboard",
+      label: "Dashboard",
+      icon: <LayoutDashboard className="w-4 h-4" />,
+      desc: "Platform health and quick jumps.",
+      sections: [
+        { id: "overview", label: "Overview", hint: "Platform metrics", content: (
+          <div className="space-y-8"><PlatformOverview /><QuickNav navigate={navigate} /></div>
+        )},
+      ],
+    },
+    {
+      id: "operations",
+      label: "Operations",
+      icon: <ClipboardCheck className="w-4 h-4" />,
+      desc: "Approvals, pipeline and catalog ops.",
+      sections: [
+        { id: "approvals", label: "Approvals", hint: "Onboarding & content review", content: (
+          <div className="space-y-6"><OnboardingApprovals /><ContentReviewWorkflow /></div>
+        )},
+        { id: "pipeline", label: "Pipeline", hint: "Title edits & QC flow", content: <TitleEditRequestsInbox /> },
+        { id: "catalog-ops", label: "Catalog Ops", hint: "Global assets", content: <GlobalAssetManager /> },
+      ],
+    },
+    {
+      id: "accounts",
+      label: "Accounts",
+      icon: <UsersIcon className="w-4 h-4" />,
+      desc: "Users, organizations, roles & access.",
+      sections: [
+        { id: "users", label: "Users", hint: "Creators, studios, buyers", content: <UsersAndCredentials /> },
+        { id: "organizations", label: "Organizations", hint: "Internal team", content: <AdminTeamManager /> },
+        { id: "roles", label: "Roles & Access", hint: "Role assignments", content: <RolesManager /> },
+      ],
+    },
+    {
+      id: "commerce",
+      label: "Commerce",
+      icon: <Briefcase className="w-4 h-4" />,
+      desc: "Plans, billing, entitlements and commercial requests.",
+      sections: [
+        { id: "plans", label: "Plans & Pricing", hint: "Products, vault pricing, free tier", content: (
+          <div className="space-y-6"><ProductsAndPlans /><StudioVaultPricing /><FreeTierConfig /></div>
+        )},
+        { id: "billing", label: "Billing", hint: "Invoices and finance ops", content: (
+          <div className="space-y-6">
             <RazorpayOpsBanner />
             <AdminFinanceConsole />
             <BillingOperations />
@@ -372,64 +407,126 @@ export default function Admin() {
             <ManualInvoiceConsole />
             <PaymentTrace />
             <RazorpayAuditLog />
-          </TabsContent>
+          </div>
+        )},
+      ],
+    },
+    {
+      id: "storage",
+      label: "Storage & Delivery",
+      icon: <HardDrive className="w-4 h-4" />,
+      desc: "Storage health, uploads and vault delivery.",
+      sections: [
+        { id: "storage-health", label: "Storage", hint: "OCI monitor", content: <OracleStorageMonitor /> },
+        { id: "vault-purchases", label: "Vault / Delivery", hint: "Studio Vault purchases", content: <AdminStudioVaultPurchases /> },
+        { id: "storage-advanced", label: "Advanced", hint: "OCI credentials & buckets", content: <OracleOciStorageCard /> },
+      ],
+    },
+    {
+      id: "comms",
+      label: "Comms",
+      icon: <Inbox className="w-4 h-4" />,
+      desc: "Support, email, notifications.",
+      sections: [
+        { id: "support", label: "Support", hint: "Support & contact inbox", content: (
+          <div className="space-y-6"><SupportInbox /><ContactInbox /></div>
+        )},
+        { id: "email", label: "Email", hint: "Email log", content: <EmailLogMonitor /> },
+        { id: "notifications", label: "Notifications", hint: "Universal broadcast", content: <UniversalBroadcast /> },
+      ],
+    },
+    {
+      id: "system",
+      label: "System",
+      icon: <SettingsIcon className="w-4 h-4" />,
+      desc: "Homepage CMS, settings, audit, and Founder Vault.",
+      sections: systemSections,
+    },
+  ];
+}
 
-          <TabsContent value="storage" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<HardDrive className="w-5 h-5" />} title="Storage" desc="Storage health, Global Repository purchases and OCI admin." />
-            <OracleStorageMonitor />
-            <AdminStudioVaultPurchases />
-            <details className="rounded-2xl border border-border/40 bg-secondary/10 p-4">
-              <summary className="cursor-pointer text-sm font-semibold text-muted-foreground hover:text-foreground">
-                Advanced storage settings · OCI credentials & buckets
-              </summary>
-              <div className="pt-4">
-                <OracleOciStorageCard />
-              </div>
-            </details>
-          </TabsContent>
+function AdminMainPanel({
+  isSuperAdmin, location, searchParams, navigate,
+}: {
+  isSuperAdmin: boolean;
+  location: { pathname: string };
+  searchParams: URLSearchParams;
+  navigate: (p: string) => void;
+}) {
+  const initial = pathToDept(location.pathname, searchParams);
+  const [dept, setDept] = useState<DeptKey>(initial);
+  const [sectionByDept, setSectionByDept] = useState<Record<string, string>>(() => {
+    const s = searchParams.get("section");
+    return s ? { [initial]: s } : {};
+  });
 
-          <TabsContent value="comms" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<Inbox className="w-5 h-5" />} title="Comms" desc="Support inbox, contact form, email log and broadcast." />
-            <SupportInbox />
-            <ContactInbox />
-            <EmailLogMonitor />
-            <UniversalBroadcast />
-          </TabsContent>
+  const departments = useMemo(
+    () => buildDepartments({ isSuperAdmin, navigate }),
+    [isSuperAdmin, navigate],
+  );
 
-          <TabsContent value="settings" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<SettingsIcon className="w-5 h-5" />} title="Settings" desc="Branding, company profile and developer credentials." />
-            <BrandingSettings />
-            <CompanyProfileSettings />
-            <PartnerLogos />
-            <details className="rounded-2xl border border-border/40 bg-secondary/10 p-4">
-              <summary className="cursor-pointer text-sm font-semibold text-muted-foreground hover:text-foreground">
-                Advanced · domain hosting & developer credentials
-              </summary>
-              <div className="pt-4 space-y-6">
-                <DomainHostingPanel />
-                <RazorpayCredentials />
-                <RazorpayConnectivityStatus />
-                <ResendCredentials />
-                <AdminCredentials />
-              </div>
-            </details>
-          </TabsContent>
+  const cmdDepartments: AdminDepartment[] = useMemo(
+    () => departments.map((d) => ({
+      id: d.id,
+      label: d.label,
+      sections: d.sections.map((s) => ({ id: s.id, label: s.label, hint: s.hint })),
+    })),
+    [departments],
+  );
 
-          <TabsContent value="audit" className="space-y-8 mt-0 animate-fade-in">
-            <DeptHeader icon={<FileText className="w-5 h-5" />} title="Audit" desc="Finance reports, management summary and payment security events." />
-            <AdminReportsConsole />
-            <PaymentSecurityEvents />
-          </TabsContent>
+  const jumpTo = (deptId: string, sectionId: string) => {
+    setDept(deptId as DeptKey);
+    setSectionByDept((prev) => ({ ...prev, [deptId]: sectionId }));
+    // Update URL so deep links work
+    const url = new URL(window.location.href);
+    url.searchParams.set("dept", deptId);
+    url.searchParams.set("section", sectionId);
+    window.history.replaceState(null, "", url.toString());
+  };
 
-          {isSuperAdmin && (
-            <TabsContent value="vault" className="space-y-8 mt-0 animate-fade-in">
-              <DeptHeader icon={<Crown className="w-5 h-5" />} title="Founder Vault" desc="Private Platform Owner storage — masters, contracts, investor & legal documents. Separately passphrase-locked and audit-logged." />
-              <FounderVault />
-            </TabsContent>
-          )}
-        </Tabs>
-      </section>
-    </main>
+  const current = departments.find((d) => d.id === dept) ?? departments[0];
+
+  return (
+    <section className="container py-10">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight">
+            {isSuperAdmin ? "Platform Owner · Media Operations" : "Admin Console"}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Departments on the left. Sub-sections appear inside each department.
+          </p>
+        </div>
+        <AdminCommandBar departments={cmdDepartments} onJump={jumpTo} />
+      </div>
+
+      <Tabs
+        value={dept}
+        onValueChange={(v) => setDept(v as DeptKey)}
+        className="w-full"
+      >
+        <TabsList className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 h-auto p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-6">
+          {departments.map((d) => (
+            <DeptTab key={d.id} value={d.id} icon={d.icon} label={d.label} />
+          ))}
+        </TabsList>
+
+        {departments.map((d) => (
+          <TabsContent key={d.id} value={d.id} className="mt-0 animate-fade-in">
+            <DeptHeader icon={d.icon} title={d.label} desc={d.desc} />
+            <div className="mt-6">
+              <DeptSubNav
+                sections={d.sections}
+                activeId={sectionByDept[d.id]}
+                onActiveChange={(id) =>
+                  setSectionByDept((prev) => ({ ...prev, [d.id]: id }))
+                }
+              />
+            </div>
+          </TabsContent>
+        ))}
+      </Tabs>
+    </section>
   );
 }
 

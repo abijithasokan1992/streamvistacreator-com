@@ -36,16 +36,18 @@ export const SECTIONS: ReadonlyArray<SectionDef> = [
   // Main
   { id: "home",           label: "Home",         heading: "Home",         tip: "Your dashboard overview.",                              icon: Home,    group: "main" },
   { id: "titles",         label: "Titles",       heading: "Titles",       tip: "Add and manage your films and shows.",                  icon: Film,    group: "main" },
-  { id: "submissions",    label: "Review Queue", heading: "Review Queue", tip: "Track which titles are being reviewed.",                icon: Inbox,   group: "main", proOnly: true },
-  { id: "updates",        label: "Inbox",        heading: "Inbox",        tip: "Messages and notes from our team.",                     icon: Bell,    group: "main", proOnly: true },
 
   // Storage
-  { id: "delivery_vault", label: "My Library",   heading: "My Library",   subhead: "Masters, deliveries, archives.", tip: "Secure storage for your master files.", icon: Database, group: "storage" },
+  { id: "delivery_vault", label: "Library",      heading: "Library",      subhead: "Masters, deliveries, archives.", tip: "Secure storage for your master files.", icon: Database, group: "storage" },
 
   // Account
-  { id: "profile",        label: "My Profile",   heading: "My Profile",   subhead: "Identity, contact, tax and billing details.", tip: "Your identity, contact, tax and billing details.", icon: UserCircle, group: "account" },
   { id: "billing",        label: "Billing",      heading: "Billing",      subhead: "Plan, storage, invoices.",       tip: "Your plan, storage and invoices.",       icon: Wallet,  group: "account" },
   { id: "help",           label: "Help",         heading: "Help",         tip: "Contact us or get answers fast.",                         icon: LifeBuoy, group: "account" },
+
+  // Hidden from sidebar but still routable (deep links + Home cards still work)
+  { id: "submissions",    label: "Review Queue", heading: "Review Queue", tip: "Track which titles are being reviewed.",                icon: Inbox,   group: "main", proOnly: true, hidden: true },
+  { id: "updates",        label: "Inbox",        heading: "Inbox",        tip: "Messages and notes from our team.",                     icon: Bell,    group: "main", proOnly: true, hidden: true },
+  { id: "profile",        label: "My Profile",   heading: "My Profile",   subhead: "Identity, contact, tax and billing details.", tip: "Your identity, contact, tax and billing details.", icon: UserCircle, group: "account", hidden: true },
 ];
 
 const GROUP_ORDER: SectionGroup[] = ["main", "storage", "account"];

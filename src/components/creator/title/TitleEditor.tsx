@@ -1100,33 +1100,8 @@ function MetadataTab({
         </section>
       </div>
 
-      {/* Festivals + Awards */}
+      {/* Awards */}
       <div className="grid md:grid-cols-2 gap-6">
-        <section>
-          <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Festival information</h4>
-          <RepeatList
-            items={meta.festivals}
-            disabled={readOnly}
-            onChange={(v) => upd("festivals", v as any)}
-            blank={() => ({ name: "", year: null, award: "", selection_type: "", location: "", url: "" } as any)}
-            addLabel="Add festival"
-            render={(f: any, set) => (
-              <div className="grid sm:grid-cols-2 gap-2">
-                <TextInput placeholder="Festival name" value={f.name} disabled={readOnly}
-                  onChange={(e) => set({ ...f, name: e.target.value })} />
-                <TextInput type="number" min={1900} max={2100} placeholder="Year / edition"
-                  value={f.year ?? ""} disabled={readOnly}
-                  onChange={(e) => set({ ...f, year: e.target.value ? Number(e.target.value) : null })} />
-                <TextInput placeholder="Selection (e.g. Official Selection)" value={f.selection_type ?? ""} disabled={readOnly}
-                  onChange={(e) => set({ ...f, selection_type: e.target.value })} />
-                <TextInput placeholder="Location (optional)" value={f.location ?? ""} disabled={readOnly}
-                  onChange={(e) => set({ ...f, location: e.target.value })} />
-                <TextInput placeholder="URL (optional)" value={f.url ?? ""} disabled={readOnly}
-                  onChange={(e) => set({ ...f, url: e.target.value })} className="sm:col-span-2" />
-              </div>
-            )}
-          />
-        </section>
         <section>
           <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Awards</h4>
           <RepeatList

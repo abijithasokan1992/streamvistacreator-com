@@ -538,7 +538,8 @@ function SubmissionTab({
   const posterAsset = assets.find((a) => a.category === "poster" && a.is_primary);
 
   return (
-    <div className="space-y-6">
+    <div className="grid lg:grid-cols-[1fr_320px] gap-6">
+      <div className="space-y-6 min-w-0">
       {/* A. Submission Readiness */}
       <section className="rounded-lg border border-border/40 p-4 bg-card/30">
         <div className="flex items-center justify-between gap-3">

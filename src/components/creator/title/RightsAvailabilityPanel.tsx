@@ -212,87 +212,100 @@ export function RightsAvailabilityPanel({ meta, setMeta, readOnly, isFree = fals
         </div>
       )}
 
-      {/* 4. Exclusivity & deal preference */}
-      <div className="grid sm:grid-cols-2 gap-4">
-        <div>
-          <SectionLabel>Exclusivity</SectionLabel>
-          <div className="flex flex-wrap gap-2 mt-1">
-            {(["non_exclusive", "exclusive"] as const).map((v) => (
-              <button
-                key={v}
-                type="button"
-                disabled={readOnly}
-                onClick={() => update({ exclusivity: v })}
-                className={cn(
-                  "text-xs px-3 py-1.5 rounded-md border transition",
-                  c.exclusivity === v
-                    ? "bg-accent/20 border-accent/50 text-foreground"
-                    : "border-border/40 text-muted-foreground hover:bg-secondary/30",
-                  readOnly && "opacity-60",
-                )}
-              >
-                {v === "non_exclusive" ? "Non-exclusive" : "Exclusive"}
-              </button>
-            ))}
+      {/* 4. Exclusivity & deal preference — free path locks to Non-exclusive + Revenue Share. */}
+      {isFree ? (
+        <div className="grid sm:grid-cols-2 gap-3">
+          <div className="rounded-md border border-border/40 bg-background/40 px-3 py-2">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Exclusivity</div>
+            <div className="text-sm font-medium mt-0.5">Non-exclusive</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-background/40 px-3 py-2">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Deal model</div>
+            <div className="text-sm font-medium mt-0.5">Revenue Share</div>
           </div>
         </div>
-
-        <div>
-          <SectionLabel>Deal model</SectionLabel>
-          <div className="flex flex-wrap gap-2 mt-1">
-            {([
-              { v: "revenue_share", l: "Revenue Share" },
-              { v: "mg", l: "Minimum Guarantee" },
-              { v: "outright", l: "Outright Sale" },
-              { v: "open", l: "Open to Discussion" },
-            ] as const).map(({ v, l }) => (
-              <button
-                key={v}
-                type="button"
-                disabled={readOnly}
-                onClick={() => update({ deal_model: v })}
-                className={cn(
-                  "text-xs px-3 py-1.5 rounded-md border transition",
-                  c.deal_model === v
-                    ? "bg-accent/20 border-accent/50 text-foreground"
-                    : "border-border/40 text-muted-foreground hover:bg-secondary/30",
-                  readOnly && "opacity-60",
-                )}
-              >
-                {l}
-              </button>
-            ))}
+      ) : (
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <SectionLabel>Exclusivity</SectionLabel>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {(["non_exclusive", "exclusive"] as const).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  disabled={readOnly}
+                  onClick={() => update({ exclusivity: v })}
+                  className={cn(
+                    "text-xs px-3 py-1.5 rounded-md border transition",
+                    c.exclusivity === v
+                      ? "bg-accent/20 border-accent/50 text-foreground"
+                      : "border-border/40 text-muted-foreground hover:bg-secondary/30",
+                    readOnly && "opacity-60",
+                  )}
+                >
+                  {v === "non_exclusive" ? "Non-exclusive" : "Exclusive"}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
 
-        <div>
-          <SectionLabel>Minimum expected deal value (optional)</SectionLabel>
-          <input
-            type="number"
-            min={0}
-            disabled={readOnly}
-            value={c.min_deal_value ?? ""}
-            onChange={(e) =>
-              update({ min_deal_value: e.target.value ? Number(e.target.value) : null })
-            }
-            placeholder="e.g. 500000"
-            className="w-full bg-background border border-border/40 rounded-md px-3 py-1.5 text-sm disabled:opacity-60"
-          />
-        </div>
+          <div>
+            <SectionLabel>Deal model</SectionLabel>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {([
+                { v: "revenue_share", l: "Revenue Share" },
+                { v: "mg", l: "Minimum Guarantee" },
+                { v: "outright", l: "Outright Sale" },
+                { v: "open", l: "Open to Discussion" },
+              ] as const).map(({ v, l }) => (
+                <button
+                  key={v}
+                  type="button"
+                  disabled={readOnly}
+                  onClick={() => update({ deal_model: v })}
+                  className={cn(
+                    "text-xs px-3 py-1.5 rounded-md border transition",
+                    c.deal_model === v
+                      ? "bg-accent/20 border-accent/50 text-foreground"
+                      : "border-border/40 text-muted-foreground hover:bg-secondary/30",
+                    readOnly && "opacity-60",
+                  )}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
+          </div>
 
-        <div className="flex items-end">
-          <label className="inline-flex items-center gap-2 text-xs cursor-pointer select-none">
+          <div>
+            <SectionLabel>Minimum expected deal value (optional)</SectionLabel>
             <input
-              type="checkbox"
+              type="number"
+              min={0}
               disabled={readOnly}
-              checked={c.open_to_investors}
-              onChange={(e) => update({ open_to_investors: e.target.checked })}
-              className="accent-accent"
+              value={c.min_deal_value ?? ""}
+              onChange={(e) =>
+                update({ min_deal_value: e.target.value ? Number(e.target.value) : null })
+              }
+              placeholder="e.g. 500000"
+              className="w-full bg-background border border-border/40 rounded-md px-3 py-1.5 text-sm disabled:opacity-60"
             />
-            Open to investor discussions
-          </label>
+          </div>
+
+          <div className="flex items-end">
+            <label className="inline-flex items-center gap-2 text-xs cursor-pointer select-none">
+              <input
+                type="checkbox"
+                disabled={readOnly}
+                checked={c.open_to_investors}
+                onChange={(e) => update({ open_to_investors: e.target.checked })}
+                className="accent-accent"
+              />
+              Open to investor discussions
+            </label>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 5. Notes */}
       <div>

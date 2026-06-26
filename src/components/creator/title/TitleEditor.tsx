@@ -369,51 +369,62 @@ export function TitleEditor({
           </div>
         )}
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto px-3 sm:px-5 py-4 sm:py-5">
-          {!title || !meta ? (
-            <div className="grid place-items-center py-16">
-              <Loader2 className="w-4 h-4 animate-spin text-accent" />
-            </div>
-          ) : (
-            <>
-              {tab === "overview" && (
-                <OverviewSnapshot title={title} meta={meta} assets={assets} timeline={timeline} />
-              )}
-              {tab === "metadata" && (
-                <MetadataTab meta={meta} setMeta={setMeta} readOnly={metadataLocked} />
-              )}
-              {tab === "assets" && (
-                <div className="space-y-8">
-                  <AssetTab cat="feature_film" label="Master File"
-                    assets={byCat(["feature_film"])} titleId={title.id}
-                    locked={assetsLockedFor("feature_film")} onUploaded={reload} accept="video/*" />
-                  <AssetTab cat="trailer" label="Trailer"
-                    assets={byCat(["trailer"])} titleId={title.id}
-                    locked={assetsLockedFor("trailer")} onUploaded={reload} accept="video/*" />
-                  <AssetTab cat="poster" label="Poster"
-                    assets={byCat(["poster"])} titleId={title.id}
-                    locked={assetsLockedFor("poster")} onUploaded={reload} accept="image/*" />
-                </div>
-              )}
-              {tab === "legal" && (
-                <div className="space-y-8">
-                  <AssetTab cat="censor_certificate" label="Censor Certificate"
-                    assets={byCat(["censor_certificate", "censor_cert"])} titleId={title.id}
-                    locked={assetsLockedFor("censor_certificate")} onUploaded={reload} accept="application/pdf,image/*" />
-                  <AssetTab cat="ownership_documents" label="Ownership Documents"
-                    assets={byCat(["ownership_documents", "ownership"])} titleId={title.id}
-                    locked={assetsLockedFor("ownership_documents")} onUploaded={reload} accept="application/pdf,image/*" />
-                  <RightsAvailabilityPanel meta={meta} setMeta={setMeta} readOnly={metadataLocked} />
-                </div>
-              )}
-              {tab === "submission" && (
-                <SubmissionTab title={title} readiness={readiness} local={localChecklist!} assets={assets} meta={meta} onJumpTab={setTab} />
-              )}
-            </>
-
-          )}
+        {/* Body — full workspace width */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="px-4 sm:px-6 lg:px-8 py-5 sm:py-6 max-w-[1600px] mx-auto w-full">
+            {!title || !meta ? (
+              <div className="grid place-items-center py-16">
+                <Loader2 className="w-4 h-4 animate-spin text-accent" />
+              </div>
+            ) : (
+              <>
+                {tab === "overview" && (
+                  <OverviewSnapshot title={title} meta={meta} assets={assets} timeline={timeline} />
+                )}
+                {tab === "metadata" && (
+                  <MetadataTab meta={meta} setMeta={setMeta} readOnly={metadataLocked} />
+                )}
+                {tab === "assets" && (
+                  <div className="space-y-8">
+                    {/* 1. Trailer */}
+                    <AssetTab cat="trailer" label="Trailer"
+                      assets={byCat(["trailer"])} titleId={title.id}
+                      locked={assetsLockedFor("trailer")} onUploaded={reload} accept="video/*" />
+                    {/* 2. Poster — 4-slot artwork grid (slot 1 live, slots 2-4 reserved). */}
+                    <PosterGrid
+                      titleId={title.id}
+                      assets={byCat(["poster"])}
+                      locked={assetsLockedFor("poster")}
+                      onUploaded={reload}
+                    />
+                    {/* 3. Master File */}
+                    <AssetTab cat="feature_film" label="Master File"
+                      assets={byCat(["feature_film"])} titleId={title.id}
+                      locked={assetsLockedFor("feature_film")} onUploaded={reload} accept="video/*" />
+                    {/* 4. Existing Contracts (renamed from Ownership Documents) */}
+                    <AssetTab cat="ownership_documents" label="Existing Contracts"
+                      description="Contracts, agreements, chain-of-title and existing rights paperwork."
+                      assets={byCat(["ownership_documents", "ownership"])} titleId={title.id}
+                      locked={assetsLockedFor("ownership_documents")} onUploaded={reload}
+                      accept="application/pdf,image/*" />
+                  </div>
+                )}
+                {tab === "legal" && (
+                  <div className="space-y-8">
+                    <AssetTab cat="censor_certificate" label="Censor Certificate"
+                      assets={byCat(["censor_certificate", "censor_cert"])} titleId={title.id}
+                      locked={assetsLockedFor("censor_certificate")} onUploaded={reload} accept="application/pdf,image/*" />
+                    <RightsAvailabilityPanel meta={meta} setMeta={setMeta} readOnly={metadataLocked} isFree={isFree} />
+                  </div>
+                )}
+                {tab === "submission" && (
+                  <SubmissionTab title={title} readiness={readiness} local={localChecklist!} assets={assets} meta={meta} onJumpTab={setTab} isFree={isFree} />
+                )}
+              </>
+            )}
+          </div>
         </div>
+      </div>
       </div>
       <FreeSubmissionTermsModal
         open={termsOpen}

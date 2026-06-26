@@ -1039,19 +1039,26 @@ function MetadataTab({
             onChange={(total) => upd("runtime_minutes", total)} />
         </Field>
         <Field label="Certification" hint="Censor / age rating issued for the title.">
-          <SelectInput
-            value={(meta as any).certification ?? ""}
-            disabled={readOnly}
-            options={["U", "U/A", "A", "S", "Unrated / Not certified", "Other"]}
-            placeholder="Select certification…"
-            onChange={(v) => {
-              const map: Record<string, string> = {
-                "U": "U", "U/A": "U/A", "A": "A", "S": "S",
-                "Unrated / Not certified": "unrated", "Other": "other",
-              };
-              setMeta({ ...meta, ...({ certification: (map[v] ?? "") } as any) });
-            }}
-          />
+          {(() => {
+            const stored = (meta as any).certification ?? "";
+            const toLabel: Record<string, string> = {
+              "U": "U", "U/A": "U/A", "A": "A", "S": "S",
+              "unrated": "Unrated / Not certified", "other": "Other",
+            };
+            const fromLabel: Record<string, string> = {
+              "U": "U", "U/A": "U/A", "A": "A", "S": "S",
+              "Unrated / Not certified": "unrated", "Other": "other",
+            };
+            return (
+              <SelectInput
+                value={toLabel[stored] ?? ""}
+                disabled={readOnly}
+                options={["U", "U/A", "A", "S", "Unrated / Not certified", "Other"]}
+                placeholder="Select certification…"
+                onChange={(v) => setMeta({ ...meta, ...({ certification: (fromLabel[v] ?? "") } as any) })}
+              />
+            );
+          })()}
         </Field>
         <Field label="Rights owner" hint="Auto-filled from your profile — editable.">
           <TextInput value={meta.rights_owner} disabled={readOnly}

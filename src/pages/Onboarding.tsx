@@ -94,6 +94,7 @@ export default function Onboarding() {
       studio_slug: studioSlug,
       whatsapp: whatsapp.trim() || null,
       professional_role: professionalRole,
+      access_authorization_code: accessCode.trim() || null,
       plan_tier: "free",
       onboarding_step: "done",
     }, { onConflict: "user_id" });

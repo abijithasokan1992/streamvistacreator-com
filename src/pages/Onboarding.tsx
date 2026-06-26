@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Loader2, ArrowRight, Sparkles, SkipForward } from "lucide-react";
+import { Loader2, ArrowRight, Sparkles, SkipForward, KeyRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, dashboardForRole } from "@/hooks/useAuth";
 import CinematicOnboarding from "@/components/CinematicOnboarding";
@@ -35,6 +35,9 @@ export default function Onboarding() {
   const [professionalRole, setProfessionalRole] = useState("");
   const [studioName, setStudioName] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
+  const [accessCode, setAccessCode] = useState("");
+
+  const accessCodeRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (loading) return;
@@ -42,7 +45,7 @@ export default function Onboarding() {
     (async () => {
       const { data } = await supabase
         .from("user_profiles")
-        .select("first_name,last_name,studio_name,whatsapp,professional_role,onboarding_step")
+        .select("first_name,last_name,studio_name,whatsapp,professional_role,onboarding_step,access_authorization_code")
         .eq("user_id", user.id)
         .maybeSingle();
       if (data) {
@@ -51,6 +54,7 @@ export default function Onboarding() {
         setStudioName(data.studio_name ?? "");
         setWhatsapp(data.whatsapp ?? "");
         setProfessionalRole((data as any).professional_role ?? "");
+        setAccessCode((data as any).access_authorization_code ?? "");
         if (data.onboarding_step === "done") {
           navigate(dashboardForRole(role ?? "client"), { replace: true });
           return;
@@ -59,6 +63,13 @@ export default function Onboarding() {
       setHydrating(false);
     })();
   }, [user, loading, role, navigate]);
+
+  // Auto-focus the Access Authorization Code once the form is visible.
+  useEffect(() => {
+    if (hydrating || showCinematic) return;
+    const t = window.setTimeout(() => accessCodeRef.current?.focus(), 80);
+    return () => window.clearTimeout(t);
+  }, [hydrating, showCinematic]);
 
   const finish = async () => {
     if (!user) return;
@@ -83,6 +94,7 @@ export default function Onboarding() {
       studio_slug: studioSlug,
       whatsapp: whatsapp.trim() || null,
       professional_role: professionalRole,
+      access_authorization_code: accessCode.trim() || null,
       plan_tier: "free",
       onboarding_step: "done",
     }, { onConflict: "user_id" });
@@ -107,6 +119,7 @@ export default function Onboarding() {
       first_name: firstName.trim() || "Creator",
       display_name: firstName.trim() || "Creator",
       professional_role: professionalRole || "Creator",
+      access_authorization_code: accessCode.trim() || null,
       plan_tier: "free",
       onboarding_step: "done",
     }, { onConflict: "user_id" });
@@ -167,6 +180,27 @@ export default function Onboarding() {
               <option value="">Your role *</option>
               {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
+          </div>
+
+          <div className="mt-3">
+            <label htmlFor="access-auth-code" className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.2em] text-muted-foreground mb-1.5 font-mono">
+              <KeyRound className="w-3 h-3 text-accent" />
+              Access Authorization Code
+            </label>
+            <input
+              id="access-auth-code"
+              ref={accessCodeRef}
+              type="text"
+              autoComplete="off"
+              spellCheck={false}
+              value={accessCode}
+              onChange={(e) => setAccessCode(e.target.value.slice(0, 64))}
+              placeholder="Optional — enter if you were issued one"
+              className="w-full h-12 px-4 rounded-xl bg-input/40 border border-accent/30 text-sm font-mono tracking-wider placeholder:font-sans placeholder:tracking-normal placeholder:text-muted-foreground outline-none focus:border-accent/70 focus:bg-input/70"
+            />
+            <p className="mt-1 text-[10px] text-muted-foreground/70">
+              Stored privately with your onboarding record for admin review.
+            </p>
           </div>
 
           {!showOptional ? (

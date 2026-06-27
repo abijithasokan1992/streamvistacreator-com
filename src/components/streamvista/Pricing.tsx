@@ -2,6 +2,7 @@ import { Check, ArrowRight, Crown, HardDrive, Layers, Loader2 } from "lucide-rea
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { usePublicPlans, withGst } from "@/hooks/usePublicPlans";
+import { GlobalCheckout } from "./GlobalCheckout";
 
 /**
  * Public pricing — three commercial blocks that match what the MVP actually does.
@@ -161,6 +162,10 @@ export const Pricing = () => {
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
+
+        <GlobalCheckout />
+
+
 
 
 

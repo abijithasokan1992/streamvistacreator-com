@@ -163,6 +163,10 @@ export const Pricing = () => {
           </Link>
         </div>
 
+        <GlobalCheckout />
+
+
+
 
 
         <p className="text-center text-xs text-muted-foreground mt-8 max-w-2xl mx-auto">

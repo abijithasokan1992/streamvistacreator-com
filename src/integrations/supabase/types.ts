@@ -7413,6 +7413,7 @@ export type Database = {
           personal_logo_url: string | null
           plan_tier: string
           professional_role: string | null
+          purchased_title_slots: number
           storage_used_mb: number
           studio_name: string | null
           studio_slug: Database["public"]["Enums"]["studio_slug"]
@@ -7443,6 +7444,7 @@ export type Database = {
           personal_logo_url?: string | null
           plan_tier?: string
           professional_role?: string | null
+          purchased_title_slots?: number
           storage_used_mb?: number
           studio_name?: string | null
           studio_slug?: Database["public"]["Enums"]["studio_slug"]
@@ -7473,6 +7475,7 @@ export type Database = {
           personal_logo_url?: string | null
           plan_tier?: string
           professional_role?: string | null
+          purchased_title_slots?: number
           storage_used_mb?: number
           studio_name?: string | null
           studio_slug?: Database["public"]["Enums"]["studio_slug"]

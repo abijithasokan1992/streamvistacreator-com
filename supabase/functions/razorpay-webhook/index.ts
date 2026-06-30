@@ -196,6 +196,56 @@ async function processEvent(supabase: any, event: any, creds: any): Promise<void
         await supabase.rpc("revoke_creator_role", { _user_id: userId });
       }
     }
+
+    // Welcome + founder notification on first activation
+    if (userId && type === "subscription.activated") {
+      try {
+        const { data: prof } = await supabase
+          .from("user_profiles")
+          .select("first_name,last_name,full_name,display_name")
+          .eq("user_id", userId).maybeSingle();
+        const { data: authRes } = await supabase.auth.admin.getUserById(userId);
+        const email = authRes?.user?.email || "";
+        const name = (prof as any)?.full_name || (prof as any)?.display_name ||
+          [(prof as any)?.first_name, (prof as any)?.last_name].filter(Boolean).join(" ").trim() || "";
+        const displayName = isStorageSub
+          ? `Storage Add-on${subscription?.quantity ? ` × ${subscription.quantity} TB` : ""}`
+          : "Creator Plan (Razorpay)";
+        const founderEmail = Deno.env.get("FOUNDER_ALERT_EMAIL") || "Arunasankarca@gmail.com";
+        const occurredAt = new Date().toISOString();
+        const tdBuyer = {
+          audience: "buyer", productName: displayName,
+          priceLabel: subscription?.quantity ? `${subscription.quantity} × storage block / month` : "monthly",
+          quantity: subscription?.quantity || 1,
+          entitlementSummary: isStorageSub
+            ? `+${(subscription?.quantity || 1) * 1024} GB workspace storage`
+            : "Creator role granted",
+          buyerEmail: email, buyerName: name,
+          paddleSubscriptionId: subscription?.id, occurredAt,
+        };
+        if (email) {
+          await supabase.functions.invoke("send-transactional-email", {
+            body: { templateName: "purchase-confirmation", recipientEmail: email,
+              idempotencyKey: `rzp-buyer-${subscription?.id}`, templateData: tdBuyer },
+          });
+        }
+        await supabase.functions.invoke("send-transactional-email", {
+          body: { templateName: "purchase-confirmation", recipientEmail: founderEmail,
+            idempotencyKey: `rzp-founder-${subscription?.id}`,
+            templateData: { ...tdBuyer, audience: "founder" } },
+        });
+        await supabase.from("agent_events").insert({
+          agent: "chief", severity: "info",
+          title: `Razorpay subscription · ${displayName}`,
+          summary: `${name || email || userId} · ${tdBuyer.entitlementSummary}`,
+          payload: {
+            source: "razorpay-webhook", razorpay_subscription_id: subscription?.id,
+            user_id: userId, buyer_email: email, is_storage_sub: isStorageSub,
+          },
+          created_by: userId,
+        });
+      } catch (e) { console.error("razorpay activation notify failed", e); }
+    }
   }
 
   if (!orderId && !subscription?.id) {

@@ -460,12 +460,8 @@ function ActiveSubscriptionCancel({ userId }: { userId: string }) {
       </div>
     </div>
   );
-}
-        </>
-      )}
-    </div>
-  );
-}
+
+
 
 /* ---------------- Statements (purchases) ---------------- */
 function Statements({ userId }: { userId: string }) {

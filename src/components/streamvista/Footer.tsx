@@ -7,7 +7,6 @@ const LEGAL_LINKS = [
   { to: "/privacy", label: "Privacy" },
   { to: "/ip-copyright", label: "IP & DMCA" },
   { to: "/contact", label: "Contact" },
-  { to: "/contact", label: "Contact" },
 ];
 
 const TRUST: { icon: LucideIcon; label: string }[] = [

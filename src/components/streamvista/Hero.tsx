@@ -97,12 +97,12 @@ export const Hero = () => {
 
   const subtitle =
     nonEmpty(current?.subheadline) ??
-    "Intake, storage, operations and licensing in one secure operating layer";
+    "From Camera to Licensing. One Secure Platform for Professional Content Operations.";
   const ctaLabel = nonEmpty(current?.cta_label) ?? "Get Started";
   const ctaHref = nonEmpty(current?.cta_url) ?? "/auth?intent=signup";
-  const cta2Label = nonEmpty(current?.cta2_label) ?? "Talk to StreamVista";
-  const cta2Href = nonEmpty(current?.cta2_url) ?? "/contact";
-  const isSlider = settings.mode === "slider" && slides.length > 1;
+  const cta2Label = nonEmpty(current?.cta2_label) ?? "Book a Demo";
+  const cta2Href = nonEmpty(current?.cta2_url) ?? "/contact?intent=demo";
+  const isSlider = false;
 
   return (
     <section

@@ -1,8 +1,6 @@
 import { Navigate } from "react-router-dom";
 import { Navbar } from "@/components/streamvista/Navbar";
 import { Hero } from "@/components/streamvista/Hero";
-import { HeroReel } from "@/components/streamvista/HeroReel";
-import { SuccessStories } from "@/components/streamvista/SuccessStories";
 import { PlatformOverview } from "@/components/streamvista/PlatformOverview";
 import { Partners } from "@/components/streamvista/Partners";
 import { Workflow } from "@/components/streamvista/Workflow";
@@ -21,8 +19,8 @@ const Index = () => {
   return (
     <main className="min-h-dvh home-serif">
       <Seo
-        title="StreamVista — Secure cinema & content cloud, intake to deal"
-        description="One secure cinema and content cloud for creators, studios and licensing teams — ingest, store, prepare, control access and license your titles end-to-end."
+        title="StreamVista Cloud X — Secure content operations, camera to licensing"
+        description="One secure platform for professional content operations — ingest, store, prepare and license your titles end-to-end."
         path="/"
         jsonLd={[
           {
@@ -35,12 +33,10 @@ const Index = () => {
       />
       <Navbar />
       <Hero />
-      <HeroReel />
-      <SuccessStories />
       <PlatformOverview />
       <Workflow />
-      <Partners />
       <WhyStreamVista />
+      <Partners />
       <FinalCta />
       <Footer />
     </main>

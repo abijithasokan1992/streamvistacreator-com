@@ -97,12 +97,12 @@ export const Hero = () => {
 
   const subtitle =
     nonEmpty(current?.subheadline) ??
-    "Intake, storage, operations and licensing in one secure operating layer";
+    "From Camera to Licensing. One Secure Platform for Professional Content Operations.";
   const ctaLabel = nonEmpty(current?.cta_label) ?? "Get Started";
   const ctaHref = nonEmpty(current?.cta_url) ?? "/auth?intent=signup";
-  const cta2Label = nonEmpty(current?.cta2_label) ?? "Talk to StreamVista";
-  const cta2Href = nonEmpty(current?.cta2_url) ?? "/contact";
-  const isSlider = settings.mode === "slider" && slides.length > 1;
+  const cta2Label = nonEmpty(current?.cta2_label) ?? "Book a Demo";
+  const cta2Href = nonEmpty(current?.cta2_url) ?? "/contact?intent=demo";
+  const isSlider = false;
 
   return (
     <section
@@ -228,7 +228,7 @@ const FallbackCopy = () => (
     <DefaultHeadline />
     <div className="space-y-7 max-w-md">
       <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-        Intake, storage, operations and licensing in one secure operating layer
+        From Camera to Licensing. One Secure Platform for Professional Content Operations.
       </p>
       <div className="flex flex-col sm:flex-row gap-3">
         <Link
@@ -239,10 +239,10 @@ const FallbackCopy = () => (
           <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
         </Link>
         <Link
-          to="/contact"
+          to="/contact?intent=demo"
           className="group relative h-14 inline-flex items-center justify-center gap-3 px-6 border border-border/60 hover:border-accent/60 hover:bg-accent/5 text-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md flex-1 transition-colors"
         >
-          <span>Talk to StreamVista</span>
+          <span>Book a Demo</span>
         </Link>
       </div>
     </div>

@@ -43,9 +43,6 @@ export const Partners = () => (
         <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-4xl md:text-6xl">
           Our <span className="gradient-text">Partners</span>
         </h2>
-        <p className="mt-5 text-sm md:text-base text-text-secondary max-w-2xl md:mx-0 mx-auto">
-          StreamVista titles reach audiences through trusted platforms across India and beyond.
-        </p>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-px bg-border/60 border border-border/60 rounded-2xl overflow-hidden">

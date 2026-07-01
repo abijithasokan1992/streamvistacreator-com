@@ -6,7 +6,6 @@ const LEGAL_LINKS = [
   { to: "/terms", label: "Terms" },
   { to: "/privacy", label: "Privacy" },
   { to: "/ip-copyright", label: "IP & DMCA" },
-  { to: "/refund", label: "Refund" },
   { to: "/contact", label: "Contact" },
 ];
 

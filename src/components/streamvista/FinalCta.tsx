@@ -2,9 +2,9 @@ import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
 /**
- * Final CTA — the close on the homepage. Two doors:
- *   • Request access  → /auth?intent=signup
- *   • Talk to StreamVista → /contact (founder-assisted)
+ * Final CTA — closing conversion block. Two doors:
+ *   • Get Started → /auth?intent=signup
+ *   • Book a Demo → /contact
  */
 export const FinalCta = () => (
   <section id="cta" className="py-24 relative overflow-hidden">
@@ -13,13 +13,10 @@ export const FinalCta = () => (
     <div className="container relative">
       <div className="max-w-4xl mx-auto text-center animate-fade-in">
         <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-4xl md:text-6xl lg:text-7xl">
-          Move your catalogue
+          Ready to move your catalogue
           <br />
-          <span className="gradient-text">into one secure cloud</span>
+          <span className="gradient-text">into one secure cloud?</span>
         </h2>
-        <p className="mt-6 text-base md:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
-          Built in India for cinema operators worldwide.
-        </p>
 
         <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
           <Link
@@ -30,10 +27,10 @@ export const FinalCta = () => (
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
           <Link
-            to="/contact"
+            to="/contact?intent=demo"
             className="group h-14 inline-flex items-center justify-center gap-3 px-8 border border-border/60 hover:border-accent/60 hover:bg-accent/5 text-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md transition-colors"
           >
-            <span>Contact</span>
+            <span>Book a Demo</span>
           </Link>
         </div>
       </div>

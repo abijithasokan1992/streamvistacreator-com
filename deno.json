@@ -3,6 +3,6 @@
     "include": ["supabase/"]
   },
   "test": {
-    "include": ["supabase/"]
+    "include": ["supabase/functions/_shared/"]
   }
 }

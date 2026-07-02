@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Loader2, LogOut, ShieldCheck, Crown, RefreshCw, Copy, Check, Wallet, Inbox, Users as UsersIcon, LayoutDashboard, HardDrive, LifeBuoy, Settings as SettingsIcon, ArrowRight, Package, FileText, ClipboardCheck, Megaphone, Code2, Image as ImageIcon, Briefcase, Activity, Server } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
@@ -99,6 +100,43 @@ function pathToDept(path: string, search: URLSearchParams): DeptKey {
   if (p.startsWith("/admin/comms") || p.startsWith("/admin/support") || p.startsWith("/admin/email") || p.startsWith("/admin/notifications")) return "comms";
   if (p.startsWith("/admin/system") || p.startsWith("/admin/homepage") || p.startsWith("/admin/cms") || p.startsWith("/admin/marketing") || p.startsWith("/admin/settings") || p.startsWith("/admin/audit") || p.startsWith("/admin/reports") || p.startsWith("/admin/security") || p.startsWith("/admin/vault") || p.startsWith("/admin/founder-vault")) return "system";
   return "dashboard";
+}
+
+// ---------------------------------------------------------------------------
+// Small helpers to keep ternary chains out of JSX
+// ---------------------------------------------------------------------------
+
+function getUserRoleLabel({
+  isSuperAdmin,
+  isAdmin,
+  isQcReviewer,
+  isLegalReviewer,
+}: {
+  isSuperAdmin: boolean;
+  isAdmin: boolean;
+  isQcReviewer: boolean;
+  isLegalReviewer: boolean;
+}): string {
+  if (isSuperAdmin) return "Super Admin";
+  if (isAdmin) return "Administrator";
+  if (isQcReviewer) return "QC Reviewer";
+  if (isLegalReviewer) return "Legal Reviewer";
+  return "Member";
+}
+
+function getConsoleTitle({
+  isSuperAdmin,
+  isQcReviewer,
+  isLegalReviewer,
+}: {
+  isSuperAdmin: boolean;
+  isQcReviewer: boolean;
+  isLegalReviewer: boolean;
+}): string {
+  if (isSuperAdmin) return "Platform Owner · Media Operations";
+  if (isQcReviewer) return "QC Reviewer Console";
+  if (isLegalReviewer) return "Legal Reviewer Console";
+  return "Admin Console";
 }
 
 
@@ -282,7 +320,7 @@ export default function Admin() {
                   {identityName}
                 </span>
                 <span className="text-[9px] text-muted-foreground uppercase tracking-wider truncate max-w-[160px]" title={user?.email ?? undefined}>
-                  {isSuperAdmin ? "Super Admin" : isAdmin ? "Administrator" : isQcReviewer ? "QC Reviewer" : isLegalReviewer ? "Legal Reviewer" : "Member"}
+                  {getUserRoleLabel({ isSuperAdmin, isAdmin, isQcReviewer, isLegalReviewer })}
                 </span>
               </div>
               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-1" />
@@ -506,7 +544,7 @@ function AdminMainPanel({
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight">
-            {isSuperAdmin ? "Platform Owner · Media Operations" : isQcReviewer ? "QC Reviewer Console" : isLegalReviewer ? "Legal Reviewer Console" : "Admin Console"}
+            {getConsoleTitle({ isSuperAdmin, isQcReviewer, isLegalReviewer })}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Departments on the left. Sub-sections appear inside each department.
@@ -520,7 +558,10 @@ function AdminMainPanel({
         onValueChange={(v) => setDept(v as DeptKey)}
         className="w-full"
       >
-        <TabsList className={`grid gap-1.5 h-auto p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-6 ${departments.length === 1 ? "grid-cols-1 max-w-xs" : "grid-cols-2 sm:grid-cols-4 lg:grid-cols-7"}`}>
+        <TabsList className={cn(
+          "grid gap-1.5 h-auto p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-6",
+          departments.length === 1 ? "grid-cols-1 max-w-xs" : "grid-cols-2 sm:grid-cols-4 lg:grid-cols-7",
+        )}>
           {departments.map((d) => (
             <DeptTab key={d.id} value={d.id} icon={d.icon} label={d.label} />
           ))}

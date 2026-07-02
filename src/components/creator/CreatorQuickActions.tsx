@@ -14,8 +14,8 @@ type DrawerKey = null | "readiness" | "upload" | "commercial";
 const READINESS_CHECKS = [
   "Title metadata complete (synopsis, genre, language, certification)",
   "Primary poster uploaded (slot 1)",
-  "Master file uploaded and verified",
-  "Trailer uploaded (optional but recommended)",
+  "Trailer uploaded and verified",
+  "Main film uploaded if you want to include the full-length file",
   "Rights & availability filled in Legal tab",
   "Existing contracts uploaded (if applicable)",
   "Commercial path selected (Revenue Share / Buy-out)",

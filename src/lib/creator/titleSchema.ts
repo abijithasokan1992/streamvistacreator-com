@@ -119,9 +119,8 @@ export const ASSET_CATEGORIES = [
 ] as const;
 export type AssetCategory = (typeof ASSET_CATEGORIES)[number];
 
-/** Categories required for MVP submission (server-enforced by submit_title_to_admin). */
+/** Categories surfaced in the MVP submission workspace. */
 export const MVP_CATEGORIES = [
-  "feature_film",
   "trailer",
   "poster",
   "censor_certificate",
@@ -233,4 +232,3 @@ export const PREMIUM_PLAN_TIERS: ReadonlyArray<{ value: string; label: string }>
   { value: "tier_50k",  label: "₹50,000 + GST" },
   { value: "tier_100k", label: "₹1,00,000 + GST" },
 ];
-

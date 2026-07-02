@@ -235,7 +235,7 @@ export function TitleEditor({
   const byCat = (cats: AssetCategory[]) => assets.filter((a) => cats.includes(a.category));
 
   return (
-    <div className="fixed inset-0 z-50 bg-background">
+    <div className="fixed inset-0 z-50 bg-background" data-testid="title-editor">
       <div className="bg-background w-full h-dvh flex flex-col">
         {/* === Workspace command shell — 3-zone header === */}
         <div className="border-b border-border/40 bg-card/30 backdrop-blur-sm">
@@ -397,8 +397,9 @@ export function TitleEditor({
                       locked={assetsLockedFor("poster")}
                       onUploaded={reload}
                     />
-                    {/* 3. Master File */}
-                    <AssetTab cat="feature_film" label="Master File"
+                    {/* 3. Main Film */}
+                    <AssetTab cat="feature_film" label="Main Film"
+                      description="Optional full-length master file for review."
                       assets={byCat(["feature_film"])} titleId={title.id}
                       locked={assetsLockedFor("feature_film")} onUploaded={reload} accept="video/*" />
                     {/* 4. Existing Contracts (renamed from Ownership Documents) */}
@@ -519,7 +520,6 @@ function SubmissionTab({
     { key: "language", label: "Set the original language",     ok: !!meta?.original_language?.trim(),             goto: "metadata" },
     { key: "runtime", label: "Set the runtime",                ok: (meta?.runtime_minutes ?? 0) > 0,              goto: "metadata" },
     { key: "rights_owner", label: "Confirm rights owner",      ok: !!meta?.rights_owner?.trim(),                  goto: "metadata" },
-    { key: "feature_film", label: "Upload the master file",    ok: !!(has.feature_film ?? local.hasFilm),         goto: "assets" },
     { key: "poster", label: "Upload poster artwork",           ok: !!(has.poster ?? local.hasPoster),             goto: "assets" },
     { key: "censor_certificate", label: "Upload censor certificate", ok: !!(has.censor_certificate ?? local.hasCensor), goto: "legal" },
     { key: "ownership_documents", label: "Upload existing contracts", ok: !!(has.ownership_documents ?? local.hasOwnership), goto: "assets" },

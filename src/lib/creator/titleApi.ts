@@ -419,7 +419,6 @@ export function evaluateChecklist(title: TitleRow, assets: TitleAsset[]): Submit
   };
   if (!c.hasTitle) c.missing.push("Title name");
   if (!c.hasSynopsis) c.missing.push("Synopsis");
-  if (!c.hasFilm) c.missing.push("Feature Film");
   if (!c.hasTrailer) c.missing.push("Trailer");
   if (!c.hasPoster) c.missing.push("Poster");
   if (!c.hasCensor) c.missing.push("Censor Certificate");

@@ -1,4 +1,5 @@
 import { Navigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import { Navbar } from "@/components/streamvista/Navbar";
 import { Hero } from "@/components/streamvista/Hero";
 import { PlatformOverview } from "@/components/streamvista/PlatformOverview";
@@ -13,7 +14,11 @@ import { dashboardForRole, useAuth } from "@/hooks/useAuth";
 const Index = () => {
   const { user, role, loading } = useAuth();
 
-  if (loading) return null;
+  if (loading) return (
+    <div className="min-h-dvh grid place-items-center text-muted-foreground">
+      <Loader2 className="w-5 h-5 animate-spin" />
+    </div>
+  );
   if (user) return <Navigate to={dashboardForRole(role)} replace />;
 
   return (

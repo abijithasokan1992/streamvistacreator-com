@@ -13,7 +13,7 @@ const GB = 1024 * 1024 * 1024;
 const MB = 1024 * 1024;
 const ACCEPT_MAP: Record<string, { exts: string[]; mimes: string[]; maxBytes: number; label: string }> = {
   trailer:             { exts: ["mp4","mov"],                   mimes: ["video/mp4","video/quicktime"],                            maxBytes: 5 * GB,   label: "Trailer" },
-  feature_film:        { exts: ["mp4","mov","mxf","mov"],       mimes: ["video/mp4","video/quicktime","application/mxf","video/x-prores"], maxBytes: 50 * GB,  label: "Feature Film" },
+  feature_film:        { exts: ["mp4","mov","mxf","mov"],       mimes: ["video/mp4","video/quicktime","application/mxf","video/x-prores"], maxBytes: 50 * GB,  label: "Main Film" },
   poster:              { exts: ["png","jpg","jpeg","webp"],     mimes: ["image/png","image/jpeg","image/webp"],                    maxBytes: 500 * MB, label: "Poster" },
   censor_certificate:  { exts: ["pdf"],                         mimes: ["application/pdf"],                                        maxBytes: 10 * MB,  label: "Censor Certificate" },
   ownership_documents: { exts: ["pdf"],                         mimes: ["application/pdf"],                                        maxBytes: 20 * MB,  label: "Ownership Documents" },

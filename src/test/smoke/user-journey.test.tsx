@@ -24,6 +24,13 @@ const {
   mockListTitles,
   mockFetchFreeTierStatus,
   mockCreateTitle,
+  mockGetTitle,
+  mockListAssets,
+  mockSubmitTitle,
+  mockEvaluateChecklist,
+  mockFetchReadiness,
+  mockFetchTitleTimeline,
+  mockSaveTitleMetadata,
   mockToastSuccess,
   mockToastError,
 } = vi.hoisted(() => ({
@@ -44,12 +51,84 @@ const {
   mockCreateTitle: vi.fn(async (_uid: string, _wid: string | null, _name: string) => ({
     id: "title-new",
     title: _name,
+    owner_user_id: _uid,
+    workspace_id: _wid,
+    synopsis: null,
+    language: null,
+    genre: null,
+    duration_minutes: null,
     status: "draft",
     locked: false,
-    metadata: { format: "feature_film" },
+    locked_at: null,
+    submitted_at: null,
+    approved_at: null,
+    published_at: null,
+    metadata: {
+      format: "feature_film",
+      synopsis: "",
+      genres: [],
+      runtime_minutes: 0,
+      production_company: "",
+      original_language: "",
+      rights_owner: "",
+      commercial: {
+        engagement_mode: "free_listing",
+        rights: { digital_ott: "available" },
+        territories: { worldwide: "available" },
+      },
+    },
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   })),
+  mockGetTitle: vi.fn(async (id: string) => ({
+    id,
+    owner_user_id: "user-1",
+    workspace_id: "workspace-1",
+    title: "My First Feature Film",
+    synopsis: null,
+    language: null,
+    genre: null,
+    duration_minutes: null,
+    status: "draft",
+    locked: false,
+    locked_at: null,
+    submitted_at: null,
+    approved_at: null,
+    published_at: null,
+    metadata: {
+      format: "feature_film",
+      synopsis: "",
+      genres: [],
+      runtime_minutes: 0,
+      production_company: "",
+      original_language: "",
+      rights_owner: "",
+      commercial: {
+        engagement_mode: "free_listing",
+        rights: { digital_ott: "available" },
+        territories: { worldwide: "available" },
+      },
+    },
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  })),
+  mockListAssets: vi.fn(async () => [] as any[]),
+  mockSubmitTitle: vi.fn(async () => undefined),
+  mockEvaluateChecklist: vi.fn(() => ({
+    hasTitle: true,
+    hasSynopsis: false,
+    hasFilm: false,
+    hasTrailer: false,
+    hasPoster: false,
+    hasCensor: false,
+    hasOwnership: false,
+    censorRequired: true,
+    ready: false,
+    missing: ["Synopsis", "Trailer", "Poster", "Censor Certificate", "Ownership Documents"],
+  })),
+  mockFetchReadiness: vi.fn(async () => null),
+  mockFetchTitleTimeline: vi.fn(async () => []),
+  mockSaveTitleMetadata: vi.fn(async () => undefined),
   mockToastSuccess: vi.fn(),
   mockToastError: vi.fn(),
 }));
@@ -67,12 +146,13 @@ vi.mock("@/lib/creator/titleApi", () => ({
   listTitles: mockListTitles,
   createTitle: mockCreateTitle,
   findFirstActiveDraft: vi.fn(async () => null),
-  getTitle: vi.fn(async () => null),
-  listAssets: vi.fn(async () => []),
-  submitTitle: vi.fn(async () => ({ error: null })),
-  evaluateChecklist: vi.fn(async () => ({ items: [] })),
-  fetchReadiness: vi.fn(async () => null),
-  fetchTitleTimeline: vi.fn(async () => []),
+  getTitle: mockGetTitle,
+  listAssets: mockListAssets,
+  submitTitle: mockSubmitTitle,
+  evaluateChecklist: mockEvaluateChecklist,
+  fetchReadiness: mockFetchReadiness,
+  fetchTitleTimeline: mockFetchTitleTimeline,
+  saveTitleMetadata: mockSaveTitleMetadata,
 }));
 
 vi.mock("sonner", () => ({
@@ -136,12 +216,13 @@ vi.mock("@/lib/mailVoice", () => ({
 }));
 
 vi.mock("@/hooks/useWorkspaces", () => ({
-  useWorkspaces: () => ({ active: null }),
+  useWorkspaces: () => ({ active: { id: "workspace-1" } }),
 }));
 
 vi.mock("@/hooks/useTitleLock", () => ({
   useTitleLock: () => ({
     isLocked: false,
+    unlocks: [],
     isTabEditable: () => true,
     isSectionEditable: () => true,
   }),
@@ -156,15 +237,6 @@ vi.mock("@/components/creator/OnboardingChecklist", () => ({
 vi.mock("@/components/creator/CreatorTour", () => ({
   default: () => null,
   hasSeenCreatorTour: () => true,
-}));
-
-// TitleEditor stub — exposes an "Submit to Admin" button that fires onSubmitted
-vi.mock("@/components/creator/title/TitleEditor", () => ({
-  TitleEditor: ({ onSubmitted }: { onSubmitted: () => void }) => (
-    <div data-testid="title-editor">
-      <button onClick={onSubmitted}>Submit to Admin</button>
-    </div>
-  ),
 }));
 
 // AgreementGate stub — calls onAccepted after mount to skip the legal modal
@@ -446,13 +518,107 @@ describe("Stop 5 — Creating a new title", () => {
 describe("Stop 6 — Submit title to Admin", () => {
   const existingTitle = {
     id: "title-1",
+    owner_user_id: "user-1",
+    workspace_id: "workspace-1",
     title: "My First Feature Film",
+    synopsis: null,
+    language: null,
+    genre: null,
+    duration_minutes: null,
     status: "draft",
     locked: false,
-    metadata: { format: "feature_film" },
+    locked_at: null,
+    submitted_at: null,
+    approved_at: null,
+    published_at: null,
+    metadata: {
+      format: "feature_film",
+      synopsis: "A complete synopsis for admin review.",
+      genres: ["Drama"],
+      runtime_minutes: 122,
+      production_company: "Sunrise Studios",
+      original_language: "Malayalam",
+      rights_owner: "Sunrise Studios",
+      commercial: {
+        engagement_mode: "free_listing",
+        rights: { digital_ott: "available" },
+        territories: { worldwide: "available" },
+      },
+    },
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
+
+  const trailerOnlyReadyAssets = [
+    {
+      id: "asset-trailer",
+      title_id: "title-1",
+      upload_id: "upload-trailer",
+      category: "trailer",
+      is_primary: true,
+      created_at: new Date().toISOString(),
+      upload: {
+        id: "upload-trailer",
+        file_name: "trailer.mp4",
+        file_size: 1024,
+        mime_type: "video/mp4",
+        status: "ready",
+        object_key: "trailer.mp4",
+        created_at: new Date().toISOString(),
+      },
+    },
+    {
+      id: "asset-poster",
+      title_id: "title-1",
+      upload_id: "upload-poster",
+      category: "poster",
+      is_primary: true,
+      created_at: new Date().toISOString(),
+      upload: {
+        id: "upload-poster",
+        file_name: "poster.jpg",
+        file_size: 1024,
+        mime_type: "image/jpeg",
+        status: "ready",
+        object_key: "poster.jpg",
+        created_at: new Date().toISOString(),
+      },
+    },
+    {
+      id: "asset-censor",
+      title_id: "title-1",
+      upload_id: "upload-censor",
+      category: "censor_certificate",
+      is_primary: true,
+      created_at: new Date().toISOString(),
+      upload: {
+        id: "upload-censor",
+        file_name: "censor.pdf",
+        file_size: 1024,
+        mime_type: "application/pdf",
+        status: "ready",
+        object_key: "censor.pdf",
+        created_at: new Date().toISOString(),
+      },
+    },
+    {
+      id: "asset-ownership",
+      title_id: "title-1",
+      upload_id: "upload-ownership",
+      category: "ownership_documents",
+      is_primary: true,
+      created_at: new Date().toISOString(),
+      upload: {
+        id: "upload-ownership",
+        file_name: "rights.pdf",
+        file_size: 1024,
+        mime_type: "application/pdf",
+        status: "ready",
+        object_key: "rights.pdf",
+        created_at: new Date().toISOString(),
+      },
+    },
+  ];
 
   beforeEach(() => {
     mockUseAuth.mockReturnValue({
@@ -465,12 +631,42 @@ describe("Stop 6 — Submit title to Admin", () => {
     // Seed one existing draft title so the Edit button is visible
     mockListTitles.mockResolvedValue([existingTitle]);
     mockFetchFreeTierStatus.mockResolvedValue({
-      is_free: true,
-      can_create_draft: false, // limit hit to show locked state correctly
-      draft_count: 1,
+      is_free: false,
+      can_create_draft: true,
+      can_submit: true,
+      draft_count: 0,
       lifecycle_count: 0,
     });
+    mockGetTitle.mockResolvedValue(existingTitle);
+    mockListAssets.mockResolvedValue(trailerOnlyReadyAssets);
+    mockEvaluateChecklist.mockReturnValue({
+      hasTitle: true,
+      hasSynopsis: true,
+      hasFilm: false,
+      hasTrailer: true,
+      hasPoster: true,
+      hasCensor: true,
+      hasOwnership: true,
+      censorRequired: true,
+      ready: true,
+      missing: [],
+    });
+    mockFetchReadiness.mockResolvedValue({
+      ready: true,
+      missing: [],
+      has: {
+        feature_film: false,
+        trailer: true,
+        poster: true,
+        censor_certificate: true,
+        ownership_documents: true,
+      },
+    });
+    mockFetchTitleTimeline.mockResolvedValue([]);
+    mockSubmitTitle.mockResolvedValue(undefined);
+    mockSaveTitleMetadata.mockResolvedValue(undefined);
     mockToastSuccess.mockClear();
+    mockToastError.mockClear();
   });
   afterEach(cleanup);
 
@@ -485,15 +681,21 @@ describe("Stop 6 — Submit title to Admin", () => {
     expect(await screen.findByTestId("title-editor")).toBeInTheDocument();
   });
 
-  it("clicking 'Submit to Admin' fires toast.success('Submitted to Admin.')", async () => {
+  it("submits successfully with only a trailer attached and no main film", async () => {
     render(<MemoryRouter><MyTitlesSection /></MemoryRouter>);
     fireEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
     await screen.findByTestId("title-editor");
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /submit to admin/i })).toBeEnabled();
+    });
 
     fireEvent.click(screen.getByRole("button", { name: /submit to admin/i }));
 
     await waitFor(() => {
       expect(mockToastSuccess).toHaveBeenCalledWith("Submitted to Admin.");
     });
+    expect(mockToastError).not.toHaveBeenCalled();
+    expect(mockSubmitTitle).toHaveBeenCalledWith("title-1");
   });
 });

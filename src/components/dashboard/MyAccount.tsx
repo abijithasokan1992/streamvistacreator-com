@@ -380,17 +380,89 @@ function UpgradeSection({ currentTier, email, name, userId, onUpgraded }: { curr
             Subscribe — ₹{total.toLocaleString("en-IN")} / month
           </Button>
 
-          <div className="text-[11px] text-muted-foreground text-center">
-            To cancel or change your subscription, please{" "}
-            <a href="#" onClick={(e) => { e.preventDefault(); document.getElementById("support-form")?.scrollIntoView({ behavior: "smooth" }); }}
-              className="text-accent underline-offset-2 hover:underline">open a support ticket</a>{" "}
-            — self-serve cancellation is coming soon.
-          </div>
+          <ActiveSubscriptionCancel userId={userId} />
         </>
       )}
     </div>
   );
 }
+
+/* ---------------- Cancel active Razorpay subscription ---------------- */
+function ActiveSubscriptionCancel({ userId }: { userId: string }) {
+  const [active, setActive] = useState<any | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const load = async () => {
+    const { data } = await supabase
+      .from("subscriptions")
+      .select("id, razorpay_subscription_id, subscription_type, storage_quantity_tb, status, current_period_end, cancel_at_period_end, cancel_requested_at")
+      .eq("user_id", userId)
+      .not("razorpay_subscription_id", "is", null)
+      .in("status", ["active", "authenticated", "trialing", "past_due"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setActive(data || null);
+  };
+  useEffect(() => { void load(); }, [userId]);
+
+  if (!active) {
+    return (
+      <div className="text-[11px] text-muted-foreground text-center">
+        No active recurring subscription on this account.
+      </div>
+    );
+  }
+
+  const cancel = async () => {
+    setBusy(true);
+    const { error } = await supabase.functions.invoke("cancel-creator-storage", {
+      body: { subscriptionId: active.razorpay_subscription_id },
+    });
+    setBusy(false); setConfirming(false);
+    if (error) { toast.error(error.message || "Could not cancel"); return; }
+    toast.success("Cancellation scheduled — access continues until your current period ends.");
+    void load();
+  };
+
+  const periodEnd = active.current_period_end ? new Date(active.current_period_end).toLocaleDateString() : null;
+
+  return (
+    <div className="border rounded-xl p-4 text-sm space-y-3 bg-secondary/30">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div>
+          <div className="font-semibold">
+            {active.subscription_type === "storage"
+              ? `Storage add-on${active.storage_quantity_tb ? ` · ${active.storage_quantity_tb} TB` : ""}`
+              : "Creator plan"}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Status: <span className="capitalize">{active.status}</span>
+            {periodEnd && <> · renews {periodEnd}</>}
+          </div>
+        </div>
+        {active.cancel_at_period_end ? (
+          <Badge variant="outline" className="text-[10px]">Cancellation scheduled</Badge>
+        ) : confirming ? (
+          <div className="flex gap-2">
+            <Button size="sm" variant="destructive" onClick={cancel} disabled={busy}>
+              {busy ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+              Confirm cancel
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setConfirming(false)} disabled={busy}>Keep</Button>
+          </div>
+        ) : (
+          <Button size="sm" variant="outline" onClick={() => setConfirming(true)}>Cancel subscription</Button>
+        )}
+      </div>
+      <div className="text-[11px] text-muted-foreground">
+        Cancelling stops the next renewal. Your storage / plan stays active until the end of the current billing period.
+      </div>
+    </div>
+  );
+}
+
+
 
 /* ---------------- Statements (purchases) ---------------- */
 function Statements({ userId }: { userId: string }) {

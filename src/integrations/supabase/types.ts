@@ -7413,6 +7413,7 @@ export type Database = {
           personal_logo_url: string | null
           plan_tier: string
           professional_role: string | null
+          purchased_title_slots: number
           storage_used_mb: number
           studio_name: string | null
           studio_slug: Database["public"]["Enums"]["studio_slug"]
@@ -7443,6 +7444,7 @@ export type Database = {
           personal_logo_url?: string | null
           plan_tier?: string
           professional_role?: string | null
+          purchased_title_slots?: number
           storage_used_mb?: number
           studio_name?: string | null
           studio_slug?: Database["public"]["Enums"]["studio_slug"]
@@ -7473,6 +7475,7 @@ export type Database = {
           personal_logo_url?: string | null
           plan_tier?: string
           professional_role?: string | null
+          purchased_title_slots?: number
           storage_used_mb?: number
           studio_name?: string | null
           studio_slug?: Database["public"]["Enums"]["studio_slug"]
@@ -8561,6 +8564,7 @@ export type Database = {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
       }
+      email_queue_dispatch: { Args: never; Returns: undefined }
       enqueue_archive_job: { Args: { p_upload_id: string }; Returns: string }
       enqueue_email: {
         Args: { payload: Json; queue_name: string }

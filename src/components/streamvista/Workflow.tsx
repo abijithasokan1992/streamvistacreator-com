@@ -1,346 +1,97 @@
-import {
-  Upload,
-  Database,
-  Wrench,
-  ShieldCheck,
-  FileSignature,
-  FileLock2,
-  KeyRound,
-  Lock,
-  History,
-  Scale,
-  ArrowRight,
-} from "lucide-react";
+import { Upload, Database, Wrench, FileSignature, ArrowRight, ShieldCheck, Users, History, Fingerprint } from "lucide-react";
 
 /**
- * One Pipeline — a single visual workflow diagram.
- *
- * Five stages flow left-to-right as connected nodes on a glowing rail.
- * Security & Trust wraps the entire pipeline as a protective perimeter band.
- *
- * Premium, cinematic, product-grade. 2D with light-isometric depth.
+ * Workflow — a single, simple horizontal timeline with a compact trust strip.
+ * Ingest → Store → Prepare → License. No duplicated pipeline elsewhere.
  */
 
 const STEPS = [
-  {
-    icon: Upload,
-    step: "01",
-    title: "Ingest",
-    body: "Masters, posters, metadata in.",
-  },
-  {
-    icon: Database,
-    step: "02",
-    title: "Store",
-    body: "Encrypted, versioned, auditable.",
-  },
-  {
-    icon: Wrench,
-    step: "03",
-    title: "Prepare",
-    body: "QC, mastering, delivery-ready.",
-  },
-  {
-    icon: ShieldCheck,
-    step: "04",
-    title: "Control Access",
-    body: "NDA-gated, role-scoped.",
-  },
-  {
-    icon: FileSignature,
-    step: "05",
-    title: "License",
-    body: "Screeners, requests, contracts.",
-  },
+  { icon: Upload, step: "01", title: "Ingest", body: "Masters, posters, metadata in." },
+  { icon: Database, step: "02", title: "Store", body: "Encrypted, versioned, auditable." },
+  { icon: Wrench, step: "03", title: "Prepare", body: "QC, mastering, delivery-ready." },
+  { icon: FileSignature, step: "04", title: "License", body: "Screeners, requests, contracts." },
 ];
 
 const TRUST = [
-  { icon: FileLock2, label: "NDA Gate", body: "Signed before any frame loads." },
-  { icon: KeyRound, label: "Controlled Access", body: "Role-scoped, time-bound links." },
-  { icon: Lock, label: "Encrypted Storage", body: "At rest and in transit." },
-  { icon: History, label: "Audit Timeline", body: "Every view, every change." },
-  { icon: Scale, label: "DMCA / IP Protection", body: "Takedown + chain of custody." },
+  { icon: ShieldCheck, label: "Your masters stay protected." },
+  { icon: Users, label: "Share securely with approved people." },
+  { icon: History, label: "Know who accessed every file." },
+  { icon: Fingerprint, label: "Protect your intellectual property." },
 ];
 
 export const Workflow = () => (
-  <section id="workflow" className="py-16 sm:py-20 lg:py-24 border-b border-border/40 relative overflow-hidden">
-    {/* ambient backdrop */}
+  <section id="workflow" className="py-20 lg:py-24 border-b border-border/40 relative overflow-hidden">
     <div
       aria-hidden
-      className="pointer-events-none absolute inset-0 opacity-[0.45]"
+      className="pointer-events-none absolute inset-0 opacity-[0.35]"
       style={{
         backgroundImage:
-          "radial-gradient(circle at 30% 20%, hsl(var(--primary) / 0.18), transparent 55%), radial-gradient(circle at 75% 80%, hsl(var(--accent) / 0.14), transparent 55%)",
+          "radial-gradient(circle at 30% 20%, hsl(var(--primary) / 0.15), transparent 55%), radial-gradient(circle at 75% 80%, hsl(var(--accent) / 0.12), transparent 55%)",
       }}
     />
 
     <div className="container relative">
-      {/* ===== Section header ===== */}
-      <div className="mb-10 sm:mb-14 lg:mb-16 animate-fade-in text-center">
-        <div className="flex items-center justify-center gap-3 mb-4 sm:mb-5">
+      <div className="mb-12 lg:mb-14 animate-fade-in text-center">
+        <div className="flex items-center justify-center gap-3 mb-5">
           <div className="w-8 h-px bg-accent" />
-          <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">
-            One pipeline
-          </span>
+          <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">How it works</span>
           <div className="w-8 h-px bg-accent" />
         </div>
-        <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-3xl sm:text-4xl md:text-5xl lg:text-6xl">
+        <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-4xl md:text-5xl lg:text-6xl">
           From intake <span className="gradient-text">to deal</span>
         </h2>
-        <p className="mt-4 sm:mt-5 max-w-2xl mx-auto text-sm md:text-base text-muted-foreground">
-          Five stages, one secure rail. Content moves left to right — every step
-          wrapped by the same trust layer.
-        </p>
       </div>
 
-      {/* ===== Unified Pipeline Diagram ===== */}
-      <div
-        className="relative rounded-2xl border border-border/50 p-6 sm:p-8 lg:p-10 backdrop-blur-sm"
-        style={{
-          background:
-            "linear-gradient(180deg, hsl(var(--card) / 0.7), hsl(var(--background) / 0.5))",
-          boxShadow:
-            "inset 0 1px 0 hsl(var(--accent) / 0.15), 0 24px 64px -24px hsl(var(--primary) / 0.25)",
-        }}
-      >
-        {/* Corner accent marks — schematic diagram feel */}
-        <div aria-hidden className="absolute top-3 left-3 w-4 h-4 border-t border-l border-primary/30 rounded-tl-sm" />
-        <div aria-hidden className="absolute top-3 right-3 w-4 h-4 border-t border-r border-primary/30 rounded-tr-sm" />
-        <div aria-hidden className="absolute bottom-3 left-3 w-4 h-4 border-b border-l border-primary/30 rounded-bl-sm" />
-        <div aria-hidden className="absolute bottom-3 right-3 w-4 h-4 border-b border-r border-primary/30 rounded-br-sm" />
-        {/* ===== Security & Trust perimeter badge ===== */}
-        <div
-          className="absolute -top-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-4 py-1.5 rounded-full border border-accent/40 backdrop-blur-md"
-          style={{
-            background:
-              "linear-gradient(135deg, hsl(var(--primary) / 0.18), hsl(var(--accent) / 0.18))",
-            boxShadow:
-              "0 0 24px hsl(var(--primary) / 0.2), inset 0 1px 0 hsl(var(--accent) / 0.3)",
-          }}
-        >
-          <ShieldCheck className="w-3.5 h-3.5 text-accent" />
-          <span className="font-mono-tech text-[10px] uppercase tracking-[0.25em] text-accent">
-            Security & Trust
-          </span>
-        </div>
+      {/* Horizontal timeline */}
+      <ol className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-2 relative">
+        {STEPS.map(({ icon: Icon, step, title, body }, i) => (
+          <li key={step} className="relative flex flex-col items-center text-center">
+            <div
+              className="relative w-[88px] h-[88px] rounded-full flex flex-col items-center justify-center border-2 mb-4"
+              style={{
+                borderColor: "hsl(var(--primary) / 0.45)",
+                background:
+                  "linear-gradient(145deg, hsl(var(--surface-elevated) / 0.9), hsl(var(--surface) / 0.7))",
+                boxShadow:
+                  "0 12px 32px -10px hsl(var(--primary) / 0.35), inset 0 1px 0 hsl(var(--accent) / 0.25)",
+              }}
+            >
+              <Icon className="w-6 h-6 text-primary" />
+              <span className="mt-1 font-mono-tech text-[10px] uppercase tracking-[0.25em] text-accent">{step}</span>
+            </div>
+            <h3 className="font-display text-sm md:text-base font-bold uppercase tracking-tight">{title}</h3>
+            <p className="text-xs md:text-sm text-muted-foreground leading-relaxed mt-1 max-w-[24ch]">{body}</p>
+            {i < STEPS.length - 1 && (
+              <ArrowRight
+                aria-hidden
+                className="hidden lg:block absolute top-[42px] -right-3 w-5 h-5 text-primary/40"
+              />
+            )}
+          </li>
+        ))}
+      </ol>
 
-        {/* ===== Connecting rail (desktop only) ===== */}
-        <div
-          aria-hidden
-          className="hidden lg:block absolute left-[calc(10%+40px)] right-[calc(10%+40px)] top-[104px] h-[3px]"
-          style={{
-            background:
-              "linear-gradient(90deg, hsl(var(--accent) / 0.3), hsl(var(--primary) / 0.6) 30%, hsl(var(--primary) / 0.6) 70%, hsl(var(--accent) / 0.3))",
-            boxShadow: "0 0 20px hsl(var(--primary) / 0.35), 0 0 6px hsl(var(--accent) / 0.25)",
-          }}
-        />
-
-        {/* ===== Pipeline nodes =====
-            Mobile: horizontal snap-scroll carousel (purpose-built, no awkward stacking).
-            Tablet (sm): 2-col stacked with arrow connectors.
-            Desktop (lg): 5-col rail. */}
-        <div className="relative z-[1] -mx-6 sm:mx-0">
-          <ol
-            className="
-              flex sm:hidden gap-4 overflow-x-auto snap-x snap-mandatory
-              px-6 pb-4 -mb-4 scroll-smooth
-              [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
-            "
-            aria-label="Pipeline stages"
+      {/* Compact trust strip */}
+      <ul className="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {TRUST.map(({ icon: Icon, label }) => (
+          <li
+            key={label}
+            className="flex items-center gap-3 rounded-lg border border-border/40 bg-background/50 p-3.5"
           >
-            {STEPS.map(({ icon: Icon, step, title, body }) => (
-              <li
-                key={step}
-                className="snap-center shrink-0 basis-[78%] xs:basis-[68%] max-w-[280px]"
-              >
-                <div
-                  className="h-full flex flex-col items-center text-center rounded-2xl border border-border/50 p-5"
-                  style={{
-                    background:
-                      "linear-gradient(180deg, hsl(var(--surface-elevated) / 0.7), hsl(var(--surface) / 0.4))",
-                    boxShadow: "inset 0 1px 0 hsl(var(--accent) / 0.15)",
-                  }}
-                >
-                  <div
-                    className="relative w-[84px] h-[84px] rounded-full flex flex-col items-center justify-center border-2 mb-4"
-                    style={{
-                      borderColor: "hsl(var(--primary) / 0.45)",
-                      background:
-                        "linear-gradient(145deg, hsl(var(--surface-elevated) / 0.9), hsl(var(--surface) / 0.7))",
-                      boxShadow:
-                        "0 12px 32px -10px hsl(var(--primary) / 0.35), inset 0 1px 0 hsl(var(--accent) / 0.25)",
-                    }}
-                  >
-                    <Icon className="w-6 h-6 text-primary drop-shadow-[0_0_8px_hsl(var(--primary)/0.5)]" />
-                    <span className="mt-1 font-mono-tech text-[9px] uppercase tracking-[0.25em] text-accent">
-                      {step}
-                    </span>
-                  </div>
-                  <h3 className="font-display text-sm font-bold uppercase tracking-tight">
-                    {title}
-                  </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed mt-1">
-                    {body}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ol>
-
-          {/* Mobile scroll hint dots */}
-          <div className="sm:hidden flex items-center justify-center gap-1.5 mt-3" aria-hidden>
-            {STEPS.map((s) => (
-              <span key={s.step} className="w-1.5 h-1.5 rounded-full bg-primary/30" />
-            ))}
-          </div>
-
-          <ol className="hidden sm:grid relative grid-cols-2 lg:grid-cols-5 gap-6 sm:gap-5 lg:gap-4">
-            {STEPS.map(({ icon: Icon, step, title, body }, i) => (
-              <li key={step} className="relative group">
-                <div className="relative flex flex-col items-center text-center">
-                  <div className="relative mb-4 sm:mb-5">
-                    <div
-                      aria-hidden
-                      className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                      style={{
-                        transform: "scale(1.25)",
-                        background:
-                          "radial-gradient(circle, hsl(var(--primary) / 0.25), transparent 70%)",
-                      }}
-                    />
-                    <div
-                      className="relative w-[92px] h-[92px] lg:w-[104px] lg:h-[104px] rounded-full flex flex-col items-center justify-center border-2 transition-all duration-500 group-hover:scale-105"
-                      style={{
-                        borderColor: "hsl(var(--primary) / 0.45)",
-                        background:
-                          "linear-gradient(145deg, hsl(var(--surface-elevated) / 0.9), hsl(var(--surface) / 0.7))",
-                        boxShadow:
-                          "0 12px 32px -10px hsl(var(--primary) / 0.35), inset 0 1px 0 hsl(var(--accent) / 0.25), 0 0 0 1px hsl(var(--primary) / 0.15)",
-                      }}
-                    >
-                      <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-primary drop-shadow-[0_0_8px_hsl(var(--primary)/0.5)]" />
-                      <span className="mt-1 font-mono-tech text-[10px] uppercase tracking-[0.25em] text-accent">
-                        {step}
-                      </span>
-                    </div>
-                    {i < STEPS.length - 1 && (
-                      <div
-                        aria-hidden
-                        className="hidden lg:block absolute top-1/2 -translate-y-1/2 left-[calc(100%+8px)]"
-                      >
-                        <ArrowRight className="w-4 h-4 text-primary/40" />
-                      </div>
-                    )}
-                  </div>
-                  <h3 className="font-display text-sm sm:text-base font-bold uppercase tracking-tight">
-                    {title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mt-1 max-w-[26ch]">
-                    {body}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </div>
-
-        {/* ===== Security & Trust perimeter band ===== */}
-        <div
-          className="mt-10 sm:mt-12 lg:mt-14 rounded-xl border border-border/50 p-4 sm:p-5 lg:p-6 relative overflow-hidden"
-          style={{
-            background:
-              "linear-gradient(180deg, hsl(var(--surface-elevated) / 0.5), hsl(var(--surface) / 0.3))",
-            boxShadow: "inset 0 1px 0 hsl(var(--accent) / 0.12)",
-          }}
-        >
-          <div
-            aria-hidden
-            className="absolute top-0 left-0 right-0 h-[1px]"
-            style={{
-              background:
-                "linear-gradient(90deg, transparent, hsl(var(--accent) / 0.5) 20%, hsl(var(--primary) / 0.5) 50%, hsl(var(--accent) / 0.5) 80%, transparent)",
-            }}
-          />
-
-          {/* Mobile: horizontal snap carousel; sm+: responsive grid */}
-          <ul
-            className="
-              flex sm:hidden gap-3 overflow-x-auto snap-x snap-mandatory
-              -mx-4 px-4 pb-1
-              [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
-            "
-            aria-label="Security and trust controls"
-          >
-            {TRUST.map(({ icon: Icon, label, body }) => (
-              <li
-                key={label}
-                className="snap-start shrink-0 basis-[72%] xs:basis-[60%] max-w-[260px] flex items-center gap-3 rounded-lg border border-border/40 bg-background/50 p-3"
-              >
-                <div
-                  className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, hsl(var(--primary) / 0.15), hsl(var(--accent) / 0.15))",
-                    boxShadow: "inset 0 0 0 1px hsl(var(--accent) / 0.25)",
-                  }}
-                >
-                  <Icon className="w-4 h-4 text-accent" />
-                </div>
-                <div className="min-w-0 text-left">
-                  <div className="font-display text-[11px] font-bold uppercase tracking-wide">
-                    {label}
-                  </div>
-                  <div className="text-[11px] text-muted-foreground leading-snug mt-0.5">
-                    {body}
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-
-          <ul className="hidden sm:grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
-            {TRUST.map(({ icon: Icon, label, body }) => (
-              <li
-                key={label}
-                className="group flex items-center gap-3 rounded-lg border border-border/40 bg-background/50 p-3 sm:p-3.5 transition-colors hover:border-accent/50"
-              >
-                <div
-                  className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, hsl(var(--primary) / 0.15), hsl(var(--accent) / 0.15))",
-                    boxShadow: "inset 0 0 0 1px hsl(var(--accent) / 0.25)",
-                  }}
-                >
-                  <Icon className="w-3.5 h-3.5 text-accent" />
-                </div>
-                <div className="min-w-0 text-left">
-                  <div className="font-display text-[11px] sm:text-xs font-bold uppercase tracking-wide">
-                    {label}
-                  </div>
-                  <div className="text-[11px] text-muted-foreground leading-snug mt-0.5">
-                    {body}
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-
-      {/* ===== Onboarding CTA ===== */}
-      <div className="mt-10 sm:mt-12 lg:mt-14 flex flex-col items-center text-center animate-fade-in">
-        <a
-          href="/onboarding"
-          className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-gradient-primary text-primary-foreground font-semibold text-sm glow-primary transition-transform hover:scale-[1.02]"
-        >
-          Start your onboarding
-          <ArrowRight className="w-4 h-4" />
-        </a>
-        <p className="mt-3 text-xs text-muted-foreground max-w-xs">
-          Two fields. 30 seconds. No credit card.
-        </p>
-      </div>
+            <div
+              className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center"
+              style={{
+                background:
+                  "linear-gradient(135deg, hsl(var(--primary) / 0.15), hsl(var(--accent) / 0.15))",
+                boxShadow: "inset 0 0 0 1px hsl(var(--accent) / 0.25)",
+              }}
+            >
+              <Icon className="w-4 h-4 text-accent" />
+            </div>
+            <span className="text-[13px] text-foreground/90 leading-snug">{label}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   </section>
 );

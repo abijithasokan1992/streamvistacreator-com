@@ -3,19 +3,51 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
+    <!-- Security headers (meta fallback; CDN/edge headers in public/_headers take precedence when honored) -->
+    <!-- Security headers: CSP is enforced via HTTP headers in public/_headers (dev/HMR needs unrestricted scripts; production hosting applies the strict CSP). -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), interest-cohort=()" />
+
     <title>StreamVista Cloud X — Creator Studio Cloud Storage</title>
-    <meta name="description" content="StreamVista Cloud X is the secure creator studio cloud platform for media professionals to onboard, store, share and monetise content." />
+    <meta name="description" content="StreamVista Cloud X is the secure creator studio cloud platform for media professionals to onboard, store, share and monetise content.">
     <meta name="author" content="StreamVista" />
     <meta name="robots" content="index, follow" />
+    <meta name="google-site-verification" content="jh0nQJpYFrHztSUEP_W7wtbDQwhDhc8yoBIHnApkaOs" />
+    <link rel="canonical" href="https://streamvistacreator.com/" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;700;800;900&family=DM+Serif+Display:ital@0;1&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;700;800;900&family=DM+Serif+Display:ital@0;1&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;700;800;900&family=DM+Serif+Display:ital@0;1&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+      />
+    </noscript>
 
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="StreamVista Cloud X — Creator Studio Cloud Storage" />
-    <meta property="og:description" content="Secure creator cloud storage, sharing and payments — fully white-labeled for StreamVista." />
+    
+    
     <meta property="og:url" content="https://streamvistacreator.com/" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="StreamVista Cloud X — Creator Studio Cloud Storage" />
-    <meta name="twitter:description" content="Secure creator cloud storage, sharing and payments — fully white-labeled for StreamVista." />
+    
+    
 
     <script type="application/ld+json">
       {"@context":"https://schema.org","@type":"Organization","name":"StreamVista","url":"https://streamvistacreator.com/","sameAs":[]}
@@ -23,6 +55,27 @@
     <script type="application/ld+json">
       {"@context":"https://schema.org","@type":"WebSite","name":"StreamVista Cloud X","url":"https://streamvistacreator.com/"}
     </script>
+    <script>
+      // Apply theme before paint to avoid flash. Mirrors ThemeProvider logic.
+      (function () {
+        try {
+          var stored = localStorage.getItem('sv.theme');
+          var mode = (stored === 'light' || stored === 'dark' || stored === 'system') ? stored : 'dark';
+          var resolved = mode === 'system'
+            ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+            : mode;
+          if (resolved === 'dark') document.documentElement.classList.add('dark');
+          document.documentElement.style.colorScheme = resolved;
+        } catch (e) { document.documentElement.classList.add('dark'); }
+      })();
+    </script>
+  <meta property="og:title" content="StreamVista Cloud X — Creator Studio Cloud Storage">
+  <meta name="twitter:title" content="StreamVista Cloud X — Creator Studio Cloud Storage">
+  <meta property="og:description" content="StreamVista Cloud X is the secure creator studio cloud platform for media professionals to onboard, store, share and monetise content.">
+  <meta name="twitter:description" content="StreamVista Cloud X is the secure creator studio cloud platform for media professionals to onboard, store, share and monetise content.">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <meta property="og:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/7f6aeb35-3168-4850-b871-90af59570e0a">
+  <meta name="twitter:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/7f6aeb35-3168-4850-b871-90af59570e0a">
 </head>
 
   <body>

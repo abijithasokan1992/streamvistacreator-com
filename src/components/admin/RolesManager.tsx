@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, UserCog, Plus, Trash2, Crown, Camera, Users, Eye, Link2, Briefcase, Wallet, Code2, Megaphone, LayoutGrid, Lock, Unlock } from "lucide-react";
+import { Loader2, UserCog, Plus, Trash2, Crown, Camera, Users, Eye, Link2, Briefcase, Wallet, Code2, Megaphone, LayoutGrid, Lock, Unlock, ShieldCheck, Scale, Building2, ShoppingBag, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,25 +10,52 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 
-type Role = "admin" | "executive_producer" | "creator" | "client";
-const ROLES: { value: Role; label: string; icon: React.ReactNode }[] = [
-  { value: "admin",              label: "Admin",              icon: <Crown className="w-3.5 h-3.5" /> },
-  { value: "executive_producer", label: "Executive Producer", icon: <Eye className="w-3.5 h-3.5" /> },
-  { value: "creator",            label: "Creator",            icon: <Camera className="w-3.5 h-3.5" /> },
-  { value: "client",             label: "Client",             icon: <Users className="w-3.5 h-3.5" /> },
-];
+// =====================================================================
+// MVP RBAC (7 roles).
+//   Public sign-up: content_owner ("Creator"), studio, buyer
+//   Invite-only:    admin, super_admin, qc_reviewer, legal_reviewer
+//
+// Dormant / Phase 2 roles (executive_producer, distributor, localization_partner,
+// studio sub-roles, admin divisions, EP→Creator linkage) still exist in the DB
+// but are intentionally not exposed in this MVP admin UI. They can be re-enabled
+// in Phase 2 without a migration.
+// =====================================================================
+type Role =
+  | "super_admin"
+  | "admin"
+  | "qc_reviewer"
+  | "legal_reviewer"
+  | "content_owner"
+  | "studio"
+  | "buyer";
 
+const ROLES: { value: Role; label: string; icon: React.ReactNode; inviteOnly?: boolean }[] = [
+  { value: "super_admin",    label: "Super Admin",    icon: <Sparkles className="w-3.5 h-3.5" />,    inviteOnly: true },
+  { value: "admin",          label: "Admin",          icon: <Crown className="w-3.5 h-3.5" />,       inviteOnly: true },
+  { value: "qc_reviewer",    label: "QC Reviewer",    icon: <ShieldCheck className="w-3.5 h-3.5" />, inviteOnly: true },
+  { value: "legal_reviewer", label: "Legal Reviewer", icon: <Scale className="w-3.5 h-3.5" />,       inviteOnly: true },
+  { value: "content_owner",  label: "Creator",        icon: <Camera className="w-3.5 h-3.5" /> },
+  { value: "studio",         label: "Studio",         icon: <Building2 className="w-3.5 h-3.5" /> },
+  { value: "buyer",          label: "Buyer",          icon: <ShoppingBag className="w-3.5 h-3.5" /> },
+];
+// NOTE: legacy/dormant roles (executive_producer, distributor, localization_partner,
+// studio_*, moderator, user, client, creator) are intentionally NOT in this list.
+// They remain in the DB enum and continue to work for any account already holding
+// them, but they cannot be granted from this MVP admin UI.
 type ProfileRow = { user_id: string; display_name: string | null };
 type RoleRow    = { user_id: string; role: Role };
 type AssignRow  = { id: string; ep_user_id: string; creator_user_id: string; created_at: string };
-type Division   = "ops" | "finance" | "dev" | "marketing";
 type DivisionRow = { id: string; user_id: string; division: Division };
+
+
+type Division = "ops" | "finance" | "dev" | "marketing";
 const DIVISIONS: { value: Division; label: string; icon: React.ReactNode }[] = [
   { value: "ops",       label: "Business & Ops",   icon: <Briefcase className="w-3.5 h-3.5" /> },
   { value: "finance",   label: "Finance & Billing",icon: <Wallet className="w-3.5 h-3.5" /> },
   { value: "dev",       label: "Development",      icon: <Code2 className="w-3.5 h-3.5" /> },
   { value: "marketing", label: "Marketing",        icon: <Megaphone className="w-3.5 h-3.5" /> },
 ];
+
 
 export default function RolesManager() {
   const [loading, setLoading] = useState(true);
@@ -85,8 +112,9 @@ export default function RolesManager() {
   // EP ↔ Creator assignment
   const [epPick, setEpPick] = useState<string>("");
   const [crPick, setCrPick] = useState<string>("");
-  const eps      = profiles.filter((p) => rolesByUser(p.user_id).includes("executive_producer"));
-  const creators = profiles.filter((p) => rolesByUser(p.user_id).includes("creator"));
+  const eps      = profiles.filter((p) => (rolesByUser(p.user_id) as string[]).includes("executive_producer"));
+  const creators = profiles.filter((p) => (rolesByUser(p.user_id) as string[]).includes("creator"));
+
   const linkPair = async () => {
     if (!guard()) return;
     if (!epPick || !crPick) return toast.error("Pick both an EP and a Creator");

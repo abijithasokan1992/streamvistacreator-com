@@ -1,64 +1,118 @@
-## Users & Credentials — admin tab
+# Dashboard IA + Guided Tools Refactor
 
-A 5th tab in the existing admin console (`/admin`) for full user lifecycle control, audit trail, and admin self-credentials.
+This is a large, multi-dashboard restructure. To keep it safe (no business-logic rewrites, no auth/payments/storage backend churn), I'll ship it in **4 phased patches**, one dashboard per patch, plus a small shared primitives patch first. Each phase is independently shippable — you can pause or redirect between phases.
 
-### What the tab shows
+## Phase 0 — Shared primitives (small)
 
-A glassmorphic users table with:
-- Filter toggle: **All users** / **Staff only** (admin · executive_producer · moderator)
-- Search by email / name
-- Columns: avatar, email, display name, primary role, plan tier, status (active / suspended), last sign-in, created
-- Row actions: **View**, **Modify** (role + plan), **Hold** (suspend / unsuspend), **Delete**
+Add a thin, reusable tools-layer kit used by every dashboard. Pure presentation, no business logic.
 
-A second card: **My admin credentials**
-- Shows the admin URL (`/admin`) with copy button
-- "Send me a password-reset link" button (uses Lovable auth recovery email)
-- "Invite new admin" form (email → sends magic-link invite, role pre-set to `admin`)
+New files under `src/components/shared/tools/`:
+- `QuickActionCard.tsx` — icon + title + 1-line desc + CTA
+- `QuickActionGrid.tsx` — responsive 2/3/4 col grid
+- `GuidedWizard.tsx` — multi-step shell (steps, progress, back/next/finish) — wraps existing form inputs, owns no state beyond step index
+- `StatusSummaryCard.tsx` — label/value + status pill + optional progress bar
+- `HelpDrawer.tsx` — right-side drawer for contextual help content
+- `PlanVisibilityCard.tsx` — plan name + tier pill + quota line + upgrade/request CTA (role-agnostic, takes props)
 
-A third card: **Audit log** — last 50 admin actions (who did what, when, on which user).
+These are pure UI; existing role logic feeds them.
 
-### What each button does
+## Phase 1 — Creator dashboard
 
-- **View** — slide-over drawer with full profile, all roles, plan, storage usage, referral code, last login, suspended flag, recent audit entries for this user.
-- **Modify role / plan** — dialog with role multi-select and plan dropdown; writes through edge function, logs to audit.
-- **Hold (suspend)** — toggles `user_profiles.is_suspended`; suspended users are blocked at `OnboardingGate` and on auth refresh (signed out client-side next nav). Reversible.
-- **Delete** — confirm-text dialog ("type the email to confirm"); calls `auth.admin.deleteUser` via edge function; cascades to profile/roles via existing FK.
-- **Full access & audit** — opens the audit log filtered to this user; admin already has full RLS bypass on every panel.
+Final IA (left nav, in this order):
+```text
+Home · Titles · Library · Billing · Help
+```
 
-### Schema (one migration)
+Changes:
+- `CreatorSidebar.tsx` — collapse `submissions`, `updates`, `profile` out of the top nav. Profile moves under Home as a card link; Review Queue + Inbox surface inside Home as widgets (no route loss; old `SectionId`s still resolve).
+- Creator Home gets a **Creator Tools** strip (QuickActionGrid):
+  - New Title Wizard (deep-link → Titles → new)
+  - Submission Readiness Checker (opens HelpDrawer with checklist driven by existing readiness logic)
+  - Metadata / Asset Upload Guide (HelpDrawer)
+  - Commercial Path Summary (StatusSummaryCard)
+  - Upgrade / Plan Help (links to Billing)
+  - Support Shortcut (links to Help)
+- Plan visibility: `PlanVisibilityCard` pinned at top of Home and top of Billing — shows plan name, storage used/total, submission path state, tier pill (Free/Paid/Managed/Founder/Custom).
 
-- `user_profiles.is_suspended boolean default false`
-- New table `admin_audit_log` (admin_user_id, target_user_id, action, details jsonb, created_at) with admin-only SELECT, service-role INSERT.
+Touched files (approx): `CreatorSidebar.tsx`, `pages/dashboards/ContentOwner.tsx` (Creator shell), 1 new `CreatorQuickActions.tsx`, 1 new `CreatorPlanStrip.tsx`.
 
-### Edge function
+## Phase 2 — Studio dashboard
 
-`supabase/functions/admin-users/index.ts` (verify_jwt off, validates JWT + admin role in code, uses service role for `auth.admin.*`). Endpoints via a single POST + `{ action }` body:
-- `list` (with optional `staffOnly`, `search`)
-- `get` (full detail for one user)
-- `setRolesAndPlan`
-- `setSuspended`
-- `deleteUser`
-- `inviteAdmin` (calls `auth.admin.inviteUserByEmail`, then inserts `user_roles` row on confirmation via a DB trigger that already exists for default roles — extended to honour `app_metadata.invited_role`)
-- `sendRecoveryToSelf`
+Final IA:
+```text
+Home · Ingest · Storage · Library · Billing
+```
 
-Every mutating call writes an `admin_audit_log` row.
+Changes:
+- `pages/dashboards/StudioDash.tsx` — regroup existing sections into the 5 above (Ingest = camera-to-cloud + hard-disk intake; Storage = Oracle/OCI monitor + planner; Library = vault).
+- Studio Tools strip (QuickActionGrid) on Home:
+  - Ingest Setup Wizard (GuidedWizard wrapping existing `CameraToCloudIngest` config screens)
+  - Storage Planner (StatusSummaryCard + helper drawer; uses existing storage figures)
+  - Service Request Wizard (wraps existing `StudioRequestService`)
+  - Upload / Ingest Diagnostics Helper (HelpDrawer)
+  - Plan / Storage Request shortcut (opens existing `StudioRequestPlanChange`)
+- Plan visibility: `PlanVisibilityCard` on Home + Billing (plan, storage used/total, request-plan CTA).
 
-### Front-end files
+## Phase 3 — Buyer / Licensing dashboard
 
-- `src/pages/Admin.tsx` — add 5th `DeptTab` "Users & Credentials" + `TabsContent`.
-- `src/components/admin/UsersAndCredentials.tsx` — table, drawer, modify/delete dialogs, suspend toggle, audit list.
-- `src/components/admin/AdminSelfCredentials.tsx` — copy URL, reset-my-password, invite-new-admin form.
-- `src/components/OnboardingGate.tsx` — also block when `is_suspended = true` (redirect to a "Account on hold" notice with sign-out).
+Final IA:
+```text
+Overview · My Requests · New Request · Billing
+```
+(Billing tab hidden if no buyer billing entitlement.)
 
-### Guarantees
+Changes:
+- `pages/dashboards/Buyer.tsx` — restructure tabs to the 4 above.
+- Buyer Tools strip on Overview:
+  - New Request Wizard (GuidedWizard wrapping current request form)
+  - Rights Scope Helper (HelpDrawer)
+  - Screener Request Guide (HelpDrawer + CTA)
+  - Commercial Note Builder (small templated note generator, pure FE)
+  - Catalog / Acquisition Request shortcut
+- Plan visibility: `PlanVisibilityCard` on Overview — buyer tier, screener state, active requests count.
 
-- All DB writes go through the service-role edge function; client never touches `auth.users`.
-- Admin cannot delete or suspend themselves (server-side guard).
-- Audit log is immutable from the client (no UPDATE/DELETE grants).
-- Suspended users are signed out on next route navigation and cannot pass `OnboardingGate`.
+## Phase 4 — Admin dashboard
 
-### Out of scope (deferred)
+Final IA — **7 slim top-level departments** in main sidebar:
+```text
+Dashboard · Operations · Accounts · Commerce
+Storage & Delivery · Comms · System
+```
 
-- Bulk actions.
-- Per-role storage quota overrides (already in plan/billing surface).
-- 2FA enforcement (separate auth setting).
+Section mapping (secondary nav inside each page, not in main sidebar):
+- **Operations** → Approvals, Pipeline, Catalog Ops (TitleReviewPanel, OnboardingApprovals, ContentReviewWorkflow, DealOperationsConsole, ScreeningOpsConsole, TitleCommercialOpsConsole, TitleEditRequestsInbox, CommercialControlTower)
+- **Accounts** → Users, Organizations, Roles & Access (UsersAndCredentials, AdminTeamManager, RolesManager, UserEntitlementDrillIn)
+- **Commerce** → Plans & Pricing, Billing, Entitlements, Commercial Requests (ProductsAndPlans, StudioVaultPricing, FreeTierConfig, BillingOperations, AdminFinanceConsole, AdminInvoices, ManualInvoiceConsole, EntitlementExplorer, CommissionsTracker, DistributionOffersConsole, PremiumInvitations)
+- **Storage & Delivery** → Storage, Uploads, Vault/Delivery (OracleOciStorageCard, OracleStorageMonitor, StorageGrantPanel, GlobalAssetManager, AdminStudioVaultPurchases)
+- **Comms** → Notifications, Email, Support (UniversalBroadcast, EmailLogMonitor, ResendCredentials, ContactInbox, SupportInbox, PaymentSecurityEvents, RazorpayAuditLog, RazorpayOpsBanner)
+- **System** → Homepage CMS, Settings, Audit, **Founder Vault** (MarketingCMS, HeroModeControl/HeroLivePreview/HeroReelPreview, PartnerLogos, BrandingSettings, CompanyProfileSettings, AdminCredentials, RazorpayCredentials, RazorpayConnectivityStatus, AiMcpControlCenter, PaymentTrace, PlatformOverview, PlatformOwnerConsole, ChiefBriefing, KammattamMeter, FounderVault)
+
+Changes:
+- `pages/Admin.tsx` — main sidebar reduced to the 7 departments. Each department page renders a secondary tab bar with its sub-sections. No component logic rewritten — components are reparented only.
+- New `AdminCommandBar.tsx` — top command/search bar (Cmd+K) that fuzzy-searches across all admin sub-section names and jumps to `?dept=…&section=…`.
+- RBAC, scanner, and admin business components are untouched (only their parent location changes).
+
+## What stays untouched
+
+- Auth, payments, Razorpay/Stripe wiring, storage backend, RLS, edge functions
+- Public homepage, pricing page, legal pages, blog
+- Entitlement evaluation logic
+- The Creator Title Editor (recently refactored)
+- All existing routes/URLs continue to resolve via legacy aliases
+
+## Technical notes
+
+- All new components use existing shadcn primitives + lucide icons + design tokens — no new deps.
+- Wizards wrap **existing** forms; they don't reimplement submit logic.
+- Plan/quota figures are read from the same hooks each dashboard already uses.
+- Admin command bar is a pure FE index over the new department/section map; no new backend.
+
+## Suggested execution order
+
+1. Phase 0 (shared primitives) — required by all later phases
+2. Phase 1 (Creator)
+3. Phase 2 (Studio)
+4. Phase 3 (Buyer)
+5. Phase 4 (Admin) — largest; ship last
+
+Reply with **"go"** to execute all phases in order, or name specific phases to start with (e.g. "Phase 0 + 1 only").

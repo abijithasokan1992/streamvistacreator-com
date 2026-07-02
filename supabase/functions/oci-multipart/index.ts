@@ -19,12 +19,78 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
+import { validateUploadKind } from "../_shared/uploadValidation.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const MAX_BYTES = 50 * 1024 * 1024 * 1024;        // 50 GB hard ceiling
+const MAX_BYTES = 50 * 1024 * 1024 * 1024;        // 50 GB hard ceiling (global safety)
 const MIN_PART  = 5  * 1024 * 1024;                // OCI minimum 5 MB (last part exempt)
-const MAX_PART  = 50 * 1024 * 1024;                // 50 MB per part recommended
+const MAX_PART  = 128 * 1024 * 1024;               // 128 MB per part ceiling (matches client PART_SIZE_LARGE)
+const MULTIPART_THRESHOLD = 5 * 1024 * 1024;       // 5 MB — files at/above this use multipart
+const UPLOAD_CONCURRENCY = 4;                      // recommended parallel chunk workers
+
+// ---------- Phase 3: Server-side category limits (bytes) ----------
+// Caps stay <= MAX_BYTES until the global ceiling is intentionally raised.
+const GB = 1024 * 1024 * 1024;
+const MB = 1024 * 1024;
+const CATEGORY_LIMITS: Record<string, number> = {
+  trailer: 5 * GB,
+  feature_film: 50 * GB,
+  master: 50 * GB,         // target 250GB after global lift
+  prores: 50 * GB,         // target 500GB after global lift
+  dcp: 50 * GB,            // target 500GB after global lift
+  poster: 500 * MB,
+  artwork: 500 * MB,
+  subtitle: 50 * MB,
+  captions: 50 * MB,
+  censor_certificate: 200 * MB,
+  censor_cert: 200 * MB,
+  ownership_documents: 500 * MB,
+  ownership: 500 * MB,
+  legal: 200 * MB,
+  sales: 500 * MB,
+  audio: 5 * GB,
+  audio_tracks: 5 * GB,
+};
+
+// ---------- Phase 4: Server-derived prefix map (no client trust) ----------
+const CATEGORY_PREFIX: Record<string, string> = {
+  trailer: "trailers",
+  feature_film: "masters",
+  master: "masters",
+  prores: "prores",
+  dcp: "dcp",
+  poster: "artwork",
+  artwork: "artwork",
+  subtitle: "subtitles",
+  captions: "subtitles",
+  censor_certificate: "documents",
+  censor_cert: "documents",
+  ownership_documents: "documents",
+  ownership: "documents",
+  legal: "documents",
+  sales: "documents",
+  audio: "documents",
+  audio_tracks: "documents",
+};
+
+// ---------- Phase 7: Plan-level total storage quotas (bytes) ----------
+// Defense-in-depth fallback only — primary path reads workspace_storage_entitlements
+// via get_workspace_storage_entitlement RPC. Free tier is 5 GB per the canonical
+// plans.creator_basic row and free_tier_config.
+const TB = 1024 * GB;
+const PLAN_QUOTA: Record<string, number> = {
+  free: 5 * GB,
+  creator: 1 * TB,
+  monthly: 5 * TB,
+  quarterly: 5 * TB,
+  yearly: 5 * TB,
+};
+function planQuotaBytes(planTier: string | null | undefined, topupTb: number | null | undefined): number {
+  const base = PLAN_QUOTA[String(planTier || "free").toLowerCase()] ?? PLAN_QUOTA.free;
+  const topup = Math.max(0, Number(topupTb || 0)) * TB;
+  return base + topup;
+}
 
 // ---------- OCI signing helpers ----------
 
@@ -40,8 +106,8 @@ function pemToPkcs8(pem: string): ArrayBuffer {
 let cachedKey: CryptoKey | null = null;
 async function getPrivateKey(): Promise<CryptoKey> {
   if (cachedKey) return cachedKey;
-  const pem = Deno.env.get("ORACLE_PRIVATE_KEY");
-  if (!pem) throw new Error("ORACLE_PRIVATE_KEY missing");
+  const pem = Deno.env.get("ORACLE_PRIVATE_KEY") || Deno.env.get("OCI_PRIVATE_KEY");
+  if (!pem) throw new Error("ORACLE_PRIVATE_KEY/OCI_PRIVATE_KEY missing");
   cachedKey = await crypto.subtle.importKey(
     "pkcs8", pemToPkcs8(pem),
     { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
@@ -70,17 +136,19 @@ async function buildOciSignature(opts: {
   contentLength?: number;
   keyId: string;
   privateKey: CryptoKey;
+  dateHeader?: "date" | "x-date";
 }): Promise<{ authorization: string; headers: Record<string, string>; date: string }> {
   const { method, host, path, contentSha256, contentType, contentLength, keyId, privateKey } = opts;
+  const dateHeader = opts.dateHeader ?? "date";
   const date = new Date().toUTCString();
   const isBodyMethod = method === "PUT" || method === "POST";
 
   const headers: Record<string, string> = {
     "(request-target)": `${method.toLowerCase()} ${path}`,
     host,
-    date,
+    [dateHeader]: date,
   };
-  const names = ["(request-target)", "host", "date"];
+  const names = ["(request-target)", "host", dateHeader];
 
   if (isBodyMethod) {
     headers["x-content-sha256"] = contentSha256;
@@ -159,7 +227,7 @@ Deno.serve(async (req) => {
     const fingerprint = cfg?.oracle_fingerprint || Deno.env.get("OCI_FINGERPRINT");
     const region = cfg?.oracle_region || Deno.env.get("OCI_REGION");
     const ns = cfg?.oracle_namespace || Deno.env.get("OCI_NAMESPACE");
-    const bucket = cfg?.oracle_bucket || Deno.env.get("OCI_BUCKET");
+    const bucket = cfg?.oracle_bucket || Deno.env.get("OCI_BUCKET") || Deno.env.get("OCI_BUCKET_NAME");
     if (!tenancy || !user || !fingerprint || !region || !ns || !bucket) {
       return json({ error: "OCI not fully configured" }, 500, cors);
     }
@@ -182,26 +250,43 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (!sess || !sess.oci_upload_id) return json({ found: false }, 200, cors);
 
-      // Confirm with OCI which parts are actually stored.
+      // Confirm with OCI that the multipart upload still exists.
       const path = `/n/${ns}/b/${bucket}/u/${encodeURIComponent(sess.object_key)}?uploadId=${encodeURIComponent(sess.oci_upload_id)}`;
       const sig = await buildOciSignature({ method: "GET", host, path, contentSha256: "", keyId, privateKey });
       const resp = await fetch(`https://${host}${path}`, {
         method: "GET", headers: { host, date: sig.date, Authorization: sig.authorization },
       });
       const text = await resp.text();
-      let parts: Array<{ partNumber: number; etag: string; size?: number }> = [];
-      if (resp.ok) {
-        try {
-          const arr = JSON.parse(text);
-          if (Array.isArray(arr)) {
-            parts = arr.map((p: any) => ({
-              partNumber: Number(p.partNumber ?? p.uploadPartNum ?? p.part_num),
-              etag: String(p.etag ?? p.ETag ?? "").replace(/^"|"$/g, ""),
-              size: typeof p.size === "number" ? p.size : undefined,
-            })).filter((p) => Number.isInteger(p.partNumber) && p.etag);
-          }
-        } catch { /* ignore */ }
+
+      // If OCI says the multipart is gone (404 UploadNotFound, 403, etc.), DO NOT
+      // hand the stale uploadId back to the client — invalidate the session row
+      // and force a fresh init.
+      if (!resp.ok) {
+        await admin.from("upload_sessions")
+          .update({ status: "aborted", error_message: `oci_list_parts_${resp.status}: ${text.slice(0, 200)}` })
+          .eq("id", sess.id);
+        await admin.from("recent_uploads")
+          .update({ status: "failed", error_message: `OCI multipart no longer exists (${resp.status})` })
+          .eq("user_id", userId).eq("oci_upload_id", sess.oci_upload_id);
+        await logIngest(admin, {
+          user_id: userId, session_id: sess.id, oci_upload_id: sess.oci_upload_id,
+          event: "session.invalidated", severity: "warn", http_status: resp.status,
+          error_message: text.slice(0, 200),
+        });
+        return json({ found: false, invalidated: true }, 200, cors);
       }
+
+      let parts: Array<{ partNumber: number; etag: string; size?: number }> = [];
+      try {
+        const arr = JSON.parse(text);
+        if (Array.isArray(arr)) {
+          parts = arr.map((p: any) => ({
+            partNumber: Number(p.partNumber ?? p.uploadPartNum ?? p.part_num),
+            etag: String(p.etag ?? p.ETag ?? "").replace(/^"|"$/g, ""),
+            size: typeof p.size === "number" ? p.size : undefined,
+          })).filter((p) => Number.isInteger(p.partNumber) && p.etag);
+        }
+      } catch { /* ignore */ }
       const nextPart = (parts.reduce((m, p) => Math.max(m, p.partNumber), 0) || 0) + 1;
       await logIngest(admin, {
         user_id: userId, session_id: sess.id, oci_upload_id: sess.oci_upload_id,
@@ -228,17 +313,96 @@ Deno.serve(async (req) => {
       const projectIdRaw = body.projectId ? String(body.projectId) : "";
       const categoryRaw = body.category ? String(body.category) : "";
       const subpathRaw = body.subpath ? String(body.subpath) : "";
+      const titleIdRaw = body.titleId ? String(body.titleId).trim() : "";
 
       if (!fileName) return json({ error: "missing fileName" }, 400, cors);
       if (!workspaceId) return json({ error: "missing workspaceId" }, 400, cors);
       if (!fileSize || fileSize <= 0) return json({ error: "missing fileSize" }, 400, cors);
       if (fileSize > MAX_BYTES) return json({ error: `file exceeds ${MAX_BYTES} bytes` }, 413, cors);
 
+      // Server-side MIME / extension allowlist (defence-in-depth — same
+      // contract as oci-upload so both paths reject identical inputs).
+      {
+        const v = validateUploadKind({ fileName, mimeType: mime, category: categoryRaw });
+        if (v) return json({ error: v.message, code: v.code }, 415, cors);
+      }
+
       const { data: membership } = await admin
         .from("workspace_members").select("role")
         .eq("workspace_id", workspaceId).eq("user_id", userId).maybeSingle();
       if (!membership || !["owner", "admin", "editor"].includes(membership.role)) {
         return json({ error: "forbidden_workspace" }, 403, cors);
+      }
+
+      // ---------- Phase 3: per-category limit ----------
+      const catKey = categoryRaw.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "");
+      if (titleIdRaw) {
+        if (!catKey || !(catKey in CATEGORY_LIMITS)) {
+          return json({ error: `invalid category '${categoryRaw}'` }, 400, cors);
+        }
+        const catLimit = CATEGORY_LIMITS[catKey];
+        if (fileSize > catLimit) {
+          return json({
+            error: `Upload Failed — ${catKey} exceeds category limit (${Math.round(catLimit / GB * 10) / 10} GB)`,
+            limitBytes: catLimit,
+          }, 413, cors);
+        }
+      } else if (catKey && CATEGORY_LIMITS[catKey] && fileSize > CATEGORY_LIMITS[catKey]) {
+        return json({
+          error: `Upload Failed — ${catKey} exceeds category limit`,
+          limitBytes: CATEGORY_LIMITS[catKey],
+        }, 413, cors);
+      }
+
+      // ---------- Phase 7: total storage quota ----------
+      // Authoritative source = creator entitlement RPC. Falls back to the
+      // profile-based PLAN_QUOTA only when the RPC is unavailable.
+      {
+        let quota: number | null = null;
+        let usedBytes = 0;
+        try {
+          const { data: ent } = await admin.rpc("get_workspace_storage_entitlement", { _user_id: userId });
+          if (ent && typeof (ent as any).total_storage_gb !== "undefined") {
+            quota = Number((ent as any).total_storage_gb) * GB;
+            usedBytes = Number((ent as any).used_bytes ?? 0);
+          }
+        } catch (_) { /* fall through */ }
+        if (quota === null) {
+          try {
+            const { data: entRows } = await admin.rpc("get_creator_storage_entitlement", { _user_id: userId });
+            const e: any = Array.isArray(entRows) ? entRows[0] : entRows;
+            if (e && typeof e.total_gb === "number") {
+              quota = Number(e.total_gb) * GB;
+              usedBytes = Math.round(Number(e.used_gb || 0) * GB);
+            }
+          } catch (_) { /* fall through */ }
+        }
+
+        if (quota === null) {
+          const { data: prof } = await admin
+            .from("user_profiles")
+            .select("plan_tier, topup_tb")
+            .eq("user_id", userId)
+            .maybeSingle();
+          quota = planQuotaBytes(prof?.plan_tier, prof?.topup_tb);
+          const { data: usedRows } = await admin
+            .from("recent_uploads")
+            .select("file_size")
+            .eq("user_id", userId)
+            .in("status", ["uploading", "uploaded", "verified", "ready", "completed", "done"]);
+          usedBytes = (usedRows ?? []).reduce(
+            (sum: number, r: any) => sum + (Number(r.file_size) || 0),
+            0,
+          );
+        }
+        if (usedBytes + fileSize > quota) {
+          return json({
+            error: `Storage limit reached — your workspace has used ${Math.round(usedBytes / GB)} GB of ${Math.round(quota / GB)} GB. Add another 1 TB block in Storage & Billing or request a higher plan.`,
+            code: "storage_quota_exceeded",
+            quotaBytes: quota,
+            usedBytes,
+          }, 413, cors);
+        }
       }
 
       // Idempotent resume: if a prior row exists for the same pendingId and it
@@ -259,39 +423,90 @@ Deno.serve(async (req) => {
             return json({ idempotent: true, upload: full }, 200, cors);
           }
           if (existing.oci_upload_id && existing.object_key) {
-            return json({
-              resumed: true,
-              uploadRowId: existing.id,
-              uploadId: existing.oci_upload_id,
-              objectKey: existing.object_key,
-              bucket, namespace: ns, region,
-              partSize: MAX_PART,
-            }, 200, cors);
+            const probePath = `/n/${ns}/b/${bucket}/u/${encodeURIComponent(existing.object_key)}?uploadId=${encodeURIComponent(existing.oci_upload_id)}`;
+            const probeSig = await buildOciSignature({
+              method: "GET", host, path: probePath, contentSha256: "", keyId, privateKey,
+            });
+            const probeResp = await fetch(`https://${host}${probePath}`, {
+              method: "GET", headers: { host, date: probeSig.date, Authorization: probeSig.authorization },
+            });
+            await probeResp.text().catch(() => "");
+            if (probeResp.ok) {
+              return json({
+                resumed: true,
+                uploadRowId: existing.id,
+                uploadId: existing.oci_upload_id,
+                objectKey: existing.object_key,
+                bucket, namespace: ns, region,
+                partSize: MAX_PART,
+                minPart: MIN_PART,
+                maxBytes: MAX_BYTES,
+                multipartThreshold: MULTIPART_THRESHOLD,
+                concurrency: UPLOAD_CONCURRENCY,
+              }, 200, cors);
+            }
+            await admin.from("upload_sessions")
+              .update({ status: "aborted", error_message: `oci_probe_${probeResp.status}` })
+              .eq("user_id", userId).eq("oci_upload_id", existing.oci_upload_id);
+            await logIngest(admin, {
+              user_id: userId, oci_upload_id: existing.oci_upload_id,
+              event: "session.restart", severity: "warn", http_status: probeResp.status,
+            });
           }
+          // Free the unique (user_id, client_pending_id) slot on the stale row
+          // so the fresh insert below does not violate the unique constraint.
+          await admin.from("recent_uploads")
+            .update({
+              status: "failed",
+              client_pending_id: null,
+              error_message: `superseded by retry`,
+            })
+            .eq("id", existing.id);
         }
       }
 
-      // Compute object key (mirrors oci-upload routing)
-      let projectSegment = "";
+      // ---------- Phase 4: server-derived object key ----------
+      // Title uploads: users/{userId}/titles/{titleId}/{prefix}/...
+      // Legacy non-title uploads keep the previous workspace/project layout.
+      let objectKey: string;
       let categorySegment = "ingest";
-      if (projectIdRaw) {
-        const { data: proj } = await admin.from("projects")
-          .select("id, workspace_id, foldering_mode_archive, foldering_mode_raw")
-          .eq("id", projectIdRaw).maybeSingle();
-        if (proj && proj.workspace_id === workspaceId) {
-          projectSegment = `projects/${proj.id}/`;
-          const cat = categoryRaw.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "");
-          if (cat) categorySegment = cat;
-          const manual =
-            (cat === "raw" && proj.foldering_mode_raw === "manual") ||
-            (cat === "archive" && proj.foldering_mode_archive === "manual");
-          if (manual && subpathRaw.trim()) {
-            const clean = subpathRaw.trim().replace(/^\/+|\/+$/g, "").replace(/[^\w./-]+/g, "_").slice(0, 200);
-            if (clean) categorySegment = clean;
+      let projectSegment = "";
+
+      if (titleIdRaw) {
+        // Verify title ownership (server-side; never trust client subpath).
+        const { data: t } = await admin
+          .from("content_titles")
+          .select("id, owner_user_id, workspace_id")
+          .eq("id", titleIdRaw)
+          .maybeSingle();
+        if (!t || (t.owner_user_id !== userId)) {
+          return json({ error: "forbidden_title" }, 403, cors);
+        }
+        const prefix = CATEGORY_PREFIX[catKey] ?? "documents";
+        objectKey = `users/${userId}/titles/${titleIdRaw}/${prefix}/${Date.now()}-${crypto.randomUUID()}-${safeName(fileName)}`;
+        categorySegment = catKey;
+      } else {
+        // Legacy path (unchanged) for non-title workflows.
+        if (projectIdRaw) {
+          const { data: proj } = await admin.from("projects")
+            .select("id, workspace_id, foldering_mode_archive, foldering_mode_raw")
+            .eq("id", projectIdRaw).maybeSingle();
+          if (proj && proj.workspace_id === workspaceId) {
+            projectSegment = `projects/${proj.id}/`;
+            if (catKey) categorySegment = catKey;
+            const manual =
+              (catKey === "raw" && proj.foldering_mode_raw === "manual") ||
+              (catKey === "archive" && proj.foldering_mode_archive === "manual");
+            if (manual && subpathRaw.trim()) {
+              const clean = subpathRaw.trim().replace(/^\/+|\/+$/g, "").replace(/[^\w./-]+/g, "_").slice(0, 200);
+              if (clean) categorySegment = clean;
+            }
           }
         }
+        objectKey = `workspaces/${workspaceId}/${projectSegment}${categorySegment}/users/${userId}/${Date.now()}-${crypto.randomUUID()}-${safeName(fileName)}`;
       }
-      const objectKey = `workspaces/${workspaceId}/${projectSegment}${categorySegment}/users/${userId}/${Date.now()}-${crypto.randomUUID()}-${safeName(fileName)}`;
+
+
 
       // Create multipart upload on OCI:
       //   POST /n/{ns}/b/{bucket}/u  body: {"object":"...","contentType":"..."}
@@ -335,8 +550,8 @@ Deno.serve(async (req) => {
         object_key: objectKey,
         status: "uploading",
         client_pending_id: pendingId,
-        project_id: projectSegment ? projectIdRaw : null,
-        category: projectSegment ? categorySegment : null,
+        project_id: titleIdRaw ? null : (projectSegment ? projectIdRaw : null),
+        category: titleIdRaw ? catKey : (projectSegment ? categorySegment : null),
         oci_upload_id: uploadId,
       };
       const { data: inserted, error: insErr } = await admin
@@ -379,6 +594,9 @@ Deno.serve(async (req) => {
         bucket, namespace: ns, region,
         partSize: MAX_PART,
         minPart: MIN_PART,
+        maxBytes: MAX_BYTES,
+        multipartThreshold: MULTIPART_THRESHOLD,
+        concurrency: UPLOAD_CONCURRENCY,
       }, 200, cors);
     }
 
@@ -411,6 +629,7 @@ Deno.serve(async (req) => {
         method: "PUT", host, path,
         contentSha256, contentType: "application/octet-stream",
         contentLength, keyId, privateKey,
+        dateHeader: "x-date",
       });
 
       await logIngest(admin, {
@@ -423,11 +642,10 @@ Deno.serve(async (req) => {
         method: "PUT",
         headers: {
           host,
-          date: sig.date,
+          "x-date": sig.date,
           Authorization: sig.authorization,
           "x-content-sha256": contentSha256,
           "content-type": "application/octet-stream",
-          "content-length": String(contentLength),
         },
         expires_in: 300,
       }, 200, cors);
@@ -475,7 +693,26 @@ Deno.serve(async (req) => {
         headers: { host, date: sig.date, Authorization: sig.authorization },
       });
       const text = await resp.text();
-      if (!resp.ok) return json({ error: `OCI list-parts ${resp.status}`, detail: text.slice(0, 400) }, 502, cors);
+      if (!resp.ok) {
+        // OCI says the multipart no longer exists — invalidate the row + session
+        // so the client knows to start over with a fresh init instead of trying
+        // to PUT into a dead uploadId.
+        if (resp.status === 404 || resp.status === 403) {
+          await admin.from("recent_uploads")
+            .update({ status: "failed", error_message: `OCI multipart gone (${resp.status})` })
+            .eq("id", uploadRowId);
+          await admin.from("upload_sessions")
+            .update({ status: "aborted", error_message: `oci_list_parts_${resp.status}` })
+            .eq("user_id", userId).eq("oci_upload_id", uploadId);
+          await logIngest(admin, {
+            user_id: userId, oci_upload_id: uploadId,
+            event: "session.invalidated", severity: "warn", http_status: resp.status,
+            error_message: text.slice(0, 200),
+          });
+          return json({ error: "upload_not_found", code: "upload_not_found", ociStatus: resp.status }, 410, cors);
+        }
+        return json({ error: `OCI list-parts ${resp.status}`, detail: text.slice(0, 400) }, 502, cors);
+      }
       let parts: Array<{ partNumber: number; etag: string; size?: number }> = [];
       try {
         const arr = JSON.parse(text);

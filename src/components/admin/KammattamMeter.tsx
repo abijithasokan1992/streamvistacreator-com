@@ -180,7 +180,7 @@ export default function KammattamMeter({ popout = false }: { popout?: boolean })
         <div className="mt-6 flex items-center justify-between rounded-2xl border border-border/60 px-4 py-3 bg-secondary/40">
           <div className="text-xs">
             <div className="font-semibold">Auto-charge saved cards</div>
-            <div className="text-muted-foreground">Drains the trapped column into realised — off_session Stripe.</div>
+            <div className="text-muted-foreground">Drains the trapped column into realised — Razorpay recurring charge.</div>
           </div>
           <Switch checked={autoCharge} onCheckedChange={toggleAutoCharge} />
         </div>

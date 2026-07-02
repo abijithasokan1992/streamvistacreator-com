@@ -2,6 +2,7 @@ import * as React from 'npm:react@18.3.1'
 import {
   Body, Button, Container, Head, Heading, Hr, Html, Link, Preview, Section, Text,
 } from 'npm:@react-email/components@0.0.22'
+import { BrandLogos } from '../email-templates/brand-logos.tsx'
 import type { TemplateEntry } from './registry.ts'
 
 interface Props {
@@ -77,16 +78,16 @@ const Email = ({
           <Hr style={hr} />
 
           <Text style={fineprint}>
-            If the button doesn't open, paste this link into your browser:
-            <br />
-            <Link href={shareUrl} style={link}>{shareUrl}</Link>
+            Trouble with the button?{' '}
+            <Link href={shareUrl} style={link}>Open the secure review link</Link>.
           </Text>
 
           <Text style={fineprint}>
             Received this by mistake? You can ignore the email — the link only works for
             you and expires automatically.
           </Text>
-        </Container>
+                <BrandLogos />
+      </Container>
       </Body>
     </Html>
   )

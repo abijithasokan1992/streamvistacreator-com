@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Loader2, User, CreditCard, FileText, BarChart3, Wallet, Globe, ImagePlus, LifeBuoy, Send } from "lucide-react";
+import { Loader2, User, CreditCard, FileText, BarChart3, Wallet, ImagePlus, LifeBuoy, Send } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,7 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { useBranding, uploadBrandingFile, fetchBranding } from "@/lib/branding";
 import { cn } from "@/lib/utils";
 import { PLANS, planByCycle, type Cycle } from "@/components/streamvista/plans";
-import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
+import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
+import { useCreatorPaygPrice } from "@/hooks/usePublicPlans";
 
 interface Profile {
   user_id: string;
@@ -269,18 +270,14 @@ function SupportRequestForm() {
 /* ---------------- Upgrade / Payment ---------------- */
 function UpgradeSection({ currentTier, email, name, userId, onUpgraded }: { currentTier: string; email?: string; name?: string; userId: string; onUpgraded: (tier: Profile["plan_tier"]) => void; }) {
   const [selected, setSelected] = useState<Cycle>("creator");
-  const [provider, setProvider] = useState<"razorpay" | "card">("razorpay");
   const [tbCount, setTbCount] = useState<number>(1);
   const [busy, setBusy] = useState(false);
-  const [stripeOpen, setStripeOpen] = useState(false);
+  const payg = useCreatorPaygPrice();
 
   const plan = planByCycle(selected);
   const subtotal = plan.price * tbCount; // ₹650 per TB pre-GST × TB
   const gst = Math.round(subtotal * GST_RATE);
   const total = subtotal + gst;
-
-  // Stripe price-id for the Creator plan (recurring monthly, ₹767/TB inc. GST)
-  const stripePriceId = "cloudx_creator";
 
   const loadRazorpay = () => new Promise<boolean>((resolve) => {
     if ((window as any).Razorpay) return resolve(true);
@@ -294,7 +291,8 @@ function UpgradeSection({ currentTier, email, name, userId, onUpgraded }: { curr
     if (selected === "free") { toast.info("You're already on the Free plan"); return; }
     setBusy(true);
 
-    if (provider === "card") { setBusy(false); setStripeOpen(true); return; }
+    try { assertLiveCheckoutHost(); }
+    catch (e: any) { setBusy(false); toast.error(e?.message || "Checkout unavailable here"); return; }
 
     // Razorpay recurring subscription path
     const loaded = await loadRazorpay();
@@ -318,7 +316,6 @@ function UpgradeSection({ currentTier, email, name, userId, onUpgraded }: { curr
       theme: { color: "#6366f1" },
       handler: async () => {
         setBusy(false);
-        // Webhook flips the role; reflect optimistically here.
         onUpgraded(selected as Profile["plan_tier"]);
         toast.success("Subscription activated — welcome to the Creator plan!");
       },
@@ -334,17 +331,20 @@ function UpgradeSection({ currentTier, email, name, userId, onUpgraded }: { curr
       <div>
         <div className="text-sm font-medium mb-2">Choose a plan</div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-          {PLANS.map((p) => (
-            <button key={p.cycle}
-              onClick={() => setSelected(p.cycle)}
-              className={cn("border rounded-xl p-3 text-left transition",
-                selected === p.cycle ? "border-primary bg-primary/5" : "border-border hover:bg-secondary/40",
-                currentTier === p.cycle && "ring-1 ring-accent")}>
-              <div className="text-xs uppercase text-muted-foreground">{p.label}</div>
-              <div className="font-semibold">{p.priceLabel}</div>
-              <div className="text-[11px] text-muted-foreground">{p.cadence}</div>
-            </button>
-          ))}
+          {PLANS.map((p) => {
+            const priceLabel = p.cycle === "creator" ? payg.totalLabel : p.priceLabel;
+            return (
+              <button key={p.cycle}
+                onClick={() => setSelected(p.cycle)}
+                className={cn("border rounded-xl p-3 text-left transition",
+                  selected === p.cycle ? "border-primary bg-primary/5" : "border-border hover:bg-secondary/40",
+                  currentTier === p.cycle && "ring-1 ring-accent")}>
+                <div className="text-xs uppercase text-muted-foreground">{p.label}</div>
+                <div className="font-semibold">{priceLabel}</div>
+                <div className="text-[11px] text-muted-foreground">{p.cadence}</div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -364,17 +364,8 @@ function UpgradeSection({ currentTier, email, name, userId, onUpgraded }: { curr
 
           <div>
             <div className="text-sm font-medium mb-2">Payment method</div>
-            <div className="grid grid-cols-2 gap-3">
-              <button type="button" onClick={() => setProvider("razorpay")}
-                className={cn("h-14 rounded-xl border-2 flex items-center justify-center gap-2 text-sm font-semibold",
-                  provider === "razorpay" ? "border-primary bg-primary/10" : "border-border")}>
-                <Wallet className="w-4 h-4" /> UPI / Netbanking <span className="text-[10px] opacity-70">(India)</span>
-              </button>
-              <button type="button" onClick={() => setProvider("card")}
-                className={cn("h-14 rounded-xl border-2 flex items-center justify-center gap-2 text-sm font-semibold",
-                  provider === "card" ? "border-primary bg-primary/10" : "border-border")}>
-                <Globe className="w-4 h-4" /> Card <span className="text-[10px] opacity-70">(Global)</span>
-              </button>
+            <div className="h-14 rounded-xl border-2 border-primary bg-primary/10 flex items-center justify-center gap-2 text-sm font-semibold">
+              <Wallet className="w-4 h-4" /> UPI / Netbanking / Cards via Razorpay
             </div>
           </div>
 
@@ -389,28 +380,89 @@ function UpgradeSection({ currentTier, email, name, userId, onUpgraded }: { curr
             Subscribe — ₹{total.toLocaleString("en-IN")} / month
           </Button>
 
-          <div className="text-[11px] text-muted-foreground text-center">
-            To cancel or change your subscription, please{" "}
-            <a href="#" onClick={(e) => { e.preventDefault(); document.getElementById("support-form")?.scrollIntoView({ behavior: "smooth" }); }}
-              className="text-accent underline-offset-2 hover:underline">open a support ticket</a>{" "}
-            — self-serve cancellation is coming soon.
-          </div>
-
-          {stripeOpen && (
-            <div className="mt-3 rounded-xl border p-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs uppercase tracking-wider text-accent">Secure card checkout</span>
-                <button onClick={() => setStripeOpen(false)} className="text-xs text-muted-foreground hover:text-foreground">Cancel</button>
-              </div>
-              <StripeEmbeddedCheckout priceId={stripePriceId} quantity={tbCount} customerEmail={email} userId={userId}
-                returnUrl={`${window.location.origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`} />
-            </div>
-          )}
+          <ActiveSubscriptionCancel userId={userId} />
         </>
       )}
     </div>
   );
 }
+
+/* ---------------- Cancel active Razorpay subscription ---------------- */
+function ActiveSubscriptionCancel({ userId }: { userId: string }) {
+  const [active, setActive] = useState<any | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const load = async () => {
+    const { data } = await supabase
+      .from("subscriptions")
+      .select("id, razorpay_subscription_id, subscription_type, storage_quantity_tb, status, current_period_end, cancel_at_period_end, cancel_requested_at")
+      .eq("user_id", userId)
+      .not("razorpay_subscription_id", "is", null)
+      .in("status", ["active", "authenticated", "trialing", "past_due"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setActive(data || null);
+  };
+  useEffect(() => { void load(); }, [userId]);
+
+  if (!active) {
+    return (
+      <div className="text-[11px] text-muted-foreground text-center">
+        No active recurring subscription on this account.
+      </div>
+    );
+  }
+
+  const cancel = async () => {
+    setBusy(true);
+    const { error } = await supabase.functions.invoke("cancel-creator-storage", {
+      body: { subscriptionId: active.razorpay_subscription_id },
+    });
+    setBusy(false); setConfirming(false);
+    if (error) { toast.error(error.message || "Could not cancel"); return; }
+    toast.success("Cancellation scheduled — access continues until your current period ends.");
+    void load();
+  };
+
+  const periodEnd = active.current_period_end ? new Date(active.current_period_end).toLocaleDateString() : null;
+
+  return (
+    <div className="border rounded-xl p-4 text-sm space-y-3 bg-secondary/30">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div>
+          <div className="font-semibold">
+            {active.subscription_type === "storage"
+              ? `Storage add-on${active.storage_quantity_tb ? ` · ${active.storage_quantity_tb} TB` : ""}`
+              : "Creator plan"}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Status: <span className="capitalize">{active.status}</span>
+            {periodEnd && <> · renews {periodEnd}</>}
+          </div>
+        </div>
+        {active.cancel_at_period_end ? (
+          <Badge variant="outline" className="text-[10px]">Cancellation scheduled</Badge>
+        ) : confirming ? (
+          <div className="flex gap-2">
+            <Button size="sm" variant="destructive" onClick={cancel} disabled={busy}>
+              {busy ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+              Confirm cancel
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setConfirming(false)} disabled={busy}>Keep</Button>
+          </div>
+        ) : (
+          <Button size="sm" variant="outline" onClick={() => setConfirming(true)}>Cancel subscription</Button>
+        )}
+      </div>
+      <div className="text-[11px] text-muted-foreground">
+        Cancelling stops the next renewal. Your storage / plan stays active until the end of the current billing period.
+      </div>
+    </div>
+  );
+}
+
+
 
 /* ---------------- Statements (purchases) ---------------- */
 function Statements({ userId }: { userId: string }) {

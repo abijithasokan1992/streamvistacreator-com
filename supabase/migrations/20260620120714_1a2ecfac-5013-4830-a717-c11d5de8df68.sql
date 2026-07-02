@@ -1,0 +1,2 @@
+REVOKE EXECUTE ON FUNCTION public.studio_vault_calculate_price(uuid,integer,integer) FROM anon, public;
+GRANT EXECUTE ON FUNCTION public.studio_vault_calculate_price(uuid,integer,integer) TO authenticated, service_role;

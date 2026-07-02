@@ -1,16 +1,13 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+function jsonWith(req: Request) {
+  const cors = buildCorsHeaders(req);
+  return (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
 }
 
 async function requireAdmin(req: Request) {
@@ -28,7 +25,8 @@ async function requireAdmin(req: Request) {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") return handleOptions(req);
+  const json = jsonWith(req);
 
   const gate = await requireAdmin(req);
   if (!gate.ok) return json({ error: gate.error }, gate.status);
@@ -65,6 +63,51 @@ Deno.serve(async (req) => {
     } catch (e) {
       return json({ ok: false, error: (e as Error).message });
     }
+  }
+
+  if (action === "send_test") {
+    if (!key) return json({ ok: false, error: "RESEND_API_KEY is not set" }, 200);
+    const to = String(body?.to ?? "").trim();
+    if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+      return json({ ok: false, error: "Provide a valid recipient email" }, 200);
+    }
+    const fromDomain = Deno.env.get("RESEND_FROM_DOMAIN") || "streamvistacreator.com";
+    const senderName = Deno.env.get("RESEND_SENDER_NAME") || "StreamVista";
+    const from = `${senderName} <noreply@${fromDomain}>`;
+    try {
+      const r = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from,
+          to: [to],
+          subject: "StreamVista · Resend test email",
+          html: `<div style="font-family:Arial,sans-serif;padding:24px;max-width:560px">
+            <h2 style="margin:0 0 12px">Resend connectivity OK</h2>
+            <p>This is an operational test from the StreamVista admin panel.</p>
+            <p style="color:#666;font-size:12px">Sent at ${new Date().toISOString()} from <code>${from}</code></p>
+          </div>`,
+        }),
+      });
+      const txt = await r.text();
+      let parsed: any = null;
+      try { parsed = JSON.parse(txt); } catch { /* noop */ }
+      if (!r.ok) {
+        return json({ ok: false, error: `Resend ${r.status}: ${parsed?.message || txt.slice(0, 240)}`, from });
+      }
+      return json({ ok: true, id: parsed?.id ?? null, from, to });
+    } catch (e) {
+      return json({ ok: false, error: (e as Error).message, from });
+    }
+  }
+
+  if (action === "sender_info") {
+    return json({
+      from_address: `noreply@${Deno.env.get("RESEND_FROM_DOMAIN") || "streamvistacreator.com"}`,
+      sender_name: Deno.env.get("RESEND_SENDER_NAME") || "StreamVista",
+      sender_domain: Deno.env.get("SENDER_DOMAIN") || "notify.streamvistacreator.com",
+      source: "edge function constants (send-transactional-email / auth-email-hook)",
+    });
   }
 
   return json({ error: "Unknown action" }, 400);

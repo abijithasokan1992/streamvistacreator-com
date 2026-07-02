@@ -31,7 +31,7 @@ export function CmsHeroBanners() {
   return (
     <section className="container py-10">
       <div className="relative overflow-hidden rounded-3xl glass-strong border border-border/40">
-        {b.image_url && <img src={b.image_url} alt={b.headline} className="absolute inset-0 w-full h-full object-cover opacity-40" />}
+        {b.image_url && <img src={b.image_url} alt={b.headline} className="absolute inset-0 w-full h-full object-cover opacity-90" />}
         <div className="relative p-8 md:p-14 max-w-3xl">
           <h2 className="font-display text-3xl md:text-5xl font-bold tracking-tight">{b.headline}</h2>
           {b.subheadline && <p className="mt-3 text-base md:text-lg text-muted-foreground">{b.subheadline}</p>}
@@ -77,14 +77,21 @@ export function CmsFeaturedFilms() {
   return (
     <section className="container py-12">
       <div className="flex items-end justify-between mb-6">
-        <h2 className="font-display text-2xl md:text-3xl font-bold tracking-tight">Featured films & projects</h2>
+        <h2 className="font-display text-2xl md:text-3xl font-bold tracking-tight">Our Licensed Film Portfolio</h2>
       </div>
-      <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
         {films.map(f => (
           <a key={f.id} href={f.link_url ?? "#"} className="group block rounded-2xl overflow-hidden border border-border/50 bg-secondary/30 hover:border-accent/50 transition">
-            {f.poster_url
-              ? <img src={f.poster_url} alt={f.title} className="w-full aspect-[2/3] object-cover group-hover:scale-[1.03] transition" />
-              : <div className="w-full aspect-[2/3] bg-secondary" />}
+            <div className="relative w-full aspect-[2/3] bg-secondary overflow-hidden">
+              {f.poster_url && (
+                <img
+                  src={f.poster_url}
+                  alt={f.title}
+                  loading="lazy"
+                  className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-[1.03] transition"
+                />
+              )}
+            </div>
             <div className="p-4 space-y-1">
               <div className="font-semibold text-sm">{f.title}</div>
               {f.blurb && <p className="text-xs text-muted-foreground line-clamp-2">{f.blurb}</p>}

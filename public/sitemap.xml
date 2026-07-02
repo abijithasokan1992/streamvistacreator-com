@@ -1,13 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://streamvistacreator.com/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
-  <url><loc>https://streamvistacreator.com/about</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://streamvistacreator.com/</loc><lastmod>2026-06-24</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://streamvistacreator.com/about</loc><lastmod>2026-06-24</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://streamvistacreator.com/pricing</loc><lastmod>2026-06-24</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://streamvistacreator.com/contact</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://streamvistacreator.com/c2c-setup</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://streamvistacreator.com/onboarding</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://streamvistacreator.com/support</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://streamvistacreator.com/launching-special-plan</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://streamvistacreator.com/auth</loc><changefreq>yearly</changefreq><priority>0.4</priority></url>
   <url><loc>https://streamvistacreator.com/terms</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
   <url><loc>https://streamvistacreator.com/privacy</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
   <url><loc>https://streamvistacreator.com/refund</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
-  <url><loc>https://streamvistacreator.com/ip-copyright</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
-  <url><loc>https://streamvistacreator.com/dmca</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://streamvistacreator.com/ip-copyright</loc><lastmod>2026-06-24</lastmod><changefreq>yearly</changefreq><priority>0.4</priority></url>
+  <url><loc>https://streamvistacreator.com/dmca</loc><lastmod>2026-06-24</lastmod><changefreq>yearly</changefreq><priority>0.4</priority></url>
+  <url><loc>https://streamvistacreator.com/blog/camera-to-cloud-guide</loc><lastmod>2026-06-24</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://streamvistacreator.com/blog/streamvista-vs-frame-io-camera-to-cloud</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
 </urlset>

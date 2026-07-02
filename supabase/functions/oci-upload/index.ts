@@ -6,10 +6,48 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
+import { validateUploadKind } from "../_shared/uploadValidation.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const MAX_BYTES = 5 * 1024 * 1024 * 1024; // 5 GB per file
+const MAX_BYTES = 5 * 1024 * 1024 * 1024; // 5 GB per file (single-shot)
+
+// Phase 3 / 4 / 7 — mirrors oci-multipart caps & prefix rules.
+const GB = 1024 * 1024 * 1024;
+const MB = 1024 * 1024;
+const TB = 1024 * GB;
+const CATEGORY_LIMITS: Record<string, number> = {
+  trailer: 5 * GB, feature_film: 5 * GB, master: 5 * GB,
+  prores: 5 * GB, dcp: 5 * GB,
+  poster: 500 * MB, artwork: 500 * MB,
+  subtitle: 50 * MB, captions: 50 * MB,
+  censor_certificate: 200 * MB, censor_cert: 200 * MB,
+  ownership_documents: 500 * MB, ownership: 500 * MB,
+  legal: 200 * MB, sales: 500 * MB,
+  audio: 5 * GB, audio_tracks: 5 * GB,
+};
+const CATEGORY_PREFIX: Record<string, string> = {
+  trailer: "trailers",
+  feature_film: "masters", master: "masters",
+  prores: "prores", dcp: "dcp",
+  poster: "artwork", artwork: "artwork",
+  subtitle: "subtitles", captions: "subtitles",
+  censor_certificate: "documents", censor_cert: "documents",
+  ownership_documents: "documents", ownership: "documents",
+  legal: "documents", sales: "documents",
+  audio: "documents", audio_tracks: "documents",
+};
+// Defense-in-depth fallback only — primary path reads workspace_storage_entitlements
+// via get_workspace_storage_entitlement RPC. Free tier is 5 GB per the canonical
+// plans.creator_basic row and free_tier_config.
+const PLAN_QUOTA: Record<string, number> = {
+  free: 5 * GB, creator: 1 * TB,
+  monthly: 5 * TB, quarterly: 5 * TB, yearly: 5 * TB,
+};
+function planQuotaBytes(planTier: string | null | undefined, topupTb: number | null | undefined): number {
+  const base = PLAN_QUOTA[String(planTier || "free").toLowerCase()] ?? PLAN_QUOTA.free;
+  return base + Math.max(0, Number(topupTb || 0)) * TB;
+}
 
 function pemToPkcs8(pem: string): ArrayBuffer {
   const b64 = pem.replace(/-----BEGIN [^-]+-----/g, "")
@@ -98,33 +136,49 @@ Deno.serve(async (req) => {
   if (ct.includes("application/json")) {
     const body = await req.json().catch(() => ({}));
     if (body.action === "list") {
-      // RLS scopes to workspaces the caller belongs to; service-role bypasses,
-      // so we filter explicitly via the user's memberships.
+      // Security invariant: recent_uploads rows (including par_url signed Oracle
+      // URLs and object_key) must only be readable by the uploader OR a workspace
+      // admin. Service-role bypasses RLS, so enforce the same predicate here.
       const { data: memberships } = await admin
         .from("workspace_members")
-        .select("workspace_id")
+        .select("workspace_id, role")
         .eq("user_id", userId);
       const wsIds = (memberships ?? []).map((m: any) => m.workspace_id);
-      if (wsIds.length === 0) {
-        return new Response(JSON.stringify({ uploads: [] }), { headers: cors });
+      const adminWsIds = (memberships ?? [])
+        .filter((m: any) => m.role === "owner" || m.role === "admin")
+        .map((m: any) => m.workspace_id);
+      const { data: platformAdminRow } = await admin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .eq("role", "admin")
+        .maybeSingle();
+      const isPlatformAdmin = !!platformAdminRow;
+
+      const requestedWs = typeof body.workspaceId === "string" ? body.workspaceId.trim() : "";
+      if (requestedWs && !wsIds.includes(requestedWs) && !isPlatformAdmin) {
+        return new Response(JSON.stringify({ error: "forbidden_workspace" }), { status: 403, headers: cors });
       }
+
       let q = admin
         .from("recent_uploads")
         .select("*")
-        .in("workspace_id", wsIds)
         .order("created_at", { ascending: false })
         .limit(50);
-      if (typeof body.workspaceId === "string" && body.workspaceId) {
-        if (!wsIds.includes(body.workspaceId)) {
-          return new Response(JSON.stringify({ error: "forbidden_workspace" }), { status: 403, headers: cors });
+
+      if (isPlatformAdmin) {
+        if (requestedWs) q = q.eq("workspace_id", requestedWs);
+      } else {
+        // Caller sees only their own uploads, plus all uploads in workspaces
+        // where they are workspace owner/admin.
+        const orParts: string[] = [`user_id.eq.${userId}`];
+        if (adminWsIds.length > 0) {
+          orParts.push(`workspace_id.in.(${adminWsIds.join(",")})`);
         }
-        q = admin
-          .from("recent_uploads")
-          .select("*")
-          .eq("workspace_id", body.workspaceId)
-          .order("created_at", { ascending: false })
-          .limit(50);
+        q = q.or(orParts.join(","));
+        if (requestedWs) q = q.eq("workspace_id", requestedWs);
       }
+
       const { data, error } = await q;
       if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: cors });
       return new Response(JSON.stringify({ uploads: data ?? [] }), { headers: cors });
@@ -144,13 +198,13 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   // Private key only lives in the encrypted backend secret — never in the DB.
-  const pem = Deno.env.get("ORACLE_PRIVATE_KEY");
+  const pem = Deno.env.get("ORACLE_PRIVATE_KEY") || Deno.env.get("OCI_PRIVATE_KEY");
   const tenancy = cfg?.oracle_tenancy_ocid || Deno.env.get("OCI_TENANCY_OCID");
   const user = cfg?.oracle_user_ocid || Deno.env.get("OCI_USER_OCID");
   const fingerprint = cfg?.oracle_fingerprint || Deno.env.get("OCI_FINGERPRINT");
   const region = cfg?.oracle_region || Deno.env.get("OCI_REGION");
   const ns = cfg?.oracle_namespace || Deno.env.get("OCI_NAMESPACE");
-  const bucket = cfg?.oracle_bucket || Deno.env.get("OCI_BUCKET");
+  const bucket = cfg?.oracle_bucket || Deno.env.get("OCI_BUCKET") || Deno.env.get("OCI_BUCKET_NAME");
   if (!pem || !tenancy || !user || !fingerprint || !region || !ns || !bucket) {
     return new Response(JSON.stringify({ error: "OCI not fully configured" }), { status: 500, headers: cors });
   }
@@ -166,6 +220,15 @@ Deno.serve(async (req) => {
   }
   if (file.size > MAX_BYTES) {
     return new Response(JSON.stringify({ error: `file exceeds ${MAX_BYTES} bytes` }), { status: 413, headers: cors });
+  }
+
+  // Server-side MIME / extension allowlist (defence-in-depth — clients can lie).
+  {
+    const categoryHint = typeof form.get("category") === "string" ? String(form.get("category")) : null;
+    const v = validateUploadKind({ fileName: file.name, mimeType: file.type, category: categoryHint });
+    if (v) {
+      return new Response(JSON.stringify({ error: v.message, code: v.code }), { status: 415, headers: cors });
+    }
   }
 
   // Workspace routing: the caller must specify which workspace this asset belongs
@@ -249,8 +312,78 @@ Deno.serve(async (req) => {
     }
   }
 
+  // Phase 4: server-derived prefix when titleId is supplied.
+  const titleIdRaw = form.get("titleId");
+  const titleId = typeof titleIdRaw === "string" ? titleIdRaw.trim() : "";
+  const catKeyRaw = typeof categoryRaw === "string"
+    ? categoryRaw.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "")
+    : "";
+
+  // Phase 3: per-category limit
+  if (titleId) {
+    if (!catKeyRaw || !(catKeyRaw in CATEGORY_LIMITS)) {
+      return new Response(JSON.stringify({ error: `invalid category '${catKeyRaw}'` }), { status: 400, headers: cors });
+    }
+    if (file.size > CATEGORY_LIMITS[catKeyRaw]) {
+      return new Response(JSON.stringify({ error: `Upload Failed — ${catKeyRaw} exceeds category limit`, limitBytes: CATEGORY_LIMITS[catKeyRaw] }), { status: 413, headers: cors });
+    }
+  }
+
+  // Phase 7: total storage quota — authoritative via creator entitlement RPC,
+  // with a profile-based fallback when the RPC is unavailable.
+  {
+    let quota: number | null = null;
+    let usedBytes = 0;
+    try {
+      const { data: ent } = await admin.rpc("get_workspace_storage_entitlement", { _user_id: userId });
+      if (ent && typeof (ent as any).total_storage_gb !== "undefined") {
+        quota = Number((ent as any).total_storage_gb) * GB;
+        usedBytes = Number((ent as any).used_bytes ?? 0);
+      }
+    } catch (_) { /* fall through */ }
+    if (quota === null) {
+      // Legacy fallback for any environment still on the old RPC.
+      try {
+        const { data: entRows } = await admin.rpc("get_creator_storage_entitlement", { _user_id: userId });
+        const e: any = Array.isArray(entRows) ? entRows[0] : entRows;
+        if (e && typeof e.total_gb === "number") {
+          quota = Number(e.total_gb) * GB;
+          usedBytes = Math.round(Number(e.used_gb || 0) * GB);
+        }
+      } catch (_) { /* fall through */ }
+    }
+    if (quota === null) {
+      const { data: prof } = await admin.from("user_profiles")
+        .select("plan_tier, topup_tb").eq("user_id", userId).maybeSingle();
+      quota = planQuotaBytes(prof?.plan_tier, prof?.topup_tb);
+      const { data: usedRows } = await admin.from("recent_uploads")
+        .select("file_size").eq("user_id", userId)
+        .in("status", ["uploading", "uploaded", "verified", "ready", "completed", "done"]);
+      usedBytes = (usedRows ?? []).reduce((s: number, r: any) => s + (Number(r.file_size) || 0), 0);
+    }
+
+    if (usedBytes + file.size > quota) {
+      return new Response(JSON.stringify({
+        error: `Storage limit reached — your workspace has used ${Math.round(usedBytes / GB)} GB of ${Math.round(quota / GB)} GB. Add another 1 TB block in Storage & Billing or request a higher plan.`,
+        code: "storage_quota_exceeded",
+        quotaBytes: quota, usedBytes,
+      }), { status: 413, headers: cors });
+    }
+  }
+
   if (!row) {
-    const objectKey = `workspaces/${workspaceId}/${projectSegment}${categorySegment}/users/${userId}/${Date.now()}-${crypto.randomUUID()}-${safeName(file.name)}`;
+    let objectKey: string;
+    if (titleId) {
+      const { data: t } = await admin.from("content_titles")
+        .select("id, owner_user_id").eq("id", titleId).maybeSingle();
+      if (!t || t.owner_user_id !== userId) {
+        return new Response(JSON.stringify({ error: "forbidden_title" }), { status: 403, headers: cors });
+      }
+      const prefix = CATEGORY_PREFIX[catKeyRaw] ?? "documents";
+      objectKey = `users/${userId}/titles/${titleId}/${prefix}/${Date.now()}-${crypto.randomUUID()}-${safeName(file.name)}`;
+    } else {
+      objectKey = `workspaces/${workspaceId}/${projectSegment}${categorySegment}/users/${userId}/${Date.now()}-${crypto.randomUUID()}-${safeName(file.name)}`;
+    }
     const { data: inserted, error: insErr } = await admin
       .from("recent_uploads")
       .insert({
@@ -263,8 +396,8 @@ Deno.serve(async (req) => {
         object_key: objectKey,
         status: "uploading",
         client_pending_id: pendingId,
-        project_id: projectSegment ? projectIdRaw : null,
-        category: projectSegment ? categorySegment : null,
+        project_id: titleId ? null : (projectSegment ? projectIdRaw : null),
+        category: titleId ? catKeyRaw : (projectSegment ? categorySegment : null),
       })
       .select("id, object_key, status").single();
     if (insErr || !inserted) {

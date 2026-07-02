@@ -15,6 +15,7 @@ import {
   Section,
   Text,
 } from 'npm:@react-email/components@0.0.22'
+import { BrandLogos } from './brand-logos.tsx'
 
 interface SignupEmailProps {
   siteName: string
@@ -55,6 +56,7 @@ export const SignupEmail = ({
         <Text style={footer}>
           You're receiving this because someone signed up at <Link href={siteUrl} style={footerLink}>StreamVista</Link>. If that wasn't you, simply ignore this email.
         </Text>
+              <BrandLogos />
       </Container>
     </Body>
   </Html>

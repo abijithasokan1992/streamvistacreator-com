@@ -11,7 +11,10 @@ import { useWorkspaces } from "@/hooks/useWorkspaces";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useStorageQuota, StorageWarningBanner } from "@/hooks/useStorageQuota";
-import { uploadFileMultipart, MULTIPART_THRESHOLD, ResumableUploadInterrupted } from "@/lib/ociMultipartUpload";
+import { useCreatorPaygPrice } from "@/hooks/usePublicPlans";
+import { uploadFileMultipart, MULTIPART_THRESHOLD, ResumableUploadInterrupted, UploadSessionExpiredError, mapUploadError } from "@/lib/ociMultipartUpload";
+import { reportUploadFailure } from "@/lib/uploads/uploadFailure";
+import { useAuth } from "@/hooks/useAuth";
 
 // Persisted pendingId per file fingerprint so a retry on the same browser
 // resumes the same OCI multipart upload instead of starting fresh.
@@ -71,7 +74,9 @@ export default function CameraToCloudIngest() {
   const inputRef = useRef<HTMLInputElement>(null);
   const { showMessage } = useSystemMessage();
   const { workspaces, activeId, setActiveId, canWriteActive } = useWorkspaces();
+  const { user } = useAuth();
   const quota = useStorageQuota();
+  const payg = useCreatorPaygPrice();
 
   const refresh = useCallback(async () => {
     if (!activeId) { setRecent([]); return; }
@@ -171,12 +176,30 @@ export default function CameraToCloudIngest() {
       toast.success(`Ingested: ${p.file.name}`);
       refresh();
     } catch (e) {
-      const msg = (e as Error).message;
-      setPending((cur) => cur.map((x) => x.id === p.id ? { ...x, status: "error", error: msg } : x));
-      const m = msg.toLowerCase();
-      const isOracle = m.includes("oracle") || m.includes("oci") || m.includes("objectstorage") || m.includes("bucket") || m.includes("namespace");
-      const isAuth = m.includes("not signed in") || m.includes("401") || m.includes("jwt");
+      const rawMsg = (e as Error).message;
+      const friendly = mapUploadError(e);
+      const m = rawMsg.toLowerCase();
+      const isOracle = m.includes("oracle") || m.includes("oci") || m.includes("objectstorage") || m.includes("bucket") || m.includes("namespace") || m.includes("notauthenticated");
+      const isAuth = m.includes("not signed in") || m.includes("401") || m.includes("jwt") || m.includes("unauthenticated");
       const isNet = m.includes("network") || m.includes("failed to fetch");
+      const isSessionGone = e instanceof UploadSessionExpiredError || m.includes("upload_not_found") || m.includes("uploadnotfound");
+      setPending((cur) => cur.map((x) => x.id === p.id ? { ...x, status: "error", error: friendly } : x));
+      // Route real server-side / OCI failures into the admin support inbox.
+      // Pure client-side guards (auth, validation) are filtered inside reporter.
+      void reportUploadFailure({
+        userId: user?.id,
+        userEmail: user?.email,
+        surface: "studio_c2c_ingest",
+        stage: isSessionGone ? "session_expired"
+              : isOracle ? "part_upload"
+              : isNet ? "part_upload"
+              : "upload_init",
+        fileName: p.file.name,
+        fileSize: p.file.size,
+        workspaceId: activeId,
+        error: e,
+        extra: { pendingId: p.id, mime: p.file.type },
+      });
       showMessage({
         severity: "error",
         title: isOracle ? "C CLOUD storage rejected the upload"
@@ -185,22 +208,20 @@ export default function CameraToCloudIngest() {
               : `Couldn't ingest "${p.file.name}"`,
         message:
           (isOracle
-            ? `Camera-to-Cloud reached the StreamVista backend, but C CLOUD Object Storage returned an error.\n\nReason: ${msg}\n\nThe file is still on your device — retry once C CLOUD is reachable, or report this so an admin can verify the bucket credentials.`
+            ? `Camera-to-Cloud reached the StreamVista backend, but C CLOUD Object Storage returned an error.\n\nReason: ${friendly}\n\nThe file is still on your device — retry once C CLOUD is reachable. This failure has been logged for an admin to verify the bucket credentials.`
             : isAuth
             ? `Your session expired before "${p.file.name}" finished ingesting. Sign in again and retry — nothing was lost.`
             : isNet
-            ? `The network dropped while streaming "${p.file.name}" to the cloud bridge.\n\nReason: ${msg}\n\nReconnect and try again, or report this so we can investigate.`
-            : `The ingest pipeline failed for "${p.file.name}".\n\nReason: ${msg}\n\nRetry, or report this so an admin can take a look.`),
+            ? `The network dropped while streaming "${p.file.name}" to the cloud bridge.\n\nReason: ${friendly}\n\nReconnect and try again — your progress is checkpointed.`
+            : `The ingest pipeline failed for "${p.file.name}".\n\nReason: ${friendly}`),
         context: `file=${p.file.name}; size=${p.file.size}; mime=${p.file.type}; pendingId=${p.id}`,
-        // Re-attempt the same pendingId with the same File handle. Skip for auth errors
-        // (user must sign in again first) — the modal still surfaces the issue.
         extraAction: isAuth ? undefined : {
           label: "Retry upload",
           onClick: () => { void uploadOne(p); },
         },
       });
     }
-  }, [refresh, showMessage, activeId]);
+  }, [refresh, showMessage, activeId, user?.id, user?.email]);
 
   const handleFiles = useCallback((files: FileList | File[]) => {
     if (!activeId) {
@@ -288,7 +309,7 @@ export default function CameraToCloudIngest() {
           <p className="mt-2 text-sm text-muted-foreground">
             Upgrade to the Creator Plan to keep ingesting. Existing footage stays viewable.
           </p>
-          <Button variant="default" className="mt-4">Upgrade · ₹767 / mo</Button>
+          <Button variant="default" className="mt-4">Upgrade · {payg.totalLabel} / mo</Button>
         </Card>
       ) : (
       <Card

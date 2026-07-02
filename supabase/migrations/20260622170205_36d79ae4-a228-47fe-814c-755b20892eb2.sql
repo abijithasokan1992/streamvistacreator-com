@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.get_creator_storage_entitlement(uuid);

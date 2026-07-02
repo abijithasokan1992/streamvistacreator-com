@@ -14,7 +14,7 @@
  * valid even though the user hasn't set a new password.
  */
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
 import { loadRazorpayCreds } from "../_shared/razorpay-config.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -23,10 +23,10 @@ const ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
 
 const FASTLINK_AMOUNT_PAISE = 100; // ₹1.00
 
-function json(body: unknown, status = 200) {
+function json(body: unknown, status = 200, req?: Request) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...(req ? buildCorsHeaders(req) : {}), "Content-Type": "application/json" },
   });
 }
 
@@ -46,17 +46,18 @@ async function hmacSha256Hex(key: string, msg: string): Promise<string> {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") return handleOptions(req);
+  const j = (b: unknown, s = 200) => json(b, s, req);
 
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
+    if (!authHeader?.startsWith("Bearer ")) return j({ error: "Unauthorized" }, 401);
 
     const userClient = createClient(SUPABASE_URL, ANON, {
       global: { headers: { Authorization: authHeader } },
     });
     const { data: userRes, error: uErr } = await userClient.auth.getUser();
-    if (uErr || !userRes?.user) return json({ error: "Unauthorized" }, 401);
+    if (uErr || !userRes?.user) return j({ error: "Unauthorized" }, 401);
     const uid = userRes.user.id;
 
     const body = await req.json().catch(() => ({}));
@@ -64,7 +65,7 @@ Deno.serve(async (req) => {
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
     const creds = await loadRazorpayCreds(admin);
-    if (!creds) return json({ error: "Razorpay not configured" }, 503);
+    if (!creds) return j({ error: "Razorpay not configured" }, 503);
 
     if (action === "create") {
       // Ledger row first so we can attach order_id afterwards.
@@ -78,7 +79,7 @@ Deno.serve(async (req) => {
         })
         .select("id")
         .single();
-      if (insErr || !row) return json({ error: insErr?.message || "Insert failed" }, 500);
+      if (insErr || !row) return j({ error: insErr?.message || "Insert failed" }, 500);
 
       // Razorpay creds occasionally arrive with stray whitespace / unicode
       // characters from secret entry. Sanitize to ASCII before base64-encoding.
@@ -102,7 +103,7 @@ Deno.serve(async (req) => {
           .from("fastlink_payments")
           .update({ status: "failed" })
           .eq("id", row.id);
-        return json({ error: "Order creation failed" }, 502);
+        return j({ error: "Order creation failed" }, 502);
       }
 
       await admin
@@ -110,7 +111,7 @@ Deno.serve(async (req) => {
         .update({ razorpay_order_id: order.id })
         .eq("id", row.id);
 
-      return json({
+      return j({
         fastlinkId: row.id,
         orderId: order.id,
         amount: FASTLINK_AMOUNT_PAISE,
@@ -124,7 +125,7 @@ Deno.serve(async (req) => {
       const paymentId = String(body?.razorpay_payment_id ?? "");
       const signature = String(body?.razorpay_signature ?? "");
       if (!orderId || !paymentId || !signature) {
-        return json({ error: "Missing payment fields" }, 400);
+        return j({ error: "Missing payment fields" }, 400);
       }
 
       const expected = await hmacSha256Hex(creds.keySecret, `${orderId}|${paymentId}`);
@@ -134,7 +135,7 @@ Deno.serve(async (req) => {
           .update({ status: "failed" })
           .eq("razorpay_order_id", orderId)
           .eq("user_id", uid);
-        return json({ verified: false, error: "Signature mismatch" }, 400);
+        return j({ verified: false, error: "Signature mismatch" }, 400);
       }
 
       const { data: updated, error: upErr } = await admin
@@ -149,15 +150,15 @@ Deno.serve(async (req) => {
         .select("id")
         .single();
       if (upErr || !updated) {
-        return json({ verified: false, error: "Ledger update failed" }, 500);
+        return j({ verified: false, error: "Ledger update failed" }, 500);
       }
 
-      return json({ verified: true });
+      return j({ verified: true });
     }
 
-    return json({ error: "Unknown action" }, 400);
+    return j({ error: "Unknown action" }, 400);
   } catch (e) {
     console.error("fastlink-pay error:", e instanceof Error ? e.message : String(e));
-    return json({ error: "Internal server error" }, 500);
+    return j({ error: "Internal server error" }, 500);
   }
 });

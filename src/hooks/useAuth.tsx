@@ -3,33 +3,93 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
 export type AppRole =
+  // === MVP roles (the only roles the product surfaces) ===
+  // Public signup
+  | "content_owner"   // labelled "Creator" in UI
+  | "studio"
+  | "buyer"
+  // Invite-only
   | "admin"
+  | "super_admin"
+  | "qc_reviewer"
+  | "legal_reviewer"
+  // === Dormant / Phase 2 — kept in the enum so existing rows still load,
+  // but never offered through signup, dashboards, or admin UI. ===
+  | "localization_partner"
+  | "distributor"
   | "executive_producer"
   | "creator"
   | "client"
   | "moderator"
   | "user";
 
+/** The 7 roles supported by the StreamVista MVP. */
+export const MVP_PUBLIC_ROLES = ["content_owner", "studio", "buyer"] as const;
+export const MVP_INVITE_ROLES = ["admin", "super_admin", "qc_reviewer", "legal_reviewer"] as const;
+export const MVP_ROLES = [...MVP_PUBLIC_ROLES, ...MVP_INVITE_ROLES] as const;
+
+const ROLE_ORDER: AppRole[] = [
+  "super_admin",
+  "admin",
+  "qc_reviewer",
+  "legal_reviewer",
+  "content_owner",
+  "studio",
+  "buyer",
+  // Dormant fall-through
+  "distributor",
+  "localization_partner",
+  "executive_producer",
+  "creator",
+  "moderator",
+  "client",
+  "user",
+];
+
+
 interface AuthCtx {
   user: User | null;
   session: Session | null;
   role: AppRole | null;
+  /** Canonical dashboard role: legacy roles are mapped to the new ones. */
+  dashboardRole: AppRole | null;
   isAdmin: boolean;
-  isExecutiveProducer: boolean;
-  isCreator: boolean;
-  isClient: boolean;
+  isSuperAdmin: boolean;
+  isQcReviewer: boolean;
+  isLegalReviewer: boolean;
   loading: boolean;
   signOut: () => Promise<void>;
   refreshRole: () => Promise<void>;
 }
 
+
 const Ctx = createContext<AuthCtx>({} as AuthCtx);
 
-/** Highest-precedence role (matches DB `public.primary_role`). */
+/** Highest-precedence role across new + legacy enums. */
 function pickPrimary(roles: AppRole[]): AppRole | null {
-  const order: AppRole[] = ["admin", "executive_producer", "creator", "moderator", "client", "user"];
-  for (const r of order) if (roles.includes(r)) return r;
+  for (const r of ROLE_ORDER) if (roles.includes(r)) return r;
   return null;
+}
+
+export function pickPrimaryRole(roles: AppRole[]): AppRole | null {
+  return pickPrimary(roles);
+}
+
+/** Map legacy roles to their new-world equivalents for routing. */
+function toDashboardRole(r: AppRole | null): AppRole | null {
+  if (!r) return null;
+  switch (r) {
+    case "executive_producer":
+    case "creator":
+      return "content_owner";
+    case "client":
+      return "buyer";
+    case "moderator":
+    case "user":
+      return "buyer";
+    default:
+      return r;
+  }
 }
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -48,12 +108,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setRole(pickPrimary(roles));
   };
 
+  const handleRefreshFailure = () => {
+    try {
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith("sb-") || k.includes("supabase.auth"))
+        .forEach((k) => localStorage.removeItem(k));
+      Object.keys(sessionStorage)
+        .filter((k) => k.startsWith("sb-") || k.includes("supabase.auth"))
+        .forEach((k) => sessionStorage.removeItem(k));
+    } catch { /* ignore */ }
+    setSession(null);
+    setUser(null);
+    setRole(null);
+    setLoading(false);
+    if (typeof window !== "undefined" && window.location.pathname !== "/auth") {
+      window.location.replace("/auth");
+    }
+  };
+
+  const isRefreshTokenError = (err: unknown): boolean => {
+    const msg = (err as any)?.message?.toLowerCase?.() ?? "";
+    const code = (err as any)?.code?.toLowerCase?.() ?? "";
+    return (
+      code === "refresh_token_not_found" ||
+      msg.includes("refresh token not found") ||
+      msg.includes("invalid refresh token") ||
+      msg.includes("refresh_token_not_found")
+    );
+  };
+
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((evt, s) => {
+      if (evt === "SIGNED_OUT" || (evt === "TOKEN_REFRESHED" && !s)) {
+        if (!s) { handleRefreshFailure(); return; }
+      }
       setSession(s);
       setUser(s?.user ?? null);
       setTimeout(() => checkRole(s?.user?.id), 0);
-      // Idle-tracker: keep last_active_at fresh + auto-unfreeze on real sign-in
       if ((evt === "SIGNED_IN" || evt === "TOKEN_REFRESHED") && s?.user?.id) {
         setTimeout(() => {
           supabase.from("user_profiles").update({
@@ -65,18 +156,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }, 0);
       }
     });
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (error && isRefreshTokenError(error)) {
+        handleRefreshFailure();
+        return;
+      }
       setSession(data.session);
       setUser(data.session?.user ?? null);
       checkRole(data.session?.user?.id).finally(() => setLoading(false));
+    }).catch((err) => {
+      if (isRefreshTokenError(err)) handleRefreshFailure();
+      else setLoading(false);
     });
-    return () => sub.subscription.unsubscribe();
+
+    // Catch async refresh failures fired outside getSession()
+    const onUnhandled = (e: PromiseRejectionEvent) => {
+      if (isRefreshTokenError(e.reason)) {
+        e.preventDefault();
+        handleRefreshFailure();
+      }
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("unhandledrejection", onUnhandled);
+    }
+    return () => {
+      sub.subscription.unsubscribe();
+      if (typeof window !== "undefined") {
+        window.removeEventListener("unhandledrejection", onUnhandled);
+      }
+    };
   }, []);
+
 
   const signOut = async () => {
     try { await supabase.auth.signOut(); } catch { /* ignore */ }
     try {
-      // Belt-and-braces: wipe any cached supabase tokens before redirect.
       Object.keys(localStorage)
         .filter((k) => k.startsWith("sb-") || k.includes("supabase.auth"))
         .forEach((k) => localStorage.removeItem(k));
@@ -87,12 +201,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setSession(null);
     setUser(null);
     setRole(null);
-    // Hard-replace so the dashboard cannot be reached via the back button.
     if (typeof window !== "undefined") {
       window.location.replace("/auth");
     }
   };
   const refreshRole = async () => { await checkRole(user?.id); };
+
+  const dashboardRole = toDashboardRole(role);
 
   return (
     <Ctx.Provider
@@ -100,10 +215,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         user,
         session,
         role,
-        isAdmin: role === "admin",
-        isExecutiveProducer: role === "executive_producer",
-        isCreator: role === "creator",
-        isClient: role === "client",
+        dashboardRole,
+        isAdmin: role === "admin" || role === "super_admin",
+        isSuperAdmin: role === "super_admin",
+        isQcReviewer: role === "qc_reviewer",
+        isLegalReviewer: role === "legal_reviewer",
         loading,
         signOut,
         refreshRole,
@@ -116,11 +232,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 export const useAuth = () => useContext(Ctx);
 
-/** Default landing route for a given role. */
+/** Canonical landing route for a given role (legacy roles supported). */
 export function dashboardForRole(r: AppRole | null): string {
-  // Admins go to their dedicated console. Every other (regular) user lands on
-  // the shared user dashboard, which then routes them deeper based on role.
-  if (r === "admin") return "/admin";
-  return "/dashboard";
+  const d = toDashboardRole(r);
+  switch (d) {
+    case "super_admin": return "/admin";
+    case "admin": return "/admin";
+    case "qc_reviewer": return "/admin/qc";
+    case "legal_reviewer": return "/admin/legal";
+    case "content_owner": return "/dashboard/content";
+    case "studio": return "/dashboard/studio";
+    case "buyer": return "/dashboard/buyer";
+    // Dormant (Phase 2) roles still have routes so existing assignees aren't broken,
+    // but are never offered through signup or admin UI.
+    case "localization_partner": return "/dashboard/localization";
+    case "distributor": return "/dashboard/distribution";
+    default: return "/dashboard/content";
+  }
 }
 

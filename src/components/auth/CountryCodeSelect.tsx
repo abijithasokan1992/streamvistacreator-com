@@ -48,7 +48,7 @@ export function CountryCodeSelect({ value, onChange }: Props) {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search country or code…"
-            className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
+            className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           />
         </div>
         <ul className="max-h-72 overflow-y-auto py-1">

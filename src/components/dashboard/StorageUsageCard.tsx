@@ -3,13 +3,15 @@ import { HardDrive, Zap, Sparkles, Loader2, ArrowUpRight } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
+import { extractFnError, reportBillingFailure } from "@/lib/payments/billingFailure";
 import {
-  PAYG_TB_INR,
   FREE_STORAGE_GB,
   FREE_BANDWIDTH_GB,
   FREE_BANDWIDTH_OVERAGE_INR_PER_GB,
 } from "@/components/streamvista/plans";
 import { cn } from "@/lib/utils";
+import { notify } from "@/lib/notify";
 
 interface UsageProfile {
   plan_tier: string;
@@ -52,19 +54,28 @@ export default function StorageUsageCard() {
     if (!user) return;
     setToppingUp(true);
     const t = toast.loading("Opening Razorpay…");
+    let stage: "dialog_launch" | "order_create" | "payment_verify" = "dialog_launch";
     try {
+      assertLiveCheckoutHost();
+      stage = "order_create";
       const { data, error } = await supabase.functions.invoke("create-storage-topup", {
         body: { tb: 1 },
       });
-      if (error) throw error;
+      if (error) {
+        const msg = await extractFnError(error, "Could not create storage top-up");
+        throw new Error(msg);
+      }
       if ((data as any)?.error) throw new Error((data as any).error);
+      if (!(data as any)?.orderId) {
+        throw new Error("Creator storage add-on is not available right now.");
+      }
 
-      // Load Razorpay checkout
-      await new Promise<void>((resolve) => {
+      await new Promise<void>((resolve, reject) => {
         if ((window as any).Razorpay) return resolve();
         const s = document.createElement("script");
         s.src = "https://checkout.razorpay.com/v1/checkout.js";
         s.onload = () => resolve();
+        s.onerror = () => reject(new Error("Failed to load Razorpay checkout"));
         document.body.appendChild(s);
       });
 
@@ -78,6 +89,7 @@ export default function StorageUsageCard() {
         prefill: { email: user.email },
         theme: { color: "#a855f7" },
         handler: async (resp: any) => {
+          stage = "payment_verify";
           const v = await supabase.functions.invoke("verify-storage-topup", {
             body: {
               topupId: data.topupId,
@@ -87,17 +99,56 @@ export default function StorageUsageCard() {
             },
           });
           if (v.error || (v.data as any)?.error) {
-            toast.error("Payment verification failed");
+            const msg = (v.data as any)?.error
+              || (await extractFnError(v.error, "Payment verification failed"));
+            toast.error(`Payment verification failed — ${msg}`);
+            reportBillingFailure({
+              userId: user.id,
+              userEmail: user.email,
+              dashboard: "creator",
+              surface: "creator_storage_topup_card",
+              intent: "Creator +1 TB top-up",
+              stage: "payment_verify",
+              error: new Error(msg),
+              extra: { topup_id: data.topupId, razorpay_order_id: resp.razorpay_order_id },
+            });
           } else {
             toast.success("+1 TB added to your workspace 🎉");
+            if (user?.id) {
+              await notify(user.id, "storage_topup_paid", "+1 TB storage added", "Your workspace storage entitlement has been expanded. New uploads can use the additional space immediately.");
+            }
             load();
           }
         },
       });
+      rzp.on?.("payment.failed", (resp: any) => {
+        const msg = resp?.error?.description ?? resp?.error?.reason ?? "Payment failed at gateway";
+        toast.error(msg);
+        reportBillingFailure({
+          userId: user.id,
+          userEmail: user.email,
+          dashboard: "creator",
+          surface: "creator_storage_topup_card",
+          intent: "Creator +1 TB top-up",
+          stage: "payment_verify",
+          error: new Error(msg),
+          extra: { topup_id: data.topupId, razorpay_order_id: data.orderId },
+        });
+      });
       toast.dismiss(t);
       rzp.open();
     } catch (e: any) {
-      toast.error(e?.message || "Top-up failed", { id: t });
+      const msg = e?.message || "Top-up failed";
+      toast.error(msg, { id: t });
+      reportBillingFailure({
+        userId: user.id,
+        userEmail: user.email,
+        dashboard: "creator",
+        surface: "creator_storage_topup_card",
+        intent: "Creator +1 TB top-up",
+        stage,
+        error: e,
+      });
     } finally {
       setToppingUp(false);
     }
@@ -111,10 +162,25 @@ export default function StorageUsageCard() {
     );
   }
 
-  const isCreator = profile.plan_tier === "creator";
-  const storageQuotaMb = isCreator
-    ? (1 + Number(profile.topup_tb || 0)) * MB_PER_TB
-    : FREE_STORAGE_GB * MB_PER_GB;
+  // Resolve real total quota from entitlement RPC (included + paid + admin bonus).
+  const [entitlement, setEntitlement] = useState<any>(null);
+  useEffect(() => {
+    let cancelled = false;
+    if (!user) return;
+    (supabase as any).rpc("get_workspace_storage_entitlement", { _user_id: user.id })
+      .then(({ data }: any) => { if (!cancelled && data) setEntitlement(data); });
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
+  const totalGb = Number(entitlement?.total_storage_gb ?? FREE_STORAGE_GB);
+  const paidGb = Number(entitlement?.paid_storage_gb ?? 0);
+  const bonusGb = Number(entitlement?.admin_bonus_storage_gb ?? 0);
+  const testingGb = Number(entitlement?.testing_override_gb ?? 0);
+  const testingOn = Boolean(entitlement?.testing_mode_enabled) && testingGb > 0;
+  const planCode = String(entitlement?.plan_code ?? "creator_basic");
+  const includedGb = Number(entitlement?.included_storage_gb ?? 0);
+  const isCreator = paidGb > 0 || planCode !== "creator_basic";
+  const storageQuotaMb = totalGb * MB_PER_GB;
   const storageUsedMb = Number(profile.storage_used_mb || 0);
   const storagePct = Math.min(100, Math.round((storageUsedMb / storageQuotaMb) * 100));
   const storageFull = storagePct >= 100;
@@ -129,9 +195,13 @@ export default function StorageUsageCard() {
     : mb >= MB_PER_GB ? `${(mb / MB_PER_GB).toFixed(1)} GB`
     : `${mb.toFixed(0)} MB`;
 
-  const totalQuotaLabel = isCreator
-    ? `${(storageQuotaMb / MB_PER_TB).toFixed(0)} TB`
-    : `${FREE_STORAGE_GB} GB`;
+  const totalQuotaLabel = totalGb >= 1024
+    ? `${(totalGb / 1024).toFixed(2)} TB`
+    : `${totalGb.toFixed(0)} GB`;
+  const planLabel = isCreator
+    ? `Creator · ${paidGb > 0 ? `${Math.round(paidGb / 1024)} TB add-on` : "paid plan"}${bonusGb > 0 ? ` + ${bonusGb.toFixed(0)} GB grant` : ""}`
+    : `Creator Basic · submission plan${bonusGb > 0 ? ` + ${bonusGb.toFixed(0)} GB grant` : ""}`;
+
 
   return (
     <div className="glass rounded-2xl p-5 space-y-5">
@@ -142,7 +212,8 @@ export default function StorageUsageCard() {
             Storage &amp; Bandwidth
           </h3>
           <p className="text-[11px] text-muted-foreground mt-0.5">
-            {isCreator ? "Creator · Pay-As-You-Go" : "Basic Free Plan"}
+            {planLabel}
+
           </p>
         </div>
         {isCreator && (
@@ -155,7 +226,14 @@ export default function StorageUsageCard() {
       {/* Storage meter */}
       <div>
         <div className="flex items-center justify-between text-xs mb-1.5">
-          <span className="text-muted-foreground">Storage</span>
+          <span className="text-muted-foreground inline-flex items-center gap-2">
+            Storage
+            {testingOn && (
+              <span className="text-[10px] font-mono uppercase tracking-wider text-amber-400 bg-amber-400/10 border border-amber-400/30 px-1.5 py-0.5 rounded">
+                Testing +{testingGb} GB
+              </span>
+            )}
+          </span>
           <span className="font-mono">
             <b className="text-foreground">{fmt(storageUsedMb)}</b> / {totalQuotaLabel}
           </span>
@@ -171,9 +249,14 @@ export default function StorageUsageCard() {
             style={{ width: `${storagePct}%` }}
           />
         </div>
+        {testingOn && (
+          <p className="text-[10px] text-muted-foreground mt-1.5">
+            Total = {includedGb} GB plan + {paidGb.toFixed(0)} GB paid{bonusGb > 0 ? ` + ${bonusGb.toFixed(0)} GB grant` : ""} + <span className="text-amber-400">{testingGb} GB testing</span>. Testing allowance is internal QA only and is removed when the platform exits testing mode.
+          </p>
+        )}
         {storageFull && (
           <p className="text-[11px] text-destructive mt-1.5">
-            Storage full — uploads paused. {isCreator ? "Tap below to add the next TB." : "Upgrade to Creator for 1 TB + auto top-up."}
+            Storage full — uploads paused. {isCreator ? "Request more storage from the Upgrade tab — our team will follow up." : "Request a Creator upgrade for more storage."}
           </p>
         )}
       </div>
@@ -201,29 +284,19 @@ export default function StorageUsageCard() {
         </div>
       )}
 
-      {/* 1-click PAYG top-up */}
-      {isCreator ? (
-        <button
-          onClick={topUp}
-          disabled={toppingUp}
-          className={cn(
-            "w-full h-11 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all",
-            storageFull
-              ? "bg-gradient-primary text-primary-foreground glow-primary animate-pulse"
-              : "border border-accent/40 text-accent hover:bg-accent/10",
-          )}
-        >
-          {toppingUp ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUpRight className="w-4 h-4" />}
-          {storageFull ? `Add next 1 TB · ₹${PAYG_TB_INR}` : `Top up 1 TB · ₹${PAYG_TB_INR}`}
-        </button>
-      ) : (
-        <a
-          href="/auth?plan=creator"
-          className="block w-full h-11 leading-[44px] text-center rounded-xl bg-gradient-primary text-primary-foreground text-sm font-semibold glow-primary"
-        >
-          Upgrade to Creator · ₹{PAYG_TB_INR} / TB
-        </a>
-      )}
+      {/* Creator billing is founder-assisted — route to upgrade request form, not self-serve checkout. */}
+      <a
+        href="/dashboard/content?section=upgrade"
+        className={cn(
+          "w-full h-11 leading-[44px] text-center rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all",
+          storageFull
+            ? "bg-gradient-primary text-primary-foreground glow-primary"
+            : "border border-accent/40 text-accent hover:bg-accent/10",
+        )}
+      >
+        <ArrowUpRight className="w-4 h-4" />
+        {isCreator ? "Request more storage" : "Request a Creator upgrade"}
+      </a>
     </div>
   );
 }

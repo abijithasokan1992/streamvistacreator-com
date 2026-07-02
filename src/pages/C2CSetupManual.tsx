@@ -9,6 +9,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useWorkspaces } from "@/hooks/useWorkspaces";
+import { Seo } from "@/components/Seo";
 
 const PAR_BASE_URL = "https://objectstorage.ap-mumbai-1.oraclecloud.com/p/JeKB364pUi17Y_pIPaqVDc_M6XMrsCdj0xUXOHkWJT-2sOgzisRkuAB1KzAtfmym/n/bma8wibnommg/b/bucket-20260526-1544/o/";
 
@@ -368,6 +369,35 @@ export default function C2CSetupManual() {
 
 
     <div className="min-h-dvh bg-background text-foreground">
+      <Seo
+        title="Camera-to-Cloud (C2C) Setup Manual — StreamVista Cloud X"
+        description="Step-by-step setup guides for hardware, mobile, NDI/IP and virtual encoders to ingest media directly into StreamVista's secure cloud."
+        path="/c2c-setup"
+        type="article"
+        jsonLd={[
+          {
+            "@context": "https://schema.org",
+            "@type": "HowTo",
+            name: "Camera-to-Cloud Ingest Setup",
+            description:
+              "How to ingest live and recorded media into StreamVista Cloud using dedicated hardware encoders, mobile devices, NDI/IP workflows, or virtual/software encoders.",
+            step: [
+              { "@type": "HowToStep", name: "Dedicated Hardware", text: "Configure dedicated hardware encoders for camera-to-cloud ingest." },
+              { "@type": "HowToStep", name: "Mobile Ingest", text: "Use mobile devices to push camera footage to the StreamVista cloud." },
+              { "@type": "HowToStep", name: "NDI / IP Workflow", text: "Bridge NDI / IP video sources into the StreamVista ingest pipeline." },
+              { "@type": "HowToStep", name: "Virtual / Software Encoders", text: "Stream from virtual or software encoders into StreamVista." },
+            ],
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: "https://streamvistacreator.com/" },
+              { "@type": "ListItem", position: 2, name: "C2C Setup Manual", item: "https://streamvistacreator.com/c2c-setup" },
+            ],
+          },
+        ]}
+      />
       {/* Header */}
       <header className="border-b border-border/50 glass sticky top-0 z-40">
         <div className="container flex items-center justify-between h-16">
@@ -443,9 +473,9 @@ export default function C2CSetupManual() {
         <section className="space-y-4">
           <div className="flex items-center gap-3 mb-1">
             <div className="w-8 h-px bg-accent" />
-            <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">
+            <h2 className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent m-0">
               Ingest Categories
-            </span>
+            </h2>
           </div>
           {CATEGORIES.map((cat) => (
             <CategoryCard key={cat.id} cat={cat} ingestHref={ingestQuery(cat.id)} />
@@ -470,7 +500,7 @@ export default function C2CSetupManual() {
         </section>
 
         {/* Footer hint */}
-        <p className="text-center text-[11px] text-muted-foreground/60 pb-8">
+        <p className="text-center text-[11px] text-muted-foreground pb-8">
           All uploads are SHA-256 verified and encrypted in transit. For support, visit the{" "}
           <Link to="/support" className="underline hover:text-accent transition">Support Center</Link>.
         </p>

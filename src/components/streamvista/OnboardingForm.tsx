@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { planByCycle, type Cycle } from "./plans";
 import { useNavigate } from "react-router-dom";
+import { useCreatorPaygPrice } from "@/hooks/usePublicPlans";
 
 const ROLES = [
   "Creator", "Editor", "Director", "Cinematographer",
@@ -44,6 +45,8 @@ export const OnboardingForm = ({ selectedCycle = "free" }: Props) => {
   const navigate = useNavigate();
   const plan = planByCycle(selectedCycle);
   const isPaid = plan.cycle !== "free";
+  const payg = useCreatorPaygPrice();
+  const priceLabel = isPaid ? payg.totalLabel : plan.priceLabel;
 
   const [clientName, setClientName] = useState("");
   const [professionalRole, setProfessionalRole] = useState("");
@@ -162,7 +165,7 @@ export const OnboardingForm = ({ selectedCycle = "free" }: Props) => {
             <Sparkles className="w-3.5 h-3.5 text-accent" />
             <span className="font-mono-tech text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Selected</span>
             <span className="font-semibold">{plan.label}</span>
-            <span className="text-accent font-display">{plan.priceLabel}</span>
+            <span className="text-accent font-display">{priceLabel}</span>
             <span className="text-muted-foreground text-xs">{plan.cadence}</span>
           </div>
         </div>

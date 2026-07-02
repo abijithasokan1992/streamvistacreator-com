@@ -1,13 +1,10 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
-import { Cloud, ArrowLeft, Home, Compass } from "lucide-react";
-import { useBranding } from "@/lib/branding";
+import { ArrowLeft, Home, Compass } from "lucide-react";
 
 const NotFound = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const branding = useBranding();
-  const logo = branding?.site_logo_url;
 
   useEffect(() => {
     console.error("404 Error: User attempted to access non-existent route:", location.pathname);
@@ -20,25 +17,11 @@ const NotFound = () => {
       <div className="absolute top-0 -left-32 w-[40rem] h-[40rem] rounded-full bg-primary/15 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 -right-32 w-[36rem] h-[36rem] rounded-full bg-primary-glow/10 blur-[140px] pointer-events-none" />
 
-      {/* Brand bar */}
+      {/* Brand bar — typography-only wordmark */}
       <header className="relative z-10 border-b border-border/40 backdrop-blur-xl bg-background/40">
         <div className="container flex items-center h-16">
-          <Link to="/" className="flex items-center gap-2.5">
-            {logo ? (
-              <img src={logo} alt="StreamVista Cloud X" className="h-9 w-auto max-w-[160px] object-contain" />
-            ) : (
-              <div className="w-9 h-9 rounded-xl bg-gradient-primary grid place-items-center glow-primary">
-                <Cloud className="w-5 h-5 text-primary-foreground" strokeWidth={2.5} />
-              </div>
-            )}
-            <div className="leading-tight">
-              <div className="font-display font-bold text-sm tracking-tight">
-                StreamVista <span className="gradient-text">Cloud X</span>
-              </div>
-              <div className="font-mono-tech text-[9px] uppercase tracking-[0.25em] text-muted-foreground">
-                Bridge · Crayons Pictures
-              </div>
-            </div>
+          <Link to="/" className="font-display font-black tracking-tight text-sm md:text-base uppercase leading-none">
+            STREAMVISTA <span className="gradient-text">CLOUD X</span>
           </Link>
         </div>
       </header>
@@ -61,7 +44,7 @@ const NotFound = () => {
         <p className="text-sm md:text-base text-muted-foreground max-w-md mb-2 animate-fade-in">
           The link you followed may be broken, expired, or never made it past the editor's bin.
         </p>
-        <code className="text-[11px] font-mono-tech text-muted-foreground/60 mb-10 break-all max-w-md">
+        <code className="text-[11px] font-mono-tech text-muted-foreground mb-10 break-all max-w-md">
           {location.pathname}
         </code>
 
@@ -80,7 +63,7 @@ const NotFound = () => {
           </Link>
         </div>
 
-        <p className="mt-12 text-[10px] font-mono-tech uppercase tracking-[0.3em] text-muted-foreground/60">
+        <p className="mt-12 text-[10px] font-mono-tech uppercase tracking-[0.3em] text-muted-foreground">
           © {new Date().getFullYear()} StreamVista OPC Pvt Ltd · Operated by Crayons Pictures
         </p>
       </main>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Mail, Loader2, ShieldCheck, ShieldAlert, Zap, Pencil, XCircle, ExternalLink, KeyRound } from "lucide-react";
+import { Mail, Loader2, ShieldCheck, ShieldAlert, Zap, Pencil, XCircle, ExternalLink, KeyRound, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +18,9 @@ export default function ResendCredentials() {
   const [verified, setVerified] = useState<null | boolean>(null);
   const [verifyMsg, setVerifyMsg] = useState<string>("");
   const [status, setStatus] = useState<StatusResp | null>(null);
+  const [sender, setSender] = useState<{ from_address: string; sender_name: string; sender_domain: string } | null>(null);
+  const [testTo, setTestTo] = useState("");
+  const [sending, setSending] = useState(false);
 
   const loadStatus = async () => {
     setLoading(true);
@@ -46,8 +49,19 @@ export default function ResendCredentials() {
     (async () => {
       const s = await loadStatus();
       if (s?.configured) await runTest(true);
+      const { data: info } = await supabase.functions.invoke("resend-admin", { body: { action: "sender_info" } });
+      if (info) setSender(info as any);
     })();
   }, []);
+
+  const sendTest = async () => {
+    if (!testTo) { toast.error("Enter a recipient email"); return; }
+    setSending(true);
+    const { data, error } = await supabase.functions.invoke("resend-admin", { body: { action: "send_test", to: testTo } });
+    setSending(false);
+    if (error || !data?.ok) { toast.error(data?.error || error?.message || "Test send failed"); return; }
+    toast.success(`Test email queued to ${testTo}`);
+  };
 
   const statusBadge = () => {
     if (loading) return null;
@@ -141,6 +155,39 @@ export default function ResendCredentials() {
             >
               <Pencil className="w-4 h-4" /> Manage on Resend <ExternalLink className="w-3.5 h-3.5" />
             </a>
+          </div>
+
+          {sender && (
+            <div className="rounded-xl border border-border/40 bg-secondary/20 p-4 text-xs space-y-2">
+              <p className="font-semibold text-foreground flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" /> Active sender configuration</p>
+              <div className="grid sm:grid-cols-3 gap-2 font-mono">
+                <div><span className="text-muted-foreground">From:</span> <span className="text-foreground">{sender.from_address}</span></div>
+                <div><span className="text-muted-foreground">Name:</span> <span className="text-foreground">{sender.sender_name}</span></div>
+                <div><span className="text-muted-foreground">Sender domain:</span> <span className="text-foreground">{sender.sender_domain}</span></div>
+              </div>
+              <p className="text-muted-foreground text-[11px]">Defined in edge function constants (send-transactional-email, auth-email-hook). Override with <span className="font-mono">RESEND_FROM_DOMAIN</span> / <span className="font-mono">RESEND_SENDER_NAME</span> secrets.</p>
+            </div>
+          )}
+
+          <div className="rounded-xl border border-border/40 bg-secondary/20 p-4 space-y-3">
+            <p className="text-xs font-semibold text-foreground flex items-center gap-1.5"><Send className="w-3.5 h-3.5" /> Send test email</p>
+            <div className="flex flex-wrap gap-2">
+              <input
+                type="email"
+                value={testTo}
+                onChange={(e) => setTestTo(e.target.value)}
+                placeholder="you@example.com"
+                className="flex-1 min-w-[220px] h-10 px-3 rounded-lg bg-background border border-border text-sm"
+              />
+              <button
+                onClick={sendTest}
+                disabled={sending || !status?.configured}
+                className="h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-semibold inline-flex items-center gap-2 disabled:opacity-60"
+              >
+                {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Send
+              </button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">Sends a one-off operational test via Resend using the active sender config. Admin-only.</p>
           </div>
         </>
       )}

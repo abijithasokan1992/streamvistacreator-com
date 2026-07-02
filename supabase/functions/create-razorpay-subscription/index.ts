@@ -84,11 +84,10 @@ Deno.serve(async (req) => {
     const userClient = createClient(supaUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claims } = await userClient.auth.getClaims(token);
-    const userId = claims?.claims?.sub as string | undefined;
-    const userEmail = claims?.claims?.email as string | undefined;
-    if (!userId) return jsonError(req, "Unauthorized", 401);
+    const { data: userRes, error: userErr } = await userClient.auth.getUser();
+    const userId = userRes?.user?.id;
+    const userEmail = userRes?.user?.email;
+    if (userErr || !userId) return jsonError(req, "Unauthorized", 401);
 
     const supabase = createClient(supaUrl, serviceKey);
     const creds = await loadRazorpayCreds(supabase);
@@ -105,7 +104,12 @@ Deno.serve(async (req) => {
         total_count: 12,
         quantity: tbCount,
         customer_notify: 1,
-        notes: { userId, plan: "creator", tb: String(tbCount) },
+        notes: {
+          userId,
+          plan: "creator_storage",
+          subscription_type: "creator_storage",
+          tb: String(tbCount),
+        },
       }),
     });
     const sub = await subRes.json();
@@ -114,14 +118,19 @@ Deno.serve(async (req) => {
       return jsonError(req, sub?.error?.description || "Subscription creation failed", 502);
     }
 
-    // Record placeholder row so webhook can update it.
+    // Record placeholder row so webhook can update it. Storage-subscription metadata
+    // (subscription_type, storage_quantity_tb, unit_amount_paise) is the source of
+    // truth for entitlement aggregation in get_creator_storage_entitlement().
     await supabase.from("subscriptions").upsert(
       {
         user_id: userId,
         customer_email: userEmail ?? null,
         razorpay_subscription_id: sub.id,
         razorpay_plan_id: planId,
-        price_id: "cloudx_creator",
+        price_id: "cloudx_creator_storage",
+        subscription_type: "creator_storage",
+        storage_quantity_tb: tbCount,
+        unit_amount_paise: PLAN_AMOUNT_PAISE,
         status: sub.status ?? "created",
         environment: creds.mode === "live" ? "live" : "sandbox",
         gateway: "razorpay",

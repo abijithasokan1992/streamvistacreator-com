@@ -43,7 +43,7 @@ export const Testimonials = () => (
           {LOGO_NAMES.map((name) => (
             <div
               key={name}
-              className="font-display text-sm md:text-base uppercase tracking-[0.18em] text-foreground/50 hover:text-foreground transition-colors"
+              className="font-display text-sm md:text-base uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition-colors"
             >
               {name}
             </div>

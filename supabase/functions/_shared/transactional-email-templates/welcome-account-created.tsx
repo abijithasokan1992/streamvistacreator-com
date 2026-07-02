@@ -2,6 +2,7 @@ import * as React from 'npm:react@18.3.1'
 import {
   Body, Button, Container, Head, Heading, Hr, Html, Link, Preview, Section, Text,
 } from 'npm:@react-email/components@0.0.22'
+import { BrandLogos } from '../email-templates/brand-logos.tsx'
 import type { TemplateEntry } from './registry.ts'
 
 interface Props {
@@ -49,9 +50,11 @@ const Email = ({
             Didn't create this account? Reply to this email so our team can lock it down.
           </Text>
           <Text style={fineprint}>
-            <Link href={dashboardUrl} style={link}>{dashboardUrl}</Link>
+            Trouble with the button?{' '}
+            <Link href={dashboardUrl} style={link}>Open your workspace</Link>.
           </Text>
-        </Container>
+                <BrandLogos />
+      </Container>
       </Body>
     </Html>
   )

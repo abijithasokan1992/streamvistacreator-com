@@ -1,102 +1,290 @@
-@import url('https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+/* Fonts are loaded via <link rel="stylesheet"> in index.html for non-blocking, faster LCP. */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* =============================================================
+   StreamVista Design OS — semantic tokens
+   - .dark  : cinematic brand mode (default)
+   - :root  : operational light mode
+   Every color in components MUST come from a token below.
+   ============================================================= */
+
 @layer base {
+  /* ---------- LIGHT (paired with dark — same brand DNA) ----------
+     Light = paper white surfaces, same primary/accent hues as dark so
+     the brand reads identically across themes. Calibrated for AA+ contrast. */
   :root {
-    /* Premium dark futuristic palette - StreamVista */
-    --background: 230 45% 5%;
-    --foreground: 220 25% 96%;
+    --background: 225 30% 98.5%;
+    --foreground: 225 40% 8%;
 
-    --card: 230 40% 8%;
-    --card-foreground: 220 25% 96%;
+    --surface: 225 25% 96.5%;
+    --surface-elevated: 0 0% 100%;
+    --surface-sunken: 225 22% 94%;
 
-    --popover: 230 45% 7%;
-    --popover-foreground: 220 25% 96%;
+    --card: 0 0% 100%;
+    --card-foreground: 225 40% 8%;
 
-    --primary: 220 95% 62%;        /* neon blue */
-    --primary-foreground: 230 45% 5%;
-    --primary-glow: 250 95% 70%;   /* electric purple */
+    --popover: 0 0% 100%;
+    --popover-foreground: 225 40% 8%;
 
-    --secondary: 230 35% 14%;
-    --secondary-foreground: 220 25% 96%;
+    /* Same hue as dark mode, deeper lightness for sRGB AA on white */
+    --primary: 218 92% 48%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 250 88% 58%;
 
-    --muted: 230 30% 12%;
-    --muted-foreground: 220 15% 65%;
+    --secondary: 225 20% 93%;
+    --secondary-foreground: 225 40% 14%;
 
-    --accent: 45 95% 60%;          /* gold */
-    --accent-foreground: 230 45% 5%;
+    --muted: 225 18% 95%;
+    --muted-foreground: 225 14% 36%;
 
-    --destructive: 0 75% 60%;
-    --destructive-foreground: 220 25% 96%;
+    --accent: 42 95% 46%;
+    --accent-foreground: 225 40% 8%;
 
-    --success: 145 70% 50%;
-    --success-foreground: 230 45% 5%;
+    --destructive: 0 78% 48%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 230 30% 18%;
-    --input: 230 30% 14%;
-    --ring: 220 95% 62%;
+    --success: 148 68% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 95% 46%;
+    --warning-foreground: 225 40% 8%;
+    --info: 210 92% 46%;
+    --info-foreground: 0 0% 100%;
 
-    --radius: 1rem;
+    --border: 225 18% 88%;
+    --border-subtle: 225 18% 92%;
+    --border-strong: 225 18% 76%;
+    --input: 225 18% 90%;
+    --ring: 218 92% 48%;
 
-    /* Gradients */
-    --gradient-hero: radial-gradient(ellipse at top, hsl(250 80% 25% / 0.6), transparent 60%),
-                     radial-gradient(ellipse at bottom right, hsl(220 90% 30% / 0.5), transparent 60%),
-                     linear-gradient(180deg, hsl(230 50% 6%), hsl(230 45% 4%));
-    --gradient-primary: linear-gradient(135deg, hsl(220 95% 62%), hsl(250 95% 70%));
-    --gradient-gold: linear-gradient(135deg, hsl(45 95% 60%), hsl(35 95% 55%));
-    --gradient-card: linear-gradient(145deg, hsl(230 40% 11% / 0.9), hsl(230 45% 7% / 0.7));
-    --gradient-border: linear-gradient(135deg, hsl(220 95% 62% / 0.5), hsl(250 95% 70% / 0.3), hsl(45 95% 60% / 0.4));
+    --text-secondary: 225 16% 28%;
+    --text-tertiary: 225 12% 46%;
 
-    /* Shadows / glows */
-    --shadow-glow: 0 0 60px hsl(220 95% 62% / 0.35);
-    --shadow-glow-purple: 0 0 80px hsl(250 95% 70% / 0.4);
-    --shadow-glow-gold: 0 0 50px hsl(45 95% 60% / 0.3);
-    --shadow-card: 0 20px 60px -20px hsl(230 80% 2% / 0.8);
-    --shadow-elevated: 0 30px 80px -30px hsl(220 95% 50% / 0.5);
+    --row-hover: 225 30% 96%;
+    --row-selected: 218 80% 94%;
 
-    --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    --chart-1: 218 92% 48%;
+    --chart-2: 250 88% 58%;
+    --chart-3: 42 95% 46%;
+    --chart-4: 148 68% 36%;
+    --chart-5: 0 78% 48%;
+    --chart-6: 195 92% 42%;
 
-    --sidebar-background: 230 45% 5%;
-    --sidebar-foreground: 220 25% 96%;
-    --sidebar-primary: 220 95% 62%;
-    --sidebar-primary-foreground: 230 45% 5%;
-    --sidebar-accent: 230 35% 14%;
-    --sidebar-accent-foreground: 220 25% 96%;
-    --sidebar-border: 230 30% 18%;
-    --sidebar-ring: 220 95% 62%;
+    --radius: 0.75rem;
+
+    --gradient-hero: radial-gradient(ellipse 80% 60% at 50% -10%, hsl(218 92% 88% / 0.7), transparent 60%),
+                     radial-gradient(ellipse 60% 50% at 90% 110%, hsl(250 88% 90% / 0.55), transparent 60%),
+                     linear-gradient(180deg, hsl(225 30% 99%), hsl(225 25% 97%));
+    --gradient-primary: linear-gradient(135deg, hsl(218 92% 48%), hsl(250 88% 58%));
+    --gradient-gold: linear-gradient(135deg, hsl(42 95% 48%), hsl(32 95% 46%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(225 25% 97.5%));
+    --gradient-border: linear-gradient(135deg, hsl(218 92% 48% / 0.42), hsl(250 88% 58% / 0.28));
+
+    --shadow-glow: 0 1px 2px hsl(225 40% 8% / 0.06), 0 8px 24px -8px hsl(218 92% 48% / 0.18);
+    --shadow-glow-purple: 0 1px 2px hsl(225 40% 8% / 0.06), 0 8px 24px -8px hsl(250 88% 58% / 0.20);
+    --shadow-glow-gold: 0 1px 2px hsl(225 40% 8% / 0.06), 0 8px 24px -8px hsl(42 95% 48% / 0.20);
+    --shadow-card: 0 1px 0 hsl(0 0% 100% / 0.8) inset, 0 1px 3px hsl(225 40% 8% / 0.06), 0 10px 28px -14px hsl(225 40% 8% / 0.12);
+    --shadow-elevated: 0 1px 0 hsl(0 0% 100% / 0.8) inset, 0 18px 44px -18px hsl(225 40% 8% / 0.18);
+
+    --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 225 40% 14%;
+    --sidebar-primary: 218 92% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 225 18% 95%;
+    --sidebar-accent-foreground: 225 40% 14%;
+    --sidebar-border: 225 18% 88%;
+    --sidebar-ring: 218 92% 48%;
   }
+
+
+  /* ---------- DARK (cinematic, brand default — Baselight DI grade) ---------- */
+  .dark {
+    /* Deep neutral black with a hint of blue — Netflix/Apple reference black */
+    --background: 225 35% 3.5%;
+    --foreground: 220 20% 98%;
+
+    --surface: 225 30% 6%;
+    --surface-elevated: 225 28% 9%;
+    --surface-sunken: 225 38% 2.5%;
+
+    --card: 225 30% 7%;
+    --card-foreground: 220 20% 98%;
+
+    --popover: 225 32% 6%;
+    --popover-foreground: 220 20% 98%;
+
+    /* Calibrated primary — sits cleanly in sRGB and lifts in P3 */
+    --primary: 218 100% 64%;
+    --primary-foreground: 225 40% 4%;
+    --primary-glow: 250 100% 72%;
+
+    --secondary: 225 25% 13%;
+    --secondary-foreground: 220 20% 98%;
+
+    --muted: 225 22% 11%;
+    --muted-foreground: 220 14% 68%;
+
+    --accent: 42 100% 62%;
+    --accent-foreground: 225 40% 4%;
+
+    --destructive: 0 80% 62%;
+    --destructive-foreground: 220 20% 98%;
+
+    --success: 148 72% 52%;
+    --success-foreground: 225 40% 4%;
+    --warning: 38 100% 60%;
+    --warning-foreground: 225 40% 4%;
+    --info: 210 100% 64%;
+    --info-foreground: 225 40% 4%;
+
+    --border: 225 22% 17%;
+    --border-subtle: 225 22% 13%;
+    --border-strong: 225 22% 24%;
+    --input: 225 22% 13%;
+    --ring: 218 100% 64%;
+
+    --text-secondary: 220 14% 82%;
+    --text-tertiary: 220 12% 62%;
+
+    --row-hover: 225 28% 11%;
+    --row-selected: 218 60% 16%;
+
+    --chart-1: 218 100% 64%;
+    --chart-2: 250 100% 72%;
+    --chart-3: 42 100% 62%;
+    --chart-4: 148 72% 52%;
+    --chart-5: 0 80% 62%;
+    --chart-6: 195 100% 62%;
+
+    --gradient-hero: radial-gradient(ellipse 80% 60% at 50% -10%, hsl(250 80% 22% / 0.55), transparent 60%),
+                     radial-gradient(ellipse 60% 50% at 90% 110%, hsl(218 90% 28% / 0.45), transparent 60%),
+                     linear-gradient(180deg, hsl(225 40% 4.5%), hsl(225 38% 3%));
+    --gradient-primary: linear-gradient(135deg, hsl(218 100% 64%), hsl(250 100% 72%));
+    --gradient-gold: linear-gradient(135deg, hsl(42 100% 62%), hsl(32 100% 58%));
+    --gradient-card: linear-gradient(145deg, hsl(225 28% 10% / 0.92), hsl(225 32% 6% / 0.72));
+    --gradient-border: linear-gradient(135deg, hsl(218 100% 64% / 0.55), hsl(250 100% 72% / 0.32), hsl(42 100% 62% / 0.4));
+
+    --shadow-glow: 0 0 64px hsl(218 100% 64% / 0.38);
+    --shadow-glow-purple: 0 0 84px hsl(250 100% 72% / 0.42);
+    --shadow-glow-gold: 0 0 56px hsl(42 100% 62% / 0.32);
+    --shadow-card: 0 1px 0 hsl(220 20% 98% / 0.04) inset, 0 22px 64px -22px hsl(225 80% 1% / 0.85);
+    --shadow-elevated: 0 1px 0 hsl(220 20% 98% / 0.06) inset, 0 32px 84px -30px hsl(218 100% 50% / 0.5);
+
+    --sidebar-background: 225 35% 3.5%;
+    --sidebar-foreground: 220 20% 98%;
+    --sidebar-primary: 218 100% 64%;
+    --sidebar-primary-foreground: 225 40% 4%;
+    --sidebar-accent: 225 25% 13%;
+    --sidebar-accent-foreground: 220 20% 98%;
+    --sidebar-border: 225 22% 17%;
+    --sidebar-ring: 218 100% 64%;
+  }
+
+  /* ---------- P3 wide-gamut calibration (Baselight DI feel) ----------
+     Browsers on Display P3 screens get richer, more saturated primaries
+     while sRGB displays fall back to the HSL above. No component changes. */
+  @supports (color: color(display-p3 1 1 1)) {
+    @media (color-gamut: p3) {
+      .dark {
+        --primary: 218 100% 66%;
+        --primary-glow: 252 100% 74%;
+        --accent: 42 100% 64%;
+      }
+    }
+  }
+
 }
 
 @layer base {
   * { @apply border-border; }
-  html { scroll-behavior: smooth; }
+  html {
+    scroll-behavior: smooth;
+    /* Calibrated text rendering — crisp on Retina/4K/8K, balanced on standard DPI */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "kern", "liga", "calt", "ss01", "cv11";
+    font-variant-ligatures: common-ligatures contextual;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    color-scheme: dark light;
+  }
   body {
     @apply bg-background text-foreground font-sans antialiased;
     background: var(--gradient-hero);
     background-attachment: fixed;
     font-family: 'Inter', system-ui, sans-serif;
+    font-synthesis: none;
+    /* Accurate color across displays */
+    -webkit-tap-highlight-color: transparent;
   }
+  /* Subtle film vignette + grain — only on cinematic dark mode, GPU-cheap */
+  .dark body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    background:
+      radial-gradient(ellipse at center, transparent 55%, hsl(225 60% 1% / 0.45) 100%);
+    mix-blend-mode: multiply;
+  }
+  .dark body::after {
+    content: "";
+    position: fixed;
+    inset: -50%;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.035;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.6 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+  /* Images should render as accurately as possible across displays */
+  img, video, canvas { image-rendering: auto; }
   h1, h2, h3, h4 {
     font-family: 'Big Shoulders Display', 'Space Grotesk', system-ui, sans-serif;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.025em;
+    font-feature-settings: "kern", "liga", "ss01";
+    font-weight: 800;
   }
+  h1 { font-weight: 900; letter-spacing: -0.035em; }
+  /* Bold & punchy lead paragraph — replaces meek body copy when the writer
+     wraps a sentence in <p class="lead"> or uses Tailwind .text-lead */
+  .lead, p.lead {
+    font-size: 1.0625rem;
+    line-height: 1.55;
+    color: hsl(var(--foreground) / 0.92);
+    font-weight: 500;
+  }
+
   .font-mono-tech { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+  /* Calibrated selection — brand-accurate on every display */
+  ::selection { background: hsl(var(--primary) / 0.35); color: hsl(var(--foreground)); }
+  /* Refined focus ring — accessible, not jarring */
+  :focus-visible { outline: 2px solid hsl(var(--ring) / 0.7); outline-offset: 2px; border-radius: 4px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
 }
 
+
 @layer components {
+  .input {
+    @apply w-full px-3 py-2 text-sm rounded-md bg-secondary/40 border border-border/60 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/60 transition-colors;
+  }
   .glass {
     @apply backdrop-blur-xl border border-border/60;
     background: var(--gradient-card);
     box-shadow: var(--shadow-card);
   }
   .glass-strong {
-    @apply backdrop-blur-2xl border;
-    background: linear-gradient(145deg, hsl(230 40% 13% / 0.95), hsl(230 45% 8% / 0.85));
-    border-color: hsl(var(--primary) / 0.25);
-    box-shadow: var(--shadow-card), inset 0 1px 0 hsl(220 95% 62% / 0.1);
+    @apply backdrop-blur-2xl border border-border;
+    background: var(--gradient-card);
+    box-shadow: var(--shadow-card);
   }
   .gradient-text {
     @apply bg-clip-text text-transparent;
@@ -110,15 +298,65 @@
   .glow-purple { box-shadow: var(--shadow-glow-purple); }
   .glow-gold   { box-shadow: var(--shadow-glow-gold); }
 
+  /* ===== Bold & punchy attention helpers (opt-in, no component churn) ===== */
+  /* Embossed/3D CTA — adds tactile depth to any button or anchor */
+  .btn-emboss {
+    background-image: var(--gradient-primary);
+    color: hsl(var(--primary-foreground));
+    box-shadow:
+      0 1px 0 hsl(0 0% 100% / 0.25) inset,
+      0 -2px 0 hsl(225 60% 6% / 0.18) inset,
+      0 8px 22px -8px hsl(var(--primary) / 0.55),
+      0 2px 6px -2px hsl(var(--primary) / 0.35);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
+  }
+  .btn-emboss:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      0 1px 0 hsl(0 0% 100% / 0.3) inset,
+      0 -2px 0 hsl(225 60% 6% / 0.22) inset,
+      0 14px 32px -8px hsl(var(--primary) / 0.65),
+      0 4px 10px -2px hsl(var(--primary-glow) / 0.45);
+  }
+  .btn-emboss:active { transform: translateY(0); }
+
+  /* Attention badge — small uppercase pill that pops above cards/headers */
+  .pill-attention {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] uppercase tracking-[0.22em] font-mono-tech;
+    background: hsl(var(--primary) / 0.12);
+    color: hsl(var(--primary));
+    border: 1px solid hsl(var(--primary) / 0.28);
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.05) inset;
+  }
+
+  /* Big bold numeric stat — for KPIs, prices, hero metrics */
+  .stat-bold {
+    font-family: 'Big Shoulders Display', 'Space Grotesk', system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    background-image: var(--gradient-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 1px 0 hsl(var(--primary) / 0.12);
+  }
+
+  /* Section eyebrow — uppercase label above bold headings */
+  .eyebrow {
+    @apply inline-block text-[11px] uppercase tracking-[0.28em] font-mono-tech;
+    color: hsl(var(--primary));
+  }
+
+
   .grid-bg {
     background-image:
-      linear-gradient(hsl(220 95% 62% / 0.06) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(220 95% 62% / 0.06) 1px, transparent 1px);
+      linear-gradient(hsl(var(--primary) / 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--primary) / 0.06) 1px, transparent 1px);
     background-size: 48px 48px;
     mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
   }
 
-  /* Invisible Guidance — cinematic CTA cues */
+  /* Invisible Guidance — cinematic CTA cues (dark surfaces only) */
   .cta-guide {
     position: relative;
     isolation: isolate;
@@ -146,7 +384,7 @@
   }
   .cta-hint {
     @apply pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full backdrop-blur-xl text-[10px] font-mono-tech uppercase tracking-[0.22em] opacity-0 transition-all duration-500 whitespace-nowrap;
-    background: linear-gradient(145deg, hsl(230 40% 13% / 0.9), hsl(230 45% 8% / 0.75));
+    background: var(--gradient-card);
     border: 1px solid hsl(var(--primary) / 0.35);
     color: hsl(var(--foreground));
     box-shadow: 0 8px 30px -10px hsl(var(--primary) / 0.5);
@@ -154,6 +392,51 @@
   }
   .cta-guide .cta-hint { opacity: 0.85; }
   .cta-guide:hover .cta-hint { opacity: 1; transform: translate(-50%, -4px); }
+
+  /* Light mode: tone down all cinematic glows */
+  :root:not(.dark) .cta-guide::before { opacity: 0.18; filter: blur(10px); animation: none; }
+  :root:not(.dark) .cta-guide::after { display: none; }
+  :root:not(.dark) .glow-primary,
+  :root:not(.dark) .glow-purple,
+  :root:not(.dark) .glow-gold { box-shadow: var(--shadow-card); }
+
+  /* Light mode: retarget cinematic white-on-dark micro-tints used across
+     UploadManager, admin tabs, list rows, etc. so they remain readable
+     on light surfaces without rewriting every component. */
+  :root:not(.dark) .bg-white\/5,
+  :root:not(.dark) .bg-white\/10,
+  :root:not(.dark) .bg-white\/\[0\.02\],
+  :root:not(.dark) .bg-white\/\[0\.03\],
+  :root:not(.dark) .bg-white\/\[0\.04\],
+  :root:not(.dark) .bg-white\/\[0\.05\],
+  :root:not(.dark) .bg-white\/\[0\.06\],
+  :root:not(.dark) .bg-white\/\[0\.08\] {
+    background-color: hsl(var(--foreground) / 0.04);
+  }
+  :root:not(.dark) .hover\:bg-white\/5:hover,
+  :root:not(.dark) .hover\:bg-white\/10:hover,
+  :root:not(.dark) .hover\:bg-white\/\[0\.02\]:hover,
+  :root:not(.dark) .hover\:bg-white\/\[0\.04\]:hover,
+  :root:not(.dark) .hover\:bg-white\/\[0\.05\]:hover,
+  :root:not(.dark) .hover\:bg-white\/\[0\.08\]:hover {
+    background-color: hsl(var(--foreground) / 0.06);
+  }
+  :root:not(.dark) .border-white\/5,
+  :root:not(.dark) .border-white\/10,
+  :root:not(.dark) .border-white\/\[0\.06\],
+  :root:not(.dark) .border-white\/\[0\.08\] {
+    border-color: hsl(var(--foreground) / 0.10);
+  }
+  :root:not(.dark) .bg-black\/20,
+  :root:not(.dark) .bg-black\/30 {
+    background-color: hsl(var(--foreground) / 0.06);
+  }
+  :root:not(.dark) .bg-black\/40,
+  :root:not(.dark) .bg-black\/50,
+  :root:not(.dark) .bg-black\/60 {
+    background-color: hsl(var(--foreground) / 0.45);
+  }
+  /* Keep dialog/sheet/drawer scrims dark in both modes (intentional modal backdrop) */
 }
 
 @keyframes cta-breathe {
@@ -169,12 +452,71 @@
   0%, 100% { transform: translate(-50%, 0); }
   50%      { transform: translate(-50%, -3px); }
 }
-
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-
 .animate-fade-in {
   animation: fadeIn 0.6s ease-out both;
+}
+
+/* ------------------------------------------------------------------
+   Homepage-only premium typography (scoped to .home-serif on /).
+   Does NOT affect admin, dashboards, auth, or CMS forms.
+   - DM Serif Display → hero headline + major section headings (h1, h2)
+   - Inter → everything else (nav, subheadline, buttons, cards, body, footer)
+   ------------------------------------------------------------------ */
+.home-serif {
+  font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-feature-settings: "ss01", "cv11";
+}
+.home-serif h1,
+.home-serif h2 {
+  font-family: 'DM Serif Display', 'Times New Roman', Times, serif;
+  font-weight: 400;            /* DM Serif Display is a single-weight display face */
+  font-style: normal;
+  text-transform: none;        /* serifs read poorly in all-caps; literal-cased copy is preserved */
+  letter-spacing: -0.015em;
+  line-height: 1.02;
+  font-feature-settings: "liga", "dlig";
+}
+.home-serif h1 {
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+}
+/* Italic accent for any gradient-highlighted heading fragment */
+.home-serif h1 .gradient-text,
+.home-serif h2 .gradient-text {
+  font-style: italic;
+}
+/* Product-explainer section headings — Inter for functional/product feel */
+.home-serif #for h2,
+.home-serif #workflow h2 {
+  font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 0.95;
+}
+/* Smaller card-level headings stay sans for clarity */
+.home-serif h3,
+.home-serif h4,
+.home-serif h5,
+.home-serif h6 {
+  font-family: 'Inter', system-ui, sans-serif;
+}
+/* Subheadline / lead paragraph readability — width + leading */
+.home-serif section p {
+  line-height: 1.65;
+}
+.home-serif section .max-w-md,
+.home-serif section .max-w-lg {
+  max-width: 38ch;
+}
+/* Section rhythm — a touch more breathing room between bands */
+.home-serif > section {
+  padding-top: clamp(4rem, 7vw, 7rem);
+  padding-bottom: clamp(4rem, 7vw, 7rem);
+}
+.home-serif > section:first-of-type {
+  padding-top: clamp(5rem, 8vw, 8.5rem);
 }

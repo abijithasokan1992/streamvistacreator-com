@@ -4,85 +4,126 @@
 // writes a structured row into public.payment_debug_logs so ops can see the
 // checksum handshake / ETag verification and per-file duration.
 //
-// Endpoint is intentionally public — callers (encoders, browser) send a
-// non-sensitive ingest receipt, never secrets. Service role is used only to
-// write the audit row.
+// SECURITY: this endpoint is NOT anonymous. It accepts either:
+//   1. a signed-in user bearer token (preferred, browser callers), or
+//   2. the shared secret `C2C_WEBHOOK_SECRET` (for non-browser encoders),
+//       sent as the `X-C2C-Webhook-Secret` header.
+// Wildcard CORS has been removed — only origins on the strict allow-list
+// (managed via site_config / SITE_ORIGIN) may make browser requests.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const ANON_KEY     = Deno.env.get("SUPABASE_ANON_KEY")!;
+const WEBHOOK_SECRET = Deno.env.get("C2C_WEBHOOK_SECRET") ?? "";
 
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+function jsonWith(req: Request) {
+  const cors = buildCorsHeaders(req);
+  return (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") return handleOptions(req);
+  const json = jsonWith(req);
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
-    const body = await req.json().catch(() => ({}));
-    const {
-      file_name,
-      size_bytes,
-      sha256,
-      etag,
-      duration_ms,
-      workspace_id,
-      production_banner,
-      category,
-      ingest_path,        // 'hardware' | 'mobile' | 'ndi' | 'virtual'
-      par_status,         // HTTP status of the PAR PUT (or 'multipart')
-      transport,          // 'par' | 'multipart' | 'webhook'
-    } = body ?? {};
+    // ---- Authentication: bearer user OR shared secret ----
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const secretHeader = req.headers.get("x-c2c-webhook-secret") ?? "";
 
-    if (!file_name || typeof file_name !== "string") {
-      return json({ error: "file_name required" }, 400);
+    let user_id: string | null = null;
+    let authed = false;
+
+    if (authHeader.startsWith("Bearer ")) {
+      const userClient = createClient(SUPABASE_URL, ANON_KEY, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: userRes } = await userClient.auth.getUser();
+      if (userRes?.user?.id) {
+        user_id = userRes.user.id;
+        authed = true;
+      }
+    }
+    if (!authed && WEBHOOK_SECRET && secretHeader && secretHeader === WEBHOOK_SECRET) {
+      authed = true;
+    }
+    if (!authed) return json({ error: "Unauthorized" }, 401);
+
+    // Reject obviously oversized payloads (log flooding / abuse defence).
+    const rawText = await req.text();
+    if (rawText.length > 8 * 1024) {
+      return json({ error: "Payload too large" }, 413);
+    }
+    let body: any = {};
+    try { body = rawText ? JSON.parse(rawText) : {}; } catch {
+      return json({ error: "Invalid JSON" }, 400);
     }
 
-    // ETag handshake: if both sha256 and etag are present, they should agree
-    // (OCI returns the MD5 of the object body for single-part PUTs, and a
-    // multipart-style etag for chunked). We only flag a mismatch, never fail.
+    const clip = (v: unknown, n: number): string | null => {
+      if (typeof v !== "string") return null;
+      const t = v.trim();
+      return t.length === 0 ? null : t.slice(0, n);
+    };
+    const isUuid = (v: unknown): string | null => {
+      if (typeof v !== "string") return null;
+      return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v) ? v : null;
+    };
+
+    const file_name = clip(body?.file_name, 256);
+    if (!file_name) return json({ error: "file_name required" }, 400);
+
+    const size_bytes_n = Number(body?.size_bytes);
+    const size_bytes = Number.isFinite(size_bytes_n) && size_bytes_n >= 0 && size_bytes_n < 1e15
+      ? size_bytes_n : null;
+    const duration_ms_n = Number(body?.duration_ms);
+    const duration_ms = Number.isFinite(duration_ms_n) && duration_ms_n >= 0 && duration_ms_n < 24 * 3600 * 1000
+      ? duration_ms_n : null;
+
+    const sha256 = clip(body?.sha256, 128);
+    const etag = clip(body?.etag, 128);
+    const workspace_id = isUuid(body?.workspace_id);
+    const production_banner = clip(body?.production_banner, 64);
+    const category = clip(body?.category, 64);
+    const ingest_path = clip(body?.ingest_path, 32);
+    const transport = clip(body?.transport, 32);
+    const par_status = clip(body?.par_status, 16);
+    const par_status_num = par_status ? Number(par_status) : NaN;
+
     const etag_matches = sha256 && etag
-      ? String(etag).replace(/"/g, "").toLowerCase().includes(String(sha256).slice(0, 16).toLowerCase())
+      ? etag.replace(/"/g, "").toLowerCase().includes(sha256.slice(0, 16).toLowerCase())
       : null;
 
     const supa = createClient(SUPABASE_URL, SERVICE_ROLE, {
       auth: { persistSession: false },
     });
 
-    const auth = req.headers.get("Authorization") ?? "";
-    let user_id: string | null = null;
-    if (auth.startsWith("Bearer ")) {
-      const { data } = await supa.auth.getUser(auth.replace("Bearer ", ""));
-      user_id = data.user?.id ?? null;
-    }
-
     const { error } = await supa.from("payment_debug_logs").insert({
-      severity: par_status && Number(par_status) >= 400 ? "error" : "info",
+      severity: Number.isFinite(par_status_num) && par_status_num >= 400 ? "error" : "info",
       action_type: "c2c.ingest_verified",
       source: "edge",
       user_id,
-      duration_ms: Number.isFinite(Number(duration_ms)) ? Number(duration_ms) : null,
-      error_message: par_status && Number(par_status) >= 400 ? `PAR HTTP ${par_status}` : null,
+      duration_ms,
+      error_message: Number.isFinite(par_status_num) && par_status_num >= 400 ? `PAR HTTP ${par_status}` : null,
       extra: {
         file_name,
-        size_bytes: Number(size_bytes) || null,
-        sha256: sha256 ?? null,
-        etag: etag ?? null,
+        size_bytes,
+        sha256,
+        etag,
         etag_matches,
-        workspace_id: workspace_id ?? null,
-        production_banner: production_banner ?? null,
-        category: category ?? null,
-        ingest_path: ingest_path ?? null,
-        transport: transport ?? null,
-        par_status: par_status ?? null,
-        ua: req.headers.get("user-agent") ?? null,
+        workspace_id,
+        production_banner,
+        category,
+        ingest_path,
+        transport,
+        par_status,
+        ua: (req.headers.get("user-agent") ?? "").slice(0, 256),
       },
     });
 

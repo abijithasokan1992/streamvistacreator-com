@@ -13,6 +13,7 @@ import {
   Section,
   Text,
 } from 'npm:@react-email/components@0.0.22'
+import { BrandLogos } from './brand-logos.tsx'
 
 interface ReauthenticationEmailProps {
   token: string
@@ -41,6 +42,7 @@ export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => 
         <Text style={footer}>
           This code expires shortly. If you didn't request it, you can safely ignore this email.
         </Text>
+              <BrandLogos />
       </Container>
     </Body>
   </Html>

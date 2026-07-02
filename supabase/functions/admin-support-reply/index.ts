@@ -7,18 +7,20 @@
  * Body: { requestId: string; reply: string }
  */
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 import { sendGmail } from "../_shared/gmail.ts";
 const MAIL_FROM = Deno.env.get("MAIL_FROM") || "StreamVista Support <abijithasokan@crayonspictures.com>";
 
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+function jsonWith(req: Request) {
+  const cors = buildCorsHeaders(req);
+  return (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
 }
 
 const esc = (s: string) =>
@@ -38,7 +40,8 @@ function renderHtml(opts: { name: string; subject: string; reply: string; origin
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") return handleOptions(req);
+  const json = jsonWith(req);
   try {
     // Gmail credentials checked inside sendGmail()
 
@@ -48,9 +51,9 @@ Deno.serve(async (req) => {
     const userClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: claims } = await userClient.auth.getClaims(authHeader.replace("Bearer ", ""));
-    const uid = claims?.claims?.sub;
-    if (!uid) return json({ error: "Unauthorized" }, 401);
+    const { data: userRes, error: userErr } = await userClient.auth.getUser();
+    const uid = userRes?.user?.id;
+    if (userErr || !uid) return json({ error: "Unauthorized" }, 401);
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
     const { data: isAdmin } = await admin.rpc("has_role", { _user_id: uid, _role: "admin" });

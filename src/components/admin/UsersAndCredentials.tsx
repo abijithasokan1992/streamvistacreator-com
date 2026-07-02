@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
-  Loader2, Users, ShieldAlert, Trash2, Pause, Play, Eye, Crown, Camera,
+  Loader2, Users, ShieldAlert, Trash2, Pause, Play, Eye, Crown, Camera, Receipt,
   Briefcase, History, Mail, Search, RefreshCw, Copy, Check, KeyRound, UserPlus, Send,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +21,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import UserEntitlementDrillIn, { type EntitlementTarget } from "@/components/admin/UserEntitlementDrillIn";
 
 type Role = "admin" | "executive_producer" | "creator" | "moderator" | "client" | "user";
 const ALL_ROLES: { value: Role; label: string }[] = [
@@ -94,6 +95,7 @@ export default function UsersAndCredentials() {
 
   const [deleting, setDeleting] = useState<UserRow | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [entitlementTarget, setEntitlementTarget] = useState<EntitlementTarget | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -269,6 +271,11 @@ export default function UsersAndCredentials() {
                           <Button size="sm" variant="ghost" onClick={() => onView(row)} title="View">
                             <Eye className="w-4 h-4" />
                           </Button>
+                          <Button size="sm" variant="ghost"
+                            onClick={() => setEntitlementTarget({ user_id: row.id, email: row.email, display_name: row.display_name })}
+                            title="Billing & entitlement">
+                            <Receipt className="w-4 h-4 text-accent" />
+                          </Button>
                           <Button size="sm" variant="ghost" onClick={() => onEdit(row)} title="Modify">
                             <Crown className="w-4 h-4" />
                           </Button>
@@ -439,6 +446,13 @@ export default function UsersAndCredentials() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Entitlement / billing drill-in */}
+      <UserEntitlementDrillIn
+        target={entitlementTarget}
+        open={!!entitlementTarget}
+        onOpenChange={(o) => { if (!o) setEntitlementTarget(null); }}
+      />
     </div>
   );
 }

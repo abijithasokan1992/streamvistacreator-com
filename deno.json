@@ -1,0 +1,12 @@
+{
+  "$schema": "https://deno.land/x/deno/cli/schemas/config-file.v1.json",
+  "lint": {
+    "include": ["supabase/functions/"]
+  },
+  "fmt": {
+    "include": ["supabase/functions/"]
+  },
+  "test": {
+    "include": ["supabase/functions/"]
+  }
+}

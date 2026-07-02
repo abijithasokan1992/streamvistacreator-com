@@ -82,6 +82,8 @@ const AdminRoutes = () => (
     <Route path="/admin/settings" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/audit" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/homepage" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/qc" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/legal" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     {/* Legacy admin paths — Admin.tsx pathToTab maps these to the new buckets */}
     <Route path="/admin/content" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/support" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
@@ -140,6 +142,8 @@ const PublicRoutes = () => (
     <Route path="/admin/settings" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/audit" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/homepage" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/qc" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/legal" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     {/* Legacy admin paths — Admin.tsx pathToTab maps these to the new buckets */}
     <Route path="/admin/content" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/support" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />

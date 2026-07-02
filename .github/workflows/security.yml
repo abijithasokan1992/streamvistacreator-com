@@ -76,7 +76,7 @@ jobs:
         run: npm ci
 
       - name: Install npm-audit-sarif converter
-        run: npm install -g npm-audit-sarif@1.0.4
+        run: npm install -g npm-audit-sarif@0.0.13
 
       - name: Run npm audit and emit SARIF
         run: |

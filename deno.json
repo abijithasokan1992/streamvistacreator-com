@@ -1,0 +1,8 @@
+{
+  "lint": {
+    "include": ["supabase/"]
+  },
+  "test": {
+    "include": ["supabase/"]
+  }
+}

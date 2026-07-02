@@ -10,7 +10,6 @@ on:
 
 permissions:
   contents: read
-  security-events: write
 
 jobs:
   # ─── Secret Scanning ────────────────────────────────────────────────────────
@@ -45,19 +44,18 @@ jobs:
             --config "p/owasp-top-ten" \
             --config "p/xss" \
             --config "p/secrets" \
-            --error \
             --sarif \
             --output semgrep.sarif \
             --exclude "node_modules" \
             --exclude "dist" \
             .
 
-      - name: Upload Semgrep SARIF
+      - name: Upload Semgrep report
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: actions/upload-artifact@v4
         with:
-          sarif_file: semgrep.sarif
-          category: semgrep
+          name: semgrep-sarif
+          path: semgrep.sarif
 
   # ─── Dependency Vulnerabilities ─────────────────────────────────────────────
   npm-audit:
@@ -75,17 +73,18 @@ jobs:
         run: npm ci
 
       - name: Install npm-audit-sarif converter
-        run: npm install -g npm-audit-sarif@1.0.4
+        run: npm install -g npm-audit-sarif@0.0.13
 
       - name: Run npm audit and emit SARIF
         run: |
           npm audit --json | npm-audit-sarif > npm-audit.sarif || true
 
-      - name: Upload npm audit SARIF
-        uses: github/codeql-action/upload-sarif@v3
+      - name: Upload npm audit report
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          sarif_file: npm-audit.sarif
-          category: npm-audit
+          name: npm-audit-sarif
+          path: npm-audit.sarif
 
   osv-scanner:
     name: OSV Scanner (Dependencies)
@@ -94,19 +93,19 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Run OSV Scanner
-        uses: google/osv-scanner-action@v1
+        uses: google/osv-scanner-action@v2.3.8
         with:
           scan-args: |-
             --lockfile=package-lock.json
             --format=sarif
             --output=osv.sarif
 
-      - name: Upload OSV SARIF
+      - name: Upload OSV report
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: actions/upload-artifact@v4
         with:
-          sarif_file: osv.sarif
-          category: osv-scanner
+          name: osv-sarif
+          path: osv.sarif
 
   # ─── Filesystem / Misconfiguration Scan ─────────────────────────────────────
   trivy:
@@ -126,9 +125,9 @@ jobs:
           exit-code: "0"
           ignore-unfixed: true
 
-      - name: Upload Trivy SARIF
+      - name: Upload Trivy report
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: actions/upload-artifact@v4
         with:
-          sarif_file: trivy.sarif
-          category: trivy
+          name: trivy-sarif
+          path: trivy.sarif

@@ -1,0 +1,47 @@
+# Gitleaks configuration for StreamVista Creator
+# Docs: https://github.com/gitleaks/gitleaks
+
+title = "StreamVista Gitleaks Config"
+
+[extend]
+# Use the default ruleset shipped with gitleaks and extend it
+useDefault = true
+
+[allowlist]
+  description = "Allowlist for known false positives"
+  regexTarget = "match"
+  # Allow example/placeholder values commonly used in documentation or .env.example
+  regexes = [
+    '''REPLACE_ME''',
+    '''your_.*_here''',
+    '''example''',
+    '''changeme''',
+  ]
+  paths = [
+    '''.env.example''',
+    '''README.md''',
+    '''public/_headers''',
+  ]
+  stopwords = [
+    "placeholder",
+    "example",
+    "test",
+    "dummy",
+  ]
+
+[[rules]]
+  description = "Supabase anon key"
+  id = "supabase-anon-key"
+  regex = '''eyJ[A-Za-z0-9-_]+\.eyJ[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+'''
+  tags = ["supabase", "jwt", "key"]
+
+[[rules]]
+  description = "Generic high-entropy secret"
+  id = "generic-high-entropy"
+  regex = '''(?i)(secret|password|passwd|token|apikey|api_key|auth)\s*[=:]\s*["']?[^\s"']{16,}["']?'''
+  tags = ["generic", "high-entropy"]
+  [rules.allowlist]
+    regexes = [
+      '''process\.env''',
+      '''import\.meta\.env''',
+    ]

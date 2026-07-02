@@ -15,8 +15,13 @@ const Index = () => {
   const { user, role, loading } = useAuth();
 
   if (loading) return (
-    <div className="min-h-dvh grid place-items-center text-muted-foreground">
-      <Loader2 className="w-5 h-5 animate-spin" />
+    <div
+      className="min-h-dvh grid place-items-center text-muted-foreground"
+      role="status"
+      aria-live="polite"
+    >
+      <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
+      <span className="sr-only">Loading</span>
     </div>
   );
   if (user) return <Navigate to={dashboardForRole(role)} replace />;

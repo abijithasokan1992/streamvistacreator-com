@@ -41,6 +41,7 @@ import ScreeningRoom from "./pages/ScreeningRoom.tsx";
 import MyCreatorProfile from "./pages/profile/MyCreatorProfile.tsx";
 import MyStudioProfile from "./pages/profile/MyStudioProfile.tsx";
 import AdminHome from "./pages/AdminHome.tsx";
+import CollegeERP from "./pages/CollegeERP.tsx";
 
 import ReferralCapture from "./components/ReferralCapture.tsx";
 import { RouteAgentDock } from "./components/agents/RouteAgentDock.tsx";
@@ -176,6 +177,7 @@ const PublicRoutes = () => (
     <Route path="/unsubscribe" element={<Unsubscribe />} />
     <Route path="/invoice/:id" element={<InvoiceReceipt />} />
     <Route path="/invoice/manual/:id" element={<ManualInvoiceReceipt />} />
+    <Route path="/college-erp" element={<CollegeERP />} />
     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
     <Route path="*" element={<NotFound />} />
   </Routes>

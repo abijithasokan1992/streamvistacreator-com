@@ -460,16 +460,8 @@ export async function submitTitle(id: string, note?: string): Promise<void> {
  */
 export async function notifyTitleSubmitted(titleId: string): Promise<void> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-    const url = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/notify-title-submitted`;
-    await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({ titleId }),
+    await (supabase as any).functions.invoke("notify-title-submitted", {
+      body: { titleId },
     });
   } catch (e) {
     console.warn("notify-title-submitted: non-fatal error", e);

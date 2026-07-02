@@ -59,11 +59,13 @@ Deno.serve(async (req) => {
     if (titleRow.owner_user_id !== user.id) {
       return json({ error: "Forbidden" }, 403);
     }
-    // Tolerate brief status lag — allow 'submitted' or still 'draft' while DB commits.
-    if (!["submitted", "in_review", "draft", "incomplete"].includes(titleRow.status)) {
-      return json({ error: "Title is not in a submittable state" }, 422);
+    // Only fire notifications for titles that are actually in review.
+    if (!["submitted", "in_review"].includes(titleRow.status)) {
+      return json({ error: "Title is not in a submitted state" }, 422);
     }
 
+    // submitted_at is set by submit_title_to_admin; the fallback covers the rare
+    // case where the column is null (e.g. legacy rows migrated without it).
     const submittedAt = (titleRow.submitted_at as string | null) ?? new Date().toISOString();
     const titleName = titleRow.title as string;
 
@@ -104,11 +106,12 @@ Deno.serve(async (req) => {
       .eq("role", "admin");
 
     const adminIds = (roles ?? []).map((r: { user_id: string }) => r.user_id);
-    const adminEmails: string[] = [];
-    for (const id of adminIds) {
-      const { data } = await admin.auth.admin.getUserById(id);
-      if (data?.user?.email) adminEmails.push(data.user.email);
-    }
+    const adminUserResults = await Promise.all(
+      adminIds.map((id: string) => admin.auth.admin.getUserById(id)),
+    );
+    const adminEmails: string[] = adminUserResults
+      .map((r) => r.data?.user?.email)
+      .filter((e): e is string => !!e);
 
     const adminEmailResults = await Promise.allSettled(
       adminEmails.map((to) =>

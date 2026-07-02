@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  UploadCloud, HardDrive, Wrench, Activity, Receipt,
+  UploadCloud, HardDrive, Wrench, Activity, Receipt, ChevronDown, ChevronUp,
 } from "lucide-react";
 import {
   QuickActionCard, QuickActionGrid, HelpDrawer,
@@ -29,6 +29,7 @@ export default function StudioQuickActions({
   onRequestPlan?: () => void;
 }) {
   const [drawer, setDrawer] = useState<DrawerKey>(null);
+  const [showMore, setShowMore] = useState(false);
   const navigate = useNavigate();
   const availableGb = Math.max(0, totalGb - usedGb);
 
@@ -36,8 +37,8 @@ export default function StudioQuickActions({
     <>
       <QuickActionGrid
         title="Studio Tools"
-        description="Guided shortcuts for ingest, storage planning, and service requests."
-        cols={3}
+        description="Guided shortcuts for ingest and storage planning."
+        cols={2}
       >
         <QuickActionCard
           icon={UploadCloud}
@@ -56,28 +57,44 @@ export default function StudioQuickActions({
           cta="Plan storage"
           onClick={() => setDrawer("planner")}
         />
-        <QuickActionCard
-          icon={Wrench}
-          title="Service Request Wizard"
-          description="Proxies, QC, restore, delivery, archive — founder-assisted."
-          cta="Request service"
-          onClick={() => { if (onRequestService) onRequestService(); else onOpenBilling(); }}
-        />
-        <QuickActionCard
-          icon={Activity}
-          title="Upload / Ingest Diagnostics"
-          description="Stuck upload? Run through the common fixes."
-          cta="Open helper"
-          onClick={() => setDrawer("diagnostics")}
-        />
-        <QuickActionCard
-          icon={Receipt}
-          title="Plan / Storage Request"
-          description="Need more capacity or a custom plan? Send a quick request."
-          cta="Send request"
-          onClick={() => { if (onRequestPlan) onRequestPlan(); else onOpenBilling(); }}
-        />
+
+        {showMore && (
+          <>
+            <QuickActionCard
+              icon={Wrench}
+              title="Service Request"
+              description="Proxies, QC, restore, delivery, archive — founder-assisted."
+              cta="Request service"
+              onClick={() => { if (onRequestService) onRequestService(); else onOpenBilling(); }}
+            />
+            <QuickActionCard
+              icon={Activity}
+              title="Upload Diagnostics"
+              description="Stuck upload? Run through the common fixes."
+              cta="Open helper"
+              onClick={() => setDrawer("diagnostics")}
+            />
+            <QuickActionCard
+              icon={Receipt}
+              title="Plan / Storage Request"
+              description="Need more capacity or a custom plan? Send a quick request."
+              cta="Send request"
+              onClick={() => { if (onRequestPlan) onRequestPlan(); else onOpenBilling(); }}
+            />
+          </>
+        )}
       </QuickActionGrid>
+
+      {/* Toggle for utility tools */}
+      <button
+        type="button"
+        onClick={() => setShowMore((v) => !v)}
+        className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+      >
+        {showMore
+          ? <><ChevronUp className="w-3.5 h-3.5" /> Hide extra tools</>
+          : <><ChevronDown className="w-3.5 h-3.5" /> More tools (service request, diagnostics)</>}
+      </button>
 
       <HelpDrawer
         open={drawer === "planner"}
@@ -121,7 +138,7 @@ export default function StudioQuickActions({
           onClick={() => { setDrawer(null); onOpenLibrary(); }}
           className="inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline"
         >
-          Open Library →
+          Open Vault →
         </button>
       </HelpDrawer>
     </>

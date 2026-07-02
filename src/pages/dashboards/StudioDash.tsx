@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  ArrowUpRight, Cloud, Database, HardDrive, Loader2,
-  Snowflake, Sparkles, Wrench, Receipt, ShoppingCart, ShieldCheck, UploadCloud,
+  AlertTriangle, ArrowUpRight, Cloud, Database, Loader2,
+  RefreshCw, ShieldCheck, Snowflake, ShoppingCart, Sparkles, UploadCloud,
+  Receipt, Wrench,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useStorageQuota } from "@/hooks/useStorageQuota";
+import { useLiveStudioSku } from "@/components/shared/useLiveStudioSku";
 import RoleDashboardShell from "./RoleDashboardShell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -20,89 +21,10 @@ import ManualInvoicesList from "@/components/billing/ManualInvoicesList";
 import HardDiskIntakeDialog from "@/components/studio/HardDiskIntakeDialog";
 import StudioIngest from "@/components/studio/ingest/StudioIngest";
 import StudioQuickActions from "@/components/studio/StudioQuickActions";
-import StudioPlanStrip from "@/components/studio/StudioPlanStrip";
-import type { VaultProduct } from "@/lib/studioVault";
+import { supabase } from "@/integrations/supabase/client";
 import { useCreatorPaygPrice } from "@/hooks/usePublicPlans";
 
 type AllocRow = { id: string; allocated_gb: number; used_gb: number; source: string };
-
-function useLiveStudioSku() {
-  const [product, setProduct] = useState<VaultProduct | null>(null);
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase
-        .from("studio_vault_products_public" as any)
-        .select("*")
-        .eq("visible", true)
-        .eq("self_serve_enabled", true)
-        .order("sort_order", { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      if (data) {
-        const p = data as unknown as VaultProduct;
-        setProduct({
-          ...p,
-          default_tb_options: Array.isArray(p.default_tb_options) ? p.default_tb_options : [1],
-          billing_modes: Array.isArray(p.billing_modes) ? p.billing_modes : ["monthly"],
-          features: Array.isArray(p.features) ? p.features : [],
-        });
-      }
-    })();
-  }, []);
-  return product;
-}
-
-function OneClickBuyCard({
-  product, hasPaid, onPurchased,
-}: { product: VaultProduct | null; hasPaid: boolean; onPurchased: () => void }) {
-  const [open, setOpen] = useState(false);
-  if (!product) return null;
-  const gstMul = 1 + (product.gst_percent ?? 18) / 100;
-  const totalRupees = Math.round((product.sell_price_per_tb_paise / 100) * gstMul);
-  const baseRupees = Math.round(product.sell_price_per_tb_paise / 100);
-  return (
-    <section className="rounded-2xl border border-accent/40 bg-gradient-to-br from-accent/10 to-secondary/10 p-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0 max-w-xl">
-          <span className="text-[11px] uppercase tracking-[0.25em] text-accent font-mono">One-click</span>
-          <h3 className="font-display text-2xl mt-1.5">
-            {hasPaid ? "Add 1 TB" : "Start with 1 TB"}
-          </h3>
-          <p className="text-sm text-muted-foreground mt-1.5">
-            Recurring vault storage for uploads, masters and archives.
-          </p>
-          <p className="text-sm mt-3">
-            <span className="font-display text-2xl">₹{totalRupees}</span>
-            <span className="text-muted-foreground"> / month</span>
-            <span className="text-xs text-muted-foreground ml-2">(incl. {product.gst_percent}% GST)</span>
-          </p>
-          <p className="text-[11px] text-muted-foreground mt-1">
-            Activates right after payment.
-          </p>
-        </div>
-        <div className="flex flex-col items-end gap-2">
-          <Button
-            size="lg"
-            onClick={() => setOpen(true)}
-            className="bg-gradient-primary text-primary-foreground glow-primary"
-          >
-            <ShoppingCart className="w-4 h-4 mr-2" />
-            {hasPaid ? "Add 1 TB" : "Buy 1 TB"}
-          </Button>
-          <Link to="/contact" className="text-[11px] text-muted-foreground hover:text-accent">
-            Need more? Contact us →
-          </Link>
-        </div>
-      </div>
-      <BuyVaultDialog
-        product={product}
-        open={open}
-        onOpenChange={setOpen}
-        onPurchased={() => { setOpen(false); onPurchased(); }}
-      />
-    </section>
-  );
-}
 
 function useStudioVaultRows() {
   const { user } = useAuth();
@@ -123,7 +45,7 @@ function useStudioVaultRows() {
       setRows((data as AllocRow[]) ?? []);
       setLoading(false);
     })();
-  }, [user?.id, bump]);
+  }, [user?.id, bump]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return { rows, loading, refresh };
 }
@@ -139,6 +61,118 @@ function StatusPill({ tone, children }: { tone: "ok" | "warn" | "muted"; childre
 }
 
 /* ============================================================
+ * STATUS BANNER — single authoritative block for Home tab
+ * replaces: StudioPlanStrip + inline status card + OneClickBuyCard
+ * ============================================================ */
+function StudioStatusBanner({ rows, onGoVault, onPurchased }: {
+  rows: AllocRow[];
+  onGoVault: () => void;
+  onPurchased: () => void;
+}) {
+  const q = useStorageQuota();
+  const liveSku = useLiveStudioSku();
+  const [buyOpen, setBuyOpen] = useState(false);
+
+  const hasPaidVault = rows.length > 0;
+  const hasTesting = q.testingModeEnabled && q.testingOverrideGb > 0;
+  const hasUsable = hasPaidVault || hasTesting;
+
+  const paidGbTotal = rows.reduce((s, r) => s + r.allocated_gb, 0);
+  const usedGbTotal = rows.reduce((s, r) => s + r.used_gb, 0);
+  const totalGb = paidGbTotal + (hasTesting ? q.testingOverrideGb : 0);
+  const availGb = Math.max(0, totalGb - usedGbTotal);
+
+  const gstMul = liveSku ? 1 + (liveSku.gst_percent ?? 18) / 100 : 1;
+  const priceLabel = liveSku
+    ? `₹${Math.round((liveSku.sell_price_per_tb_paise / 100) * gstMul)}/mo`
+    : "";
+
+  const statusTone: "ok" | "warn" | "muted" = hasPaidVault ? "ok" : hasTesting ? "warn" : "muted";
+  const statusLabel = hasPaidVault ? "Active" : hasTesting ? "Test allowance" : "Not activated";
+  const heading = hasPaidVault
+    ? "Storage is live."
+    : hasTesting
+    ? "Test allowance enabled."
+    : "Activate your storage.";
+  const desc = hasPaidVault
+    ? "Upload and manage your footage and masters."
+    : hasTesting
+    ? "50 GB test allowance active. Buy 1 TB to activate real capacity."
+    : "Buy 1 TB to start uploading.";
+
+  return (
+    <section className="rounded-2xl border border-border/50 bg-secondary/10 p-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] uppercase tracking-[0.25em] text-accent font-mono">Studio Storage</span>
+            <StatusPill tone={statusTone}>{statusLabel}</StatusPill>
+          </div>
+          <h2 className="font-display text-2xl md:text-3xl mt-1.5 leading-tight">{heading}</h2>
+          <p className="text-sm text-muted-foreground mt-1.5 max-w-xl">{desc}</p>
+        </div>
+        <div className="flex flex-wrap gap-2 shrink-0">
+          {hasUsable && (
+            <Button onClick={onGoVault} variant={hasPaidVault ? "default" : "outline"} className={hasPaidVault ? "bg-gradient-primary text-primary-foreground glow-primary" : ""}>
+              <Cloud className="w-4 h-4 mr-2" /> Open Vault
+            </Button>
+          )}
+          <Button
+            onClick={() => setBuyOpen(true)}
+            disabled={!liveSku}
+            variant={hasPaidVault ? "outline" : "default"}
+            className={!hasPaidVault ? "bg-gradient-primary text-primary-foreground glow-primary" : ""}
+          >
+            <ShoppingCart className="w-4 h-4 mr-2" />
+            {hasPaidVault ? "Add 1 TB" : `Buy 1 TB${priceLabel ? ` · ${priceLabel}` : ""}`}
+          </Button>
+        </div>
+      </div>
+
+      {/* Quota numbers — only when storage is usable */}
+      {hasUsable && (
+        <div className="grid grid-cols-3 gap-3 mt-5">
+          <div className="rounded-lg border border-border/50 p-3">
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-mono">Allocated</p>
+            <p className="font-display text-lg mt-0.5">
+              {totalGb >= 1024 ? `${(totalGb / 1024).toFixed(1)} TB` : `${totalGb.toFixed(0)} GB`}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border/50 p-3">
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-mono">Used</p>
+            <p className="font-display text-lg mt-0.5">{usedGbTotal.toFixed(2)} GB</p>
+          </div>
+          <div className="rounded-lg border border-border/50 p-3">
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-mono">Available</p>
+            <p className="font-display text-lg mt-0.5">{availGb.toFixed(1)} GB</p>
+          </div>
+        </div>
+      )}
+
+      {/* Visible error when SKU can't load */}
+      {!liveSku && (
+        <div className="mt-4 rounded-lg border border-amber-400/30 bg-amber-500/10 p-3 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-amber-300 flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            Storage plans are unavailable right now.
+          </p>
+          <Button size="sm" variant="outline" onClick={() => window.location.reload()}>
+            <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Retry
+          </Button>
+        </div>
+      )}
+
+      <BuyVaultDialog
+        product={liveSku}
+        open={buyOpen}
+        onOpenChange={setBuyOpen}
+        onPurchased={() => { setBuyOpen(false); onPurchased(); }}
+      />
+    </section>
+  );
+}
+
+/* ============================================================
  * 1) STUDIO HOME — status-first, one primary CTA
  * ============================================================ */
 function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchased }: {
@@ -147,8 +181,6 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
   onPurchased: () => void;
 }) {
   const q = useStorageQuota();
-  const liveSku = useLiveStudioSku();
-  const [buyOpen, setBuyOpen] = useState(false);
   const hasPaidVault = rows.length > 0;
   const hasTesting = q.testingModeEnabled && q.testingOverrideGb > 0;
   const hasUsable = hasPaidVault || hasTesting;
@@ -157,29 +189,16 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
   const usedGbTotal = rows.reduce((s, r) => s + r.used_gb, 0);
   const totalGb = paidGbTotal + (hasTesting ? q.testingOverrideGb : 0);
 
-  // Direct paid CTA — opens the existing BuyVaultDialog with the live 1 TB SKU.
-  // Removes the previous "Browse plans" dead-end which only switched tabs.
-  const openBuy = () => {
-    if (!liveSku) {
-      // Surface a meaningful message instead of silently doing nothing.
-      // (toast import lives in shared scope of BuyVaultDialog; keep this local UX minimal)
-      return;
-    }
-    setBuyOpen(true);
-  };
-
   return (
     <div className="space-y-6">
-      {/* Plan & quota visibility — top of Studio Home */}
-      <StudioPlanStrip
-        hasPaidVault={hasPaidVault}
-        hasTesting={hasTesting}
-        totalGb={totalGb}
-        usedGb={usedGbTotal}
-        onUpgrade={hasPaidVault ? onGoBilling : openBuy}
+      {/* 1. Status + CTA — always first */}
+      <StudioStatusBanner
+        rows={rows}
+        onGoVault={onGoVault}
+        onPurchased={onPurchased}
       />
 
-      {/* Studio Tools / Quick Actions */}
+      {/* 2. Studio Tools / Quick Actions */}
       <StudioQuickActions
         hasUsable={hasUsable}
         totalGb={totalGb}
@@ -189,94 +208,7 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
         onOpenLibrary={onGoVault}
       />
 
-      {/* Status card */}
-      <section className="rounded-2xl border border-border/50 bg-secondary/10 p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] uppercase tracking-[0.25em] text-accent font-mono">Studio Storage</span>
-              {hasPaidVault && <StatusPill tone="ok">Active</StatusPill>}
-              {!hasPaidVault && hasTesting && <StatusPill tone="warn">Testing allowance</StatusPill>}
-              {!hasUsable && <StatusPill tone="muted">Not activated</StatusPill>}
-            </div>
-            <h2 className="font-display text-2xl md:text-3xl mt-1.5 leading-tight">
-              {hasPaidVault
-                ? "Storage is live."
-                : hasTesting
-                ? "Testing storage active."
-                : "Activate your storage."}
-            </h2>
-            <p className="text-sm text-muted-foreground mt-1.5 max-w-xl">
-              {hasPaidVault
-                ? "Upload and manage your footage and masters."
-                : hasTesting
-                ? "50 GB test allowance. Buy 1 TB to go live."
-                : "Buy 1 TB to start uploading."}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {hasUsable && (
-              <Button onClick={onGoVault} variant={hasPaidVault ? "default" : "outline"} className={hasPaidVault ? "bg-gradient-primary text-primary-foreground glow-primary" : ""}>
-                <Cloud className="w-4 h-4 mr-2" /> Open Storage
-              </Button>
-            )}
-            <Button
-              onClick={openBuy}
-              disabled={!liveSku}
-              className="bg-gradient-primary text-primary-foreground glow-primary"
-            >
-              <ShoppingCart className="w-4 h-4 mr-2" />
-              {hasPaidVault ? "Add 1 TB" : "Buy 1 TB"}
-            </Button>
-          </div>
-        </div>
-
-        {/* Quota summary numbers */}
-        {hasUsable && (
-          <div className="grid grid-cols-3 gap-3 mt-5">
-            <div className="rounded-lg border border-border/50 p-3">
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-mono">Allocated</p>
-              <p className="font-display text-lg mt-0.5">
-                {totalGb >= 1024 ? `${(totalGb / 1024).toFixed(1)} TB` : `${totalGb.toFixed(0)} GB`}
-              </p>
-            </div>
-            <div className="rounded-lg border border-border/50 p-3">
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-mono">Used</p>
-              <p className="font-display text-lg mt-0.5">{usedGbTotal.toFixed(2)} GB</p>
-            </div>
-            <div className="rounded-lg border border-border/50 p-3">
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-mono">Available</p>
-              <p className="font-display text-lg mt-0.5">{Math.max(0, totalGb - usedGbTotal).toFixed(1)} GB</p>
-            </div>
-          </div>
-        )}
-
-        {hasTesting && !hasPaidVault && (
-          <p className="text-[11px] text-muted-foreground mt-3">
-            <ShieldCheck className="w-3 h-3 inline mr-1 text-amber-300" />
-            {q.testingOverrideGb} GB test allowance. Buy 1 TB to activate real capacity.
-          </p>
-        )}
-
-        {!liveSku && (
-          <p className="text-[11px] text-amber-300 mt-3">
-            Storage unavailable right now. Try refreshing.
-          </p>
-        )}
-      </section>
-
-      {/* Shared BuyVaultDialog — single source of truth for Studio checkout. */}
-      <BuyVaultDialog
-        product={liveSku}
-        open={buyOpen}
-        onOpenChange={setBuyOpen}
-        onPurchased={() => { setBuyOpen(false); onPurchased(); }}
-      />
-
-      {/* Detailed one-click purchase card — kept for context, same dialog, same SKU. */}
-      <OneClickBuyCard product={liveSku} hasPaid={hasPaidVault} onPurchased={onPurchased} />
-
-      {/* Per-class breakdown only when we have paid storage */}
+      {/* 3. Per-class breakdown only when we have paid storage */}
       {!loading && rows.length > 0 && <MyVaultSummary />}
     </div>
   );
@@ -430,27 +362,23 @@ export default function StudioDashboard() {
     quota.refresh();
   };
 
-  const subtitle = useMemo(
-    () => "Home · Ingest · Storage · Library · Billing.",
-    [],
+  const profileLink = (
+    <Link
+      to="/dashboard/studio/profile"
+      className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 rounded-md border border-border/40 px-3 py-1.5"
+    >
+      <ShieldCheck className="w-3.5 h-3.5" /> My Studio Profile
+    </Link>
   );
 
   return (
-    <RoleDashboardShell expectedRole="studio" title="Studio Storage" subtitle={subtitle}>
-      <div className="mb-4 flex justify-end">
-        <Link
-          to="/dashboard/studio/profile"
-          className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 rounded-md border border-border/40 px-3 py-1.5"
-        >
-          <ShieldCheck className="w-3.5 h-3.5" /> My Studio Profile
-        </Link>
-      </div>
+    <RoleDashboardShell expectedRole="studio" title="Studio Storage" headerAction={profileLink}>
       <Tabs value={tab} onValueChange={setTab} className="w-full">
         <TabsList className="grid grid-cols-3 sm:grid-cols-5 w-full max-w-3xl">
           <TabsTrigger value="home"><Sparkles className="w-3.5 h-3.5 mr-1.5" />Home</TabsTrigger>
           <TabsTrigger value="ingest"><UploadCloud className="w-3.5 h-3.5 mr-1.5" />Ingest</TabsTrigger>
-          <TabsTrigger value="buy"><ShoppingCart className="w-3.5 h-3.5 mr-1.5" />Storage</TabsTrigger>
-          <TabsTrigger value="workspace"><Cloud className="w-3.5 h-3.5 mr-1.5" />Library</TabsTrigger>
+          <TabsTrigger value="buy"><ShoppingCart className="w-3.5 h-3.5 mr-1.5" />Plans</TabsTrigger>
+          <TabsTrigger value="workspace"><Cloud className="w-3.5 h-3.5 mr-1.5" />Vault</TabsTrigger>
           <TabsTrigger value="billing"><Receipt className="w-3.5 h-3.5 mr-1.5" />Billing</TabsTrigger>
         </TabsList>
 

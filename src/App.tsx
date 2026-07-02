@@ -40,6 +40,7 @@ import ManualInvoiceReceipt from "./pages/ManualInvoiceReceipt.tsx";
 import ScreeningRoom from "./pages/ScreeningRoom.tsx";
 import MyCreatorProfile from "./pages/profile/MyCreatorProfile.tsx";
 import MyStudioProfile from "./pages/profile/MyStudioProfile.tsx";
+import AdminHome from "./pages/AdminHome.tsx";
 
 import ReferralCapture from "./components/ReferralCapture.tsx";
 import { RouteAgentDock } from "./components/agents/RouteAgentDock.tsx";

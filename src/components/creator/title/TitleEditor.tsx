@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
-  getTitle, listAssets, saveTitleMetadata, submitTitle,
+  getTitle, listAssets, saveTitleMetadata, submitTitle, notifyTitleSubmitted,
   evaluateChecklist, fetchReadiness, fetchTitleTimeline, fetchFreeTierStatus,
   type TitleRow, type TitleAsset, type ServerReadiness, type ContentStatus, type TitleTimelineEntry,
 } from "@/lib/creator/titleApi";
@@ -203,6 +203,8 @@ export function TitleEditor({
     try {
       await submitTitle(title.id);
       setTermsOpen(false);
+      // Fire email notifications (creator confirmation + admin alert) — best-effort.
+      void notifyTitleSubmitted(title.id);
       onSubmitted();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Submit failed.");

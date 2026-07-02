@@ -454,4 +454,26 @@ export async function submitTitle(id: string, note?: string): Promise<void> {
   if (error) throw new Error(error.message ?? "Submit failed");
 }
 
+/**
+ * Fire-and-forget: triggers creator confirmation and admin alert emails.
+ * Never throws — email delivery is best-effort and must not block the UI.
+ */
+export async function notifyTitleSubmitted(titleId: string): Promise<void> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const url = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/notify-title-submitted`;
+    await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ titleId }),
+    });
+  } catch (e) {
+    console.warn("notify-title-submitted: non-fatal error", e);
+  }
+}
+
 export { ASSET_CATEGORIES };

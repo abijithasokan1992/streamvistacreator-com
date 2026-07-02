@@ -103,7 +103,9 @@ function pathToDept(path: string, search: URLSearchParams): DeptKey {
 
 
 export default function Admin() {
-  const { user, isAdmin, isSuperAdmin, loading, signOut } = useAuth();
+  const { user, isAdmin, isSuperAdmin, isQcReviewer, isLegalReviewer, loading, signOut } = useAuth();
+  const isReviewer = isQcReviewer || isLegalReviewer;
+  const hasAdminAccess = isAdmin || isReviewer;
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -172,11 +174,11 @@ export default function Admin() {
     setRows((data as Row[]) ?? []);
   };
 
-  useEffect(() => { if (isAdmin) load(); }, [isAdmin]);
+  useEffect(() => { if (hasAdminAccess) load(); }, [hasAdminAccess]);
 
   // Realtime: notify admin of new onboarding requests
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!hasAdminAccess) return;
     const channel = supabase
       .channel("admin-onboarding-inserts")
       .on(
@@ -199,7 +201,7 @@ export default function Admin() {
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [isAdmin]);
+  }, [hasAdminAccess]);
 
   const setStatus = async (id: string, status: string) => {
     const { error } = await supabase.from("onboarding_requests").update({ onboarding_status: status }).eq("id", id);
@@ -210,7 +212,7 @@ export default function Admin() {
 
   if (loading) return <div className="min-h-dvh grid place-items-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
 
-  if (!isAdmin) {
+  if (!hasAdminAccess) {
     return (
       <main className="min-h-dvh grid place-items-center px-4">
         <div className="glass-strong rounded-3xl p-10 max-w-md text-center animate-fade-in">
@@ -280,7 +282,7 @@ export default function Admin() {
                   {identityName}
                 </span>
                 <span className="text-[9px] text-muted-foreground uppercase tracking-wider truncate max-w-[160px]" title={user?.email ?? undefined}>
-                  {isSuperAdmin ? "Super Admin" : isAdmin ? "Administrator" : "Member"}
+                  {isSuperAdmin ? "Super Admin" : isAdmin ? "Administrator" : isQcReviewer ? "QC Reviewer" : isLegalReviewer ? "Legal Reviewer" : "Member"}
                 </span>
               </div>
               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-1" />
@@ -300,6 +302,8 @@ export default function Admin() {
 
       <AdminMainPanel
         isSuperAdmin={isSuperAdmin}
+        isQcReviewer={isQcReviewer}
+        isLegalReviewer={isLegalReviewer}
         location={location}
         searchParams={searchParams}
         navigate={navigate}
@@ -315,9 +319,11 @@ export default function Admin() {
  * ============================================================ */
 function buildDepartments(args: {
   isSuperAdmin: boolean;
+  isQcReviewer?: boolean;
+  isLegalReviewer?: boolean;
   navigate: (p: string) => void;
 }): Array<{ id: DeptKey; label: string; icon: JSX.Element; desc: string; sections: DeptSubSection[] }> {
-  const { isSuperAdmin, navigate } = args;
+  const { isSuperAdmin, isQcReviewer, isLegalReviewer, navigate } = args;
 
   const systemSections: DeptSubSection[] = [
     { id: "homepage", label: "Homepage CMS", hint: "Hero, carousel, ad zones", content: <MarketingCMS /> },
@@ -353,7 +359,7 @@ function buildDepartments(args: {
     });
   }
 
-  return [
+  const allDepts = [
     {
       id: "dashboard",
       label: "Dashboard",
@@ -443,12 +449,21 @@ function buildDepartments(args: {
       sections: systemSections,
     },
   ];
+
+  // Reviewers only see the Operations department — they have no access to
+  // billing, user management, or system settings.
+  if (isQcReviewer || isLegalReviewer) {
+    return allDepts.filter((d) => d.id === "operations");
+  }
+  return allDepts;
 }
 
 function AdminMainPanel({
-  isSuperAdmin, location, searchParams, navigate,
+  isSuperAdmin, isQcReviewer, isLegalReviewer, location, searchParams, navigate,
 }: {
   isSuperAdmin: boolean;
+  isQcReviewer?: boolean;
+  isLegalReviewer?: boolean;
   location: { pathname: string };
   searchParams: URLSearchParams;
   navigate: (p: string) => void;
@@ -461,8 +476,8 @@ function AdminMainPanel({
   });
 
   const departments = useMemo(
-    () => buildDepartments({ isSuperAdmin, navigate }),
-    [isSuperAdmin, navigate],
+    () => buildDepartments({ isSuperAdmin, isQcReviewer, isLegalReviewer, navigate }),
+    [isSuperAdmin, isQcReviewer, isLegalReviewer, navigate],
   );
 
   const cmdDepartments: AdminDepartment[] = useMemo(
@@ -491,7 +506,7 @@ function AdminMainPanel({
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight">
-            {isSuperAdmin ? "Platform Owner · Media Operations" : "Admin Console"}
+            {isSuperAdmin ? "Platform Owner · Media Operations" : isQcReviewer ? "QC Reviewer Console" : isLegalReviewer ? "Legal Reviewer Console" : "Admin Console"}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Departments on the left. Sub-sections appear inside each department.
@@ -505,7 +520,7 @@ function AdminMainPanel({
         onValueChange={(v) => setDept(v as DeptKey)}
         className="w-full"
       >
-        <TabsList className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 h-auto p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-6">
+        <TabsList className={`grid gap-1.5 h-auto p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-6 ${departments.length === 1 ? "grid-cols-1 max-w-xs" : "grid-cols-2 sm:grid-cols-4 lg:grid-cols-7"}`}>
           {departments.map((d) => (
             <DeptTab key={d.id} value={d.id} icon={d.icon} label={d.label} />
           ))}

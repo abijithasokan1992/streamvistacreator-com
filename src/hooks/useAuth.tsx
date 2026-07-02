@@ -247,7 +247,9 @@ export function dashboardForRole(r: AppRole | null): string {
     // but are never offered through signup or admin UI.
     case "localization_partner": return "/dashboard/localization";
     case "distributor": return "/dashboard/distribution";
-    default: return "/dashboard/content";
+    // Unknown or unmapped roles land on /admin/home which shows a clear
+    // "role not configured" message instead of a non-existent URL.
+    default: return "/admin/home";
   }
 }
 

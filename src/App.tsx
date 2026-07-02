@@ -84,6 +84,8 @@ const AdminRoutes = () => (
     <Route path="/admin/homepage" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/qc" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/legal" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    {/* Fallback for unknown / unmapped roles — shows a clear "no role configured" message. */}
+    <Route path="/admin/home" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     {/* Legacy admin paths — Admin.tsx pathToTab maps these to the new buckets */}
     <Route path="/admin/content" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/support" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
@@ -144,6 +146,8 @@ const PublicRoutes = () => (
     <Route path="/admin/homepage" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/qc" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/legal" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    {/* Fallback for unknown / unmapped roles — shows a clear "no role configured" message. */}
+    <Route path="/admin/home" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     {/* Legacy admin paths — Admin.tsx pathToTab maps these to the new buckets */}
     <Route path="/admin/content" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/support" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />

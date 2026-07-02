@@ -1,0 +1,31 @@
+# CODEOWNERS — StreamVista Creator
+# Every PR that touches these paths requires a review from @abijithasokan1992
+# before it can be merged. This protects the application code you've built.
+#
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# ── CATCH-ALL: any file not listed below ──────────────────────────────────────
+*                                   @abijithasokan1992
+
+# ── App source code (your built features — locked) ────────────────────────────
+/src/                               @abijithasokan1992
+/public/                            @abijithasokan1992
+/supabase/                          @abijithasokan1992
+/index.html                         @abijithasokan1992
+
+# ── Build & config (locked — changes here affect the whole build) ─────────────
+/vite.config.ts                     @abijithasokan1992
+/tailwind.config.ts                 @abijithasokan1992
+/tsconfig*.json                     @abijithasokan1992
+/package.json                       @abijithasokan1992
+/package-lock.json                  @abijithasokan1992
+/postcss.config.js                  @abijithasokan1992
+/components.json                    @abijithasokan1992
+
+# ── Security tooling (locked — only owner changes security rules) ─────────────
+/.gitleaks.toml                     @abijithasokan1992
+/.pre-commit-config.yaml            @abijithasokan1992
+/eslint.config.js                   @abijithasokan1992
+/.github/workflows/                 @abijithasokan1992
+/.github/dependabot.yml             @abijithasokan1992
+/.github/zap-rules.tsv              @abijithasokan1992

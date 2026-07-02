@@ -1,0 +1,20 @@
+# OWASP ZAP baseline scan rule overrides
+# Format: rule_id	IGNORE/WARN/FAIL	Optional comment
+# Full rule list: https://www.zaproxy.org/docs/alerts/
+
+# Informational / false positive suppressions
+10015	IGNORE	Incomplete or No Cache-control Header – handled via _headers
+10017	IGNORE	Cross-Domain JavaScript Source File Inclusion – Razorpay/Google Fonts intentional
+10019	IGNORE	Content-Type Header Missing – Vite SPA, handled by hosting
+10021	IGNORE	X-Content-Type-Options Header Missing – set in _headers
+10023	WARN	Information Disclosure - Debug Error Messages
+10024	WARN	Information Disclosure - Sensitive Information in URL
+10035	WARN	Strict-Transport-Security Header Not Set – set in _headers
+10040	WARN	Secure Pages Include Mixed Content
+10049	WARN	Non-Storable Content
+10050	WARN	Retrieved from Cache
+10054	WARN	Cookie Without SameSite Attribute
+10055	WARN	CSP Scanner
+10063	WARN	Permissions Policy Header Not Set – set in _headers
+10096	WARN	Timestamp Disclosure
+10202	WARN	Absence of Anti-CSRF Tokens

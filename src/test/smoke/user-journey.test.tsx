@@ -41,7 +41,7 @@ const {
     loading: false,
     signOut: vi.fn(),
   })),
-  mockListTitles: vi.fn(async () => [] as any[]),
+  mockListTitles: vi.fn(async () => [] as unknown[]),
   mockFetchFreeTierStatus: vi.fn(async () => ({
     is_free: false,
     can_create_draft: true,
@@ -112,7 +112,7 @@ const {
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   })),
-  mockListAssets: vi.fn(async () => [] as any[]),
+  mockListAssets: vi.fn(async () => [] as unknown[]),
   mockSubmitTitle: vi.fn(async () => undefined),
   mockEvaluateChecklist: vi.fn(() => ({
     hasTitle: true,
@@ -165,8 +165,8 @@ vi.mock("sonner", () => ({
 
 // Supabase — fully chainable query builder that resolves to empty results
 vi.mock("@/integrations/supabase/client", () => {
-  const makeBuilder = (): any => {
-    const proxy: any = new Proxy(
+  const makeBuilder = () => {
+    const proxy = new Proxy(
       {
         then: (r: (v: unknown) => unknown, rej?: (e: unknown) => unknown) =>
           Promise.resolve({ data: [], error: null, count: 0 }).then(r, rej),

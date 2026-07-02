@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowUpRight, Cloud, Database, HardDrive, Loader2,
-  Snowflake, Sparkles, Wrench, Receipt, ShoppingCart, ShieldCheck, UploadCloud,
+  Snowflake, Sparkles, Wrench, Receipt, ShoppingCart, ShieldCheck, UploadCloud, RefreshCw,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -28,6 +28,8 @@ type AllocRow = { id: string; allocated_gb: number; used_gb: number; source: str
 
 function useLiveStudioSku() {
   const [product, setProduct] = useState<VaultProduct | null>(null);
+  const [bump, setBump] = useState(0);
+  const refresh = () => setBump((b) => b + 1);
   useEffect(() => {
     (async () => {
       const { data } = await supabase
@@ -48,60 +50,8 @@ function useLiveStudioSku() {
         });
       }
     })();
-  }, []);
-  return product;
-}
-
-function OneClickBuyCard({
-  product, hasPaid, onPurchased,
-}: { product: VaultProduct | null; hasPaid: boolean; onPurchased: () => void }) {
-  const [open, setOpen] = useState(false);
-  if (!product) return null;
-  const gstMul = 1 + (product.gst_percent ?? 18) / 100;
-  const totalRupees = Math.round((product.sell_price_per_tb_paise / 100) * gstMul);
-  const baseRupees = Math.round(product.sell_price_per_tb_paise / 100);
-  return (
-    <section className="rounded-2xl border border-accent/40 bg-gradient-to-br from-accent/10 to-secondary/10 p-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0 max-w-xl">
-          <span className="text-[11px] uppercase tracking-[0.25em] text-accent font-mono">One-click</span>
-          <h3 className="font-display text-2xl mt-1.5">
-            {hasPaid ? "Add 1 TB" : "Start with 1 TB"}
-          </h3>
-          <p className="text-sm text-muted-foreground mt-1.5">
-            Recurring vault storage for uploads, masters and archives.
-          </p>
-          <p className="text-sm mt-3">
-            <span className="font-display text-2xl">₹{totalRupees}</span>
-            <span className="text-muted-foreground"> / month</span>
-            <span className="text-xs text-muted-foreground ml-2">(incl. {product.gst_percent}% GST)</span>
-          </p>
-          <p className="text-[11px] text-muted-foreground mt-1">
-            Activates right after payment.
-          </p>
-        </div>
-        <div className="flex flex-col items-end gap-2">
-          <Button
-            size="lg"
-            onClick={() => setOpen(true)}
-            className="bg-gradient-primary text-primary-foreground glow-primary"
-          >
-            <ShoppingCart className="w-4 h-4 mr-2" />
-            {hasPaid ? "Add 1 TB" : "Buy 1 TB"}
-          </Button>
-          <Link to="/contact" className="text-[11px] text-muted-foreground hover:text-accent">
-            Need more? Contact us →
-          </Link>
-        </div>
-      </div>
-      <BuyVaultDialog
-        product={product}
-        open={open}
-        onOpenChange={setOpen}
-        onPurchased={() => { setOpen(false); onPurchased(); }}
-      />
-    </section>
-  );
+  }, [bump]);
+  return { product, refresh };
 }
 
 function useStudioVaultRows() {
@@ -147,7 +97,7 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
   onPurchased: () => void;
 }) {
   const q = useStorageQuota();
-  const liveSku = useLiveStudioSku();
+  const { product: liveSku, refresh: refreshSku } = useLiveStudioSku();
   const [buyOpen, setBuyOpen] = useState(false);
   const hasPaidVault = rows.length > 0;
   const hasTesting = q.testingModeEnabled && q.testingOverrideGb > 0;
@@ -157,16 +107,7 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
   const usedGbTotal = rows.reduce((s, r) => s + r.used_gb, 0);
   const totalGb = paidGbTotal + (hasTesting ? q.testingOverrideGb : 0);
 
-  // Direct paid CTA — opens the existing BuyVaultDialog with the live 1 TB SKU.
-  // Removes the previous "Browse plans" dead-end which only switched tabs.
-  const openBuy = () => {
-    if (!liveSku) {
-      // Surface a meaningful message instead of silently doing nothing.
-      // (toast import lives in shared scope of BuyVaultDialog; keep this local UX minimal)
-      return;
-    }
-    setBuyOpen(true);
-  };
+  const openBuy = () => { if (liveSku) setBuyOpen(true); };
 
   return (
     <div className="space-y-6">
@@ -220,14 +161,25 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
                 <Cloud className="w-4 h-4 mr-2" /> Open Storage
               </Button>
             )}
-            <Button
-              onClick={openBuy}
-              disabled={!liveSku}
-              className="bg-gradient-primary text-primary-foreground glow-primary"
-            >
-              <ShoppingCart className="w-4 h-4 mr-2" />
-              {hasPaidVault ? "Add 1 TB" : "Buy 1 TB"}
-            </Button>
+            {liveSku ? (
+              <Button
+                onClick={openBuy}
+                className="bg-gradient-primary text-primary-foreground glow-primary"
+              >
+                <ShoppingCart className="w-4 h-4 mr-2" />
+                {hasPaidVault ? "Add 1 TB" : "Buy 1 TB"}
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={refreshSku}
+                className="text-amber-300 border-amber-400/40 hover:bg-amber-500/10"
+              >
+                <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                Retry
+              </Button>
+            )}
           </div>
         </div>
 
@@ -251,30 +203,20 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
           </div>
         )}
 
-        {hasTesting && !hasPaidVault && (
-          <p className="text-[11px] text-muted-foreground mt-3">
-            <ShieldCheck className="w-3 h-3 inline mr-1 text-amber-300" />
-            {q.testingOverrideGb} GB test allowance. Buy 1 TB to activate real capacity.
-          </p>
-        )}
-
         {!liveSku && (
           <p className="text-[11px] text-amber-300 mt-3">
-            Storage unavailable right now. Try refreshing.
+            Storage unavailable right now — click Retry above or refresh the page.
           </p>
         )}
       </section>
 
-      {/* Shared BuyVaultDialog — single source of truth for Studio checkout. */}
+      {/* Shared BuyVaultDialog */}
       <BuyVaultDialog
         product={liveSku}
         open={buyOpen}
         onOpenChange={setBuyOpen}
         onPurchased={() => { setBuyOpen(false); onPurchased(); }}
       />
-
-      {/* Detailed one-click purchase card — kept for context, same dialog, same SKU. */}
-      <OneClickBuyCard product={liveSku} hasPaid={hasPaidVault} onPurchased={onPurchased} />
 
       {/* Per-class breakdown only when we have paid storage */}
       {!loading && rows.length > 0 && <MyVaultSummary />}

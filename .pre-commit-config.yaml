@@ -1,0 +1,51 @@
+# Pre-commit hooks for StreamVista Creator
+# Install: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+# Docs: https://pre-commit.com
+
+repos:
+  # ── Secret scanning ──────────────────────────────────────────────────────────
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks
+        name: Detect secrets with Gitleaks
+
+  # ── General file hygiene ─────────────────────────────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: no-commit-to-branch
+        args: ["--branch", "main"]
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-json
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ["--maxkb=10240"] # 10 MB max file size
+
+  # ── Semgrep SAST ─────────────────────────────────────────────────────────────
+  - repo: https://github.com/semgrep/semgrep
+    rev: v1.75.0
+    hooks:
+      - id: semgrep
+        name: Semgrep SAST
+        args:
+          - --config=p/typescript
+          - --config=p/react
+          - --config=p/secrets
+          - --error
+          - --exclude=node_modules
+          - --exclude=dist
+
+  # ── npm audit ────────────────────────────────────────────────────────────────
+  - repo: local
+    hooks:
+      - id: npm-audit
+        name: npm audit (high+)
+        language: system
+        entry: npm audit --audit-level=high
+        pass_filenames: false
+        files: ^package(-lock)?\.json$

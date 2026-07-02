@@ -116,7 +116,11 @@ function safeName(name: string): string {
   return name.replace(/[^\w.\-]+/g, "_").slice(0, 120);
 }
 
-async function logIngest(admin: any, evt: {
+async function logIngest(admin: {
+  from: (table: string) => {
+    insert: (value: unknown) => Promise<unknown>;
+  };
+}, evt: {
   user_id?: string | null;
   oci_upload_id?: string | null;
   event: string;

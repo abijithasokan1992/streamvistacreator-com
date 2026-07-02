@@ -247,7 +247,26 @@ export function dashboardForRole(r: AppRole | null): string {
     // but are never offered through signup or admin UI.
     case "localization_partner": return "/dashboard/localization";
     case "distributor": return "/dashboard/distribution";
-    default: return "/dashboard/content";
+    // Unknown / unmapped role: land on the safe fallback with a clear message
+    // rather than bouncing to a non-existent URL that renders WrongPortal/404.
+    default: return "/admin/home";
   }
 }
+
+/**
+ * Every route dashboardForRole() can return. Kept in sync with App.tsx routers
+ * and asserted in src/test/smoke/reviewer-routing.test.tsx so a role can never
+ * be mapped to a URL that isn't registered.
+ */
+export const REGISTERED_DASHBOARD_ROUTES = [
+  "/admin",
+  "/admin/qc",
+  "/admin/legal",
+  "/admin/home",
+  "/dashboard/content",
+  "/dashboard/studio",
+  "/dashboard/buyer",
+  "/dashboard/localization",
+  "/dashboard/distribution",
+] as const;
 

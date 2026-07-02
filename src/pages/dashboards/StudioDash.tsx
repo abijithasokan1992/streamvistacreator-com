@@ -45,7 +45,7 @@ function useStudioVaultRows() {
       setRows((data as AllocRow[]) ?? []);
       setLoading(false);
     })();
-  }, [user?.id, bump]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user?.id, bump]); // eslint-disable-line react-hooks/exhaustive-deps -- intentional: `user?.id` is used as a stable identity key; re-running on full `user` reference changes is not desired
 
   return { rows, loading, refresh };
 }

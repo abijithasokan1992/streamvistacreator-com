@@ -61,7 +61,7 @@ export function buildSyncPipelineEvents(opts?: {
       event: "pipeline.metadata_extracted",
       severity: "info",
       metadata: {
-        derivative: "metadata",
+        derivative: "file_metadata",
       },
     },
   ];

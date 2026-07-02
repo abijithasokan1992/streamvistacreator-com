@@ -471,16 +471,16 @@ Deno.serve(async (req) => {
     }
     const { data: updated } = await admin
       .from("recent_uploads").update({ status: "uploaded" }).eq("id", row.id).select().single();
-    for (const evt of buildSyncPipelineEvents({ fileSha256 })) {
-      await logIngest(admin, {
+    await Promise.all(buildSyncPipelineEvents({ fileSha256 }).map((evt) =>
+      logIngest(admin, {
         user_id: userId,
         oci_upload_id: null,
         event: evt.event,
         severity: evt.severity,
         bytes: file.size,
         metadata: evt.metadata,
-      });
-    }
+      })
+    ));
     return new Response(JSON.stringify({ upload: updated ?? row }), { headers: cors });
   } catch (e) {
     const msg = (e as Error).message;

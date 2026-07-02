@@ -618,7 +618,7 @@ Deno.serve(async (req) => {
       if (contentLength > MAX_PART) return json({ error: `part exceeds ${MAX_PART}` }, 400, cors);
 
       const { data: row } = await admin.from("recent_uploads")
-        .select("user_id, object_key, oci_upload_id, status")
+        .select("user_id, object_key, oci_upload_id, status, file_size")
         .eq("id", uploadRowId).maybeSingle();
       if (!row || row.user_id !== userId) return json({ error: "not_found" }, 404, cors);
       if (row.oci_upload_id !== uploadId) return json({ error: "uploadId mismatch" }, 400, cors);
@@ -796,16 +796,17 @@ Deno.serve(async (req) => {
         event: "session.completed", severity: "info",
         metadata: { parts: partsToCommit.length },
       });
-      for (const evt of buildSyncPipelineEvents({ fileSha256: completedSession?.file_sha256 ?? null })) {
-        await logIngest(admin, {
+      await Promise.all(buildSyncPipelineEvents({ fileSha256: completedSession?.file_sha256 ?? null }).map((evt) =>
+        logIngest(admin, {
           user_id: userId,
           session_id: completedSession?.id ?? null,
           oci_upload_id: uploadId,
           event: evt.event,
           severity: evt.severity,
+          bytes: row.file_size ?? null,
           metadata: evt.metadata,
-        });
-      }
+        })
+      ));
       return json({ upload: updated }, 200, cors);
     }
 

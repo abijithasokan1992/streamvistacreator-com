@@ -1,15 +1,27 @@
-import { Upload, Database, Wrench, FileSignature, ArrowRight, ShieldCheck, Users, History, Fingerprint } from "lucide-react";
+import {
+  Upload,
+  Database,
+  Wrench,
+  Lock,
+  FileSignature,
+  ArrowRight,
+  ShieldCheck,
+  Users,
+  History,
+  Fingerprint,
+} from "lucide-react";
 
 /**
  * Workflow — a single, simple horizontal timeline with a compact trust strip.
- * Ingest → Store → Prepare → License. No duplicated pipeline elsewhere.
+ * Ingest → Store → Prepare → Control Access → License. No duplicated pipeline elsewhere.
  */
 
 const STEPS = [
   { icon: Upload, step: "01", title: "Ingest", body: "Masters, posters, metadata in." },
   { icon: Database, step: "02", title: "Store", body: "Encrypted, versioned, auditable." },
   { icon: Wrench, step: "03", title: "Prepare", body: "QC, mastering, delivery-ready." },
-  { icon: FileSignature, step: "04", title: "License", body: "Screeners, requests, contracts." },
+  { icon: Lock, step: "04", title: "Control Access", body: "Role-based permissions, revocable links." },
+  { icon: FileSignature, step: "05", title: "License", body: "Screeners, requests, contracts." },
 ];
 
 const TRUST = [
@@ -38,7 +50,7 @@ export const Workflow = () => (
           <div className="w-8 h-px bg-accent" />
         </div>
         <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-4xl md:text-5xl lg:text-6xl">
-          From intake <span className="gradient-text">to deal</span>
+          One pipeline from intake <span className="gradient-text">to deal</span>
         </h2>
       </div>
 
@@ -72,7 +84,10 @@ export const Workflow = () => (
       </ol>
 
       {/* Compact trust strip */}
-      <ul className="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <h3 className="mt-14 mb-4 text-center font-display text-sm md:text-base font-bold uppercase tracking-[0.15em] text-foreground/80">
+        Security & Trust
+      </h3>
+      <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {TRUST.map(({ icon: Icon, label }) => (
           <li
             key={label}

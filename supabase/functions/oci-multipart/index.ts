@@ -20,6 +20,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
 import { validateUploadKind } from "../_shared/uploadValidation.ts";
+import { buildSyncPipelineEvents } from "../_shared/uploadPipeline.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -785,11 +786,26 @@ Deno.serve(async (req) => {
       await admin.from("upload_sessions")
         .update({ status: "completed", uploaded_parts: partsToCommit })
         .eq("user_id", userId).eq("oci_upload_id", uploadId);
+      const { data: completedSession } = await admin.from("upload_sessions")
+        .select("id, file_sha256")
+        .eq("user_id", userId)
+        .eq("oci_upload_id", uploadId)
+        .maybeSingle();
       await logIngest(admin, {
         user_id: userId, oci_upload_id: uploadId,
         event: "session.completed", severity: "info",
         metadata: { parts: partsToCommit.length },
       });
+      for (const evt of buildSyncPipelineEvents({ fileSha256: completedSession?.file_sha256 ?? null })) {
+        await logIngest(admin, {
+          user_id: userId,
+          session_id: completedSession?.id ?? null,
+          oci_upload_id: uploadId,
+          event: evt.event,
+          severity: evt.severity,
+          metadata: evt.metadata,
+        });
+      }
       return json({ upload: updated }, 200, cors);
     }
 

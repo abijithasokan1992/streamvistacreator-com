@@ -7,6 +7,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
 import { validateUploadKind } from "../_shared/uploadValidation.ts";
+import { buildSyncPipelineEvents } from "../_shared/uploadPipeline.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -113,6 +114,28 @@ async function ociPut(opts: {
 
 function safeName(name: string): string {
   return name.replace(/[^\w.\-]+/g, "_").slice(0, 120);
+}
+
+async function logIngest(admin: any, evt: {
+  user_id?: string | null;
+  oci_upload_id?: string | null;
+  event: string;
+  severity: "info" | "warn" | "error";
+  bytes?: number | null;
+  metadata?: Record<string, unknown> | null;
+}) {
+  try {
+    await admin.from("upload_ingest_events").insert({
+      user_id: evt.user_id ?? null,
+      oci_upload_id: evt.oci_upload_id ?? null,
+      event: evt.event,
+      severity: evt.severity,
+      bytes: evt.bytes ?? null,
+      metadata: evt.metadata ?? null,
+    });
+  } catch {
+    // best effort
+  }
 }
 
 Deno.serve(async (req) => {
@@ -435,6 +458,7 @@ Deno.serve(async (req) => {
     const host = `objectstorage.${region}.oraclecloud.com`;
     const path = `/n/${ns}/b/${bucket}/o/${encodeURIComponent(objectKey)}`;
     const keyId = `${tenancy}/${user}/${fingerprint}`;
+    const fileSha256 = await sha256B64(buf);
     const r = await ociPut({ host, path, body: buf, contentType: mime, keyId, privateKey });
     if (!r.ok) {
       const text = await r.text().catch(() => "");
@@ -443,6 +467,16 @@ Deno.serve(async (req) => {
     }
     const { data: updated } = await admin
       .from("recent_uploads").update({ status: "uploaded" }).eq("id", row.id).select().single();
+    for (const evt of buildSyncPipelineEvents({ fileSha256 })) {
+      await logIngest(admin, {
+        user_id: userId,
+        oci_upload_id: null,
+        event: evt.event,
+        severity: evt.severity,
+        bytes: file.size,
+        metadata: evt.metadata,
+      });
+    }
     return new Response(JSON.stringify({ upload: updated ?? row }), { headers: cors });
   } catch (e) {
     const msg = (e as Error).message;

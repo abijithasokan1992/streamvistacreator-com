@@ -16,6 +16,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, cleanup, waitFor } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
+import { useEffect } from "react";
 
 // ─── Hoisted mock functions (available inside vi.mock factories) ──────────────
 const {
@@ -40,9 +41,9 @@ const {
     draft_count: 0,
     lifecycle_count: 0,
   })),
-  mockCreateTitle: vi.fn(async (_uid: string, _wid: string | null, name: string) => ({
+  mockCreateTitle: vi.fn(async (_uid: string, _wid: string | null, _name: string) => ({
     id: "title-new",
-    title: name,
+    title: _name,
     status: "draft",
     locked: false,
     metadata: { format: "feature_film" },
@@ -169,10 +170,8 @@ vi.mock("@/components/creator/title/TitleEditor", () => ({
 // AgreementGate stub — calls onAccepted after mount to skip the legal modal
 vi.mock("@/components/legal/AgreementGate", () => ({
   AgreementGate: ({ onAccepted }: { onAccepted: () => void }) => {
-    // Use useEffect to defer the call past the current render cycle,
-    // avoiding a "setState during render" React warning.
-    const { useEffect } = require("react");
-    useEffect(() => { onAccepted(); }, []);
+    // Defer past the current render cycle to avoid "setState during render".
+    useEffect(() => { onAccepted(); }, [onAccepted]);
     return null;
   },
 }));

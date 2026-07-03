@@ -38,12 +38,12 @@ export default function AdminFinanceConsole() {
       supabase.from("subscriptions").select("id", { count: "exact", head: true }).eq("status", "active"),
       supabase.from("manual_invoices").select("id", { count: "exact", head: true }).in("status", ["sent", "overdue"]),
       supabase.from("invoices").select("id", { count: "exact", head: true }).neq("status", "paid"),
-      supabase.from("invoices").select("amount_cents").gte("created_at", since),
-      supabase.from("billing_orders").select("amount_refunded_cents").gte("created_at", since),
+      supabase.from("invoices").select("total_paise").gte("created_at", since).eq("status", "paid"),
+      supabase.from("invoices").select("total_paise").gte("created_at", since).eq("status", "refunded"),
     ]);
 
-    const totalInvoiced = (invoiced30d.data ?? []).reduce((sum: number, r: any) => sum + (r.amount_cents ?? 0), 0) / 100;
-    const totalRefunds = (refunds30d.data ?? []).reduce((sum: number, r: any) => sum + (r.amount_refunded_cents ?? 0), 0) / 100;
+    const totalInvoiced = (invoiced30d.data ?? []).reduce((sum: number, r: any) => sum + Number(r.total_paise ?? 0), 0) / 100;
+    const totalRefunds = (refunds30d.data ?? []).reduce((sum: number, r: any) => sum + Number(r.total_paise ?? 0), 0) / 100;
 
     setSnap({
       active_subscriptions: subs.count ?? 0,

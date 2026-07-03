@@ -42,6 +42,7 @@ import MyCreatorProfile from "./pages/profile/MyCreatorProfile.tsx";
 import MyStudioProfile from "./pages/profile/MyStudioProfile.tsx";
 import AdminHome from "./pages/AdminHome.tsx";
 import CollegeERP from "./pages/CollegeERP.tsx";
+import SmartUploads from "./pages/SmartUploads.tsx";
 
 import ReferralCapture from "./components/ReferralCapture.tsx";
 import { RouteAgentDock } from "./components/agents/RouteAgentDock.tsx";

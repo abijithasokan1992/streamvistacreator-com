@@ -97,12 +97,13 @@ export const Hero = () => {
 
   const subtitle =
     nonEmpty(current?.subheadline) ??
-    "From Camera to Licensing. One Secure Platform for Professional Content Operations.";
+    "Manage, protect, distribute, license and monetize professional media through one connected platform.";
   const ctaLabel = nonEmpty(current?.cta_label) ?? "Get Started";
   const ctaHref = nonEmpty(current?.cta_url) ?? "/auth?intent=signup";
   const cta2Label = nonEmpty(current?.cta2_label) ?? "Book a Demo";
   const cta2Href = nonEmpty(current?.cta2_url) ?? "/contact?intent=demo";
   const isSlider = false;
+  const TRUST_LABELS = ["Asset Management", "Rights Management", "Distribution", "Marketplace", "Revenue Intelligence"];
 
   return (
     <section

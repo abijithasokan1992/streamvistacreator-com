@@ -87,13 +87,10 @@ Deno.serve(async (req) => {
     // fall through as anon
   }
 
-  if (callerRole === 'anon') {
-    console.warn('Rejected anon call to send-transactional-email')
-    return new Response(
-      JSON.stringify({ error: 'Forbidden' }),
-      { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-  }
+  // Anon callers are only allowed when the resolved template has a fixed
+  // server-side `to` recipient (checked below after template lookup). This
+  // supports public forms (e.g., contact form) that notify a fixed admin
+  // inbox without letting the anon key spoof arbitrary recipients.
 
   // Parse request body
   let templateName: string

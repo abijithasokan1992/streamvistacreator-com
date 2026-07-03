@@ -2899,30 +2899,6 @@ export type Database = {
         }
         Relationships: []
       }
-      founder_vault_config: {
-        Row: {
-          key: string
-          password_hash: string | null
-          set_at: string | null
-          set_by: string | null
-          updated_at: string
-        }
-        Insert: {
-          key?: string
-          password_hash?: string | null
-          set_at?: string | null
-          set_by?: string | null
-          updated_at?: string
-        }
-        Update: {
-          key?: string
-          password_hash?: string | null
-          set_at?: string | null
-          set_by?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       founder_works: {
         Row: {
           achievement: string | null
@@ -8573,14 +8549,6 @@ export type Database = {
       founder_vault_log: {
         Args: { action: string; details?: Json }
         Returns: undefined
-      }
-      founder_vault_set_password: {
-        Args: { new_password: string }
-        Returns: undefined
-      }
-      founder_vault_verify_password: {
-        Args: { candidate: string }
-        Returns: boolean
       }
       fulfill_billing_order: { Args: { _order_id: string }; Returns: Json }
       get_active_branding: {

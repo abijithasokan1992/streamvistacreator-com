@@ -2,7 +2,7 @@
  * admin-support-reply
  *
  * Admin-only edge function — emails a support-ticket reply to the user via
- * Resend and (idempotently) marks the request resolved.
+ * the Gmail connector and (idempotently) marks the request resolved.
  *
  * Body: { requestId: string; reply: string }
  */

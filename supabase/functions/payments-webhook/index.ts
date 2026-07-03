@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { verifyWebhook, EventName, type PaddleEnv } from "../_shared/paddle.ts";
 
-const FOUNDER_EMAIL = Deno.env.get("FOUNDER_ALERT_EMAIL") || "Arunasankarca@gmail.com";
+const FOUNDER_EMAIL = Deno.env.get("FOUNDER_ALERT_EMAIL") || "abijithasokan@crayonspictures.com";
 
 let _supabase: ReturnType<typeof createClient> | null = null;
 function getSupabase() {

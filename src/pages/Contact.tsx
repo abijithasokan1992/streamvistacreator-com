@@ -59,7 +59,7 @@ export default function Contact() {
     setSubmitting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      const { error } = await supabase.from("contact_messages").insert({
+      const { data: inserted, error } = await supabase.from("contact_messages").insert({
         name: parsed.data.name,
         email: parsed.data.email,
         company: parsed.data.company || null,
@@ -67,8 +67,34 @@ export default function Contact() {
         message: parsed.data.message,
         user_id: user?.id ?? null,
         user_agent: navigator.userAgent.slice(0, 500),
-      });
+      }).select("id").maybeSingle();
       if (error) throw error;
+
+      // Best-effort admin notification via existing transactional email pipeline.
+      // Uses the generic system-message-report template so we do not add new templates.
+      const contactId = (inserted as any)?.id ?? `${Date.now()}`;
+      supabase.functions
+        .invoke("send-transactional-email", {
+          body: {
+            templateName: "system-message-report",
+            recipientEmail: "abijithasokan@crayonspictures.com",
+            idempotencyKey: `contact-${contactId}`,
+            templateData: {
+              userEmail: parsed.data.email,
+              userId: user?.id ?? "anonymous",
+              severity: "info",
+              title: `Contact form · ${parsed.data.name}`,
+              message: parsed.data.message,
+              context: [
+                parsed.data.company ? `Company: ${parsed.data.company}` : null,
+                parsed.data.role ? `Role: ${parsed.data.role}` : null,
+              ].filter(Boolean).join(" · "),
+              page: "/contact",
+              occurredAt: new Date().toISOString(),
+            },
+          },
+        })
+        .catch(() => { /* non-blocking */ });
       setDone(true);
       setForm({ name: "", email: "", company: "", role: "", message: "" });
       toast({ title: "Message sent", description: "Our team will reach out shortly." });

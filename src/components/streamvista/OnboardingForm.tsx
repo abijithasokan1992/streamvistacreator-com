@@ -28,7 +28,7 @@ function fireWelcomeNotifications(email: string, name: string) {
   supabase.functions
     .invoke("send-transactional-email", {
       body: {
-        templateName: "account-created",
+        templateName: "welcome-account-created",
         recipientEmail: email,
         idempotencyKey: `signup-${email}-${Date.now()}`,
         templateData: { name },
@@ -192,7 +192,7 @@ export const OnboardingForm = ({ selectedCycle = "free" }: Props) => {
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm">Email Address</Label>
               <Input id="email" type="email" value={businessEmail} onChange={e => setBusinessEmail(e.target.value)}
-                placeholder="e.g. picturecrayons@gmail.com" className="bg-input/60 border-border h-12" required />
+                placeholder="you@company.com" className="bg-input/60 border-border h-12" required />
             </div>
           </div>
 

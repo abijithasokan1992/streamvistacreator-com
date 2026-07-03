@@ -4,7 +4,7 @@
 //        subject?, message?, ctaLabel? }
 //
 // Generates a per-recipient signed token in public.intro_invites and emails
-// each recipient a cinematic StreamVista invite via Resend.
+// each recipient a cinematic StreamVista invite via the Gmail connector.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";

@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import SmartDropUploader from "@/components/uploads/SmartDropUploader";
-import Navbar from "@/components/streamvista/Navbar";
+import { Navbar } from "@/components/streamvista/Navbar";
 
 export default function SmartUploadsPage() {
   return (

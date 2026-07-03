@@ -316,6 +316,7 @@ export default function Admin() {
 function buildDepartments(args: {
   isSuperAdmin: boolean;
   navigate: (p: string) => void;
+  reviewInitialTab?: "submitted" | "qc_review" | "legal_review";
 }): Array<{ id: DeptKey; label: string; icon: JSX.Element; desc: string; sections: DeptSubSection[] }> {
   const { isSuperAdmin, navigate } = args;
 
@@ -372,7 +373,7 @@ function buildDepartments(args: {
       desc: "Approvals, pipeline and catalog ops.",
       sections: [
         { id: "approvals", label: "Approvals", hint: "Onboarding & content review", content: (
-          <div className="space-y-6"><OnboardingApprovals /><ContentReviewWorkflow /></div>
+          <div className="space-y-6"><OnboardingApprovals /><ContentReviewWorkflow initialTab={args.reviewInitialTab} /></div>
         )},
         { id: "pipeline", label: "Pipeline", hint: "Title edits & QC flow", content: <TitleEditRequestsInbox /> },
         { id: "catalog-ops", label: "Catalog Ops", hint: "Global assets", content: <GlobalAssetManager /> },
@@ -460,9 +461,14 @@ function AdminMainPanel({
     return s ? { [initial]: s } : {};
   });
 
+  const reviewInitialTab: "qc_review" | "legal_review" | undefined =
+    location.pathname.toLowerCase().startsWith("/admin/qc") ? "qc_review"
+    : location.pathname.toLowerCase().startsWith("/admin/legal") ? "legal_review"
+    : undefined;
+
   const departments = useMemo(
-    () => buildDepartments({ isSuperAdmin, navigate }),
-    [isSuperAdmin, navigate],
+    () => buildDepartments({ isSuperAdmin, navigate, reviewInitialTab }),
+    [isSuperAdmin, navigate, reviewInitialTab],
   );
 
   const cmdDepartments: AdminDepartment[] = useMemo(

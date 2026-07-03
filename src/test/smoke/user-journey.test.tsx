@@ -47,7 +47,7 @@ const {
     can_create_draft: true,
     draft_count: 0,
     lifecycle_count: 0,
-  })),
+  } as any)),
   mockCreateTitle: vi.fn(async (_uid: string, _wid: string | null, _name: string) => ({
     id: "title-new",
     title: _name,
@@ -475,7 +475,7 @@ describe("Stop 5 — Creating a new title", () => {
       metadata: { format: "feature_film" },
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-    });
+    } as any);
   });
   afterEach(cleanup);
 

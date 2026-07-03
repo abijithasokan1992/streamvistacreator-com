@@ -38,7 +38,7 @@ export const Workflow = () => (
           <div className="w-8 h-px bg-accent" />
         </div>
         <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-4xl md:text-5xl lg:text-6xl">
-          From intake <span className="gradient-text">to deal</span>
+          From upload <span className="gradient-text">to revenue</span>
         </h2>
       </div>
 

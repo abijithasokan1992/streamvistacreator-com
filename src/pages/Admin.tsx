@@ -372,7 +372,7 @@ function buildDepartments(args: {
       desc: "Approvals, pipeline and catalog ops.",
       sections: [
         { id: "approvals", label: "Approvals", hint: "Onboarding & content review", content: (
-          <div className="space-y-6"><OnboardingApprovals /><ContentReviewWorkflow /></div>
+          <div className="space-y-6"><OnboardingApprovals /><ContentReviewWorkflow initialTab={args.reviewInitialTab} /></div>
         )},
         { id: "pipeline", label: "Pipeline", hint: "Title edits & QC flow", content: <TitleEditRequestsInbox /> },
         { id: "catalog-ops", label: "Catalog Ops", hint: "Global assets", content: <GlobalAssetManager /> },

@@ -38,7 +38,7 @@ export const Partners = () => (
       <div className="mb-12 animate-fade-in text-center md:text-left">
         <div className="flex items-center gap-3 mb-5 justify-center md:justify-start">
           <div className="w-8 h-px bg-accent" />
-          <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">Distribution network</span>
+          <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">Connected Media Ecosystem</span>
         </div>
         <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-4xl md:text-6xl">
           Our <span className="gradient-text">Partners</span>

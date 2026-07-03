@@ -1,22 +1,22 @@
-import { Upload, Database, Wrench, FileSignature, ArrowRight, ShieldCheck, Users, History, Fingerprint } from "lucide-react";
+import { Upload, FolderKanban, Users, Send, TrendingUp, ArrowRight, ShieldCheck, History, Fingerprint } from "lucide-react";
 
 /**
- * Workflow — a single, simple horizontal timeline with a compact trust strip.
- * Ingest → Store → Prepare → License. No duplicated pipeline elsewhere.
+ * Workflow — business-value pipeline. Upload → Manage → Collaborate → Distribute → Monetize.
  */
 
 const STEPS = [
-  { icon: Upload, step: "01", title: "Ingest", body: "Masters, posters, metadata in." },
-  { icon: Database, step: "02", title: "Store", body: "Encrypted, versioned, auditable." },
-  { icon: Wrench, step: "03", title: "Prepare", body: "QC, mastering, delivery-ready." },
-  { icon: FileSignature, step: "04", title: "License", body: "Screeners, requests, contracts." },
+  { icon: Upload, step: "01", title: "Upload", body: "Bring assets, projects and metadata in." },
+  { icon: FolderKanban, step: "02", title: "Manage", body: "Organize titles, rights and library." },
+  { icon: Users, step: "03", title: "Collaborate", body: "Review, approve and share with partners." },
+  { icon: Send, step: "04", title: "Distribute", body: "Deliver to platforms, buyers and marketplaces." },
+  { icon: TrendingUp, step: "05", title: "Monetize", body: "Close licensing deals and grow revenue." },
 ];
 
 const TRUST = [
-  { icon: ShieldCheck, label: "Your masters stay protected." },
-  { icon: Users, label: "Share securely with approved people." },
-  { icon: History, label: "Know who accessed every file." },
-  { icon: Fingerprint, label: "Protect your intellectual property." },
+  { icon: ShieldCheck, label: "Protect your intellectual property." },
+  { icon: Users, label: "Collaborate securely with approved partners." },
+  { icon: History, label: "Full audit trail on every asset." },
+  { icon: Fingerprint, label: "Enterprise-grade access controls." },
 ];
 
 export const Workflow = () => (

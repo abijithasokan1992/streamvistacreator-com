@@ -189,6 +189,7 @@ export const Hero = () => {
                       <span>{nonEmpty(s.cta2_label) ?? cta2Label}</span>
                     </Link>
                   </div>
+                  <TrustStrip />
                 </div>
               </div>
             );

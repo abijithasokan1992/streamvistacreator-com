@@ -47,7 +47,7 @@ const {
     can_create_draft: true,
     draft_count: 0,
     lifecycle_count: 0,
-  })),
+  } as any)),
   mockCreateTitle: vi.fn(async (_uid: string, _wid: string | null, _name: string) => ({
     id: "title-new",
     title: _name,

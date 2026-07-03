@@ -316,6 +316,7 @@ export default function Admin() {
 function buildDepartments(args: {
   isSuperAdmin: boolean;
   navigate: (p: string) => void;
+  reviewInitialTab?: "submitted" | "qc_review" | "legal_review";
 }): Array<{ id: DeptKey; label: string; icon: JSX.Element; desc: string; sections: DeptSubSection[] }> {
   const { isSuperAdmin, navigate } = args;
 

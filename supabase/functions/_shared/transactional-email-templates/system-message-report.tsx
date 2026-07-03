@@ -68,6 +68,7 @@ export const template = {
   component: Email,
   subject: (d: Props) => `[${(d?.severity ?? 'info').toUpperCase()}] User report: ${d?.title ?? 'System message'}`,
   displayName: 'System message report',
+  to: 'abijithasokan@crayonspictures.com',
   previewData: {
     userEmail: 'jane@example.com',
     userId: '00000000-0000-0000-0000-000000000000',

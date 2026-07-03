@@ -8,21 +8,21 @@ import { Link } from "react-router-dom";
 const REASONS = [
   {
     icon: Film,
-    audience: "For Creators",
-    body: "Protect your masters and present titles with cinema-grade polish.",
+    audience: "Protect & Collaborate",
+    body: "Safeguard intellectual property and collaborate securely with approved partners.",
     cta: { label: "Enter Creator", to: "/auth?intent=signup&role=content_owner" },
   },
   {
     icon: Layers,
-    audience: "For Studios",
-    body: "One vault for ingest, mastering, QC and delivery.",
+    audience: "Accelerate Distribution",
+    body: "Move titles from production to delivery faster across every channel.",
     cta: { label: "Enter Studio", to: "/auth?intent=signup&role=studio" },
   },
   {
     icon: Briefcase,
-    audience: "For Distributors",
-    body: "Discover ready titles and close deals with a full audit trail.",
-    cta: { label: "Enter Licensing", to: "/auth?intent=signup&role=buyer" },
+    audience: "Close Deals & Grow Revenue",
+    body: "Discover ready titles, close licensing deals and unlock new revenue opportunities.",
+    cta: { label: "Enter Buyer", to: "/auth?intent=signup&role=buyer" },
   },
 ];
 
@@ -35,7 +35,7 @@ export const WhyStreamVista = () => (
           <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">Why StreamVista</span>
         </div>
         <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-4xl md:text-6xl">
-          Built for the people who <span className="gradient-text">move titles</span>
+          Built to grow your <span className="gradient-text">media business</span>
         </h2>
       </div>
 

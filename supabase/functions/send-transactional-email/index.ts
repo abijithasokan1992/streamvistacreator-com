@@ -160,6 +160,15 @@ Deno.serve(async (req) => {
     )
   }
 
+  // Enforce anon policy: allow only when template has a fixed server-side recipient.
+  if (callerRole === 'anon' && !template.to) {
+    console.warn('Rejected anon call to send-transactional-email', { templateName })
+    return new Response(
+      JSON.stringify({ error: 'Forbidden' }),
+      { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
   // Authenticated (non-service) callers may only send to their own auth email,
   // unless the template defines a fixed `to` recipient (controlled server-side).
   if (callerRole === 'authenticated' && !template.to) {

@@ -472,7 +472,7 @@ describe("Stop 5 — Creating a new title", () => {
       title: "My First Feature Film",
       status: "draft",
       locked: false,
-      metadata: { format: "feature_film" },
+      metadata: { format: "feature_film" } as any,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     });

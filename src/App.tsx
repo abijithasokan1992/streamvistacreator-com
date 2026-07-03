@@ -120,6 +120,7 @@ const PublicRoutes = () => (
 
     {/* Legacy shared dashboard entry — always normalize to the role dashboard. */}
     <Route path="/dashboard" element={<CanonicalDashboardRedirect />} />
+    <Route path="/uploads" element={<SmartUploads />} />
 
 
 

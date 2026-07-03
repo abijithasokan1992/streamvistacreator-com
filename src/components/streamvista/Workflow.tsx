@@ -43,7 +43,7 @@ export const Workflow = () => (
       </div>
 
       {/* Horizontal timeline */}
-      <ol className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-2 relative">
+      <ol className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 lg:gap-2 relative">
         {STEPS.map(({ icon: Icon, step, title, body }, i) => (
           <li key={step} className="relative flex flex-col items-center text-center">
             <div

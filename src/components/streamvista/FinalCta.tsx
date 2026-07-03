@@ -13,10 +13,13 @@ export const FinalCta = () => (
     <div className="container relative">
       <div className="max-w-4xl mx-auto text-center animate-fade-in">
         <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-4xl md:text-6xl lg:text-7xl">
-          Ready to move your catalogue
+          Ready to grow your
           <br />
-          <span className="gradient-text">into one secure cloud?</span>
+          <span className="gradient-text">media business?</span>
         </h2>
+        <p className="mt-6 text-base md:text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+          Manage assets, collaborate with partners, distribute content and unlock new revenue opportunities through one connected platform.
+        </p>
 
         <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
           <Link

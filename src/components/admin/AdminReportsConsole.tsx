@@ -61,10 +61,10 @@ export default function AdminReportsConsole() {
       titles, pendingReview,
       auditLog,
     ] = await Promise.all([
-      supabase.from("invoices").select("amount_cents").gte("created_at", since),
+      supabase.from("invoices").select("total_paise").gte("created_at", since).eq("status", "paid"),
       supabase.from("manual_invoices").select("id", { count: "exact", head: true }).in("status", ["sent", "overdue"]),
       supabase.from("subscriptions").select("id", { count: "exact", head: true }).eq("status", "active"),
-      supabase.from("billing_orders").select("amount_refunded_cents").gte("created_at", since),
+      supabase.from("invoices").select("total_paise").gte("created_at", since).eq("status", "refunded"),
       supabase.from("user_profiles").select("user_id", { count: "exact", head: true }),
       supabase.from("user_roles").select("user_id, role"),
       supabase.from("content_titles").select("id", { count: "exact", head: true }),
@@ -73,8 +73,8 @@ export default function AdminReportsConsole() {
     ]);
 
 
-    const invTotal = (inv30d.data ?? []).reduce((s: number, r: any) => s + (r.amount_cents ?? 0), 0) / 100;
-    const refundsTotal = (refunds30d.data ?? []).reduce((s: number, r: any) => s + (r.amount_refunded_cents ?? 0), 0) / 100;
+    const invTotal = (inv30d.data ?? []).reduce((s: number, r: any) => s + Number(r.total_paise ?? 0), 0) / 100;
+    const refundsTotal = (refunds30d.data ?? []).reduce((s: number, r: any) => s + Number(r.total_paise ?? 0), 0) / 100;
 
     const rolesData = (roles.data ?? []) as { user_id: string; role: string }[];
     const setBy = (role: string) => new Set(rolesData.filter((r) => r.role === role).map((r) => r.user_id)).size;

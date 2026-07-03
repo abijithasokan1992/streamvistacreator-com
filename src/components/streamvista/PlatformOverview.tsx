@@ -9,24 +9,24 @@ import { Link } from "react-router-dom";
 const SURFACES = [
   {
     key: "creator",
-    title: "Creator",
+    title: "Creator Workspace",
     icon: Film,
-    pitch: "Submit titles, manage rights, and prepare your catalogue.",
+    pitch: "Manage your titles, assets, metadata and distribution.",
     cta: { label: "Enter Creator", to: "/auth?intent=signup&role=content_owner" },
   },
   {
     key: "studio",
-    title: "Studio",
+    title: "Studio Workspace",
     icon: Layers,
-    pitch: "Run ingest, storage, QC and delivery from one vault.",
+    pitch: "Run production, media operations, delivery and collaboration.",
     cta: { label: "Enter Studio", to: "/auth?intent=signup&role=studio" },
   },
   {
     key: "buyer",
-    title: "Licensing",
+    title: "Buyer Workspace",
     icon: Briefcase,
-    pitch: "Review titles, request screeners, and close deals faster.",
-    cta: { label: "Enter Licensing", to: "/auth?intent=signup&role=buyer" },
+    pitch: "Discover titles, review screeners and manage acquisition opportunities.",
+    cta: { label: "Enter Buyer", to: "/auth?intent=signup&role=buyer" },
   },
 ] as const;
 
@@ -39,7 +39,7 @@ export const PlatformOverview = () => (
           <span className="eyebrow">Platform overview</span>
         </div>
         <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-4xl md:text-6xl">
-          One platform, <span className="gradient-text">three doors</span>
+          Choose your <span className="gradient-text">workspace</span>
         </h2>
       </div>
 

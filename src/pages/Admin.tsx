@@ -461,9 +461,14 @@ function AdminMainPanel({
     return s ? { [initial]: s } : {};
   });
 
+  const reviewInitialTab: "qc_review" | "legal_review" | undefined =
+    location.pathname.toLowerCase().startsWith("/admin/qc") ? "qc_review"
+    : location.pathname.toLowerCase().startsWith("/admin/legal") ? "legal_review"
+    : undefined;
+
   const departments = useMemo(
-    () => buildDepartments({ isSuperAdmin, navigate }),
-    [isSuperAdmin, navigate],
+    () => buildDepartments({ isSuperAdmin, navigate, reviewInitialTab }),
+    [isSuperAdmin, navigate, reviewInitialTab],
   );
 
   const cmdDepartments: AdminDepartment[] = useMemo(

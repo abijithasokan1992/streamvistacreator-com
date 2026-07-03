@@ -214,14 +214,38 @@ export const Hero = () => {
   );
 };
 
+const TRUST_LABELS = [
+  "Asset Management",
+  "Rights Management",
+  "Distribution",
+  "Marketplace",
+  "Revenue Intelligence",
+];
+
+const TrustStrip = () => (
+  <div className="mt-10 flex flex-wrap gap-2">
+    {TRUST_LABELS.map((label) => (
+      <span
+        key={label}
+        className="inline-flex items-center px-3 py-1.5 rounded-full border border-border/60 bg-background/40 backdrop-blur-sm font-mono-tech text-[10px] uppercase tracking-[0.2em] text-muted-foreground"
+      >
+        {label}
+      </span>
+    ))}
+  </div>
+);
+
 const DefaultHeadline = () => (
-  <h1 className="font-display font-black uppercase leading-[0.88] tracking-tight text-[clamp(2.4rem,8.4vw,7rem)]">
-    ONE SECURE CLOUD
-    <br />
-    FOR FILMS, SERIES
-    <br />
-    <span className="gradient-text">&amp; SHOWS</span>
-  </h1>
+  <div>
+    <div className="mb-6 font-mono-tech text-[11px] uppercase tracking-[0.3em] text-accent">
+      StreamVista Cloud X
+    </div>
+    <h1 className="font-display font-black uppercase leading-[0.88] tracking-tight text-[clamp(2.4rem,7.6vw,6rem)]">
+      The Digital Media
+      <br />
+      <span className="gradient-text">Business Platform</span>
+    </h1>
+  </div>
 );
 
 const FallbackCopy = () => (
@@ -229,7 +253,7 @@ const FallbackCopy = () => (
     <DefaultHeadline />
     <div className="space-y-7 max-w-md">
       <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-        From Camera to Licensing. One Secure Platform for Professional Content Operations.
+        Manage, protect, distribute, license and monetize professional media through one connected platform.
       </p>
       <div className="flex flex-col sm:flex-row gap-3">
         <Link
@@ -246,6 +270,7 @@ const FallbackCopy = () => (
           <span>Book a Demo</span>
         </Link>
       </div>
+      <TrustStrip />
     </div>
   </div>
 );

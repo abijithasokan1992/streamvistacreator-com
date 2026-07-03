@@ -59,7 +59,7 @@ export default function Contact() {
     setSubmitting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      const { data: inserted, error } = await supabase.from("contact_messages").insert({
+      const { error } = await supabase.from("contact_messages").insert({
         name: parsed.data.name,
         email: parsed.data.email,
         company: parsed.data.company || null,
@@ -67,12 +67,12 @@ export default function Contact() {
         message: parsed.data.message,
         user_id: user?.id ?? null,
         user_agent: navigator.userAgent.slice(0, 500),
-      }).select("id").maybeSingle();
+      });
       if (error) throw error;
 
       // Best-effort admin notification via existing transactional email pipeline.
       // Uses the generic system-message-report template so we do not add new templates.
-      const contactId = (inserted as any)?.id ?? `${Date.now()}`;
+      const contactId = `${Date.now()}-${parsed.data.email}`;
       supabase.functions
         .invoke("send-transactional-email", {
           body: {

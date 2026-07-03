@@ -78,11 +78,7 @@ Deno.serve(async (req) => {
       .from("user_profiles").select("display_name,first_name").eq("user_id", row.user_id).maybeSingle();
     const name = profile?.first_name || profile?.display_name || to.split("@")[0];
 
-    // Persist reply + status
-    await admin.from("support_requests")
-      .update({ admin_reply: reply, status: "resolved" }).eq("id", requestId);
-
-    // Send via Resend
+    // Send via Gmail FIRST — only mark resolved if delivery succeeds
     const out = await sendGmail({
       from: MAIL_FROM,
       to,
@@ -92,8 +88,18 @@ Deno.serve(async (req) => {
     });
     if (!out.ok) {
       console.error("Gmail send error", out.status, out.error);
-      return json({ error: out.error || "Email send failed", status: out.status }, 502);
+      const insufficientScope = out.status === 403 && /insufficient authentication scopes/i.test(out.error || "");
+      return json({
+        error: insufficientScope
+          ? "Gmail connection is missing the 'gmail.send' scope. Reconnect the Gmail connector with Send permission and try again."
+          : (out.error || "Email send failed"),
+        status: out.status,
+      }, 502);
     }
+
+    // Persist reply + status only after successful send
+    await admin.from("support_requests")
+      .update({ admin_reply: reply, status: "resolved" }).eq("id", requestId);
     return json({ ok: true, id: out?.id ?? null });
   } catch (e) {
     console.error("admin-support-reply error", e);

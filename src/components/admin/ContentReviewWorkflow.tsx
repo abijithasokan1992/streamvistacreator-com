@@ -116,8 +116,11 @@ function statusColor(s: string) {
   }
 }
 
-export default function ContentReviewWorkflow() {
-  const [activeTab, setActiveTab] = useState<Status>("submitted");
+export default function ContentReviewWorkflow({ initialTab = "submitted" }: { initialTab?: Status } = {}) {
+  const [activeTab, setActiveTab] = useState<Status>(initialTab);
+  // Keep the queue tab in sync when the parent route deep-links a specific stage
+  // (e.g. /admin/qc → qc_review, /admin/legal → legal_review).
+  useEffect(() => { setActiveTab(initialTab); }, [initialTab]);
   const [rows, setRows] = useState<QueueRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [counts, setCounts] = useState<Record<string, number>>({});

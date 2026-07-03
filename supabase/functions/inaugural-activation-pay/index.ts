@@ -33,7 +33,8 @@ const EVENT_TYPE = "inaugural_founder_activation";
 
 // Hard-coded founder recipient — ceremonial inaugural completion email must
 // always reach this mailbox even if the auth user email is ever rotated.
-const ARUNA_FOUNDER_EMAIL = "Arunasankarca@gmail.com";
+// Overridable via FOUNDER_ALERT_EMAIL env for future rotation.
+const ARUNA_FOUNDER_EMAIL = Deno.env.get("FOUNDER_ALERT_EMAIL") || "abijithasokan@crayonspictures.com";
 
 async function hasCompletedInaugural(admin: any, uid: string): Promise<{ paid: boolean; row: any | null }> {
   const { data } = await admin

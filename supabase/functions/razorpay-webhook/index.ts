@@ -211,7 +211,7 @@ async function processEvent(supabase: any, event: any, creds: any): Promise<void
         const displayName = isStorageSub
           ? `Storage Add-on${subscription?.quantity ? ` × ${subscription.quantity} TB` : ""}`
           : "Creator Plan (Razorpay)";
-        const founderEmail = Deno.env.get("FOUNDER_ALERT_EMAIL") || "Arunasankarca@gmail.com";
+        const founderEmail = Deno.env.get("FOUNDER_ALERT_EMAIL") || "abijithasokan@crayonspictures.com";
         const occurredAt = new Date().toISOString();
         const tdBuyer = {
           audience: "buyer", productName: displayName,

@@ -39,7 +39,7 @@ import UniversalBroadcast from "@/components/admin/UniversalBroadcast";
 import BrandingSettings from "@/components/admin/BrandingSettings";
 import CompanyProfileSettings from "@/components/admin/CompanyProfileSettings";
 import PartnerLogos from "@/components/admin/PartnerLogos";
-import ResendCredentials from "@/components/admin/ResendCredentials";
+
 import AdminCredentials from "@/components/admin/AdminCredentials";
 import RazorpayCredentials from "@/components/admin/RazorpayCredentials";
 import RazorpayConnectivityStatus from "@/components/admin/RazorpayConnectivityStatus";
@@ -335,7 +335,7 @@ function buildDepartments(args: {
             <DomainHostingPanel />
             <RazorpayCredentials />
             <RazorpayConnectivityStatus />
-            <ResendCredentials />
+            
             <AdminCredentials />
           </div>
         </details>

@@ -28,7 +28,7 @@ function fireWelcomeNotifications(email: string, name: string) {
   supabase.functions
     .invoke("send-transactional-email", {
       body: {
-        templateName: "account-created",
+        templateName: "welcome-account-created",
         recipientEmail: email,
         idempotencyKey: `signup-${email}-${Date.now()}`,
         templateData: { name },

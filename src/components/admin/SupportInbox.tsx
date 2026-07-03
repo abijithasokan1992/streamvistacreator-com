@@ -50,7 +50,7 @@ export default function SupportInbox() {
     toast.success("Updated");
   };
 
-  /** 1-click: save reply, mark resolved, email user via Resend edge function. */
+  /** 1-click: save reply, mark resolved, email user via the admin-support-reply edge function. */
   const sendReply = async (r: Req) => {
     const reply = (drafts[r.id] ?? r.admin_reply ?? "").trim();
     if (!reply) return toast.error("Write a reply first");
@@ -60,7 +60,7 @@ export default function SupportInbox() {
       // 1. Persist reply + mark resolved
       await update(r.id, { admin_reply: reply, status: "resolved" });
 
-      // 2. Dispatch email via existing Resend infrastructure
+      // 2. Dispatch email via existing admin-support-reply edge function
       const { data, error } = await supabase.functions.invoke("admin-support-reply", {
         body: { requestId: r.id, reply },
       });
@@ -82,7 +82,7 @@ export default function SupportInbox() {
         <span className="text-xs text-muted-foreground">({rows.length})</span>
       </div>
       <p className="text-[11px] text-muted-foreground -mt-2">
-        One-click: write a reply, hit <b className="text-foreground">Send &amp; Resolve</b> — we email the user via Resend and close the ticket.
+        One-click: write a reply, hit <b className="text-foreground">Send &amp; Resolve</b> — we email the user and close the ticket.
       </p>
       {loading ? (
         <div className="py-10 grid place-items-center"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>

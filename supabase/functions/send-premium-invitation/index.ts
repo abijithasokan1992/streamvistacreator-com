@@ -7,7 +7,7 @@ import { sendGmail } from "../_shared/gmail.ts";
 const MAIL_FROM = Deno.env.get("MAIL_FROM") || "StreamVista Cloud X <abijithasokan@crayonspictures.com>";
 // Always use the live primary domain for invite links, regardless of where the admin sends from.
 const PRIMARY_DOMAIN = "https://streamvistacreator.com";
-const CC_EMAILS = ["picturecrayons@gmail.com", "abijithasokan1992@gmail.com"];
+const CC_EMAILS = ["abijithasokan@crayonspictures.com"];
 
 function jsonWith(req: Request) {
   const cors = buildCorsHeaders(req);

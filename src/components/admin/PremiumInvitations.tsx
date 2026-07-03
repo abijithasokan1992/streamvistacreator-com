@@ -20,9 +20,9 @@ const PRIMARY_DOMAIN = "https://streamvistacreator.com";
 // Invites are now unlimited — kept as a type for backwards compatibility only.
 type AccountType = "personal" | "professional";
 
-// Email routing
-const FROM_EMAIL = "StreamVista Cloud X <onboarding@resend.dev>";
-const CC_EMAILS = ["picturecrayons@gmail.com", "abijithasokan1992@gmail.com"];
+// Email routing (customer-facing sender + admin CC)
+const FROM_EMAIL = "StreamVista Cloud X <noreply@streamvistacreator.com>";
+const CC_EMAILS = ["abijithasokan@crayonspictures.com"];
 
 interface Invitation {
   id: string;

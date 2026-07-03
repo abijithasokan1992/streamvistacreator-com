@@ -103,7 +103,7 @@ export const Hero = () => {
   const cta2Label = nonEmpty(current?.cta2_label) ?? "Book a Demo";
   const cta2Href = nonEmpty(current?.cta2_url) ?? "/contact?intent=demo";
   const isSlider = false;
-  const TRUST_LABELS = ["Asset Management", "Rights Management", "Distribution", "Marketplace", "Revenue Intelligence"];
+  
 
   return (
     <section

@@ -330,8 +330,9 @@ export function AssetList({
 }: { assets: { id: string; upload: any; is_primary: boolean; category?: string }[]; emptyHint?: string }) {
   const [previewing, setPreviewing] = useState<{
     file_name: string; mime_type: string | null; par_url: string | null;
-    par_expires_at: string | null; category_label?: string;
+    par_expires_at: string | null; category_label?: string; upload_id?: string | null;
   } | null>(null);
+
 
   if (!assets.length) {
     return (

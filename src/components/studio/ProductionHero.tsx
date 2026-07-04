@@ -15,7 +15,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  Clapperboard, Cloud, HardDrive, Pencil, Repeat, UploadCloud,
+  Clapperboard, Cloud, HardDrive, Pencil, Plus, Repeat, UploadCloud,
   MapPin, Sunrise, Sunset, Wind, Droplets, ThermometerSun, Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -63,6 +63,7 @@ export default function ProductionHero({
   onOpenLibrary,
   onEdit,
   onSwitch,
+  onNew,
 }: {
   workspaceId: string | null;
   activeProject: ActiveProject;
@@ -72,6 +73,7 @@ export default function ProductionHero({
   onOpenLibrary: () => void;
   onEdit?: () => void;
   onSwitch?: () => void;
+  onNew?: () => void;
 }) {
   const crew = activeProject?.crew ?? {};
   const cover: string | undefined = crew.cover_url || crew.cover_photo;
@@ -211,6 +213,11 @@ export default function ProductionHero({
 
           {/* Secondary actions */}
           <div className="flex flex-wrap gap-2 text-xs">
+            {onNew && (
+              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={onNew}>
+                <Plus className="w-3.5 h-3.5 mr-1.5" /> New Production
+              </Button>
+            )}
             {onEdit && (
               <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={onEdit}>
                 <Pencil className="w-3.5 h-3.5 mr-1.5" /> Edit Production
@@ -222,6 +229,7 @@ export default function ProductionHero({
               </Button>
             )}
           </div>
+
 
           {/* Production Conditions (weather) — hidden when no shoot location. */}
           {shootLocation?.lat && shootLocation?.lng && (

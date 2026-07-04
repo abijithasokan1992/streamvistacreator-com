@@ -561,17 +561,24 @@ function useActiveProject(workspaceId: string | null) {
  * 5) PRODUCTION PANEL — active workspace + title list
  * ============================================================ */
 function ProductionPanel({
-  activeProjectId, onSetActive,
+  activeProjectId, onSetActive, initialFormOpen, onFormClose,
 }: {
   activeProjectId: string | null;
   onSetActive: (id: string | null) => void;
+  initialFormOpen?: boolean;
+  onFormClose?: () => void;
 }) {
   const { user } = useAuth();
   const { activeId, workspaces, canWriteActive } = useWorkspaces();
   const [projects, setProjects] = useState<Array<{ id: string; name: string; created_at: string; crew?: any; user_id?: string }>>([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(!!initialFormOpen);
   const [submitting, setSubmitting] = useState(false);
+
+  // Sync with parent trigger (e.g. hero "New Production" button).
+  useEffect(() => {
+    if (initialFormOpen) setShowForm(true);
+  }, [initialFormOpen]);
 
   const [name, setName] = useState("");
   const [contentType, setContentType] = useState<string>("Feature Film");
@@ -628,7 +635,7 @@ function ProductionPanel({
       }).select("id").single();
       if (error) throw error;
       toast.success("Title created");
-      setName(""); setCompany(""); setShowForm(false);
+      setName(""); setCompany(""); setShowForm(false); onFormClose?.();
       await refresh();
       if (data?.id) onSetActive(data.id);
     } catch (e) {
@@ -699,7 +706,7 @@ function ProductionPanel({
               </div>
             </div>
             <div className="flex items-center justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={() => setShowForm(false)} disabled={submitting}>Cancel</Button>
+              <Button variant="ghost" size="sm" onClick={() => { setShowForm(false); onFormClose?.(); }} disabled={submitting}>Cancel</Button>
               <Button size="sm" onClick={handleCreate} disabled={!canSubmit || submitting}>
                 {submitting ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Plus className="w-3.5 h-3.5 mr-1.5" />}
                 Create Production
@@ -1024,18 +1031,20 @@ function StoragePanel({ rows, loading, onGoBuy, onPurchased }: {
  * Shell with tabs
  * ============================================================ */
 export default function StudioDashboard() {
-  const [tab, setTab] = useState<string>("storage");
+  const [tab, setTab] = useState<string>("productions");
   const { rows, loading, refresh } = useStudioVaultRows();
   const quota = useStorageQuota();
   const { activeId: workspaceId, canWriteActive } = useWorkspaces();
   const { activeProjectId, activeProject, setActiveProjectId } = useActiveProject(workspaceId);
 
-  // Production Control Center — single primary entry points.
+  // Production Workspace — single primary entry points.
   const [ingestOpen, setIngestOpen] = useState(false);
   const [buyOpen, setBuyOpen] = useState(false);
   const [resumeIngestAfterBuy, setResumeIngestAfterBuy] = useState(false);
-  // Secondary surfaces open in a Sheet so PCC stays a clean executive overview.
-  const [sheet, setSheet] = useState<null | "open_production" | "switch_production">(null);
+  // Open Production opens the logical media view in a Sheet; Switch/Edit/New
+  // stay inline in the Productions tab.
+  const [sheet, setSheet] = useState<null | "open_production">(null);
+  const [productionsFormOpen, setProductionsFormOpen] = useState(false);
   const liveSku = useLiveStudioSku();
 
   const refreshAfterPurchase = () => {
@@ -1115,8 +1124,8 @@ export default function StudioDashboard() {
       </div>
 
       {/* Production Control Center — executive overview.
-          Primary: Ingest Media (opens DIT Workspace) / Open Production (Sheet).
-          Secondary: Edit / Switch Production (Sheet with existing panel). */}
+          Primary: Ingest Media (opens Ingest Workspace) / Open Production (Sheet).
+          Secondary: New / Edit / Switch Production → jump to the Productions tab. */}
       <div className="mb-6">
         <ProductionHero
           workspaceId={workspaceId ?? null}
@@ -1125,8 +1134,9 @@ export default function StudioDashboard() {
           usedGb={usedGbTotal}
           onIngest={startIngest}
           onOpenLibrary={() => setSheet("open_production")}
-          onEdit={() => setSheet("switch_production")}
-          onSwitch={() => setSheet("switch_production")}
+          onNew={() => { setProductionsFormOpen(true); setTab("productions"); }}
+          onEdit={() => { setProductionsFormOpen(false); setTab("productions"); }}
+          onSwitch={() => { setProductionsFormOpen(false); setTab("productions"); }}
         />
       </div>
 
@@ -1140,11 +1150,20 @@ export default function StudioDashboard() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="grid grid-cols-2 w-full max-w-lg">
+        <TabsList className="grid grid-cols-3 w-full max-w-2xl">
+          <TabsTrigger value="productions"><Clapperboard className="w-3.5 h-3.5 mr-1.5" />Productions</TabsTrigger>
           <TabsTrigger value="storage"><Database className="w-3.5 h-3.5 mr-1.5" />Storage</TabsTrigger>
           <TabsTrigger value="activity"><Activity className="w-3.5 h-3.5 mr-1.5" />Recent Activity</TabsTrigger>
         </TabsList>
 
+        <TabsContent value="productions" className="mt-6">
+          <ProductionPanel
+            activeProjectId={activeProjectId}
+            onSetActive={setActiveProjectId}
+            initialFormOpen={productionsFormOpen}
+            onFormClose={() => setProductionsFormOpen(false)}
+          />
+        </TabsContent>
         <TabsContent value="storage" className="mt-6">
           <StoragePanel rows={rows} loading={loading} onGoBuy={() => setTab("storage")} onPurchased={refreshAfterPurchase} />
         </TabsContent>
@@ -1153,7 +1172,7 @@ export default function StudioDashboard() {
         </TabsContent>
       </Tabs>
 
-      {/* DIT Workspace — reuses <StudioIngest/> for all sources & pipeline stages. */}
+      {/* Ingest Workspace — reuses <StudioIngest/> for all sources & pipeline stages. */}
       <IngestMediaDialog
         open={ingestOpen}
         onOpenChange={setIngestOpen}
@@ -1180,23 +1199,6 @@ export default function StudioDashboard() {
         </SheetContent>
       </Sheet>
 
-      {/* Switch / Edit Production — reuses existing ProductionPanel. */}
-      <Sheet open={sheet === "switch_production"} onOpenChange={(o) => !o && setSheet(null)}>
-        <SheetContent side="right" className="w-full sm:max-w-3xl overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Productions</SheetTitle>
-            <SheetDescription>
-              Switch the active production or edit production details.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="mt-4">
-            <ProductionPanel
-              activeProjectId={activeProjectId}
-              onSetActive={(id) => { setActiveProjectId(id); setSheet(null); }}
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
 
 
       {/* Storage-insufficient remediation — reuses existing BuyVaultDialog and

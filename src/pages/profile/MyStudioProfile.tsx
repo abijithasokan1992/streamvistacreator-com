@@ -305,6 +305,10 @@ export default function MyStudioProfile({
             </h1>
             <p className="text-xs text-muted-foreground mt-1">
               Studio identity, contact, tax and billing details used across StreamVista.
+              {" "}
+              <a href="/dashboard/studio/settings/advanced" className="underline underline-offset-4 hover:text-foreground">
+                Advanced settings →
+              </a>
             </p>
           </div>
           <div className="flex items-center gap-3">

@@ -818,15 +818,8 @@ export default function StudioIngest({
         )}
       </Card>
 
-      {/* Advanced diagnostics link — moved to Settings → Advanced → Ingest Diagnostics. */}
-      <div className="text-right">
-        <a
-          href="/dashboard/studio/settings/advanced"
-          className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-4"
-        >
-          Advanced diagnostics →
-        </a>
-      </div>
+      {/* Advanced diagnostics moved to Settings → Advanced. Not shown here to
+          keep the Ingest Workspace focused on production work. */}
     </div>
   );
 }

@@ -373,6 +373,19 @@ export function TitleEditor({
               ))}
             </div>
           </div>
+          {/* Row 3 · Submission progress bar — visible from every tab */}
+          {title && meta && (
+            <div className="h-1 w-full bg-secondary/30">
+              <div
+                className={cn(
+                  "h-full transition-all",
+                  progressPct === 100 ? "bg-emerald-400" : progressPct >= 60 ? "bg-sky-400" : "bg-amber-400",
+                )}
+                style={{ width: `${progressPct}%` }}
+                aria-label={`Submission ${progressPct}% ready`}
+              />
+            </div>
+          )}
         </div>
 
         {/* Locked banner + section unlocks + edit request */}

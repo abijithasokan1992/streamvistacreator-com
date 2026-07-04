@@ -48,6 +48,8 @@ import CollegeERP from "./pages/CollegeERP.tsx";
 import ReferralCapture from "./components/ReferralCapture.tsx";
 import { RouteAgentDock } from "./components/agents/RouteAgentDock.tsx";
 import WrongPortal from "./components/WrongPortal.tsx";
+import OnboardingGate from "./components/OnboardingGate.tsx";
+import RoleGate from "./components/RoleGate.tsx";
 import { SystemMessageProvider } from "./components/system/SystemMessageProvider.tsx";
 import GlobalErrorListener from "./components/system/GlobalErrorListener.tsx";
 import { StorageQuotaProvider } from "@/hooks/useStorageQuota";
@@ -68,12 +70,26 @@ const CanonicalDashboardRedirect = () => {
   return <Navigate to={dashboardForRole(role)} replace />;
 };
 
+/** Admin subdomain root: authed users go to /admin, guests see the login. */
+const AdminRoot = () => {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="min-h-dvh grid place-items-center text-muted-foreground">
+        <Loader2 className="w-5 h-5 animate-spin" />
+      </div>
+    );
+  }
+  return user ? <Navigate to="/admin" replace /> : <Auth />;
+};
+
 /** Admin subdomain (admin.streamvistacreator.com): only auth + admin console. */
 const AdminRoutes = () => (
   <Routes>
-    <Route path="/" element={<Auth />} />
+    <Route path="/" element={<AdminRoot />} />
     <Route path="/auth" element={<Auth />} />
     <Route path="/auth/callback" element={<AuthCallback />} />
+
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/admin" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/home" element={<AdminHome />} />
@@ -111,11 +127,11 @@ const PublicRoutes = () => (
     <Route path="/onboarding" element={<Onboarding />} />
 
     {/* New role-based dashboards (Phase 2 — empty states, no fake cards). */}
-    <Route path="/dashboard/content" element={<ContentOwnerDashboard />} />
-    <Route path="/dashboard/studio" element={<StudioDashboard />} />
-    <Route path="/dashboard/buyer" element={<BuyerDashboard />} />
-    <Route path="/dashboard/profile/creator" element={<MyCreatorProfile />} />
-    <Route path="/dashboard/studio/profile" element={<MyStudioProfile />} />
+    <Route path="/dashboard/content" element={<OnboardingGate><RoleGate allow={["content_owner"]}><ContentOwnerDashboard /></RoleGate></OnboardingGate>} />
+    <Route path="/dashboard/studio" element={<OnboardingGate><RoleGate allow={["studio"]}><StudioDashboard /></RoleGate></OnboardingGate>} />
+    <Route path="/dashboard/buyer" element={<OnboardingGate><RoleGate allow={["buyer"]}><BuyerDashboard /></RoleGate></OnboardingGate>} />
+    <Route path="/dashboard/profile/creator" element={<OnboardingGate><MyCreatorProfile /></OnboardingGate>} />
+    <Route path="/dashboard/studio/profile" element={<OnboardingGate><MyStudioProfile /></OnboardingGate>} />
     <Route path="/dashboard/localization" element={<CanonicalDashboardRedirect />} />
     <Route path="/dashboard/distribution" element={<CanonicalDashboardRedirect />} />
 

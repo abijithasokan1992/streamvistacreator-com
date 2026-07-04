@@ -153,7 +153,11 @@ export function TitleEditor({
       setAutoSavedAt(Date.now());
       if (!silent) toast.success("Saved.");
     } catch (e) {
-      if (!silent) toast.error(e instanceof Error ? e.message : "Save failed.");
+      // Never surface raw Zod / JSON errors to the user.
+      const raw = e instanceof Error ? e.message : "";
+      const looksTechnical = /^\s*[\[{]/.test(raw) || /ZodError|"code":/.test(raw);
+      const msg = !raw || looksTechnical ? "Please review the highlighted fields before saving." : raw;
+      if (!silent) toast.error(msg);
     } finally { setSaving(false); }
   }, [title, meta, name]);
 

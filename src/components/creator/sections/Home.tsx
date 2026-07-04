@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, ArrowRight, Bell, Film, Inbox, HardDrive, Database, Wallet, Crown } from "lucide-react";
+import { Plus, ArrowRight, Bell, Film, Inbox, Crown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { listTitles, fetchFreeTierStatus, type TitleRow, type FreeTierStatus } from "@/lib/creator/titleApi";
@@ -7,10 +7,7 @@ import WorkspaceWelcome from "@/components/creator/WorkspaceWelcome";
 import ReviewNotesInbox from "@/components/creator/ReviewNotesInbox";
 import { UploadDiagnostics } from "@/components/creator/UploadDiagnostics";
 import Buy1TBCard from "@/components/shared/Buy1TBCard";
-import UpgradeCreatorPlanCard from "@/components/creator/UpgradeCreatorPlanCard";
-import { Button } from "@/components/ui/button";
 import OnboardingChecklist from "@/components/creator/OnboardingChecklist";
-import CreatorPlanStrip from "@/components/creator/CreatorPlanStrip";
 import CreatorQuickActions from "@/components/creator/CreatorQuickActions";
 import type { SectionId } from "@/components/creator/CreatorSidebar";
 
@@ -21,8 +18,13 @@ const SUBMITTED_STATES = new Set(["submitted", "in_review", "qc_review", "legal_
 
 /**
  * Creator Home — compact workspace control room.
- * Answers: what plan, what storage, which titles need work, what is submitted,
- * any admin updates to act on. Not a marketing page.
+ * Each section has a single purpose:
+ *  1. WorkspaceWelcome — identity + plan + storage + title usage (single source)
+ *  2. Primary action     — start a new title (or upgrade if capped)
+ *  3. OnboardingChecklist — first-run guidance
+ *  4. CreatorQuickActions — tool shortcuts
+ *  5. Operational cards   — drafts / review queue / inbox
+ *  6. Diagnostics + Review notes
  */
 export default function HomeSection({ onNavigate, isFree }: { onNavigate: (s: SectionId) => void; isFree: boolean }) {
   const { user } = useAuth();
@@ -56,32 +58,15 @@ export default function HomeSection({ onNavigate, isFree }: { onNavigate: (s: Se
   const inReview = titles.filter((t) => SUBMITTED_STATES.has(t.status)).length;
   const approved = titles.filter((t) => t.status === "approved" || t.status === "ready_for_distribution").length;
 
-  return (
-    <div className="space-y-6">
-      {/* Plan & quota visibility — top of Home */}
-      <CreatorPlanStrip
-        isFree={isFree}
-        tier={tier}
-        titles={titles}
-        onUpgrade={() => onNavigate("billing")}
-      />
+  const capped = isFree && tier && !tier.can_create_draft && tier.lifecycle_count >= 1;
 
-      {/* Single welcome block — name + plan + storage live inside WorkspaceWelcome */}
+  return (
+    <div className="space-y-8">
+      {/* 1. Identity + plan + storage + titles — the single at-a-glance block */}
       <WorkspaceWelcome />
 
-      {/* Creator Tools / Quick Actions strip */}
-      <CreatorQuickActions
-        onNavigate={onNavigate}
-        isFree={isFree}
-        tier={tier}
-        titles={titles}
-      />
-
-      {/* One-time onboarding checklist */}
-      <OnboardingChecklist hasTitles={titles.length > 0} onNavigate={onNavigate} />
-
-      {/* Primary action — gated on free plan when 1-title limit is hit */}
-      {isFree && tier && !tier.can_create_draft && tier.lifecycle_count >= 1 ? (
+      {/* 2. Primary action */}
+      {capped ? (
         <button
           onClick={() => onNavigate("billing")}
           className="w-full rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/15 p-5 text-left flex items-center gap-3"
@@ -90,7 +75,7 @@ export default function HomeSection({ onNavigate, isFree }: { onNavigate: (s: Se
           <div className="flex-1">
             <p className="font-semibold">Upgrade to add more titles</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Free plan allows 1 title. Upgrade for 5 TB storage + multiple submissions (₹25,000 + 18% GST).
+              Free plan allows 1 title. Upgrade for 5 TB storage + multiple submissions.
             </p>
           </div>
           <ArrowRight className="w-4 h-4 text-muted-foreground" />
@@ -109,32 +94,19 @@ export default function HomeSection({ onNavigate, isFree }: { onNavigate: (s: Se
         </button>
       )}
 
-      {/* Storage row — compact */}
-      <div className="rounded-2xl border border-border/40 bg-secondary/5 p-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm font-medium">Storage</p>
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" onClick={() => onNavigate("billing")}>
-            <Wallet className="w-3.5 h-3.5 mr-1.5" /> Billing
-          </Button>
-          <Button size="sm" onClick={() => onNavigate("delivery_vault")} className="bg-gradient-primary text-primary-foreground">
-            <Database className="w-3.5 h-3.5 mr-1.5" /> Open My Library
-          </Button>
-        </div>
-      </div>
+      {/* 3. First-run checklist (self-hides once complete) */}
+      <OnboardingChecklist hasTitles={titles.length > 0} onNavigate={onNavigate} />
 
-      {/* 1 TB add-on — short headline */}
-      <Buy1TBCard variant="compact" headline="Add 1 TB to My Library" />
+      {/* 4. Quick actions */}
+      <CreatorQuickActions
+        onNavigate={onNavigate}
+        isFree={isFree}
+        tier={tier}
+        titles={titles}
+      />
 
-      {/* Four operational cards — short copy */}
+      {/* 5. Operational status — one card per real signal, no duplicates */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <OpCard
-          icon={HardDrive}
-          label="Storage"
-          value="Usage"
-          hint="View and add storage."
-          cta="Open Billing"
-          onClick={() => onNavigate("billing")}
-        />
         <OpCard
           icon={Film}
           label="Drafts"
@@ -165,8 +137,10 @@ export default function HomeSection({ onNavigate, isFree }: { onNavigate: (s: Se
         )}
       </div>
 
+      {/* 6. Storage add-on — single storage CTA on Home */}
+      <Buy1TBCard variant="compact" headline="Add 1 TB to My Library" />
 
-      {/* Operational signals */}
+      {/* 7. Operational signals */}
       <UploadDiagnostics />
       {!isFree && <ReviewNotesInbox />}
     </div>

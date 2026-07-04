@@ -40,6 +40,7 @@ import ManualInvoiceReceipt from "./pages/ManualInvoiceReceipt.tsx";
 import ScreeningRoom from "./pages/ScreeningRoom.tsx";
 import MyCreatorProfile from "./pages/profile/MyCreatorProfile.tsx";
 import MyStudioProfile from "./pages/profile/MyStudioProfile.tsx";
+import StudioProfileOnboardingGate from "./components/studio/StudioProfileOnboardingGate.tsx";
 import AdminHome from "./pages/AdminHome.tsx";
 import CollegeERP from "./pages/CollegeERP.tsx";
 // Smart Uploads is not MVP-ready — hidden until the checksum + bucket work is production-safe.

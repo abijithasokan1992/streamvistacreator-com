@@ -458,7 +458,9 @@ export default function MyStudioProfile({
                 <FieldError result={errors.pan} />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">GSTIN</Label>
+                <Label className="text-xs">
+                  GSTIN{merged.is_gst_registered && <span className="text-destructive"> *</span>}
+                </Label>
                 <Input disabled={!canEdit} value={merged.gstin ?? ""}
                   onChange={(e) => setP("gstin", formatTaxId(e.target.value))}
                   maxLength={15} placeholder="22AAAAA0000A1Z5" autoCapitalize="characters" />
@@ -471,13 +473,16 @@ export default function MyStudioProfile({
                   maxLength={10} placeholder="AAAA99999A" autoCapitalize="characters" />
                 <FieldError result={errors.tan} />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">CIN</Label>
-                <Input disabled={!canEdit} value={merged.cin_number ?? ""}
-                  onChange={(e) => setP("cin_number", formatTaxId(e.target.value))}
-                  maxLength={21} placeholder="U12345MH2020PTC123456" autoCapitalize="characters" />
-                <FieldError result={errors.cin} />
-              </div>
+              {/* CIN — hidden for Proprietorship (legally not issued). */}
+              {!isProprietorship && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs">CIN</Label>
+                  <Input disabled={!canEdit} value={merged.cin_number ?? ""}
+                    onChange={(e) => setP("cin_number", formatTaxId(e.target.value))}
+                    maxLength={21} placeholder="U12345MH2020PTC123456" autoCapitalize="characters" />
+                  <FieldError result={errors.cin} />
+                </div>
+              )}
               <div className="md:col-span-2 space-y-1.5">
                 <div className="flex items-center justify-between rounded-md border border-border/40 p-3">
                   <div>
@@ -488,6 +493,7 @@ export default function MyStudioProfile({
                 </div>
                 <FieldError result={errors.gstReg} />
               </div>
+
               <div className="space-y-1.5">
                 <Label className="text-xs">Place of supply (state)</Label>
                 <Input disabled={!canEdit} value={merged.place_of_supply_state ?? ""}

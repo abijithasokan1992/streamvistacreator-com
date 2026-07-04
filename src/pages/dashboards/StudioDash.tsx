@@ -720,7 +720,10 @@ function ProductionPanel({
             <Loader2 className="w-5 h-5 animate-spin" />
           </div>
         ) : projects.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No productions yet. Create one to begin.</p>
+          <div className="py-8 text-center">
+            <p className="font-display text-lg">No Productions Yet</p>
+            <p className="text-sm text-muted-foreground mt-1">Create your first Production.</p>
+          </div>
         ) : (
           <ProductionGroups
             projects={projects}

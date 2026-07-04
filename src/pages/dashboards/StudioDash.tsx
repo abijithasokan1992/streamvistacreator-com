@@ -30,6 +30,8 @@ import HardDiskIntakeDialog from "@/components/studio/HardDiskIntakeDialog";
 import StudioIngest from "@/components/studio/ingest/StudioIngest";
 import StudioQuickActions from "@/components/studio/StudioQuickActions";
 import StudioPlanStrip from "@/components/studio/StudioPlanStrip";
+import ProductionHero from "@/components/studio/ProductionHero";
+import IngestMediaDialog, { runIngestValidation } from "@/components/studio/IngestMediaDialog";
 import type { VaultProduct } from "@/lib/studioVault";
 import { useCreatorPaygPrice } from "@/hooks/usePublicPlans";
 
@@ -904,8 +906,14 @@ export default function StudioDashboard() {
   const [tab, setTab] = useState<string>("production");
   const { rows, loading, refresh } = useStudioVaultRows();
   const quota = useStorageQuota();
-  const { activeId: workspaceId } = useWorkspaces();
+  const { activeId: workspaceId, canWriteActive } = useWorkspaces();
   const { activeProjectId, activeProject, setActiveProjectId } = useActiveProject(workspaceId);
+
+  // Production Control Center — single primary entry points.
+  const [ingestOpen, setIngestOpen] = useState(false);
+  const [buyOpen, setBuyOpen] = useState(false);
+  const [resumeIngestAfterBuy, setResumeIngestAfterBuy] = useState(false);
+  const liveSku = useLiveStudioSku();
 
   const refreshAfterPurchase = () => {
     refresh();
@@ -929,12 +937,48 @@ export default function StudioDashboard() {
     };
   }, [activeProject?.crew]);
 
-  const availableGb = useMemo(() => {
-    const paid = rows.reduce((s, r) => s + r.allocated_gb, 0);
-    const used = rows.reduce((s, r) => s + r.used_gb, 0);
-    const bonus = quota.testingModeEnabled ? quota.testingOverrideGb : 0;
-    return Math.max(0, paid + bonus - used);
-  }, [rows, quota.testingModeEnabled, quota.testingOverrideGb]);
+  const paidGbTotal = useMemo(() => rows.reduce((s, r) => s + r.allocated_gb, 0), [rows]);
+  const usedGbTotal = useMemo(() => rows.reduce((s, r) => s + r.used_gb, 0), [rows]);
+  const bonusGb = quota.testingModeEnabled ? quota.testingOverrideGb : 0;
+  const totalGb = paidGbTotal + bonusGb;
+  const availableGb = Math.max(0, totalGb - usedGbTotal);
+
+  // Automatic Validation Gate — one primary CTA drives every ingest path.
+  const startIngest = useCallback(() => {
+    const v = runIngestValidation({
+      workspaceId,
+      activeProjectId,
+      canWrite: canWriteActive,
+      totalGb,
+      usedGb: usedGbTotal,
+      storageLocked: quota.locked,
+    });
+    if (v.ok === true) { setIngestOpen(true); return; }
+    const fail = v;
+    // Fail with a clear action — never a raw technical error.
+    if (fail.cta === "buy_storage") {
+      toast.error(fail.message, {
+        action: liveSku ? { label: "Buy Storage", onClick: () => { setResumeIngestAfterBuy(true); setBuyOpen(true); } } : undefined,
+      });
+    } else if (fail.cta === "choose_production") {
+      toast.error(fail.message, { action: { label: "Choose", onClick: () => setTab("production") } });
+    } else {
+      toast.error(fail.message);
+    }
+  }, [workspaceId, activeProjectId, canWriteActive, totalGb, usedGbTotal, quota.locked, liveSku]);
+
+  const handlePurchased = useCallback(() => {
+    setBuyOpen(false);
+    refreshAfterPurchase();
+    if (resumeIngestAfterBuy) {
+      setResumeIngestAfterBuy(false);
+      // Give the entitlement refresh a tick before re-validating.
+      setTimeout(() => setIngestOpen(true), 400);
+      toast.success("Storage activated — resuming ingest.");
+    }
+  }, [resumeIngestAfterBuy]);
+
+
 
   return (
     <RoleDashboardShell expectedRole="studio" title="Production Control Center" subtitle={subtitle}>
@@ -947,32 +991,22 @@ export default function StudioDashboard() {
         </Link>
       </div>
 
-      {/* Active Production strip — persistent across all tabs so the user
-          always knows which production Upload / Activity / Storage act on. */}
-      {activeProject ? (
-        <div className="mb-4 rounded-xl border border-accent/30 bg-accent/5 p-3 flex items-center justify-between gap-3 flex-wrap">
-          <div className="min-w-0 flex items-center gap-2 flex-wrap">
-            <span className="text-[10px] uppercase tracking-widest font-mono text-accent">Active Production</span>
-            <span className="font-medium text-sm truncate">{activeProject.name}</span>
-            {activeProject.crew?.title_number && (
-              <span className="text-[11px] font-mono text-muted-foreground">{activeProject.crew.title_number}</span>
-            )}
-            {activeProject.crew?.title_status && (
-              <StatusPill tone="ok">{activeProject.crew.title_status}</StatusPill>
-            )}
-            <span className="text-[11px] text-muted-foreground">· {availableGb.toFixed(1)} GB available</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setTab("production")}>Switch</Button>
-            <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setActiveProjectId(null)}>Clear</Button>
-          </div>
-        </div>
-      ) : workspaceId ? (
-        <div className="mb-4 rounded-xl border border-dashed border-border/50 p-3 text-xs text-muted-foreground flex items-center justify-between gap-3">
-          <span>No active production. Pick one so Upload, Activity, and Storage stay in sync.</span>
-          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setTab("production")}>Choose</Button>
-        </div>
-      ) : null}
+      {/* Production Control Center — hero card is the single entry point.
+          Ingest Media triggers the validation gate; Open Library jumps to the
+          existing storage tab. Weather widget renders only when the active
+          production carries a shoot_location. */}
+      <div className="mb-6">
+        <ProductionHero
+          workspaceId={workspaceId ?? null}
+          activeProject={activeProject}
+          totalGb={totalGb}
+          usedGb={usedGbTotal}
+          onIngest={startIngest}
+          onOpenLibrary={() => setTab("storage")}
+          onEdit={() => setTab("production")}
+          onSwitch={() => setTab("production")}
+        />
+      </div>
 
       <Tabs value={tab} onValueChange={setTab} className="w-full">
         <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full max-w-3xl">
@@ -986,6 +1020,14 @@ export default function StudioDashboard() {
           <ProductionPanel activeProjectId={activeProjectId} onSetActive={setActiveProjectId} />
         </TabsContent>
         <TabsContent value="upload" className="mt-6">
+          <div className="mb-3 flex items-center justify-between gap-3 flex-wrap">
+            <p className="text-xs text-muted-foreground">
+              One entry for every source — Browser, Camera Card, Camera-to-Cloud, Hard-disk, Archive, Bulk.
+            </p>
+            <Button size="sm" onClick={startIngest} className="bg-gradient-primary text-primary-foreground glow-primary">
+              <UploadCloud className="w-3.5 h-3.5 mr-1.5" /> Ingest Media
+            </Button>
+          </div>
           <StudioIngest
             activeProjectId={activeProjectId ?? undefined}
             activeProjectDefaults={ingestDefaults}
@@ -998,6 +1040,23 @@ export default function StudioDashboard() {
           <ActivityPanel activeProjectId={activeProjectId} activeProjectName={activeProject?.name ?? null} />
         </TabsContent>
       </Tabs>
+
+      {/* Single primary Ingest dialog — reuses <StudioIngest/> for all modes. */}
+      <IngestMediaDialog
+        open={ingestOpen}
+        onOpenChange={setIngestOpen}
+        activeProjectId={activeProjectId ?? undefined}
+        ingestDefaults={ingestDefaults}
+      />
+
+      {/* Storage-insufficient remediation — reuses existing BuyVaultDialog and
+          resumes ingest automatically once entitlement refreshes. */}
+      <BuyVaultDialog
+        product={liveSku}
+        open={buyOpen}
+        onOpenChange={(o) => { setBuyOpen(o); if (!o) setResumeIngestAfterBuy(false); }}
+        onPurchased={handlePurchased}
+      />
     </RoleDashboardShell>
   );
 }

@@ -330,7 +330,12 @@ export function AssetUploader({
 
 export function AssetList({
   assets, emptyHint,
-}: { assets: { id: string; upload: any; is_primary: boolean }[]; emptyHint?: string }) {
+}: { assets: { id: string; upload: any; is_primary: boolean; category?: string }[]; emptyHint?: string }) {
+  const [previewing, setPreviewing] = useState<{
+    file_name: string; mime_type: string | null; par_url: string | null;
+    par_expires_at: string | null; category_label?: string;
+  } | null>(null);
+
   if (!assets.length) {
     return (
       <p className="text-xs text-muted-foreground mt-3">
@@ -345,42 +350,59 @@ export function AssetList({
     } catch { return "—"; }
   };
   return (
-    <ul className="mt-3 space-y-1.5">
-      {assets.map((a) => {
-        const u = a.upload ?? {};
-        const ok = u.status !== "error" && u.status !== "failed";
-        return (
-          <li
-            key={a.id}
-            className="text-xs border border-border/40 rounded-md px-3 py-2 grid grid-cols-[16px_1fr_auto] gap-2 items-center"
-          >
-            {ok ? (
-              <FileCheck2 className="w-3.5 h-3.5 text-emerald-400" />
-            ) : (
-              <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
-            )}
-            <div className="min-w-0">
-              <div className="truncate flex items-center gap-2">
-                <span className="truncate">{u.file_name ?? "—"}</span>
-                {a.is_primary && (
-                  <span className="text-[9px] uppercase tracking-wider text-accent">Current</span>
-                )}
+    <>
+      <ul className="mt-3 space-y-1.5">
+        {assets.map((a) => {
+          const u = a.upload ?? {};
+          const ok = u.status !== "error" && u.status !== "failed";
+          const previewable = canPreview(u.mime_type ?? null, u.file_name ?? "");
+          return (
+            <li
+              key={a.id}
+              className="text-xs border border-border/40 rounded-md px-3 py-2 grid grid-cols-[16px_1fr_auto] gap-2 items-center"
+            >
+              {ok ? (
+                <FileCheck2 className="w-3.5 h-3.5 text-emerald-400" />
+              ) : (
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+              )}
+              <div className="min-w-0">
+                <div className="truncate flex items-center gap-2">
+                  <span className="truncate font-medium">{u.file_name ?? "—"}</span>
+                  {a.is_primary && (
+                    <span className="text-[9px] uppercase tracking-wider text-accent">Current</span>
+                  )}
+                  {!ok && (
+                    <span className="text-[9px] uppercase tracking-wider text-rose-400">Retry needed</span>
+                  )}
+                </div>
+                <div className="text-[10px] text-muted-foreground flex flex-wrap gap-x-3">
+                  <span>Uploaded {fmt(u.created_at ?? u.updated_at)}</span>
+                  <span>{u.file_size ? humanBytes(Number(u.file_size)) : "—"}</span>
+                </div>
               </div>
-              <div className="text-[10px] text-muted-foreground flex flex-wrap gap-x-3">
-                <span>{(fileExt(u.file_name ?? "") || "FILE").toUpperCase()}</span>
-                <span>{u.file_size ? humanBytes(Number(u.file_size)) : "—"}</span>
-                <span>Uploaded {fmt(u.created_at ?? u.updated_at)}</span>
-                <span className={ok ? "text-emerald-400" : "text-rose-400"}>
-                  Verification: {ok ? "Verified" : "Failed"}
-                </span>
-                <span className={ok ? "text-emerald-400" : "text-rose-400"}>
-                  OCI: {ok ? "Stored Successfully" : "Pending"}
-                </span>
-              </div>
-            </div>
-          </li>
-        );
-      })}
-    </ul>
+              {ok && previewable && u.par_url && (
+                <button
+                  type="button"
+                  onClick={() => setPreviewing({
+                    file_name: u.file_name ?? "File",
+                    mime_type: u.mime_type ?? null,
+                    par_url: u.par_url ?? null,
+                    par_expires_at: u.par_expires_at ?? null,
+                    category_label: a.category,
+                  })}
+                  className="text-[11px] rounded-md border border-border/60 px-2 py-1 hover:bg-secondary/30"
+                >
+                  Preview
+                </button>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      {previewing && (
+        <AssetPreviewModal asset={previewing} onClose={() => setPreviewing(null)} />
+      )}
+    </>
   );
 }

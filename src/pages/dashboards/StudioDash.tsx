@@ -561,17 +561,24 @@ function useActiveProject(workspaceId: string | null) {
  * 5) PRODUCTION PANEL — active workspace + title list
  * ============================================================ */
 function ProductionPanel({
-  activeProjectId, onSetActive,
+  activeProjectId, onSetActive, initialFormOpen, onFormClose,
 }: {
   activeProjectId: string | null;
   onSetActive: (id: string | null) => void;
+  initialFormOpen?: boolean;
+  onFormClose?: () => void;
 }) {
   const { user } = useAuth();
   const { activeId, workspaces, canWriteActive } = useWorkspaces();
   const [projects, setProjects] = useState<Array<{ id: string; name: string; created_at: string; crew?: any; user_id?: string }>>([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(!!initialFormOpen);
   const [submitting, setSubmitting] = useState(false);
+
+  // Sync with parent trigger (e.g. hero "New Production" button).
+  useEffect(() => {
+    if (initialFormOpen) setShowForm(true);
+  }, [initialFormOpen]);
 
   const [name, setName] = useState("");
   const [contentType, setContentType] = useState<string>("Feature Film");

@@ -70,12 +70,26 @@ const CanonicalDashboardRedirect = () => {
   return <Navigate to={dashboardForRole(role)} replace />;
 };
 
+/** Admin subdomain root: authed users go to /admin, guests see the login. */
+const AdminRoot = () => {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="min-h-dvh grid place-items-center text-muted-foreground">
+        <Loader2 className="w-5 h-5 animate-spin" />
+      </div>
+    );
+  }
+  return user ? <Navigate to="/admin" replace /> : <Auth />;
+};
+
 /** Admin subdomain (admin.streamvistacreator.com): only auth + admin console. */
 const AdminRoutes = () => (
   <Routes>
-    <Route path="/" element={<Auth />} />
+    <Route path="/" element={<AdminRoot />} />
     <Route path="/auth" element={<Auth />} />
     <Route path="/auth/callback" element={<AuthCallback />} />
+
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/admin" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/home" element={<AdminHome />} />

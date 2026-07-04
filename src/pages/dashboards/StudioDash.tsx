@@ -902,11 +902,14 @@ function ActivityPanel({ activeProjectId, activeProjectName }: { activeProjectId
             <Loader2 className="w-5 h-5 animate-spin" />
           </div>
         ) : jobs.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            {scope === "active" && activeProjectName
-              ? `No ingest jobs yet for “${activeProjectName}”.`
-              : "No ingest jobs yet for this workspace."}
-          </p>
+          <div className="py-8 text-center">
+            <p className="font-display text-lg">No Recent Activity</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {scope === "active" && activeProjectName
+                ? `Activity will appear here after media is uploaded to “${activeProjectName}”.`
+                : "Activity will appear here after media is uploaded."}
+            </p>
+          </div>
         ) : (
           <div className="space-y-3">
             {jobs.map((j) => {

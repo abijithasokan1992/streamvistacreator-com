@@ -518,9 +518,28 @@ export default function StudioIngest({
           }
           transferredBaseline += f.file.size;
           completed += 1;
-          if (itemId) await supabase.from("ingest_job_items").update({
-            status: "completed", progress_percent: 100,
-          }).eq("id", itemId);
+          // Intelligent enrichment — probes dims/duration and (for small
+          // files) computes a client checksum. Fire-and-forget; the upload
+          // pump must not wait on it.
+          if (itemId) {
+            void (async () => {
+              try {
+                const enriched = await enrichFile(f.file, f.relativePath);
+                await supabase.from("ingest_job_items").update({
+                  status: "completed",
+                  progress_percent: 100,
+                  metadata: {
+                    ...(itemsPayload.find((it) => (it as any).relative_path === f.relativePath)?.metadata ?? {}),
+                    ...enriched,
+                  },
+                }).eq("id", itemId);
+              } catch {
+                await supabase.from("ingest_job_items").update({
+                  status: "completed", progress_percent: 100,
+                }).eq("id", itemId);
+              }
+            })();
+          }
           await supabase.from("ingest_jobs").update({
             transferred_bytes: transferredBaseline,
             completed_files: completed,

@@ -178,7 +178,7 @@ export default function ProductionHero({
                 <UploadCloud className="w-4 h-4 mr-2" /> Ingest Media
               </Button>
               <Button onClick={onOpenLibrary} variant="outline">
-                <Cloud className="w-4 h-4 mr-2" /> Open Library
+                <Cloud className="w-4 h-4 mr-2" /> Open Production
               </Button>
             </div>
           </div>

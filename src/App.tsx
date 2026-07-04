@@ -40,6 +40,7 @@ import ManualInvoiceReceipt from "./pages/ManualInvoiceReceipt.tsx";
 import ScreeningRoom from "./pages/ScreeningRoom.tsx";
 import MyCreatorProfile from "./pages/profile/MyCreatorProfile.tsx";
 import MyStudioProfile from "./pages/profile/MyStudioProfile.tsx";
+import StudioAdvancedSettings from "./pages/dashboards/StudioAdvancedSettings.tsx";
 import StudioProfileOnboardingGate from "./components/studio/StudioProfileOnboardingGate.tsx";
 import AdminHome from "./pages/AdminHome.tsx";
 import CollegeERP from "./pages/CollegeERP.tsx";
@@ -133,6 +134,7 @@ const PublicRoutes = () => (
     <Route path="/dashboard/buyer" element={<OnboardingGate><RoleGate allow={["buyer"]}><BuyerDashboard /></RoleGate></OnboardingGate>} />
     <Route path="/dashboard/profile/creator" element={<OnboardingGate><MyCreatorProfile /></OnboardingGate>} />
     <Route path="/dashboard/studio/profile" element={<OnboardingGate><MyStudioProfile /></OnboardingGate>} />
+    <Route path="/dashboard/studio/settings/advanced" element={<OnboardingGate><RoleGate allow={["studio"]}><StudioAdvancedSettings /></RoleGate></OnboardingGate>} />
     <Route path="/dashboard/localization" element={<CanonicalDashboardRedirect />} />
     <Route path="/dashboard/distribution" element={<CanonicalDashboardRedirect />} />
 

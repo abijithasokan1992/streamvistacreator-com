@@ -42,7 +42,7 @@ import {
   mapUploadError,
 } from "@/lib/ociMultipartUpload";
 import HardDiskIntakeDialog from "@/components/studio/HardDiskIntakeDialog";
-import IngestDiagnosticsPanel from "@/components/studio/ingest/IngestDiagnosticsPanel";
+// IngestDiagnosticsPanel is rendered on the Advanced Settings page, not inline.
 
 type IngestMode = "connected_drive" | "camera_card" | "watch_folder" | "archive";
 
@@ -818,8 +818,15 @@ export default function StudioIngest({
         )}
       </Card>
 
-      {/* Ingest Diagnostics — Crayons Bridge Ingest Engine supporting surface */}
-      <IngestDiagnosticsPanel workspaceId={activeId ?? null} />
+      {/* Advanced diagnostics link — moved to Settings → Advanced → Ingest Diagnostics. */}
+      <div className="text-right">
+        <a
+          href="/dashboard/studio/settings/advanced"
+          className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-4"
+        >
+          Advanced diagnostics →
+        </a>
+      </div>
     </div>
   );
 }

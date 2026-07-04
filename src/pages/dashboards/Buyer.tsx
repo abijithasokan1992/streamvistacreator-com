@@ -254,8 +254,8 @@ export default function BuyerDashboard() {
                   disabled={counts.open === 0}
                 />
                 <NextAction
-                  label="Browse approved screeners"
-                  onClick={() => window.location.assign("/screening")}
+                  label="Review approved screeners"
+                  onClick={() => setTab("requests")}
                   disabled={screenerCount === 0}
                 />
               </ul>

@@ -1075,7 +1075,7 @@ export default function StudioDashboard() {
     const cameraBrandGuess: string | undefined =
       typeof c.camera_system === "string" ? String(c.camera_system).split(/\s+/)[0] : undefined;
     return {
-      cameraBrand: cameraBrandGuess || c.camera_brand || undefined,
+      cameraBrand: c.camera_brand || cameraBrandGuess || undefined,
       unit: c.default_unit || c.unit || undefined,
     };
   }, [activeProject?.crew]);

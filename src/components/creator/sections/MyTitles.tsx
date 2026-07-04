@@ -307,7 +307,7 @@ function CreateTitleModal({
         <div className="flex items-center justify-between px-5 py-3 border-b border-border/40">
           <div>
             <h2 className="font-semibold">Add a new title</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">What are you adding?</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Pick a content type to get started.</p>
           </div>
           <button onClick={onClose} className="p-1.5 rounded hover:bg-secondary/30" aria-label="Close">
             <X className="w-4 h-4" />

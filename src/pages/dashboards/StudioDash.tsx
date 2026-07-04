@@ -591,11 +591,15 @@ function ProductionPanel({
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  // Auto-select the newest Production as Active when none is set. Keeps
-  // Upload / Activity / Storage tabs meaningful without manual pinning.
+  // Auto-select the newest non-archived Production as Active when none is set.
+  // Keeps Upload / Activity / Storage tabs meaningful without manual pinning,
+  // and prevents an archived title from silently becoming the workspace context.
   useEffect(() => {
     if (!loading && projects.length > 0 && !activeProjectId) {
-      onSetActive(projects[0].id);
+      const firstLive = projects.find(
+        (p) => String(p.crew?.title_status ?? "").toLowerCase() !== "archived",
+      );
+      if (firstLive) onSetActive(firstLive.id);
     }
   }, [loading, projects, activeProjectId, onSetActive]);
 

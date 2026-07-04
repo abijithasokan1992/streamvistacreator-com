@@ -37,7 +37,7 @@ export const Navbar = () => {
         </nav>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-3 md:gap-4">
+        <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
           <ThemeToggle className="hidden sm:inline-flex" />
           <Link
             to="/auth"

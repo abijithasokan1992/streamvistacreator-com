@@ -293,6 +293,21 @@ export function TitleEditor({
                 {!isFree && (
                   <span className="text-[10px] uppercase tracking-wider rounded bg-amber-500/10 text-amber-300 border border-amber-500/30 px-1.5 py-0.5">Premium</span>
                 )}
+                {title && meta && (
+                  <span
+                    className={cn(
+                      "text-[10px] uppercase tracking-wider rounded border px-1.5 py-0.5 tabular-nums",
+                      progressPct === 100
+                        ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
+                        : progressPct >= 60
+                          ? "bg-sky-500/10 text-sky-300 border-sky-500/30"
+                          : "bg-amber-500/10 text-amber-300 border-amber-500/30",
+                    )}
+                    title={progressPct === 100 ? "Ready to submit" : "Submission readiness"}
+                  >
+                    {progressPct}% ready
+                  </span>
+                )}
                 {title?.locked && (
                   <span className="text-[10px] text-muted-foreground inline-flex items-center gap-1">
                     <Lock className="w-3 h-3" /> Locked

@@ -35,6 +35,7 @@ import StudioPlanStrip from "@/components/studio/StudioPlanStrip";
 import ProductionHero from "@/components/studio/ProductionHero";
 import IngestMediaDialog, { runIngestValidation } from "@/components/studio/IngestMediaDialog";
 import ProductionMediaWorkspace from "@/components/studio/ProductionMediaWorkspace";
+import ProductionSettingsPanel from "@/components/studio/ProductionSettingsPanel";
 import type { VaultProduct } from "@/lib/studioVault";
 import { useCreatorPaygPrice } from "@/hooks/usePublicPlans";
 
@@ -516,6 +517,7 @@ function useActiveProject(workspaceId: string | null) {
     return localStorage.getItem(activeProjKey(workspaceId));
   });
   const [project, setProject] = useState<ActiveProject>(null);
+  const [bump, setBump] = useState(0);
 
   // Reload persisted selection when workspace changes.
   useEffect(() => {
@@ -537,7 +539,7 @@ function useActiveProject(workspaceId: string | null) {
         .maybeSingle();
       setProject((data as any) ?? null);
     })();
-  }, [projectId]);
+  }, [projectId, bump]);
 
   const setActiveProjectId = useCallback((id: string | null) => {
     setProjectIdState(id);
@@ -548,7 +550,9 @@ function useActiveProject(workspaceId: string | null) {
     } catch {}
   }, [workspaceId]);
 
-  return { activeProjectId: projectId, activeProject: project, setActiveProjectId };
+  const refreshActiveProject = useCallback(() => setBump((b) => b + 1), []);
+
+  return { activeProjectId: projectId, activeProject: project, setActiveProjectId, refreshActiveProject };
 }
 
 /* ============================================================
@@ -1042,7 +1046,7 @@ export default function StudioDashboard() {
   const { rows, loading, refresh } = useStudioVaultRows();
   const quota = useStorageQuota();
   const { activeId: workspaceId, canWriteActive } = useWorkspaces();
-  const { activeProjectId, activeProject, setActiveProjectId } = useActiveProject(workspaceId);
+  const { activeProjectId, activeProject, setActiveProjectId, refreshActiveProject } = useActiveProject(workspaceId);
 
   // Production Workspace — single primary entry points.
   const [ingestOpen, setIngestOpen] = useState(false);
@@ -1071,7 +1075,7 @@ export default function StudioDashboard() {
     const cameraBrandGuess: string | undefined =
       typeof c.camera_system === "string" ? String(c.camera_system).split(/\s+/)[0] : undefined;
     return {
-      cameraBrand: cameraBrandGuess || c.camera_brand || undefined,
+      cameraBrand: c.camera_brand || cameraBrandGuess || undefined,
       unit: c.default_unit || c.unit || undefined,
     };
   }, [activeProject?.crew]);
@@ -1157,8 +1161,9 @@ export default function StudioDashboard() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="grid grid-cols-3 w-full max-w-2xl">
+        <TabsList className="grid grid-cols-4 w-full max-w-3xl">
           <TabsTrigger value="productions"><Clapperboard className="w-3.5 h-3.5 mr-1.5" />Productions</TabsTrigger>
+          <TabsTrigger value="settings"><Wrench className="w-3.5 h-3.5 mr-1.5" />Settings</TabsTrigger>
           <TabsTrigger value="storage"><Database className="w-3.5 h-3.5 mr-1.5" />Storage</TabsTrigger>
           <TabsTrigger value="activity"><Activity className="w-3.5 h-3.5 mr-1.5" />Recent Activity</TabsTrigger>
         </TabsList>
@@ -1169,6 +1174,14 @@ export default function StudioDashboard() {
             onSetActive={setActiveProjectId}
             initialFormOpen={productionsFormOpen}
             onFormClose={() => setProductionsFormOpen(false)}
+          />
+        </TabsContent>
+        <TabsContent value="settings" className="mt-6">
+          <ProductionSettingsPanel
+            activeProjectId={activeProjectId}
+            activeProjectName={activeProject?.name ?? null}
+            activeProjectCrew={activeProject?.crew ?? null}
+            onSaved={refreshActiveProject}
           />
         </TabsContent>
         <TabsContent value="storage" className="mt-6">

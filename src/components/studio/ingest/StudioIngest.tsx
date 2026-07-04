@@ -290,29 +290,33 @@ export default function StudioIngest() {
           destination_type: destinationType,
           preserve_structure: preserveStructure,
           shoot_day: shootDay || null,
-          camera_label: cameraLabel || null,
+          camera_label: [cameraBrand, cameraLabel, cardLabel].filter(Boolean).join(" · ") || null,
           asset_class: assetClass || null,
-          notes: notes || null,
+          notes: [unitLabel ? `Unit: ${unitLabel}` : "", notes].filter(Boolean).join("\n") || null,
           status: "ready",
           total_files: scan.files.length,
           total_bytes: scan.totalBytes,
           source_summary: {
             root_label: scan.rootLabel,
             top_level_folders: scan.topLevelFolders,
+            unit: unitLabel || null,
+            camera_brand: cameraBrand || null,
+            camera: cameraLabel || null,
+            card: cardLabel || null,
           },
         })
         .select("id")
         .single();
       if (jobErr || !job) throw jobErr ?? new Error("Failed to create ingest job");
 
-      // 3. Job item rows (relative_path preserved per file).
+      // 3. Job item rows — auto-classify each file into RAW / Proxy / Audio / Reports / Bundle.
       const itemsPayload = scan.files.map((f) => ({
         job_id: job.id,
         relative_path: f.relativePath,
         file_name: f.file.name,
         size_bytes: f.file.size,
         mime_guess: f.file.type || null,
-        asset_class: assetClass || null,
+        asset_class: assetClass || autoClassify(f.relativePath),
       }));
       // Insert in chunks to stay under PostgREST payload limits.
       for (let i = 0; i < itemsPayload.length; i += 200) {

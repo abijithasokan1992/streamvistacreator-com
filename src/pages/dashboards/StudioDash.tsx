@@ -972,25 +972,27 @@ function StoragePanel({ rows, loading, onGoBuy, onPurchased }: {
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <span className="text-[11px] uppercase tracking-[0.25em] text-accent font-mono">Studio Storage</span>
-              {hasPaid && <StatusPill tone="ok">Active</StatusPill>}
-              {!hasPaid && hasTesting && <StatusPill tone="warn">Testing allowance</StatusPill>}
-              {!hasUsable && <StatusPill tone="muted">Not activated</StatusPill>}
+              {hasPaid ? (
+                <StatusPill tone="ok">Active</StatusPill>
+              ) : (
+                <StatusPill tone="muted">Not activated</StatusPill>
+              )}
             </div>
             <h2 className="font-display text-2xl md:text-3xl mt-1.5 leading-tight">
-              {hasPaid ? "Storage is live." : hasTesting ? "Testing storage active." : "Activate your storage."}
+              {hasPaid ? "Storage is live." : "Storage not activated."}
             </h2>
             <p className="text-sm text-muted-foreground mt-1.5 max-w-xl">
-              {hasPaid ? "Upload and manage your footage and masters." : hasTesting ? `${q.testingOverrideGb} GB test allowance. Buy 1 TB to go live.` : "Buy 1 TB to start uploading."}
+              {hasPaid ? "Upload and manage your footage and masters." : "Choose a storage plan to begin uploading."}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button onClick={onGoBuy} className="bg-gradient-primary text-primary-foreground glow-primary">
               <ShoppingCart className="w-4 h-4 mr-2" />
-              {hasPaid ? "Add 1 TB" : "Buy 1 TB"}
+              {hasPaid ? "Add 1 TB" : "Upgrade Storage"}
             </Button>
           </div>
         </div>
-        {hasUsable && (
+        {hasPaid && (
           <div className="grid grid-cols-3 gap-3 mt-5">
             <div className="rounded-lg border border-border/50 p-3">
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-mono">Allocated</p>

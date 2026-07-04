@@ -315,12 +315,8 @@ export function AssetUploader({
             <CheckCircle2 className="w-4 h-4" /> Upload Complete
           </div>
           <dl className="grid grid-cols-[110px_1fr] gap-y-0.5 text-muted-foreground">
-            <dt>Filename</dt>            <dd className="text-foreground truncate">{success.name}</dd>
-            <dt>Format</dt>              <dd className="text-foreground">{success.format}</dd>
-            <dt>Size</dt>                <dd className="text-foreground">{humanBytes(success.size)}</dd>
-            <dt>OCI Verification</dt>    <dd className="text-emerald-300">Passed</dd>
-            <dt>Asset Registration</dt>  <dd className="text-emerald-300">Passed</dd>
-            <dt>Metadata Registration</dt><dd className="text-emerald-300">Passed</dd>
+            <dt>Filename</dt> <dd className="text-foreground truncate">{success.name}</dd>
+            <dt>Size</dt>     <dd className="text-foreground">{humanBytes(success.size)}</dd>
           </dl>
           <p className="text-emerald-300 pt-1">Ready for submission.</p>
         </div>

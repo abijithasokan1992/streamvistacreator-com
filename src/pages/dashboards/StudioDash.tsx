@@ -1024,18 +1024,20 @@ function StoragePanel({ rows, loading, onGoBuy, onPurchased }: {
  * Shell with tabs
  * ============================================================ */
 export default function StudioDashboard() {
-  const [tab, setTab] = useState<string>("storage");
+  const [tab, setTab] = useState<string>("productions");
   const { rows, loading, refresh } = useStudioVaultRows();
   const quota = useStorageQuota();
   const { activeId: workspaceId, canWriteActive } = useWorkspaces();
   const { activeProjectId, activeProject, setActiveProjectId } = useActiveProject(workspaceId);
 
-  // Production Control Center — single primary entry points.
+  // Production Workspace — single primary entry points.
   const [ingestOpen, setIngestOpen] = useState(false);
   const [buyOpen, setBuyOpen] = useState(false);
   const [resumeIngestAfterBuy, setResumeIngestAfterBuy] = useState(false);
-  // Secondary surfaces open in a Sheet so PCC stays a clean executive overview.
-  const [sheet, setSheet] = useState<null | "open_production" | "switch_production">(null);
+  // Open Production opens the logical media view in a Sheet; Switch/Edit/New
+  // stay inline in the Productions tab.
+  const [sheet, setSheet] = useState<null | "open_production">(null);
+  const [productionsFormOpen, setProductionsFormOpen] = useState(false);
   const liveSku = useLiveStudioSku();
 
   const refreshAfterPurchase = () => {

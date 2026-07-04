@@ -143,6 +143,11 @@ export const DMCAForm = () => {
         <Input value={form.signature} onChange={e => set("signature", e.target.value)} maxLength={200} required />
       </Field>
 
+      <div className="rounded-xl border border-border/50 bg-background/40 p-4 text-xs text-muted-foreground space-y-1">
+        <p className="font-semibold text-foreground">What happens next</p>
+        <p>We acknowledge receipt within 48 business hours. If the notice is valid, we disable access to the reported material and notify the uploader. The uploader may file a counter-notice if they believe the removal was a mistake.</p>
+      </div>
+
       <button type="submit" disabled={submitting} className="w-full h-12 rounded-xl bg-gradient-primary text-primary-foreground font-semibold glow-primary disabled:opacity-60 flex items-center justify-center gap-2">
         {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
         Submit Takedown Notice

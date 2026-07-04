@@ -42,6 +42,13 @@ export const Footer = () => {
           </nav>
         </div>
 
+        <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
+          <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground/60">Trust &amp; Safety</span>
+          <Link to="/dmca#submit-notice" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Report IP infringement</Link>
+          <Link to="/dmca#grievance" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Grievance officer</Link>
+          <Link to="/ip-copyright" className="text-xs text-muted-foreground hover:text-foreground transition-colors">IP policy</Link>
+        </div>
+
         <div className="mt-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <p className="text-[11px] leading-relaxed text-muted-foreground">
             © {new Date().getFullYear()}{" "}

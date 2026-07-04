@@ -12,6 +12,7 @@ import { useWorkspaces } from "@/hooks/useWorkspaces";
 import { useStorageQuota } from "@/hooks/useStorageQuota";
 import RoleDashboardShell from "./RoleDashboardShell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

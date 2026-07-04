@@ -1126,7 +1126,7 @@ export default function StudioDashboard() {
 
 
   return (
-    <RoleDashboardShell expectedRole="studio" title="Production Control Center" subtitle={subtitle}>
+    <RoleDashboardShell expectedRole="studio" title="Studio" subtitle={subtitle}>
       <div className="mb-4 flex justify-end">
         <Link
           to="/dashboard/studio/profile"
@@ -1136,48 +1136,79 @@ export default function StudioDashboard() {
         </Link>
       </div>
 
-      {/* Production Control Center — executive overview.
-          Primary: Ingest Media (opens Ingest Workspace) / Open Production (Sheet).
-          Secondary: New / Edit / Switch Production → jump to the Productions tab. */}
-      <div className="mb-6">
-        <ProductionHero
-          workspaceId={workspaceId ?? null}
-          activeProject={activeProject}
-          totalGb={totalGb}
-          usedGb={usedGbTotal}
-          onIngest={startIngest}
-          onOpenLibrary={() => setSheet("open_production")}
-          onNew={() => { setProductionsFormOpen(true); setTab("productions"); }}
-          onEdit={() => { setProductionsFormOpen(false); setTab("productions"); }}
-          onSwitch={() => { setProductionsFormOpen(false); setTab("productions"); }}
-        />
-      </div>
-
-      {/* System Health — compact read-only badges. */}
-      <div className="mb-6">
-        <SystemStatusStrip
-          storageReady={paidGbTotal > 0 && availableGb > 0}
-          billingActive={paidGbTotal > 0}
-          storageLocked={!!quota.locked}
-        />
-      </div>
-
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="grid grid-cols-4 w-full max-w-3xl">
+        <TabsList className="grid grid-cols-3 sm:grid-cols-6 w-full">
+          <TabsTrigger value="dashboard"><Activity className="w-3.5 h-3.5 mr-1.5" />Dashboard</TabsTrigger>
           <TabsTrigger value="productions"><Clapperboard className="w-3.5 h-3.5 mr-1.5" />Productions</TabsTrigger>
-          <TabsTrigger value="settings"><Wrench className="w-3.5 h-3.5 mr-1.5" />Settings</TabsTrigger>
+          <TabsTrigger value="ingest"><UploadCloud className="w-3.5 h-3.5 mr-1.5" />Ingest</TabsTrigger>
+          <TabsTrigger value="media"><Film className="w-3.5 h-3.5 mr-1.5" />Production Media</TabsTrigger>
           <TabsTrigger value="storage"><Database className="w-3.5 h-3.5 mr-1.5" />Storage</TabsTrigger>
-          <TabsTrigger value="activity"><Activity className="w-3.5 h-3.5 mr-1.5" />Recent Activity</TabsTrigger>
+          <TabsTrigger value="settings"><Wrench className="w-3.5 h-3.5 mr-1.5" />Settings</TabsTrigger>
         </TabsList>
 
+        <TabsContent value="dashboard" className="mt-6 space-y-6">
+          {/* Active Production */}
+          <ProductionHero
+            workspaceId={workspaceId ?? null}
+            activeProject={activeProject}
+            totalGb={totalGb}
+            usedGb={usedGbTotal}
+            onIngest={startIngest}
+            onOpenLibrary={() => setTab("media")}
+            onNew={() => { setProductionsFormOpen(true); setTab("productions"); }}
+            onEdit={() => { setProductionsFormOpen(false); setTab("productions"); }}
+            onSwitch={() => { setProductionsFormOpen(false); setTab("productions"); }}
+          />
+
+          {/* System Status */}
+          <SystemStatusStrip
+            storageReady={paidGbTotal > 0 && availableGb > 0}
+            billingActive={paidGbTotal > 0}
+            storageLocked={!!quota.locked}
+          />
+
+          {/* Storage summary */}
+          <StudioPlanStrip
+            hasPaidVault={paidGbTotal > 0}
+            hasTesting={quota.testingModeEnabled && quota.testingOverrideGb > 0}
+            totalGb={totalGb}
+            usedGb={usedGbTotal}
+            onUpgrade={() => setTab("storage")}
+          />
+
+          {/* Recent Activity */}
+          <ActivityPanel activeProjectId={activeProjectId} activeProjectName={activeProject?.name ?? null} />
+        </TabsContent>
+
         <TabsContent value="productions" className="mt-6">
-          <ProductionPanel
+          <ProductionsManager
             activeProjectId={activeProjectId}
             onSetActive={setActiveProjectId}
+            onOpenProduction={() => setTab("media")}
             initialFormOpen={productionsFormOpen}
             onFormClose={() => setProductionsFormOpen(false)}
           />
         </TabsContent>
+
+        <TabsContent value="ingest" className="mt-6">
+          <StudioIngest
+            activeProjectId={activeProjectId ?? undefined}
+            activeProjectDefaults={ingestDefaults}
+          />
+        </TabsContent>
+
+        <TabsContent value="media" className="mt-6">
+          <ProductionMediaWorkspace
+            workspaceId={workspaceId ?? null}
+            activeProjectId={activeProjectId}
+            activeProjectName={activeProject?.name ?? null}
+          />
+        </TabsContent>
+
+        <TabsContent value="storage" className="mt-6">
+          <StoragePanel rows={rows} loading={loading} onGoBuy={() => setTab("storage")} onPurchased={refreshAfterPurchase} />
+        </TabsContent>
+
         <TabsContent value="settings" className="mt-6">
           <ProductionSettingsPanel
             activeProjectId={activeProjectId}
@@ -1186,15 +1217,9 @@ export default function StudioDashboard() {
             onSaved={refreshActiveProject}
           />
         </TabsContent>
-        <TabsContent value="storage" className="mt-6">
-          <StoragePanel rows={rows} loading={loading} onGoBuy={() => setTab("storage")} onPurchased={refreshAfterPurchase} />
-        </TabsContent>
-        <TabsContent value="activity" className="mt-6">
-          <ActivityPanel activeProjectId={activeProjectId} activeProjectName={activeProject?.name ?? null} />
-        </TabsContent>
       </Tabs>
 
-      {/* Ingest Workspace — reuses <StudioIngest/> for all sources & pipeline stages. */}
+      {/* Ingest Workspace dialog — reused when triggered from Dashboard hero. */}
       <IngestMediaDialog
         open={ingestOpen}
         onOpenChange={setIngestOpen}
@@ -1202,29 +1227,7 @@ export default function StudioDashboard() {
         ingestDefaults={ingestDefaults}
       />
 
-      {/* Open Production — logical media view (Shoot Day → Unit → Camera → Card → Clips). */}
-      <Sheet open={sheet === "open_production"} onOpenChange={(o) => !o && setSheet(null)}>
-        <SheetContent side="right" className="w-full sm:max-w-4xl overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Open Production</SheetTitle>
-            <SheetDescription>
-              {activeProject?.name ?? "Active production"} — logical media view.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="mt-4">
-            <ProductionMediaWorkspace
-              workspaceId={workspaceId ?? null}
-              activeProjectId={activeProjectId}
-              activeProjectName={activeProject?.name ?? null}
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
-
-
-
-      {/* Storage-insufficient remediation — reuses existing BuyVaultDialog and
-          resumes ingest automatically once entitlement refreshes. */}
+      {/* Storage-insufficient remediation — reuses existing BuyVaultDialog. */}
       <BuyVaultDialog
         product={liveSku}
         open={buyOpen}

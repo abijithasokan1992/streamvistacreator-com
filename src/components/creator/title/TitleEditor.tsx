@@ -1171,8 +1171,15 @@ function MetadataTab({
               <div className="grid sm:grid-cols-2 gap-2">
                 <TextInput placeholder="Name" value={c.name} disabled={readOnly}
                   onChange={(e) => set({ ...c, name: e.target.value })} />
-                <TextInput placeholder="Role (e.g. Director, DOP)" value={c.role} disabled={readOnly}
-                  onChange={(e) => set({ ...c, role: e.target.value })} />
+                <>
+                  <TextInput
+                    list="crew-role-options"
+                    placeholder="Role"
+                    value={c.role}
+                    disabled={readOnly}
+                    onChange={(e) => set({ ...c, role: e.target.value })}
+                  />
+                </>
               </div>
             )}
           />

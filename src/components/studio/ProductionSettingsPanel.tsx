@@ -141,6 +141,27 @@ const DEFAULTS: Settings = {
   delivery_specs: "",
 };
 
+const DEFAULT_PKG_NAMES = ["A Cam", "B Cam", "C Cam", "D Cam", "Drone", "Crash Cam", "GoPro", "Virtual Camera"];
+
+function newPackage(index: number, seed?: Partial<CameraPackage>): CameraPackage {
+  const letter = String.fromCharCode(65 + index); // A, B, C…
+  return {
+    id: `pkg_${Math.random().toString(36).slice(2, 10)}`,
+    name: DEFAULT_PKG_NAMES[index] ?? `${letter} Cam`,
+    camera_system: "",
+    camera_model: "",
+    recording_format: "",
+    codec: "",
+    resolution: "",
+    frame_rate: "",
+    color_space: "",
+    lut: "",
+    card_prefix: letter,
+    folder_naming: "{camera}/{card}",
+    ...seed,
+  };
+}
+
 function crewToSettings(crew: Crew | null | undefined): Settings {
   const c = crew ?? {};
   const out: any = { ...DEFAULTS };
@@ -150,6 +171,24 @@ function crewToSettings(crew: Crew | null | undefined): Settings {
   // Best-effort camera_brand fallback when only camera_system was set previously.
   if (!c.camera_brand && typeof c.camera_system === "string") {
     out.camera_brand = String(c.camera_system).split(/\s+/)[0] ?? "";
+  }
+  // Seed one Camera Package from legacy flat fields when nothing is defined yet.
+  if (!Array.isArray(out.camera_packages) || out.camera_packages.length === 0) {
+    const hasLegacy = out.camera_system || out.camera_brand || out.codec || out.resolution || out.color_space;
+    if (hasLegacy) {
+      out.camera_packages = [newPackage(0, {
+        camera_system: out.camera_brand || String(out.camera_system).split(/\s+/)[0] || "",
+        camera_model: out.camera_system || "",
+        recording_format: out.codec || "",
+        codec: out.codec || "",
+        resolution: out.resolution || "",
+        frame_rate: out.frame_rate || "",
+        color_space: out.color_space || "",
+        lut: "",
+      })];
+    } else {
+      out.camera_packages = [];
+    }
   }
   return out as Settings;
 }

@@ -399,14 +399,14 @@ export function TitleEditor({
           <div className="px-4 sm:px-6 lg:px-8 py-3 border-b border-border/40 bg-amber-500/5">
             <div className="flex flex-wrap items-center gap-2 text-sm">
               <ShieldCheck className="w-4 h-4 text-amber-300" />
-              <span className="font-medium">Submitted For Review</span>
-              <span className="text-muted-foreground">·</span>
+              <span className="font-medium">Submitted for review</span>
+              <span className="text-muted-foreground hidden sm:inline">·</span>
               <span className="text-muted-foreground inline-flex items-center gap-1">
-                <Lock className="w-3 h-3" /> Content Locked
+                <Lock className="w-3 h-3" /> Content locked
               </span>
-              <span className="text-muted-foreground">·</span>
+              <span className="text-muted-foreground hidden sm:inline">·</span>
               <span className="text-muted-foreground inline-flex items-center gap-1">
-                <Clock className="w-3 h-3" /> Awaiting Admin Review
+                <Clock className="w-3 h-3" /> Awaiting review
               </span>
               {lockState.openRequests > 0 && (
                 <span className="ml-2 text-[11px] inline-flex items-center gap-1 rounded-md bg-sky-500/10 border border-sky-500/30 text-sky-300 px-2 py-0.5">

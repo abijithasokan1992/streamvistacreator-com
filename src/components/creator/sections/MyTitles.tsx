@@ -130,7 +130,7 @@ export default function MyTitlesSection() {
           )}
         >
           {freeLimitHit ? <Lock className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-          {freeLimitHit ? "New Title — Pro" : "New Title"}
+          {freeLimitHit ? "Upgrade to add" : "New Title"}
         </button>
       </div>
 

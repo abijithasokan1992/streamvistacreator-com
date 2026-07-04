@@ -150,17 +150,29 @@ export default function MyStudioProfile({
 
   const dirty = Object.keys(pForm).length > 0 || Object.keys(eForm).length > 0;
 
+  // Entity-type dependencies: proprietorships legally can't have a CIN, so we
+  // hide the field entirely and skip its validator when this entity type is
+  // selected. Any previously-entered CIN is dropped on save.
+  const isProprietorship = (merged?.entity_type ?? "").toLowerCase() === "proprietorship";
+
   // Real-time validation results for tax + billing identity inputs.
   const errors = useMemo(() => {
     if (!merged || !mergedExt) {
       return {} as Record<string, ValidationResult>;
     }
+    // Place of supply is mandatory when GST registration is on (invoice legally
+    // needs a state code even if GSTIN itself validates independently).
+    const placeOfSupply: ValidationResult = merged.is_gst_registered
+      && !(merged.place_of_supply_state ?? "").trim()
+      ? { ok: false, message: "Place of Supply is required when GST is registered." }
+      : { ok: true };
     return {
       pan: validatePAN(merged.pan_number),
       gstin: validateGSTIN(merged.gstin),
       gstReg: validateGstRegistration(merged.is_gst_registered, merged.gstin),
+      placeOfSupply,
       tan: validateTAN(merged.tan_number),
-      cin: validateCIN(merged.cin_number),
+      cin: isProprietorship ? { ok: true } as ValidationResult : validateCIN(merged.cin_number),
       pincode: validatePincode(merged.postal_code),
       billingPincode: validatePincode(merged.billing_postal_code),
       billingEmail: validateEmail(merged.billing_email),
@@ -171,7 +183,7 @@ export default function MyStudioProfile({
       contactEmail: validateEmail(mergedExt.primary_contact_email),
       contactPhone: validatePhone(mergedExt.primary_contact_phone),
     } satisfies Record<string, ValidationResult>;
-  }, [merged, mergedExt]);
+  }, [merged, mergedExt, isProprietorship]);
 
   const firstError = Object.values(errors).find((e) => e && e.ok === false);
   const invalidMessage = firstError && firstError.ok === false
@@ -191,7 +203,11 @@ export default function MyStudioProfile({
       return;
     }
     try {
-      if (Object.keys(pForm).length) await saveProfile(pForm);
+      const profilePatch: Partial<EntityProfile> = { ...pForm };
+      // Drop CIN when entity type doesn't support it, so we don't persist stale
+      // corporate numbers on a proprietorship record.
+      if (isProprietorship) profilePatch.cin_number = null as unknown as EntityProfile["cin_number"];
+      if (Object.keys(profilePatch).length) await saveProfile(profilePatch);
       if (studioExt && Object.keys(eForm).length) {
         const extPatch: Partial<StudioExt> = { ...eForm } as Partial<StudioExt>;
         if (eForm._services !== undefined) extPatch.services = commaSplit(eForm._services);
@@ -205,13 +221,18 @@ export default function MyStudioProfile({
         await saveStudioExt(extPatch);
       }
       setPForm({}); setEForm({});
-      toast.success("Studio profile saved.");
+      toast.success(onboarding ? "Profile complete — welcome to your Production Control Center." : "Studio profile saved.");
+      // Ensure downstream reads (verification badge, completeness %) reflect
+      // the freshly-saved state before the parent onboarding gate re-evaluates.
+      await refresh();
+      onDone?.();
     } catch (e) {
       toast.error((e as Error).message);
     }
   };
 
   const handleReset = () => { setPForm({}); setEForm({}); };
+
 
   if (authLoading || wsLoading) {
     return (

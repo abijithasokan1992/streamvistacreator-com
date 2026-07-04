@@ -213,6 +213,11 @@ export default function ProductionHero({
 
           {/* Secondary actions */}
           <div className="flex flex-wrap gap-2 text-xs">
+            {onNew && (
+              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={onNew}>
+                <Plus className="w-3.5 h-3.5 mr-1.5" /> New Production
+              </Button>
+            )}
             {onEdit && (
               <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={onEdit}>
                 <Pencil className="w-3.5 h-3.5 mr-1.5" /> Edit Production
@@ -224,6 +229,7 @@ export default function ProductionHero({
               </Button>
             )}
           </div>
+
 
           {/* Production Conditions (weather) — hidden when no shoot location. */}
           {shootLocation?.lat && shootLocation?.lng && (

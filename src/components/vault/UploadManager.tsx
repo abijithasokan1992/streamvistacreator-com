@@ -256,7 +256,7 @@ export function UploadManagerProvider({
           showMessageRef.current({
             severity: "error",
             title: "Upload couldn't be finalised",
-            message: `The bytes for "${task.filename}" reached storage, but we couldn't register the file in your vault.\n\nReason: ${errMsg}\n\nClick OK to dismiss, or Report to Admin so we can recover it for you.`,
+            message: `The file "${task.filename}" reached storage, but we couldn't register it in your vault.\n\nReason: ${errMsg}\n\nDismiss to close, or Report to support so we can recover it for you.`,
             context: `taskId=${task.id}; storagePath=${task.storagePath}; size=${task.size}`,
           });
         } finally {

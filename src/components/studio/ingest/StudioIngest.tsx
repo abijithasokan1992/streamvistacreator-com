@@ -765,14 +765,14 @@ export default function StudioIngest() {
                 "text-muted-foreground";
               return (
                 <li key={j.id} className="py-3">
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2 text-xs">
+                      <div className="flex items-center gap-2 text-xs flex-wrap">
                         <FileVideo className="w-3.5 h-3.5 text-accent shrink-0" />
                         <span className="font-medium truncate">{j.source_summary?.root_label ?? "(unnamed source)"}</span>
-                        <Badge variant="outline" className="text-[10px]">{j.job_mode}</Badge>
-                        <Badge variant="outline" className="text-[10px]">{j.destination_type === "archive_vault" ? "archive" : "working"}</Badge>
-                        {j.preserve_structure && <Badge variant="outline" className="text-[10px]">preserve</Badge>}
+                        <Badge variant="outline" className="text-[10px] capitalize">{j.job_mode.replace(/_/g, " ")}</Badge>
+                        <Badge variant="outline" className="text-[10px]">{j.destination_type === "archive_vault" ? "Archive" : "Working"}</Badge>
+                        {j.preserve_structure && <Badge variant="outline" className="text-[10px]">Structure kept</Badge>}
                       </div>
                       <p className="text-[11px] text-muted-foreground mt-1">
                         {j.completed_files}/{j.total_files} files · {fmtBytes(j.transferred_bytes)} / {fmtBytes(j.total_bytes)}
@@ -780,9 +780,9 @@ export default function StudioIngest() {
                         {" "}· {new Date(j.created_at).toLocaleString()}
                       </p>
                     </div>
-                    <div className="text-right">
+                    <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-1">
                       <span className={`text-[10px] uppercase tracking-widest font-mono ${tone}`}>{j.status}</span>
-                      <div className="w-32 mt-1.5">
+                      <div className="w-24 sm:w-32">
                         <Progress value={pct} className="h-1" />
                       </div>
                     </div>

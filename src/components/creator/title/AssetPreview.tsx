@@ -23,7 +23,10 @@ export type PreviewableAsset = {
   par_url: string | null;
   par_expires_at: string | null;
   category_label?: string;
+  /** recent_uploads.id — enables on-demand PAR mint when par_url is missing/expired. */
+  upload_id?: string | null;
 };
+
 
 export type PreviewKind = "image" | "pdf" | "video" | "audio" | "other";
 

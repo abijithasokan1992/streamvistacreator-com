@@ -904,6 +904,8 @@ export default function StudioDashboard() {
   const [tab, setTab] = useState<string>("production");
   const { rows, loading, refresh } = useStudioVaultRows();
   const quota = useStorageQuota();
+  const { activeId: workspaceId } = useWorkspaces();
+  const { activeProjectId, activeProject, setActiveProjectId } = useActiveProject(workspaceId);
 
   const refreshAfterPurchase = () => {
     refresh();
@@ -915,6 +917,25 @@ export default function StudioDashboard() {
     [],
   );
 
+  // Inherit metadata from the Active Production's `crew` JSONB so Upload
+  // pre-fills without asking the DIT to retype known values.
+  const ingestDefaults = useMemo(() => {
+    const c = activeProject?.crew ?? {};
+    const cameraBrandGuess: string | undefined =
+      typeof c.camera_system === "string" ? String(c.camera_system).split(/\s+/)[0] : undefined;
+    return {
+      cameraBrand: cameraBrandGuess || c.camera_brand || undefined,
+      unit: c.default_unit || c.unit || undefined,
+    };
+  }, [activeProject?.crew]);
+
+  const availableGb = useMemo(() => {
+    const paid = rows.reduce((s, r) => s + r.allocated_gb, 0);
+    const used = rows.reduce((s, r) => s + r.used_gb, 0);
+    const bonus = quota.testingModeEnabled ? quota.testingOverrideGb : 0;
+    return Math.max(0, paid + bonus - used);
+  }, [rows, quota.testingModeEnabled, quota.testingOverrideGb]);
+
   return (
     <RoleDashboardShell expectedRole="studio" title="Production Control Center" subtitle={subtitle}>
       <div className="mb-4 flex justify-end">
@@ -925,6 +946,34 @@ export default function StudioDashboard() {
           <ShieldCheck className="w-3.5 h-3.5" /> My Studio Profile
         </Link>
       </div>
+
+      {/* Active Production strip — persistent across all tabs so the user
+          always knows which production Upload / Activity / Storage act on. */}
+      {activeProject ? (
+        <div className="mb-4 rounded-xl border border-accent/30 bg-accent/5 p-3 flex items-center justify-between gap-3 flex-wrap">
+          <div className="min-w-0 flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] uppercase tracking-widest font-mono text-accent">Active Production</span>
+            <span className="font-medium text-sm truncate">{activeProject.name}</span>
+            {activeProject.crew?.title_number && (
+              <span className="text-[11px] font-mono text-muted-foreground">{activeProject.crew.title_number}</span>
+            )}
+            {activeProject.crew?.title_status && (
+              <StatusPill tone="ok">{activeProject.crew.title_status}</StatusPill>
+            )}
+            <span className="text-[11px] text-muted-foreground">· {availableGb.toFixed(1)} GB available</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setTab("production")}>Switch</Button>
+            <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setActiveProjectId(null)}>Clear</Button>
+          </div>
+        </div>
+      ) : workspaceId ? (
+        <div className="mb-4 rounded-xl border border-dashed border-border/50 p-3 text-xs text-muted-foreground flex items-center justify-between gap-3">
+          <span>No active production. Pick one so Upload, Activity, and Storage stay in sync.</span>
+          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setTab("production")}>Choose</Button>
+        </div>
+      ) : null}
+
       <Tabs value={tab} onValueChange={setTab} className="w-full">
         <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full max-w-3xl">
           <TabsTrigger value="production"><Clapperboard className="w-3.5 h-3.5 mr-1.5" />Production</TabsTrigger>
@@ -934,16 +983,19 @@ export default function StudioDashboard() {
         </TabsList>
 
         <TabsContent value="production" className="mt-6">
-          <ProductionPanel />
+          <ProductionPanel activeProjectId={activeProjectId} onSetActive={setActiveProjectId} />
         </TabsContent>
         <TabsContent value="upload" className="mt-6">
-          <StudioIngest />
+          <StudioIngest
+            activeProjectId={activeProjectId ?? undefined}
+            activeProjectDefaults={ingestDefaults}
+          />
         </TabsContent>
         <TabsContent value="storage" className="mt-6">
           <StoragePanel rows={rows} loading={loading} onGoBuy={() => setTab("storage")} onPurchased={refreshAfterPurchase} />
         </TabsContent>
         <TabsContent value="activity" className="mt-6">
-          <ActivityPanel />
+          <ActivityPanel activeProjectId={activeProjectId} activeProjectName={activeProject?.name ?? null} />
         </TabsContent>
       </Tabs>
     </RoleDashboardShell>

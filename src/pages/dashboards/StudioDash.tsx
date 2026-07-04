@@ -1033,6 +1033,8 @@ export default function StudioDashboard() {
   const [ingestOpen, setIngestOpen] = useState(false);
   const [buyOpen, setBuyOpen] = useState(false);
   const [resumeIngestAfterBuy, setResumeIngestAfterBuy] = useState(false);
+  // Secondary surfaces open in a Sheet so PCC stays a clean executive overview.
+  const [sheet, setSheet] = useState<null | "open_production" | "switch_production">(null);
   const liveSku = useLiveStudioSku();
 
   const refreshAfterPurchase = () => {

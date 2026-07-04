@@ -41,8 +41,11 @@ export default function WorkspaceWelcome() {
         (supabase as any).rpc("creator_free_tier_status"),
       ]);
 
-      const planName: string = pa.data?.plan?.name
-        || (prof.data?.plan_tier && prof.data.plan_tier !== "free" ? `Plan: ${prof.data.plan_tier}` : "Creator Basic");
+      const rawTier: string | undefined = prof.data?.plan_tier;
+      const tierLabel = rawTier && rawTier !== "free"
+        ? rawTier.charAt(0).toUpperCase() + rawTier.slice(1)
+        : null;
+      const planName: string = pa.data?.plan?.name || tierLabel || "Creator Basic";
       const tierData = (tier?.data ?? null) as any;
       const isFree = !!tierData?.is_free || (!pa.data && (!prof.data?.plan_tier || prof.data.plan_tier === "free"));
 

@@ -3,23 +3,20 @@ import { PlanVisibilityCard, type PlanTier } from "@/components/shared/tools";
 
 export default function StudioPlanStrip({
   hasPaidVault,
-  hasTesting,
+  hasTesting: _hasTesting,
   totalGb,
   usedGb,
   onUpgrade,
 }: {
   hasPaidVault: boolean;
+  /** Retained for API compatibility; testing allowance is not surfaced in production UI. */
   hasTesting: boolean;
   totalGb: number;
   usedGb: number;
   onUpgrade: () => void;
 }) {
-  const tier: PlanTier = hasPaidVault ? "paid" : hasTesting ? "managed" : "free";
-  const planName = hasPaidVault
-    ? "Studio Vault — Paid"
-    : hasTesting
-      ? "Studio Vault — Testing allowance"
-      : "Studio Vault — Not activated";
+  const tier: PlanTier = hasPaidVault ? "paid" : "free";
+  const planName = hasPaidVault ? "Studio Vault — Paid" : "Studio Vault — Not activated";
 
   const percent = totalGb > 0 ? Math.round((usedGb / totalGb) * 100) : 0;
 
@@ -31,24 +28,31 @@ export default function StudioPlanStrip({
       statusLine={
         hasPaidVault
           ? "Recurring vault active. Add capacity any time."
-          : hasTesting
-            ? "Testing allowance — buy 1 TB to activate real capacity."
-            : "Buy 1 TB to start uploading."
+          : "Storage not activated. Choose a storage plan to begin uploading."
       }
-      quotas={[
-        {
-          label: "Allocated",
-          used: totalGb >= 1024 ? `${(totalGb / 1024).toFixed(1)} TB` : `${totalGb.toFixed(0)} GB`,
-          total: undefined,
-        },
-        {
-          label: "Used",
-          used: `${usedGb.toFixed(1)} GB`,
-          total: totalGb > 0 ? (totalGb >= 1024 ? `${(totalGb / 1024).toFixed(1)} TB` : `${totalGb.toFixed(0)} GB`) : undefined,
-          percent: totalGb > 0 ? percent : undefined,
-        },
-      ]}
-      ctaLabel={hasPaidVault ? "Manage" : "Get storage"}
+      quotas={
+        hasPaidVault
+          ? [
+              {
+                label: "Allocated",
+                used: totalGb >= 1024 ? `${(totalGb / 1024).toFixed(1)} TB` : `${totalGb.toFixed(0)} GB`,
+                total: undefined,
+              },
+              {
+                label: "Used",
+                used: `${usedGb.toFixed(1)} GB`,
+                total:
+                  totalGb > 0
+                    ? totalGb >= 1024
+                      ? `${(totalGb / 1024).toFixed(1)} TB`
+                      : `${totalGb.toFixed(0)} GB`
+                    : undefined,
+                percent: totalGb > 0 ? percent : undefined,
+              },
+            ]
+          : []
+      }
+      ctaLabel={hasPaidVault ? "Manage" : "Upgrade Storage"}
       onCta={onUpgrade}
     />
   );

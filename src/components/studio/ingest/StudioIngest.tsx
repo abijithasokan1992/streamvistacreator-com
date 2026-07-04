@@ -77,15 +77,19 @@ type JobRow = {
   source_summary: any;
 };
 
+// UI labels only — every mode routes through the same ingest engine
+// (Upload → Checksum → Primary Backup → OCI Sync → Proxy → Library → Editorial).
+// Adding a new source type in future = another tile with the same `id`
+// semantics; no new pipeline, no backend redesign.
 const MODES: { id: IngestMode; label: string; icon: any; blurb: string }[] = [
-  { id: "connected_drive", label: "Drive / Folder", icon: HardDrive,
-    blurb: "SSD, HDD or any attached drive." },
+  { id: "connected_drive", label: "Browser Upload", icon: HardDrive,
+    blurb: "Drag & drop files or a full folder from your computer. Also handles bulk uploads." },
   { id: "camera_card",     label: "Camera Card",    icon: Camera,
-    blurb: "Offload a camera card or mag." },
-  { id: "watch_folder",    label: "Live Folder",    icon: FolderClock,
-    blurb: "Rescan as the shoot continues." },
-  { id: "archive",         label: "Archive",        icon: Snowflake,
-    blurb: "Master bundles for long-term vault." },
+    blurb: "Offload a camera card or mag straight from the DIT cart." },
+  { id: "watch_folder",    label: "Camera-to-Cloud", icon: FolderClock,
+    blurb: "Live-scan a folder as the shoot continues — near-real-time ingest." },
+  { id: "archive",         label: "Archive Intake", icon: Snowflake,
+    blurb: "Master bundles and completed projects for long-term vault." },
 ];
 
 const CAMERA_BRANDS = [
@@ -748,11 +752,13 @@ export default function StudioIngest({
         )}
       </Card>
 
-      {/* Hard-disk ship-in lane (Option C) — distinct from local Connected Drive Import */}
+      {/* Hard-disk Import — physical courier-in lane. Reuses the same ingest
+          pipeline (Upload → Checksum → Primary Backup → OCI Sync → Proxy →
+          Library → Editorial) once the drive is received. */}
       <Card className="p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-border/40 bg-secondary/5">
         <div className="min-w-0">
           <h3 className="font-semibold text-sm flex items-center gap-2">
-            <Truck className="w-4 h-4 text-accent" /> Ship a physical drive
+            <Truck className="w-4 h-4 text-accent" /> Hard-disk Import
           </h3>
           <p className="text-xs text-muted-foreground mt-1 max-w-xl">
             Can't upload over the network? Courier or hand over a drive and our team ingests it into your studio vault.

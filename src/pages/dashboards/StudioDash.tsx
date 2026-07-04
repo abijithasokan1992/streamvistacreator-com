@@ -1114,10 +1114,9 @@ export default function StudioDashboard() {
         </Link>
       </div>
 
-      {/* Production Control Center — hero card is the single entry point.
-          Ingest Media triggers the validation gate; Open Library jumps to the
-          existing storage tab. Weather widget renders only when the active
-          production carries a shoot_location. */}
+      {/* Production Control Center — executive overview.
+          Primary: Ingest Media (opens DIT Workspace) / Open Production (Sheet).
+          Secondary: Edit / Switch Production (Sheet with existing panel). */}
       <div className="mb-6">
         <ProductionHero
           workspaceId={workspaceId ?? null}
@@ -1125,13 +1124,13 @@ export default function StudioDashboard() {
           totalGb={totalGb}
           usedGb={usedGbTotal}
           onIngest={startIngest}
-          onOpenLibrary={() => setTab("workspace")}
-          onEdit={() => setTab("production")}
-          onSwitch={() => setTab("production")}
+          onOpenLibrary={() => setSheet("open_production")}
+          onEdit={() => setSheet("switch_production")}
+          onSwitch={() => setSheet("switch_production")}
         />
       </div>
 
-      {/* System Status — compact read-only badges. */}
+      {/* System Health — compact read-only badges. */}
       <div className="mb-6">
         <SystemStatusStrip
           storageReady={totalGb > 0 && availableGb > 0}
@@ -1141,42 +1140,64 @@ export default function StudioDashboard() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="grid grid-cols-4 w-full max-w-3xl">
-          <TabsTrigger value="workspace"><Film className="w-3.5 h-3.5 mr-1.5" />Media</TabsTrigger>
+        <TabsList className="grid grid-cols-2 w-full max-w-lg">
           <TabsTrigger value="storage"><Database className="w-3.5 h-3.5 mr-1.5" />Storage</TabsTrigger>
           <TabsTrigger value="activity"><Activity className="w-3.5 h-3.5 mr-1.5" />Recent Activity</TabsTrigger>
-          <TabsTrigger value="production"><Clapperboard className="w-3.5 h-3.5 mr-1.5" />Production</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="workspace" className="mt-6">
-          <ProductionMediaWorkspace
-            workspaceId={workspaceId ?? null}
-            activeProjectId={activeProjectId}
-            activeProjectName={activeProject?.name ?? null}
-          />
-        </TabsContent>
         <TabsContent value="storage" className="mt-6">
           <StoragePanel rows={rows} loading={loading} onGoBuy={() => setTab("storage")} onPurchased={refreshAfterPurchase} />
         </TabsContent>
         <TabsContent value="activity" className="mt-6">
           <ActivityPanel activeProjectId={activeProjectId} activeProjectName={activeProject?.name ?? null} />
         </TabsContent>
-        <TabsContent value="production" className="mt-6">
-          <ProductionPanel activeProjectId={activeProjectId} onSetActive={setActiveProjectId} />
-        </TabsContent>
       </Tabs>
 
-      {/* Single primary Ingest dialog — reuses <StudioIngest/> for all modes. */}
+      {/* DIT Workspace — reuses <StudioIngest/> for all sources & pipeline stages. */}
       <IngestMediaDialog
         open={ingestOpen}
-        onOpenChange={(o) => {
-          setIngestOpen(o);
-          // Auto-open the Production Media Workspace when the ingest flow closes.
-          if (!o) setTab("workspace");
-        }}
+        onOpenChange={setIngestOpen}
         activeProjectId={activeProjectId ?? undefined}
         ingestDefaults={ingestDefaults}
       />
+
+      {/* Open Production — logical media view (Shoot Day → Unit → Camera → Card → Clips). */}
+      <Sheet open={sheet === "open_production"} onOpenChange={(o) => !o && setSheet(null)}>
+        <SheetContent side="right" className="w-full sm:max-w-4xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Open Production</SheetTitle>
+            <SheetDescription>
+              {activeProject?.name ?? "Active production"} — logical media view.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-4">
+            <ProductionMediaWorkspace
+              workspaceId={workspaceId ?? null}
+              activeProjectId={activeProjectId}
+              activeProjectName={activeProject?.name ?? null}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Switch / Edit Production — reuses existing ProductionPanel. */}
+      <Sheet open={sheet === "switch_production"} onOpenChange={(o) => !o && setSheet(null)}>
+        <SheetContent side="right" className="w-full sm:max-w-3xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Productions</SheetTitle>
+            <SheetDescription>
+              Switch the active production or edit production details.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-4">
+            <ProductionPanel
+              activeProjectId={activeProjectId}
+              onSetActive={(id) => { setActiveProjectId(id); setSheet(null); }}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
+
 
       {/* Storage-insufficient remediation — reuses existing BuyVaultDialog and
           resumes ingest automatically once entitlement refreshes. */}

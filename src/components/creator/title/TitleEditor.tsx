@@ -245,7 +245,9 @@ export function TitleEditor({
   const handleSubmit = async () => {
     if (!title) return;
     if (!ready) {
-      toast.error(`Missing: ${missing.join(", ")}`);
+      const preview = missing.slice(0, 3).join(", ");
+      const extra = missing.length > 3 ? ` +${missing.length - 3} more` : "";
+      toast.error(`A few items still need attention: ${preview}${extra}. Open the Submission tab to review.`);
       return;
     }
     // Flush any pending edits before submitting so the lock doesn't strand changes.
@@ -253,7 +255,7 @@ export function TitleEditor({
     // Free-tier guard: 1 submission allowed.
     const t = await fetchFreeTierStatus();
     if (t?.is_free && !t.can_submit) {
-      toast.error("Free plan allows 1 submission. Request a plan change from Storage & Billing to submit more titles.");
+      toast.error("Free plan allows 1 submission. Upgrade from Storage & Billing to submit more titles.");
       return;
     }
     // Free-tier: require explicit acknowledgement of commercial submission terms.

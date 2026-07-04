@@ -391,15 +391,35 @@ export default function StudioIngest({
         .single();
       if (jobErr || !job) throw jobErr ?? new Error("Failed to create ingest job");
 
-      // 3. Job item rows — auto-classify each file into RAW / Proxy / Audio / Reports / Bundle.
-      const itemsPayload = scan.files.map((f) => ({
-        job_id: job.id,
-        relative_path: f.relativePath,
-        file_name: f.file.name,
-        size_bytes: f.file.size,
-        mime_guess: f.file.type || null,
-        asset_class: assetClass || autoClassify(f.relativePath),
-      }));
+      // 3. Job item rows — intelligent classification + legacy asset_class.
+      //    The 14-way `detected_type` and confidence live in metadata JSONB so
+      //    the existing pipeline keeps consuming asset_class unchanged.
+      const classifications = scan.files.map((f) => classifyFile(f.file.name, f.relativePath));
+      const lowConfidence = classifications.filter((c) => c.confidence < 0.6).length;
+      if (lowConfidence > 0 && !assetClass) {
+        toast.message(`${lowConfidence} file${lowConfidence === 1 ? "" : "s"} need review`, {
+          description: "Auto-detection was uncertain — pick an Asset Class above to override, or continue and confirm later in Production Media.",
+        });
+      }
+      const itemsPayload = scan.files.map((f, idx) => {
+        const cls = classifications[idx];
+        return {
+          job_id: job.id,
+          relative_path: f.relativePath,
+          file_name: f.file.name,
+          size_bytes: f.file.size,
+          mime_guess: f.file.type || null,
+          asset_class: assetClass || cls.assetClass,
+          metadata: {
+            detected_type: cls.detectedType,
+            confidence: cls.confidence,
+            reason: cls.reason,
+            container: cls.container,
+            codec_hint: cls.codecHint,
+            device_hint: cls.deviceHint,
+          },
+        };
+      });
       // Insert in chunks to stay under PostgREST payload limits.
       for (let i = 0; i < itemsPayload.length; i += 200) {
         const chunk = itemsPayload.slice(i, i + 200);

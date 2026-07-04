@@ -69,9 +69,9 @@ export default function IngestMediaDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Ingest Media</DialogTitle>
+          <DialogTitle>DIT Workspace</DialogTitle>
           <DialogDescription>
             Browser Upload · Camera Card · Camera-to-Cloud · Hard-disk Import · Archive Intake · Bulk Upload
           </DialogDescription>

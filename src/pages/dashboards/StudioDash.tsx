@@ -649,11 +649,11 @@ function ProductionPanel({
       <section className="rounded-2xl border border-border/50 p-6">
         <div className="flex items-center justify-between gap-3 mb-4">
           <h3 className="font-semibold text-sm flex items-center gap-2">
-            <Clapperboard className="w-4 h-4 text-accent" /> Productions / Titles
+            <Clapperboard className="w-4 h-4 text-accent" /> Productions
           </h3>
           {activeId && (
             <Button size="sm" variant="outline" onClick={() => setShowForm((s) => !s)}>
-              <Plus className="w-3.5 h-3.5 mr-1.5" /> New Title
+              <Plus className="w-3.5 h-3.5 mr-1.5" /> New Production
             </Button>
           )}
         </div>
@@ -696,7 +696,7 @@ function ProductionPanel({
               <Button variant="ghost" size="sm" onClick={() => setShowForm(false)} disabled={submitting}>Cancel</Button>
               <Button size="sm" onClick={handleCreate} disabled={!canSubmit || submitting}>
                 {submitting ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Plus className="w-3.5 h-3.5 mr-1.5" />}
-                Create Title
+                Create Production
               </Button>
             </div>
           </Card>
@@ -707,39 +707,114 @@ function ProductionPanel({
             <Loader2 className="w-5 h-5 animate-spin" />
           </div>
         ) : projects.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No productions yet. Create a title to begin.</p>
+          <p className="text-sm text-muted-foreground">No productions yet. Create one to begin.</p>
         ) : (
-          <div className="space-y-2">
-            {projects.map((p) => {
-              const isActive = p.id === activeProjectId;
-              return (
-                <div key={p.id} className={`flex items-center justify-between py-2 border-b border-border/30 last:border-0 ${isActive ? "bg-accent/5 rounded-md px-2" : ""}`}>
-                  <div>
-                    <p className="text-sm font-medium flex items-center gap-2">
-                      {p.name}
-                      {isActive && <StatusPill tone="ok">Active</StatusPill>}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {p.crew?.content_type ?? "Production"} · {p.crew?.title_status ?? "Active"}
-                      {p.crew?.title_number && <> · <span className="font-mono">{p.crew.title_number}</span></>}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-muted-foreground hidden sm:inline">
-                      {new Date(p.created_at).toLocaleDateString()}
-                    </span>
-                    {!isActive && (
-                      <Button size="sm" variant="ghost" className="text-xs h-7" onClick={() => onSetActive(p.id)}>
-                        Set active
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <ProductionGroups
+            projects={projects}
+            currentUserId={user?.id ?? null}
+            activeProjectId={activeProjectId}
+            onSetActive={onSetActive}
+          />
         )}
       </section>
+    </div>
+  );
+}
+
+/* ---- Grouped list: My Productions / Partner Productions / Archived --------
+ * Active Production is workspace context and stays surfaced by the hero card
+ * above the tabs — it's not repeated here. Grouping rules reuse the existing
+ * project record without new columns:
+ *   • My Productions      = created by the current user (projects.user_id)
+ *   • Partner Productions = created by another workspace member
+ *   • Archived            = crew.title_status === "Archived"
+ * A production classified as Archived never appears in My/Partner.
+ */
+type ProjectRow = { id: string; name: string; created_at: string; crew?: any; user_id?: string };
+
+function ProductionGroups({
+  projects, currentUserId, activeProjectId, onSetActive,
+}: {
+  projects: ProjectRow[];
+  currentUserId: string | null;
+  activeProjectId: string | null;
+  onSetActive: (id: string) => void;
+}) {
+  const { mine, partner, archived } = useMemo(() => {
+    const mine: ProjectRow[] = [];
+    const partner: ProjectRow[] = [];
+    const archived: ProjectRow[] = [];
+    for (const p of projects) {
+      const isArchived = String(p.crew?.title_status ?? "").toLowerCase() === "archived";
+      if (isArchived) { archived.push(p); continue; }
+      if (currentUserId && p.user_id === currentUserId) mine.push(p);
+      else partner.push(p);
+    }
+    return { mine, partner, archived };
+  }, [projects, currentUserId]);
+
+  return (
+    <div className="space-y-6">
+      <ProductionGroup title="My Productions" tone="accent" items={mine} activeProjectId={activeProjectId} onSetActive={onSetActive} emptyHint="Productions you create appear here." />
+      <ProductionGroup title="Partner Productions" tone="muted" items={partner} activeProjectId={activeProjectId} onSetActive={onSetActive} emptyHint="Productions shared into this workspace by teammates appear here." />
+      <ProductionGroup title="Archived Productions" tone="muted" items={archived} activeProjectId={activeProjectId} onSetActive={onSetActive} emptyHint="Set a production's status to Archived to move it here." dim />
+    </div>
+  );
+}
+
+function ProductionGroup({
+  title, items, activeProjectId, onSetActive, emptyHint, tone, dim,
+}: {
+  title: string;
+  items: ProjectRow[];
+  activeProjectId: string | null;
+  onSetActive: (id: string) => void;
+  emptyHint: string;
+  tone: "accent" | "muted";
+  dim?: boolean;
+}) {
+  const toneCls = tone === "accent"
+    ? "bg-accent/10 text-accent border-accent/30"
+    : "bg-secondary/40 text-muted-foreground border-border/50";
+  return (
+    <div className={dim ? "opacity-80" : ""}>
+      <div className="flex items-center gap-2 mb-2">
+        <h4 className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-mono">{title}</h4>
+        <span className={`text-[10px] font-mono border rounded-full px-2 py-0.5 ${toneCls}`}>{items.length}</span>
+      </div>
+      {items.length === 0 ? (
+        <p className="text-xs text-muted-foreground pl-1">{emptyHint}</p>
+      ) : (
+        <div className="space-y-2">
+          {items.map((p) => {
+            const isActive = p.id === activeProjectId;
+            return (
+              <div key={p.id} className={`flex items-center justify-between py-2 border-b border-border/30 last:border-0 ${isActive ? "bg-accent/5 rounded-md px-2" : ""}`}>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium flex items-center gap-2 truncate">
+                    <span className="truncate">{p.name}</span>
+                    {isActive && <StatusPill tone="ok">Active</StatusPill>}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {p.crew?.content_type ?? "Production"} · {p.crew?.title_status ?? "Active"}
+                    {p.crew?.title_number && <> · <span className="font-mono">{p.crew.title_number}</span></>}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[11px] text-muted-foreground hidden sm:inline">
+                    {new Date(p.created_at).toLocaleDateString()}
+                  </span>
+                  {!isActive && (
+                    <Button size="sm" variant="ghost" className="text-xs h-7" onClick={() => onSetActive(p.id)}>
+                      Set active
+                    </Button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

@@ -93,15 +93,15 @@ export default function WorkspaceWelcome() {
             <Building2 className="w-4 h-4 text-muted-foreground/70 shrink-0" />
             <span>Welcome back, <span className="text-accent">{s.displayName}</span></span>
           </h2>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             {s.isFree
-              ? "You're on Creator Basic — request a plan change any time from Storage & Billing."
+              ? "You're on Creator Basic — request a plan upgrade any time from Storage & Billing."
               : "Your titles, storage and plan at a glance."}
           </p>
         </div>
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-xs">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-xs whitespace-nowrap">
           <Crown className="w-3.5 h-3.5 text-accent" />
-          <span className="font-medium">{s.planName}</span>
+          <span className="font-medium truncate max-w-[16ch]">{s.planName}</span>
         </span>
       </div>
 

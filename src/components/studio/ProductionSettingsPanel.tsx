@@ -52,6 +52,21 @@ const NAMING_TOKENS = [
 
 type Crew = Record<string, any>;
 
+export type CameraPackage = {
+  id: string;
+  name: string;               // "A Cam", "B Cam", "Drone", …
+  camera_system: string;      // "ARRI"
+  camera_model: string;       // "Alexa 35"
+  recording_format: string;   // "ARRIRAW"
+  codec: string;              // "ARRIRAW"
+  resolution: string;         // "4.6K"
+  frame_rate: string;         // "24"
+  color_space: string;        // "ARRI LogC4"
+  lut: string;                // "ARRI LogC4 → Rec.709"
+  card_prefix: string;        // "A"
+  folder_naming: string;      // "{camera}/{card}"
+};
+
 type Settings = {
   // Production
   title_number: string;
@@ -65,7 +80,8 @@ type Settings = {
   // Content Type
   content_type: string;
   aspect_ratio: string;
-  // Equipment
+  // Equipment — legacy flat fields kept for backward compatibility.
+  // Editing happens via camera_packages; these mirror the primary package on save.
   camera_system: string;
   camera_brand: string;
   codec: string;
@@ -73,6 +89,8 @@ type Settings = {
   frame_rate: string;
   color_space: string;
   default_unit: string;
+  // Camera Packages — new source of truth for equipment (one or many rigs).
+  camera_packages: CameraPackage[];
   // Folder Structure
   folder_root: string;
   folder_pattern: string;

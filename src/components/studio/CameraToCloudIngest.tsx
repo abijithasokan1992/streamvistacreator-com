@@ -135,8 +135,8 @@ export default function CameraToCloudIngest() {
               severity: "warning",
               title: "Upload paused — safely resumable",
               message:
-                `The connection dropped while streaming "${p.file.name}" (part ${mpErr.partNumber} of ${mpErr.totalChunks}).\n\n` +
-                `Your progress is checkpointed in C CLOUD. Drop the same file again — on this device or any other — and ingest will resume from the exact missing block with cryptographic integrity.`,
+                `The connection dropped while uploading "${p.file.name}" (part ${mpErr.partNumber} of ${mpErr.totalChunks}).\n\n` +
+                `Your progress is saved. Drop the same file again — on this device or another — and it will resume from the exact point it stopped.`,
               context: `file=${p.file.name}; size=${p.file.size}; part=${mpErr.partNumber}/${mpErr.totalChunks}`,
               extraAction: { label: "Resume now", onClick: () => { void uploadOne(p); } },
             });

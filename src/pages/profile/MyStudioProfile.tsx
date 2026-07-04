@@ -73,7 +73,13 @@ function useMyStudioWorkspaces() {
   return { list, loading };
 }
 
-export default function MyStudioProfile() {
+export default function MyStudioProfile({
+  onboarding = false,
+  onDone,
+}: {
+  onboarding?: boolean;
+  onDone?: () => void;
+} = {}) {
   const { user, loading: authLoading } = useAuth();
   const { list: workspaces, loading: wsLoading } = useMyStudioWorkspaces();
   const [orgId, setOrgId] = useState<string | null>(null);
@@ -84,7 +90,7 @@ export default function MyStudioProfile() {
 
   const {
     profile, studioExt, socials, loading, saving, canEdit,
-    saveProfile, saveStudioExt, upsertSocial, removeSocial,
+    saveProfile, saveStudioExt, upsertSocial, removeSocial, refresh,
   } = useEntityProfile({ kind: "studio", orgId });
 
   const [pForm, setPForm] = useState<Partial<EntityProfile>>({});
@@ -99,6 +105,31 @@ export default function MyStudioProfile() {
 
   useEffect(() => { setPForm({}); }, [profile?.id]);
   useEffect(() => { setEForm({}); }, [studioExt?.profile_id]);
+
+  // Auto-fill defaults from the logged-in user so DITs don't retype known
+  // values (legal name / emails). Only populates fields that are still empty
+  // on the loaded record — never overwrites saved data.
+  useEffect(() => {
+    if (!profile || !studioExt || !user) return;
+    const userName =
+      (user.user_metadata as { full_name?: string; name?: string } | undefined)?.full_name
+      ?? (user.user_metadata as { name?: string } | undefined)?.name
+      ?? "";
+    const userEmail = user.email ?? "";
+    const patchP: Partial<EntityProfile> = {};
+    const patchE: Partial<StudioExt> = {};
+    if (!profile.legal_name && userName) patchP.legal_name = userName;
+    if (!profile.billing_legal_name && userName) patchP.billing_legal_name = userName;
+    if (!profile.primary_email && userEmail) patchP.primary_email = userEmail;
+    if (!profile.billing_email && userEmail) patchP.billing_email = userEmail;
+    if (!studioExt.primary_contact_name && userName) patchE.primary_contact_name = userName;
+    if (!studioExt.primary_contact_email && userEmail) patchE.primary_contact_email = userEmail;
+    if (Object.keys(patchP).length) setPForm((f) => ({ ...patchP, ...f }));
+    if (Object.keys(patchE).length) setEForm((f) => ({ ...patchE, ...f }));
+    // Run only when the loaded profile/user identity changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.id, studioExt?.profile_id, user?.id]);
+
 
   const merged = useMemo<EntityProfile | null>(
     () => (profile ? { ...profile, ...pForm } as EntityProfile : null),

@@ -1213,6 +1213,10 @@ function MetadataTab({
           <p className="text-[11px] text-muted-foreground mt-1.5">
             Empty rows are ignored automatically when you save.
           </p>
+        </section>
+      </div>
+
+
 
       {/* Awards */}
       <div className="grid md:grid-cols-2 gap-6">

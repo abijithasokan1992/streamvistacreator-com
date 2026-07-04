@@ -21,7 +21,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   HardDrive, Camera, FolderClock, Snowflake, FolderOpen, Loader2, ListChecks,
   CheckCircle2, AlertTriangle, Cloud, Gauge, RefreshCw, Building2, FileVideo,
-  Truck,
+  Truck, ChevronDown, ChevronRight, ShieldCheck, ShieldAlert, Sparkles,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -239,6 +239,7 @@ export default function StudioIngest({
   const [notes, setNotes] = useState("");
   const [preserveStructure, setPreserveStructure] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
 
   const cameraPackages = activeProjectDefaults?.cameraPackages ?? [];
   const selectedPackage = useMemo(
@@ -919,11 +920,28 @@ export default function StudioIngest({
                 j.status === "paused" ? "text-amber-300" :
                 j.status === "uploading" || j.status === "verifying" || j.status === "retrying" ? "text-accent" :
                 "text-muted-foreground";
+              const isOpen = expandedJobs.has(j.id);
+              const toggle = () => {
+                setExpandedJobs((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(j.id)) next.delete(j.id); else next.add(j.id);
+                  return next;
+                });
+              };
               return (
                 <li key={j.id} className="py-3">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 text-xs flex-wrap">
+                        <button
+                          type="button"
+                          onClick={toggle}
+                          aria-expanded={isOpen}
+                          aria-label={isOpen ? "Hide detected items" : "Show detected items"}
+                          className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                        >
+                          {isOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                        </button>
                         <FileVideo className="w-3.5 h-3.5 text-accent shrink-0" />
                         <span className="font-medium truncate">{j.source_summary?.root_label ?? "(unnamed source)"}</span>
                         <Badge variant="outline" className="text-[10px] capitalize">{j.job_mode.replace(/_/g, " ")}</Badge>
@@ -943,6 +961,7 @@ export default function StudioIngest({
                       </div>
                     </div>
                   </div>
+                  {isOpen && <DetectedItemsPanel jobId={j.id} />}
                 </li>
               );
             })}
@@ -955,3 +974,195 @@ export default function StudioIngest({
     </div>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/*  DetectedItemsPanel                                                 */
+/*  Lazy-loads ingest_job_items for a job and renders the intelligent  */
+/*  media-pipeline enrichment: detected type, confidence, codec/device */
+/*  hints, resolution / duration, and checksum status.                 */
+/* ------------------------------------------------------------------ */
+
+type ItemRow = {
+  id: string;
+  file_name: string;
+  relative_path: string;
+  size_bytes: number;
+  status: string;
+  asset_class: string | null;
+  mime_guess: string | null;
+  metadata: Record<string, any> | null;
+};
+
+const DETECTED_LABEL: Record<string, string> = {
+  raw_camera: "RAW Camera",
+  audio: "Audio",
+  still_image: "Still Image",
+  document: "Document",
+  graphic: "Graphic",
+  vfx_plate: "VFX Plate",
+  music: "Music",
+  sfx: "SFX",
+  subtitle: "Subtitle",
+  dubbing: "Dubbing",
+  master_file: "Master File",
+  finished_film: "Finished Film",
+  proxy: "Proxy",
+  project_bundle: "Project Bundle",
+  unknown: "Unknown",
+};
+
+function fmtDuration(ms: number | null | undefined): string | null {
+  if (!ms || !Number.isFinite(ms) || ms <= 0) return null;
+  const s = Math.round(ms / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const r = s % 60;
+  if (h > 0) return `${h}h ${m}m ${r}s`;
+  if (m > 0) return `${m}m ${r}s`;
+  return `${r}s`;
+}
+
+function confidenceTone(c: number): string {
+  if (c >= 0.85) return "text-emerald-300 border-emerald-500/40";
+  if (c >= 0.6)  return "text-amber-300 border-amber-500/40";
+  return "text-destructive border-destructive/40";
+}
+
+function DetectedItemsPanel({ jobId }: { jobId: string }) {
+  const [loading, setLoading] = useState(true);
+  const [items, setItems] = useState<ItemRow[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true); setError(null);
+      const { data, error } = await supabase
+        .from("ingest_job_items")
+        .select("id,file_name,relative_path,size_bytes,status,asset_class,mime_guess,metadata")
+        .eq("job_id", jobId)
+        .order("created_at", { ascending: true })
+        .limit(500);
+      if (cancelled) return;
+      if (error) setError(error.message);
+      else setItems((data as any as ItemRow[]) ?? []);
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [jobId]);
+
+  if (loading) {
+    return (
+      <div className="mt-3 flex items-center gap-2 text-[11px] text-muted-foreground">
+        <Loader2 className="w-3 h-3 animate-spin" /> Loading detected items…
+      </div>
+    );
+  }
+  if (error) {
+    return <p className="mt-3 text-[11px] text-destructive">Failed to load items: {error}</p>;
+  }
+  if (items.length === 0) {
+    return <p className="mt-3 text-[11px] text-muted-foreground">No items recorded for this job.</p>;
+  }
+
+  return (
+    <div className="mt-3 rounded-md border border-border/40 bg-background/40 divide-y divide-border/30">
+      {items.map((it) => {
+        const md = it.metadata ?? {};
+        const detected = String(md.detected_type ?? "unknown");
+        const confidence = typeof md.confidence === "number" ? md.confidence : null;
+        const width = md.width ?? null;
+        const height = md.height ?? null;
+        const duration = fmtDuration(md.duration_ms);
+        const checksum = md.checksum_sha256 ?? null;
+        const checksumScope = md.checksum_scope ?? null;
+        const container = md.container ?? null;
+        const codec = md.codec_hint ?? null;
+        const device = md.device_hint ?? null;
+        const reason = md.reason ?? null;
+
+        return (
+          <div key={it.id} className="p-3 text-[11px] space-y-1.5">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="min-w-0 flex items-center gap-2">
+                <Sparkles className="w-3 h-3 text-accent shrink-0" />
+                <span className="font-mono text-foreground truncate max-w-[280px]" title={it.relative_path || it.file_name}>
+                  {it.relative_path || it.file_name}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <Badge variant="outline" className="text-[10px]">
+                  {DETECTED_LABEL[detected] ?? detected}
+                </Badge>
+                {confidence !== null && (
+                  <Badge variant="outline" className={`text-[10px] ${confidenceTone(confidence)}`}>
+                    {Math.round(confidence * 100)}% conf
+                  </Badge>
+                )}
+                {it.asset_class && (
+                  <Badge variant="outline" className="text-[10px] capitalize text-muted-foreground">
+                    class: {it.asset_class}
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground">
+              {(container || codec) && (
+                <span>
+                  <span className="text-foreground/70">Codec:</span>{" "}
+                  {[container, codec && container !== codec ? codec : null].filter(Boolean).join(" · ")}
+                </span>
+              )}
+              {device && (
+                <span>
+                  <span className="text-foreground/70">Device:</span> {device}
+                </span>
+              )}
+              {(width && height) && (
+                <span>
+                  <span className="text-foreground/70">Resolution:</span> {width}×{height}
+                </span>
+              )}
+              {duration && (
+                <span>
+                  <span className="text-foreground/70">Duration:</span> {duration}
+                </span>
+              )}
+              <span>
+                <span className="text-foreground/70">Size:</span> {fmtBytes(it.size_bytes)}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              {checksum ? (
+                <span className="inline-flex items-center gap-1 text-emerald-300">
+                  <ShieldCheck className="w-3 h-3" />
+                  SHA-256 verified
+                  <span className="font-mono text-muted-foreground truncate max-w-[220px]" title={checksum}>
+                    {checksum.slice(0, 12)}…
+                  </span>
+                </span>
+              ) : checksumScope === "server_pending" ? (
+                <span className="inline-flex items-center gap-1 text-amber-300">
+                  <ShieldAlert className="w-3 h-3" />
+                  Server-side checksum in progress
+                </span>
+              ) : it.status === "completed" ? (
+                <span className="inline-flex items-center gap-1 text-muted-foreground">
+                  <ShieldAlert className="w-3 h-3" /> Checksum pending
+                </span>
+              ) : null}
+              {reason && (
+                <span className="text-muted-foreground/70 italic truncate max-w-[240px]" title={reason}>
+                  — {reason}
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+

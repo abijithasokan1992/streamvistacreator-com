@@ -77,15 +77,19 @@ type JobRow = {
   source_summary: any;
 };
 
+// UI labels only — every mode routes through the same ingest engine
+// (Upload → Checksum → Primary Backup → OCI Sync → Proxy → Library → Editorial).
+// Adding a new source type in future = another tile with the same `id`
+// semantics; no new pipeline, no backend redesign.
 const MODES: { id: IngestMode; label: string; icon: any; blurb: string }[] = [
-  { id: "connected_drive", label: "Drive / Folder", icon: HardDrive,
-    blurb: "SSD, HDD or any attached drive." },
+  { id: "connected_drive", label: "Browser Upload", icon: HardDrive,
+    blurb: "Drag & drop files or a full folder from your computer. Also handles bulk uploads." },
   { id: "camera_card",     label: "Camera Card",    icon: Camera,
-    blurb: "Offload a camera card or mag." },
-  { id: "watch_folder",    label: "Live Folder",    icon: FolderClock,
-    blurb: "Rescan as the shoot continues." },
-  { id: "archive",         label: "Archive",        icon: Snowflake,
-    blurb: "Master bundles for long-term vault." },
+    blurb: "Offload a camera card or mag straight from the DIT cart." },
+  { id: "watch_folder",    label: "Camera-to-Cloud", icon: FolderClock,
+    blurb: "Live-scan a folder as the shoot continues — near-real-time ingest." },
+  { id: "archive",         label: "Archive Intake", icon: Snowflake,
+    blurb: "Master bundles and completed projects for long-term vault." },
 ];
 
 const CAMERA_BRANDS = [

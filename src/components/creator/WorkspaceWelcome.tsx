@@ -41,8 +41,11 @@ export default function WorkspaceWelcome() {
         (supabase as any).rpc("creator_free_tier_status"),
       ]);
 
-      const planName: string = pa.data?.plan?.name
-        || (prof.data?.plan_tier && prof.data.plan_tier !== "free" ? `Plan: ${prof.data.plan_tier}` : "Creator Basic");
+      const rawTier: string | undefined = prof.data?.plan_tier;
+      const tierLabel = rawTier && rawTier !== "free"
+        ? rawTier.charAt(0).toUpperCase() + rawTier.slice(1)
+        : null;
+      const planName: string = pa.data?.plan?.name || tierLabel || "Creator Basic";
       const tierData = (tier?.data ?? null) as any;
       const isFree = !!tierData?.is_free || (!pa.data && (!prof.data?.plan_tier || prof.data.plan_tier === "free"));
 
@@ -90,25 +93,25 @@ export default function WorkspaceWelcome() {
             <Building2 className="w-4 h-4 text-muted-foreground/70 shrink-0" />
             <span>Welcome back, <span className="text-accent">{s.displayName}</span></span>
           </h2>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             {s.isFree
-              ? "You're on Creator Basic — request a plan change any time from Storage & Billing."
+              ? "You're on Creator Basic — request a plan upgrade any time from Storage & Billing."
               : "Your titles, storage and plan at a glance."}
           </p>
         </div>
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-xs">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-xs whitespace-nowrap">
           <Crown className="w-3.5 h-3.5 text-accent" />
-          <span className="font-medium">{s.planName}</span>
+          <span className="font-medium truncate max-w-[16ch]">{s.planName}</span>
         </span>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-5">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3 mt-5">
         <Stat icon={HardDrive} label="Storage" primary={`${s.usedGb.toFixed(2)} GB`}
           secondary={`of ${s.allocatedGb} GB · ${pct}% used`} tone={pct >= 80 ? "warn" : "default"} />
         <Stat icon={Film} label="Titles" primary={String(s.titleCount)}
-          secondary={s.titleLimit ? `of ${s.titleLimit} included` : "no plan cap"} />
+          secondary={s.titleLimit ? `of ${s.titleLimit} included` : "No plan cap"} />
         <Stat icon={Crown} label="Plan" primary={s.planName}
-          secondary={s.isFree ? "Founder-assisted upgrade" : "Active"} />
+          secondary={s.isFree ? "Upgrade available" : "Active"} />
       </div>
     </section>
   );

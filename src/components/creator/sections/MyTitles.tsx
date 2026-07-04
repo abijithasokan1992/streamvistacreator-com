@@ -47,12 +47,12 @@ export default function MyTitlesSection() {
     if (tier?.is_free && !tier.can_create_draft) {
       const draft = await findFirstActiveDraft(user.id);
       if (draft) {
-        toast.info("Free plan allows 1 draft — opening your existing draft.");
+        toast.info("Free plan allows 1 draft — reopening your existing one.");
         setEditorId(draft.id);
         setEditorMode("edit");
         return;
       }
-      toast.error("Free plan limit reached. Upgrade to the 5 TB plan (₹25,000 + 18% GST) from Storage & Billing to add more titles.");
+      toast.error("Free plan limit reached. Upgrade from Storage & Billing to add more titles.");
       return;
     }
     setGating(true);
@@ -93,7 +93,7 @@ export default function MyTitlesSection() {
           <div className="min-w-0 flex-1">
             <div className="font-medium">Free plan — 1 title only</div>
             <div className="text-muted-foreground mt-0.5">
-              {tier.draft_count}/1 draft · {tier.lifecycle_count}/1 submission used. Upgrade to 5 TB plan (₹25,000 + 18% GST) for additional submissions.
+              {tier.draft_count}/1 draft · {tier.lifecycle_count}/1 submission used. Upgrade for additional submissions and 5 TB storage.
             </div>
           </div>
           <a
@@ -130,7 +130,7 @@ export default function MyTitlesSection() {
           )}
         >
           {freeLimitHit ? <Lock className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-          {freeLimitHit ? "New Title — Pro" : "New Title"}
+          {freeLimitHit ? "Upgrade to add" : "New Title"}
         </button>
       </div>
 
@@ -231,17 +231,17 @@ export default function MyTitlesSection() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {visible.map((t) => (
-            <article key={t.id} className="rounded-xl border border-border/40 bg-secondary/5 p-4 flex flex-col gap-3 min-w-0">
+            <article key={t.id} className="rounded-xl border border-border/40 bg-secondary/5 hover:bg-secondary/10 transition-colors p-4 flex flex-col gap-3 min-w-0">
               <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <h3 className="font-medium truncate">{t.title}</h3>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-medium truncate text-sm sm:text-base">{t.title}</h3>
                   <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
                     {CONTENT_TYPE_LABEL[t.metadata.format] ?? "Title"} · Updated {new Date(t.updated_at).toLocaleDateString()}
                   </p>
                 </div>
-                {t.locked && <Lock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
+                {t.locked && <Lock className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" aria-label="Locked" />}
               </div>
               <StatusBadge status={t.status} />
               <div className="flex items-center gap-1.5 mt-auto pt-2">
@@ -269,7 +269,7 @@ export default function MyTitlesSection() {
           titleId={editorId}
           mode={editorMode}
           onClose={() => { setEditorId(null); reload(); }}
-          onSubmitted={() => { setEditorId(null); reload(); toast.success("Submitted to Admin."); }}
+          onSubmitted={() => { setEditorId(null); reload(); toast.success("Submitted for review."); }}
         />
       )}
     </div>
@@ -303,11 +303,11 @@ function CreateTitleModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm grid place-items-center p-4">
-      <div className="bg-background border border-border/50 rounded-2xl w-full max-w-xl max-h-[90dvh] overflow-y-auto">
+      <div className="bg-background border border-border/50 rounded-2xl w-[calc(100vw-2rem)] sm:w-full max-w-xl max-h-[90dvh] overflow-y-auto">
         <div className="flex items-center justify-between px-5 py-3 border-b border-border/40">
           <div>
             <h2 className="font-semibold">Add a new title</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">What are you adding?</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Pick a content type to get started.</p>
           </div>
           <button onClick={onClose} className="p-1.5 rounded hover:bg-secondary/30" aria-label="Close">
             <X className="w-4 h-4" />

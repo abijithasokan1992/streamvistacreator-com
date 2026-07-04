@@ -245,7 +245,9 @@ export function TitleEditor({
   const handleSubmit = async () => {
     if (!title) return;
     if (!ready) {
-      toast.error(`Missing: ${missing.join(", ")}`);
+      const preview = missing.slice(0, 3).join(", ");
+      const extra = missing.length > 3 ? ` +${missing.length - 3} more` : "";
+      toast.error(`A few items still need attention: ${preview}${extra}. Open the Submission tab to review.`);
       return;
     }
     // Flush any pending edits before submitting so the lock doesn't strand changes.
@@ -253,7 +255,7 @@ export function TitleEditor({
     // Free-tier guard: 1 submission allowed.
     const t = await fetchFreeTierStatus();
     if (t?.is_free && !t.can_submit) {
-      toast.error("Free plan allows 1 submission. Request a plan change from Storage & Billing to submit more titles.");
+      toast.error("Free plan allows 1 submission. Upgrade from Storage & Billing to submit more titles.");
       return;
     }
     // Free-tier: require explicit acknowledgement of commercial submission terms.
@@ -345,10 +347,10 @@ export function TitleEditor({
                   onClick={handleSubmit}
                   disabled={submitting || !ready}
                   className="inline-flex items-center gap-1.5 rounded-md bg-accent text-accent-foreground text-xs font-semibold px-3.5 py-2 disabled:opacity-40"
-                  title={ready ? "Submit for review" : `Missing: ${missing.join(", ")}`}
+                  title={ready ? "Submit for review" : `A few items still need attention: ${missing.slice(0, 3).join(", ")}${missing.length > 3 ? "…" : ""}`}
                 >
                   {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                  <span className="hidden sm:inline">Submit to Admin</span>
+                  <span className="hidden sm:inline">Submit for review</span>
                   <span className="sm:hidden">Submit</span>
                 </button>
               )}
@@ -397,14 +399,14 @@ export function TitleEditor({
           <div className="px-4 sm:px-6 lg:px-8 py-3 border-b border-border/40 bg-amber-500/5">
             <div className="flex flex-wrap items-center gap-2 text-sm">
               <ShieldCheck className="w-4 h-4 text-amber-300" />
-              <span className="font-medium">Submitted For Review</span>
-              <span className="text-muted-foreground">·</span>
+              <span className="font-medium">Submitted for review</span>
+              <span className="text-muted-foreground hidden sm:inline">·</span>
               <span className="text-muted-foreground inline-flex items-center gap-1">
-                <Lock className="w-3 h-3" /> Content Locked
+                <Lock className="w-3 h-3" /> Content locked
               </span>
-              <span className="text-muted-foreground">·</span>
+              <span className="text-muted-foreground hidden sm:inline">·</span>
               <span className="text-muted-foreground inline-flex items-center gap-1">
-                <Clock className="w-3 h-3" /> Awaiting Admin Review
+                <Clock className="w-3 h-3" /> Awaiting review
               </span>
               {lockState.openRequests > 0 && (
                 <span className="ml-2 text-[11px] inline-flex items-center gap-1 rounded-md bg-sky-500/10 border border-sky-500/30 text-sky-300 px-2 py-0.5">

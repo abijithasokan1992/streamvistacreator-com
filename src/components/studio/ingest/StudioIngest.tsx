@@ -579,58 +579,68 @@ export default function StudioIngest() {
         />
 
         {mode === "watch_folder" && (
-          <p className="text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-md px-3 py-2">
-            Browsers can't background-watch a folder. This MVP rescans the folder when you click <strong>Rescan source</strong>.
-            Continuous background watch arrives with the Crayons Bridge Ingest Engine.
-          </p>
-        )}
-
-        {mode === "connected_drive" && (
           <p className="text-[11px] text-muted-foreground">
-            For drives that are <em>physically shipped</em> to StreamVista (not attached to this browser), use{" "}
-            <span className="inline-flex items-center gap-1 text-foreground"><Truck className="w-3 h-3" /> Ship a physical drive</span> below.
+            Click <strong>Rescan source</strong> to pick up new media as the shoot continues.
           </p>
         )}
 
-        {/* Optional project / asset context */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Required shoot context: Project → Shoot Day → Unit → Camera → Card */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
           <div className="space-y-1.5">
-            <Label className="text-xs">Project / Title (optional)</Label>
+            <Label className="text-xs">Project</Label>
             <Select value={projectId || "__none"} onValueChange={(v) => setProjectId(v === "__none" ? "" : v)}>
-              <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="No project" /></SelectTrigger>
+              <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select project" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="__none">No project</SelectItem>
+                <SelectItem value="__none">Select project</SelectItem>
                 {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Shoot day / batch</Label>
-            <Input value={shootDay} onChange={(e) => setShootDay(e.target.value)} className="h-9 text-xs"
-                   placeholder={mode === "camera_card" ? "Day 03" : "Optional"} />
+            <Label className="text-xs">Shoot day</Label>
+            <Input value={shootDay} onChange={(e) => setShootDay(e.target.value)} className="h-9 text-xs" placeholder="Day 03" />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Camera / source label</Label>
-            <Input value={cameraLabel} onChange={(e) => setCameraLabel(e.target.value)} className="h-9 text-xs"
-                   placeholder={mode === "camera_card" ? "A_CAM_001" : "Optional"} />
+            <Label className="text-xs">Unit / Team</Label>
+            <Input value={unitLabel} onChange={(e) => setUnitLabel(e.target.value)} className="h-9 text-xs" placeholder="Main Unit" />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Asset class</Label>
-            <Select value={assetClass || "__none"} onValueChange={(v) => setAssetClass(v === "__none" ? "" : v)}>
-              <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Auto-detect" /></SelectTrigger>
+            <Label className="text-xs">Camera brand</Label>
+            <Select value={cameraBrand || "__none"} onValueChange={(v) => setCameraBrand(v === "__none" ? "" : v)}>
+              <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Brand" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="__none">Auto-detect</SelectItem>
-                <SelectItem value="rushes">Rushes</SelectItem>
-                <SelectItem value="masters">Masters</SelectItem>
-                <SelectItem value="proxies">Proxies</SelectItem>
-                <SelectItem value="audio">Audio / sound</SelectItem>
-                <SelectItem value="reports">Reports / sidecars</SelectItem>
-                <SelectItem value="project_bundle">Project bundle</SelectItem>
-                <SelectItem value="archive">Archive bundle</SelectItem>
+                <SelectItem value="__none">Brand</SelectItem>
+                {CAMERA_BRANDS.map((b) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Camera</Label>
+            <Input value={cameraLabel} onChange={(e) => setCameraLabel(e.target.value)} className="h-9 text-xs" placeholder="A-Cam" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Card / Mag</Label>
+            <Input value={cardLabel} onChange={(e) => setCardLabel(e.target.value)} className="h-9 text-xs" placeholder="A001" />
+          </div>
         </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-[11px] text-muted-foreground">
+            Files auto-organize into <strong>RAW · Proxy · Audio · Documents · Reports</strong>.
+          </p>
+          <Select value={assetClass || "__auto"} onValueChange={(v) => setAssetClass(v === "__auto" ? "" : v)}>
+            <SelectTrigger className="h-8 w-[180px] text-xs"><SelectValue placeholder="Auto-organize" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__auto">Auto-organize</SelectItem>
+              <SelectItem value="rushes">All as RAW</SelectItem>
+              <SelectItem value="proxies">All as Proxy</SelectItem>
+              <SelectItem value="audio">All as Audio</SelectItem>
+              <SelectItem value="reports">All as Documents / Reports</SelectItem>
+              <SelectItem value="archive">All as Archive</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">

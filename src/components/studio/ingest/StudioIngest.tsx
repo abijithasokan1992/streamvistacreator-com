@@ -78,15 +78,30 @@ type JobRow = {
 };
 
 const MODES: { id: IngestMode; label: string; icon: any; blurb: string }[] = [
-  { id: "connected_drive", label: "Connected Drive Import", icon: HardDrive,
-    blurb: "Locally attached drives, shuttle disks and folders selected from this browser." },
-  { id: "camera_card",     label: "Camera Card Intake",     icon: Camera,
-    blurb: "DIT-friendly card offload — repeatable per project / shoot day, preserves card structure." },
-  { id: "watch_folder",    label: "Watch Folder / Near-live", icon: FolderClock,
-    blurb: "Rescan a folder for new media as the shoot continues. Background watch is powered by the Crayons Bridge Ingest Engine." },
-  { id: "archive",         label: "Archive Intake",         icon: Snowflake,
-    blurb: "Master archive bundles, project backup drives and archive vault hand-offs." },
+  { id: "connected_drive", label: "Drive / Folder", icon: HardDrive,
+    blurb: "SSD, HDD or any attached drive." },
+  { id: "camera_card",     label: "Camera Card",    icon: Camera,
+    blurb: "Offload a camera card or mag." },
+  { id: "watch_folder",    label: "Live Folder",    icon: FolderClock,
+    blurb: "Rescan as the shoot continues." },
+  { id: "archive",         label: "Archive",        icon: Snowflake,
+    blurb: "Master bundles for long-term vault." },
 ];
+
+const CAMERA_BRANDS = [
+  "ARRI", "RED", "Sony", "Blackmagic", "Canon Cinema EOS",
+  "Panasonic", "DJI", "GoPro", "Nikon", "Fujifilm", "Leica", "Phantom", "Other",
+];
+
+/** Business-friendly auto-classification from filename / folder path. */
+function autoClassify(relativePath: string): "rushes" | "proxies" | "audio" | "reports" | "project_bundle" {
+  const p = relativePath.toLowerCase();
+  if (/\.(wav|aif|aiff|mp3|flac|bwf|m4a)$/.test(p)) return "audio";
+  if (/\/(proxy|proxies|prores_proxy|avid_proxy)\//.test(p) || /_proxy\.|\.proxy\./.test(p)) return "proxies";
+  if (/\.(pdf|csv|xml|xmp|ale|edl|txt|md|json|log)$/.test(p) || /\/(reports?|sidecars?|metadata)\//.test(p)) return "reports";
+  if (/\.(r3d|ari|arx|braw|mxf|dng|cdng|crm|rmf|mov|mp4|mts|m2ts)$/.test(p)) return "rushes";
+  return "project_bundle";
+}
 
 function fmtBytes(n: number): string {
   if (!Number.isFinite(n) || n <= 0) return "0 B";
@@ -185,7 +200,10 @@ export default function StudioIngest() {
   const [scan, setScan] = useState<ScanSummary | null>(null);
   const [projectId, setProjectId] = useState<string>("");
   const [shootDay, setShootDay] = useState("");
+  const [unitLabel, setUnitLabel] = useState("");
+  const [cameraBrand, setCameraBrand] = useState("");
   const [cameraLabel, setCameraLabel] = useState("");
+  const [cardLabel, setCardLabel] = useState("");
   const [assetClass, setAssetClass] = useState("");
   const [notes, setNotes] = useState("");
   const [preserveStructure, setPreserveStructure] = useState(true);
@@ -272,29 +290,33 @@ export default function StudioIngest() {
           destination_type: destinationType,
           preserve_structure: preserveStructure,
           shoot_day: shootDay || null,
-          camera_label: cameraLabel || null,
+          camera_label: [cameraBrand, cameraLabel, cardLabel].filter(Boolean).join(" · ") || null,
           asset_class: assetClass || null,
-          notes: notes || null,
+          notes: [unitLabel ? `Unit: ${unitLabel}` : "", notes].filter(Boolean).join("\n") || null,
           status: "ready",
           total_files: scan.files.length,
           total_bytes: scan.totalBytes,
           source_summary: {
             root_label: scan.rootLabel,
             top_level_folders: scan.topLevelFolders,
+            unit: unitLabel || null,
+            camera_brand: cameraBrand || null,
+            camera: cameraLabel || null,
+            card: cardLabel || null,
           },
         })
         .select("id")
         .single();
       if (jobErr || !job) throw jobErr ?? new Error("Failed to create ingest job");
 
-      // 3. Job item rows (relative_path preserved per file).
+      // 3. Job item rows — auto-classify each file into RAW / Proxy / Audio / Reports / Bundle.
       const itemsPayload = scan.files.map((f) => ({
         job_id: job.id,
         relative_path: f.relativePath,
         file_name: f.file.name,
         size_bytes: f.file.size,
         mime_guess: f.file.type || null,
-        asset_class: assetClass || null,
+        asset_class: assetClass || autoClassify(f.relativePath),
       }));
       // Insert in chunks to stay under PostgREST payload limits.
       for (let i = 0; i < itemsPayload.length; i += 200) {
@@ -451,9 +473,12 @@ export default function StudioIngest() {
       setSubmitting(false);
     }
   }, [scan, activeId, user, canWriteActive, quota, mode, destinationType, preserveStructure,
-      projectId, shootDay, cameraLabel, assetClass, notes, queue]);
+      projectId, shootDay, unitLabel, cameraBrand, cameraLabel, cardLabel, assetClass, notes, queue]);
 
   const currentModeMeta = useMemo(() => MODES.find((m) => m.id === mode)!, [mode]);
+
+  const contextReady =
+    !!projectId && !!shootDay.trim() && !!unitLabel.trim() && !!cameraLabel.trim() && !!cardLabel.trim();
 
   return (
     <div className="space-y-6">
@@ -462,11 +487,7 @@ export default function StudioIngest() {
         <div className="min-w-0">
           <h2 className="font-display text-2xl">Studio Ingest</h2>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            Bring footage into your studio vault from local drives, camera cards, watch folders or archive
-            bundles. Source folder structure is preserved by default — A_CAM / B_CAM / SOUND / day_01 stays intact.
-          </p>
-          <p className="text-[10px] text-muted-foreground mt-1.5 tracking-wide">
-            Powered by Crayons Bridge Ingest Engine
+            Drop footage from drives, camera cards or live folders. Files are auto-organized into RAW, Proxy, Audio, Documents and Reports inside your project.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -558,58 +579,68 @@ export default function StudioIngest() {
         />
 
         {mode === "watch_folder" && (
-          <p className="text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-md px-3 py-2">
-            Browsers can't background-watch a folder. This MVP rescans the folder when you click <strong>Rescan source</strong>.
-            Continuous background watch arrives with the Crayons Bridge Ingest Engine.
-          </p>
-        )}
-
-        {mode === "connected_drive" && (
           <p className="text-[11px] text-muted-foreground">
-            For drives that are <em>physically shipped</em> to StreamVista (not attached to this browser), use{" "}
-            <span className="inline-flex items-center gap-1 text-foreground"><Truck className="w-3 h-3" /> Ship a physical drive</span> below.
+            Click <strong>Rescan source</strong> to pick up new media as the shoot continues.
           </p>
         )}
 
-        {/* Optional project / asset context */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Required shoot context: Project → Shoot Day → Unit → Camera → Card */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
           <div className="space-y-1.5">
-            <Label className="text-xs">Project / Title (optional)</Label>
+            <Label className="text-xs">Project</Label>
             <Select value={projectId || "__none"} onValueChange={(v) => setProjectId(v === "__none" ? "" : v)}>
-              <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="No project" /></SelectTrigger>
+              <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select project" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="__none">No project</SelectItem>
+                <SelectItem value="__none">Select project</SelectItem>
                 {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Shoot day / batch</Label>
-            <Input value={shootDay} onChange={(e) => setShootDay(e.target.value)} className="h-9 text-xs"
-                   placeholder={mode === "camera_card" ? "Day 03" : "Optional"} />
+            <Label className="text-xs">Shoot day</Label>
+            <Input value={shootDay} onChange={(e) => setShootDay(e.target.value)} className="h-9 text-xs" placeholder="Day 03" />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Camera / source label</Label>
-            <Input value={cameraLabel} onChange={(e) => setCameraLabel(e.target.value)} className="h-9 text-xs"
-                   placeholder={mode === "camera_card" ? "A_CAM_001" : "Optional"} />
+            <Label className="text-xs">Unit / Team</Label>
+            <Input value={unitLabel} onChange={(e) => setUnitLabel(e.target.value)} className="h-9 text-xs" placeholder="Main Unit" />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Asset class</Label>
-            <Select value={assetClass || "__none"} onValueChange={(v) => setAssetClass(v === "__none" ? "" : v)}>
-              <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Auto-detect" /></SelectTrigger>
+            <Label className="text-xs">Camera brand</Label>
+            <Select value={cameraBrand || "__none"} onValueChange={(v) => setCameraBrand(v === "__none" ? "" : v)}>
+              <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Brand" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="__none">Auto-detect</SelectItem>
-                <SelectItem value="rushes">Rushes</SelectItem>
-                <SelectItem value="masters">Masters</SelectItem>
-                <SelectItem value="proxies">Proxies</SelectItem>
-                <SelectItem value="audio">Audio / sound</SelectItem>
-                <SelectItem value="reports">Reports / sidecars</SelectItem>
-                <SelectItem value="project_bundle">Project bundle</SelectItem>
-                <SelectItem value="archive">Archive bundle</SelectItem>
+                <SelectItem value="__none">Brand</SelectItem>
+                {CAMERA_BRANDS.map((b) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Camera</Label>
+            <Input value={cameraLabel} onChange={(e) => setCameraLabel(e.target.value)} className="h-9 text-xs" placeholder="A-Cam" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Card / Mag</Label>
+            <Input value={cardLabel} onChange={(e) => setCardLabel(e.target.value)} className="h-9 text-xs" placeholder="A001" />
+          </div>
         </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-[11px] text-muted-foreground">
+            Files auto-organize into <strong>RAW · Proxy · Audio · Documents · Reports</strong>.
+          </p>
+          <Select value={assetClass || "__auto"} onValueChange={(v) => setAssetClass(v === "__auto" ? "" : v)}>
+            <SelectTrigger className="h-8 w-[180px] text-xs"><SelectValue placeholder="Auto-organize" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__auto">Auto-organize</SelectItem>
+              <SelectItem value="rushes">All as RAW</SelectItem>
+              <SelectItem value="proxies">All as Proxy</SelectItem>
+              <SelectItem value="audio">All as Audio</SelectItem>
+              <SelectItem value="reports">All as Documents / Reports</SelectItem>
+              <SelectItem value="archive">All as Archive</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -622,9 +653,10 @@ export default function StudioIngest() {
                 <RefreshCw className="w-4 h-4 mr-2" /> Rescan source
               </Button>
             )}
-            <Button onClick={() => openPicker(mode)} disabled={!activeId} variant="outline">
+            <Button onClick={() => openPicker(mode)} disabled={!activeId || !contextReady} variant="outline"
+                    title={!contextReady ? "Select Project · Shoot Day · Unit · Camera · Card first" : undefined}>
               <FolderOpen className="w-4 h-4 mr-2" />
-              {scan ? "Choose a different source" : mode === "camera_card" ? "Choose card" : "Choose source folder"}
+              {scan ? "Choose a different source" : mode === "camera_card" ? "Choose card" : "Drop or choose folder"}
             </Button>
           </div>
         </div>
@@ -652,7 +684,7 @@ export default function StudioIngest() {
                 )}
               </div>
               <div className="flex flex-col gap-2 items-end">
-                <Button onClick={startIngest} disabled={submitting || !canWriteActive}
+                <Button onClick={startIngest} disabled={submitting || !canWriteActive || !contextReady}
                         className="bg-gradient-primary text-primary-foreground glow-primary">
                   {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Cloud className="w-4 h-4 mr-2" />}
                   Start ingest

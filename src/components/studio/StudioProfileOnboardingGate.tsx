@@ -20,12 +20,13 @@ import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspaces } from "@/hooks/useWorkspaces";
 import { useEntityProfile, type EntityProfile } from "@/hooks/useEntityProfile";
-import MyStudioProfile from "@/pages/profile/MyStudioProfile";
+import StudioOnboardingWizard from "@/components/studio/StudioOnboardingWizard";
 
 /**
- * "Onboarded" = every core identity + tax + billing field is filled AND the
- * DB-computed completeness is at or above threshold. Read-only checks — no
- * schema changes.
+ * "Onboarded" = the MVP activation fields are on file. This mirrors what the
+ * 4-step onboarding wizard collects; extra profile detail (About, Services,
+ * Public Links, Billing overrides, etc.) lives under Settings > Studio
+ * Profile and never re-locks the studio.
  */
 export function isStudioOnboarded(p: EntityProfile | null): boolean {
   if (!p) return false;
@@ -34,20 +35,19 @@ export function isStudioOnboarded(p: EntityProfile | null): boolean {
     "entity_type",
     "primary_email",
     "primary_phone",
+    "country",
+    "state",
     "pan_number",
-    "billing_legal_name",
-    "billing_email",
   ];
   for (const k of required) {
     const v = p[k];
     if (v == null || String(v).trim() === "") return false;
   }
-  // GST-registered studios must have a GSTIN and a place of supply on file.
   if (p.is_gst_registered) {
     if (!p.gstin || String(p.gstin).trim() === "") return false;
     if (!p.place_of_supply_state || String(p.place_of_supply_state).trim() === "") return false;
   }
-  return (p.profile_completion_pct ?? 0) >= 100;
+  return true;
 }
 
 export default function StudioProfileOnboardingGate({ children }: { children: React.ReactNode }) {
@@ -55,11 +55,7 @@ export default function StudioProfileOnboardingGate({ children }: { children: Re
   const { activeId: orgId, loading: wsLoading } = useWorkspaces();
   const { profile, loading } = useEntityProfile({ kind: "studio", orgId: orgId ?? null });
 
-  // Local override — once the wizard reports success we drop the gate for
-  // this session immediately, without waiting for the profile to reload.
   const [justCompleted, setJustCompleted] = useState(false);
-
-  // If the workspace changes, re-evaluate onboarding from scratch.
   useEffect(() => { setJustCompleted(false); }, [orgId]);
 
   const complete = useMemo(
@@ -75,12 +71,10 @@ export default function StudioProfileOnboardingGate({ children }: { children: Re
     );
   }
 
-  // No user or no workspace — fall through to children; the underlying route
-  // gates (RoleGate / OnboardingGate) already handle those cases.
   if (!user || !orgId) return <>{children}</>;
 
   if (!complete) {
-    return <MyStudioProfile onboarding onDone={() => setJustCompleted(true)} />;
+    return <StudioOnboardingWizard onDone={() => setJustCompleted(true)} />;
   }
 
   return <>{children}</>;

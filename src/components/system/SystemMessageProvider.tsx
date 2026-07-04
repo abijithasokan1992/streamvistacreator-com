@@ -137,7 +137,7 @@ export function SystemMessageProvider({ children }: { children: ReactNode }) {
                 className="gap-2"
               >
                 {reporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldAlert className="w-4 h-4" />}
-                Report to admin
+                Report to support
               </Button>
             )}
             {current?.extraAction && (

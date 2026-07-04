@@ -18,7 +18,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { FieldGroup } from "@/components/profile/FieldGroup";
-import { Loader2, Save, Settings2, Sparkles } from "lucide-react";
+import { Loader2, Save, Settings2, Sparkles, Plus, Trash2, GripVertical, ChevronUp, ChevronDown, Video } from "lucide-react";
 
 const CONTENT_TYPES = [
   "Feature Film", "Short Film", "Series", "Documentary", "Commercial",

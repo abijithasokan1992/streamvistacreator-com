@@ -1077,6 +1077,7 @@ export default function StudioDashboard() {
     return {
       cameraBrand: c.camera_brand || cameraBrandGuess || undefined,
       unit: c.default_unit || c.unit || undefined,
+      cameraPackages: Array.isArray(c.camera_packages) ? c.camera_packages : undefined,
     };
   }, [activeProject?.crew]);
 

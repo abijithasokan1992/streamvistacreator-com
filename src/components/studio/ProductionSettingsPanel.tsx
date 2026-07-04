@@ -18,7 +18,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { FieldGroup } from "@/components/profile/FieldGroup";
-import { Loader2, Save, Settings2, Sparkles } from "lucide-react";
+import { Loader2, Save, Settings2, Sparkles, Plus, Trash2, GripVertical, ChevronUp, ChevronDown, Video } from "lucide-react";
 
 const CONTENT_TYPES = [
   "Feature Film", "Short Film", "Series", "Documentary", "Commercial",
@@ -52,6 +52,21 @@ const NAMING_TOKENS = [
 
 type Crew = Record<string, any>;
 
+export type CameraPackage = {
+  id: string;
+  name: string;               // "A Cam", "B Cam", "Drone", …
+  camera_system: string;      // "ARRI"
+  camera_model: string;       // "Alexa 35"
+  recording_format: string;   // "ARRIRAW"
+  codec: string;              // "ARRIRAW"
+  resolution: string;         // "4.6K"
+  frame_rate: string;         // "24"
+  color_space: string;        // "ARRI LogC4"
+  lut: string;                // "ARRI LogC4 → Rec.709"
+  card_prefix: string;        // "A"
+  folder_naming: string;      // "{camera}/{card}"
+};
+
 type Settings = {
   // Production
   title_number: string;
@@ -65,7 +80,8 @@ type Settings = {
   // Content Type
   content_type: string;
   aspect_ratio: string;
-  // Equipment
+  // Equipment — legacy flat fields kept for backward compatibility.
+  // Editing happens via camera_packages; these mirror the primary package on save.
   camera_system: string;
   camera_brand: string;
   codec: string;
@@ -73,6 +89,8 @@ type Settings = {
   frame_rate: string;
   color_space: string;
   default_unit: string;
+  // Camera Packages — new source of truth for equipment (one or many rigs).
+  camera_packages: CameraPackage[];
   // Folder Structure
   folder_root: string;
   folder_pattern: string;
@@ -109,6 +127,7 @@ const DEFAULTS: Settings = {
   frame_rate: "24",
   color_space: "",
   default_unit: "Main Unit",
+  camera_packages: [],
   folder_root: "/{project}",
   folder_pattern: "{project}/{date}_{shootday}/{unit}/{camera}/{card}",
   naming_pattern: "{project}_{shootday}_{unit}_{camera}_{card}_{clip}",
@@ -122,6 +141,27 @@ const DEFAULTS: Settings = {
   delivery_specs: "",
 };
 
+const DEFAULT_PKG_NAMES = ["A Cam", "B Cam", "C Cam", "D Cam", "Drone", "Crash Cam", "GoPro", "Virtual Camera"];
+
+function newPackage(index: number, seed?: Partial<CameraPackage>): CameraPackage {
+  const letter = String.fromCharCode(65 + index); // A, B, C…
+  return {
+    id: `pkg_${Math.random().toString(36).slice(2, 10)}`,
+    name: DEFAULT_PKG_NAMES[index] ?? `${letter} Cam`,
+    camera_system: "",
+    camera_model: "",
+    recording_format: "",
+    codec: "",
+    resolution: "",
+    frame_rate: "",
+    color_space: "",
+    lut: "",
+    card_prefix: letter,
+    folder_naming: "{camera}/{card}",
+    ...seed,
+  };
+}
+
 function crewToSettings(crew: Crew | null | undefined): Settings {
   const c = crew ?? {};
   const out: any = { ...DEFAULTS };
@@ -131,6 +171,24 @@ function crewToSettings(crew: Crew | null | undefined): Settings {
   // Best-effort camera_brand fallback when only camera_system was set previously.
   if (!c.camera_brand && typeof c.camera_system === "string") {
     out.camera_brand = String(c.camera_system).split(/\s+/)[0] ?? "";
+  }
+  // Seed one Camera Package from legacy flat fields when nothing is defined yet.
+  if (!Array.isArray(out.camera_packages) || out.camera_packages.length === 0) {
+    const hasLegacy = out.camera_system || out.camera_brand || out.codec || out.resolution || out.color_space;
+    if (hasLegacy) {
+      out.camera_packages = [newPackage(0, {
+        camera_system: out.camera_brand || String(out.camera_system).split(/\s+/)[0] || "",
+        camera_model: out.camera_system || "",
+        recording_format: out.codec || "",
+        codec: out.codec || "",
+        resolution: out.resolution || "",
+        frame_rate: out.frame_rate || "",
+        color_space: out.color_space || "",
+        lut: "",
+      })];
+    } else {
+      out.camera_packages = [];
+    }
   }
   return out as Settings;
 }
@@ -186,7 +244,22 @@ export default function ProductionSettingsPanel({
       .select("crew")
       .eq("id", activeProjectId)
       .maybeSingle();
-    const merged = { ...(((current as any)?.crew) ?? {}), ...s };
+    // Mirror the primary Camera Package into the legacy flat fields so any
+    // downstream consumer that still reads crew.camera_system / codec / etc.
+    // keeps working without changes.
+    const primary = s.camera_packages[0];
+    const mirrored: Settings = primary
+      ? {
+          ...s,
+          camera_system: [primary.camera_system, primary.camera_model].filter(Boolean).join(" ") || s.camera_system,
+          camera_brand: primary.camera_system || s.camera_brand,
+          codec: primary.codec || primary.recording_format || s.codec,
+          resolution: primary.resolution || s.resolution,
+          frame_rate: primary.frame_rate || s.frame_rate,
+          color_space: primary.color_space || s.color_space,
+        }
+      : s;
+    const merged = { ...(((current as any)?.crew) ?? {}), ...mirrored };
     const { error } = await supabase.from("projects").update({ crew: merged }).eq("id", activeProjectId);
     setSaving(false);
     if (error) {
@@ -197,18 +270,22 @@ export default function ProductionSettingsPanel({
     onSaved?.();
   };
 
+  const primaryPkg = s.camera_packages[0];
+  const primaryCamToken = (primaryPkg?.camera_system || primaryPkg?.name || s.camera_brand || "CAM").toUpperCase().replace(/\s+/g, "").slice(0, 4);
+  const primaryCardToken = primaryPkg?.card_prefix ? `${primaryPkg.card_prefix}001` : "A001";
+
   const namingPreview = useMemo(() => {
     return s.naming_pattern
       .replace("{project}", (activeProjectName ?? "PROJECT").replace(/\s+/g, "_"))
       .replace("{date}", "20260704")
       .replace("{shootday}", "D01")
       .replace("{unit}", s.default_unit.replace(/\s+/g, "") || "MainUnit")
-      .replace("{camera}", (s.camera_brand || "CAM").toUpperCase().slice(0, 4))
-      .replace("{card}", "A001")
+      .replace("{camera}", primaryCamToken)
+      .replace("{card}", primaryCardToken)
       .replace("{clip}", "C0001")
       .replace("{scene}", "S01")
       .replace("{take}", "T01");
-  }, [s.naming_pattern, s.default_unit, s.camera_brand, activeProjectName]);
+  }, [s.naming_pattern, s.default_unit, primaryCamToken, primaryCardToken, activeProjectName]);
 
   const folderPreview = useMemo(() => {
     return s.folder_pattern
@@ -216,9 +293,9 @@ export default function ProductionSettingsPanel({
       .replace("{date}", "20260704")
       .replace("{shootday}", "D01")
       .replace("{unit}", s.default_unit.replace(/\s+/g, "") || "MainUnit")
-      .replace("{camera}", (s.camera_brand || "CAM").toUpperCase().slice(0, 4))
-      .replace("{card}", "A001");
-  }, [s.folder_pattern, s.default_unit, s.camera_brand, activeProjectName]);
+      .replace("{camera}", primaryCamToken)
+      .replace("{card}", primaryCardToken);
+  }, [s.folder_pattern, s.default_unit, primaryCamToken, primaryCardToken, activeProjectName]);
 
   if (!activeProjectId) {
     return (
@@ -294,33 +371,12 @@ export default function ProductionSettingsPanel({
             </Field>
           </FieldGroup>
 
-          <FieldGroup title="Equipment" description="Camera & codec presets pre-fill every ingest card.">
-            <Field label="Camera System">
-              <SearchSelect
-                value={s.camera_system}
-                onChange={(v) => {
-                  set("camera_system", v);
-                  const brand = v.split(/\s+/)[0] ?? "";
-                  if (brand) set("camera_brand", brand);
-                }}
-                options={CAMERA_PRESETS}
-              />
-            </Field>
-            <Field label="Camera Brand">
-              <Input value={s.camera_brand} onChange={(e) => set("camera_brand", e.target.value)} placeholder="ARRI / RED / Sony…" />
-            </Field>
-            <Field label="Codec">
-              <SearchSelect value={s.codec} onChange={(v) => set("codec", v)} options={CODEC_PRESETS} />
-            </Field>
-            <Field label="Resolution">
-              <SearchSelect value={s.resolution} onChange={(v) => set("resolution", v)} options={RESOLUTIONS} />
-            </Field>
-            <Field label="Frame Rate">
-              <SearchSelect value={s.frame_rate} onChange={(v) => set("frame_rate", v)} options={FRAME_RATES} />
-            </Field>
-            <Field label="Color Space">
-              <SearchSelect value={s.color_space} onChange={(v) => set("color_space", v)} options={COLOR_SPACES} />
-            </Field>
+          <CameraPackagesEditor
+            packages={s.camera_packages}
+            onChange={(pkgs) => set("camera_packages", pkgs)}
+          />
+
+          <FieldGroup title="Units" description="Default unit / team applied to every new ingest.">
             <Field label="Default Unit">
               <Input value={s.default_unit} onChange={(e) => set("default_unit", e.target.value)} placeholder="Main Unit" />
             </Field>
@@ -465,5 +521,143 @@ function TokenHints() {
         </code>
       ))}
     </div>
+  );
+}
+
+/* ============================================================
+ * Camera Packages Editor — add, edit, remove, reorder.
+ * Each package pre-fills its own ingest defaults so a production
+ * with A/B/C cams, drones and specialty rigs stays fast to log.
+ * ============================================================ */
+function CameraPackagesEditor({
+  packages, onChange,
+}: {
+  packages: CameraPackage[];
+  onChange: (p: CameraPackage[]) => void;
+}) {
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  const add = () => {
+    const next = [...packages, newPackage(packages.length)];
+    onChange(next);
+    setExpanded((e) => ({ ...e, [next[next.length - 1].id]: true }));
+  };
+  const remove = (id: string) => onChange(packages.filter((p) => p.id !== id));
+  const move = (id: string, dir: -1 | 1) => {
+    const i = packages.findIndex((p) => p.id === id);
+    if (i < 0) return;
+    const j = i + dir;
+    if (j < 0 || j >= packages.length) return;
+    const next = [...packages];
+    [next[i], next[j]] = [next[j], next[i]];
+    onChange(next);
+  };
+  const update = (id: string, patch: Partial<CameraPackage>) =>
+    onChange(packages.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+
+  return (
+    <section className="rounded-xl border border-border/50 bg-card/40 p-4 md:p-6 space-y-4">
+      <header className="flex items-start justify-between gap-3">
+        <div className="space-y-1">
+          <h2 className="text-base font-semibold tracking-tight">Camera Packages</h2>
+          <p className="text-xs text-muted-foreground">
+            One or many rigs — A Cam, B Cam, Drone, Crash Cam, Virtual Camera.
+            During ingest, users pick a package and a card; everything else is inherited.
+          </p>
+        </div>
+        <Button onClick={add} size="sm" variant="outline">
+          <Plus className="w-3.5 h-3.5 mr-1.5" /> Add Camera
+        </Button>
+      </header>
+
+      {packages.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-border/50 p-6 text-center">
+          <Video className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
+          <p className="text-sm font-medium">No camera packages yet</p>
+          <p className="text-xs text-muted-foreground">Add your first camera to start.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {packages.map((p, i) => {
+            const open = expanded[p.id] ?? false;
+            const summary = [p.camera_system, p.camera_model].filter(Boolean).join(" ")
+              || [p.codec, p.resolution].filter(Boolean).join(" · ")
+              || "Not configured";
+            return (
+              <div key={p.id} className="rounded-lg border border-border/50 bg-background/60">
+                <div className="flex items-center gap-2 p-2.5">
+                  <GripVertical className="w-4 h-4 text-muted-foreground" />
+                  <div className="flex flex-col gap-0.5">
+                    <button type="button" className="p-0.5 hover:bg-muted rounded disabled:opacity-30" onClick={() => move(p.id, -1)} disabled={i === 0} aria-label="Move up">
+                      <ChevronUp className="w-3 h-3" />
+                    </button>
+                    <button type="button" className="p-0.5 hover:bg-muted rounded disabled:opacity-30" onClick={() => move(p.id, 1)} disabled={i === packages.length - 1} aria-label="Move down">
+                      <ChevronDown className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <Input
+                    value={p.name}
+                    onChange={(e) => update(p.id, { name: e.target.value })}
+                    className="h-8 text-sm font-medium max-w-[180px]"
+                    placeholder="A Cam"
+                  />
+                  <span className="text-xs text-muted-foreground truncate flex-1">{summary}</span>
+                  <code className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border/40">
+                    prefix: {p.card_prefix || "—"}
+                  </code>
+                  <Button variant="ghost" size="sm" onClick={() => setExpanded((e) => ({ ...e, [p.id]: !open }))}>
+                    {open ? "Hide" : "Edit"}
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => remove(p.id)} aria-label="Remove camera">
+                    <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                  </Button>
+                </div>
+
+                {open && (
+                  <div className="border-t border-border/40 p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <Field label="Camera System">
+                      <SearchSelect value={p.camera_system} onChange={(v) => update(p.id, { camera_system: v })}
+                        options={["ARRI", "RED", "Sony", "Blackmagic", "Canon", "Panasonic", "DJI", "GoPro", "Insta360", "Other"]} />
+                    </Field>
+                    <Field label="Model">
+                      <SearchSelect value={p.camera_model} onChange={(v) => update(p.id, { camera_model: v })}
+                        options={CAMERA_PRESETS.map((c) => c.replace(/^(ARRI|RED|Sony|Blackmagic|Canon|Panasonic)\s+/, ""))} />
+                    </Field>
+                    <Field label="Recording Format">
+                      <SearchSelect value={p.recording_format} onChange={(v) => update(p.id, { recording_format: v, codec: p.codec || v })}
+                        options={CODEC_PRESETS} />
+                    </Field>
+                    <Field label="Codec">
+                      <SearchSelect value={p.codec} onChange={(v) => update(p.id, { codec: v })} options={CODEC_PRESETS} />
+                    </Field>
+                    <Field label="Resolution">
+                      <SearchSelect value={p.resolution} onChange={(v) => update(p.id, { resolution: v })}
+                        options={["8K", "6K", "4.6K", "4K DCI", "4K UHD", "2K", "1080p", "720p"]} />
+                    </Field>
+                    <Field label="Frame Rate">
+                      <SearchSelect value={p.frame_rate} onChange={(v) => update(p.id, { frame_rate: v })}
+                        options={["23.976", "24", "25", "29.97", "30", "50", "59.94", "60", "120"]} />
+                    </Field>
+                    <Field label="Color Space / Gamma">
+                      <SearchSelect value={p.color_space} onChange={(v) => update(p.id, { color_space: v })}
+                        options={COLOR_SPACES} />
+                    </Field>
+                    <Field label="Default LUT">
+                      <Input value={p.lut} onChange={(e) => update(p.id, { lut: e.target.value })} placeholder="e.g. ARRI LogC4 → Rec.709" />
+                    </Field>
+                    <Field label="Card Prefix">
+                      <Input value={p.card_prefix} onChange={(e) => update(p.id, { card_prefix: e.target.value })} placeholder="A" />
+                    </Field>
+                    <Field label="Folder Naming">
+                      <Input value={p.folder_naming} onChange={(e) => update(p.id, { folder_naming: e.target.value })} placeholder="{camera}/{card}" />
+                    </Field>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
   );
 }

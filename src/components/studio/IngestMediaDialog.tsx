@@ -59,13 +59,31 @@ export function runIngestValidation(input: {
   return { ok: true };
 }
 
+export type IngestCameraPackage = {
+  id: string;
+  name: string;
+  camera_system?: string;
+  camera_model?: string;
+  recording_format?: string;
+  codec?: string;
+  resolution?: string;
+  frame_rate?: string;
+  color_space?: string;
+  lut?: string;
+  card_prefix?: string;
+};
+
 export default function IngestMediaDialog({
   open, onOpenChange, activeProjectId, ingestDefaults,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   activeProjectId?: string;
-  ingestDefaults?: { cameraBrand?: string; unit?: string };
+  ingestDefaults?: {
+    cameraBrand?: string;
+    unit?: string;
+    cameraPackages?: IngestCameraPackage[];
+  };
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

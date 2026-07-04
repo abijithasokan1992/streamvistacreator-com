@@ -201,7 +201,23 @@ export default function StudioIngest({
    *  inherits the Active Production without asking the user to re-pick it. */
   activeProjectId?: string;
   /** Optional metadata inherited from the Active Production (crew JSONB). */
-  activeProjectDefaults?: { cameraBrand?: string; unit?: string };
+  activeProjectDefaults?: {
+    cameraBrand?: string;
+    unit?: string;
+    cameraPackages?: Array<{
+      id: string;
+      name: string;
+      camera_system?: string;
+      camera_model?: string;
+      recording_format?: string;
+      codec?: string;
+      resolution?: string;
+      frame_rate?: string;
+      color_space?: string;
+      lut?: string;
+      card_prefix?: string;
+    }>;
+  };
 } = {}) {
   const { user } = useAuth();
   const { workspaces, activeId, setActiveId, canWriteActive } = useWorkspaces();
@@ -217,10 +233,36 @@ export default function StudioIngest({
   const [cameraBrand, setCameraBrand] = useState(activeProjectDefaults?.cameraBrand ?? "");
   const [cameraLabel, setCameraLabel] = useState("");
   const [cardLabel, setCardLabel] = useState("");
+  const [cameraPackageId, setCameraPackageId] = useState<string>("");
   const [assetClass, setAssetClass] = useState("");
   const [notes, setNotes] = useState("");
   const [preserveStructure, setPreserveStructure] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
+  const cameraPackages = activeProjectDefaults?.cameraPackages ?? [];
+  const selectedPackage = useMemo(
+    () => cameraPackages.find((p) => p.id === cameraPackageId) ?? null,
+    [cameraPackages, cameraPackageId],
+  );
+
+  // Auto-select the first Camera Package on mount / project change so the DIT
+  // only has to touch it when swapping rigs.
+  useEffect(() => {
+    if (cameraPackages.length > 0 && !cameraPackageId) {
+      setCameraPackageId(cameraPackages[0].id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeProjectId, cameraPackages.length]);
+
+  // Inherit technical defaults from the selected Camera Package. Only overwrite
+  // fields the user hasn't already edited for this job.
+  useEffect(() => {
+    if (!selectedPackage) return;
+    setCameraBrand((prev) => prev || selectedPackage.camera_system || activeProjectDefaults?.cameraBrand || "");
+    setCameraLabel((prev) => prev || selectedPackage.name || "");
+    setCardLabel((prev) => prev || (selectedPackage.card_prefix ? `${selectedPackage.card_prefix}001` : ""));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPackage?.id]);
 
   // Keep the ingest form synchronized with the Active Production selected in
   // the dashboard. We only override an empty value so a per-job change sticks.
@@ -325,6 +367,23 @@ export default function StudioIngest({
             camera_brand: cameraBrand || null,
             camera: cameraLabel || null,
             card: cardLabel || null,
+            // Camera Package inheritance — codec / resolution / LUT / color space
+            // flow from Production Settings without extra typing.
+            camera_package: selectedPackage
+              ? {
+                  id: selectedPackage.id,
+                  name: selectedPackage.name,
+                  camera_system: selectedPackage.camera_system ?? null,
+                  camera_model: selectedPackage.camera_model ?? null,
+                  recording_format: selectedPackage.recording_format ?? null,
+                  codec: selectedPackage.codec ?? null,
+                  resolution: selectedPackage.resolution ?? null,
+                  frame_rate: selectedPackage.frame_rate ?? null,
+                  color_space: selectedPackage.color_space ?? null,
+                  lut: selectedPackage.lut ?? null,
+                  card_prefix: selectedPackage.card_prefix ?? null,
+                }
+              : null,
           },
         })
         .select("id")
@@ -626,24 +685,57 @@ export default function StudioIngest({
             <Label className="text-xs">Unit / Team</Label>
             <Input value={unitLabel} onChange={(e) => setUnitLabel(e.target.value)} className="h-9 text-xs" placeholder="Main Unit" />
           </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Camera brand</Label>
-            <Select value={cameraBrand || "__none"} onValueChange={(v) => setCameraBrand(v === "__none" ? "" : v)}>
-              <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Brand" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none">Brand</SelectItem>
-                {CAMERA_BRANDS.map((b) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Camera</Label>
-            <Input value={cameraLabel} onChange={(e) => setCameraLabel(e.target.value)} className="h-9 text-xs" placeholder="A-Cam" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Card / Mag</Label>
-            <Input value={cardLabel} onChange={(e) => setCardLabel(e.target.value)} className="h-9 text-xs" placeholder="A001" />
-          </div>
+          {cameraPackages.length > 0 ? (
+            <>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Camera Package</Label>
+                <Select value={cameraPackageId || "__none"} onValueChange={(v) => setCameraPackageId(v === "__none" ? "" : v)}>
+                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select camera" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none">Select camera</SelectItem>
+                    {cameraPackages.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}{p.camera_system || p.camera_model ? ` — ${[p.camera_system, p.camera_model].filter(Boolean).join(" ")}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Card / Mag</Label>
+                <Input value={cardLabel} onChange={(e) => setCardLabel(e.target.value)} className="h-9 text-xs"
+                  placeholder={selectedPackage?.card_prefix ? `${selectedPackage.card_prefix}001` : "A001"} />
+              </div>
+              <div className="space-y-1.5 col-span-full">
+                <p className="text-[11px] text-muted-foreground">
+                  {selectedPackage
+                    ? <>Inherited from <strong>{selectedPackage.name}</strong>: {[selectedPackage.camera_system, selectedPackage.camera_model, selectedPackage.codec, selectedPackage.resolution, selectedPackage.color_space].filter(Boolean).join(" · ") || "no defaults set yet"}.</>
+                    : <>Select a Camera Package to inherit codec, resolution, LUT and folder rules automatically.</>}
+                </p>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Camera brand</Label>
+                <Select value={cameraBrand || "__none"} onValueChange={(v) => setCameraBrand(v === "__none" ? "" : v)}>
+                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Brand" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none">Brand</SelectItem>
+                    {CAMERA_BRANDS.map((b) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Camera</Label>
+                <Input value={cameraLabel} onChange={(e) => setCameraLabel(e.target.value)} className="h-9 text-xs" placeholder="A-Cam" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Card / Mag</Label>
+                <Input value={cardLabel} onChange={(e) => setCardLabel(e.target.value)} className="h-9 text-xs" placeholder="A001" />
+              </div>
+            </>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-2">

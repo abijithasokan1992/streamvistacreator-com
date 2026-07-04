@@ -431,7 +431,7 @@ export default function StudioDashboard() {
   };
 
   const subtitle = useMemo(
-    () => "Home · Ingest · Storage · Library · Billing.",
+    () => "Home · Ingest · Buy Storage · Library · Billing.",
     [],
   );
 

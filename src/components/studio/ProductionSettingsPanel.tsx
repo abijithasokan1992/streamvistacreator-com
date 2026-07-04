@@ -244,7 +244,22 @@ export default function ProductionSettingsPanel({
       .select("crew")
       .eq("id", activeProjectId)
       .maybeSingle();
-    const merged = { ...(((current as any)?.crew) ?? {}), ...s };
+    // Mirror the primary Camera Package into the legacy flat fields so any
+    // downstream consumer that still reads crew.camera_system / codec / etc.
+    // keeps working without changes.
+    const primary = s.camera_packages[0];
+    const mirrored: Settings = primary
+      ? {
+          ...s,
+          camera_system: [primary.camera_system, primary.camera_model].filter(Boolean).join(" ") || s.camera_system,
+          camera_brand: primary.camera_system || s.camera_brand,
+          codec: primary.codec || primary.recording_format || s.codec,
+          resolution: primary.resolution || s.resolution,
+          frame_rate: primary.frame_rate || s.frame_rate,
+          color_space: primary.color_space || s.color_space,
+        }
+      : s;
+    const merged = { ...(((current as any)?.crew) ?? {}), ...mirrored };
     const { error } = await supabase.from("projects").update({ crew: merged }).eq("id", activeProjectId);
     setSaving(false);
     if (error) {

@@ -1046,7 +1046,7 @@ export default function StudioDashboard() {
   const { rows, loading, refresh } = useStudioVaultRows();
   const quota = useStorageQuota();
   const { activeId: workspaceId, canWriteActive } = useWorkspaces();
-  const { activeProjectId, activeProject, setActiveProjectId } = useActiveProject(workspaceId);
+  const { activeProjectId, activeProject, setActiveProjectId, refreshActiveProject } = useActiveProject(workspaceId);
 
   // Production Workspace — single primary entry points.
   const [ingestOpen, setIngestOpen] = useState(false);

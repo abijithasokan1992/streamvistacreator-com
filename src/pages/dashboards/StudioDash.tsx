@@ -751,14 +751,28 @@ function ActivityPanel({ activeProjectId, activeProjectName }: { activeProjectId
   return (
     <div className="space-y-6">
       <section className="rounded-2xl border border-border/50 p-6">
-        <div className="flex items-center justify-between gap-3 mb-4">
-          <h3 className="font-semibold text-sm flex items-center gap-2">
-            <ListChecks className="w-4 h-4 text-accent" /> Recent Ingest Activity
-          </h3>
-          <Button variant="outline" size="sm" onClick={refresh} disabled={loading || !activeId}>
-            <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-semibold text-sm flex items-center gap-2">
+              <ListChecks className="w-4 h-4 text-accent" /> Recent Ingest Activity
+            </h3>
+            {activeProjectId && activeProjectName && (
+              <span className="text-[10px] uppercase tracking-widest font-mono border rounded-full px-2 py-0.5 bg-accent/10 text-accent border-accent/30">
+                {scope === "active" ? `Scoped · ${activeProjectName}` : "All workspace jobs"}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {activeProjectId && (
+              <Button variant="ghost" size="sm" onClick={() => setScope(scope === "active" ? "all" : "active")} className="text-xs h-8">
+                {scope === "active" ? "Show all" : "Scope to Active"}
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={refresh} disabled={loading || !activeId}>
+              <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {loading ? (
@@ -766,7 +780,11 @@ function ActivityPanel({ activeProjectId, activeProjectName }: { activeProjectId
             <Loader2 className="w-5 h-5 animate-spin" />
           </div>
         ) : jobs.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No ingest jobs yet for this workspace.</p>
+          <p className="text-sm text-muted-foreground">
+            {scope === "active" && activeProjectName
+              ? `No ingest jobs yet for “${activeProjectName}”.`
+              : "No ingest jobs yet for this workspace."}
+          </p>
         ) : (
           <div className="space-y-3">
             {jobs.map((j) => {

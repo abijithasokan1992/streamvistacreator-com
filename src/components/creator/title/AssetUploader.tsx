@@ -7,6 +7,7 @@ import { uploadTitleAsset, UploadValidationError } from "@/lib/creator/titleApi"
 import type { AssetCategory } from "@/lib/creator/titleSchema";
 import { mapUploadError, type UploadTelemetry } from "@/lib/ociMultipartUpload";
 import { useWorkspaces } from "@/hooks/useWorkspaces";
+import { AssetPreviewModal, canPreview } from "./AssetPreview";
 
 // ---------- Allowed-format & size matrix (client-side preflight) ----------
 const GB = 1024 * 1024 * 1024;

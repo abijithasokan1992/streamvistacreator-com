@@ -153,7 +153,11 @@ export function TitleEditor({
       setAutoSavedAt(Date.now());
       if (!silent) toast.success("Saved.");
     } catch (e) {
-      if (!silent) toast.error(e instanceof Error ? e.message : "Save failed.");
+      // Never surface raw Zod / JSON errors to the user.
+      const raw = e instanceof Error ? e.message : "";
+      const looksTechnical = /^\s*[\[{]/.test(raw) || /ZodError|"code":/.test(raw);
+      const msg = !raw || looksTechnical ? "Please review the highlighted fields before saving." : raw;
+      if (!silent) toast.error(msg);
     } finally { setSaving(false); }
   }, [title, meta, name]);
 
@@ -1176,24 +1180,43 @@ function MetadataTab({
             onChange={(v) => upd("crew", v as any)}
             blank={() => ({ name: "", role: "" })}
             addLabel="Add crew member"
-            render={(c, set) => (
-              <div className="grid sm:grid-cols-2 gap-2">
-                <TextInput placeholder="Name" value={c.name} disabled={readOnly}
-                  onChange={(e) => set({ ...c, name: e.target.value })} />
-                <>
-                  <TextInput
-                    list="crew-role-options"
-                    placeholder="Role"
-                    value={c.role}
-                    disabled={readOnly}
-                    onChange={(e) => set({ ...c, role: e.target.value })}
-                  />
-                </>
-              </div>
-            )}
+            render={(c, set) => {
+              const needsName = !c.name?.trim() && !!c.role?.trim();
+              return (
+                <div className="space-y-1">
+                  <div className="grid sm:grid-cols-2 gap-2">
+                    <TextInput
+                      placeholder="Name"
+                      value={c.name}
+                      disabled={readOnly}
+                      aria-invalid={needsName || undefined}
+                      className={needsName ? "border-destructive/60 focus-visible:ring-destructive/40" : undefined}
+                      onChange={(e) => set({ ...c, name: e.target.value })}
+                    />
+                    <TextInput
+                      list="crew-role-options"
+                      placeholder="Role"
+                      value={c.role}
+                      disabled={readOnly}
+                      onChange={(e) => set({ ...c, role: e.target.value })}
+                    />
+                  </div>
+                  {needsName && (
+                    <p className="text-[11px] text-destructive">
+                      Please enter a crew member name, or remove this empty row.
+                    </p>
+                  )}
+                </div>
+              );
+            }}
           />
+          <p className="text-[11px] text-muted-foreground mt-1.5">
+            Empty rows are ignored automatically when you save.
+          </p>
         </section>
       </div>
+
+
 
       {/* Awards */}
       <div className="grid md:grid-cols-2 gap-6">

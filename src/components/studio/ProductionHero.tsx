@@ -63,6 +63,7 @@ export default function ProductionHero({
   onOpenLibrary,
   onEdit,
   onSwitch,
+  onNew,
 }: {
   workspaceId: string | null;
   activeProject: ActiveProject;
@@ -72,6 +73,7 @@ export default function ProductionHero({
   onOpenLibrary: () => void;
   onEdit?: () => void;
   onSwitch?: () => void;
+  onNew?: () => void;
 }) {
   const crew = activeProject?.crew ?? {};
   const cover: string | undefined = crew.cover_url || crew.cover_photo;

@@ -47,7 +47,7 @@ export const Navbar = () => {
           </Link>
           <Link
             to="/auth?intent=signup"
-            className="cta-guide relative text-xs md:text-sm font-semibold px-4 md:px-5 py-2.5 rounded-full bg-gradient-primary text-primary-foreground hover:scale-105 transition-transform"
+            className="cta-guide relative text-xs md:text-sm font-semibold px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-full bg-gradient-primary text-primary-foreground hover:scale-105 transition-transform whitespace-nowrap"
           >
             Get Started
           </Link>

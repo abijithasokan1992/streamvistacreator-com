@@ -367,33 +367,12 @@ export default function ProductionSettingsPanel({
             </Field>
           </FieldGroup>
 
-          <FieldGroup title="Equipment" description="Camera & codec presets pre-fill every ingest card.">
-            <Field label="Camera System">
-              <SearchSelect
-                value={s.camera_system}
-                onChange={(v) => {
-                  set("camera_system", v);
-                  const brand = v.split(/\s+/)[0] ?? "";
-                  if (brand) set("camera_brand", brand);
-                }}
-                options={CAMERA_PRESETS}
-              />
-            </Field>
-            <Field label="Camera Brand">
-              <Input value={s.camera_brand} onChange={(e) => set("camera_brand", e.target.value)} placeholder="ARRI / RED / Sony…" />
-            </Field>
-            <Field label="Codec">
-              <SearchSelect value={s.codec} onChange={(v) => set("codec", v)} options={CODEC_PRESETS} />
-            </Field>
-            <Field label="Resolution">
-              <SearchSelect value={s.resolution} onChange={(v) => set("resolution", v)} options={RESOLUTIONS} />
-            </Field>
-            <Field label="Frame Rate">
-              <SearchSelect value={s.frame_rate} onChange={(v) => set("frame_rate", v)} options={FRAME_RATES} />
-            </Field>
-            <Field label="Color Space">
-              <SearchSelect value={s.color_space} onChange={(v) => set("color_space", v)} options={COLOR_SPACES} />
-            </Field>
+          <CameraPackagesEditor
+            packages={s.camera_packages}
+            onChange={(pkgs) => set("camera_packages", pkgs)}
+          />
+
+          <FieldGroup title="Units" description="Default unit / team applied to every new ingest.">
             <Field label="Default Unit">
               <Input value={s.default_unit} onChange={(e) => set("default_unit", e.target.value)} placeholder="Main Unit" />
             </Field>

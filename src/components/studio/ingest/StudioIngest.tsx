@@ -201,7 +201,23 @@ export default function StudioIngest({
    *  inherits the Active Production without asking the user to re-pick it. */
   activeProjectId?: string;
   /** Optional metadata inherited from the Active Production (crew JSONB). */
-  activeProjectDefaults?: { cameraBrand?: string; unit?: string };
+  activeProjectDefaults?: {
+    cameraBrand?: string;
+    unit?: string;
+    cameraPackages?: Array<{
+      id: string;
+      name: string;
+      camera_system?: string;
+      camera_model?: string;
+      recording_format?: string;
+      codec?: string;
+      resolution?: string;
+      frame_rate?: string;
+      color_space?: string;
+      lut?: string;
+      card_prefix?: string;
+    }>;
+  };
 } = {}) {
   const { user } = useAuth();
   const { workspaces, activeId, setActiveId, canWriteActive } = useWorkspaces();
@@ -217,10 +233,36 @@ export default function StudioIngest({
   const [cameraBrand, setCameraBrand] = useState(activeProjectDefaults?.cameraBrand ?? "");
   const [cameraLabel, setCameraLabel] = useState("");
   const [cardLabel, setCardLabel] = useState("");
+  const [cameraPackageId, setCameraPackageId] = useState<string>("");
   const [assetClass, setAssetClass] = useState("");
   const [notes, setNotes] = useState("");
   const [preserveStructure, setPreserveStructure] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
+  const cameraPackages = activeProjectDefaults?.cameraPackages ?? [];
+  const selectedPackage = useMemo(
+    () => cameraPackages.find((p) => p.id === cameraPackageId) ?? null,
+    [cameraPackages, cameraPackageId],
+  );
+
+  // Auto-select the first Camera Package on mount / project change so the DIT
+  // only has to touch it when swapping rigs.
+  useEffect(() => {
+    if (cameraPackages.length > 0 && !cameraPackageId) {
+      setCameraPackageId(cameraPackages[0].id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeProjectId, cameraPackages.length]);
+
+  // Inherit technical defaults from the selected Camera Package. Only overwrite
+  // fields the user hasn't already edited for this job.
+  useEffect(() => {
+    if (!selectedPackage) return;
+    setCameraBrand((prev) => prev || selectedPackage.camera_system || activeProjectDefaults?.cameraBrand || "");
+    setCameraLabel((prev) => prev || selectedPackage.name || "");
+    setCardLabel((prev) => prev || (selectedPackage.card_prefix ? `${selectedPackage.card_prefix}001` : ""));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPackage?.id]);
 
   // Keep the ingest form synchronized with the Active Production selected in
   // the dashboard. We only override an empty value so a per-job change sticks.

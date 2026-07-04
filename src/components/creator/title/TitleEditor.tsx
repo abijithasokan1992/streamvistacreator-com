@@ -347,10 +347,10 @@ export function TitleEditor({
                   onClick={handleSubmit}
                   disabled={submitting || !ready}
                   className="inline-flex items-center gap-1.5 rounded-md bg-accent text-accent-foreground text-xs font-semibold px-3.5 py-2 disabled:opacity-40"
-                  title={ready ? "Submit for review" : `Missing: ${missing.join(", ")}`}
+                  title={ready ? "Submit for review" : `A few items still need attention: ${missing.slice(0, 3).join(", ")}${missing.length > 3 ? "…" : ""}`}
                 >
                   {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                  <span className="hidden sm:inline">Submit to Admin</span>
+                  <span className="hidden sm:inline">Submit for review</span>
                   <span className="sm:hidden">Submit</span>
                 </button>
               )}

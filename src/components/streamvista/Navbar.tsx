@@ -8,6 +8,7 @@ const Wordmark = () => (
 );
 
 const NAV_LINKS = [
+  { to: "/", label: "Home" },
   { to: "/#platform", label: "Solutions" },
   { to: "/pricing", label: "Pricing" },
   { to: "/about", label: "About" },

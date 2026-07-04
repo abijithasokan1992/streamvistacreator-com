@@ -192,7 +192,7 @@ const PublicRoutes = () => (
     <Route path="/c2c-setup" element={<C2CSetupManual />} />
     <Route path="/blog/camera-to-cloud-guide" element={<CameraToCloudGuide />} />
     <Route path="/blog/streamvista-vs-frame-io-camera-to-cloud" element={<StreamVistaVsFrameIO />} />
-    <Route path="/support" element={<Contact />} />
+    <Route path="/support" element={<Navigate to="/contact" replace />} />
     <Route path="/contact" element={<Contact />} />
     <Route path="/unsubscribe" element={<Unsubscribe />} />
     <Route path="/invoice/:id" element={<InvoiceReceipt />} />

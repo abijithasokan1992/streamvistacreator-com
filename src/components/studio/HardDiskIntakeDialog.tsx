@@ -192,7 +192,7 @@ export default function HardDiskIntakeDialog({
         </button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Truck className="w-5 h-5 text-accent" /> Hard-disk Import Intake
@@ -201,9 +201,7 @@ export default function HardDiskIntakeDialog({
 
         <div className="space-y-5">
           <p className="text-xs text-muted-foreground">
-            Log a physical drive shipment so the StreamVista ops team can track, receive
-            and ingest it into your vault. You'll get a status update as it moves through
-            received → ingesting → ingested.
+            Log a physical drive shipment so our ops team can receive and ingest it into your vault. You'll get status updates as it moves through received → ingesting → ingested.
           </p>
 
           <div className="grid sm:grid-cols-2 gap-3">

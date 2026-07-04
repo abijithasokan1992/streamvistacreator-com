@@ -239,6 +239,7 @@ export default function StudioIngest({
   const [notes, setNotes] = useState("");
   const [preserveStructure, setPreserveStructure] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
 
   const cameraPackages = activeProjectDefaults?.cameraPackages ?? [];
   const selectedPackage = useMemo(

@@ -269,7 +269,7 @@ export default function MyTitlesSection() {
           titleId={editorId}
           mode={editorMode}
           onClose={() => { setEditorId(null); reload(); }}
-          onSubmitted={() => { setEditorId(null); reload(); toast.success("Submitted to Admin."); }}
+          onSubmitted={() => { setEditorId(null); reload(); toast.success("Submitted for review."); }}
         />
       )}
     </div>

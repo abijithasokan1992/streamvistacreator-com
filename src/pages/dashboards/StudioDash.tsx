@@ -463,9 +463,65 @@ function fmtBytes(n: number): string {
 }
 
 /* ============================================================
+ * Active Production — cross-tab synchronization
+ * ============================================================ */
+const ACTIVE_PROJECT_KEY = "sv:active-project";
+function activeProjKey(wsId: string | null) {
+  return wsId ? `${ACTIVE_PROJECT_KEY}:${wsId}` : ACTIVE_PROJECT_KEY;
+}
+
+type ActiveProject = { id: string; name: string; crew?: any } | null;
+
+function useActiveProject(workspaceId: string | null) {
+  const [projectId, setProjectIdState] = useState<string | null>(() => {
+    if (typeof window === "undefined" || !workspaceId) return null;
+    return localStorage.getItem(activeProjKey(workspaceId));
+  });
+  const [project, setProject] = useState<ActiveProject>(null);
+
+  // Reload persisted selection when workspace changes.
+  useEffect(() => {
+    if (!workspaceId) { setProjectIdState(null); return; }
+    try {
+      const v = localStorage.getItem(activeProjKey(workspaceId));
+      setProjectIdState(v);
+    } catch { setProjectIdState(null); }
+  }, [workspaceId]);
+
+  // Hydrate the active project record (name + crew metadata for inheritance).
+  useEffect(() => {
+    if (!projectId) { setProject(null); return; }
+    (async () => {
+      const { data } = await supabase
+        .from("projects")
+        .select("id,name,crew")
+        .eq("id", projectId)
+        .maybeSingle();
+      setProject((data as any) ?? null);
+    })();
+  }, [projectId]);
+
+  const setActiveProjectId = useCallback((id: string | null) => {
+    setProjectIdState(id);
+    try {
+      if (!workspaceId) return;
+      if (id) localStorage.setItem(activeProjKey(workspaceId), id);
+      else localStorage.removeItem(activeProjKey(workspaceId));
+    } catch {}
+  }, [workspaceId]);
+
+  return { activeProjectId: projectId, activeProject: project, setActiveProjectId };
+}
+
+/* ============================================================
  * 5) PRODUCTION PANEL — active workspace + title list
  * ============================================================ */
-function ProductionPanel() {
+function ProductionPanel({
+  activeProjectId, onSetActive,
+}: {
+  activeProjectId: string | null;
+  onSetActive: (id: string | null) => void;
+}) {
   const { user } = useAuth();
   const { activeId, workspaces, canWriteActive } = useWorkspaces();
   const [projects, setProjects] = useState<Array<{ id: string; name: string; created_at: string; crew?: any }>>([]);
@@ -493,6 +549,14 @@ function ProductionPanel() {
 
   useEffect(() => { refresh(); }, [refresh]);
 
+  // Auto-select the newest Production as Active when none is set. Keeps
+  // Upload / Activity / Storage tabs meaningful without manual pinning.
+  useEffect(() => {
+    if (!loading && projects.length > 0 && !activeProjectId) {
+      onSetActive(projects[0].id);
+    }
+  }, [loading, projects, activeProjectId, onSetActive]);
+
   const canSubmit = !!activeId && !!user && !!name.trim() && !!company.trim() && !!contentType && !!startDate && !!status;
 
   const handleCreate = async () => {
@@ -500,7 +564,7 @@ function ProductionPanel() {
     if (!canWriteActive) { toast.error("You only have viewer access to this workspace"); return; }
     setSubmitting(true);
     try {
-      const { error } = await supabase.from("projects").insert({
+      const { data, error } = await supabase.from("projects").insert({
         workspace_id: activeId,
         user_id: user.id,
         name: name.trim(),
@@ -513,11 +577,12 @@ function ProductionPanel() {
           folders: DEFAULT_FOLDERS,
           members: [],
         } as any,
-      });
+      }).select("id").single();
       if (error) throw error;
       toast.success("Title created");
       setName(""); setCompany(""); setShowForm(false);
       await refresh();
+      if (data?.id) onSetActive(data.id);
     } catch (e) {
       toast.error((e as Error).message || "Failed to create Title");
     } finally {
@@ -603,19 +668,33 @@ function ProductionPanel() {
           <p className="text-sm text-muted-foreground">No productions yet. Create a title to begin.</p>
         ) : (
           <div className="space-y-2">
-            {projects.map((p) => (
-              <div key={p.id} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
-                <div>
-                  <p className="text-sm font-medium">{p.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {p.crew?.content_type ?? "Production"} · {p.crew?.title_status ?? "Active"}
-                  </p>
+            {projects.map((p) => {
+              const isActive = p.id === activeProjectId;
+              return (
+                <div key={p.id} className={`flex items-center justify-between py-2 border-b border-border/30 last:border-0 ${isActive ? "bg-accent/5 rounded-md px-2" : ""}`}>
+                  <div>
+                    <p className="text-sm font-medium flex items-center gap-2">
+                      {p.name}
+                      {isActive && <StatusPill tone="ok">Active</StatusPill>}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {p.crew?.content_type ?? "Production"} · {p.crew?.title_status ?? "Active"}
+                      {p.crew?.title_number && <> · <span className="font-mono">{p.crew.title_number}</span></>}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-muted-foreground hidden sm:inline">
+                      {new Date(p.created_at).toLocaleDateString()}
+                    </span>
+                    {!isActive && (
+                      <Button size="sm" variant="ghost" className="text-xs h-7" onClick={() => onSetActive(p.id)}>
+                        Set active
+                      </Button>
+                    )}
+                  </div>
                 </div>
-                <span className="text-[11px] text-muted-foreground">
-                  {new Date(p.created_at).toLocaleDateString()}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
@@ -640,37 +719,60 @@ type JobRow = {
   source_summary: any;
 };
 
-function ActivityPanel() {
+function ActivityPanel({ activeProjectId, activeProjectName }: { activeProjectId: string | null; activeProjectName?: string | null }) {
   const { activeId } = useWorkspaces();
   const [jobs, setJobs] = useState<JobRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [scope, setScope] = useState<"active" | "all">(activeProjectId ? "active" : "all");
+
+  // Follow the Active Production automatically — if the user pins one, scope
+  // to it; if they clear it, fall back to workspace-wide activity.
+  useEffect(() => {
+    setScope(activeProjectId ? "active" : "all");
+  }, [activeProjectId]);
 
   const refresh = useCallback(async () => {
     if (!activeId) { setJobs([]); setLoading(false); return; }
     setLoading(true);
-    const { data } = await supabase
+    let q = supabase
       .from("ingest_jobs")
-      .select("id,job_mode,status,destination_type,total_bytes,transferred_bytes,total_files,completed_files,failed_files,created_at,source_summary")
+      .select("id,job_mode,status,destination_type,total_bytes,transferred_bytes,total_files,completed_files,failed_files,created_at,source_summary,project_id")
       .eq("workspace_id", activeId)
       .order("created_at", { ascending: false })
       .limit(20);
+    if (scope === "active" && activeProjectId) q = q.eq("project_id", activeProjectId);
+    const { data } = await q;
     setJobs((data as JobRow[]) ?? []);
     setLoading(false);
-  }, [activeId]);
+  }, [activeId, scope, activeProjectId]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
   return (
     <div className="space-y-6">
       <section className="rounded-2xl border border-border/50 p-6">
-        <div className="flex items-center justify-between gap-3 mb-4">
-          <h3 className="font-semibold text-sm flex items-center gap-2">
-            <ListChecks className="w-4 h-4 text-accent" /> Recent Ingest Activity
-          </h3>
-          <Button variant="outline" size="sm" onClick={refresh} disabled={loading || !activeId}>
-            <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-semibold text-sm flex items-center gap-2">
+              <ListChecks className="w-4 h-4 text-accent" /> Recent Ingest Activity
+            </h3>
+            {activeProjectId && activeProjectName && (
+              <span className="text-[10px] uppercase tracking-widest font-mono border rounded-full px-2 py-0.5 bg-accent/10 text-accent border-accent/30">
+                {scope === "active" ? `Scoped · ${activeProjectName}` : "All workspace jobs"}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {activeProjectId && (
+              <Button variant="ghost" size="sm" onClick={() => setScope(scope === "active" ? "all" : "active")} className="text-xs h-8">
+                {scope === "active" ? "Show all" : "Scope to Active"}
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={refresh} disabled={loading || !activeId}>
+              <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {loading ? (
@@ -678,7 +780,11 @@ function ActivityPanel() {
             <Loader2 className="w-5 h-5 animate-spin" />
           </div>
         ) : jobs.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No ingest jobs yet for this workspace.</p>
+          <p className="text-sm text-muted-foreground">
+            {scope === "active" && activeProjectName
+              ? `No ingest jobs yet for “${activeProjectName}”.`
+              : "No ingest jobs yet for this workspace."}
+          </p>
         ) : (
           <div className="space-y-3">
             {jobs.map((j) => {
@@ -798,6 +904,8 @@ export default function StudioDashboard() {
   const [tab, setTab] = useState<string>("production");
   const { rows, loading, refresh } = useStudioVaultRows();
   const quota = useStorageQuota();
+  const { activeId: workspaceId } = useWorkspaces();
+  const { activeProjectId, activeProject, setActiveProjectId } = useActiveProject(workspaceId);
 
   const refreshAfterPurchase = () => {
     refresh();
@@ -809,6 +917,25 @@ export default function StudioDashboard() {
     [],
   );
 
+  // Inherit metadata from the Active Production's `crew` JSONB so Upload
+  // pre-fills without asking the DIT to retype known values.
+  const ingestDefaults = useMemo(() => {
+    const c = activeProject?.crew ?? {};
+    const cameraBrandGuess: string | undefined =
+      typeof c.camera_system === "string" ? String(c.camera_system).split(/\s+/)[0] : undefined;
+    return {
+      cameraBrand: cameraBrandGuess || c.camera_brand || undefined,
+      unit: c.default_unit || c.unit || undefined,
+    };
+  }, [activeProject?.crew]);
+
+  const availableGb = useMemo(() => {
+    const paid = rows.reduce((s, r) => s + r.allocated_gb, 0);
+    const used = rows.reduce((s, r) => s + r.used_gb, 0);
+    const bonus = quota.testingModeEnabled ? quota.testingOverrideGb : 0;
+    return Math.max(0, paid + bonus - used);
+  }, [rows, quota.testingModeEnabled, quota.testingOverrideGb]);
+
   return (
     <RoleDashboardShell expectedRole="studio" title="Production Control Center" subtitle={subtitle}>
       <div className="mb-4 flex justify-end">
@@ -819,6 +946,34 @@ export default function StudioDashboard() {
           <ShieldCheck className="w-3.5 h-3.5" /> My Studio Profile
         </Link>
       </div>
+
+      {/* Active Production strip — persistent across all tabs so the user
+          always knows which production Upload / Activity / Storage act on. */}
+      {activeProject ? (
+        <div className="mb-4 rounded-xl border border-accent/30 bg-accent/5 p-3 flex items-center justify-between gap-3 flex-wrap">
+          <div className="min-w-0 flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] uppercase tracking-widest font-mono text-accent">Active Production</span>
+            <span className="font-medium text-sm truncate">{activeProject.name}</span>
+            {activeProject.crew?.title_number && (
+              <span className="text-[11px] font-mono text-muted-foreground">{activeProject.crew.title_number}</span>
+            )}
+            {activeProject.crew?.title_status && (
+              <StatusPill tone="ok">{activeProject.crew.title_status}</StatusPill>
+            )}
+            <span className="text-[11px] text-muted-foreground">· {availableGb.toFixed(1)} GB available</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setTab("production")}>Switch</Button>
+            <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setActiveProjectId(null)}>Clear</Button>
+          </div>
+        </div>
+      ) : workspaceId ? (
+        <div className="mb-4 rounded-xl border border-dashed border-border/50 p-3 text-xs text-muted-foreground flex items-center justify-between gap-3">
+          <span>No active production. Pick one so Upload, Activity, and Storage stay in sync.</span>
+          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setTab("production")}>Choose</Button>
+        </div>
+      ) : null}
+
       <Tabs value={tab} onValueChange={setTab} className="w-full">
         <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full max-w-3xl">
           <TabsTrigger value="production"><Clapperboard className="w-3.5 h-3.5 mr-1.5" />Production</TabsTrigger>
@@ -828,16 +983,19 @@ export default function StudioDashboard() {
         </TabsList>
 
         <TabsContent value="production" className="mt-6">
-          <ProductionPanel />
+          <ProductionPanel activeProjectId={activeProjectId} onSetActive={setActiveProjectId} />
         </TabsContent>
         <TabsContent value="upload" className="mt-6">
-          <StudioIngest />
+          <StudioIngest
+            activeProjectId={activeProjectId ?? undefined}
+            activeProjectDefaults={ingestDefaults}
+          />
         </TabsContent>
         <TabsContent value="storage" className="mt-6">
           <StoragePanel rows={rows} loading={loading} onGoBuy={() => setTab("storage")} onPurchased={refreshAfterPurchase} />
         </TabsContent>
         <TabsContent value="activity" className="mt-6">
-          <ActivityPanel />
+          <ActivityPanel activeProjectId={activeProjectId} activeProjectName={activeProject?.name ?? null} />
         </TabsContent>
       </Tabs>
     </RoleDashboardShell>

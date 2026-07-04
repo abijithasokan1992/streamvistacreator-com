@@ -189,7 +189,16 @@ function useWorkspaceProjects(workspaceId: string | null) {
 /* ============================================================
  * Main component
  * ============================================================ */
-export default function StudioIngest() {
+export default function StudioIngest({
+  activeProjectId,
+  activeProjectDefaults,
+}: {
+  /** When provided, the ingest form is pre-bound to this Production so Upload
+   *  inherits the Active Production without asking the user to re-pick it. */
+  activeProjectId?: string;
+  /** Optional metadata inherited from the Active Production (crew JSONB). */
+  activeProjectDefaults?: { cameraBrand?: string; unit?: string };
+} = {}) {
   const { user } = useAuth();
   const { workspaces, activeId, setActiveId, canWriteActive } = useWorkspaces();
   const quota = useStorageQuota();
@@ -198,16 +207,25 @@ export default function StudioIngest() {
 
   const [mode, setMode] = useState<IngestMode>("connected_drive");
   const [scan, setScan] = useState<ScanSummary | null>(null);
-  const [projectId, setProjectId] = useState<string>("");
+  const [projectId, setProjectId] = useState<string>(activeProjectId ?? "");
   const [shootDay, setShootDay] = useState("");
-  const [unitLabel, setUnitLabel] = useState("");
-  const [cameraBrand, setCameraBrand] = useState("");
+  const [unitLabel, setUnitLabel] = useState(activeProjectDefaults?.unit ?? "");
+  const [cameraBrand, setCameraBrand] = useState(activeProjectDefaults?.cameraBrand ?? "");
   const [cameraLabel, setCameraLabel] = useState("");
   const [cardLabel, setCardLabel] = useState("");
   const [assetClass, setAssetClass] = useState("");
   const [notes, setNotes] = useState("");
   const [preserveStructure, setPreserveStructure] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
+  // Keep the ingest form synchronized with the Active Production selected in
+  // the dashboard. We only override an empty value so a per-job change sticks.
+  useEffect(() => {
+    if (activeProjectId && activeProjectId !== projectId) setProjectId(activeProjectId);
+    if (activeProjectDefaults?.cameraBrand && !cameraBrand) setCameraBrand(activeProjectDefaults.cameraBrand);
+    if (activeProjectDefaults?.unit && !unitLabel) setUnitLabel(activeProjectDefaults.unit);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeProjectId, activeProjectDefaults?.cameraBrand, activeProjectDefaults?.unit]);
   const [liveProgress, setLiveProgress] = useState<{
     jobId: string | null;
     currentFile: string;

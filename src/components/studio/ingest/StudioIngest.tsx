@@ -684,7 +684,7 @@ export default function StudioIngest() {
                 )}
               </div>
               <div className="flex flex-col gap-2 items-end">
-                <Button onClick={startIngest} disabled={submitting || !canWriteActive}
+                <Button onClick={startIngest} disabled={submitting || !canWriteActive || !contextReady}
                         className="bg-gradient-primary text-primary-foreground glow-primary">
                   {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Cloud className="w-4 h-4 mr-2" />}
                   Start ingest

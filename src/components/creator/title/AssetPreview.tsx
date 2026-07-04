@@ -4,6 +4,8 @@ import {
   ExternalLink, ShieldCheck, PictureInPicture2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+
 
 /**
  * AssetPreview — secure, in-app preview for images, PDFs, video and audio.
@@ -21,7 +23,10 @@ export type PreviewableAsset = {
   par_url: string | null;
   par_expires_at: string | null;
   category_label?: string;
+  /** recent_uploads.id — enables on-demand PAR mint when par_url is missing/expired. */
+  upload_id?: string | null;
 };
+
 
 export type PreviewKind = "image" | "pdf" | "video" | "audio" | "other";
 
@@ -52,8 +57,34 @@ export function AssetPreviewModal({
   const kind = inferPreviewKind(asset.mime_type, asset.file_name);
   const [loading, setLoading] = useState(true);
   const [pipSupported, setPipSupported] = useState(false);
+  const [url, setUrl] = useState<string | null>(asset.par_url ?? null);
+  const [minting, setMinting] = useState(false);
+  const [mintError, setMintError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const url = asset.par_url;
+
+  // Mint a signed preview URL on demand when the cached one is missing/expired.
+  useEffect(() => {
+    const expired = asset.par_expires_at
+      ? new Date(asset.par_expires_at).getTime() - Date.now() < 60_000
+      : true;
+    const needMint = (!asset.par_url || expired) && !!asset.upload_id;
+    if (!needMint) return;
+    let cancelled = false;
+    setMinting(true);
+    setMintError(null);
+    supabase.functions.invoke("mint-preview-par", {
+      body: { upload_id: asset.upload_id },
+    }).then(({ data, error }) => {
+      if (cancelled) return;
+      if (error || !data?.url) {
+        setMintError(data?.error || error?.message || "Could not prepare secure preview.");
+      } else {
+        setUrl(data.url as string);
+      }
+    }).finally(() => { if (!cancelled) setMinting(false); });
+    return () => { cancelled = true; };
+  }, [asset.par_url, asset.par_expires_at, asset.upload_id]);
+
 
   // Detect PiP support once mounted.
   useEffect(() => {
@@ -201,8 +232,16 @@ export function AssetPreviewModal({
         {/* Body */}
         <div className="relative flex-1 min-h-[240px] sm:min-h-[320px] bg-black/40 grid place-items-center overflow-auto">
           {!url ? (
-            <FallbackNotice message="Preview not available yet. The secure link is still being prepared — try again in a moment." />
+            minting ? (
+              <div className="flex flex-col items-center gap-3 px-6 py-10 text-sm text-muted-foreground">
+                <Loader2 className="w-5 h-5 animate-spin text-accent" />
+                Preparing secure preview…
+              </div>
+            ) : (
+              <FallbackNotice message={mintError ?? "Preview not available yet. The secure link is still being prepared — try again in a moment."} />
+            )
           ) : kind === "image" ? (
+
             <>
               {loading && <Loader2 className="absolute w-5 h-5 animate-spin text-accent" />}
               <img

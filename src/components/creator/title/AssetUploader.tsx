@@ -330,8 +330,9 @@ export function AssetList({
 }: { assets: { id: string; upload: any; is_primary: boolean; category?: string }[]; emptyHint?: string }) {
   const [previewing, setPreviewing] = useState<{
     file_name: string; mime_type: string | null; par_url: string | null;
-    par_expires_at: string | null; category_label?: string;
+    par_expires_at: string | null; category_label?: string; upload_id?: string | null;
   } | null>(null);
+
 
   if (!assets.length) {
     return (
@@ -378,7 +379,7 @@ export function AssetList({
                   <span>{u.file_size ? humanBytes(Number(u.file_size)) : "—"}</span>
                 </div>
               </div>
-              {ok && previewable && u.par_url && (
+              {ok && previewable && u.id && (
                 <button
                   type="button"
                   onClick={() => setPreviewing({
@@ -387,12 +388,14 @@ export function AssetList({
                     par_url: u.par_url ?? null,
                     par_expires_at: u.par_expires_at ?? null,
                     category_label: a.category,
+                    upload_id: u.id ?? null,
                   })}
                   className="text-[11px] rounded-md border border-border/60 px-2 py-1 hover:bg-secondary/30"
                 >
                   Preview
                 </button>
               )}
+
             </li>
           );
         })}

@@ -906,8 +906,14 @@ export default function StudioDashboard() {
   const [tab, setTab] = useState<string>("production");
   const { rows, loading, refresh } = useStudioVaultRows();
   const quota = useStorageQuota();
-  const { activeId: workspaceId } = useWorkspaces();
+  const { activeId: workspaceId, canWriteActive } = useWorkspaces();
   const { activeProjectId, activeProject, setActiveProjectId } = useActiveProject(workspaceId);
+
+  // Production Control Center — single primary entry points.
+  const [ingestOpen, setIngestOpen] = useState(false);
+  const [buyOpen, setBuyOpen] = useState(false);
+  const [resumeIngestAfterBuy, setResumeIngestAfterBuy] = useState(false);
+  const liveSku = useLiveStudioSku();
 
   const refreshAfterPurchase = () => {
     refresh();
@@ -931,12 +937,47 @@ export default function StudioDashboard() {
     };
   }, [activeProject?.crew]);
 
-  const availableGb = useMemo(() => {
-    const paid = rows.reduce((s, r) => s + r.allocated_gb, 0);
-    const used = rows.reduce((s, r) => s + r.used_gb, 0);
-    const bonus = quota.testingModeEnabled ? quota.testingOverrideGb : 0;
-    return Math.max(0, paid + bonus - used);
-  }, [rows, quota.testingModeEnabled, quota.testingOverrideGb]);
+  const paidGbTotal = useMemo(() => rows.reduce((s, r) => s + r.allocated_gb, 0), [rows]);
+  const usedGbTotal = useMemo(() => rows.reduce((s, r) => s + r.used_gb, 0), [rows]);
+  const bonusGb = quota.testingModeEnabled ? quota.testingOverrideGb : 0;
+  const totalGb = paidGbTotal + bonusGb;
+  const availableGb = Math.max(0, totalGb - usedGbTotal);
+
+  // Automatic Validation Gate — one primary CTA drives every ingest path.
+  const startIngest = useCallback(() => {
+    const v = runIngestValidation({
+      workspaceId,
+      activeProjectId,
+      canWrite: canWriteActive,
+      totalGb,
+      usedGb: usedGbTotal,
+      storageLocked: quota.locked,
+    });
+    if (v.ok) { setIngestOpen(true); return; }
+    // Fail with a clear action — never a raw technical error.
+    if (v.cta === "buy_storage") {
+      toast.error(v.message, {
+        action: liveSku ? { label: "Buy Storage", onClick: () => { setResumeIngestAfterBuy(true); setBuyOpen(true); } } : undefined,
+      });
+    } else if (v.cta === "choose_production") {
+      toast.error(v.message, { action: { label: "Choose", onClick: () => setTab("production") } });
+    } else {
+      toast.error(v.message);
+    }
+  }, [workspaceId, activeProjectId, canWriteActive, totalGb, usedGbTotal, quota.locked, liveSku]);
+
+  const handlePurchased = useCallback(() => {
+    setBuyOpen(false);
+    refreshAfterPurchase();
+    if (resumeIngestAfterBuy) {
+      setResumeIngestAfterBuy(false);
+      // Give the entitlement refresh a tick before re-validating.
+      setTimeout(() => setIngestOpen(true), 400);
+      toast.success("Storage activated — resuming ingest.");
+    }
+  }, [resumeIngestAfterBuy]);
+
+
 
   return (
     <RoleDashboardShell expectedRole="studio" title="Production Control Center" subtitle={subtitle}>

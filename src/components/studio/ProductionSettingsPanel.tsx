@@ -523,3 +523,141 @@ function TokenHints() {
     </div>
   );
 }
+
+/* ============================================================
+ * Camera Packages Editor — add, edit, remove, reorder.
+ * Each package pre-fills its own ingest defaults so a production
+ * with A/B/C cams, drones and specialty rigs stays fast to log.
+ * ============================================================ */
+function CameraPackagesEditor({
+  packages, onChange,
+}: {
+  packages: CameraPackage[];
+  onChange: (p: CameraPackage[]) => void;
+}) {
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  const add = () => {
+    const next = [...packages, newPackage(packages.length)];
+    onChange(next);
+    setExpanded((e) => ({ ...e, [next[next.length - 1].id]: true }));
+  };
+  const remove = (id: string) => onChange(packages.filter((p) => p.id !== id));
+  const move = (id: string, dir: -1 | 1) => {
+    const i = packages.findIndex((p) => p.id === id);
+    if (i < 0) return;
+    const j = i + dir;
+    if (j < 0 || j >= packages.length) return;
+    const next = [...packages];
+    [next[i], next[j]] = [next[j], next[i]];
+    onChange(next);
+  };
+  const update = (id: string, patch: Partial<CameraPackage>) =>
+    onChange(packages.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+
+  return (
+    <section className="rounded-xl border border-border/50 bg-card/40 p-4 md:p-6 space-y-4">
+      <header className="flex items-start justify-between gap-3">
+        <div className="space-y-1">
+          <h2 className="text-base font-semibold tracking-tight">Camera Packages</h2>
+          <p className="text-xs text-muted-foreground">
+            One or many rigs — A Cam, B Cam, Drone, Crash Cam, Virtual Camera.
+            During ingest, users pick a package and a card; everything else is inherited.
+          </p>
+        </div>
+        <Button onClick={add} size="sm" variant="outline">
+          <Plus className="w-3.5 h-3.5 mr-1.5" /> Add Camera
+        </Button>
+      </header>
+
+      {packages.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-border/50 p-6 text-center">
+          <Video className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
+          <p className="text-sm font-medium">No camera packages yet</p>
+          <p className="text-xs text-muted-foreground">Add your first camera to start.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {packages.map((p, i) => {
+            const open = expanded[p.id] ?? false;
+            const summary = [p.camera_system, p.camera_model].filter(Boolean).join(" ")
+              || [p.codec, p.resolution].filter(Boolean).join(" · ")
+              || "Not configured";
+            return (
+              <div key={p.id} className="rounded-lg border border-border/50 bg-background/60">
+                <div className="flex items-center gap-2 p-2.5">
+                  <GripVertical className="w-4 h-4 text-muted-foreground" />
+                  <div className="flex flex-col gap-0.5">
+                    <button type="button" className="p-0.5 hover:bg-muted rounded disabled:opacity-30" onClick={() => move(p.id, -1)} disabled={i === 0} aria-label="Move up">
+                      <ChevronUp className="w-3 h-3" />
+                    </button>
+                    <button type="button" className="p-0.5 hover:bg-muted rounded disabled:opacity-30" onClick={() => move(p.id, 1)} disabled={i === packages.length - 1} aria-label="Move down">
+                      <ChevronDown className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <Input
+                    value={p.name}
+                    onChange={(e) => update(p.id, { name: e.target.value })}
+                    className="h-8 text-sm font-medium max-w-[180px]"
+                    placeholder="A Cam"
+                  />
+                  <span className="text-xs text-muted-foreground truncate flex-1">{summary}</span>
+                  <code className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border/40">
+                    prefix: {p.card_prefix || "—"}
+                  </code>
+                  <Button variant="ghost" size="sm" onClick={() => setExpanded((e) => ({ ...e, [p.id]: !open }))}>
+                    {open ? "Hide" : "Edit"}
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => remove(p.id)} aria-label="Remove camera">
+                    <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                  </Button>
+                </div>
+
+                {open && (
+                  <div className="border-t border-border/40 p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <Field label="Camera System">
+                      <SearchSelect value={p.camera_system} onChange={(v) => update(p.id, { camera_system: v })}
+                        options={["ARRI", "RED", "Sony", "Blackmagic", "Canon", "Panasonic", "DJI", "GoPro", "Insta360", "Other"]} />
+                    </Field>
+                    <Field label="Model">
+                      <SearchSelect value={p.camera_model} onChange={(v) => update(p.id, { camera_model: v })}
+                        options={CAMERA_PRESETS.map((c) => c.replace(/^(ARRI|RED|Sony|Blackmagic|Canon|Panasonic)\s+/, ""))} />
+                    </Field>
+                    <Field label="Recording Format">
+                      <SearchSelect value={p.recording_format} onChange={(v) => update(p.id, { recording_format: v, codec: p.codec || v })}
+                        options={CODEC_PRESETS} />
+                    </Field>
+                    <Field label="Codec">
+                      <SearchSelect value={p.codec} onChange={(v) => update(p.id, { codec: v })} options={CODEC_PRESETS} />
+                    </Field>
+                    <Field label="Resolution">
+                      <SearchSelect value={p.resolution} onChange={(v) => update(p.id, { resolution: v })}
+                        options={["8K", "6K", "4.6K", "4K DCI", "4K UHD", "2K", "1080p", "720p"]} />
+                    </Field>
+                    <Field label="Frame Rate">
+                      <SearchSelect value={p.frame_rate} onChange={(v) => update(p.id, { frame_rate: v })}
+                        options={["23.976", "24", "25", "29.97", "30", "50", "59.94", "60", "120"]} />
+                    </Field>
+                    <Field label="Color Space / Gamma">
+                      <SearchSelect value={p.color_space} onChange={(v) => update(p.id, { color_space: v })}
+                        options={COLOR_SPACES} />
+                    </Field>
+                    <Field label="Default LUT">
+                      <Input value={p.lut} onChange={(e) => update(p.id, { lut: e.target.value })} placeholder="e.g. ARRI LogC4 → Rec.709" />
+                    </Field>
+                    <Field label="Card Prefix">
+                      <Input value={p.card_prefix} onChange={(e) => update(p.id, { card_prefix: e.target.value })} placeholder="A" />
+                    </Field>
+                    <Field label="Folder Naming">
+                      <Input value={p.folder_naming} onChange={(e) => update(p.id, { folder_naming: e.target.value })} placeholder="{camera}/{card}" />
+                    </Field>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}

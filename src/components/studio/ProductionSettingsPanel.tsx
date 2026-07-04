@@ -270,18 +270,22 @@ export default function ProductionSettingsPanel({
     onSaved?.();
   };
 
+  const primaryPkg = s.camera_packages[0];
+  const primaryCamToken = (primaryPkg?.camera_system || primaryPkg?.name || s.camera_brand || "CAM").toUpperCase().replace(/\s+/g, "").slice(0, 4);
+  const primaryCardToken = primaryPkg?.card_prefix ? `${primaryPkg.card_prefix}001` : "A001";
+
   const namingPreview = useMemo(() => {
     return s.naming_pattern
       .replace("{project}", (activeProjectName ?? "PROJECT").replace(/\s+/g, "_"))
       .replace("{date}", "20260704")
       .replace("{shootday}", "D01")
       .replace("{unit}", s.default_unit.replace(/\s+/g, "") || "MainUnit")
-      .replace("{camera}", (s.camera_brand || "CAM").toUpperCase().slice(0, 4))
-      .replace("{card}", "A001")
+      .replace("{camera}", primaryCamToken)
+      .replace("{card}", primaryCardToken)
       .replace("{clip}", "C0001")
       .replace("{scene}", "S01")
       .replace("{take}", "T01");
-  }, [s.naming_pattern, s.default_unit, s.camera_brand, activeProjectName]);
+  }, [s.naming_pattern, s.default_unit, primaryCamToken, primaryCardToken, activeProjectName]);
 
   const folderPreview = useMemo(() => {
     return s.folder_pattern

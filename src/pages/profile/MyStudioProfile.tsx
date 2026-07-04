@@ -271,9 +271,15 @@ export default function MyStudioProfile({
     <main className="min-h-dvh bg-background text-foreground">
       <header className="border-b border-border/40 sticky top-0 z-30 bg-background/80 backdrop-blur">
         <div className="max-w-5xl mx-auto px-4 md:px-6 py-3.5 flex items-center justify-between gap-3">
-          <Link to="/dashboard/studio" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
-            <ChevronLeft className="w-3.5 h-3.5" /> Back to dashboard
-          </Link>
+          {onboarding ? (
+            <span className="text-[11px] uppercase tracking-[0.25em] text-accent font-mono">
+              One-time setup
+            </span>
+          ) : (
+            <Link to="/dashboard/studio" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+              <ChevronLeft className="w-3.5 h-3.5" /> Back to dashboard
+            </Link>
+          )}
           <div className="flex items-center gap-3">
             {merged && <VerificationBadge status={merged.verification_status} />}
             <ThemeToggle />
@@ -282,6 +288,16 @@ export default function MyStudioProfile({
       </header>
 
       <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 space-y-6 pb-24">
+        {onboarding && (
+          <Card className="p-4 border-accent/40 bg-accent/5">
+            <h2 className="font-semibold text-sm flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-accent" /> Complete your Studio Profile to continue
+            </h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              We need your studio identity, tax and billing details before you can access the Production Control Center. This one-time setup unlocks Production, Upload, Storage, and Activity.
+            </p>
+          </Card>
+        )}
         <section className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-xl md:text-2xl font-semibold tracking-tight inline-flex items-center gap-2">

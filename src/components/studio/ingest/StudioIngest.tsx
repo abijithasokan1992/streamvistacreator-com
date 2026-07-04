@@ -731,14 +731,13 @@ export default function StudioIngest() {
       </Card>
 
       {/* Hard-disk ship-in lane (Option C) — distinct from local Connected Drive Import */}
-      <Card className="p-5 flex flex-wrap items-center justify-between gap-3 border-border/40 bg-secondary/5">
+      <Card className="p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-border/40 bg-secondary/5">
         <div className="min-w-0">
           <h3 className="font-semibold text-sm flex items-center gap-2">
             <Truck className="w-4 h-4 text-accent" /> Ship a physical drive
           </h3>
           <p className="text-xs text-muted-foreground mt-1 max-w-xl">
-            For shoots that can't upload over network — courier or hand over a drive and our team ingests it
-            into your studio vault. This is a founder-assisted intake, separate from local Connected Drive Import.
+            Can't upload over the network? Courier or hand over a drive and our team ingests it into your studio vault.
           </p>
         </div>
         <HardDiskIntakeDialog />

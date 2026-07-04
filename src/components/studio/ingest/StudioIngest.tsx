@@ -483,17 +483,17 @@ export default function StudioIngest() {
   return (
     <div className="space-y-6">
       {/* Workspace + mode header */}
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="font-display text-2xl">Studio Ingest</h2>
+          <h2 className="font-display text-xl sm:text-2xl">Studio Ingest</h2>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            Drop footage from drives, camera cards or live folders. Files are auto-organized into RAW, Proxy, Audio, Documents and Reports inside your project.
+            Bring in footage from drives, camera cards or live folders. Files are auto-sorted into RAW, Proxy, Audio, Documents and Reports.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {workspaces.length > 0 && (
             <Select value={activeId ?? ""} onValueChange={(v) => setActiveId(v)}>
-              <SelectTrigger className="h-9 w-[220px] text-xs">
+              <SelectTrigger className="h-9 w-full sm:w-[220px] text-xs">
                 <Building2 className="w-3.5 h-3.5 mr-1" />
                 <SelectValue placeholder="Pick a workspace…" />
               </SelectTrigger>
@@ -509,7 +509,7 @@ export default function StudioIngest() {
           )}
           <Button variant="outline" size="sm" onClick={queue.refresh} disabled={queue.loading || !activeId}>
             <RefreshCw className={`h-4 w-4 mr-2 ${queue.loading ? "animate-spin" : ""}`} />
-            Refresh queue
+            Refresh
           </Button>
         </div>
       </div>

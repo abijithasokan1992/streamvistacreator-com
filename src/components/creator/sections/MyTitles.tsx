@@ -105,14 +105,8 @@ export default function MyTitlesSection() {
         </div>
       )}
 
-      {freeLimitHit && (
-        <div className="mb-4">
-          <UpgradeCreatorPlanCard
-            variant="compact"
-            reason="You have reached the free plan limit of 1 title."
-          />
-        </div>
-      )}
+      {/* Upgrade CTA lives on the Billing section — the inline free-plan banner above
+          already surfaces the limit here and links straight to Billing. */}
 
       <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <p className="text-xs text-muted-foreground">

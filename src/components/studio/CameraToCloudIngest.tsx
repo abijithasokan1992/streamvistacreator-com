@@ -121,7 +121,7 @@ export default function CameraToCloudIngest() {
           });
           clearPendingId(p.file);
           setPending((cur) => cur.map((x) => x.id === p.id ? { ...x, status: "done", progress: 100 } : x));
-          toast.success(`${p.file.name} successfully streamed with cryptographic integrity`);
+          toast.success(`${p.file.name} ingested securely`);
           refresh();
           return;
         } catch (mpErr) {
@@ -135,8 +135,8 @@ export default function CameraToCloudIngest() {
               severity: "warning",
               title: "Upload paused — safely resumable",
               message:
-                `The connection dropped while streaming "${p.file.name}" (part ${mpErr.partNumber} of ${mpErr.totalChunks}).\n\n` +
-                `Your progress is checkpointed in C CLOUD. Drop the same file again — on this device or any other — and ingest will resume from the exact missing block with cryptographic integrity.`,
+                `The connection dropped while uploading "${p.file.name}" (part ${mpErr.partNumber} of ${mpErr.totalChunks}).\n\n` +
+                `Your progress is saved. Drop the same file again — on this device or another — and it will resume from the exact point it stopped.`,
               context: `file=${p.file.name}; size=${p.file.size}; part=${mpErr.partNumber}/${mpErr.totalChunks}`,
               extraAction: { label: "Resume now", onClick: () => { void uploadOne(p); } },
             });
@@ -202,18 +202,18 @@ export default function CameraToCloudIngest() {
       });
       showMessage({
         severity: "error",
-        title: isOracle ? "C CLOUD storage rejected the upload"
+        title: isOracle ? "Cloud storage rejected the upload"
               : isAuth ? "Sign-in expired"
               : isNet ? "Network dropped mid-upload"
               : `Couldn't ingest "${p.file.name}"`,
         message:
           (isOracle
-            ? `Camera-to-Cloud reached the StreamVista backend, but C CLOUD Object Storage returned an error.\n\nReason: ${friendly}\n\nThe file is still on your device — retry once C CLOUD is reachable. This failure has been logged for an admin to verify the bucket credentials.`
+            ? `The upload reached us but secure cloud storage returned an error.\n\nReason: ${friendly}\n\nThe file is still on your device — retry when the connection is stable. Our team has been notified.`
             : isAuth
-            ? `Your session expired before "${p.file.name}" finished ingesting. Sign in again and retry — nothing was lost.`
+            ? `Your session expired before "${p.file.name}" finished uploading. Sign in again and retry — nothing was lost.`
             : isNet
-            ? `The network dropped while streaming "${p.file.name}" to the cloud bridge.\n\nReason: ${friendly}\n\nReconnect and try again — your progress is checkpointed.`
-            : `The ingest pipeline failed for "${p.file.name}".\n\nReason: ${friendly}`),
+            ? `The network dropped while uploading "${p.file.name}".\n\nReason: ${friendly}\n\nReconnect and try again — your progress is saved.`
+            : `The upload failed for "${p.file.name}".\n\nReason: ${friendly}`),
         context: `file=${p.file.name}; size=${p.file.size}; mime=${p.file.type}; pendingId=${p.id}`,
         extraAction: isAuth ? undefined : {
           label: "Retry upload",
@@ -250,20 +250,20 @@ export default function CameraToCloudIngest() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
-            <Cloud className="h-6 w-6 text-primary" />
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-xl sm:text-2xl font-semibold tracking-tight flex items-center gap-2">
+            <Cloud className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
             Camera-to-Cloud Ingest
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Drop footage, audio, RAW or proxies — streamed to C CLOUD Object Storage with cryptographic integrity.
+            Stream footage, audio, RAW or proxies directly to secure cloud storage with SHA-256 verification.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {workspaces.length > 0 && (
             <Select value={activeId ?? ""} onValueChange={(v) => setActiveId(v)}>
-              <SelectTrigger className="h-9 w-[220px] text-xs">
+              <SelectTrigger className="h-9 w-full sm:w-[220px] text-xs">
                 <Building2 className="w-3.5 h-3.5 mr-1" />
                 <SelectValue placeholder="Pick a workspace…" />
               </SelectTrigger>
@@ -286,7 +286,7 @@ export default function CameraToCloudIngest() {
 
       {!activeId && (
         <Card className="p-4 text-sm text-muted-foreground border-amber-500/30 bg-amber-500/5">
-          Pick a workspace above to start routing camera-to-cloud uploads into its isolated C CLOUD prefix.
+          Pick a workspace above to start routing camera-to-cloud uploads into it.
         </Card>
       )}
       {activeId && !canWriteActive && (

@@ -256,7 +256,7 @@ export function UploadManagerProvider({
           showMessageRef.current({
             severity: "error",
             title: "Upload couldn't be finalised",
-            message: `The bytes for "${task.filename}" reached storage, but we couldn't register the file in your vault.\n\nReason: ${errMsg}\n\nClick OK to dismiss, or Report to Admin so we can recover it for you.`,
+            message: `The file "${task.filename}" reached storage, but we couldn't register it in your vault.\n\nReason: ${errMsg}\n\nDismiss to close, or Report to support so we can recover it for you.`,
             context: `taskId=${task.id}; storagePath=${task.storagePath}; size=${task.size}`,
           });
         } finally {
@@ -610,13 +610,13 @@ function TaskRow({
         </div>
         <div className="min-w-0 flex-1">
           <div className="text-xs font-medium truncate" title={task.filename}>{task.filename}</div>
-          <div className="text-[10px] text-muted-foreground flex items-center gap-1.5 flex-wrap">
+          <div className="text-[10px] text-muted-foreground flex items-center gap-1.5 flex-wrap mt-0.5">
             <span>{fmtBytes(task.uploadedBytes)} / {fmtBytes(task.size)}</span>
-            <span>·</span>
+            <span aria-hidden>·</span>
             <span>{task.tier === "sovereign" ? "India Secure" : "Standard"}</span>
-            {isUploading && task.etaSeconds != null && (<><span>·</span><span>ETA {fmtEta(task.etaSeconds)}</span></>)}
-            {isPaused && <><span>·</span><span className="text-amber-400">Paused</span></>}
-            {needsFile && <><span>·</span><span className="text-amber-400">Re-select to resume</span></>}
+            {isUploading && task.etaSeconds != null && (<><span aria-hidden>·</span><span>ETA {fmtEta(task.etaSeconds)}</span></>)}
+            {isPaused && <><span aria-hidden>·</span><span className="text-amber-400">Paused</span></>}
+            {needsFile && <><span aria-hidden>·</span><span className="text-amber-400">Re-select to resume</span></>}
           </div>
         </div>
         <div className="text-[11px] font-mono tabular-nums shrink-0 w-10 text-right">

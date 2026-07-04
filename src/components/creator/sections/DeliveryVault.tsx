@@ -17,30 +17,28 @@ import Buy1TBCard from "@/components/shared/Buy1TBCard";
  */
 export default function DeliveryVaultSection() {
   return (
-    <div className="space-y-8">
-      <div className="rounded-2xl border border-border/40 bg-secondary/10 p-5">
+    <div className="space-y-6 sm:space-y-8">
+      <div className="rounded-2xl border border-border/40 bg-secondary/10 p-4 sm:p-5">
         <div className="flex items-start gap-3">
           <Database className="w-5 h-5 text-accent mt-0.5 shrink-0" />
-          <div className="space-y-1">
+          <div className="space-y-1 min-w-0">
             <h2 className="font-display text-lg">My Library</h2>
             <p className="text-sm text-muted-foreground max-w-2xl">
-              Use this area for larger delivery masters, archive copies and paid
-              storage expansion. Your day-to-day title prep (metadata, posters,
-              trailers, review files) lives in the Workspace.
+              A dedicated home for delivery masters, archive copies and paid storage expansion. Day-to-day title prep (metadata, posters, trailers, review files) stays in the Workspace.
             </p>
           </div>
         </div>
-        <div className="grid sm:grid-cols-3 gap-3 mt-5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 sm:mt-5">
           <Tile icon={HardDrive} title="Delivery-ready masters" body="DCPs, ProRes, broadcast-grade deliverables." />
           <Tile icon={Database} title="Catalog copies" body="Working copies of titles in active rotation." />
-          <Tile icon={Archive} title="Long-term archive" body="Cold storage for finished, infrequently accessed titles." />
+          <Tile icon={Archive} title="Long-term archive" body="Cold storage for finished titles." />
         </div>
       </div>
 
       {/* One-click 1 TB purchase — primary commercial CTA */}
       <Buy1TBCard
         headline="1 TB Library Storage"
-        subline="Secure recurring storage for masters, delivery files, archive copies and buyer-facing delivery materials."
+        subline="Recurring storage for masters, delivery files, archive copies and buyer-facing materials."
       />
 
       <section className="space-y-3">
@@ -49,9 +47,9 @@ export default function DeliveryVaultSection() {
       </section>
 
       <section className="space-y-3">
-        <div className="flex items-baseline justify-between">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h3 className="font-display text-base">All storage plans</h3>
-          <p className="text-xs text-muted-foreground">Self-serve · Razorpay checkout</p>
+          <p className="text-xs text-muted-foreground">Self-serve checkout</p>
         </div>
         <VaultPlanCards />
       </section>

@@ -218,7 +218,7 @@ export async function saveTitleMetadata(
 export async function listAssets(titleId: string): Promise<TitleAsset[]> {
   const { data, error } = await (supabase as any)
     .from("title_assets")
-    .select("*, upload:recent_uploads(id,file_name,file_size,mime_type,status,object_key,created_at)")
+    .select("*, upload:recent_uploads(id,file_name,file_size,mime_type,status,object_key,created_at,par_url,par_expires_at)")
     .eq("title_id", titleId)
     .order("created_at", { ascending: false });
   if (error) throw error;

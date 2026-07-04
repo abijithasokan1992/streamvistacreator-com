@@ -303,7 +303,7 @@ function CreateTitleModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm grid place-items-center p-4">
-      <div className="bg-background border border-border/50 rounded-2xl w-full max-w-xl max-h-[90dvh] overflow-y-auto">
+      <div className="bg-background border border-border/50 rounded-2xl w-[calc(100vw-2rem)] sm:w-full max-w-xl max-h-[90dvh] overflow-y-auto">
         <div className="flex items-center justify-between px-5 py-3 border-b border-border/40">
           <div>
             <h2 className="font-semibold">Add a new title</h2>

@@ -200,7 +200,10 @@ export default function StudioIngest() {
   const [scan, setScan] = useState<ScanSummary | null>(null);
   const [projectId, setProjectId] = useState<string>("");
   const [shootDay, setShootDay] = useState("");
+  const [unitLabel, setUnitLabel] = useState("");
+  const [cameraBrand, setCameraBrand] = useState("");
   const [cameraLabel, setCameraLabel] = useState("");
+  const [cardLabel, setCardLabel] = useState("");
   const [assetClass, setAssetClass] = useState("");
   const [notes, setNotes] = useState("");
   const [preserveStructure, setPreserveStructure] = useState(true);

@@ -121,7 +121,8 @@ const PublicRoutes = () => (
 
     {/* Legacy shared dashboard entry — always normalize to the role dashboard. */}
     <Route path="/dashboard" element={<CanonicalDashboardRedirect />} />
-    <Route path="/uploads" element={<SmartUploads />} />
+    {/* Smart Uploads disabled for MVP — redirect any stray links home. */}
+    <Route path="/uploads" element={<Navigate to="/" replace />} />
 
 
 

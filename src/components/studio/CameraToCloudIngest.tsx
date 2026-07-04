@@ -202,18 +202,18 @@ export default function CameraToCloudIngest() {
       });
       showMessage({
         severity: "error",
-        title: isOracle ? "C CLOUD storage rejected the upload"
+        title: isOracle ? "Cloud storage rejected the upload"
               : isAuth ? "Sign-in expired"
               : isNet ? "Network dropped mid-upload"
               : `Couldn't ingest "${p.file.name}"`,
         message:
           (isOracle
-            ? `Camera-to-Cloud reached the StreamVista backend, but C CLOUD Object Storage returned an error.\n\nReason: ${friendly}\n\nThe file is still on your device — retry once C CLOUD is reachable. This failure has been logged for an admin to verify the bucket credentials.`
+            ? `The upload reached us but secure cloud storage returned an error.\n\nReason: ${friendly}\n\nThe file is still on your device — retry when the connection is stable. Our team has been notified.`
             : isAuth
-            ? `Your session expired before "${p.file.name}" finished ingesting. Sign in again and retry — nothing was lost.`
+            ? `Your session expired before "${p.file.name}" finished uploading. Sign in again and retry — nothing was lost.`
             : isNet
-            ? `The network dropped while streaming "${p.file.name}" to the cloud bridge.\n\nReason: ${friendly}\n\nReconnect and try again — your progress is checkpointed.`
-            : `The ingest pipeline failed for "${p.file.name}".\n\nReason: ${friendly}`),
+            ? `The network dropped while uploading "${p.file.name}".\n\nReason: ${friendly}\n\nReconnect and try again — your progress is saved.`
+            : `The upload failed for "${p.file.name}".\n\nReason: ${friendly}`),
         context: `file=${p.file.name}; size=${p.file.size}; mime=${p.file.type}; pendingId=${p.id}`,
         extraAction: isAuth ? undefined : {
           label: "Retry upload",

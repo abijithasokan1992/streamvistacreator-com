@@ -42,7 +42,8 @@ import MyCreatorProfile from "./pages/profile/MyCreatorProfile.tsx";
 import MyStudioProfile from "./pages/profile/MyStudioProfile.tsx";
 import AdminHome from "./pages/AdminHome.tsx";
 import CollegeERP from "./pages/CollegeERP.tsx";
-import SmartUploads from "./pages/SmartUploads.tsx";
+// Smart Uploads is not MVP-ready — hidden until the checksum + bucket work is production-safe.
+// import SmartUploads from "./pages/SmartUploads.tsx";
 
 import ReferralCapture from "./components/ReferralCapture.tsx";
 import { RouteAgentDock } from "./components/agents/RouteAgentDock.tsx";
@@ -120,7 +121,8 @@ const PublicRoutes = () => (
 
     {/* Legacy shared dashboard entry — always normalize to the role dashboard. */}
     <Route path="/dashboard" element={<CanonicalDashboardRedirect />} />
-    <Route path="/uploads" element={<SmartUploads />} />
+    {/* Smart Uploads disabled for MVP — redirect any stray links home. */}
+    <Route path="/uploads" element={<Navigate to="/" replace />} />
 
 
 

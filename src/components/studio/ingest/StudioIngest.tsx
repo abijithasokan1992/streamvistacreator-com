@@ -42,7 +42,7 @@ import {
   mapUploadError,
 } from "@/lib/ociMultipartUpload";
 import HardDiskIntakeDialog from "@/components/studio/HardDiskIntakeDialog";
-import IngestDiagnosticsPanel from "@/components/studio/ingest/IngestDiagnosticsPanel";
+// IngestDiagnosticsPanel is rendered on the Advanced Settings page, not inline.
 
 type IngestMode = "connected_drive" | "camera_card" | "watch_folder" | "archive";
 

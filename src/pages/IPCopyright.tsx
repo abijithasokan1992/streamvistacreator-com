@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { LegalLayout, LegalSection } from "@/components/streamvista/LegalLayout";
 import { Seo } from "@/components/Seo";
 import { useLocation } from "react-router-dom";
@@ -14,6 +15,11 @@ export default function IPCopyright() {
         image={path === "/dmca" ? "/og/dmca.jpg" : "/og/ip-copyright.jpg"}
       />
     <LegalLayout title="IP & Copyright (DMCA) Policy" eyebrow="Legal · IP & DMCA">
+
+      <div className="flex flex-wrap gap-3 pb-2">
+        <Link to="/dmca#submit-notice" className="inline-flex items-center justify-center h-10 px-5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">Report infringement</Link>
+        <Link to="/dmca#grievance" className="inline-flex items-center justify-center h-10 px-5 rounded-lg border border-border bg-background text-foreground text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors">Contact grievance officer</Link>
+      </div>
 
       <LegalSection title="1. Our Commitment">
         StreamVista OPC Pvt Ltd and Crayons Pictures respect the intellectual property rights of

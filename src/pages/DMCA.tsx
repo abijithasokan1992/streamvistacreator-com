@@ -41,6 +41,11 @@ export default function DMCA() {
             Accounts that receive multiple substantiated infringement notices will be suspended and may be terminated. Stored assets may be permanently deleted in accordance with our retention policy.
           </Section>
 
+          <div className="rounded-xl border border-border/50 bg-background/40 p-4 text-sm text-muted-foreground">
+            <p className="font-semibold text-foreground mb-1">Notice to uploaders</p>
+            <p>Accounts with multiple substantiated notices may be suspended or terminated, and stored assets permanently deleted per our retention policy.</p>
+          </div>
+
           <Section icon={FileText} title="5. False Claims">
             Knowingly submitting a misrepresentation under this policy may subject you to liability for damages, including legal costs, under applicable copyright law.
           </Section>
@@ -53,6 +58,15 @@ export default function DMCA() {
               <p className="text-xs text-muted-foreground mt-3">We aim to acknowledge valid notices within 48 business hours.</p>
             </div>
           </Section>
+
+          <Section icon={Mail} title="7. Grievance Officer" id="grievance">
+            <div className="space-y-1">
+              <div><span className="text-muted-foreground">Attention:</span> Grievance Officer, StreamVista OPC Pvt Ltd</div>
+              <div><span className="text-muted-foreground">Email:</span> <a className="text-accent hover:underline" href="mailto:dmca@streamvista.cloud">dmca@streamvista.cloud</a></div>
+              <div><span className="text-muted-foreground">Postal:</span> Ernakulam, Kerala, India</div>
+              <p className="text-xs text-muted-foreground mt-3">Designated under the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021.</p>
+            </div>
+          </Section>
         </article>
 
         <div id="submit-notice" className="mt-12 scroll-mt-24">
@@ -63,8 +77,8 @@ export default function DMCA() {
   );
 }
 
-const Section = ({ icon: Icon, title, children }: { icon: any; title: string; children: React.ReactNode }) => (
-  <section>
+const Section = ({ icon: Icon, title, children, id }: { icon: any; title: string; children: React.ReactNode; id?: string }) => (
+  <section id={id}>
     <h2 className="font-display text-xl font-bold flex items-center gap-2 mb-3">
       <Icon className="w-4 h-4 text-accent" /> {title}
     </h2>

@@ -495,9 +495,13 @@ export default function MyStudioProfile({
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs">Place of supply (state)</Label>
+                <Label className="text-xs">
+                  Place of supply (state){merged.is_gst_registered && <span className="text-destructive"> *</span>}
+                </Label>
                 <Input disabled={!canEdit} value={merged.place_of_supply_state ?? ""}
-                  onChange={(e) => setP("place_of_supply_state", e.target.value)} />
+                  onChange={(e) => setP("place_of_supply_state", e.target.value)}
+                  placeholder={merged.is_gst_registered ? "Required when GST is on" : "Optional"} />
+                <FieldError result={errors.placeOfSupply} />
               </div>
             </FieldGroup>
 

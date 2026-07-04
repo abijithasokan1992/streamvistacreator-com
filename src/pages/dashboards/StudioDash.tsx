@@ -635,7 +635,7 @@ function ProductionPanel({
       }).select("id").single();
       if (error) throw error;
       toast.success("Title created");
-      setName(""); setCompany(""); setShowForm(false);
+      setName(""); setCompany(""); setShowForm(false); onFormClose?.();
       await refresh();
       if (data?.id) onSetActive(data.id);
     } catch (e) {

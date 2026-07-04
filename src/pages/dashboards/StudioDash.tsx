@@ -566,7 +566,7 @@ function ProductionPanel({
 }) {
   const { user } = useAuth();
   const { activeId, workspaces, canWriteActive } = useWorkspaces();
-  const [projects, setProjects] = useState<Array<{ id: string; name: string; created_at: string; crew?: any }>>([]);
+  const [projects, setProjects] = useState<Array<{ id: string; name: string; created_at: string; crew?: any; user_id?: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);

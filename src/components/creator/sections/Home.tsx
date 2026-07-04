@@ -137,8 +137,7 @@ export default function HomeSection({ onNavigate, isFree }: { onNavigate: (s: Se
         )}
       </div>
 
-      {/* 6. Storage add-on — single storage CTA on Home */}
-      <Buy1TBCard variant="compact" headline="Add 1 TB to My Library" />
+      {/* Storage add-on lives on the Library section, not Home — one entry point only. */}
 
       {/* 7. Operational signals */}
       <UploadDiagnostics />

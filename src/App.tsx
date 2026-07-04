@@ -133,6 +133,7 @@ const PublicRoutes = () => (
     <Route path="/dashboard/buyer" element={<OnboardingGate><RoleGate allow={["buyer"]}><BuyerDashboard /></RoleGate></OnboardingGate>} />
     <Route path="/dashboard/profile/creator" element={<OnboardingGate><MyCreatorProfile /></OnboardingGate>} />
     <Route path="/dashboard/studio/profile" element={<OnboardingGate><MyStudioProfile /></OnboardingGate>} />
+    <Route path="/dashboard/studio/settings/advanced" element={<OnboardingGate><RoleGate allow={["studio"]}><StudioAdvancedSettings /></RoleGate></OnboardingGate>} />
     <Route path="/dashboard/localization" element={<CanonicalDashboardRedirect />} />
     <Route path="/dashboard/distribution" element={<CanonicalDashboardRedirect />} />
 

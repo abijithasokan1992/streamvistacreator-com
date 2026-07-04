@@ -197,6 +197,35 @@ export function TitleEditor({
   const ready = readiness?.ready ?? localChecklist?.ready ?? false;
   const missing = readiness?.missing ?? localChecklist?.missing ?? [];
 
+  // Lightweight progress % shared with the header chip so creators can see
+  // completion at a glance from every tab (mirrors SubmissionTab logic).
+  const progressPct = useMemo(() => {
+    if (!title || !meta || !localChecklist) return 0;
+    const has = readiness?.has ?? {
+      poster: localChecklist.hasPoster,
+      censor_certificate: localChecklist.hasCensor,
+      ownership_documents: localChecklist.hasOwnership,
+    } as any;
+    const commercial = meta.commercial;
+    const rightsAvailableCount = commercial ? Object.values(commercial.rights).filter((v) => v === "available").length : 0;
+    const territoriesAvailableCount = commercial ? Object.values(commercial.territories).filter((v) => v === "available").length : 0;
+    const engagementSet = !!commercial && commercial.engagement_mode !== "unspecified";
+    const base = [
+      !!localChecklist.hasTitle,
+      !!localChecklist.hasSynopsis,
+      (meta.genres?.length ?? 0) > 0,
+      !!meta.original_language?.trim(),
+      (meta.runtime_minutes ?? 0) > 0,
+      !!meta.rights_owner?.trim(),
+      !!(has.poster ?? localChecklist.hasPoster),
+      !!(has.censor_certificate ?? localChecklist.hasCensor),
+      !!(has.ownership_documents ?? localChecklist.hasOwnership),
+    ];
+    const items = isFree ? base : [...base, engagementSet, rightsAvailableCount > 0, territoriesAvailableCount > 0];
+    const done = items.filter(Boolean).length;
+    return Math.round((done / items.length) * 100);
+  }, [title, meta, localChecklist, readiness, isFree]);
+
   const doSubmit = async () => {
     if (!title) return;
     setSubmitting(true);

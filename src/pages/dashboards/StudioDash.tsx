@@ -36,6 +36,7 @@ import ProductionHero from "@/components/studio/ProductionHero";
 import IngestMediaDialog, { runIngestValidation } from "@/components/studio/IngestMediaDialog";
 import ProductionMediaWorkspace from "@/components/studio/ProductionMediaWorkspace";
 import ProductionSettingsPanel from "@/components/studio/ProductionSettingsPanel";
+import ProductionsManager from "@/components/studio/ProductionsManager";
 import type { VaultProduct } from "@/lib/studioVault";
 import { useCreatorPaygPrice } from "@/hooks/usePublicPlans";
 

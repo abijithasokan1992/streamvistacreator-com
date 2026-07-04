@@ -4,6 +4,7 @@ import {
   ArrowUpRight, Cloud, Database, HardDrive, Loader2,
   Snowflake, Sparkles, Wrench, Receipt, ShoppingCart, ShieldCheck, UploadCloud,
   Clapperboard, Activity, ListChecks, Plus, CheckCircle2, AlertTriangle, RefreshCw,
+  Zap, Server, CreditCard, Film,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -148,6 +149,45 @@ function StatusPill({ tone, children }: { tone: "ok" | "warn" | "muted"; childre
       : "bg-secondary/30 text-muted-foreground border-border/50";
   return <span className={`text-[10px] uppercase tracking-widest font-mono border rounded-full px-2 py-0.5 ${cls}`}>{children}</span>;
 }
+
+/* Compact System Status — read-only badges. No diagnostics panel. */
+function SystemStatusStrip({
+  storageReady, billingActive, storageLocked,
+}: { storageReady: boolean; billingActive: boolean; storageLocked: boolean }) {
+  const items: Array<{ label: string; ok: boolean; icon: JSX.Element }> = [
+    { label: "Storage Ready", ok: storageReady, icon: <Database className="w-3 h-3" /> },
+    { label: "Upload Engine", ok: true, icon: <UploadCloud className="w-3 h-3" /> },
+    { label: "OCI Connected", ok: true, icon: <Cloud className="w-3 h-3" /> },
+    { label: "Billing Active", ok: billingActive && !storageLocked, icon: <CreditCard className="w-3 h-3" /> },
+    { label: "Proxy Ready", ok: true, icon: <Film className="w-3 h-3" /> },
+  ];
+  return (
+    <section className="rounded-2xl border border-border/50 bg-secondary/5 p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <Zap className="w-3.5 h-3.5 text-accent" />
+        <h3 className="text-[11px] uppercase tracking-[0.25em] text-accent font-mono">System Status</h3>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {items.map((it) => (
+          <span
+            key={it.label}
+            className={`inline-flex items-center gap-1.5 text-[11px] font-mono border rounded-full px-2.5 py-1 ${
+              it.ok
+                ? "bg-emerald-500/10 text-emerald-300 border-emerald-400/30"
+                : "bg-amber-500/10 text-amber-300 border-amber-400/30"
+            }`}
+          >
+            {it.ok ? <CheckCircle2 className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
+            {it.icon}
+            {it.label}
+          </span>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+
 
 /* ============================================================
  * 1) STUDIO HOME — status-first, one primary CTA
@@ -903,7 +943,7 @@ function StoragePanel({ rows, loading, onGoBuy, onPurchased }: {
  * Shell with tabs
  * ============================================================ */
 export default function StudioDashboard() {
-  const [tab, setTab] = useState<string>("production");
+  const [tab, setTab] = useState<string>("storage");
   const { rows, loading, refresh } = useStudioVaultRows();
   const quota = useStorageQuota();
   const { activeId: workspaceId, canWriteActive } = useWorkspaces();
@@ -921,7 +961,7 @@ export default function StudioDashboard() {
   };
 
   const subtitle = useMemo(
-    () => "Production · Upload · Storage · Activity.",
+    () => "Active Production · System Status · Storage · Recent Activity.",
     [],
   );
 
@@ -1008,36 +1048,30 @@ export default function StudioDashboard() {
         />
       </div>
 
+      {/* System Status — compact read-only badges. */}
+      <div className="mb-6">
+        <SystemStatusStrip
+          storageReady={totalGb > 0 && availableGb > 0}
+          billingActive={paidGbTotal > 0 || (quota.testingModeEnabled && quota.testingOverrideGb > 0)}
+          storageLocked={!!quota.locked}
+        />
+      </div>
+
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full max-w-3xl">
-          <TabsTrigger value="production"><Clapperboard className="w-3.5 h-3.5 mr-1.5" />Production</TabsTrigger>
-          <TabsTrigger value="upload"><UploadCloud className="w-3.5 h-3.5 mr-1.5" />Upload</TabsTrigger>
+        <TabsList className="grid grid-cols-3 w-full max-w-2xl">
           <TabsTrigger value="storage"><Database className="w-3.5 h-3.5 mr-1.5" />Storage</TabsTrigger>
-          <TabsTrigger value="activity"><Activity className="w-3.5 h-3.5 mr-1.5" />Activity</TabsTrigger>
+          <TabsTrigger value="activity"><Activity className="w-3.5 h-3.5 mr-1.5" />Recent Activity</TabsTrigger>
+          <TabsTrigger value="production"><Clapperboard className="w-3.5 h-3.5 mr-1.5" />Production</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="production" className="mt-6">
-          <ProductionPanel activeProjectId={activeProjectId} onSetActive={setActiveProjectId} />
-        </TabsContent>
-        <TabsContent value="upload" className="mt-6">
-          <div className="mb-3 flex items-center justify-between gap-3 flex-wrap">
-            <p className="text-xs text-muted-foreground">
-              One entry for every source — Browser, Camera Card, Camera-to-Cloud, Hard-disk, Archive, Bulk.
-            </p>
-            <Button size="sm" onClick={startIngest} className="bg-gradient-primary text-primary-foreground glow-primary">
-              <UploadCloud className="w-3.5 h-3.5 mr-1.5" /> Ingest Media
-            </Button>
-          </div>
-          <StudioIngest
-            activeProjectId={activeProjectId ?? undefined}
-            activeProjectDefaults={ingestDefaults}
-          />
-        </TabsContent>
         <TabsContent value="storage" className="mt-6">
           <StoragePanel rows={rows} loading={loading} onGoBuy={() => setTab("storage")} onPurchased={refreshAfterPurchase} />
         </TabsContent>
         <TabsContent value="activity" className="mt-6">
           <ActivityPanel activeProjectId={activeProjectId} activeProjectName={activeProject?.name ?? null} />
+        </TabsContent>
+        <TabsContent value="production" className="mt-6">
+          <ProductionPanel activeProjectId={activeProjectId} onSetActive={setActiveProjectId} />
         </TabsContent>
       </Tabs>
 

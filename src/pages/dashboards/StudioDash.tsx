@@ -1043,7 +1043,7 @@ function StoragePanel({ rows, loading, onGoBuy, onPurchased }: {
  * Shell with tabs
  * ============================================================ */
 export default function StudioDashboard() {
-  const [tab, setTab] = useState<string>("productions");
+  const [tab, setTab] = useState<string>("dashboard");
   const { rows, loading, refresh } = useStudioVaultRows();
   const quota = useStorageQuota();
   const { activeId: workspaceId, canWriteActive } = useWorkspaces();
@@ -1053,9 +1053,6 @@ export default function StudioDashboard() {
   const [ingestOpen, setIngestOpen] = useState(false);
   const [buyOpen, setBuyOpen] = useState(false);
   const [resumeIngestAfterBuy, setResumeIngestAfterBuy] = useState(false);
-  // Open Production opens the logical media view in a Sheet; Switch/Edit/New
-  // stay inline in the Productions tab.
-  const [sheet, setSheet] = useState<null | "open_production">(null);
   const [productionsFormOpen, setProductionsFormOpen] = useState(false);
   const liveSku = useLiveStudioSku();
 

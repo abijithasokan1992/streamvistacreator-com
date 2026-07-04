@@ -57,8 +57,34 @@ export function AssetPreviewModal({
   const kind = inferPreviewKind(asset.mime_type, asset.file_name);
   const [loading, setLoading] = useState(true);
   const [pipSupported, setPipSupported] = useState(false);
+  const [url, setUrl] = useState<string | null>(asset.par_url ?? null);
+  const [minting, setMinting] = useState(false);
+  const [mintError, setMintError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const url = asset.par_url;
+
+  // Mint a signed preview URL on demand when the cached one is missing/expired.
+  useEffect(() => {
+    const expired = asset.par_expires_at
+      ? new Date(asset.par_expires_at).getTime() - Date.now() < 60_000
+      : true;
+    const needMint = (!asset.par_url || expired) && !!asset.upload_id;
+    if (!needMint) return;
+    let cancelled = false;
+    setMinting(true);
+    setMintError(null);
+    supabase.functions.invoke("mint-preview-par", {
+      body: { upload_id: asset.upload_id },
+    }).then(({ data, error }) => {
+      if (cancelled) return;
+      if (error || !data?.url) {
+        setMintError(data?.error || error?.message || "Could not prepare secure preview.");
+      } else {
+        setUrl(data.url as string);
+      }
+    }).finally(() => { if (!cancelled) setMinting(false); });
+    return () => { cancelled = true; };
+  }, [asset.par_url, asset.par_expires_at, asset.upload_id]);
+
 
   // Detect PiP support once mounted.
   useEffect(() => {

@@ -197,6 +197,35 @@ export function TitleEditor({
   const ready = readiness?.ready ?? localChecklist?.ready ?? false;
   const missing = readiness?.missing ?? localChecklist?.missing ?? [];
 
+  // Lightweight progress % shared with the header chip so creators can see
+  // completion at a glance from every tab (mirrors SubmissionTab logic).
+  const progressPct = useMemo(() => {
+    if (!title || !meta || !localChecklist) return 0;
+    const has = readiness?.has ?? {
+      poster: localChecklist.hasPoster,
+      censor_certificate: localChecklist.hasCensor,
+      ownership_documents: localChecklist.hasOwnership,
+    } as any;
+    const commercial = meta.commercial;
+    const rightsAvailableCount = commercial ? Object.values(commercial.rights).filter((v) => v === "available").length : 0;
+    const territoriesAvailableCount = commercial ? Object.values(commercial.territories).filter((v) => v === "available").length : 0;
+    const engagementSet = !!commercial && commercial.engagement_mode !== "unspecified";
+    const base = [
+      !!localChecklist.hasTitle,
+      !!localChecklist.hasSynopsis,
+      (meta.genres?.length ?? 0) > 0,
+      !!meta.original_language?.trim(),
+      (meta.runtime_minutes ?? 0) > 0,
+      !!meta.rights_owner?.trim(),
+      !!(has.poster ?? localChecklist.hasPoster),
+      !!(has.censor_certificate ?? localChecklist.hasCensor),
+      !!(has.ownership_documents ?? localChecklist.hasOwnership),
+    ];
+    const items = isFree ? base : [...base, engagementSet, rightsAvailableCount > 0, territoriesAvailableCount > 0];
+    const done = items.filter(Boolean).length;
+    return Math.round((done / items.length) * 100);
+  }, [title, meta, localChecklist, readiness, isFree]);
+
   const doSubmit = async () => {
     if (!title) return;
     setSubmitting(true);
@@ -264,6 +293,21 @@ export function TitleEditor({
                 {!isFree && (
                   <span className="text-[10px] uppercase tracking-wider rounded bg-amber-500/10 text-amber-300 border border-amber-500/30 px-1.5 py-0.5">Premium</span>
                 )}
+                {title && meta && (
+                  <span
+                    className={cn(
+                      "text-[10px] uppercase tracking-wider rounded border px-1.5 py-0.5 tabular-nums",
+                      progressPct === 100
+                        ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
+                        : progressPct >= 60
+                          ? "bg-sky-500/10 text-sky-300 border-sky-500/30"
+                          : "bg-amber-500/10 text-amber-300 border-amber-500/30",
+                    )}
+                    title={progressPct === 100 ? "Ready to submit" : "Submission readiness"}
+                  >
+                    {progressPct}% ready
+                  </span>
+                )}
                 {title?.locked && (
                   <span className="text-[10px] text-muted-foreground inline-flex items-center gap-1">
                     <Lock className="w-3 h-3" /> Locked
@@ -329,6 +373,19 @@ export function TitleEditor({
               ))}
             </div>
           </div>
+          {/* Row 3 · Submission progress bar — visible from every tab */}
+          {title && meta && (
+            <div className="h-1 w-full bg-secondary/30">
+              <div
+                className={cn(
+                  "h-full transition-all",
+                  progressPct === 100 ? "bg-emerald-400" : progressPct >= 60 ? "bg-sky-400" : "bg-amber-400",
+                )}
+                style={{ width: `${progressPct}%` }}
+                aria-label={`Submission ${progressPct}% ready`}
+              />
+            </div>
+          )}
         </div>
 
         {/* Locked banner + section unlocks + edit request */}
@@ -985,7 +1042,16 @@ function MetadataTab({
 
   return (
     <div className="space-y-6">
-      <div className="grid sm:grid-cols-2 gap-4">
+      {/* Shared crew-role suggestions — powers the <input list="crew-role-options"> below. */}
+      <datalist id="crew-role-options">
+        {[
+          "Director", "Producer", "Executive Producer", "Co-Producer", "Writer", "Screenplay",
+          "Story", "Director of Photography", "Cinematographer", "Editor", "Production Designer",
+          "Art Director", "Costume Designer", "Music Director", "Composer", "Sound Designer",
+          "Sound Mixer", "VFX Supervisor", "Line Producer", "Casting Director",
+        ].map((r) => <option key={r} value={r} />)}
+      </datalist>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <Field label="Synopsis" hint={`${synopsisWords} / ${SYNOPSIS_WORD_LIMIT} words${overLimit ? " — over limit" : ""}`}>
           <TextArea
             rows={5}
@@ -1114,8 +1180,15 @@ function MetadataTab({
               <div className="grid sm:grid-cols-2 gap-2">
                 <TextInput placeholder="Name" value={c.name} disabled={readOnly}
                   onChange={(e) => set({ ...c, name: e.target.value })} />
-                <TextInput placeholder="Role (e.g. Director, DOP)" value={c.role} disabled={readOnly}
-                  onChange={(e) => set({ ...c, role: e.target.value })} />
+                <>
+                  <TextInput
+                    list="crew-role-options"
+                    placeholder="Role"
+                    value={c.role}
+                    disabled={readOnly}
+                    onChange={(e) => set({ ...c, role: e.target.value })}
+                  />
+                </>
               </div>
             )}
           />

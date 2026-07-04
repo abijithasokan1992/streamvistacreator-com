@@ -247,9 +247,9 @@ export function dashboardForRole(r: AppRole | null): string {
     // but are never offered through signup or admin UI.
     case "localization_partner": return "/dashboard/localization";
     case "distributor": return "/dashboard/distribution";
-    // Unknown / unmapped role: land on the safe fallback with a clear message
-    // rather than bouncing to a non-existent URL that renders WrongPortal/404.
-    default: return "/admin/home";
+    // Unknown / unmapped role: send to onboarding so the user can pick a role
+    // instead of bouncing into the admin console.
+    default: return "/onboarding";
   }
 }
 

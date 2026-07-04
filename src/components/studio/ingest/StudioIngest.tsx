@@ -473,9 +473,12 @@ export default function StudioIngest() {
       setSubmitting(false);
     }
   }, [scan, activeId, user, canWriteActive, quota, mode, destinationType, preserveStructure,
-      projectId, shootDay, cameraLabel, assetClass, notes, queue]);
+      projectId, shootDay, unitLabel, cameraBrand, cameraLabel, cardLabel, assetClass, notes, queue]);
 
   const currentModeMeta = useMemo(() => MODES.find((m) => m.id === mode)!, [mode]);
+
+  const contextReady =
+    !!projectId && !!shootDay.trim() && !!unitLabel.trim() && !!cameraLabel.trim() && !!cardLabel.trim();
 
   return (
     <div className="space-y-6">
@@ -484,11 +487,7 @@ export default function StudioIngest() {
         <div className="min-w-0">
           <h2 className="font-display text-2xl">Studio Ingest</h2>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            Bring footage into your studio vault from local drives, camera cards, watch folders or archive
-            bundles. Source folder structure is preserved by default — A_CAM / B_CAM / SOUND / day_01 stays intact.
-          </p>
-          <p className="text-[10px] text-muted-foreground mt-1.5 tracking-wide">
-            Powered by Crayons Bridge Ingest Engine
+            Drop footage from drives, camera cards or live folders. Files are auto-organized into RAW, Proxy, Audio, Documents and Reports inside your project.
           </p>
         </div>
         <div className="flex items-center gap-2">

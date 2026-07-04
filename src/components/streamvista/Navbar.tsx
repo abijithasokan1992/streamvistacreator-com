@@ -17,7 +17,7 @@ const NAV_LINKS = [
 export const Navbar = () => {
   return (
     <header className="fixed top-0 inset-x-0 z-50 backdrop-blur-xl bg-background/60 border-b border-border/50">
-      <div className="container flex items-center justify-between h-16 gap-4">
+      <div className="container flex items-center justify-between h-16 gap-2 sm:gap-4">
         {/* Brand */}
         <Link to="/" className="flex items-center gap-3 shrink-0" aria-label="StreamVista Cloud X home">
           <Wordmark />

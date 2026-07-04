@@ -142,7 +142,7 @@ export default function ProductionSetupGate() {
       <Card className="p-6 sm:p-8 space-y-6">
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-primary">
-            <ClapperboardIcon className="w-5 h-5" />
+            <Clapperboard className="w-5 h-5" />
             <span className="text-xs uppercase tracking-widest">Production Setup</span>
           </div>
           <h2 className="text-2xl font-semibold tracking-tight">Create your first Production</h2>

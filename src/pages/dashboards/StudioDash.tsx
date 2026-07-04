@@ -465,7 +465,7 @@ export default function StudioDashboard() {
           />
         </TabsContent>
         <TabsContent value="ingest" className="mt-6">
-          <StudioIngest />
+          <ProductionSetupGate />
         </TabsContent>
         <TabsContent value="buy" className="mt-6">
           <BuyStorage onPurchased={() => { refreshAfterPurchase(); setTab("home"); }} />

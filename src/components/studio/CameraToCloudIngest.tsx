@@ -250,20 +250,20 @@ export default function CameraToCloudIngest() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
-            <Cloud className="h-6 w-6 text-primary" />
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-xl sm:text-2xl font-semibold tracking-tight flex items-center gap-2">
+            <Cloud className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
             Camera-to-Cloud Ingest
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Drop footage, audio, RAW or proxies — streamed to C CLOUD Object Storage with cryptographic integrity.
+            Stream footage, audio, RAW or proxies directly to secure cloud storage with SHA-256 verification.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {workspaces.length > 0 && (
             <Select value={activeId ?? ""} onValueChange={(v) => setActiveId(v)}>
-              <SelectTrigger className="h-9 w-[220px] text-xs">
+              <SelectTrigger className="h-9 w-full sm:w-[220px] text-xs">
                 <Building2 className="w-3.5 h-3.5 mr-1" />
                 <SelectValue placeholder="Pick a workspace…" />
               </SelectTrigger>
@@ -286,7 +286,7 @@ export default function CameraToCloudIngest() {
 
       {!activeId && (
         <Card className="p-4 text-sm text-muted-foreground border-amber-500/30 bg-amber-500/5">
-          Pick a workspace above to start routing camera-to-cloud uploads into its isolated C CLOUD prefix.
+          Pick a workspace above to start routing camera-to-cloud uploads into it.
         </Card>
       )}
       {activeId && !canWriteActive && (

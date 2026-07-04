@@ -69,28 +69,28 @@ export default function HomeSection({ onNavigate, isFree }: { onNavigate: (s: Se
       {capped ? (
         <button
           onClick={() => onNavigate("billing")}
-          className="w-full rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/15 p-5 text-left flex items-center gap-3"
+          className="w-full rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/15 p-4 sm:p-5 text-left flex items-center gap-3 transition-colors"
         >
-          <Crown className="w-5 h-5 text-amber-300" />
-          <div className="flex-1">
-            <p className="font-semibold">Upgrade to add more titles</p>
+          <Crown className="w-5 h-5 text-amber-300 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm sm:text-base">Upgrade to add more titles</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Free plan allows 1 title. Upgrade for 5 TB storage + multiple submissions.
+              Free plan includes 1 title. Upgrade for 5 TB storage and multiple submissions.
             </p>
           </div>
-          <ArrowRight className="w-4 h-4 text-muted-foreground" />
+          <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
         </button>
       ) : (
         <button
           onClick={() => onNavigate("titles")}
-          className="w-full rounded-xl border border-accent/40 bg-accent/10 hover:bg-accent/15 p-5 text-left flex items-center gap-3"
+          className="w-full rounded-xl border border-accent/40 bg-accent/10 hover:bg-accent/15 p-4 sm:p-5 text-left flex items-center gap-3 transition-colors"
         >
-          <Plus className="w-5 h-5 text-accent" />
-          <div className="flex-1">
-            <p className="font-semibold">New Title</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Start a draft. Add files. Submit.</p>
+          <Plus className="w-5 h-5 text-accent shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm sm:text-base">Start a new title</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Create a draft, add files, and submit when ready.</p>
           </div>
-          <ArrowRight className="w-4 h-4 text-muted-foreground" />
+          <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
         </button>
       )}
 

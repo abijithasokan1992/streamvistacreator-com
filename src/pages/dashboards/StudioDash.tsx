@@ -262,6 +262,11 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
                 ? "Upload and manage your footage and masters."
                 : "Choose a storage plan to begin uploading."}
             </p>
+            {!hasPaidVault && hasTesting && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Trial storage available: <span className="font-mono">{q.testingOverrideGb} GB</span>
+              </p>
+            )}
           </div>
           <div className="flex flex-wrap gap-2">
             {hasPaidVault && (
@@ -987,6 +992,11 @@ function StoragePanel({ rows, loading, onGoBuy, onPurchased }: {
             <p className="text-sm text-muted-foreground mt-1.5 max-w-xl">
               {hasPaid ? "Upload and manage your footage and masters." : "Choose a storage plan to begin uploading."}
             </p>
+            {!hasPaid && hasTesting && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Trial storage available: <span className="font-mono">{q.testingOverrideGb} GB</span>
+              </p>
+            )}
           </div>
           <div className="flex flex-wrap gap-2">
             <Button onClick={onGoBuy} className="bg-gradient-primary text-primary-foreground glow-primary">
@@ -1140,8 +1150,8 @@ export default function StudioDashboard() {
       {/* System Health — compact read-only badges. */}
       <div className="mb-6">
         <SystemStatusStrip
-          storageReady={totalGb > 0 && availableGb > 0}
-          billingActive={paidGbTotal > 0 || (quota.testingModeEnabled && quota.testingOverrideGb > 0)}
+          storageReady={paidGbTotal > 0 && availableGb > 0}
+          billingActive={paidGbTotal > 0}
           storageLocked={!!quota.locked}
         />
       </div>

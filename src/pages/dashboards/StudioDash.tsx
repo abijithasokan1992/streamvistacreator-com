@@ -1161,8 +1161,9 @@ export default function StudioDashboard() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="grid grid-cols-3 w-full max-w-2xl">
+        <TabsList className="grid grid-cols-4 w-full max-w-3xl">
           <TabsTrigger value="productions"><Clapperboard className="w-3.5 h-3.5 mr-1.5" />Productions</TabsTrigger>
+          <TabsTrigger value="settings"><Wrench className="w-3.5 h-3.5 mr-1.5" />Settings</TabsTrigger>
           <TabsTrigger value="storage"><Database className="w-3.5 h-3.5 mr-1.5" />Storage</TabsTrigger>
           <TabsTrigger value="activity"><Activity className="w-3.5 h-3.5 mr-1.5" />Recent Activity</TabsTrigger>
         </TabsList>
@@ -1173,6 +1174,14 @@ export default function StudioDashboard() {
             onSetActive={setActiveProjectId}
             initialFormOpen={productionsFormOpen}
             onFormClose={() => setProductionsFormOpen(false)}
+          />
+        </TabsContent>
+        <TabsContent value="settings" className="mt-6">
+          <ProductionSettingsPanel
+            activeProjectId={activeProjectId}
+            activeProjectName={activeProject?.name ?? null}
+            activeProjectCrew={activeProject?.crew ?? null}
+            onSaved={refreshActiveProject}
           />
         </TabsContent>
         <TabsContent value="storage" className="mt-6">

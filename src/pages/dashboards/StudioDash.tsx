@@ -273,8 +273,8 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
         onPurchased={() => { setBuyOpen(false); onPurchased(); }}
       />
 
-      {/* Detailed one-click purchase card — kept for context, same dialog, same SKU. */}
-      <OneClickBuyCard product={liveSku} hasPaid={hasPaidVault} onPurchased={onPurchased} />
+      {/* Detailed one-click purchase card removed — the inline "Buy 1 TB" button in the
+          status header above opens the same BuyVaultDialog with the same SKU. */}
 
       {/* Per-class breakdown only when we have paid storage */}
       {!loading && rows.length > 0 && <MyVaultSummary />}

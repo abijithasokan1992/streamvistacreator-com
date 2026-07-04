@@ -78,15 +78,30 @@ type JobRow = {
 };
 
 const MODES: { id: IngestMode; label: string; icon: any; blurb: string }[] = [
-  { id: "connected_drive", label: "Connected Drive Import", icon: HardDrive,
-    blurb: "Locally attached drives, shuttle disks and folders selected from this browser." },
-  { id: "camera_card",     label: "Camera Card Intake",     icon: Camera,
-    blurb: "DIT-friendly card offload — repeatable per project / shoot day, preserves card structure." },
-  { id: "watch_folder",    label: "Watch Folder / Near-live", icon: FolderClock,
-    blurb: "Rescan a folder for new media as the shoot continues. Background watch is powered by the Crayons Bridge Ingest Engine." },
-  { id: "archive",         label: "Archive Intake",         icon: Snowflake,
-    blurb: "Master archive bundles, project backup drives and archive vault hand-offs." },
+  { id: "connected_drive", label: "Drive / Folder", icon: HardDrive,
+    blurb: "SSD, HDD or any attached drive." },
+  { id: "camera_card",     label: "Camera Card",    icon: Camera,
+    blurb: "Offload a camera card or mag." },
+  { id: "watch_folder",    label: "Live Folder",    icon: FolderClock,
+    blurb: "Rescan as the shoot continues." },
+  { id: "archive",         label: "Archive",        icon: Snowflake,
+    blurb: "Master bundles for long-term vault." },
 ];
+
+const CAMERA_BRANDS = [
+  "ARRI", "RED", "Sony", "Blackmagic", "Canon Cinema EOS",
+  "Panasonic", "DJI", "GoPro", "Nikon", "Fujifilm", "Leica", "Phantom", "Other",
+];
+
+/** Business-friendly auto-classification from filename / folder path. */
+function autoClassify(relativePath: string): "rushes" | "proxies" | "audio" | "reports" | "project_bundle" {
+  const p = relativePath.toLowerCase();
+  if (/\.(wav|aif|aiff|mp3|flac|bwf|m4a)$/.test(p)) return "audio";
+  if (/\/(proxy|proxies|prores_proxy|avid_proxy)\//.test(p) || /_proxy\.|\.proxy\./.test(p)) return "proxies";
+  if (/\.(pdf|csv|xml|xmp|ale|edl|txt|md|json|log)$/.test(p) || /\/(reports?|sidecars?|metadata)\//.test(p)) return "reports";
+  if (/\.(r3d|ari|arx|braw|mxf|dng|cdng|crm|rmf|mov|mp4|mts|m2ts)$/.test(p)) return "rushes";
+  return "project_bundle";
+}
 
 function fmtBytes(n: number): string {
   if (!Number.isFinite(n) || n <= 0) return "0 B";

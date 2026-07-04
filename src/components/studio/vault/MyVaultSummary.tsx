@@ -80,7 +80,7 @@ export default function MyVaultSummary() {
             {((totalAllocGb - totalUsedGb) / 1024).toFixed(1)} TB available
           </p>
           <p className="text-[10px] text-muted-foreground mt-1">
-            Shows purchased vault allocations only. Any testing allowance appears separately on the Home tab total.
+            Shows purchased vault allocations only.
           </p>
         </div>
       </div>

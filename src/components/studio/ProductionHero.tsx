@@ -15,7 +15,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  Clapperboard, Cloud, HardDrive, Pencil, Repeat, UploadCloud,
+  Clapperboard, Cloud, HardDrive, Pencil, Plus, Repeat, UploadCloud,
   MapPin, Sunrise, Sunset, Wind, Droplets, ThermometerSun, Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";

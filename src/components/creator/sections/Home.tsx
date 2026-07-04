@@ -6,7 +6,7 @@ import { listTitles, fetchFreeTierStatus, type TitleRow, type FreeTierStatus } f
 import WorkspaceWelcome from "@/components/creator/WorkspaceWelcome";
 import ReviewNotesInbox from "@/components/creator/ReviewNotesInbox";
 import { UploadDiagnostics } from "@/components/creator/UploadDiagnostics";
-import Buy1TBCard from "@/components/shared/Buy1TBCard";
+
 import OnboardingChecklist from "@/components/creator/OnboardingChecklist";
 import CreatorQuickActions from "@/components/creator/CreatorQuickActions";
 import type { SectionId } from "@/components/creator/CreatorSidebar";

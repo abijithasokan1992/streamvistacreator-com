@@ -818,8 +818,15 @@ export default function StudioIngest({
         )}
       </Card>
 
-      {/* Ingest Diagnostics — Crayons Bridge Ingest Engine supporting surface */}
-      <IngestDiagnosticsPanel workspaceId={activeId ?? null} />
+      {/* Advanced diagnostics link — moved to Settings → Advanced → Ingest Diagnostics. */}
+      <div className="text-right">
+        <a
+          href="/dashboard/studio/settings/advanced"
+          className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-4"
+        >
+          Advanced diagnostics →
+        </a>
+      </div>
     </div>
   );
 }

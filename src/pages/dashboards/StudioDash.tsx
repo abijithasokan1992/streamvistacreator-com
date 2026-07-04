@@ -4,6 +4,7 @@ import {
   ArrowUpRight, Cloud, Database, HardDrive, Loader2,
   Snowflake, Sparkles, Wrench, Receipt, ShoppingCart, ShieldCheck, UploadCloud,
   Clapperboard, Activity, ListChecks, Plus, CheckCircle2, AlertTriangle, RefreshCw,
+  Zap, Server, CreditCard, Film,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";

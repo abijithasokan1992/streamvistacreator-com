@@ -1,15 +1,24 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowUpRight, Cloud, Database, HardDrive, Loader2,
   Snowflake, Sparkles, Wrench, Receipt, ShoppingCart, ShieldCheck, UploadCloud,
+  Clapperboard, Activity, ListChecks, Plus, CheckCircle2, AlertTriangle, RefreshCw,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useWorkspaces } from "@/hooks/useWorkspaces";
 import { useStorageQuota } from "@/hooks/useStorageQuota";
 import RoleDashboardShell from "./RoleDashboardShell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
 import VaultPlanCards from "@/components/studio/vault/VaultPlanCards";
 import MyVaultSummary from "@/components/studio/vault/MyVaultSummary";
 import VaultBillingPanel from "@/components/studio/vault/VaultBillingPanel";
@@ -18,7 +27,7 @@ import StudioRequestService from "@/components/studio/StudioRequestService";
 import StudioRequestPlanChange from "@/components/studio/StudioRequestPlanChange";
 import ManualInvoicesList from "@/components/billing/ManualInvoicesList";
 import HardDiskIntakeDialog from "@/components/studio/HardDiskIntakeDialog";
-import ProductionSetupGate from "@/components/studio/ingest/ProductionSetupGate";
+import StudioIngest from "@/components/studio/ingest/StudioIngest";
 import StudioQuickActions from "@/components/studio/StudioQuickActions";
 import StudioPlanStrip from "@/components/studio/StudioPlanStrip";
 import type { VaultProduct } from "@/lib/studioVault";

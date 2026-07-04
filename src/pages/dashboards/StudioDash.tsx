@@ -30,6 +30,8 @@ import HardDiskIntakeDialog from "@/components/studio/HardDiskIntakeDialog";
 import StudioIngest from "@/components/studio/ingest/StudioIngest";
 import StudioQuickActions from "@/components/studio/StudioQuickActions";
 import StudioPlanStrip from "@/components/studio/StudioPlanStrip";
+import ProductionHero from "@/components/studio/ProductionHero";
+import IngestMediaDialog, { runIngestValidation } from "@/components/studio/IngestMediaDialog";
 import type { VaultProduct } from "@/lib/studioVault";
 import { useCreatorPaygPrice } from "@/hooks/usePublicPlans";
 

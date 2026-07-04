@@ -127,6 +127,7 @@ const DEFAULTS: Settings = {
   frame_rate: "24",
   color_space: "",
   default_unit: "Main Unit",
+  camera_packages: [],
   folder_root: "/{project}",
   folder_pattern: "{project}/{date}_{shootday}/{unit}/{camera}/{card}",
   naming_pattern: "{project}_{shootday}_{unit}_{camera}_{card}_{clip}",

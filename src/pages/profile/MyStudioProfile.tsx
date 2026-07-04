@@ -73,7 +73,13 @@ function useMyStudioWorkspaces() {
   return { list, loading };
 }
 
-export default function MyStudioProfile() {
+export default function MyStudioProfile({
+  onboarding = false,
+  onDone,
+}: {
+  onboarding?: boolean;
+  onDone?: () => void;
+} = {}) {
   const { user, loading: authLoading } = useAuth();
   const { list: workspaces, loading: wsLoading } = useMyStudioWorkspaces();
   const [orgId, setOrgId] = useState<string | null>(null);
@@ -84,7 +90,7 @@ export default function MyStudioProfile() {
 
   const {
     profile, studioExt, socials, loading, saving, canEdit,
-    saveProfile, saveStudioExt, upsertSocial, removeSocial,
+    saveProfile, saveStudioExt, upsertSocial, removeSocial, refresh,
   } = useEntityProfile({ kind: "studio", orgId });
 
   const [pForm, setPForm] = useState<Partial<EntityProfile>>({});
@@ -99,6 +105,31 @@ export default function MyStudioProfile() {
 
   useEffect(() => { setPForm({}); }, [profile?.id]);
   useEffect(() => { setEForm({}); }, [studioExt?.profile_id]);
+
+  // Auto-fill defaults from the logged-in user so DITs don't retype known
+  // values (legal name / emails). Only populates fields that are still empty
+  // on the loaded record — never overwrites saved data.
+  useEffect(() => {
+    if (!profile || !studioExt || !user) return;
+    const userName =
+      (user.user_metadata as { full_name?: string; name?: string } | undefined)?.full_name
+      ?? (user.user_metadata as { name?: string } | undefined)?.name
+      ?? "";
+    const userEmail = user.email ?? "";
+    const patchP: Partial<EntityProfile> = {};
+    const patchE: Partial<StudioExt> = {};
+    if (!profile.legal_name && userName) patchP.legal_name = userName;
+    if (!profile.billing_legal_name && userName) patchP.billing_legal_name = userName;
+    if (!profile.primary_email && userEmail) patchP.primary_email = userEmail;
+    if (!profile.billing_email && userEmail) patchP.billing_email = userEmail;
+    if (!studioExt.primary_contact_name && userName) patchE.primary_contact_name = userName;
+    if (!studioExt.primary_contact_email && userEmail) patchE.primary_contact_email = userEmail;
+    if (Object.keys(patchP).length) setPForm((f) => ({ ...patchP, ...f }));
+    if (Object.keys(patchE).length) setEForm((f) => ({ ...patchE, ...f }));
+    // Run only when the loaded profile/user identity changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.id, studioExt?.profile_id, user?.id]);
+
 
   const merged = useMemo<EntityProfile | null>(
     () => (profile ? { ...profile, ...pForm } as EntityProfile : null),
@@ -119,17 +150,29 @@ export default function MyStudioProfile() {
 
   const dirty = Object.keys(pForm).length > 0 || Object.keys(eForm).length > 0;
 
+  // Entity-type dependencies: proprietorships legally can't have a CIN, so we
+  // hide the field entirely and skip its validator when this entity type is
+  // selected. Any previously-entered CIN is dropped on save.
+  const isProprietorship = (merged?.entity_type ?? "").toLowerCase() === "proprietorship";
+
   // Real-time validation results for tax + billing identity inputs.
   const errors = useMemo(() => {
     if (!merged || !mergedExt) {
       return {} as Record<string, ValidationResult>;
     }
+    // Place of supply is mandatory when GST registration is on (invoice legally
+    // needs a state code even if GSTIN itself validates independently).
+    const placeOfSupply: ValidationResult = merged.is_gst_registered
+      && !(merged.place_of_supply_state ?? "").trim()
+      ? { ok: false, message: "Place of Supply is required when GST is registered." }
+      : { ok: true };
     return {
       pan: validatePAN(merged.pan_number),
       gstin: validateGSTIN(merged.gstin),
       gstReg: validateGstRegistration(merged.is_gst_registered, merged.gstin),
+      placeOfSupply,
       tan: validateTAN(merged.tan_number),
-      cin: validateCIN(merged.cin_number),
+      cin: isProprietorship ? { ok: true } as ValidationResult : validateCIN(merged.cin_number),
       pincode: validatePincode(merged.postal_code),
       billingPincode: validatePincode(merged.billing_postal_code),
       billingEmail: validateEmail(merged.billing_email),
@@ -140,7 +183,7 @@ export default function MyStudioProfile() {
       contactEmail: validateEmail(mergedExt.primary_contact_email),
       contactPhone: validatePhone(mergedExt.primary_contact_phone),
     } satisfies Record<string, ValidationResult>;
-  }, [merged, mergedExt]);
+  }, [merged, mergedExt, isProprietorship]);
 
   const firstError = Object.values(errors).find((e) => e && e.ok === false);
   const invalidMessage = firstError && firstError.ok === false
@@ -160,7 +203,11 @@ export default function MyStudioProfile() {
       return;
     }
     try {
-      if (Object.keys(pForm).length) await saveProfile(pForm);
+      const profilePatch: Partial<EntityProfile> = { ...pForm };
+      // Drop CIN when entity type doesn't support it, so we don't persist stale
+      // corporate numbers on a proprietorship record.
+      if (isProprietorship) profilePatch.cin_number = null as unknown as EntityProfile["cin_number"];
+      if (Object.keys(profilePatch).length) await saveProfile(profilePatch);
       if (studioExt && Object.keys(eForm).length) {
         const extPatch: Partial<StudioExt> = { ...eForm } as Partial<StudioExt>;
         if (eForm._services !== undefined) extPatch.services = commaSplit(eForm._services);
@@ -174,13 +221,18 @@ export default function MyStudioProfile() {
         await saveStudioExt(extPatch);
       }
       setPForm({}); setEForm({});
-      toast.success("Studio profile saved.");
+      toast.success(onboarding ? "Profile complete — welcome to your Production Control Center." : "Studio profile saved.");
+      // Ensure downstream reads (verification badge, completeness %) reflect
+      // the freshly-saved state before the parent onboarding gate re-evaluates.
+      await refresh();
+      onDone?.();
     } catch (e) {
       toast.error((e as Error).message);
     }
   };
 
   const handleReset = () => { setPForm({}); setEForm({}); };
+
 
   if (authLoading || wsLoading) {
     return (
@@ -219,9 +271,15 @@ export default function MyStudioProfile() {
     <main className="min-h-dvh bg-background text-foreground">
       <header className="border-b border-border/40 sticky top-0 z-30 bg-background/80 backdrop-blur">
         <div className="max-w-5xl mx-auto px-4 md:px-6 py-3.5 flex items-center justify-between gap-3">
-          <Link to="/dashboard/studio" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
-            <ChevronLeft className="w-3.5 h-3.5" /> Back to dashboard
-          </Link>
+          {onboarding ? (
+            <span className="text-[11px] uppercase tracking-[0.25em] text-accent font-mono">
+              One-time setup
+            </span>
+          ) : (
+            <Link to="/dashboard/studio" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+              <ChevronLeft className="w-3.5 h-3.5" /> Back to dashboard
+            </Link>
+          )}
           <div className="flex items-center gap-3">
             {merged && <VerificationBadge status={merged.verification_status} />}
             <ThemeToggle />
@@ -230,6 +288,16 @@ export default function MyStudioProfile() {
       </header>
 
       <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 space-y-6 pb-24">
+        {onboarding && (
+          <Card className="p-4 border-accent/40 bg-accent/5">
+            <h2 className="font-semibold text-sm flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-accent" /> Complete your Studio Profile to continue
+            </h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              We need your studio identity, tax and billing details before you can access the Production Control Center. This one-time setup unlocks Production, Upload, Storage, and Activity.
+            </p>
+          </Card>
+        )}
         <section className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-xl md:text-2xl font-semibold tracking-tight inline-flex items-center gap-2">
@@ -390,7 +458,9 @@ export default function MyStudioProfile() {
                 <FieldError result={errors.pan} />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">GSTIN</Label>
+                <Label className="text-xs">
+                  GSTIN{merged.is_gst_registered && <span className="text-destructive"> *</span>}
+                </Label>
                 <Input disabled={!canEdit} value={merged.gstin ?? ""}
                   onChange={(e) => setP("gstin", formatTaxId(e.target.value))}
                   maxLength={15} placeholder="22AAAAA0000A1Z5" autoCapitalize="characters" />
@@ -403,13 +473,16 @@ export default function MyStudioProfile() {
                   maxLength={10} placeholder="AAAA99999A" autoCapitalize="characters" />
                 <FieldError result={errors.tan} />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">CIN</Label>
-                <Input disabled={!canEdit} value={merged.cin_number ?? ""}
-                  onChange={(e) => setP("cin_number", formatTaxId(e.target.value))}
-                  maxLength={21} placeholder="U12345MH2020PTC123456" autoCapitalize="characters" />
-                <FieldError result={errors.cin} />
-              </div>
+              {/* CIN — hidden for Proprietorship (legally not issued). */}
+              {!isProprietorship && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs">CIN</Label>
+                  <Input disabled={!canEdit} value={merged.cin_number ?? ""}
+                    onChange={(e) => setP("cin_number", formatTaxId(e.target.value))}
+                    maxLength={21} placeholder="U12345MH2020PTC123456" autoCapitalize="characters" />
+                  <FieldError result={errors.cin} />
+                </div>
+              )}
               <div className="md:col-span-2 space-y-1.5">
                 <div className="flex items-center justify-between rounded-md border border-border/40 p-3">
                   <div>
@@ -420,10 +493,15 @@ export default function MyStudioProfile() {
                 </div>
                 <FieldError result={errors.gstReg} />
               </div>
+
               <div className="space-y-1.5">
-                <Label className="text-xs">Place of supply (state)</Label>
+                <Label className="text-xs">
+                  Place of supply (state){merged.is_gst_registered && <span className="text-destructive"> *</span>}
+                </Label>
                 <Input disabled={!canEdit} value={merged.place_of_supply_state ?? ""}
-                  onChange={(e) => setP("place_of_supply_state", e.target.value)} />
+                  onChange={(e) => setP("place_of_supply_state", e.target.value)}
+                  placeholder={merged.is_gst_registered ? "Required when GST is on" : "Optional"} />
+                <FieldError result={errors.placeOfSupply} />
               </div>
             </FieldGroup>
 

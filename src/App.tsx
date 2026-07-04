@@ -40,6 +40,7 @@ import ManualInvoiceReceipt from "./pages/ManualInvoiceReceipt.tsx";
 import ScreeningRoom from "./pages/ScreeningRoom.tsx";
 import MyCreatorProfile from "./pages/profile/MyCreatorProfile.tsx";
 import MyStudioProfile from "./pages/profile/MyStudioProfile.tsx";
+import StudioProfileOnboardingGate from "./components/studio/StudioProfileOnboardingGate.tsx";
 import AdminHome from "./pages/AdminHome.tsx";
 import CollegeERP from "./pages/CollegeERP.tsx";
 // Smart Uploads is not MVP-ready — hidden until the checksum + bucket work is production-safe.
@@ -128,7 +129,7 @@ const PublicRoutes = () => (
 
     {/* New role-based dashboards (Phase 2 — empty states, no fake cards). */}
     <Route path="/dashboard/content" element={<OnboardingGate><RoleGate allow={["content_owner"]}><ContentOwnerDashboard /></RoleGate></OnboardingGate>} />
-    <Route path="/dashboard/studio" element={<OnboardingGate><RoleGate allow={["studio"]}><StudioDashboard /></RoleGate></OnboardingGate>} />
+    <Route path="/dashboard/studio" element={<OnboardingGate><RoleGate allow={["studio"]}><StudioProfileOnboardingGate><StudioDashboard /></StudioProfileOnboardingGate></RoleGate></OnboardingGate>} />
     <Route path="/dashboard/buyer" element={<OnboardingGate><RoleGate allow={["buyer"]}><BuyerDashboard /></RoleGate></OnboardingGate>} />
     <Route path="/dashboard/profile/creator" element={<OnboardingGate><MyCreatorProfile /></OnboardingGate>} />
     <Route path="/dashboard/studio/profile" element={<OnboardingGate><MyStudioProfile /></OnboardingGate>} />

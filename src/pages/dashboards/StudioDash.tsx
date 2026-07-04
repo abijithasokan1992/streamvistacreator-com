@@ -18,7 +18,7 @@ import StudioRequestService from "@/components/studio/StudioRequestService";
 import StudioRequestPlanChange from "@/components/studio/StudioRequestPlanChange";
 import ManualInvoicesList from "@/components/billing/ManualInvoicesList";
 import HardDiskIntakeDialog from "@/components/studio/HardDiskIntakeDialog";
-import StudioIngest from "@/components/studio/ingest/StudioIngest";
+import ProductionSetupGate from "@/components/studio/ingest/ProductionSetupGate";
 import StudioQuickActions from "@/components/studio/StudioQuickActions";
 import StudioPlanStrip from "@/components/studio/StudioPlanStrip";
 import type { VaultProduct } from "@/lib/studioVault";
@@ -465,7 +465,7 @@ export default function StudioDashboard() {
           />
         </TabsContent>
         <TabsContent value="ingest" className="mt-6">
-          <StudioIngest />
+          <ProductionSetupGate />
         </TabsContent>
         <TabsContent value="buy" className="mt-6">
           <BuyStorage onPurchased={() => { refreshAfterPurchase(); setTab("home"); }} />

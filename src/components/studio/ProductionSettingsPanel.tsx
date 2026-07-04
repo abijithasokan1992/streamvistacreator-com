@@ -293,9 +293,9 @@ export default function ProductionSettingsPanel({
       .replace("{date}", "20260704")
       .replace("{shootday}", "D01")
       .replace("{unit}", s.default_unit.replace(/\s+/g, "") || "MainUnit")
-      .replace("{camera}", (s.camera_brand || "CAM").toUpperCase().slice(0, 4))
-      .replace("{card}", "A001");
-  }, [s.folder_pattern, s.default_unit, s.camera_brand, activeProjectName]);
+      .replace("{camera}", primaryCamToken)
+      .replace("{card}", primaryCardToken);
+  }, [s.folder_pattern, s.default_unit, primaryCamToken, primaryCardToken, activeProjectName]);
 
   if (!activeProjectId) {
     return (

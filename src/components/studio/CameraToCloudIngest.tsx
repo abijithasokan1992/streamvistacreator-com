@@ -121,7 +121,7 @@ export default function CameraToCloudIngest() {
           });
           clearPendingId(p.file);
           setPending((cur) => cur.map((x) => x.id === p.id ? { ...x, status: "done", progress: 100 } : x));
-          toast.success(`${p.file.name} successfully streamed with cryptographic integrity`);
+          toast.success(`${p.file.name} ingested securely`);
           refresh();
           return;
         } catch (mpErr) {

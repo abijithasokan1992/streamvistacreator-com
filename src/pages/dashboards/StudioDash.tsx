@@ -953,16 +953,17 @@ export default function StudioDashboard() {
       usedGb: usedGbTotal,
       storageLocked: quota.locked,
     });
-    if (v.ok) { setIngestOpen(true); return; }
+    if (v.ok === true) { setIngestOpen(true); return; }
+    const fail = v;
     // Fail with a clear action — never a raw technical error.
-    if (v.cta === "buy_storage") {
-      toast.error(v.message, {
+    if (fail.cta === "buy_storage") {
+      toast.error(fail.message, {
         action: liveSku ? { label: "Buy Storage", onClick: () => { setResumeIngestAfterBuy(true); setBuyOpen(true); } } : undefined,
       });
-    } else if (v.cta === "choose_production") {
-      toast.error(v.message, { action: { label: "Choose", onClick: () => setTab("production") } });
+    } else if (fail.cta === "choose_production") {
+      toast.error(fail.message, { action: { label: "Choose", onClick: () => setTab("production") } });
     } else {
-      toast.error(v.message);
+      toast.error(fail.message);
     }
   }, [workspaceId, activeProjectId, canWriteActive, totalGb, usedGbTotal, quota.locked, liveSku]);
 

@@ -668,24 +668,57 @@ export default function StudioIngest({
             <Label className="text-xs">Unit / Team</Label>
             <Input value={unitLabel} onChange={(e) => setUnitLabel(e.target.value)} className="h-9 text-xs" placeholder="Main Unit" />
           </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Camera brand</Label>
-            <Select value={cameraBrand || "__none"} onValueChange={(v) => setCameraBrand(v === "__none" ? "" : v)}>
-              <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Brand" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none">Brand</SelectItem>
-                {CAMERA_BRANDS.map((b) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Camera</Label>
-            <Input value={cameraLabel} onChange={(e) => setCameraLabel(e.target.value)} className="h-9 text-xs" placeholder="A-Cam" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Card / Mag</Label>
-            <Input value={cardLabel} onChange={(e) => setCardLabel(e.target.value)} className="h-9 text-xs" placeholder="A001" />
-          </div>
+          {cameraPackages.length > 0 ? (
+            <>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Camera Package</Label>
+                <Select value={cameraPackageId || "__none"} onValueChange={(v) => setCameraPackageId(v === "__none" ? "" : v)}>
+                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select camera" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none">Select camera</SelectItem>
+                    {cameraPackages.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}{p.camera_system || p.camera_model ? ` — ${[p.camera_system, p.camera_model].filter(Boolean).join(" ")}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Card / Mag</Label>
+                <Input value={cardLabel} onChange={(e) => setCardLabel(e.target.value)} className="h-9 text-xs"
+                  placeholder={selectedPackage?.card_prefix ? `${selectedPackage.card_prefix}001` : "A001"} />
+              </div>
+              <div className="space-y-1.5 col-span-full">
+                <p className="text-[11px] text-muted-foreground">
+                  {selectedPackage
+                    ? <>Inherited from <strong>{selectedPackage.name}</strong>: {[selectedPackage.camera_system, selectedPackage.camera_model, selectedPackage.codec, selectedPackage.resolution, selectedPackage.color_space].filter(Boolean).join(" · ") || "no defaults set yet"}.</>
+                    : <>Select a Camera Package to inherit codec, resolution, LUT and folder rules automatically.</>}
+                </p>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Camera brand</Label>
+                <Select value={cameraBrand || "__none"} onValueChange={(v) => setCameraBrand(v === "__none" ? "" : v)}>
+                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Brand" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none">Brand</SelectItem>
+                    {CAMERA_BRANDS.map((b) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Camera</Label>
+                <Input value={cameraLabel} onChange={(e) => setCameraLabel(e.target.value)} className="h-9 text-xs" placeholder="A-Cam" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Card / Mag</Label>
+                <Input value={cardLabel} onChange={(e) => setCardLabel(e.target.value)} className="h-9 text-xs" placeholder="A001" />
+              </div>
+            </>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-2">

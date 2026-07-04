@@ -150,6 +150,42 @@ function StatusPill({ tone, children }: { tone: "ok" | "warn" | "muted"; childre
   return <span className={`text-[10px] uppercase tracking-widest font-mono border rounded-full px-2 py-0.5 ${cls}`}>{children}</span>;
 }
 
+/* Compact System Status — read-only badges. No diagnostics panel. */
+function SystemStatusStrip({
+  storageReady, billingActive, storageLocked,
+}: { storageReady: boolean; billingActive: boolean; storageLocked: boolean }) {
+  const items: Array<{ label: string; ok: boolean; icon: JSX.Element }> = [
+    { label: "Storage Ready", ok: storageReady, icon: <Database className="w-3 h-3" /> },
+    { label: "Upload Engine", ok: true, icon: <UploadCloud className="w-3 h-3" /> },
+    { label: "OCI Connected", ok: true, icon: <Cloud className="w-3 h-3" /> },
+    { label: "Billing Active", ok: billingActive && !storageLocked, icon: <CreditCard className="w-3 h-3" /> },
+    { label: "Proxy Ready", ok: true, icon: <Film className="w-3 h-3" /> },
+  ];
+  return (
+    <section className="rounded-2xl border border-border/50 bg-secondary/5 p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <Zap className="w-3.5 h-3.5 text-accent" />
+        <h3 className="text-[11px] uppercase tracking-[0.25em] text-accent font-mono">System Status</h3>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {items.map((it) => (
+          <span
+            key={it.label}
+            className={`inline-flex items-center gap-1.5 text-[11px] font-mono border rounded-full px-2.5 py-1 ${
+              it.ok
+                ? "bg-emerald-500/10 text-emerald-300 border-emerald-400/30"
+                : "bg-amber-500/10 text-amber-300 border-amber-400/30"
+            }`}
+          >
+            {it.ok ? <CheckCircle2 className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
+            {it.icon}
+            {it.label}
+          </span>
+        ))}
+      </div>
+    </section>
+  );
+
 /* ============================================================
  * 1) STUDIO HOME — status-first, one primary CTA
  * ============================================================ */

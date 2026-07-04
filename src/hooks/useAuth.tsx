@@ -263,6 +263,7 @@ export const REGISTERED_DASHBOARD_ROUTES = [
   "/admin/qc",
   "/admin/legal",
   "/admin/home",
+  "/onboarding",
   "/dashboard/content",
   "/dashboard/studio",
   "/dashboard/buyer",

@@ -463,9 +463,65 @@ function fmtBytes(n: number): string {
 }
 
 /* ============================================================
+ * Active Production — cross-tab synchronization
+ * ============================================================ */
+const ACTIVE_PROJECT_KEY = "sv:active-project";
+function activeProjKey(wsId: string | null) {
+  return wsId ? `${ACTIVE_PROJECT_KEY}:${wsId}` : ACTIVE_PROJECT_KEY;
+}
+
+type ActiveProject = { id: string; name: string; crew?: any } | null;
+
+function useActiveProject(workspaceId: string | null) {
+  const [projectId, setProjectIdState] = useState<string | null>(() => {
+    if (typeof window === "undefined" || !workspaceId) return null;
+    return localStorage.getItem(activeProjKey(workspaceId));
+  });
+  const [project, setProject] = useState<ActiveProject>(null);
+
+  // Reload persisted selection when workspace changes.
+  useEffect(() => {
+    if (!workspaceId) { setProjectIdState(null); return; }
+    try {
+      const v = localStorage.getItem(activeProjKey(workspaceId));
+      setProjectIdState(v);
+    } catch { setProjectIdState(null); }
+  }, [workspaceId]);
+
+  // Hydrate the active project record (name + crew metadata for inheritance).
+  useEffect(() => {
+    if (!projectId) { setProject(null); return; }
+    (async () => {
+      const { data } = await supabase
+        .from("projects")
+        .select("id,name,crew")
+        .eq("id", projectId)
+        .maybeSingle();
+      setProject((data as any) ?? null);
+    })();
+  }, [projectId]);
+
+  const setActiveProjectId = useCallback((id: string | null) => {
+    setProjectIdState(id);
+    try {
+      if (!workspaceId) return;
+      if (id) localStorage.setItem(activeProjKey(workspaceId), id);
+      else localStorage.removeItem(activeProjKey(workspaceId));
+    } catch {}
+  }, [workspaceId]);
+
+  return { activeProjectId: projectId, activeProject: project, setActiveProjectId };
+}
+
+/* ============================================================
  * 5) PRODUCTION PANEL — active workspace + title list
  * ============================================================ */
-function ProductionPanel() {
+function ProductionPanel({
+  activeProjectId, onSetActive,
+}: {
+  activeProjectId: string | null;
+  onSetActive: (id: string | null) => void;
+}) {
   const { user } = useAuth();
   const { activeId, workspaces, canWriteActive } = useWorkspaces();
   const [projects, setProjects] = useState<Array<{ id: string; name: string; created_at: string; crew?: any }>>([]);
@@ -493,6 +549,14 @@ function ProductionPanel() {
 
   useEffect(() => { refresh(); }, [refresh]);
 
+  // Auto-select the newest Production as Active when none is set. Keeps
+  // Upload / Activity / Storage tabs meaningful without manual pinning.
+  useEffect(() => {
+    if (!loading && projects.length > 0 && !activeProjectId) {
+      onSetActive(projects[0].id);
+    }
+  }, [loading, projects, activeProjectId, onSetActive]);
+
   const canSubmit = !!activeId && !!user && !!name.trim() && !!company.trim() && !!contentType && !!startDate && !!status;
 
   const handleCreate = async () => {
@@ -500,7 +564,7 @@ function ProductionPanel() {
     if (!canWriteActive) { toast.error("You only have viewer access to this workspace"); return; }
     setSubmitting(true);
     try {
-      const { error } = await supabase.from("projects").insert({
+      const { data, error } = await supabase.from("projects").insert({
         workspace_id: activeId,
         user_id: user.id,
         name: name.trim(),
@@ -513,11 +577,12 @@ function ProductionPanel() {
           folders: DEFAULT_FOLDERS,
           members: [],
         } as any,
-      });
+      }).select("id").single();
       if (error) throw error;
       toast.success("Title created");
       setName(""); setCompany(""); setShowForm(false);
       await refresh();
+      if (data?.id) onSetActive(data.id);
     } catch (e) {
       toast.error((e as Error).message || "Failed to create Title");
     } finally {
@@ -603,19 +668,33 @@ function ProductionPanel() {
           <p className="text-sm text-muted-foreground">No productions yet. Create a title to begin.</p>
         ) : (
           <div className="space-y-2">
-            {projects.map((p) => (
-              <div key={p.id} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
-                <div>
-                  <p className="text-sm font-medium">{p.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {p.crew?.content_type ?? "Production"} · {p.crew?.title_status ?? "Active"}
-                  </p>
+            {projects.map((p) => {
+              const isActive = p.id === activeProjectId;
+              return (
+                <div key={p.id} className={`flex items-center justify-between py-2 border-b border-border/30 last:border-0 ${isActive ? "bg-accent/5 rounded-md px-2" : ""}`}>
+                  <div>
+                    <p className="text-sm font-medium flex items-center gap-2">
+                      {p.name}
+                      {isActive && <StatusPill tone="ok">Active</StatusPill>}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {p.crew?.content_type ?? "Production"} · {p.crew?.title_status ?? "Active"}
+                      {p.crew?.title_number && <> · <span className="font-mono">{p.crew.title_number}</span></>}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-muted-foreground hidden sm:inline">
+                      {new Date(p.created_at).toLocaleDateString()}
+                    </span>
+                    {!isActive && (
+                      <Button size="sm" variant="ghost" className="text-xs h-7" onClick={() => onSetActive(p.id)}>
+                        Set active
+                      </Button>
+                    )}
+                  </div>
                 </div>
-                <span className="text-[11px] text-muted-foreground">
-                  {new Date(p.created_at).toLocaleDateString()}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>

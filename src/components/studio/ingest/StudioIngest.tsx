@@ -653,9 +653,10 @@ export default function StudioIngest() {
                 <RefreshCw className="w-4 h-4 mr-2" /> Rescan source
               </Button>
             )}
-            <Button onClick={() => openPicker(mode)} disabled={!activeId} variant="outline">
+            <Button onClick={() => openPicker(mode)} disabled={!activeId || !contextReady} variant="outline"
+                    title={!contextReady ? "Select Project · Shoot Day · Unit · Camera · Card first" : undefined}>
               <FolderOpen className="w-4 h-4 mr-2" />
-              {scan ? "Choose a different source" : mode === "camera_card" ? "Choose card" : "Choose source folder"}
+              {scan ? "Choose a different source" : mode === "camera_card" ? "Choose card" : "Drop or choose folder"}
             </Button>
           </div>
         </div>

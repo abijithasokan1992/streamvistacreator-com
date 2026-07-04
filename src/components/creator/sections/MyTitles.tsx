@@ -47,12 +47,12 @@ export default function MyTitlesSection() {
     if (tier?.is_free && !tier.can_create_draft) {
       const draft = await findFirstActiveDraft(user.id);
       if (draft) {
-        toast.info("Free plan allows 1 draft — opening your existing draft.");
+        toast.info("Free plan allows 1 draft — reopening your existing one.");
         setEditorId(draft.id);
         setEditorMode("edit");
         return;
       }
-      toast.error("Free plan limit reached. Upgrade to the 5 TB plan (₹25,000 + 18% GST) from Storage & Billing to add more titles.");
+      toast.error("Free plan limit reached. Upgrade from Storage & Billing to add more titles.");
       return;
     }
     setGating(true);

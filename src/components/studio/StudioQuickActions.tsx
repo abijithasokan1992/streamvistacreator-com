@@ -121,7 +121,7 @@ export default function StudioQuickActions({
           onClick={() => { setDrawer(null); onOpenLibrary(); }}
           className="inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline"
         >
-          Open Library →
+          Open Production →
         </button>
       </HelpDrawer>
     </>

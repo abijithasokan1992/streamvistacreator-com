@@ -21,7 +21,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   HardDrive, Camera, FolderClock, Snowflake, FolderOpen, Loader2, ListChecks,
   CheckCircle2, AlertTriangle, Cloud, Gauge, RefreshCw, Building2, FileVideo,
-  Truck,
+  Truck, ChevronDown, ChevronRight, ShieldCheck, ShieldAlert, Sparkles,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";

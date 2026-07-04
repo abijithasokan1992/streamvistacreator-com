@@ -582,7 +582,7 @@ function ProductionPanel({
     setLoading(true);
     const { data } = await supabase
       .from("projects")
-      .select("id,name,created_at,crew")
+      .select("id,name,created_at,crew,user_id")
       .eq("workspace_id", activeId)
       .order("created_at", { ascending: false });
     setProjects(data ?? []);

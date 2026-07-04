@@ -1140,8 +1140,8 @@ export default function StudioDashboard() {
       {/* System Health — compact read-only badges. */}
       <div className="mb-6">
         <SystemStatusStrip
-          storageReady={totalGb > 0 && availableGb > 0}
-          billingActive={paidGbTotal > 0 || (quota.testingModeEnabled && quota.testingOverrideGb > 0)}
+          storageReady={paidGbTotal > 0 && availableGb > 0}
+          billingActive={paidGbTotal > 0}
           storageLocked={!!quota.locked}
         />
       </div>

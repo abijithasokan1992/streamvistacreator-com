@@ -1048,36 +1048,30 @@ export default function StudioDashboard() {
         />
       </div>
 
+      {/* System Status — compact read-only badges. */}
+      <div className="mb-6">
+        <SystemStatusStrip
+          storageReady={totalGb > 0 && availableGb > 0}
+          billingActive={paidGbTotal > 0 || (quota.testingModeEnabled && quota.testingOverrideGb > 0)}
+          storageLocked={!!quota.locked}
+        />
+      </div>
+
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full max-w-3xl">
-          <TabsTrigger value="production"><Clapperboard className="w-3.5 h-3.5 mr-1.5" />Production</TabsTrigger>
-          <TabsTrigger value="upload"><UploadCloud className="w-3.5 h-3.5 mr-1.5" />Upload</TabsTrigger>
+        <TabsList className="grid grid-cols-3 w-full max-w-2xl">
           <TabsTrigger value="storage"><Database className="w-3.5 h-3.5 mr-1.5" />Storage</TabsTrigger>
-          <TabsTrigger value="activity"><Activity className="w-3.5 h-3.5 mr-1.5" />Activity</TabsTrigger>
+          <TabsTrigger value="activity"><Activity className="w-3.5 h-3.5 mr-1.5" />Recent Activity</TabsTrigger>
+          <TabsTrigger value="production"><Clapperboard className="w-3.5 h-3.5 mr-1.5" />Production</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="production" className="mt-6">
-          <ProductionPanel activeProjectId={activeProjectId} onSetActive={setActiveProjectId} />
-        </TabsContent>
-        <TabsContent value="upload" className="mt-6">
-          <div className="mb-3 flex items-center justify-between gap-3 flex-wrap">
-            <p className="text-xs text-muted-foreground">
-              One entry for every source — Browser, Camera Card, Camera-to-Cloud, Hard-disk, Archive, Bulk.
-            </p>
-            <Button size="sm" onClick={startIngest} className="bg-gradient-primary text-primary-foreground glow-primary">
-              <UploadCloud className="w-3.5 h-3.5 mr-1.5" /> Ingest Media
-            </Button>
-          </div>
-          <StudioIngest
-            activeProjectId={activeProjectId ?? undefined}
-            activeProjectDefaults={ingestDefaults}
-          />
-        </TabsContent>
         <TabsContent value="storage" className="mt-6">
           <StoragePanel rows={rows} loading={loading} onGoBuy={() => setTab("storage")} onPurchased={refreshAfterPurchase} />
         </TabsContent>
         <TabsContent value="activity" className="mt-6">
           <ActivityPanel activeProjectId={activeProjectId} activeProjectName={activeProject?.name ?? null} />
+        </TabsContent>
+        <TabsContent value="production" className="mt-6">
+          <ProductionPanel activeProjectId={activeProjectId} onSetActive={setActiveProjectId} />
         </TabsContent>
       </Tabs>
 

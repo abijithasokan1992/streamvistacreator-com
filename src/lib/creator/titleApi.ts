@@ -86,6 +86,8 @@ export type TitleAsset = {
     status: string;
     object_key: string;
     created_at: string;
+    par_url: string | null;
+    par_expires_at: string | null;
   } | null;
 };
 

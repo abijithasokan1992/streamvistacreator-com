@@ -127,11 +127,11 @@ const PublicRoutes = () => (
     <Route path="/onboarding" element={<Onboarding />} />
 
     {/* New role-based dashboards (Phase 2 — empty states, no fake cards). */}
-    <Route path="/dashboard/content" element={<ContentOwnerDashboard />} />
-    <Route path="/dashboard/studio" element={<StudioDashboard />} />
-    <Route path="/dashboard/buyer" element={<BuyerDashboard />} />
-    <Route path="/dashboard/profile/creator" element={<MyCreatorProfile />} />
-    <Route path="/dashboard/studio/profile" element={<MyStudioProfile />} />
+    <Route path="/dashboard/content" element={<OnboardingGate><RoleGate allow={["content_owner"]}><ContentOwnerDashboard /></RoleGate></OnboardingGate>} />
+    <Route path="/dashboard/studio" element={<OnboardingGate><RoleGate allow={["studio"]}><StudioDashboard /></RoleGate></OnboardingGate>} />
+    <Route path="/dashboard/buyer" element={<OnboardingGate><RoleGate allow={["buyer"]}><BuyerDashboard /></RoleGate></OnboardingGate>} />
+    <Route path="/dashboard/profile/creator" element={<OnboardingGate><MyCreatorProfile /></OnboardingGate>} />
+    <Route path="/dashboard/studio/profile" element={<OnboardingGate><MyStudioProfile /></OnboardingGate>} />
     <Route path="/dashboard/localization" element={<CanonicalDashboardRedirect />} />
     <Route path="/dashboard/distribution" element={<CanonicalDashboardRedirect />} />
 

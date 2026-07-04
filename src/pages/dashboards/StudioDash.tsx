@@ -248,28 +248,24 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <span className="text-[11px] uppercase tracking-[0.25em] text-accent font-mono">Studio Storage</span>
-              {hasPaidVault && <StatusPill tone="ok">Active</StatusPill>}
-              {!hasPaidVault && hasTesting && <StatusPill tone="warn">Testing allowance</StatusPill>}
-              {!hasUsable && <StatusPill tone="muted">Not activated</StatusPill>}
+              {hasPaidVault ? (
+                <StatusPill tone="ok">Active</StatusPill>
+              ) : (
+                <StatusPill tone="muted">Not activated</StatusPill>
+              )}
             </div>
             <h2 className="font-display text-2xl md:text-3xl mt-1.5 leading-tight">
-              {hasPaidVault
-                ? "Storage is live."
-                : hasTesting
-                ? "Testing storage active."
-                : "Activate your storage."}
+              {hasPaidVault ? "Storage is live." : "Storage not activated."}
             </h2>
             <p className="text-sm text-muted-foreground mt-1.5 max-w-xl">
               {hasPaidVault
                 ? "Upload and manage your footage and masters."
-                : hasTesting
-                ? "50 GB test allowance. Buy 1 TB to go live."
-                : "Buy 1 TB to start uploading."}
+                : "Choose a storage plan to begin uploading."}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {hasUsable && (
-              <Button onClick={onGoVault} variant={hasPaidVault ? "default" : "outline"} className={hasPaidVault ? "bg-gradient-primary text-primary-foreground glow-primary" : ""}>
+            {hasPaidVault && (
+              <Button onClick={onGoVault} className="bg-gradient-primary text-primary-foreground glow-primary">
                 <Cloud className="w-4 h-4 mr-2" /> Open Storage
               </Button>
             )}
@@ -279,13 +275,13 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
               className="bg-gradient-primary text-primary-foreground glow-primary"
             >
               <ShoppingCart className="w-4 h-4 mr-2" />
-              {hasPaidVault ? "Add 1 TB" : "Buy 1 TB"}
+              {hasPaidVault ? "Add 1 TB" : "Upgrade Storage"}
             </Button>
           </div>
         </div>
 
-        {/* Quota summary numbers */}
-        {hasUsable && (
+        {/* Quota summary numbers — only when real paid capacity exists */}
+        {hasPaidVault && (
           <div className="grid grid-cols-3 gap-3 mt-5">
             <div className="rounded-lg border border-border/50 p-3">
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-mono">Allocated</p>
@@ -302,13 +298,6 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
               <p className="font-display text-lg mt-0.5">{Math.max(0, totalGb - usedGbTotal).toFixed(1)} GB</p>
             </div>
           </div>
-        )}
-
-        {hasTesting && !hasPaidVault && (
-          <p className="text-[11px] text-muted-foreground mt-3">
-            <ShieldCheck className="w-3 h-3 inline mr-1 text-amber-300" />
-            {q.testingOverrideGb} GB test allowance. Buy 1 TB to activate real capacity.
-          </p>
         )}
 
         {!liveSku && (

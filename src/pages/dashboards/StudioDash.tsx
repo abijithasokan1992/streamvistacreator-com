@@ -961,7 +961,7 @@ export default function StudioDashboard() {
   };
 
   const subtitle = useMemo(
-    () => "Production · Upload · Storage · Activity.",
+    () => "Active Production · System Status · Storage · Recent Activity.",
     [],
   );
 

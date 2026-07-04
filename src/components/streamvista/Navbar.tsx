@@ -17,7 +17,7 @@ const NAV_LINKS = [
 export const Navbar = () => {
   return (
     <header className="fixed top-0 inset-x-0 z-50 backdrop-blur-xl bg-background/60 border-b border-border/50">
-      <div className="container flex items-center justify-between h-16 gap-4">
+      <div className="container flex items-center justify-between h-16 gap-2 sm:gap-4">
         {/* Brand */}
         <Link to="/" className="flex items-center gap-3 shrink-0" aria-label="StreamVista Cloud X home">
           <Wordmark />
@@ -37,7 +37,7 @@ export const Navbar = () => {
         </nav>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-3 md:gap-4">
+        <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
           <ThemeToggle className="hidden sm:inline-flex" />
           <Link
             to="/auth"
@@ -47,7 +47,7 @@ export const Navbar = () => {
           </Link>
           <Link
             to="/auth?intent=signup"
-            className="cta-guide relative text-xs md:text-sm font-semibold px-4 md:px-5 py-2.5 rounded-full bg-gradient-primary text-primary-foreground hover:scale-105 transition-transform"
+            className="cta-guide relative text-xs md:text-sm font-semibold px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-full bg-gradient-primary text-primary-foreground hover:scale-105 transition-transform whitespace-nowrap"
           >
             Get Started
           </Link>

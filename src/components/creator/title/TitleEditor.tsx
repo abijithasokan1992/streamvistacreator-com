@@ -1042,6 +1042,15 @@ function MetadataTab({
 
   return (
     <div className="space-y-6">
+      {/* Shared crew-role suggestions — powers the <input list="crew-role-options"> below. */}
+      <datalist id="crew-role-options">
+        {[
+          "Director", "Producer", "Executive Producer", "Co-Producer", "Writer", "Screenplay",
+          "Story", "Director of Photography", "Cinematographer", "Editor", "Production Designer",
+          "Art Director", "Costume Designer", "Music Director", "Composer", "Sound Designer",
+          "Sound Mixer", "VFX Supervisor", "Line Producer", "Casting Director",
+        ].map((r) => <option key={r} value={r} />)}
+      </datalist>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <Field label="Synopsis" hint={`${synopsisWords} / ${SYNOPSIS_WORD_LIMIT} words${overLimit ? " — over limit" : ""}`}>
           <TextArea

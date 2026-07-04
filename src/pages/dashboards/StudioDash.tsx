@@ -185,6 +185,9 @@ function SystemStatusStrip({
       </div>
     </section>
   );
+}
+
+
 
 /* ============================================================
  * 1) STUDIO HOME — status-first, one primary CTA

@@ -48,6 +48,8 @@ import CollegeERP from "./pages/CollegeERP.tsx";
 import ReferralCapture from "./components/ReferralCapture.tsx";
 import { RouteAgentDock } from "./components/agents/RouteAgentDock.tsx";
 import WrongPortal from "./components/WrongPortal.tsx";
+import OnboardingGate from "./components/OnboardingGate.tsx";
+import RoleGate from "./components/RoleGate.tsx";
 import { SystemMessageProvider } from "./components/system/SystemMessageProvider.tsx";
 import GlobalErrorListener from "./components/system/GlobalErrorListener.tsx";
 import { StorageQuotaProvider } from "@/hooks/useStorageQuota";

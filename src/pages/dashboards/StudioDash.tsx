@@ -1138,12 +1138,20 @@ export default function StudioDashboard() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="grid grid-cols-3 w-full max-w-2xl">
+        <TabsList className="grid grid-cols-4 w-full max-w-3xl">
+          <TabsTrigger value="workspace"><Film className="w-3.5 h-3.5 mr-1.5" />Media</TabsTrigger>
           <TabsTrigger value="storage"><Database className="w-3.5 h-3.5 mr-1.5" />Storage</TabsTrigger>
           <TabsTrigger value="activity"><Activity className="w-3.5 h-3.5 mr-1.5" />Recent Activity</TabsTrigger>
           <TabsTrigger value="production"><Clapperboard className="w-3.5 h-3.5 mr-1.5" />Production</TabsTrigger>
         </TabsList>
 
+        <TabsContent value="workspace" className="mt-6">
+          <ProductionMediaWorkspace
+            workspaceId={workspaceId ?? null}
+            activeProjectId={activeProjectId}
+            activeProjectName={activeProject?.name ?? null}
+          />
+        </TabsContent>
         <TabsContent value="storage" className="mt-6">
           <StoragePanel rows={rows} loading={loading} onGoBuy={() => setTab("storage")} onPurchased={refreshAfterPurchase} />
         </TabsContent>

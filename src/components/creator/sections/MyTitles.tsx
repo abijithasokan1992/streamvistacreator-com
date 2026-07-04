@@ -231,17 +231,17 @@ export default function MyTitlesSection() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {visible.map((t) => (
-            <article key={t.id} className="rounded-xl border border-border/40 bg-secondary/5 p-4 flex flex-col gap-3 min-w-0">
+            <article key={t.id} className="rounded-xl border border-border/40 bg-secondary/5 hover:bg-secondary/10 transition-colors p-4 flex flex-col gap-3 min-w-0">
               <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <h3 className="font-medium truncate">{t.title}</h3>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-medium truncate text-sm sm:text-base">{t.title}</h3>
                   <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
                     {CONTENT_TYPE_LABEL[t.metadata.format] ?? "Title"} · Updated {new Date(t.updated_at).toLocaleDateString()}
                   </p>
                 </div>
-                {t.locked && <Lock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
+                {t.locked && <Lock className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" aria-label="Locked" />}
               </div>
               <StatusBadge status={t.status} />
               <div className="flex items-center gap-1.5 mt-auto pt-2">

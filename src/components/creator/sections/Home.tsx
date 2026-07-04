@@ -6,7 +6,7 @@ import { listTitles, fetchFreeTierStatus, type TitleRow, type FreeTierStatus } f
 import WorkspaceWelcome from "@/components/creator/WorkspaceWelcome";
 import ReviewNotesInbox from "@/components/creator/ReviewNotesInbox";
 import { UploadDiagnostics } from "@/components/creator/UploadDiagnostics";
-import Buy1TBCard from "@/components/shared/Buy1TBCard";
+
 import OnboardingChecklist from "@/components/creator/OnboardingChecklist";
 import CreatorQuickActions from "@/components/creator/CreatorQuickActions";
 import type { SectionId } from "@/components/creator/CreatorSidebar";
@@ -137,8 +137,7 @@ export default function HomeSection({ onNavigate, isFree }: { onNavigate: (s: Se
         )}
       </div>
 
-      {/* 6. Storage add-on — single storage CTA on Home */}
-      <Buy1TBCard variant="compact" headline="Add 1 TB to My Library" />
+      {/* Storage add-on lives on the Library section, not Home — one entry point only. */}
 
       {/* 7. Operational signals */}
       <UploadDiagnostics />

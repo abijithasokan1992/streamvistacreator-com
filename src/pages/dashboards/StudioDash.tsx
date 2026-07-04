@@ -273,8 +273,8 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
         onPurchased={() => { setBuyOpen(false); onPurchased(); }}
       />
 
-      {/* Detailed one-click purchase card — kept for context, same dialog, same SKU. */}
-      <OneClickBuyCard product={liveSku} hasPaid={hasPaidVault} onPurchased={onPurchased} />
+      {/* Detailed one-click purchase card removed — the inline "Buy 1 TB" button in the
+          status header above opens the same BuyVaultDialog with the same SKU. */}
 
       {/* Per-class breakdown only when we have paid storage */}
       {!loading && rows.length > 0 && <MyVaultSummary />}
@@ -431,7 +431,7 @@ export default function StudioDashboard() {
   };
 
   const subtitle = useMemo(
-    () => "Home · Ingest · Storage · Library · Billing.",
+    () => "Home · Ingest · Buy Storage · Library · Billing.",
     [],
   );
 
@@ -449,7 +449,7 @@ export default function StudioDashboard() {
         <TabsList className="grid grid-cols-3 sm:grid-cols-5 w-full max-w-3xl">
           <TabsTrigger value="home"><Sparkles className="w-3.5 h-3.5 mr-1.5" />Home</TabsTrigger>
           <TabsTrigger value="ingest"><UploadCloud className="w-3.5 h-3.5 mr-1.5" />Ingest</TabsTrigger>
-          <TabsTrigger value="buy"><ShoppingCart className="w-3.5 h-3.5 mr-1.5" />Storage</TabsTrigger>
+          <TabsTrigger value="buy"><ShoppingCart className="w-3.5 h-3.5 mr-1.5" />Buy Storage</TabsTrigger>
           <TabsTrigger value="workspace"><Cloud className="w-3.5 h-3.5 mr-1.5" />Library</TabsTrigger>
           <TabsTrigger value="billing"><Receipt className="w-3.5 h-3.5 mr-1.5" />Billing</TabsTrigger>
         </TabsList>

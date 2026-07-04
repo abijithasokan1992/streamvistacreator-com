@@ -516,6 +516,7 @@ function useActiveProject(workspaceId: string | null) {
     return localStorage.getItem(activeProjKey(workspaceId));
   });
   const [project, setProject] = useState<ActiveProject>(null);
+  const [bump, setBump] = useState(0);
 
   // Reload persisted selection when workspace changes.
   useEffect(() => {
@@ -537,7 +538,7 @@ function useActiveProject(workspaceId: string | null) {
         .maybeSingle();
       setProject((data as any) ?? null);
     })();
-  }, [projectId]);
+  }, [projectId, bump]);
 
   const setActiveProjectId = useCallback((id: string | null) => {
     setProjectIdState(id);
@@ -548,7 +549,9 @@ function useActiveProject(workspaceId: string | null) {
     } catch {}
   }, [workspaceId]);
 
-  return { activeProjectId: projectId, activeProject: project, setActiveProjectId };
+  const refreshActiveProject = useCallback(() => setBump((b) => b + 1), []);
+
+  return { activeProjectId: projectId, activeProject: project, setActiveProjectId, refreshActiveProject };
 }
 
 /* ============================================================

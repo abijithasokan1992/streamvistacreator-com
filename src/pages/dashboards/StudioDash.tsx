@@ -706,7 +706,7 @@ function ProductionPanel({
               </div>
             </div>
             <div className="flex items-center justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={() => setShowForm(false)} disabled={submitting}>Cancel</Button>
+              <Button variant="ghost" size="sm" onClick={() => { setShowForm(false); onFormClose?.(); }} disabled={submitting}>Cancel</Button>
               <Button size="sm" onClick={handleCreate} disabled={!canSubmit || submitting}>
                 {submitting ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Plus className="w-3.5 h-3.5 mr-1.5" />}
                 Create Production

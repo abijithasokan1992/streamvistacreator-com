@@ -50,8 +50,8 @@ describe("reviewer + role routing guard", () => {
     expect(dashboardForRole("legal_reviewer")).toBe("/admin/legal");
   });
 
-  it("unknown / null role falls back to /admin/home, not a dashboard we can't guarantee", () => {
-    expect(dashboardForRole(null)).toBe("/admin/home");
+  it("unknown / null role falls back to /onboarding, not a dashboard we can't guarantee", () => {
+    expect(dashboardForRole(null)).toBe("/onboarding");
     // "user" is a dormant legacy role — it must still resolve to a real route.
     expect(registered.has(dashboardForRole("user"))).toBe(true);
   });

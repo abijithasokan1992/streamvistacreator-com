@@ -367,6 +367,23 @@ export default function StudioIngest({
             camera_brand: cameraBrand || null,
             camera: cameraLabel || null,
             card: cardLabel || null,
+            // Camera Package inheritance — codec / resolution / LUT / color space
+            // flow from Production Settings without extra typing.
+            camera_package: selectedPackage
+              ? {
+                  id: selectedPackage.id,
+                  name: selectedPackage.name,
+                  camera_system: selectedPackage.camera_system ?? null,
+                  camera_model: selectedPackage.camera_model ?? null,
+                  recording_format: selectedPackage.recording_format ?? null,
+                  codec: selectedPackage.codec ?? null,
+                  resolution: selectedPackage.resolution ?? null,
+                  frame_rate: selectedPackage.frame_rate ?? null,
+                  color_space: selectedPackage.color_space ?? null,
+                  lut: selectedPackage.lut ?? null,
+                  card_prefix: selectedPackage.card_prefix ?? null,
+                }
+              : null,
           },
         })
         .select("id")

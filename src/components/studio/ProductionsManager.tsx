@@ -158,15 +158,26 @@ export default function ProductionsManager({
     if (!workspaceId) { setMembers([]); return; }
     const { data } = await (supabase as any)
       .from("workspace_members")
-      .select("user_id,role,profiles:profiles!workspace_members_user_id_fkey(email,full_name)")
+      .select("user_id,role")
       .eq("workspace_id", workspaceId);
-    const rows: Member[] = ((data as any[]) ?? []).map((r) => ({
+    const rows = (data as any[]) ?? [];
+    const ids = rows.map((r) => r.user_id);
+    let profMap: Record<string, { email?: string | null; full_name?: string | null }> = {};
+    if (ids.length > 0) {
+      const { data: profs } = await (supabase as any)
+        .from("profiles")
+        .select("id,email,full_name")
+        .in("id", ids);
+      for (const p of (profs as any[]) ?? []) {
+        profMap[p.id] = { email: p.email, full_name: p.full_name };
+      }
+    }
+    setMembers(rows.map((r) => ({
       user_id: r.user_id,
       role: r.role,
-      email: r.profiles?.email ?? null,
-      full_name: r.profiles?.full_name ?? null,
-    }));
-    setMembers(rows);
+      email: profMap[r.user_id]?.email ?? null,
+      full_name: profMap[r.user_id]?.full_name ?? null,
+    })));
   }, [workspaceId]);
 
   useEffect(() => { refresh(); }, [refresh]);

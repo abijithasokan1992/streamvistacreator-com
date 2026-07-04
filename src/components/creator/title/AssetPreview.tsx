@@ -4,6 +4,8 @@ import {
   ExternalLink, ShieldCheck, PictureInPicture2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+
 
 /**
  * AssetPreview — secure, in-app preview for images, PDFs, video and audio.

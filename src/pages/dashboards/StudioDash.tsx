@@ -427,10 +427,375 @@ function BillingAndServices() {
 }
 
 /* ============================================================
+ * Production Control Center — 4 tabs, no wizard gates
+ * ============================================================ */
+
+const CONTENT_TYPES = [
+  "Feature Film", "Series", "Documentary", "Short Film",
+  "Commercial", "Music Video", "Animation", "Other",
+] as const;
+
+const TITLE_STATUSES = [
+  "Pre-Production", "Production", "Post-Production", "Delivery", "Archived",
+] as const;
+
+const DEFAULT_FOLDERS = [
+  "RAW", "Proxy", "Audio", "Documents", "Reports",
+  "LUTs", "Stills", "Masters", "Deliverables", "Archive",
+] as const;
+
+function generateTitleNumber(): string {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+  return `TTL-${yyyy}${mm}${dd}-${rand}`;
+}
+
+function fmtBytes(n: number): string {
+  if (!Number.isFinite(n) || n <= 0) return "0 B";
+  if (n < 1024) return `${n} B`;
+  if (n < 1048576) return `${(n / 1024).toFixed(1)} KB`;
+  if (n < 1073741824) return `${(n / 1048576).toFixed(1)} MB`;
+  if (n < 1099511627776) return `${(n / 1073741824).toFixed(2)} GB`;
+  return `${(n / 1099511627776).toFixed(2)} TB`;
+}
+
+/* ============================================================
+ * 5) PRODUCTION PANEL — active workspace + title list
+ * ============================================================ */
+function ProductionPanel() {
+  const { user } = useAuth();
+  const { activeId, workspaces, canWriteActive } = useWorkspaces();
+  const [projects, setProjects] = useState<Array<{ id: string; name: string; created_at: string; crew?: any }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const [name, setName] = useState("");
+  const [contentType, setContentType] = useState<string>("Feature Film");
+  const [company, setCompany] = useState("");
+  const [startDate, setStartDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [status, setStatus] = useState<string>("Pre-Production");
+
+  const refresh = useCallback(async () => {
+    if (!activeId) { setProjects([]); setLoading(false); return; }
+    setLoading(true);
+    const { data } = await supabase
+      .from("projects")
+      .select("id,name,created_at,crew")
+      .eq("workspace_id", activeId)
+      .order("created_at", { ascending: false });
+    setProjects(data ?? []);
+    setLoading(false);
+  }, [activeId]);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const canSubmit = !!activeId && !!user && !!name.trim() && !!company.trim() && !!contentType && !!startDate && !!status;
+
+  const handleCreate = async () => {
+    if (!canSubmit || !activeId || !user) return;
+    if (!canWriteActive) { toast.error("You only have viewer access to this workspace"); return; }
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.from("projects").insert({
+        workspace_id: activeId,
+        user_id: user.id,
+        name: name.trim(),
+        crew: {
+          title_number: generateTitleNumber(),
+          content_type: contentType,
+          production_company: company.trim(),
+          start_date: startDate,
+          title_status: status,
+          folders: DEFAULT_FOLDERS,
+          members: [],
+        } as any,
+      });
+      if (error) throw error;
+      toast.success("Title created");
+      setName(""); setCompany(""); setShowForm(false);
+      await refresh();
+    } catch (e) {
+      toast.error((e as Error).message || "Failed to create Title");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const activeWs = workspaces.find((w) => w.id === activeId);
+
+  return (
+    <div className="space-y-6">
+      <section className="rounded-2xl border border-border/50 bg-secondary/10 p-6">
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] uppercase tracking-[0.25em] text-accent font-mono">Workspace</span>
+        </div>
+        <h2 className="font-display text-xl mt-1.5">{activeWs?.name ?? "No workspace selected"}</h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          {activeWs ? `${projects.length} production${projects.length === 1 ? "" : "s"} in this workspace.` : "Select a workspace to begin."}
+        </p>
+      </section>
+
+      <section className="rounded-2xl border border-border/50 p-6">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <h3 className="font-semibold text-sm flex items-center gap-2">
+            <Clapperboard className="w-4 h-4 text-accent" /> Productions / Titles
+          </h3>
+          {activeId && (
+            <Button size="sm" variant="outline" onClick={() => setShowForm((s) => !s)}>
+              <Plus className="w-3.5 h-3.5 mr-1.5" /> New Title
+            </Button>
+          )}
+        </div>
+
+        {showForm && (
+          <Card className="p-4 mb-4 space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="sm:col-span-2 space-y-1.5">
+                <Label htmlFor="p-name">Title Name</Label>
+                <Input id="p-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Untitled Feature 2026" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Content Type</Label>
+                <Select value={contentType} onValueChange={setContentType}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {CONTENT_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Status</Label>
+                <Select value={status} onValueChange={setStatus}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {TITLE_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="sm:col-span-2 space-y-1.5">
+                <Label htmlFor="p-company">Production Company</Label>
+                <Input id="p-company" value={company} onChange={(e) => setCompany(e.target.value)} placeholder="e.g. Northlight Pictures Pvt. Ltd." />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="p-start">Start Date</Label>
+                <Input id="p-start" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2">
+              <Button variant="ghost" size="sm" onClick={() => setShowForm(false)} disabled={submitting}>Cancel</Button>
+              <Button size="sm" onClick={handleCreate} disabled={!canSubmit || submitting}>
+                {submitting ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Plus className="w-3.5 h-3.5 mr-1.5" />}
+                Create Title
+              </Button>
+            </div>
+          </Card>
+        )}
+
+        {loading ? (
+          <div className="grid place-items-center py-8 text-muted-foreground">
+            <Loader2 className="w-5 h-5 animate-spin" />
+          </div>
+        ) : projects.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No productions yet. Create a title to begin.</p>
+        ) : (
+          <div className="space-y-2">
+            {projects.map((p) => (
+              <div key={p.id} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
+                <div>
+                  <p className="text-sm font-medium">{p.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {p.crew?.content_type ?? "Production"} · {p.crew?.title_status ?? "Active"}
+                  </p>
+                </div>
+                <span className="text-[11px] text-muted-foreground">
+                  {new Date(p.created_at).toLocaleDateString()}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+/* ============================================================
+ * 6) ACTIVITY PANEL — recent ingest queue
+ * ============================================================ */
+type JobRow = {
+  id: string;
+  job_mode: string;
+  status: string;
+  destination_type: string;
+  total_bytes: number;
+  transferred_bytes: number;
+  total_files: number;
+  completed_files: number;
+  failed_files: number;
+  created_at: string;
+  source_summary: any;
+};
+
+function ActivityPanel() {
+  const { activeId } = useWorkspaces();
+  const [jobs, setJobs] = useState<JobRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    if (!activeId) { setJobs([]); setLoading(false); return; }
+    setLoading(true);
+    const { data } = await supabase
+      .from("ingest_jobs")
+      .select("id,job_mode,status,destination_type,total_bytes,transferred_bytes,total_files,completed_files,failed_files,created_at,source_summary")
+      .eq("workspace_id", activeId)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    setJobs((data as JobRow[]) ?? []);
+    setLoading(false);
+  }, [activeId]);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  return (
+    <div className="space-y-6">
+      <section className="rounded-2xl border border-border/50 p-6">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <h3 className="font-semibold text-sm flex items-center gap-2">
+            <ListChecks className="w-4 h-4 text-accent" /> Recent Ingest Activity
+          </h3>
+          <Button variant="outline" size="sm" onClick={refresh} disabled={loading || !activeId}>
+            <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
+
+        {loading ? (
+          <div className="grid place-items-center py-8 text-muted-foreground">
+            <Loader2 className="w-5 h-5 animate-spin" />
+          </div>
+        ) : jobs.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No ingest jobs yet for this workspace.</p>
+        ) : (
+          <div className="space-y-3">
+            {jobs.map((j) => {
+              const pct = j.total_bytes > 0 ? Math.min(100, Math.round((j.transferred_bytes / j.total_bytes) * 100)) : 0;
+              const tone =
+                j.status === "completed" ? "text-emerald-300" :
+                j.status === "failed" ? "text-destructive" :
+                j.status === "paused" ? "text-amber-300" :
+                j.status === "uploading" || j.status === "verifying" || j.status === "retrying" ? "text-accent" :
+                "text-muted-foreground";
+              const Icon = j.status === "completed" ? CheckCircle2 : j.status === "failed" ? AlertTriangle : ListChecks;
+              return (
+                <div key={j.id} className="flex items-start justify-between gap-3 py-2 border-b border-border/30 last:border-0">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 text-xs flex-wrap">
+                      <Icon className={`w-3.5 h-3.5 shrink-0 ${tone}`} />
+                      <span className="font-medium truncate">{j.source_summary?.root_label ?? "(unnamed source)"}</span>
+                      <span className="text-[10px] uppercase border border-border/50 rounded-full px-1.5 py-0.5">{j.job_mode.replace(/_/g, " ")}</span>
+                      <span className="text-[10px] uppercase border border-border/50 rounded-full px-1.5 py-0.5">{j.destination_type === "archive_vault" ? "Archive" : "Working"}</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      {j.completed_files}/{j.total_files} files · {fmtBytes(j.transferred_bytes)} / {fmtBytes(j.total_bytes)}
+                      {j.failed_files > 0 && <> · <span className="text-destructive">{j.failed_files} failed</span></>}
+                      {" · "}{new Date(j.created_at).toLocaleString()}
+                    </p>
+                    {j.total_bytes > 0 && (
+                      <div className="w-full bg-secondary/30 rounded-full h-1 mt-1.5 overflow-hidden">
+                        <div className="bg-accent h-1 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+/* ============================================================
+ * 7) STORAGE PANEL — quota + buy + vault summary
+ * ============================================================ */
+function StoragePanel({ rows, loading, onGoBuy, onPurchased }: {
+  rows: AllocRow[]; loading: boolean;
+  onGoBuy: () => void; onPurchased: () => void;
+}) {
+  const q = useStorageQuota();
+  const hasPaid = rows.length > 0;
+  const hasTesting = q.testingModeEnabled && q.testingOverrideGb > 0;
+  const hasUsable = hasPaid || hasTesting;
+
+  const paidGbTotal = rows.reduce((s, r) => s + r.allocated_gb, 0);
+  const usedGbTotal = rows.reduce((s, r) => s + r.used_gb, 0);
+  const totalGb = paidGbTotal + (hasTesting ? q.testingOverrideGb : 0);
+
+  return (
+    <div className="space-y-6">
+      {/* Quota status card */}
+      <section className="rounded-2xl border border-border/50 bg-secondary/10 p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] uppercase tracking-[0.25em] text-accent font-mono">Studio Storage</span>
+              {hasPaid && <StatusPill tone="ok">Active</StatusPill>}
+              {!hasPaid && hasTesting && <StatusPill tone="warn">Testing allowance</StatusPill>}
+              {!hasUsable && <StatusPill tone="muted">Not activated</StatusPill>}
+            </div>
+            <h2 className="font-display text-2xl md:text-3xl mt-1.5 leading-tight">
+              {hasPaid ? "Storage is live." : hasTesting ? "Testing storage active." : "Activate your storage."}
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1.5 max-w-xl">
+              {hasPaid ? "Upload and manage your footage and masters." : hasTesting ? `${q.testingOverrideGb} GB test allowance. Buy 1 TB to go live.` : "Buy 1 TB to start uploading."}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={onGoBuy} className="bg-gradient-primary text-primary-foreground glow-primary">
+              <ShoppingCart className="w-4 h-4 mr-2" />
+              {hasPaid ? "Add 1 TB" : "Buy 1 TB"}
+            </Button>
+          </div>
+        </div>
+        {hasUsable && (
+          <div className="grid grid-cols-3 gap-3 mt-5">
+            <div className="rounded-lg border border-border/50 p-3">
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-mono">Allocated</p>
+              <p className="font-display text-lg mt-0.5">
+                {totalGb >= 1024 ? `${(totalGb / 1024).toFixed(1)} TB` : `${totalGb.toFixed(0)} GB`}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border/50 p-3">
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-mono">Used</p>
+              <p className="font-display text-lg mt-0.5">{usedGbTotal.toFixed(2)} GB</p>
+            </div>
+            <div className="rounded-lg border border-border/50 p-3">
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-mono">Available</p>
+              <p className="font-display text-lg mt-0.5">{Math.max(0, totalGb - usedGbTotal).toFixed(1)} GB</p>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Vault summary for paid users */}
+      {!loading && rows.length > 0 && <MyVaultSummary />}
+
+      {/* Purchase options */}
+      <BuyStorage onPurchased={onPurchased} />
+    </div>
+  );
+}
+
+/* ============================================================
  * Shell with tabs
  * ============================================================ */
 export default function StudioDashboard() {
-  const [tab, setTab] = useState<string>("home");
+  const [tab, setTab] = useState<string>("production");
   const { rows, loading, refresh } = useStudioVaultRows();
   const quota = useStorageQuota();
 
@@ -440,12 +805,12 @@ export default function StudioDashboard() {
   };
 
   const subtitle = useMemo(
-    () => "Home · Ingest · Buy Storage · Library · Billing.",
+    () => "Production · Upload · Storage · Activity.",
     [],
   );
 
   return (
-    <RoleDashboardShell expectedRole="studio" title="Studio Storage" subtitle={subtitle}>
+    <RoleDashboardShell expectedRole="studio" title="Production Control Center" subtitle={subtitle}>
       <div className="mb-4 flex justify-end">
         <Link
           to="/dashboard/studio/profile"
@@ -455,35 +820,24 @@ export default function StudioDashboard() {
         </Link>
       </div>
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="grid grid-cols-3 sm:grid-cols-5 w-full max-w-3xl">
-          <TabsTrigger value="home"><Sparkles className="w-3.5 h-3.5 mr-1.5" />Home</TabsTrigger>
-          <TabsTrigger value="ingest"><UploadCloud className="w-3.5 h-3.5 mr-1.5" />Ingest</TabsTrigger>
-          <TabsTrigger value="buy"><ShoppingCart className="w-3.5 h-3.5 mr-1.5" />Buy Storage</TabsTrigger>
-          <TabsTrigger value="workspace"><Cloud className="w-3.5 h-3.5 mr-1.5" />Library</TabsTrigger>
-          <TabsTrigger value="billing"><Receipt className="w-3.5 h-3.5 mr-1.5" />Billing</TabsTrigger>
+        <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full max-w-3xl">
+          <TabsTrigger value="production"><Clapperboard className="w-3.5 h-3.5 mr-1.5" />Production</TabsTrigger>
+          <TabsTrigger value="upload"><UploadCloud className="w-3.5 h-3.5 mr-1.5" />Upload</TabsTrigger>
+          <TabsTrigger value="storage"><Database className="w-3.5 h-3.5 mr-1.5" />Storage</TabsTrigger>
+          <TabsTrigger value="activity"><Activity className="w-3.5 h-3.5 mr-1.5" />Activity</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="home" className="mt-6">
-          <StudioHome
-            rows={rows}
-            loading={loading}
-            onGoBuy={() => setTab("buy")}
-            onGoVault={() => setTab("workspace")}
-            onGoBilling={() => setTab("billing")}
-            onPurchased={refreshAfterPurchase}
-          />
+        <TabsContent value="production" className="mt-6">
+          <ProductionPanel />
         </TabsContent>
-        <TabsContent value="ingest" className="mt-6">
-          <ProductionSetupGate />
+        <TabsContent value="upload" className="mt-6">
+          <StudioIngest />
         </TabsContent>
-        <TabsContent value="buy" className="mt-6">
-          <BuyStorage onPurchased={() => { refreshAfterPurchase(); setTab("home"); }} />
+        <TabsContent value="storage" className="mt-6">
+          <StoragePanel rows={rows} loading={loading} onGoBuy={() => setTab("storage")} onPurchased={refreshAfterPurchase} />
         </TabsContent>
-        <TabsContent value="workspace" className="mt-6">
-          <VaultWorkspace rows={rows} loading={loading} onGoBuy={() => setTab("buy")} onGoIngest={() => setTab("ingest")} />
-        </TabsContent>
-        <TabsContent value="billing" className="mt-6">
-          <BillingAndServices />
+        <TabsContent value="activity" className="mt-6">
+          <ActivityPanel />
         </TabsContent>
       </Tabs>
     </RoleDashboardShell>

@@ -41,6 +41,7 @@ import {
   uploadFileMultipart, MULTIPART_THRESHOLD, ResumableUploadInterrupted,
   mapUploadError,
 } from "@/lib/ociMultipartUpload";
+import { classifyFile, enrichFile } from "@/lib/ingest/mediaIntelligence";
 import HardDiskIntakeDialog from "@/components/studio/HardDiskIntakeDialog";
 // IngestDiagnosticsPanel is rendered on the Advanced Settings page, not inline.
 

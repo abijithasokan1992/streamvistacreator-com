@@ -752,11 +752,13 @@ export default function StudioIngest({
         )}
       </Card>
 
-      {/* Hard-disk ship-in lane (Option C) — distinct from local Connected Drive Import */}
+      {/* Hard-disk Import — physical courier-in lane. Reuses the same ingest
+          pipeline (Upload → Checksum → Primary Backup → OCI Sync → Proxy →
+          Library → Editorial) once the drive is received. */}
       <Card className="p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-border/40 bg-secondary/5">
         <div className="min-w-0">
           <h3 className="font-semibold text-sm flex items-center gap-2">
-            <Truck className="w-4 h-4 text-accent" /> Ship a physical drive
+            <Truck className="w-4 h-4 text-accent" /> Hard-disk Import
           </h3>
           <p className="text-xs text-muted-foreground mt-1 max-w-xl">
             Can't upload over the network? Courier or hand over a drive and our team ingests it into your studio vault.

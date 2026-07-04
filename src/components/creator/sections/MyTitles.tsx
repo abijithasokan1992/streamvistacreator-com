@@ -93,7 +93,7 @@ export default function MyTitlesSection() {
           <div className="min-w-0 flex-1">
             <div className="font-medium">Free plan — 1 title only</div>
             <div className="text-muted-foreground mt-0.5">
-              {tier.draft_count}/1 draft · {tier.lifecycle_count}/1 submission used. Upgrade to 5 TB plan (₹25,000 + 18% GST) for additional submissions.
+              {tier.draft_count}/1 draft · {tier.lifecycle_count}/1 submission used. Upgrade for additional submissions and 5 TB storage.
             </div>
           </div>
           <a

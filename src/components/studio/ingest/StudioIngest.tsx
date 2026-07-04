@@ -919,11 +919,28 @@ export default function StudioIngest({
                 j.status === "paused" ? "text-amber-300" :
                 j.status === "uploading" || j.status === "verifying" || j.status === "retrying" ? "text-accent" :
                 "text-muted-foreground";
+              const isOpen = expandedJobs.has(j.id);
+              const toggle = () => {
+                setExpandedJobs((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(j.id)) next.delete(j.id); else next.add(j.id);
+                  return next;
+                });
+              };
               return (
                 <li key={j.id} className="py-3">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 text-xs flex-wrap">
+                        <button
+                          type="button"
+                          onClick={toggle}
+                          aria-expanded={isOpen}
+                          aria-label={isOpen ? "Hide detected items" : "Show detected items"}
+                          className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                        >
+                          {isOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                        </button>
                         <FileVideo className="w-3.5 h-3.5 text-accent shrink-0" />
                         <span className="font-medium truncate">{j.source_summary?.root_label ?? "(unnamed source)"}</span>
                         <Badge variant="outline" className="text-[10px] capitalize">{j.job_mode.replace(/_/g, " ")}</Badge>
@@ -943,6 +960,7 @@ export default function StudioIngest({
                       </div>
                     </div>
                   </div>
+                  {isOpen && <DetectedItemsPanel jobId={j.id} />}
                 </li>
               );
             })}

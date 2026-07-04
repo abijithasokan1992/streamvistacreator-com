@@ -116,7 +116,7 @@ export function SystemMessageProvider({ children }: { children: ReactNode }) {
     <SystemMessageContext.Provider value={value}>
       {children}
       <Dialog open={!!current} onOpenChange={(o) => { if (!o && !reporting) close(); }}>
-        <DialogContent className="sm:max-w-md top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 fixed">
+        <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-md top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 fixed">
           <DialogHeader>
             <div className={cn("inline-flex items-center gap-2 w-fit px-3 py-1 rounded-full border text-[11px] font-semibold uppercase tracking-wider mb-2", accent)}>
               <Icon className="w-3.5 h-3.5" />

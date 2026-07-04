@@ -194,11 +194,65 @@ export async function findFirstActiveDraft(userId: string): Promise<TitleRow | n
   return { ...data, metadata: parseMetadata(data.metadata) };
 }
 
+/** Map raw Zod field paths to human-readable labels so users never see JSON. */
+const FIELD_LABELS: Record<string, string> = {
+  synopsis: "Synopsis",
+  runtime_minutes: "Runtime (minutes)",
+  original_language: "Original language",
+  production_year: "Production year",
+  country_of_origin: "Country of origin",
+  rights_owner: "Rights owner",
+  production_company: "Production company",
+  crew: "Crew",
+  cast: "Cast",
+  festivals: "Festivals",
+  awards: "Awards",
+  genres: "Genres",
+  keywords: "Keywords",
+  countries: "Countries",
+  advisory: "Advisory",
+  certification: "Certification",
+  copyright: "Copyright",
+};
+
+function friendlyValidationMessage(err: unknown): string {
+  const anyErr = err as { issues?: Array<{ path: (string | number)[]; message: string }> } | null;
+  const first = anyErr?.issues?.[0];
+  if (!first) return "Please review the highlighted fields before saving.";
+  const top = String(first.path[0] ?? "");
+  const label = FIELD_LABELS[top] ?? "This field";
+  // Row-level lists (crew/cast/etc.) — give a business-friendly line.
+  if (["crew", "cast"].includes(top)) {
+    return "Please enter a name for every added person, or remove the empty row.";
+  }
+  if (["festivals", "awards"].includes(top)) {
+    return `Please complete every ${label.toLowerCase()} entry, or remove the empty row.`;
+  }
+  return `${label} needs attention. ${first.message}`.trim();
+}
+
+/** Drop empty repeating-list rows so users aren't blocked by rows they never filled in. */
+function pruneMetadata(m: TitleMetadata): TitleMetadata {
+  const hasText = (s: unknown) => typeof s === "string" && s.trim().length > 0;
+  return {
+    ...m,
+    crew: (m.crew ?? []).filter((p) => hasText(p?.name) || hasText(p?.role)),
+    cast: (m.cast ?? []).filter((p) => hasText(p?.name) || hasText(p?.role)),
+    festivals: (m.festivals ?? []).filter((f) => hasText(f?.name)),
+    awards: (m.awards ?? []).filter((a) => hasText(a?.name)),
+  };
+}
+
 export async function saveTitleMetadata(
   id: string,
   patch: { title?: string; metadata: TitleMetadata },
 ): Promise<void> {
-  const safe = TitleMetadataSchema.parse(patch.metadata);
+  const pruned = pruneMetadata(patch.metadata);
+  const parsed = TitleMetadataSchema.safeParse(pruned);
+  if (!parsed.success) {
+    throw new Error(friendlyValidationMessage(parsed.error));
+  }
+  const safe = parsed.data;
   const update: Record<string, unknown> = {
     metadata: safe,
     synopsis: safe.synopsis || null,
@@ -208,11 +262,11 @@ export async function saveTitleMetadata(
   };
   if (patch.title !== undefined) {
     const t = patch.title.trim();
-    if (!t) throw new Error("Title name cannot be empty");
+    if (!t) throw new Error("Please enter a title name before saving.");
     update.title = t;
   }
   const { error } = await (supabase as any).from("content_titles").update(update).eq("id", id);
-  if (error) throw error;
+  if (error) throw new Error("We couldn't save your changes. Please try again.");
 }
 
 export async function listAssets(titleId: string): Promise<TitleAsset[]> {

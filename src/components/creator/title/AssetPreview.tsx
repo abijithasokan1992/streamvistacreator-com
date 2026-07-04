@@ -232,8 +232,16 @@ export function AssetPreviewModal({
         {/* Body */}
         <div className="relative flex-1 min-h-[240px] sm:min-h-[320px] bg-black/40 grid place-items-center overflow-auto">
           {!url ? (
-            <FallbackNotice message="Preview not available yet. The secure link is still being prepared — try again in a moment." />
+            minting ? (
+              <div className="flex flex-col items-center gap-3 px-6 py-10 text-sm text-muted-foreground">
+                <Loader2 className="w-5 h-5 animate-spin text-accent" />
+                Preparing secure preview…
+              </div>
+            ) : (
+              <FallbackNotice message={mintError ?? "Preview not available yet. The secure link is still being prepared — try again in a moment."} />
+            )
           ) : kind === "image" ? (
+
             <>
               {loading && <Loader2 className="absolute w-5 h-5 animate-spin text-accent" />}
               <img

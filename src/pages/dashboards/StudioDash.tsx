@@ -719,23 +719,32 @@ type JobRow = {
   source_summary: any;
 };
 
-function ActivityPanel() {
+function ActivityPanel({ activeProjectId, activeProjectName }: { activeProjectId: string | null; activeProjectName?: string | null }) {
   const { activeId } = useWorkspaces();
   const [jobs, setJobs] = useState<JobRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [scope, setScope] = useState<"active" | "all">(activeProjectId ? "active" : "all");
+
+  // Follow the Active Production automatically — if the user pins one, scope
+  // to it; if they clear it, fall back to workspace-wide activity.
+  useEffect(() => {
+    setScope(activeProjectId ? "active" : "all");
+  }, [activeProjectId]);
 
   const refresh = useCallback(async () => {
     if (!activeId) { setJobs([]); setLoading(false); return; }
     setLoading(true);
-    const { data } = await supabase
+    let q = supabase
       .from("ingest_jobs")
-      .select("id,job_mode,status,destination_type,total_bytes,transferred_bytes,total_files,completed_files,failed_files,created_at,source_summary")
+      .select("id,job_mode,status,destination_type,total_bytes,transferred_bytes,total_files,completed_files,failed_files,created_at,source_summary,project_id")
       .eq("workspace_id", activeId)
       .order("created_at", { ascending: false })
       .limit(20);
+    if (scope === "active" && activeProjectId) q = q.eq("project_id", activeProjectId);
+    const { data } = await q;
     setJobs((data as JobRow[]) ?? []);
     setLoading(false);
-  }, [activeId]);
+  }, [activeId, scope, activeProjectId]);
 
   useEffect(() => { refresh(); }, [refresh]);
 

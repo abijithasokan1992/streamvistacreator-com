@@ -30,8 +30,8 @@ export default function GlobalErrorListener() {
       showMessage({
         severity: "error",
         title: friendly.title,
-        message: `${friendly.body}\n\nTechnical detail: ${msg}`,
-        context: `source=${source}; path=${window.location.pathname}`,
+        message: friendly.body,
+        context: `source=${source}; path=${window.location.pathname}; detail=${msg}`,
       });
     };
 

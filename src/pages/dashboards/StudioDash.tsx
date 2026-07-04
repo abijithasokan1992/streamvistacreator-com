@@ -1166,7 +1166,11 @@ export default function StudioDashboard() {
       {/* Single primary Ingest dialog — reuses <StudioIngest/> for all modes. */}
       <IngestMediaDialog
         open={ingestOpen}
-        onOpenChange={setIngestOpen}
+        onOpenChange={(o) => {
+          setIngestOpen(o);
+          // Auto-open the Production Media Workspace when the ingest flow closes.
+          if (!o) setTab("workspace");
+        }}
         activeProjectId={activeProjectId ?? undefined}
         ingestDefaults={ingestDefaults}
       />

@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, ClapperboardIcon, Building2 } from "lucide-react";
+import { Loader2, Clapperboard, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspaces } from "@/hooks/useWorkspaces";

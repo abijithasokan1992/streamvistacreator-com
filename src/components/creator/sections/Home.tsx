@@ -72,6 +72,13 @@ export default function HomeSection({ onNavigate, isFree }: { onNavigate: (s: Se
       {/* 1. Identity + plan + storage + titles — the single at-a-glance block */}
       <WorkspaceWelcome />
 
+      {/* 1b. Live backend panels — every number is driven by Supabase state (no mocks). */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <StorageLive />
+        <BillingSnapshot />
+      </div>
+      <IngestQCPanel />
+
       {/* 2. Primary action */}
       {capped ? (
         <button

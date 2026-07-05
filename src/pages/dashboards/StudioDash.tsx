@@ -39,6 +39,7 @@ import ProductionSettingsPanel from "@/components/studio/ProductionSettingsPanel
 import ProductionsManager from "@/components/studio/ProductionsManager";
 import type { VaultProduct } from "@/lib/studioVault";
 import { useCreatorPaygPrice } from "@/hooks/usePublicPlans";
+import { generateProductionNumber, getProductionNumber } from "@/lib/productionNumber";
 
 type AllocRow = { id: string; allocated_gb: number; used_gb: number; source: string };
 

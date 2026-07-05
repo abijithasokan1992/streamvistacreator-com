@@ -7,6 +7,7 @@
  * already read from `projects.crew`, so saving here propagates automatically.
  */
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
@@ -204,6 +205,7 @@ export default function ProductionSettingsPanel({
   activeProjectCrew?: Crew | null;
   onSaved?: () => void;
 }) {
+  const navigate = useNavigate();
   const [s, setS] = useState<Settings>(() => crewToSettings(activeProjectCrew));
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -268,6 +270,7 @@ export default function ProductionSettingsPanel({
     }
     toast.success("Production settings saved — new ingests will inherit these values.");
     onSaved?.();
+    navigate("/dashboard/studio");
   };
 
   const primaryPkg = s.camera_packages[0];

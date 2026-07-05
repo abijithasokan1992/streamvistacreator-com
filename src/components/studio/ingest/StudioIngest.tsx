@@ -988,7 +988,9 @@ export default function StudioIngest({
                   Start ingest
                 </Button>
                 <p className="text-[10px] text-muted-foreground">
-                  {preserveStructure ? "Folder tree preserved" : "Files flattened to root"}
+                  {layoutMode === "preserve" ? "Folder tree preserved"
+                    : layoutMode === "metadata" ? "Organized by Shoot Day / Camera / Card / Asset Type"
+                    : `Custom prefix: ${customBasePath || "(root)"}`}
                 </p>
               </div>
             </div>

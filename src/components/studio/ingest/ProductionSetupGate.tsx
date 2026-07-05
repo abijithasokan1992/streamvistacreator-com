@@ -16,6 +16,7 @@ import {
   Check, ChevronsUpDown, Package, X, UserPlus,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { generateProductionNumber } from "@/lib/productionNumber";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspaces } from "@/hooks/useWorkspaces";
 import { Card } from "@/components/ui/card";
@@ -238,14 +239,7 @@ const EQUIPMENT_PRESETS: EquipmentPreset[] = [
 // Helpers
 // ---------------------------------------------------------------------------
 
-function generateTitleNumber(): string {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `TTL-${yyyy}${mm}${dd}-${rand}`;
-}
+// Production Number generator lives in "@/lib/productionNumber".
 
 const ACTIVE_TITLE_KEY = (wsId: string) => `sv:active-title:${wsId}`;
 const SMART_DEFAULTS_KEY = (wsId: string) => `sv:title-defaults:${wsId}`;
@@ -424,7 +418,7 @@ export default function ProductionSetupGate() {
   // ---- Form state ----
   const defaults = useMemo(() => (activeId ? loadDefaults(activeId) : {}), [activeId]);
 
-  const [titleNumber, setTitleNumber] = useState(generateTitleNumber);
+  const [titleNumber, setTitleNumber] = useState(generateProductionNumber);
   const [name, setName] = useState("");
   const [contentType, setContentType] = useState<string>("Feature Film");
   const [company, setCompany] = useState("");
@@ -697,13 +691,13 @@ export default function ProductionSetupGate() {
         {/* Basics */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2 space-y-1.5">
-            <Label htmlFor="ttl-number">Title Number</Label>
+            <Label htmlFor="ttl-number">Production Number</Label>
             <Input id="ttl-number" value={titleNumber} readOnly className="font-mono bg-muted/40" />
-            <p className="text-xs text-muted-foreground">Auto-generated and read-only.</p>
+            <p className="text-xs text-muted-foreground">Auto-generated. Editable later from Production Settings by workspace admins.</p>
           </div>
 
           <div className="sm:col-span-2 space-y-1.5">
-            <Label htmlFor="ttl-name">Title Name</Label>
+            <Label htmlFor="ttl-name">Production Title</Label>
             <Input id="ttl-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Untitled Feature 2026" />
           </div>
 

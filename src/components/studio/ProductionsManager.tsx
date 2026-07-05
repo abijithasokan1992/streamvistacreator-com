@@ -37,6 +37,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { generateProductionNumber, getProductionNumber } from "@/lib/productionNumber";
 
 const CONTENT_TYPES = [
   "Feature Film", "Series", "Documentary", "Short Film",
@@ -52,14 +53,7 @@ const DEFAULT_FOLDERS = [
   "LUTs", "Stills", "Masters", "Deliverables", "Archive",
 ] as const;
 
-function generateTitleNumber(): string {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `TTL-${yyyy}${mm}${dd}-${rand}`;
-}
+// Production Number generation is centralized in "@/lib/productionNumber".
 
 function fmtBytes(n: number): string {
   if (!Number.isFinite(n) || n <= 0) return "0 B";
@@ -431,6 +425,11 @@ function ProductionGroup({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-medium truncate">{p.name}</p>
+                    {getProductionNumber(p) && (
+                      <Badge variant="outline" className="text-[10px] font-mono bg-accent/10 text-accent border-accent/30">
+                        {getProductionNumber(p)}
+                      </Badge>
+                    )}
                     {isActive && <Badge variant="outline" className="text-[10px] bg-emerald-500/15 text-emerald-300 border-emerald-400/30">Active</Badge>}
                     {p.crew?.title_status && (
                       <Badge variant="outline" className="text-[10px]">{p.crew.title_status}</Badge>
@@ -511,7 +510,7 @@ function ProductionForm({
           user_id: user.id,
           name: name.trim(),
           crew: {
-            title_number: generateTitleNumber(),
+            title_number: generateProductionNumber(),
             content_type: contentType,
             production_company: company.trim(),
             start_date: startDate,
@@ -550,9 +549,16 @@ function ProductionForm({
     <Card className="p-4 space-y-3">
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="sm:col-span-2 space-y-1.5">
-          <Label htmlFor="pf-name">Production Name</Label>
+          <Label htmlFor="pf-name">Production Title</Label>
           <Input id="pf-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Untitled Feature 2026" />
         </div>
+        {mode === "edit" && getProductionNumber(project) && (
+          <div className="sm:col-span-2 space-y-1.5">
+            <Label>Production Number</Label>
+            <Input value={getProductionNumber(project) ?? ""} readOnly className="font-mono bg-muted/40" />
+            <p className="text-[11px] text-muted-foreground">Auto-generated identifier. Editable from Production Settings by workspace admins.</p>
+          </div>
+        )}
         <div className="space-y-1.5">
           <Label>Content Type</Label>
           <Select value={contentType} onValueChange={setContentType}>

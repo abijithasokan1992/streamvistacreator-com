@@ -132,10 +132,12 @@ export default function ProductionMediaWorkspace({
   workspaceId,
   activeProjectId,
   activeProjectName,
+  activeProjectNumber,
 }: {
   workspaceId: string | null;
   activeProjectId: string | null;
   activeProjectName?: string | null;
+  activeProjectNumber?: string | null;
 }) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [items, setItems] = useState<Item[]>([]);
@@ -244,7 +246,10 @@ export default function ProductionMediaWorkspace({
     return (
       <div className="rounded-2xl border border-dashed border-border/50 bg-secondary/10 p-8 text-center">
         <Film className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-        <p className="text-sm text-muted-foreground">No media ingested yet for {activeProjectName ?? "this production"}.</p>
+        <p className="text-sm text-muted-foreground">
+          No media ingested yet for {activeProjectName ?? "this production"}
+          {activeProjectNumber && <> · <span className="font-mono">{activeProjectNumber}</span></>}.
+        </p>
         <p className="text-xs text-muted-foreground mt-1">Ingest Media → Browser Upload · Camera Card · Camera-to-Cloud · Hard-disk Import · Archive Intake.</p>
       </div>
     );
@@ -252,6 +257,18 @@ export default function ProductionMediaWorkspace({
 
   return (
     <div className="space-y-4">
+      {(activeProjectName || activeProjectNumber) && (
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          {activeProjectName && (
+            <span className="font-display text-sm text-foreground truncate">{activeProjectName}</span>
+          )}
+          {activeProjectNumber && (
+            <span className="text-[10px] font-mono border rounded-full px-2 py-0.5 bg-accent/10 text-accent border-accent/30">
+              {activeProjectNumber}
+            </span>
+          )}
+        </div>
+      )}
       {/* Header + filters */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[220px]">

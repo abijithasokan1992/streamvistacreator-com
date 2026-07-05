@@ -224,6 +224,9 @@ export default function StudioIngest({
       lut?: string;
       card_prefix?: string;
     }>;
+    /** Read-only display in the ingest header. */
+    productionNumber?: string;
+    projectName?: string;
   };
   /** Fires once an ingest job reaches its terminal status. Parent dialogs
    *  (e.g. IngestMediaDialog) use this to auto-close after Save. */
@@ -822,6 +825,18 @@ export default function StudioIngest({
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
         <div className="min-w-0">
           <h2 className="font-display text-xl sm:text-2xl">Studio Ingest</h2>
+          {(activeProjectDefaults?.projectName || activeProjectDefaults?.productionNumber) && (
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+              {activeProjectDefaults?.projectName && (
+                <span className="text-foreground truncate">{activeProjectDefaults.projectName}</span>
+              )}
+              {activeProjectDefaults?.productionNumber && (
+                <span className="text-[10px] font-mono border rounded-full px-2 py-0.5 bg-accent/10 text-accent border-accent/30">
+                  {activeProjectDefaults.productionNumber}
+                </span>
+              )}
+            </div>
+          )}
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
             Bring in footage from drives, camera cards or live folders. Files are auto-sorted into RAW, Proxy, Audio, Documents and Reports.
           </p>

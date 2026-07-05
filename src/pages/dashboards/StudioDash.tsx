@@ -39,6 +39,7 @@ import ProductionSettingsPanel from "@/components/studio/ProductionSettingsPanel
 import ProductionsManager from "@/components/studio/ProductionsManager";
 import type { VaultProduct } from "@/lib/studioVault";
 import { useCreatorPaygPrice } from "@/hooks/usePublicPlans";
+import { generateProductionNumber, getProductionNumber } from "@/lib/productionNumber";
 
 type AllocRow = { id: string; allocated_gb: number; used_gb: number; source: string };
 
@@ -484,14 +485,8 @@ const DEFAULT_FOLDERS = [
   "LUTs", "Stills", "Masters", "Deliverables", "Archive",
 ] as const;
 
-function generateTitleNumber(): string {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `TTL-${yyyy}${mm}${dd}-${rand}`;
-}
+// Production Number generation is centralized in "@/lib/productionNumber".
+// (See generateProductionNumber import at the top of the file.)
 
 function fmtBytes(n: number): string {
   if (!Number.isFinite(n) || n <= 0) return "0 B";
@@ -584,6 +579,10 @@ function ProductionPanel({
   const [company, setCompany] = useState("");
   const [startDate, setStartDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
   const [status, setStatus] = useState<string>("Pre-Production");
+  // Preview a Production Number while the create form is open; regenerated
+  // on the server-side insert below so the persisted value is authoritative.
+  const [previewNumber, setPreviewNumber] = useState<string>(() => generateProductionNumber());
+  useEffect(() => { if (showForm) setPreviewNumber(generateProductionNumber()); }, [showForm]);
 
   const refresh = useCallback(async () => {
     if (!activeId) { setProjects([]); setLoading(false); return; }
@@ -623,7 +622,7 @@ function ProductionPanel({
         user_id: user.id,
         name: name.trim(),
         crew: {
-          title_number: generateTitleNumber(),
+          title_number: generateProductionNumber(),
           content_type: contentType,
           production_company: company.trim(),
           start_date: startDate,
@@ -674,8 +673,13 @@ function ProductionPanel({
           <Card className="p-4 mb-4 space-y-3">
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="sm:col-span-2 space-y-1.5">
-                <Label htmlFor="p-name">Title Name</Label>
+                <Label htmlFor="p-name">Production Title</Label>
                 <Input id="p-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Untitled Feature 2026" />
+              </div>
+              <div className="sm:col-span-2 space-y-1.5">
+                <Label htmlFor="p-number">Production Number</Label>
+                <Input id="p-number" value={previewNumber} readOnly className="font-mono bg-muted/40" />
+                <p className="text-[11px] text-muted-foreground">Auto-generated. Assigned on create; editable later from Production Settings by admins.</p>
               </div>
               <div className="space-y-1.5">
                 <Label>Content Type</Label>
@@ -809,10 +813,14 @@ function ProductionGroup({
                   <p className="text-sm font-medium flex items-center gap-2 truncate">
                     <span className="truncate">{p.name}</span>
                     {isActive && <StatusPill tone="ok">Active</StatusPill>}
+                    {getProductionNumber(p) && (
+                      <span className="text-[10px] font-mono border rounded-full px-1.5 py-0.5 bg-accent/10 text-accent border-accent/30">
+                        {getProductionNumber(p)}
+                      </span>
+                    )}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
                     {p.crew?.content_type ?? "Production"} · {p.crew?.title_status ?? "Active"}
-                    {p.crew?.title_number && <> · <span className="font-mono">{p.crew.title_number}</span></>}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -851,7 +859,7 @@ type JobRow = {
   source_summary: any;
 };
 
-function ActivityPanel({ activeProjectId, activeProjectName }: { activeProjectId: string | null; activeProjectName?: string | null }) {
+function ActivityPanel({ activeProjectId, activeProjectName, activeProjectNumber }: { activeProjectId: string | null; activeProjectName?: string | null; activeProjectNumber?: string | null }) {
   const { activeId } = useWorkspaces();
   const [jobs, setJobs] = useState<JobRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -891,6 +899,11 @@ function ActivityPanel({ activeProjectId, activeProjectName }: { activeProjectId
             {activeProjectId && activeProjectName && (
               <span className="text-[10px] uppercase tracking-widest font-mono border rounded-full px-2 py-0.5 bg-accent/10 text-accent border-accent/30">
                 {scope === "active" ? `Scoped · ${activeProjectName}` : "All workspace jobs"}
+              </span>
+            )}
+            {activeProjectNumber && scope === "active" && (
+              <span className="text-[10px] font-mono border rounded-full px-2 py-0.5 bg-secondary/40 text-muted-foreground border-border/50">
+                {activeProjectNumber}
               </span>
             )}
           </div>
@@ -1076,6 +1089,8 @@ export default function StudioDashboard() {
       cameraBrand: c.camera_brand || cameraBrandGuess || undefined,
       unit: c.default_unit || c.unit || undefined,
       cameraPackages: Array.isArray(c.camera_packages) ? c.camera_packages : undefined,
+      productionNumber: getProductionNumber(activeProject) ?? undefined,
+      projectName: activeProject?.name ?? undefined,
     };
   }, [activeProject?.crew]);
 
@@ -1174,7 +1189,11 @@ export default function StudioDashboard() {
           />
 
           {/* Recent Activity */}
-          <ActivityPanel activeProjectId={activeProjectId} activeProjectName={activeProject?.name ?? null} />
+          <ActivityPanel
+            activeProjectId={activeProjectId}
+            activeProjectName={activeProject?.name ?? null}
+            activeProjectNumber={getProductionNumber(activeProject)}
+          />
         </TabsContent>
 
         <TabsContent value="productions" className="mt-6">
@@ -1199,6 +1218,7 @@ export default function StudioDashboard() {
             workspaceId={workspaceId ?? null}
             activeProjectId={activeProjectId}
             activeProjectName={activeProject?.name ?? null}
+            activeProjectNumber={getProductionNumber(activeProject)}
           />
         </TabsContent>
 

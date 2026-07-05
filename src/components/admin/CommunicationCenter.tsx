@@ -136,7 +136,7 @@ export default function CommunicationCenter() {
         </TabsContent>
 
         <TabsContent value="broadcast" className="mt-4 space-y-4">
-          <SectionCaption title="Broadcast" hint="Send platform announcements over email, SMS, RCS or in-app. Reuses existing GatewayAPI + Gmail + notifications." />
+          <SectionCaption title="Announcements" hint="Send platform announcements over email, SMS, RCS or in-app. Reuses existing GatewayAPI + Gmail + notifications." />
           <UniversalBroadcast />
         </TabsContent>
 

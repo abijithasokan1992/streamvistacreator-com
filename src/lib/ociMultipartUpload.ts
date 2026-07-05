@@ -290,6 +290,16 @@ export function mapUploadError(raw: unknown): string {
   if (m.includes("upload_not_found") || m.includes("upload session") || m.includes("uploadnotfound")) {
     return "This upload session expired on the server. It will restart automatically — please wait or retry.";
   }
+  // OCI connectivity — DNS, socket, TLS, connection refused/reset, or a
+  // fetch that never reached the origin. Tagged with the OCI_CONNECTION_FAILED
+  // reason code so telemetry can group it while the user only sees the safe
+  // copy. Original exception text is never surfaced to the UI.
+  if (m.includes("oci_connection_failed") || m.includes("econnrefused") || m.includes("econnreset")
+      || m.includes("enotfound") || m.includes("etimedout") || m.includes("dns error")
+      || m.includes("connection refused") || m.includes("connection reset")
+      || m.includes("connection closed") || m.includes("connection failed")) {
+    return "Couldn't reach the storage service. Please check your connection and retry — the upload will resume automatically when it succeeds.";
+  }
   if (m.includes("network") || m.includes("failed to fetch")) {
     return "Network interruption — the upload will resume automatically when reconnected.";
   }

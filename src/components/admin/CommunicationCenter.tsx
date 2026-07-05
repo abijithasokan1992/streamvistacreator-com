@@ -53,7 +53,7 @@ const TABS: { key: TabKey; label: string; icon: React.ReactNode; hint: string }[
   { key: "inbox",         label: "Inbox",         icon: <InboxIcon className="w-4 h-4" />,     hint: "Support & contact form submissions" },
   { key: "notifications", label: "Notifications", icon: <Bell className="w-4 h-4" />,          hint: "System notifications" },
   { key: "invitations",   label: "Invitations",   icon: <Send className="w-4 h-4" />,          hint: "Studio, buyer, team invites" },
-  { key: "broadcast",     label: "Broadcast",     icon: <Megaphone className="w-4 h-4" />,     hint: "Email · SMS · RCS · in-app" },
+  { key: "broadcast",     label: "Announcements", icon: <Megaphone className="w-4 h-4" />,     hint: "Email · SMS · RCS · in-app" },
   { key: "support",       label: "Support",       icon: <LifeBuoy className="w-4 h-4" />,      hint: "Support conversations" },
   { key: "activity",      label: "Activity",      icon: <ActivityIcon className="w-4 h-4" />,  hint: "Recent communication activity" },
 ];

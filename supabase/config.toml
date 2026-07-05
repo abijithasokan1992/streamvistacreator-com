@@ -43,3 +43,5 @@ project_id = "hllgmkfqgeuqlmpcirvn"
 
   [functions.integrations-status]
     verify_jwt = false
+  [functions.assistant-chat]
+    verify_jwt = true

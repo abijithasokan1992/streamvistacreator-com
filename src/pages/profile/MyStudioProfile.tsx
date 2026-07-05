@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { Loader2, ChevronLeft, Building2 } from "lucide-react";
+import StudioProfileSummary from "@/components/profile/StudioProfileSummary";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";

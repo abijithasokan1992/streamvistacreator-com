@@ -859,7 +859,7 @@ type JobRow = {
   source_summary: any;
 };
 
-function ActivityPanel({ activeProjectId, activeProjectName }: { activeProjectId: string | null; activeProjectName?: string | null }) {
+function ActivityPanel({ activeProjectId, activeProjectName, activeProjectNumber }: { activeProjectId: string | null; activeProjectName?: string | null; activeProjectNumber?: string | null }) {
   const { activeId } = useWorkspaces();
   const [jobs, setJobs] = useState<JobRow[]>([]);
   const [loading, setLoading] = useState(true);

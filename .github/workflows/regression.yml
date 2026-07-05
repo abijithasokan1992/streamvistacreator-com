@@ -31,33 +31,65 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          bun-version: latest
+          node-version: 22
+          cache: npm
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: npm ci
+
+      - name: Prepare report directory
+        run: mkdir -p reports
 
       - name: ingest-preflight — client + server contract
         id: preflight
         continue-on-error: true
-        run: bun run test src/test/smoke/ingest-preflight.test.ts src/test/smoke/ingest-preflight-telemetry.test.ts
+        run: npx vitest run --reporter=verbose --reporter=json --outputFile=reports/preflight.json src/test/smoke/ingest-preflight.test.ts src/test/smoke/ingest-preflight-telemetry.test.ts 2>&1 | tee reports/preflight.log
+
+      - name: Upload preflight reports
+        if: steps.preflight.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: preflight-reports
+          path: reports/preflight.*
 
       - name: Studio onboarding — no re-loop regression
         id: onboarding
         continue-on-error: true
-        run: bun run test src/test/smoke/studio-onboarding.test.tsx
+        run: npx vitest run --reporter=verbose --reporter=json --outputFile=reports/onboarding.json src/test/smoke/studio-onboarding.test.tsx 2>&1 | tee reports/onboarding.log
+
+      - name: Upload onboarding reports
+        if: steps.onboarding.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: onboarding-reports
+          path: reports/onboarding.*
 
       - name: Active Production + Ingest hardening
         id: ingest
         continue-on-error: true
-        run: bun run test src/test/smoke/ingest-hardening.test.ts
+        run: npx vitest run --reporter=verbose --reporter=json --outputFile=reports/ingest.json src/test/smoke/ingest-hardening.test.ts 2>&1 | tee reports/ingest.log
+
+      - name: Upload ingest reports
+        if: steps.ingest.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ingest-reports
+          path: reports/ingest.*
 
       - name: OCI connection failure surface
         id: oci
         continue-on-error: true
-        run: bun run test src/test/smoke/oci-connection-failure.test.ts
+        run: npx vitest run --reporter=verbose --reporter=json --outputFile=reports/oci.json src/test/smoke/oci-connection-failure.test.ts 2>&1 | tee reports/oci.log
+
+      - name: Upload OCI reports
+        if: steps.oci.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: oci-reports
+          path: reports/oci.*
 
       - name: Report
         # Aggregate every job outcome into a single visible status line.

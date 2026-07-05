@@ -84,18 +84,9 @@ export const MFILimitedEdition = () => {
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "bin";
     const path = `${requestId}/proof.${ext}`;
 
-    // Upload proof first so we can store the path on insert
-    const { error: upErr } = await supabase.storage
-      .from("mfi-proof")
-      .upload(path, file, { contentType: file.type, upsert: true });
-
-    if (upErr) {
-      console.error("MFI upload error", upErr);
-      setSubmitting(false);
-      toast.error("Upload failed. Please try again.");
-      return;
-    }
-
+    // Insert the onboarding request FIRST so the storage RLS on `mfi-proof`,
+    // which requires the path's UUID prefix to match an existing
+    // onboarding_requests.id, permits the upload.
     const { error: insertErr } = await supabase
       .from("onboarding_requests")
       .insert({
@@ -118,6 +109,19 @@ export const MFILimitedEdition = () => {
       toast.error("Submission failed. Please try again.");
       return;
     }
+
+    // Now upload the proof file bound to the request id.
+    const { error: upErr } = await supabase.storage
+      .from("mfi-proof")
+      .upload(path, file, { contentType: file.type, upsert: true });
+
+    if (upErr) {
+      console.error("MFI upload error", upErr);
+      setSubmitting(false);
+      toast.error("Upload failed. Please try again.");
+      return;
+    }
+
 
     setSubmitting(false);
     setDone(true);

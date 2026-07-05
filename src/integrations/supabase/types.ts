@@ -3318,7 +3318,9 @@ export type Database = {
       ingest_job_items: {
         Row: {
           asset_class: string | null
+          client_checksum: string | null
           created_at: string
+          dedupe_key: string | null
           error_message: string | null
           file_name: string
           id: string
@@ -3326,16 +3328,21 @@ export type Database = {
           metadata: Json
           mime_guess: string | null
           progress_percent: number
+          proxy_status: string
           relative_path: string
           size_bytes: number
           status: string
+          technical_metadata: Json
+          thumbnail_status: string
           updated_at: string
           upload_id: string | null
           upload_session_id: string | null
         }
         Insert: {
           asset_class?: string | null
+          client_checksum?: string | null
           created_at?: string
+          dedupe_key?: string | null
           error_message?: string | null
           file_name: string
           id?: string
@@ -3343,16 +3350,21 @@ export type Database = {
           metadata?: Json
           mime_guess?: string | null
           progress_percent?: number
+          proxy_status?: string
           relative_path?: string
           size_bytes?: number
           status?: string
+          technical_metadata?: Json
+          thumbnail_status?: string
           updated_at?: string
           upload_id?: string | null
           upload_session_id?: string | null
         }
         Update: {
           asset_class?: string | null
+          client_checksum?: string | null
           created_at?: string
+          dedupe_key?: string | null
           error_message?: string | null
           file_name?: string
           id?: string
@@ -3360,9 +3372,12 @@ export type Database = {
           metadata?: Json
           mime_guess?: string | null
           progress_percent?: number
+          proxy_status?: string
           relative_path?: string
           size_bytes?: number
           status?: string
+          technical_metadata?: Json
+          thumbnail_status?: string
           updated_at?: string
           upload_id?: string | null
           upload_session_id?: string | null

@@ -16,6 +16,7 @@ import {
   Check, ChevronsUpDown, Package, X, UserPlus,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { generateProductionNumber } from "@/lib/productionNumber";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspaces } from "@/hooks/useWorkspaces";
 import { Card } from "@/components/ui/card";

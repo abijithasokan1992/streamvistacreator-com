@@ -169,6 +169,7 @@ const PublicRoutes = () => (
     <Route path="/admin/storage" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/comms" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/settings" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/integrations" element={<AdminErrorBoundary><AdminIntegrations /></AdminErrorBoundary>} />
     <Route path="/admin/audit" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/homepage" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/qc" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />

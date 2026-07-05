@@ -43,6 +43,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
+    mcpPlugin(),
     mode === "development" && componentTagger(),
     mode !== "development" && prerenderRoutes(),
   ].filter(Boolean),

@@ -703,7 +703,7 @@ export function AutoIngestPanel() {
           <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.25em] text-accent">
             <Sparkles className="w-3.5 h-3.5" /> Auto Ingest
           </div>
-          <h3 className="text-xl font-semibold mt-1">Connect a device — we handle the rest</h3>
+          <h3 className="text-xl font-semibold mt-1">Plug in a hard drive — we'll scan it automatically</h3>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
             Files already uploaded to this production are skipped automatically.
             Cancel or retry any transfer from the queue below — interrupted

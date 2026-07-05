@@ -3855,6 +3855,50 @@ export type Database = {
           },
         ]
       }
+      legacy_film_imports: {
+        Row: {
+          claimed_at: string | null
+          claimed_by_user_id: string | null
+          content_title_id: string | null
+          created_at: string
+          id: string
+          legacy_film_id: number
+          payload: Json
+          updated_at: string
+          uploader_email: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          claimed_by_user_id?: string | null
+          content_title_id?: string | null
+          created_at?: string
+          id?: string
+          legacy_film_id: number
+          payload: Json
+          updated_at?: string
+          uploader_email: string
+        }
+        Update: {
+          claimed_at?: string | null
+          claimed_by_user_id?: string | null
+          content_title_id?: string | null
+          created_at?: string
+          id?: string
+          legacy_film_id?: number
+          payload?: Json
+          updated_at?: string
+          uploader_email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legacy_film_imports_content_title_id_fkey"
+            columns: ["content_title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       legal_acceptances: {
         Row: {
           accepted_at: string
@@ -8542,6 +8586,7 @@ export type Database = {
         Returns: boolean
       }
       claim_admin_if_none: { Args: never; Returns: boolean }
+      claim_legacy_films: { Args: never; Returns: number }
       complete_title_asset_upload: {
         Args: {
           _category: string

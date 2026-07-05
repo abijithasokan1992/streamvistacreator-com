@@ -793,10 +793,11 @@ export default function StudioIngest({
     } catch (e) {
       // Route every terminal ingest failure through mapUploadError so raw
       // internal exception text, OCI response bodies, or edge-function stack
-      // traces never surface in the UI. Structured log carries the raw code
-      // for ops without exposing it to the DIT.
-      const rawMsg = (e as Error)?.message ?? "";
-      const friendly = mapUploadError(e);
+      // traces never surface in the UI. Known-friendly errors we throw
+      // ourselves (already vetted for production copy) pass through verbatim.
+      const rawMsg = String((e as Error)?.message ?? "");
+      const SAFE_PATTERN = /^(You don't have permission|A premium storage|This upload session|Please sign in|Storage upload failed|Network interruption|Couldn't reach the storage)/;
+      const friendly = SAFE_PATTERN.test(rawMsg) ? rawMsg : mapUploadError(e);
       console.log(JSON.stringify({
         level: "error", event: "ingest_job_failed",
         workspace_id: activeId, code: rawMsg.slice(0, 60),

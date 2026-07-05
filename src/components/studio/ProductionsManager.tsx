@@ -661,9 +661,9 @@ function ShareProductionDialog({
               <Select value={role} onValueChange={(v) => setRole(v as any)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="editor">Editor</SelectItem>
-                  <SelectItem value="viewer">Viewer</SelectItem>
+                  {INVITABLE_ORG_ROLES.map((r) => (
+                    <SelectItem key={r} value={r}>{ORG_ROLE_LABEL[r]}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

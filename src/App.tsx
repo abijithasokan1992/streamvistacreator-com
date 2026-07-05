@@ -43,6 +43,7 @@ import MyStudioProfile from "./pages/profile/MyStudioProfile.tsx";
 import StudioAdvancedSettings from "./pages/dashboards/StudioAdvancedSettings.tsx";
 import StudioProfileOnboardingGate from "./components/studio/StudioProfileOnboardingGate.tsx";
 import AdminHome from "./pages/AdminHome.tsx";
+import AdminIntegrations from "./pages/AdminIntegrations.tsx";
 import CollegeERP from "./pages/CollegeERP.tsx";
 // Smart Uploads is not MVP-ready — hidden until the checksum + bucket work is production-safe.
 // import SmartUploads from "./pages/SmartUploads.tsx";

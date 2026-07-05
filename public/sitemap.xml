@@ -7,7 +7,11 @@
   <url><loc>https://streamvistacreator.com/c2c-setup</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://streamvistacreator.com/onboarding</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://streamvistacreator.com/support</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://streamvistacreator.com/launching-special-plan</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://streamvistacreator.com/auth</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://streamvistacreator.com/auth/callback</loc><changefreq>yearly</changefreq><priority>0.1</priority></url>
+  <url><loc>https://streamvistacreator.com/reset-password</loc><changefreq>yearly</changefreq><priority>0.2</priority></url>
+  <url><loc>https://streamvistacreator.com/admin</loc><changefreq>yearly</changefreq><priority>0.1</priority></url>
+  <url><loc>https://streamvistacreator.com/admin/super</loc><changefreq>yearly</changefreq><priority>0.1</priority></url>
   <url><loc>https://streamvistacreator.com/terms</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
   <url><loc>https://streamvistacreator.com/privacy</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
   <url><loc>https://streamvistacreator.com/refund</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>

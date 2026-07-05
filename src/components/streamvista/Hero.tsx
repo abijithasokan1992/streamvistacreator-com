@@ -162,9 +162,15 @@ export const Hero = () => {
                 aria-hidden={!isCurrent}
               >
                 {s.headline ? (
-                  <h1 className="font-display font-black uppercase leading-[0.88] tracking-tight text-[clamp(2.4rem,8.4vw,7rem)]">
-                    {s.headline}
-                  </h1>
+                  isCurrent ? (
+                    <h1 className="font-display font-black uppercase leading-[0.88] tracking-tight text-[clamp(2.4rem,8.4vw,7rem)]">
+                      {s.headline}
+                    </h1>
+                  ) : (
+                    <h2 className="font-display font-black uppercase leading-[0.88] tracking-tight text-[clamp(2.4rem,8.4vw,7rem)]">
+                      {s.headline}
+                    </h2>
+                  )
                 ) : (
                   <DefaultHeadline />
                 )}

@@ -505,7 +505,7 @@ function ProductionForm({
           user_id: user.id,
           name: name.trim(),
           crew: {
-            title_number: generateTitleNumber(),
+            title_number: generateProductionNumber(),
             content_type: contentType,
             production_company: company.trim(),
             start_date: startDate,

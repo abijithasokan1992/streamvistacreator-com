@@ -34,6 +34,12 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import StudioIngest from "./StudioIngest";
+import {
+  PRODUCTION_ROLE_LABEL,
+  PRODUCTION_ROLE_DESCRIPTION,
+  type ProductionRole,
+} from "@/lib/rbac/labels";
+import { RoleLegend } from "@/components/rbac/RoleLegend";
 
 // ---------------------------------------------------------------------------
 // Static presets

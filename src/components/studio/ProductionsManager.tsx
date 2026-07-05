@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { generateProductionNumber, getProductionNumber } from "@/lib/productionNumber";
+import { INVITABLE_ORG_ROLES, ORG_ROLE_LABEL, ORG_ROLE_BACKEND, labelForOrgRole } from "@/lib/rbac/labels";
 
 const CONTENT_TYPES = [
   "Feature Film", "Series", "Documentary", "Short Film",
@@ -608,7 +609,9 @@ function ShareProductionDialog({
   onInvited: () => void;
 }) {
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"admin" | "editor" | "viewer">("editor");
+  // UI holds the canonical Organization Role; we map to the backend value at
+  // invite time so the workspace_members row uses the existing enum.
+  const [role, setRole] = useState<(typeof INVITABLE_ORG_ROLES)[number]>("member");
   const [sending, setSending] = useState(false);
 
   const invite = async () => {
@@ -616,12 +619,12 @@ function ShareProductionDialog({
     setSending(true);
     try {
       const { data, error } = await supabase.functions.invoke("workspace-invite", {
-        body: { workspace_id: workspaceId, email: email.trim(), role },
+        body: { workspace_id: workspaceId, email: email.trim(), role: ORG_ROLE_BACKEND[role] },
       });
       if (error) throw error;
       const res = data as any;
       if (res?.pending) toast.success(`Invitation sent to ${email.trim()}`);
-      else toast.success(`${email.trim()} added as ${role}`);
+      else toast.success(`${email.trim()} added as ${ORG_ROLE_LABEL[role]}`);
       setEmail("");
       onInvited();
     } catch (e) {
@@ -658,9 +661,9 @@ function ShareProductionDialog({
               <Select value={role} onValueChange={(v) => setRole(v as any)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="editor">Editor</SelectItem>
-                  <SelectItem value="viewer">Viewer</SelectItem>
+                  {INVITABLE_ORG_ROLES.map((r) => (
+                    <SelectItem key={r} value={r}>{ORG_ROLE_LABEL[r]}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -683,7 +686,7 @@ function ShareProductionDialog({
                       {m.full_name || m.email || m.user_id.slice(0, 8)}
                       {m.email && m.full_name ? <span className="text-muted-foreground"> · {m.email}</span> : null}
                     </span>
-                    <Badge variant="outline" className="text-[10px]">{m.role}</Badge>
+                    <Badge variant="outline" className="text-[10px]">{labelForOrgRole(m.role)}</Badge>
                   </li>
                 ))}
               </ul>
@@ -709,7 +712,7 @@ function CollaborationPanel({
   canManage: boolean;
 }) {
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"admin" | "editor" | "viewer">("editor");
+  const [role, setRole] = useState<(typeof INVITABLE_ORG_ROLES)[number]>("member");
   const [query, setQuery] = useState("");
   const [sending, setSending] = useState(false);
 
@@ -727,12 +730,12 @@ function CollaborationPanel({
     setSending(true);
     try {
       const { data, error } = await supabase.functions.invoke("workspace-invite", {
-        body: { workspace_id: workspaceId, email: email.trim(), role },
+        body: { workspace_id: workspaceId, email: email.trim(), role: ORG_ROLE_BACKEND[role] },
       });
       if (error) throw error;
       const res = data as any;
       if (res?.pending) toast.success(`Invitation sent to ${email.trim()}`);
-      else toast.success(`${email.trim()} added as ${role}`);
+      else toast.success(`${email.trim()} added as ${ORG_ROLE_LABEL[role]}`);
       setEmail("");
       onChanged();
     } catch (e) {
@@ -749,8 +752,8 @@ function CollaborationPanel({
         <h3 className="font-semibold text-sm">Team & Collaboration</h3>
       </div>
       <p className="text-xs text-muted-foreground mb-4 max-w-2xl">
-        Invite collaborators by email or search existing members. Roles control write access
-        (Admin can invite, Editor can create/edit productions, Viewer is read-only).
+        Invite collaborators by email or search existing members. Organization roles control workspace access —
+        Admin manages members and billing, Manager runs day-to-day operations, Member creates and edits productions, Viewer is read-only.
       </p>
 
       {canManage && (
@@ -768,9 +771,9 @@ function CollaborationPanel({
           <Select value={role} onValueChange={(v) => setRole(v as any)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="admin">Admin</SelectItem>
-              <SelectItem value="editor">Editor</SelectItem>
-              <SelectItem value="viewer">Viewer</SelectItem>
+              {INVITABLE_ORG_ROLES.map((r) => (
+                <SelectItem key={r} value={r}>{ORG_ROLE_LABEL[r]}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Button onClick={invite} disabled={!email.trim() || sending}>
@@ -802,7 +805,7 @@ function CollaborationPanel({
                 <span className="font-medium">{m.full_name || m.email || m.user_id.slice(0, 8)}</span>
                 {m.email && m.full_name ? <span className="text-muted-foreground"> · {m.email}</span> : null}
               </span>
-              <Badge variant="outline" className="text-[10px]">{m.role}</Badge>
+              <Badge variant="outline" className="text-[10px]">{labelForOrgRole(m.role)}</Badge>
             </li>
           ))}
         </ul>

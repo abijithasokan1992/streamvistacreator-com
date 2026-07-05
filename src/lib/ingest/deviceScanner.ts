@@ -85,8 +85,8 @@ async function walkHandle(
     if (entry.kind === "file") {
       const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
       if (!isIngestable(entry.name, rel)) continue;
+      const fileHandle = entry as FileSystemFileHandle;
       const file = await fileHandle.getFile();
-      const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
       acc.push({ file, relativePath: rel, subpath: prefix });
     } else if (entry.kind === "directory") {
       await walkHandle(entry as FileSystemDirectoryHandle, prefix ? `${prefix}/${entry.name}` : entry.name, acc);

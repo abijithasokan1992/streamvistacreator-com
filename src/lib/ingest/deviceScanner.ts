@@ -106,7 +106,7 @@ export function scanFileList(list: FileList): ScanResult {
   for (let i = 0; i < list.length; i++) {
     const f = list[i];
     const rel: string = (f as File & { webkitRelativePath?: string }).webkitRelativePath || f.name;
-    if (!MEDIA_EXT_RE.test(f.name)) continue;
+    if (!isIngestable(f.name, rel)) continue;
     const parts = rel.split("/");
     if (parts.length > 1 && rootLabel === "External media") rootLabel = parts[0];
     files.push({

@@ -1189,7 +1189,11 @@ export default function StudioDashboard() {
           />
 
           {/* Recent Activity */}
-          <ActivityPanel activeProjectId={activeProjectId} activeProjectName={activeProject?.name ?? null} />
+          <ActivityPanel
+            activeProjectId={activeProjectId}
+            activeProjectName={activeProject?.name ?? null}
+            activeProjectNumber={getProductionNumber(activeProject)}
+          />
         </TabsContent>
 
         <TabsContent value="productions" className="mt-6">
@@ -1214,6 +1218,7 @@ export default function StudioDashboard() {
             workspaceId={workspaceId ?? null}
             activeProjectId={activeProjectId}
             activeProjectName={activeProject?.name ?? null}
+            activeProjectNumber={getProductionNumber(activeProject)}
           />
         </TabsContent>
 

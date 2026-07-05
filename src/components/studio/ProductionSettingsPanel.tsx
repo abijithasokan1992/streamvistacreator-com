@@ -334,8 +334,8 @@ export default function ProductionSettingsPanel({
       ) : (
         <>
           <FieldGroup title="Production" description="Basic identity used across the production lifecycle.">
-            <Field label="Title Number">
-              <Input value={s.title_number} onChange={(e) => set("title_number", e.target.value)} placeholder="e.g. TN-2026-014" />
+            <Field label="Production Number">
+              <Input value={s.title_number} onChange={(e) => set("title_number", e.target.value)} placeholder="e.g. PRD-20260705-A1B2" />
             </Field>
             <Field label="Status">
               <SearchSelect value={s.title_status} onChange={(v) => set("title_status", v)}

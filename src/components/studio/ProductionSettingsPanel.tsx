@@ -270,6 +270,7 @@ export default function ProductionSettingsPanel({
     }
     toast.success("Production settings saved — new ingests will inherit these values.");
     onSaved?.();
+    navigate("/dashboard/studio");
   };
 
   const primaryPkg = s.camera_packages[0];

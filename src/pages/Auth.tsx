@@ -78,6 +78,14 @@ export default function Auth() {
   // Pre-fetch the mail-voice TTS so playback is instant after send.
   useEffect(() => { prewarmMailVoice(); }, []);
 
+  // If we arrived with ?next=..., stash it so the callback can honor it after sign-in.
+  useEffect(() => {
+    const n = new URLSearchParams(window.location.search).get("next");
+    if (n && n.startsWith("/") && !n.startsWith("//")) {
+      try { sessionStorage.setItem("sv_consent_next", n); } catch { /* noop */ }
+    }
+  }, []);
+
   // Already signed in → return to consent flow if pending, else role dashboard.
   useEffect(() => {
     if (loading || !user) return;

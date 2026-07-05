@@ -50,32 +50,33 @@ export const DMCAForm = () => {
     }
     setSubmitting(true);
     try {
+      // Pre-generate the request id on the client so the anonymous flow does
+      // not need a SELECT-after-INSERT (which anon lacks a policy for).
+      const requestId = crypto.randomUUID();
+
       // Insert the DMCA row FIRST so we can bind any storage upload to its id.
       // Storage RLS on `dmca-evidence` requires the path's UUID prefix to match
       // an existing dmca_requests.id, which prevents anonymous uploads to
       // arbitrary UUID folders.
-      const { data: inserted, error } = await supabase
-        .from("dmca_requests")
-        .insert({
-          reporter_name: parsed.data.reporter_name,
-          reporter_email: parsed.data.reporter_email,
-          reporter_phone: form.reporter_phone || null,
-          reporter_address: form.reporter_address || null,
-          copyright_work: parsed.data.copyright_work,
-          infringing_url: parsed.data.infringing_url,
-          description: parsed.data.description,
-          signature: parsed.data.signature,
-          good_faith_statement: true,
-          accuracy_statement: true,
-          evidence_path: null,
-          status: "pending",
-        })
-        .select("id")
-        .single();
+      const { error } = await supabase.from("dmca_requests").insert({
+        id: requestId,
+        reporter_name: parsed.data.reporter_name,
+        reporter_email: parsed.data.reporter_email,
+        reporter_phone: form.reporter_phone || null,
+        reporter_address: form.reporter_address || null,
+        copyright_work: parsed.data.copyright_work,
+        infringing_url: parsed.data.infringing_url,
+        description: parsed.data.description,
+        signature: parsed.data.signature,
+        good_faith_statement: true,
+        accuracy_statement: true,
+        evidence_path: null,
+        status: "pending",
+      });
       if (error) throw error;
 
-      if (file && inserted?.id) {
-        const path = `${inserted.id}/${file.name.replace(/[^\w.\-]/g, "_")}`;
+      if (file) {
+        const path = `${requestId}/${file.name.replace(/[^\w.\-]/g, "_")}`;
         const { error: upErr } = await supabase.storage
           .from("dmca-evidence")
           .upload(path, file, { upsert: false });
@@ -88,6 +89,7 @@ export const DMCAForm = () => {
 
       setDone(true);
       toast.success("Takedown notice submitted");
+
 
     } catch (err) {
       console.error("DMCA submission error", err);

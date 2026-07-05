@@ -455,6 +455,14 @@ export default function StudioIngest({
         );
         const pausedMatch = sameCard.find((j: any) => j.status === "paused");
         if (pausedMatch) {
+          // Structured client telemetry — reason code matches the server-side
+          // taxonomy so log pipelines can grep across both surfaces.
+          console.log(JSON.stringify({
+            level: "warn", event: "ingest_preflight_denied",
+            reason: "UPLOAD_RESUME_REQUIRED",
+            workspace_id: activeId, project_id: projectId || null,
+            prior_job_id: pausedMatch.id,
+          }));
           const ok = window.confirm(
             `A previous ingest for card "${cardKey}" was paused mid-upload. ` +
             `Continue this new ingest anyway? Cancel to open the paused job and resume it instead.`,
@@ -478,6 +486,12 @@ export default function StudioIngest({
             (f) => priorSet.has(`${f.file.name}::${f.file.size}`),
           );
           if (dupes.length > 0) {
+            console.log(JSON.stringify({
+              level: "warn", event: "ingest_preflight_denied",
+              reason: "DUPLICATE_MEDIA",
+              workspace_id: activeId, project_id: projectId || null,
+              prior_job_id: priorCompleted.id, duplicate_count: dupes.length,
+            }));
             const ok = window.confirm(
               `${dupes.length} file${dupes.length === 1 ? "" : "s"} on this source already exist ` +
               `in a prior ingest for card "${cardKey}". Existing media will NOT be overwritten. ` +
@@ -487,9 +501,14 @@ export default function StudioIngest({
           }
         }
       }
-    } catch (e) {
+    } catch {
       // Pre-check is best-effort — never block the DIT if the lookup itself fails.
-      console.warn("[ingest] pre-check failed", (e as Error).message);
+      // Original exception is intentionally NOT surfaced to keep internal error
+      // messages out of the browser console in production builds.
+      console.log(JSON.stringify({
+        level: "warn", event: "ingest_precheck_error",
+        workspace_id: activeId,
+      }));
     }
 
     setSubmitting(true);
@@ -772,7 +791,18 @@ export default function StudioIngest({
       quota.refresh();
       onCompleted?.({ jobId: job.id, status: finalStatus as "completed" | "failed" });
     } catch (e) {
-      toast.error((e as Error).message ?? "Ingest failed");
+      // Route every terminal ingest failure through mapUploadError so raw
+      // internal exception text, OCI response bodies, or edge-function stack
+      // traces never surface in the UI. Known-friendly errors we throw
+      // ourselves (already vetted for production copy) pass through verbatim.
+      const rawMsg = String((e as Error)?.message ?? "");
+      const SAFE_PATTERN = /^(You don't have permission|A premium storage|This upload session|Please sign in|Storage upload failed|Network interruption|Couldn't reach the storage)/;
+      const friendly = SAFE_PATTERN.test(rawMsg) ? rawMsg : mapUploadError(e);
+      console.log(JSON.stringify({
+        level: "error", event: "ingest_job_failed",
+        workspace_id: activeId, code: rawMsg.slice(0, 60),
+      }));
+      toast.error(friendly);
       setLiveProgress((p) => ({ ...p, state: "error" }));
     } finally {
       setSubmitting(false);

@@ -32,13 +32,53 @@ All emitted by `supabase/functions/ingest-preflight` as `event: "ingest_prefligh
 - `INVALID_PRODUCTION`
 - `PREFLIGHT_FAILED` (unexpected — inspect the paired `ingest_preflight_error` line)
 
+Client-side surfaces emit the same taxonomy for cross-layer grep:
+
+- `DUPLICATE_MEDIA` — sync pre-check found overlapping filenames+sizes in a prior card ingest. User is prompted before anything is created; nothing is overwritten.
+- `UPLOAD_RESUME_REQUIRED` — a prior job for the same card is `paused`; UI offers to resume rather than fork.
+- `OCI_CONNECTION_FAILED` — `mapUploadError()` maps low-level connectivity exceptions (ECONNREFUSED / ENOTFOUND / ETIMEDOUT / TLS) to a single production-safe string; the raw error is never surfaced.
+
+## Error surface guarantees (Launch Hardening)
+
+- Every ingest failure routes through `mapUploadError()` or an explicitly vetted safe pattern (`SAFE_PATTERN` in `StudioIngest.tsx`). No `toast.error(err.message)` in the catch-all.
+- The edge function's error map (`FRIENDLY`) is the only source of UI copy for preflight denials. RPC / DB error messages, environment variables, OCI headers, and stack traces are never returned to the client.
+- Structured telemetry (`event: "ingest_preflight_denied" | "ingest_job_failed" | "ingest_precheck_error"`) carries the reason code + workspace/user UUIDs only. No auth tokens, no OCI URLs, no request bodies.
+
 ## Regression tests
 
-- `src/test/smoke/studio-onboarding.test.tsx` — completeness rules + wizard/gate workspace alignment.
+- `src/test/smoke/studio-onboarding.test.tsx` — completeness rules + wizard/gate workspace alignment; guards the multi-workspace loop fix.
 - `src/test/smoke/ingest-preflight.test.ts` — preflight call precedes any `ingest_jobs` insert; all reason codes present.
+- `src/test/smoke/ingest-preflight-telemetry.test.ts` — structured logs, HTTP status codes, and forbidden-log patterns for the edge function.
+- `src/test/smoke/ingest-hardening.test.ts` — friendly-errors-only, `DUPLICATE_MEDIA` / `UPLOAD_RESUME_REQUIRED` telemetry, duplicate detection, resume prompt, activity sync, entitlement gates.
+- `src/test/smoke/oci-connection-failure.test.ts` — `OCI_CONNECTION_FAILED` mapping, no sensitive fragments, retry pathway preserved.
+
+## CI
+
+`.github/workflows/regression.yml` runs the four smoke suites above on every push / PR to `main` and `staging`. Each step reports **PASS**, **FAIL**, or **Skipped** in the job summary; the workflow fails hard on any FAIL and prints a warning on any unexpected Skipped step.
+
+## Production verification matrix
+
+| Surface | Static guarantee | Live-deployment check |
+| --- | --- | --- |
+| Studio onboarding | `isStudioOnboarded()` + `useWorkspaces().activeId` alignment (tested) | New studio → complete wizard → refresh → dashboard opens without wizard |
+| Active Production | `sv:active-workspace-id` + `sv:active-project-id` persisted (tested) | Pick Production → reopen tab → same Production selected |
+| Storage | `useStorageQuota` reads entitlements + usage; `checkOrPaywall()` opens `BuyVaultDialog` | Fill quota → upload → paywall appears |
+| Billing | `manual_invoices` + `billing_orders` unchanged; existing views intact | Buyer completes payment → invoice row appears |
+| Razorpay | `create-storage-topup` / `verify-storage-topup` present; test-mode banner respected | Live test payment → quota rises + invoice appears |
+| OCI upload | `uploadFileMultipart` + `oci-upload` edge fn; `ResumableUploadInterrupted` preserved for resume | > 128 MB upload finishes; pause + re-pick source resumes |
+| OCI failure | `OCI_CONNECTION_FAILED` mapped to safe copy (tested); retry preserved | Simulate offline → toast is friendly, upload resumes on reconnect |
+| Upload authorization | Preflight + RLS double-gate on workspace admin + premium entitlement | Viewer role → Start Ingest → friendly denial, no RLS leak |
+| Duplicate detection | Pre-check reads `ingest_job_items` for the same card; prompts before creating (tested) | Re-offload a card → warning fires; nothing overwritten |
+| Upload resume | Paused jobs surfaced via `UPLOAD_RESUME_REQUIRED` prompt (tested) | Pause mid-upload → re-pick source → confirm dialog offers resume |
+| Proxy generation | Unchanged pipeline; surfaced in `DetectedItemsPanel` and `IngestTimeline` | Upload `.mov` → proxy job completes → 720p preview plays |
+| Activity sync | `queue.refresh()` + `quota.refresh()` fire post-upload; timeline reads existing tables (tested) | Ingest completes → Activity + storage bar update without manual refresh |
+| Production Media | `StudioDash` lists items grouped by production | Open completed job → confidence + codec badges visible |
+| Editorial | `IngestTimeline` marks Editorial Ready when job is `completed` and no failures | Job completes clean → Editorial Ready step turns green |
+| Archive | `archive_jobs` row created when `destination_type = archive_vault`; timeline reads status | Archive intake → timeline Archive Status transitions to completed |
 
 ## Explicitly out of scope for this pass
 
 - No RLS or schema changes to `ingest_jobs`, `entity_profiles`, or entitlements.
 - No changes to Razorpay / OCI / proxy code paths.
 - No new upload pipeline — preflight sits in front of the existing one.
+

@@ -278,6 +278,18 @@ export function mapUploadError(raw: unknown): string {
   }
   if (m.includes("aborted")) return "Upload was cancelled.";
 
+  // OCI connectivity — DNS, socket, TLS, connection refused/reset, or a
+  // fetch that never reached the origin. Tagged with the OCI_CONNECTION_FAILED
+  // reason code so telemetry can group it while the user only sees the safe
+  // copy. Ordered BEFORE the generic OCI-body branch so a raw fetch failure
+  // doesn't leak its low-level message.
+  if (m.includes("oci_connection_failed") || m.includes("econnrefused") || m.includes("econnreset")
+      || m.includes("enotfound") || m.includes("etimedout") || m.includes("dns error")
+      || m.includes("connection refused") || m.includes("connection reset")
+      || m.includes("connection closed") || m.includes("connection failed")
+      || m.includes("tls handshake") || m.includes("getaddrinfo")) {
+    return "Couldn't reach the storage service. Please check your connection and retry — the upload will resume automatically when it succeeds.";
+  }
   // OCI-side errors: surface the status code + first chunk of the OCI body so
   // ops can diagnose. These messages already come pre-formatted from the
   // signing/PUT layer (e.g. "OCI PUT 401: NotAuthenticated …").

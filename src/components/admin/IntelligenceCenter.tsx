@@ -618,7 +618,7 @@ export default function IntelligenceCenter() {
                   <div className="text-xs text-muted-foreground">No results for this query.</div>
                 )}
 
-                {s.status === "success" && s.results && s.results.length > 0 && (
+                {s.status === "success" && s.results && s.results.length > 0 && (s.view ?? "list") === "list" && (
                   <ul className="divide-y divide-border/40 -mx-1">
                     {s.results.map((r, i) => (
                       <li key={`${r.url ?? r.title}-${i}`} className="px-1 py-2.5">
@@ -643,6 +643,25 @@ export default function IntelligenceCenter() {
                     ))}
                   </ul>
                 )}
+
+                {s.view === "structured" && (
+                  <div className="space-y-2">
+                    {s.structuredLoading && (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" /> Extracting structured records…
+                      </div>
+                    )}
+                    {!s.structuredLoading && s.structuredError && (
+                      <div className="text-xs text-destructive bg-destructive/10 border border-destructive/30 rounded-md px-3 py-2">
+                        {s.structuredError}
+                      </div>
+                    )}
+                    {!s.structuredLoading && !s.structuredError && (
+                      <IntelligenceLaneTable lane={lane.id} data={s.structured} />
+                    )}
+                  </div>
+                )}
+
               </div>
             </section>
           );

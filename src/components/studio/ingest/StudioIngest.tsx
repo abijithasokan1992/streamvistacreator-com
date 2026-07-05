@@ -197,6 +197,7 @@ function useWorkspaceProjects(workspaceId: string | null) {
 export default function StudioIngest({
   activeProjectId,
   activeProjectDefaults,
+  onCompleted,
 }: {
   /** When provided, the ingest form is pre-bound to this Production so Upload
    *  inherits the Active Production without asking the user to re-pick it. */
@@ -219,6 +220,9 @@ export default function StudioIngest({
       card_prefix?: string;
     }>;
   };
+  /** Fires once an ingest job reaches its terminal status. Parent dialogs
+   *  (e.g. IngestMediaDialog) use this to auto-close after Save. */
+  onCompleted?: (result: { jobId: string; status: "completed" | "failed" }) => void;
 } = {}) {
   const { user } = useAuth();
   const { workspaces, activeId, active, setActiveId, canWriteActive } = useWorkspaces();
@@ -253,7 +257,13 @@ export default function StudioIngest({
   const [cameraPackageId, setCameraPackageId] = useState<string>("");
   const [assetClass, setAssetClass] = useState("");
   const [notes, setNotes] = useState("");
-  const [preserveStructure, setPreserveStructure] = useState(true);
+  // Upload layout mode — replaces the old boolean "preserve" checkbox with a
+  // required 3-way choice. Camera Card intake always defaults to `preserve`
+  // because DIT card layouts must match 1:1 with the physical card for
+  // relinking, checksum verification, and archive restoration.
+  const [layoutMode, setLayoutMode] = useState<"preserve" | "metadata" | "custom">("preserve");
+  const [customBasePath, setCustomBasePath] = useState<string>("");
+  const preserveStructure = layoutMode !== "metadata"; // kept for the existing DB column
   const [submitting, setSubmitting] = useState(false);
   const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
 
@@ -306,6 +316,55 @@ export default function StudioIngest({
   const cardInputRef = useRef<HTMLInputElement>(null);
   const watchInputRef = useRef<HTMLInputElement>(null);
   const archiveInputRef = useRef<HTMLInputElement>(null);
+
+  // Camera card ingest → force "preserve" as the safe default so the card
+  // layout survives 1:1. Users can still switch modes for their session, but
+  // switching *into* camera_card resets the choice back to preserve.
+  useEffect(() => {
+    if (mode === "camera_card") setLayoutMode("preserve");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
+
+  // Slugify a metadata token so it is safe inside an object key. Empty parts
+  // collapse away so we never emit `//` or leading slashes.
+  const slug = (s: string) =>
+    (s ?? "").toString().trim().replace(/[^a-zA-Z0-9._-]+/g, "_").replace(/^_+|_+$/g, "");
+
+  // Map the intelligent classification to the asset-type folder buckets the
+  // user requested (RAW, Audio, Stills, Documents, Graphics, LUTs, VFX,
+  // Master Files). This is only used for the "metadata" layout mode.
+  const assetTypeFolder = (relPath: string, hintClass?: string): string => {
+    const cls = (hintClass || autoClassify(relPath)) as string;
+    const p = relPath.toLowerCase();
+    if (/\.(cube|3dl|look)$/.test(p) || /\/(luts?|colou?r)\//.test(p)) return "LUTs";
+    if (/\/(vfx|plates?|comps?)\//.test(p)) return "VFX";
+    if (/\/(masters?|deliverables?)\//.test(p) || /_master[._-]|final_master/.test(p)) return "Master Files";
+    if (/\/(graphics?|art|design|logos?|posters?|thumbnails?)\//.test(p)) return "Graphics";
+    if (/\.(jpg|jpeg|png|tif|tiff|heic|heif|webp|dng)$/.test(p) && !/\.(r3d|ari|arx|braw|crm|rmf)$/.test(p)) return "Stills";
+    if (cls === "audio") return "Audio";
+    if (cls === "reports") return "Documents";
+    if (cls === "rushes") return "RAW";
+    return "Media";
+  };
+
+  // Compute the object-key subpath for a scanned file according to the active
+  // layout mode. Filenames are NEVER rewritten and files are NEVER duplicated —
+  // only the directory prefix changes.
+  const buildSubpath = (f: ScannedFile): string => {
+    if (layoutMode === "preserve") return f.subpath;
+    if (layoutMode === "custom") {
+      const base = customBasePath.replace(/^\/+|\/+$/g, "");
+      return [base, f.subpath].filter(Boolean).join("/");
+    }
+    // metadata mode → Shoot Day / Camera / Card / Asset Type
+    const parts = [
+      shootDay && `day_${slug(shootDay)}`,
+      cameraLabel && slug(cameraLabel),
+      cardLabel && slug(cardLabel),
+      assetTypeFolder(f.relativePath, assetClass),
+    ].filter(Boolean) as string[];
+    return parts.join("/");
+  };
 
   const destinationType: "working_vault" | "archive_vault" =
     mode === "archive" ? "archive_vault" : "working_vault";
@@ -506,7 +565,7 @@ export default function StudioIngest({
       for (const f of scan.files) {
         const itemId = (f as any)._itemId as string | undefined;
         const pendingId = `ingest-${job.id}-${itemId ?? f.file.name}`.replace(/[^a-zA-Z0-9-_]/g, "_").slice(0, 120);
-        const subpath = preserveStructure ? f.subpath : "";
+        const subpath = buildSubpath(f);
         setLiveProgress((p) => ({ ...p, currentFile: f.relativePath, state: "uploading" }));
         if (itemId) await supabase.from("ingest_job_items").update({ status: "uploading" }).eq("id", itemId);
 
@@ -623,14 +682,16 @@ export default function StudioIngest({
       setScan(null);
       queue.refresh();
       quota.refresh();
+      onCompleted?.({ jobId: job.id, status: finalStatus as "completed" | "failed" });
     } catch (e) {
       toast.error((e as Error).message ?? "Ingest failed");
       setLiveProgress((p) => ({ ...p, state: "error" }));
     } finally {
       setSubmitting(false);
     }
-  }, [scan, activeId, user, canWriteActive, quota, mode, destinationType, preserveStructure,
-      projectId, shootDay, unitLabel, cameraBrand, cameraLabel, cardLabel, assetClass, notes, queue]);
+  }, [scan, activeId, user, canWriteActive, quota, mode, destinationType, layoutMode, customBasePath,
+      projectId, shootDay, unitLabel, cameraBrand, cameraLabel, cardLabel, assetClass, notes, queue, onCompleted,
+      isWorkspaceAdmin, isPremiumEligible]);
 
   const currentModeMeta = useMemo(() => MODES.find((m) => m.id === mode)!, [mode]);
 
@@ -832,11 +893,54 @@ export default function StudioIngest({
         </div>
 
 
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <Switch checked={preserveStructure} onCheckedChange={setPreserveStructure} id="preserve" />
-            <Label htmlFor="preserve" className="text-xs">Preserve source folder structure</Label>
+        {/* Upload layout mode — required 3-way choice. */}
+        <Card className="p-3 space-y-2 border-border/40">
+          <Label className="text-[11px] uppercase tracking-widest text-muted-foreground font-mono">
+            Upload layout
+          </Label>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {[
+              { id: "preserve" as const, title: "Preserve Original Folder Structure",
+                desc: "Recommended. Keeps the exact source tree — required for camera cards, relinking and archive restoration." },
+              { id: "metadata" as const, title: "Organize by Production Metadata",
+                desc: "Auto-file into Shoot Day / Camera / Card / Asset Type." },
+              { id: "custom" as const, title: "Custom Destination",
+                desc: "Advanced. Prefix a custom base path, source subfolders are kept underneath." },
+            ].map((opt) => {
+              const isActive = layoutMode === opt.id;
+              const locked = mode === "camera_card" && opt.id !== "preserve";
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  disabled={locked}
+                  onClick={() => setLayoutMode(opt.id)}
+                  className={`text-left rounded-md border p-3 transition ${
+                    isActive ? "border-accent bg-accent/10" : "border-border/40 hover:border-border"
+                  } ${locked ? "opacity-40 cursor-not-allowed" : ""}`}
+                  title={locked ? "Camera Card intake must preserve the exact card layout" : undefined}
+                >
+                  <div className="text-xs font-medium">{opt.title}</div>
+                  <div className="text-[11px] text-muted-foreground mt-1">{opt.desc}</div>
+                </button>
+              );
+            })}
           </div>
+          {layoutMode === "custom" && (
+            <div className="flex items-center gap-2 pt-1">
+              <Label className="text-xs shrink-0">Base path</Label>
+              <Input value={customBasePath} onChange={(e) => setCustomBasePath(e.target.value)}
+                     placeholder="e.g. dailies/day_03/cam_a" className="h-8 text-xs" />
+            </div>
+          )}
+          {mode === "camera_card" && (
+            <p className="text-[11px] text-muted-foreground">
+              Camera Card intake locks to Preserve to keep card structure intact for verification.
+            </p>
+          )}
+        </Card>
+
+        <div className="flex flex-wrap items-center justify-end gap-3">
           <div className="flex gap-2">
             {mode === "watch_folder" && scan && (
               <Button variant="outline" size="sm" onClick={rescan}>
@@ -890,7 +994,9 @@ export default function StudioIngest({
                   Start ingest
                 </Button>
                 <p className="text-[10px] text-muted-foreground">
-                  {preserveStructure ? "Folder tree preserved" : "Files flattened to root"}
+                  {layoutMode === "preserve" ? "Folder tree preserved"
+                    : layoutMode === "metadata" ? "Organized by Shoot Day / Camera / Card / Asset Type"
+                    : `Custom prefix: ${customBasePath || "(root)"}`}
                 </p>
               </div>
             </div>

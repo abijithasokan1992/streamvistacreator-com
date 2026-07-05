@@ -97,6 +97,7 @@ export default function IngestMediaDialog({
         <StudioIngest
           activeProjectId={activeProjectId}
           activeProjectDefaults={ingestDefaults}
+          onCompleted={() => onOpenChange(false)}
         />
       </DialogContent>
     </Dialog>

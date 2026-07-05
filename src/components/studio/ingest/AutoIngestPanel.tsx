@@ -114,18 +114,27 @@ export function AutoIngestPanel() {
     if (!activeWorkspaceId) return;
     let cancelled = false;
     (async () => {
+      // `projects` is the table that ingest_jobs.project_id FKs to and that
+      // holds the user-visible productions ("Sesham Chinthyam Subham" etc.).
       const { data } = await supabase
-        .from("productions")
-        .select("id, title, status, created_at")
+        .from("projects")
+        .select("id, name, created_at")
         .eq("workspace_id", activeWorkspaceId)
         .order("created_at", { ascending: false })
         .limit(50);
       if (cancelled) return;
-      const rows = (data ?? []) as Array<{ id: string; title: string; status: string | null }>;
-      const mapped: Project[] = rows.map((r) => ({ id: r.id, name: r.title }));
+      const rows = (data ?? []) as Array<{ id: string; name: string | null }>;
+      const mapped: Project[] = rows
+        .filter((r) => !!r.id)
+        .map((r) => ({ id: r.id, name: r.name ?? "Untitled production" }));
       setProjects(mapped);
-      const active = rows.find((r) => (r.status ?? "").toLowerCase() === "active");
-      setDefaultProjectId((active ?? rows[0])?.id ?? null);
+      // Prefer the last-viewed production if the studio dashboard stored one,
+      // otherwise fall back to the most recent project in the workspace.
+      const remembered = typeof window !== "undefined"
+        ? window.localStorage.getItem(`sv:activeProjectId:${activeWorkspaceId}`)
+        : null;
+      const preferred = mapped.find((p) => p.id === remembered) ?? mapped[0];
+      setDefaultProjectId(preferred?.id ?? null);
     })();
     return () => { cancelled = true; };
   }, [activeWorkspaceId]);

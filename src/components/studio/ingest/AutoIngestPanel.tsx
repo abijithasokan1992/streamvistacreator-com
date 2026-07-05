@@ -329,7 +329,7 @@ export function AutoIngestPanel() {
             source_id: src.id,
             project_id: projectId,
             job_mode: "camera_card",
-            destination_type: "production_media",
+            destination_type: "working_vault",
             preserve_structure: true,
             camera_label: scan.cameraFamilyLabel,
             status: "ready",

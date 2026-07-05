@@ -238,6 +238,8 @@ export default function MyStudioProfile({
       // Ensure downstream reads (verification badge, completeness %) reflect
       // the freshly-saved state before the parent onboarding gate re-evaluates.
       await refresh();
+      // Auto-collapse to Summary Mode once we've saved a fully-complete profile.
+      if (!onboarding) setViewMode("summary");
       onDone?.();
     } catch (e) {
       toast.error((e as Error).message);

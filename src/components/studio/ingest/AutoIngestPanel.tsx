@@ -29,6 +29,9 @@ import {
   mapUploadError,
 } from "@/lib/ociMultipartUpload";
 import { classifyFile, enrichFile } from "@/lib/ingest/mediaIntelligence";
+import {
+  categorizeIngestError, logIngestInsertFailure, ingestFailureUserMessage,
+} from "@/lib/ingest/ingestFailureAudit";
 
 type Project = { id: string; name: string };
 

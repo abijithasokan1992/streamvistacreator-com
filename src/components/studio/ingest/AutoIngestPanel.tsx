@@ -148,8 +148,14 @@ export function AutoIngestPanel() {
         .filter((r) => !!r.id)
         .map((r) => ({ id: r.id, name: r.name ?? "Untitled production" }));
       setProjects(mapped);
+      // Read the workspace's currently-open production. StudioDash persists
+      // this under `sv:active-project:<workspaceId>`; older builds used
+      // `sv:activeProjectId:<workspaceId>` — read both for compatibility so
+      // the Production dropdown auto-selects instead of showing "No productions yet".
       const remembered = typeof window !== "undefined"
-        ? window.localStorage.getItem(`sv:activeProjectId:${activeWorkspaceId}`)
+        ? (window.localStorage.getItem(`sv:active-project:${activeWorkspaceId}`)
+            ?? window.localStorage.getItem(`sv:activeProjectId:${activeWorkspaceId}`)
+            ?? window.localStorage.getItem("sv.activeProjectId"))
         : null;
       const preferred = mapped.find((p) => p.id === remembered) ?? mapped[0];
       setDefaultProjectId(preferred?.id ?? null);

@@ -7,6 +7,9 @@ import WorkspaceWelcome from "@/components/creator/WorkspaceWelcome";
 import ReviewNotesInbox from "@/components/creator/ReviewNotesInbox";
 import { UploadDiagnostics } from "@/components/creator/UploadDiagnostics";
 import LegacyRecoveryBanner from "@/components/creator/LegacyRecoveryBanner";
+import StorageLive from "@/components/creator/StorageLive";
+import IngestQCPanel from "@/components/creator/IngestQCPanel";
+import BillingSnapshot from "@/components/creator/BillingSnapshot";
 
 import OnboardingChecklist from "@/components/creator/OnboardingChecklist";
 import CreatorQuickActions from "@/components/creator/CreatorQuickActions";
@@ -68,6 +71,13 @@ export default function HomeSection({ onNavigate, isFree }: { onNavigate: (s: Se
 
       {/* 1. Identity + plan + storage + titles — the single at-a-glance block */}
       <WorkspaceWelcome />
+
+      {/* 1b. Live backend panels — every number is driven by Supabase state (no mocks). */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <StorageLive />
+        <BillingSnapshot />
+      </div>
+      <IngestQCPanel />
 
       {/* 2. Primary action */}
       {capped ? (

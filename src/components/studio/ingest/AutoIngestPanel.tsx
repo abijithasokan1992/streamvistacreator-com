@@ -75,7 +75,7 @@ function etaLabel(bytesLeft: number, speedBps: number): string {
 
 export function AutoIngestPanel() {
   const { user } = useAuth();
-  const { activeWorkspaceId } = useWorkspaces();
+  const { activeId: activeWorkspaceId } = useWorkspaces();
   const [scan, setScan] = useState<ScanResult | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectId, setProjectId] = useState<string | null>(null);

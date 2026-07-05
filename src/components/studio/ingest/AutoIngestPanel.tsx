@@ -405,7 +405,7 @@ export function AutoIngestPanel() {
       }
 
       await supabase.from("ingest_jobs").update({
-        status: "running",
+        status: "uploading",
         started_at: new Date().toISOString(),
       }).eq("id", dbJobId);
 

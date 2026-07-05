@@ -181,7 +181,7 @@ type NotificationRow = {
   user_id: string | null;
   title: string | null;
   message: string | null;
-  read_at: string | null;
+  is_read: boolean | null;
   created_at: string;
 };
 
@@ -195,7 +195,7 @@ function NotificationsList({ search }: { search: string }) {
       setLoading(true);
       const { data, error } = await (supabase as any)
         .from("notifications")
-        .select("id, user_id, title, message, read_at, created_at")
+        .select("id, user_id, title, message, is_read, created_at")
         .order("created_at", { ascending: false })
         .limit(200);
       if (error) {
@@ -209,7 +209,7 @@ function NotificationsList({ search }: { search: string }) {
   const visible = useMemo(() => {
     const s = search.trim().toLowerCase();
     return rows.filter((r) => {
-      if (filter === "unread" && r.read_at) return false;
+      if (filter === "unread" && r.is_read) return false;
       if (!s) return true;
       return (
         (r.title ?? "").toLowerCase().includes(s) ||
@@ -221,14 +221,15 @@ function NotificationsList({ search }: { search: string }) {
   const markRead = async (id: string) => {
     const { error } = await (supabase as any)
       .from("notifications")
-      .update({ read_at: new Date().toISOString() })
+      .update({ is_read: true })
       .eq("id", id);
     if (error) {
       toast({ title: "Could not mark read", description: error.message, variant: "destructive" });
       return;
     }
-    setRows((r) => r.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n)));
+    setRows((r) => r.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
   };
+
 
   if (loading) return <p className="text-xs text-muted-foreground">Loading…</p>;
 

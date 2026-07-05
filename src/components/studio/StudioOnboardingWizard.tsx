@@ -11,6 +11,7 @@ import { Loader2, Building2, Check, ChevronLeft, ChevronRight, Search } from "lu
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useWorkspaces } from "@/hooks/useWorkspaces";
 import { useEntityProfile, type EntityProfile, type StudioExt } from "@/hooks/useEntityProfile";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -151,9 +152,20 @@ const EMPTY: Draft = {
 
 export default function StudioOnboardingWizard({ onDone }: { onDone?: () => void }) {
   const { user } = useAuth();
-  const { list: workspaces, loading: wsLoading } = useMyStudioWorkspaces();
-  const [orgId, setOrgId] = useState<string | null>(null);
-  useEffect(() => { if (!orgId && workspaces.length) setOrgId(workspaces[0].id); }, [workspaces, orgId]);
+  // Use the SAME active workspace id as StudioProfileOnboardingGate so the
+  // wizard reads and writes the exact `entity_profiles` row the gate checks.
+  // Falls back to the user's first workspace only when no active id is set.
+  const { activeId: wsActiveId, workspaces: wsList, setActiveId, loading: wsLoading } = useWorkspaces();
+  const { list: memberWorkspaces, loading: memberLoading } = useMyStudioWorkspaces();
+  const orgId = wsActiveId ?? memberWorkspaces[0]?.id ?? null;
+  // If the gate's activeId points to a workspace we can't see (edge case),
+  // pin it to the first workspace the user actually belongs to.
+  useEffect(() => {
+    if (!wsLoading && !memberLoading && wsActiveId && memberWorkspaces.length &&
+        !memberWorkspaces.some((w) => w.id === wsActiveId)) {
+      setActiveId(memberWorkspaces[0].id);
+    }
+  }, [wsLoading, memberLoading, wsActiveId, memberWorkspaces, setActiveId]);
 
   const { profile, studioExt, loading, saving, canEdit, saveProfile, saveStudioExt, refresh } =
     useEntityProfile({ kind: "studio", orgId });
@@ -255,7 +267,7 @@ export default function StudioOnboardingWizard({ onDone }: { onDone?: () => void
     }
   };
 
-  if (wsLoading || loading || !profile || !studioExt) {
+  if (wsLoading || memberLoading || loading || !profile || !studioExt) {
     return (
       <main className="min-h-dvh grid place-items-center bg-background text-foreground">
         <Loader2 className="w-5 h-5 animate-spin text-accent" />
@@ -264,10 +276,29 @@ export default function StudioOnboardingWizard({ onDone }: { onDone?: () => void
   }
 
   if (!canEdit) {
+    // If the user is admin/owner of a DIFFERENT workspace, offer to switch
+    // rather than dead-ending them on the wizard.
+    const adminElsewhere = memberWorkspaces.filter(
+      (w) => (w.role === "owner" || w.role === "admin") && w.id !== orgId,
+    );
     return (
       <main className="min-h-dvh grid place-items-center bg-background text-foreground p-6">
-        <Card className="p-6 max-w-md text-sm text-muted-foreground">
-          You need workspace owner or admin permissions to complete studio onboarding. Please ask an admin.
+        <Card className="p-6 max-w-md text-sm space-y-4">
+          <p className="text-muted-foreground">
+            You need workspace owner or admin permissions to complete studio onboarding for
+            <span className="text-foreground"> {wsList.find((w) => w.id === orgId)?.name ?? "this workspace"}</span>.
+          </p>
+          {adminElsewhere.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-xs text-muted-foreground">Switch to a workspace you administer:</div>
+              {adminElsewhere.map((w) => (
+                <Button key={w.id} variant="outline" size="sm" className="w-full justify-start"
+                  onClick={() => setActiveId(w.id)}>
+                  {w.name}
+                </Button>
+              ))}
+            </div>
+          )}
         </Card>
       </main>
     );

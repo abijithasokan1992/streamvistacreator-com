@@ -221,10 +221,26 @@ export default function StudioIngest({
   };
 } = {}) {
   const { user } = useAuth();
-  const { workspaces, activeId, setActiveId, canWriteActive } = useWorkspaces();
+  const { workspaces, activeId, active, setActiveId, canWriteActive } = useWorkspaces();
   const quota = useStorageQuota();
   const projects = useWorkspaceProjects(activeId ?? null);
   const queue = useIngestQueue(activeId ?? null);
+
+  // RLS on ingest_jobs requires workspace admin/owner AND a premium storage
+  // entitlement (or global admin). Pre-flight this on the client so the user
+  // gets a clear, actionable message instead of a raw RLS violation.
+  const [isPremiumEligible, setIsPremiumEligible] = useState<boolean | null>(null);
+  useEffect(() => {
+    let alive = true;
+    if (!user) { setIsPremiumEligible(null); return; }
+    (async () => {
+      const { data } = await (supabase as any).rpc("has_premium_storage_entitlement", { _user_id: user.id });
+      if (alive) setIsPremiumEligible(Boolean(data));
+    })();
+    return () => { alive = false; };
+  }, [user?.id]);
+  const isWorkspaceAdmin = active?.role === "owner" || active?.role === "admin";
+  const canIngest = isWorkspaceAdmin && isPremiumEligible !== false;
 
   const [mode, setMode] = useState<IngestMode>("connected_drive");
   const [scan, setScan] = useState<ScanSummary | null>(null);
@@ -319,6 +335,15 @@ export default function StudioIngest({
   const startIngest = useCallback(async () => {
     if (!scan || !activeId || !user) return;
     if (!canWriteActive) { toast.error("You only have viewer access to this workspace"); return; }
+    if (!isWorkspaceAdmin) {
+      toast.error("Only workspace owners or admins can start an ingest. Ask an admin to promote you.");
+      return;
+    }
+    if (isPremiumEligible === false) {
+      toast.error("A premium storage plan is required to start uploads. Please activate a storage plan.");
+      quota.checkOrPaywall();
+      return;
+    }
     if (!quota.checkOrPaywall()) return;
     setSubmitting(true);
     try {
@@ -390,7 +415,17 @@ export default function StudioIngest({
         })
         .select("id")
         .single();
-      if (jobErr || !job) throw jobErr ?? new Error("Failed to create ingest job");
+      if (jobErr || !job) {
+        // Map RLS violations to an actionable message instead of the raw
+        // "new row violates row-level security policy" string.
+        const msg = String((jobErr as any)?.message ?? "");
+        if (/row-level security|row level security/i.test(msg)) {
+          throw new Error(
+            "You don't have permission to start an ingest. This requires workspace admin access and an active premium storage plan.",
+          );
+        }
+        throw jobErr ?? new Error("Failed to create ingest job");
+      }
 
       // 3. Job item rows — intelligent classification + legacy asset_class.
       //    The 14-way `detected_type` and confidence live in metadata JSONB so
@@ -817,6 +852,16 @@ export default function StudioIngest({
         </div>
 
         {/* Scan summary */}
+        {scan && !canIngest && (
+          <Card className="p-3 border-amber-500/40 bg-amber-500/5 text-xs flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+            <div>
+              {!isWorkspaceAdmin
+                ? "Only workspace owners or admins can start an ingest job. Ask an admin to promote your role."
+                : "A premium storage plan is required to start uploads. Activate a storage plan to continue."}
+            </div>
+          </Card>
+        )}
         {scan && (
           <Card className="p-4 bg-secondary/10 border-accent/20">
             <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -839,7 +884,7 @@ export default function StudioIngest({
                 )}
               </div>
               <div className="flex flex-col gap-2 items-end">
-                <Button onClick={startIngest} disabled={submitting || !canWriteActive || !contextReady}
+                <Button onClick={startIngest} disabled={submitting || !canWriteActive || !contextReady || !canIngest}
                         className="bg-gradient-primary text-primary-foreground glow-primary">
                   {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Cloud className="w-4 h-4 mr-2" />}
                   Start ingest

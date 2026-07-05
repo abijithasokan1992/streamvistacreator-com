@@ -12,6 +12,7 @@ import Onboarding from "./pages/Onboarding.tsx";
 import Index from "./pages/Index.tsx";
 import Auth from "./pages/Auth.tsx";
 import AuthCallback from "./pages/AuthCallback.tsx";
+import OAuthConsent from "./pages/OAuthConsent.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import Admin from "./pages/Admin.tsx";
 import ContentOwnerDashboard from "./pages/dashboards/ContentOwner.tsx";

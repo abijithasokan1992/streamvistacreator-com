@@ -33,7 +33,16 @@ Nine platform services surfaced under one Settings → Integrations page:
 - UI: card grid, each card shows status pill, last checked, and buttons: **Test Connection**, **Configuration** (opens existing admin surface for that service — OCI card links to Storage Governance, Razorpay to Billing, etc.). Never expose secret values.
 - No new tables. State comes from `site_config` + environment presence.
 
-### Phase 2 — StreamVista AI Assistant
+### Phase 2 — StreamVista AI Assistant  (shipped)
+
+Command-palette launcher (global ⌘K / floating "Ask StreamVista" button, authenticated users only) that orchestrates existing modules read-only. Never modifies workflows.
+
+- `supabase/functions/assistant-chat/index.ts` — AI SDK `generateText` via Lovable AI Gateway. Default model `openai/gpt-5.5`; users never see model selection. Every tool query uses the caller's bearer token so RLS enforces scope — no admin bypass.
+- Tools (read-only): `find_productions`, `list_ingest_jobs`, `list_recent_uploads`, `storage_summary`, `list_invoices`, `research_web` (Firecrawl; disabled with a friendly message when the key is absent).
+- `src/components/assistant/AssistantLauncher.tsx` — command-palette dialog with suggested actions, recent-query history (localStorage), and active-production context passed from `sv.activeProjectId`.
+- Placeholders (not built): metadata generation, subtitles, reports, AI QC, analytics, workflow automation. Assistant surfaces these as "coming soon" instead of attempting them.
+
+Original Phase 2 plan (kept for reference):
 
 - Single conversational surface at `/assistant` (authenticated).
 - Server: `supabase/functions/assistant-chat/index.ts` streaming `streamText` via Lovable AI Gateway.

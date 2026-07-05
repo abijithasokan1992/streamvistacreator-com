@@ -50,6 +50,7 @@ import CollegeERP from "./pages/CollegeERP.tsx";
 
 import ReferralCapture from "./components/ReferralCapture.tsx";
 import { RouteAgentDock } from "./components/agents/RouteAgentDock.tsx";
+import { AssistantLauncher } from "./components/assistant/AssistantLauncher.tsx";
 import WrongPortal from "./components/WrongPortal.tsx";
 import OnboardingGate from "./components/OnboardingGate.tsx";
 import RoleGate from "./components/RoleGate.tsx";
@@ -231,6 +232,7 @@ const App = () => (
                   <ErrorBoundary>
                     <HostAwareRoutes />
                     <RouteAgentDock />
+                    <AssistantLauncher />
                   </ErrorBoundary>
                 </StorageQuotaProvider>
               </SystemMessageProvider>

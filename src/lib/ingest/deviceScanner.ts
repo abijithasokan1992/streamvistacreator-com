@@ -37,9 +37,16 @@ export type ScanResult = {
   mediaFormats: string[];
 };
 
-// Extensions we care about, covering the requested professional formats.
-const MEDIA_EXT_RE =
-  /\.(ari|arx|r3d|braw|crm|dng|mov|mp4|mxf|m4v|avi|wav|aif|aiff|xml|xmp|cdl|3dl|cube|rmd|nfo|sidecar)$/i;
+// Files we skip regardless of selection — OS metadata, thumbnails, trash.
+// Everything else (any extension, or no extension at all) is ingested so
+// that Ctrl+A on the picker really does grab every file in the folder.
+const SKIP_NAME_RE = /^(\.DS_Store|Thumbs\.db|desktop\.ini|\._.*)$/i;
+const SKIP_DIR_RE = /(^|\/)(\.Trashes|\.Spotlight-V100|\.fseventsd|System Volume Information|\$RECYCLE\.BIN)(\/|$)/i;
+function isIngestable(name: string, relPath: string): boolean {
+  if (SKIP_NAME_RE.test(name)) return false;
+  if (SKIP_DIR_RE.test(relPath)) return false;
+  return true;
+}
 
 const FAMILY_SIGNATURES: Array<{ family: CameraFamily; label: string; test: (p: string) => boolean }> = [
   { family: "arri", label: "ARRI", test: (p) => /(^|\/)a\d{3}[a-z]?_.*\.(ari|arx|mxf)$/i.test(p) || /(^|\/)Alexa/i.test(p) },

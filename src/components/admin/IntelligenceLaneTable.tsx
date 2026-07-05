@@ -18,19 +18,21 @@ export type StructuredLaneData = {
     location?: string;
     category?: string;
   }>;
-  items?: Array<{
+  insights?: Array<{
     headline: string;
+    source_url?: string;
+    impact_level?: "High" | "Medium" | "Low" | string;
+    summary?: string;
     vendor?: string;
     topic?: string;
-    summary?: string;
-    url?: string;
   }>;
-  mentions?: Array<{
-    brand: string;
+  alerts?: Array<{
+    entity: string;
+    event?: string;
+    detected_at?: string;
+    reference_url?: string;
     sentiment?: string;
     summary?: string;
-    source?: string;
-    url?: string;
   }>;
   sources?: Array<{ title?: string; url?: string }>;
 };
@@ -139,7 +141,7 @@ export function IntelligenceLaneTable({
   }
 
   if (lane === "industry") {
-    const rows = data.items ?? [];
+    const rows = data.insights ?? [];
     if (!rows.length) return <Empty />;
     return (
       <div className={wrap}>
@@ -147,7 +149,7 @@ export function IntelligenceLaneTable({
           <thead>
             <tr>
               <th className={th}>Headline</th>
-              <th className={th}>Vendor</th>
+              <th className={th}>Impact</th>
               <th className={th}>Topic</th>
               <th className={th}>Summary</th>
             </tr>
@@ -156,13 +158,15 @@ export function IntelligenceLaneTable({
             {rows.map((it, i) => (
               <tr key={`${it.headline}-${i}`} className="hover:bg-muted/30">
                 <td className={td}>
-                  <LinkCell href={it.url} label={it.headline} />
+                  <LinkCell href={it.source_url} label={it.headline} />
                 </td>
-                <td className={td}>{it.vendor || "—"}</td>
                 <td className={td}>
-                  {it.topic ? (
+                  <ImpactBadge value={it.impact_level} />
+                </td>
+                <td className={td}>
+                  {it.topic || it.vendor ? (
                     <span className="inline-flex items-center rounded-full border border-border/60 px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-                      {it.topic}
+                      {it.topic || it.vendor}
                     </span>
                   ) : (
                     "—"
@@ -178,32 +182,37 @@ export function IntelligenceLaneTable({
   }
 
   if (lane === "monitor") {
-    const rows = data.mentions ?? [];
+    const rows = data.alerts ?? [];
     if (!rows.length) return <Empty />;
     return (
       <div className={wrap}>
         <table className="w-full text-sm border-collapse">
           <thead>
             <tr>
-              <th className={th}>Brand</th>
-              <th className={th}>Sentiment</th>
-              <th className={th}>Summary</th>
-              <th className={th}>Source</th>
+              <th className={th}>Entity</th>
+              <th className={th}>Event</th>
+              <th className={th}>Detected</th>
+              <th className={th}>Reference</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/40">
             {rows.map((m, i) => (
-              <tr key={`${m.brand}-${i}`} className="hover:bg-muted/30">
-                <td className={`${td} font-medium`}>{m.brand}</td>
-                <td className={td}>
-                  <SentimentBadge value={m.sentiment} />
+              <tr key={`${m.entity}-${i}`} className="hover:bg-muted/30">
+                <td className={`${td} font-medium`}>
+                  {m.entity}
+                  {m.sentiment && (
+                    <div className="mt-1">
+                      <SentimentBadge value={m.sentiment} />
+                    </div>
+                  )}
                 </td>
-                <td className={`${td} text-muted-foreground`}>{m.summary || "—"}</td>
+                <td className={`${td} text-muted-foreground`}>{m.event || m.summary || "—"}</td>
+                <td className={`${td} whitespace-nowrap`}>{m.detected_at || "—"}</td>
                 <td className={td}>
-                  {isSafeUrl(m.url) ? (
-                    <LinkCell href={m.url} label={m.source || safeHost(m.url!)} />
+                  {isSafeUrl(m.reference_url) ? (
+                    <LinkCell href={m.reference_url} label={safeHost(m.reference_url!)} />
                   ) : (
-                    m.source || "—"
+                    "—"
                   )}
                 </td>
               </tr>
@@ -236,6 +245,23 @@ function SentimentBadge({ value }: { value?: string }) {
   return (
     <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wider ${cls}`}>
       {value || "neutral"}
+    </span>
+  );
+}
+
+function ImpactBadge({ value }: { value?: string }) {
+  const v = (value ?? "").toLowerCase();
+  const cls =
+    v === "high"
+      ? "bg-destructive/15 text-destructive border-destructive/30"
+      : v === "medium"
+        ? "bg-amber-500/15 text-amber-600 border-amber-500/30"
+        : v === "low"
+          ? "bg-emerald-500/15 text-emerald-600 border-emerald-500/30"
+          : "bg-muted text-muted-foreground border-border/60";
+  return (
+    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wider ${cls}`}>
+      {value || "—"}
     </span>
   );
 }

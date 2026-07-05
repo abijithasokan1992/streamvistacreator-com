@@ -128,7 +128,7 @@ export function LiveIngestStrip() {
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
         <Tile icon={<HardDrive className="w-3 h-3" />} label="Storage" value={formatBytes(snap.storageUsedBytes)} />
-        <Tile icon={<Layers className="w-3 h-3" />} label="Objects" value={snap.objectCount.toLocaleString()} />
+        
         <Tile icon={<Activity className="w-3 h-3" />} label="Active" value={String(snap.activeUploads)} />
         <Tile icon={<Layers className="w-3 h-3" />} label="Queue" value={String(snap.queueDepth)} />
         <Tile icon={<Gauge className="w-3 h-3" />} label="Speed" value={snap.currentSpeedBps ? `${formatBytes(snap.currentSpeedBps)}/s` : "—"} />

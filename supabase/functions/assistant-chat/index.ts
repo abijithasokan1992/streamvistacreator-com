@@ -209,15 +209,19 @@ Deno.serve(async (req) => {
       ? ""
       : "\n\nFirecrawl is not connected — the research_web tool is unavailable this session.";
 
-    const result = streamText({
+    const result = await generateText({
       model,
       system: SYSTEM_PROMPT + activeLine + firecrawlLine,
-      messages: convertToModelMessages(messages),
+      messages: messages.map((m) => ({ role: m.role, content: m.content })),
       tools,
-      stopWhen: stepCountIs(50),
+      stopWhen: stepCountIs(20),
     });
 
-    return result.toUIMessageStreamResponse({ headers: cors });
+    const toolCalls = (result.steps ?? [])
+      .flatMap((s: any) => s.toolCalls ?? [])
+      .map((c: any) => ({ tool: c.toolName, input: c.args ?? c.input }));
+
+    return json({ content: result.text, tool_calls: toolCalls }, 200, cors);
   } catch (e) {
     console.error("assistant-chat error", e);
     return json({ error: "internal_error", message: (e as Error).message }, 500, cors);

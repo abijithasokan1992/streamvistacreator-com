@@ -77,7 +77,10 @@ type JobRow = {
   preserve_structure: boolean;
   notes: string | null;
   created_at: string;
+  started_at: string | null;
+  completed_at: string | null;
   source_summary: any;
+  metadata: any;
 };
 
 // UI labels only — every mode routes through the same ingest engine

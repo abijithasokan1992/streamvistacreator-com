@@ -107,6 +107,18 @@ export default function MyStudioProfile({
   useEffect(() => { setPForm({}); }, [profile?.id]);
   useEffect(() => { setEForm({}); }, [studioExt?.profile_id]);
 
+  // Summary vs Edit view mode — defaults to Summary once completeness hits
+  // 100%, otherwise defaults to Edit so incomplete profiles can be finished
+  // inline. Users can always toggle back and forth.
+  const [viewMode, setViewMode] = useState<"summary" | "edit">("edit");
+  const [viewModeInitialized, setViewModeInitialized] = useState(false);
+  useEffect(() => {
+    if (viewModeInitialized || !profile) return;
+    if (onboarding) { setViewMode("edit"); setViewModeInitialized(true); return; }
+    setViewMode((profile.profile_completion_pct ?? 0) >= 100 ? "summary" : "edit");
+    setViewModeInitialized(true);
+  }, [profile?.id, onboarding, viewModeInitialized, profile]);
+
   // Auto-fill defaults from the logged-in user so DITs don't retype known
   // values (legal name / emails). Only populates fields that are still empty
   // on the loaded record — never overwrites saved data.

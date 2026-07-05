@@ -18,19 +18,21 @@ export type StructuredLaneData = {
     location?: string;
     category?: string;
   }>;
-  items?: Array<{
+  insights?: Array<{
     headline: string;
+    source_url?: string;
+    impact_level?: "High" | "Medium" | "Low" | string;
+    summary?: string;
     vendor?: string;
     topic?: string;
-    summary?: string;
-    url?: string;
   }>;
-  mentions?: Array<{
-    brand: string;
+  alerts?: Array<{
+    entity: string;
+    event?: string;
+    detected_at?: string;
+    reference_url?: string;
     sentiment?: string;
     summary?: string;
-    source?: string;
-    url?: string;
   }>;
   sources?: Array<{ title?: string; url?: string }>;
 };

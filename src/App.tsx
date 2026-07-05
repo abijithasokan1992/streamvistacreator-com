@@ -212,6 +212,7 @@ const PublicRoutes = () => (
     <Route path="/invoice/:id" element={<InvoiceReceipt />} />
     <Route path="/invoice/manual/:id" element={<ManualInvoiceReceipt />} />
     <Route path="/college-erp" element={<CollegeERP />} />
+    <Route path="/connect" element={<Connect />} />
     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
     <Route path="*" element={<NotFound />} />
   </Routes>

@@ -561,7 +561,7 @@ export default function StudioIngest({
       for (const f of scan.files) {
         const itemId = (f as any)._itemId as string | undefined;
         const pendingId = `ingest-${job.id}-${itemId ?? f.file.name}`.replace(/[^a-zA-Z0-9-_]/g, "_").slice(0, 120);
-        const subpath = preserveStructure ? f.subpath : "";
+        const subpath = buildSubpath(f);
         setLiveProgress((p) => ({ ...p, currentFile: f.relativePath, state: "uploading" }));
         if (itemId) await supabase.from("ingest_job_items").update({ status: "uploading" }).eq("id", itemId);
 

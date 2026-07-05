@@ -165,7 +165,7 @@ function useIngestQueue(workspaceId: string | null) {
     setLoading(true);
     const { data } = await supabase
       .from("ingest_jobs")
-      .select("id,job_mode,status,destination_type,total_bytes,transferred_bytes,total_files,completed_files,failed_files,preserve_structure,notes,created_at,source_summary")
+      .select("id,job_mode,status,destination_type,total_bytes,transferred_bytes,total_files,completed_files,failed_files,preserve_structure,notes,created_at,started_at,completed_at,source_summary,metadata")
       .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false })
       .limit(20);

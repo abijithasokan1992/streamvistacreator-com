@@ -425,6 +425,11 @@ function ProductionGroup({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-medium truncate">{p.name}</p>
+                    {getProductionNumber(p) && (
+                      <Badge variant="outline" className="text-[10px] font-mono bg-accent/10 text-accent border-accent/30">
+                        {getProductionNumber(p)}
+                      </Badge>
+                    )}
                     {isActive && <Badge variant="outline" className="text-[10px] bg-emerald-500/15 text-emerald-300 border-emerald-400/30">Active</Badge>}
                     {p.crew?.title_status && (
                       <Badge variant="outline" className="text-[10px]">{p.crew.title_status}</Badge>

@@ -441,14 +441,15 @@ export default function StudioIngest({
     try {
       const cardKey = cardLabel.trim();
       if (cardKey) {
-        const { data: priorJobs } = await supabase
+        let priorQuery = supabase
           .from("ingest_jobs")
           .select("id,status,total_files,completed_files,source_summary,created_at")
           .eq("workspace_id", activeId)
-          .eq("project_id", projectId || null as any)
           .in("status", ["paused", "completed", "failed"])
           .order("created_at", { ascending: false })
           .limit(10);
+        if (projectId) priorQuery = priorQuery.eq("project_id", projectId);
+        const { data: priorJobs } = await priorQuery;
         const sameCard = (priorJobs ?? []).filter(
           (j: any) => (j.source_summary?.card ?? "").toLowerCase() === cardKey.toLowerCase(),
         );

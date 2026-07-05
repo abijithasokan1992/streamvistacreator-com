@@ -10,7 +10,7 @@ export default function IPCopyright() {
     <>
       <Seo
         title={path === "/dmca" ? "DMCA & Copyright Policy — StreamVista" : "IP & Copyright Policy — StreamVista"}
-        description={path === "/dmca" ? "Report copyright infringement on StreamVista Cloud X. Submit a DMCA takedown notice to our designated agent and view our counter-notice and repeat-infringer procedures." : "StreamVista Cloud X intellectual property rights policy — how we protect creator IP, handle DMCA notices, counter-claims, and repeat infringement on our platform."}
+        description={path === "/dmca" ? "Report copyright infringement on StreamVista Cloud X. Submit a DMCA takedown notice to our designated agent and view our counter-notice and repeat-infringer procedures." : "StreamVista Cloud X IP policy — how we protect creator IP, handle DMCA notices, counter-claims, and repeat infringement on our platform."}
         path={path}
         image={path === "/dmca" ? "/og/dmca.jpg" : "/og/ip-copyright.jpg"}
       />

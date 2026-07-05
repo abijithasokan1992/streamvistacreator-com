@@ -51,3 +51,5 @@ project_id = "hllgmkfqgeuqlmpcirvn"
     verify_jwt = false
   [functions.intelligence-snapshots]
     verify_jwt = false
+  [functions.intelligence-agent]
+    verify_jwt = false

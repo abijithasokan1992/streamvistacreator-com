@@ -116,12 +116,12 @@ export function LiveIngestStrip() {
           {snap.ociHealthy ? (
             <>
               <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-              <span className="text-emerald-500">OCI healthy</span>
+              <span className="text-emerald-500">Cloud Status: Online</span>
             </>
           ) : (
             <>
               <AlertTriangle className="w-3 h-3 text-amber-500" />
-              <span className="text-amber-500">OCI degraded</span>
+              <span className="text-amber-500">Cloud Status: Offline</span>
             </>
           )}
         </div>

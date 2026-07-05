@@ -263,7 +263,7 @@ function saveDefaults(wsId: string, d: SmartDefaults) {
   try { localStorage.setItem(SMART_DEFAULTS_KEY(wsId), JSON.stringify(d)); } catch { /* noop */ }
 }
 
-type CrewMember = { role: "Producer" | "Director" | "DOP" | "DIT"; user_id?: string; display_name?: string; email?: string };
+type CrewMember = { role: ProductionRole; user_id?: string; display_name?: string; email?: string };
 type TitleRow = { id: string; name: string; created_at?: string };
 type SaveStatus = "idle" | "saving" | "saved" | "syncing";
 

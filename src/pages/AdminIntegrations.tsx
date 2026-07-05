@@ -47,7 +47,7 @@ const CONFIG_LINKS: Record<string, { to: string; label: string }> = {
   razorpay: { to: "/admin/billing", label: "Billing settings" },
   gmail: { to: "/admin/comms", label: "Email settings" },
   sanity: { to: "/admin/content", label: "Content management" },
-  firecrawl: { to: "/admin/research", label: "Research workspace" },
+  firecrawl: { to: "/admin/research", label: "Intelligence Center" },
   gpt55: { to: "/admin/assistant", label: "Assistant orchestration" },
 };
 

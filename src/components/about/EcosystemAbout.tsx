@@ -6,11 +6,20 @@ import {
   type CompanyProfile,
   type FounderWork,
 } from "@/lib/companyProfile";
+import pictures from "@/assets/crayons-pictures.png.asset.json";
+import bridge from "@/assets/crayons-bridge.png.asset.json";
+import loop from "@/assets/crayons-loop.png.asset.json";
 
 const brandIcon: Record<string, JSX.Element> = {
   crayons_pictures: <Film className="w-5 h-5" />,
   crayons_bridge: <Radio className="w-5 h-5" />,
   crayons_loop: <Tv className="w-5 h-5" />,
+};
+
+const brandLogo: Record<string, string> = {
+  crayons_pictures: pictures.url,
+  crayons_bridge: bridge.url,
+  crayons_loop: loop.url,
 };
 
 export default function EcosystemAbout() {

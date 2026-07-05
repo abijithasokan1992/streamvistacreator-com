@@ -658,12 +658,20 @@ function ShareProductionDialog({
               />
             </div>
             <div className="w-32 space-y-1.5">
-              <Label>Role</Label>
+              <div className="flex items-center justify-between">
+                <Label>Role</Label>
+                <RoleLegend kind="org" compact />
+              </div>
               <Select value={role} onValueChange={(v) => setRole(v as any)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {INVITABLE_ORG_ROLES.map((r) => (
-                    <SelectItem key={r} value={r}>{ORG_ROLE_LABEL[r]}</SelectItem>
+                    <SelectItem key={r} value={r}>
+                      <div className="flex flex-col">
+                        <span>{ORG_ROLE_LABEL[r]}</span>
+                        <span className="text-[10px] text-muted-foreground leading-snug">{ORG_ROLE_DESCRIPTION[r]}</span>
+                      </div>
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

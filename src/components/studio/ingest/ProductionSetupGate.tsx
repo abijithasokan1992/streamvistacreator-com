@@ -691,13 +691,13 @@ export default function ProductionSetupGate() {
         {/* Basics */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2 space-y-1.5">
-            <Label htmlFor="ttl-number">Title Number</Label>
+            <Label htmlFor="ttl-number">Production Number</Label>
             <Input id="ttl-number" value={titleNumber} readOnly className="font-mono bg-muted/40" />
-            <p className="text-xs text-muted-foreground">Auto-generated and read-only.</p>
+            <p className="text-xs text-muted-foreground">Auto-generated. Editable later from Production Settings by workspace admins.</p>
           </div>
 
           <div className="sm:col-span-2 space-y-1.5">
-            <Label htmlFor="ttl-name">Title Name</Label>
+            <Label htmlFor="ttl-name">Production Title</Label>
             <Input id="ttl-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Untitled Feature 2026" />
           </div>
 

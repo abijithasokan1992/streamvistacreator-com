@@ -47,6 +47,7 @@ import AdminHome from "./pages/AdminHome.tsx";
 import AdminIntegrations from "./pages/AdminIntegrations.tsx";
 import AdminResearch from "./pages/AdminResearch.tsx";
 import CollegeERP from "./pages/CollegeERP.tsx";
+import Connect from "./pages/Connect.tsx";
 // Smart Uploads is not MVP-ready — hidden until the checksum + bucket work is production-safe.
 // import SmartUploads from "./pages/SmartUploads.tsx";
 
@@ -211,6 +212,7 @@ const PublicRoutes = () => (
     <Route path="/invoice/:id" element={<InvoiceReceipt />} />
     <Route path="/invoice/manual/:id" element={<ManualInvoiceReceipt />} />
     <Route path="/college-erp" element={<CollegeERP />} />
+    <Route path="/connect" element={<Connect />} />
     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
     <Route path="*" element={<NotFound />} />
   </Routes>

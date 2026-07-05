@@ -85,8 +85,8 @@ export function LiveIngestStrip() {
         ]);
         if (cancelled) return;
         setSnap({
-          storageUsedBytes: (usage.data as { used_bytes?: number } | null)?.used_bytes ?? 0,
-          objectCount: (usage.data as { object_count?: number } | null)?.object_count ?? 0,
+          storageUsedBytes: (usage.data as { display_used_bytes?: number } | null)?.display_used_bytes ?? 0,
+          objectCount: 0,
           activeUploads: active.count ?? 0,
           queueDepth: queued.count ?? 0,
           currentSpeedBps: 0, // populated live via AutoIngestPanel while a run is active

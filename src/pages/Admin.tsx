@@ -36,6 +36,7 @@ import SupportInbox from "@/components/admin/SupportInbox";
 import ContactInbox from "@/components/admin/ContactInbox";
 import EmailLogMonitor from "@/components/admin/EmailLogMonitor";
 import UniversalBroadcast from "@/components/admin/UniversalBroadcast";
+import CommunicationCenter from "@/components/admin/CommunicationCenter";
 import BrandingSettings from "@/components/admin/BrandingSettings";
 import CompanyProfileSettings from "@/components/admin/CompanyProfileSettings";
 import PartnerLogos from "@/components/admin/PartnerLogos";
@@ -427,13 +428,10 @@ function buildDepartments(args: {
       id: "comms",
       label: "Comms",
       icon: <Inbox className="w-4 h-4" />,
-      desc: "Support, email, notifications.",
+      desc: "Unified Communication Center.",
       sections: [
-        { id: "support", label: "Support", hint: "Support & contact inbox", content: (
-          <div className="space-y-6"><SupportInbox /><ContactInbox /></div>
-        )},
-        { id: "email", label: "Email", hint: "Email log", content: <EmailLogMonitor /> },
-        { id: "notifications", label: "Notifications", hint: "Universal broadcast", content: <UniversalBroadcast /> },
+        { id: "center", label: "Center", hint: "Inbox · Notifications · Invitations · Broadcast · Support · Activity", content: <CommunicationCenter /> },
+        { id: "email", label: "Email log", hint: "Raw email delivery log", content: <EmailLogMonitor /> },
       ],
     },
     {

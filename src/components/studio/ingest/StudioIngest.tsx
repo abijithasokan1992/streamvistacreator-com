@@ -43,6 +43,8 @@ import {
 } from "@/lib/ociMultipartUpload";
 import { classifyFile, enrichFile } from "@/lib/ingest/mediaIntelligence";
 import HardDiskIntakeDialog from "@/components/studio/HardDiskIntakeDialog";
+import { IngestDestinationPreview } from "./IngestDestinationPreview";
+import { IngestTimeline } from "./IngestTimeline";
 // IngestDiagnosticsPanel is rendered on the Advanced Settings page, not inline.
 
 type IngestMode = "connected_drive" | "camera_card" | "watch_folder" | "archive";

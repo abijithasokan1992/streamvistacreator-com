@@ -197,6 +197,7 @@ function useWorkspaceProjects(workspaceId: string | null) {
 export default function StudioIngest({
   activeProjectId,
   activeProjectDefaults,
+  onCompleted,
 }: {
   /** When provided, the ingest form is pre-bound to this Production so Upload
    *  inherits the Active Production without asking the user to re-pick it. */
@@ -219,6 +220,9 @@ export default function StudioIngest({
       card_prefix?: string;
     }>;
   };
+  /** Fires once an ingest job reaches its terminal status. Parent dialogs
+   *  (e.g. IngestMediaDialog) use this to auto-close after Save. */
+  onCompleted?: (result: { jobId: string; status: "completed" | "failed" }) => void;
 } = {}) {
   const { user } = useAuth();
   const { workspaces, activeId, active, setActiveId, canWriteActive } = useWorkspaces();

@@ -1,0 +1,84 @@
+name: Regression – Launch Hardening
+# Runs the Studio launch-hardening smoke tests on every push / PR against
+# the staging branch. Each job reports a clear PASS / FAIL / Skipped status
+# so release captains can gate a promotion on a single green tick.
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main, staging]
+  workflow_dispatch: {}
+
+concurrency:
+  group: regression-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Studio launch-hardening smoke suite
+    runs-on: ubuntu-latest
+    env:
+      # Staging configuration — the smoke tests are static / structural and
+      # do not require live secrets, but keeping the env slot documented
+      # makes it trivial to promote them to hitting a live preflight.
+      STAGE: staging
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: ingest-preflight — client + server contract
+        id: preflight
+        continue-on-error: true
+        run: bun run test src/test/smoke/ingest-preflight.test.ts src/test/smoke/ingest-preflight-telemetry.test.ts
+
+      - name: Studio onboarding — no re-loop regression
+        id: onboarding
+        continue-on-error: true
+        run: bun run test src/test/smoke/studio-onboarding.test.tsx
+
+      - name: Active Production + Ingest hardening
+        id: ingest
+        continue-on-error: true
+        run: bun run test src/test/smoke/ingest-hardening.test.ts
+
+      - name: OCI connection failure surface
+        id: oci
+        continue-on-error: true
+        run: bun run test src/test/smoke/oci-connection-failure.test.ts
+
+      - name: Report
+        # Aggregate every job outcome into a single visible status line.
+        # A failed step here fails the workflow — nothing is silently skipped.
+        run: |
+          set -e
+          report() { echo "- $1: $2"; }
+          echo "## Launch-hardening regression report" >> $GITHUB_STEP_SUMMARY
+          report "ingest-preflight (client + server)" "${{ steps.preflight.outcome }}" >> $GITHUB_STEP_SUMMARY
+          report "studio onboarding" "${{ steps.onboarding.outcome }}" >> $GITHUB_STEP_SUMMARY
+          report "active production + ingest hardening" "${{ steps.ingest.outcome }}" >> $GITHUB_STEP_SUMMARY
+          report "OCI connection failure" "${{ steps.oci.outcome }}" >> $GITHUB_STEP_SUMMARY
+          fail=0
+          for outcome in \
+            "${{ steps.preflight.outcome }}" \
+            "${{ steps.onboarding.outcome }}" \
+            "${{ steps.ingest.outcome }}" \
+            "${{ steps.oci.outcome }}"; do
+            case "$outcome" in
+              success) ;;
+              skipped) echo "::warning::a smoke step was skipped ($outcome)" ;;
+              *) fail=1 ;;
+            esac
+          done
+          if [ "$fail" = "1" ]; then
+            echo "::error::One or more launch-hardening smoke tests failed. See job logs above for the exact assertion."
+            exit 1
+          fi
+          echo "All launch-hardening smoke tests PASS."

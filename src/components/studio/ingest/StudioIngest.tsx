@@ -43,6 +43,8 @@ import {
 } from "@/lib/ociMultipartUpload";
 import { classifyFile, enrichFile } from "@/lib/ingest/mediaIntelligence";
 import HardDiskIntakeDialog from "@/components/studio/HardDiskIntakeDialog";
+import { IngestDestinationPreview } from "./IngestDestinationPreview";
+import { IngestTimeline } from "./IngestTimeline";
 // IngestDiagnosticsPanel is rendered on the Advanced Settings page, not inline.
 
 type IngestMode = "connected_drive" | "camera_card" | "watch_folder" | "archive";
@@ -75,7 +77,10 @@ type JobRow = {
   preserve_structure: boolean;
   notes: string | null;
   created_at: string;
+  started_at: string | null;
+  completed_at: string | null;
   source_summary: any;
+  metadata: any;
 };
 
 // UI labels only — every mode routes through the same ingest engine
@@ -160,7 +165,7 @@ function useIngestQueue(workspaceId: string | null) {
     setLoading(true);
     const { data } = await supabase
       .from("ingest_jobs")
-      .select("id,job_mode,status,destination_type,total_bytes,transferred_bytes,total_files,completed_files,failed_files,preserve_structure,notes,created_at,source_summary")
+      .select("id,job_mode,status,destination_type,total_bytes,transferred_bytes,total_files,completed_files,failed_files,preserve_structure,notes,created_at,started_at,completed_at,source_summary,metadata")
       .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false })
       .limit(20);
@@ -427,6 +432,64 @@ export default function StudioIngest({
       console.warn("[ingest] preflight failed", (e as Error).message);
       toast.error("Could not verify ingest permissions. Please try again.");
       return;
+    }
+
+    // Synchronization pre-check — look for existing jobs on the same
+    // Production + Card so we can (a) resume a paused job, (b) reuse the
+    // destination safely, and (c) warn on duplicate filenames from a card
+    // that has already been offloaded. Never overwrites — always prompts.
+    try {
+      const cardKey = cardLabel.trim();
+      if (cardKey) {
+        let priorQuery = supabase
+          .from("ingest_jobs")
+          .select("id,status,total_files,completed_files,source_summary,created_at")
+          .eq("workspace_id", activeId)
+          .in("status", ["paused", "completed", "failed"])
+          .order("created_at", { ascending: false })
+          .limit(10);
+        if (projectId) priorQuery = priorQuery.eq("project_id", projectId);
+        const { data: priorJobs } = await priorQuery;
+        const sameCard = (priorJobs ?? []).filter(
+          (j: any) => (j.source_summary?.card ?? "").toLowerCase() === cardKey.toLowerCase(),
+        );
+        const pausedMatch = sameCard.find((j: any) => j.status === "paused");
+        if (pausedMatch) {
+          const ok = window.confirm(
+            `A previous ingest for card "${cardKey}" was paused mid-upload. ` +
+            `Continue this new ingest anyway? Cancel to open the paused job and resume it instead.`,
+          );
+          if (!ok) return;
+        }
+        const priorCompleted = sameCard.find((j: any) => j.status === "completed");
+        if (priorCompleted) {
+          // Fetch item filenames+sizes so we can detect duplicates via existing
+          // checksum / file metadata without creating anything new.
+          const { data: priorItems } = await supabase
+            .from("ingest_job_items")
+            .select("file_name,size_bytes,metadata")
+            .eq("job_id", priorCompleted.id)
+            .limit(2000);
+          const priorSet = new Map<string, number>();
+          for (const it of (priorItems ?? []) as any[]) {
+            priorSet.set(`${it.file_name}::${it.size_bytes}`, 1);
+          }
+          const dupes = scan.files.filter(
+            (f) => priorSet.has(`${f.file.name}::${f.file.size}`),
+          );
+          if (dupes.length > 0) {
+            const ok = window.confirm(
+              `${dupes.length} file${dupes.length === 1 ? "" : "s"} on this source already exist ` +
+              `in a prior ingest for card "${cardKey}". Existing media will NOT be overwritten. ` +
+              `Continue anyway? (Duplicates will be recorded as new items you can reconcile in Production Media.)`,
+            );
+            if (!ok) return;
+          }
+        }
+      }
+    } catch (e) {
+      // Pre-check is best-effort — never block the DIT if the lookup itself fails.
+      console.warn("[ingest] pre-check failed", (e as Error).message);
     }
 
     setSubmitting(true);
@@ -1027,6 +1090,25 @@ export default function StudioIngest({
             </div>
             <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional notes for this ingest job (DIT comments, shoot context, archive intent)…"
                       className="mt-3 text-xs min-h-[64px]" />
+
+            {/* Destination Preview — read-only, computed from the same helpers
+                the upload loop uses so what you see is what will be written. */}
+            <div className="mt-3">
+              <IngestDestinationPreview
+                files={scan.files}
+                totalBytes={scan.totalBytes}
+                productionName={projects.find((p) => p.id === projectId)?.name ?? null}
+                shootDay={shootDay || null}
+                unit={unitLabel || null}
+                camera={[cameraBrand, cameraLabel].filter(Boolean).join(" ") || null}
+                card={cardLabel || null}
+                destinationBase={
+                  destinationType === "archive_vault" ? "archive_vault/" : "working_vault/"
+                }
+                layoutMode={layoutMode}
+                buildSubpath={buildSubpath}
+              />
+            </div>
           </Card>
         )}
 
@@ -1137,6 +1219,7 @@ export default function StudioIngest({
                       </div>
                     </div>
                   </div>
+                  {isOpen && <IngestTimeline job={j} />}
                   {isOpen && <DetectedItemsPanel jobId={j.id} />}
                 </li>
               );

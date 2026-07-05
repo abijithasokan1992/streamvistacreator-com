@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { Loader2, ChevronLeft, Building2 } from "lucide-react";
+import StudioProfileSummary from "@/components/profile/StudioProfileSummary";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -105,6 +106,18 @@ export default function MyStudioProfile({
 
   useEffect(() => { setPForm({}); }, [profile?.id]);
   useEffect(() => { setEForm({}); }, [studioExt?.profile_id]);
+
+  // Summary vs Edit view mode — defaults to Summary once completeness hits
+  // 100%, otherwise defaults to Edit so incomplete profiles can be finished
+  // inline. Users can always toggle back and forth.
+  const [viewMode, setViewMode] = useState<"summary" | "edit">("edit");
+  const [viewModeInitialized, setViewModeInitialized] = useState(false);
+  useEffect(() => {
+    if (viewModeInitialized || !profile) return;
+    if (onboarding) { setViewMode("edit"); setViewModeInitialized(true); return; }
+    setViewMode((profile.profile_completion_pct ?? 0) >= 100 ? "summary" : "edit");
+    setViewModeInitialized(true);
+  }, [profile?.id, onboarding, viewModeInitialized, profile]);
 
   // Auto-fill defaults from the logged-in user so DITs don't retype known
   // values (legal name / emails). Only populates fields that are still empty
@@ -225,6 +238,8 @@ export default function MyStudioProfile({
       // Ensure downstream reads (verification badge, completeness %) reflect
       // the freshly-saved state before the parent onboarding gate re-evaluates.
       await refresh();
+      // Auto-collapse to Summary Mode once we've saved a fully-complete profile.
+      if (!onboarding) setViewMode("summary");
       onDone?.();
     } catch (e) {
       toast.error((e as Error).message);
@@ -337,15 +352,35 @@ export default function MyStudioProfile({
 
         {loading || !merged || !mergedExt ? (
           <Card className="p-6"><Loader2 className="w-4 h-4 animate-spin text-accent" /></Card>
+        ) : viewMode === "summary" ? (
+          <StudioProfileSummary
+            profile={merged}
+            ext={mergedExt}
+            socials={socials}
+            canEdit={canEdit}
+            onEdit={() => setViewMode("edit")}
+          />
         ) : (
           <>
+            {(merged.profile_completion_pct ?? 0) >= 100 && !onboarding && (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("summary")}
+                  className="text-xs text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+                >
+                  ← Back to summary
+                </button>
+              </div>
+            )}
             {!canEdit && (
               <Card className="p-3 text-xs text-muted-foreground border-dashed">
                 You can view this studio profile but only workspace owners/admins can edit it.
               </Card>
             )}
 
-            <FieldGroup title="Identity" description="How this studio appears on StreamVista and on legal documents.">
+
+            <FieldGroup collapsible title="Identity" description="How this studio appears on StreamVista and on legal documents.">
               <div className="space-y-1.5">
                 <Label className="text-xs">Display name</Label>
                 <Input disabled={!canEdit} value={merged.display_name ?? ""} onChange={(e) => setP("display_name", e.target.value)} />
@@ -373,7 +408,7 @@ export default function MyStudioProfile({
               </div>
             </FieldGroup>
 
-            <FieldGroup title="Studio contact" description="Primary point of contact for production partners.">
+            <FieldGroup collapsible title="Studio contact" description="Primary point of contact for production partners.">
               <div className="space-y-1.5">
                 <Label className="text-xs">Primary contact name</Label>
                 <Input disabled={!canEdit} value={mergedExt.primary_contact_name ?? ""} onChange={(e) => setE("primary_contact_name", e.target.value)} />
@@ -423,7 +458,7 @@ export default function MyStudioProfile({
               </div>
             </FieldGroup>
 
-            <FieldGroup title="Registered address">
+            <FieldGroup collapsible title="Registered address">
               <div className="md:col-span-2 space-y-1.5">
                 <Label className="text-xs">Address line 1</Label>
                 <Input disabled={!canEdit} value={merged.address_line1 ?? ""} onChange={(e) => setP("address_line1", e.target.value)} />
@@ -453,7 +488,7 @@ export default function MyStudioProfile({
               </div>
             </FieldGroup>
 
-            <FieldGroup title="Tax identity" description="PAN, GST, TAN and CIN as applicable.">
+            <FieldGroup collapsible title="Tax identity" description="PAN, GST, TAN and CIN as applicable.">
               <div className="space-y-1.5">
                 <Label className="text-xs">PAN</Label>
                 <Input disabled={!canEdit} value={merged.pan_number ?? ""}
@@ -509,7 +544,7 @@ export default function MyStudioProfile({
               </div>
             </FieldGroup>
 
-            <FieldGroup title="Billing identity" description="Used on invoices issued to and by this studio.">
+            <FieldGroup collapsible title="Billing identity" description="Used on invoices issued to and by this studio.">
               <div className="space-y-1.5">
                 <Label className="text-xs">Billing legal name</Label>
                 <Input disabled={!canEdit} value={merged.billing_legal_name ?? ""} onChange={(e) => setP("billing_legal_name", e.target.value)} />
@@ -561,7 +596,7 @@ export default function MyStudioProfile({
               </div>
             </FieldGroup>
 
-            <FieldGroup title="Studio capabilities" description="Helps creators and buyers find the right studio.">
+            <FieldGroup collapsible title="Studio capabilities" description="Helps creators and buyers find the right studio.">
               <div className="md:col-span-2 space-y-1.5">
                 <Label className="text-xs">Services offered (comma-separated)</Label>
                 <Input
@@ -600,7 +635,7 @@ export default function MyStudioProfile({
               </div>
             </FieldGroup>
 
-            <FieldGroup title="Public links" description="Studio website, showreels, IMDb, social profiles.">
+            <FieldGroup collapsible title="Public links" description="Studio website, showreels, IMDb, social profiles.">
               <div className="md:col-span-2">
                 <SocialLinksGrid
                   socials={socials}
@@ -611,7 +646,7 @@ export default function MyStudioProfile({
               </div>
             </FieldGroup>
 
-            <FieldGroup title="Verification" description="Once you save your tax & billing details our team will verify them.">
+            <FieldGroup collapsible title="Verification" description="Once you save your tax & billing details our team will verify them.">
               <div className="md:col-span-2 flex items-center justify-between rounded-md border border-border/40 p-3">
                 <div className="space-y-1">
                   <VerificationBadge status={merged.verification_status} />

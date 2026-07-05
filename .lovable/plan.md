@@ -80,3 +80,20 @@ Each pass edits only the touchpoints for that service; no module duplication.
 - Create `src/pages/AdminIntegrations.tsx`.
 - Edit `src/App.tsx` — add `/admin/integrations` route.
 - Edit `src/pages/AdminHome.tsx` — add Integrations tile.
+
+### Phase 3 — Intelligent service integration (shipped)
+
+Every connected service is now context-aware inside StreamVista. No backend redesign, no schema changes, no duplicated business logic.
+
+- **integrations-status** now returns per-service `health`, `version`, `permissions`, `docs_url`, `last_sync`, `last_activity`, and service-specific `extra` (OCI used bytes / active uploads / archive / region; GitHub repo/branch; GatewayAPI SMS/RCS/email-fallback flags).
+- **AdminIntegrations UI** renders enriched cards: status pill, health, version, permissions row, last-sync + last-activity, per-service extras (OCI capacity, GitHub repo/branch, GatewayAPI channels), Test Connection, Open Settings, Documentation. Test buttons now cover Oracle, Razorpay, Firecrawl, GatewayAPI (SMS dialog), and the AI assistant path (GPT-5.5 / Gemini).
+- **Research Workspace** (`/admin/research`) — Firecrawl-backed research categorised into Production companies, Distributors, OTT, Broadcasters, Festivals, Markets, Post studios. Nothing is persisted; results carry a client-side "Mark for review" flag so users copy them into existing modules manually. No metadata duplication.
+- **send-sms-test** — admin-only edge function that routes one SMS through the existing GatewayAPI connector (`/mobile/single`). Reuses the notification pipeline; adds no new sender path.
+- **research-firecrawl** — admin-only proxy that adds category hints to Firecrawl v2 search and returns raw results without persisting.
+- **Assistant** — added `find_invoice` tool (billing quick-lookup) and kept the existing production / ingest / storage / research tools. GPT-5.5 stays the orchestration layer; Gemini remains available for OCR / STT / subtitles / translation / vision through the same gateway. Model selection is never exposed to the user.
+
+Constraints honoured throughout:
+- Reuses existing OCI, Razorpay, GatewayAPI, Firecrawl, Sanity, Gmail, and GitHub wiring.
+- Existing RBAC (`has_role('admin')`) gates every new function and route.
+- No new tables, no RLS changes, no duplicate upload/billing/storage/metadata paths.
+- Secrets are never returned to the client.

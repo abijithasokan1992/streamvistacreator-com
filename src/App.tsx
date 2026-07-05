@@ -232,6 +232,7 @@ const App = () => (
                   <ErrorBoundary>
                     <HostAwareRoutes />
                     <RouteAgentDock />
+                    <AssistantLauncher />
                   </ErrorBoundary>
                 </StorageQuotaProvider>
               </SystemMessageProvider>

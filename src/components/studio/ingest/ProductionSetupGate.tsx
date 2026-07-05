@@ -34,6 +34,11 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import StudioIngest from "./StudioIngest";
+import {
+  PRODUCTION_ROLE_LABEL,
+  type ProductionRole,
+} from "@/lib/rbac/labels";
+import { RoleLegend } from "@/components/rbac/RoleLegend";
 
 // ---------------------------------------------------------------------------
 // Static presets
@@ -257,7 +262,7 @@ function saveDefaults(wsId: string, d: SmartDefaults) {
   try { localStorage.setItem(SMART_DEFAULTS_KEY(wsId), JSON.stringify(d)); } catch { /* noop */ }
 }
 
-type CrewMember = { role: "Producer" | "Director" | "DOP" | "DIT"; user_id?: string; display_name?: string; email?: string };
+type CrewMember = { role: ProductionRole; user_id?: string; display_name?: string; email?: string };
 type TitleRow = { id: string; name: string; created_at?: string };
 type SaveStatus = "idle" | "saving" | "saved" | "syncing";
 
@@ -345,7 +350,7 @@ function CrewPicker({
 
   return (
     <div className="space-y-1.5">
-      <Label>{role}</Label>
+      <Label>{PRODUCTION_ROLE_LABEL[role]}</Label>
       {value ? (
         <div className="flex items-center gap-2">
           <Badge variant="secondary" className="gap-1.5 py-1 px-2">
@@ -818,13 +823,20 @@ export default function ProductionSetupGate() {
 
         {/* Crew */}
         <div className="space-y-4 rounded-lg border border-border/60 bg-muted/20 p-4">
-          <div className="text-sm font-medium">Crew</div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <CrewPicker role="Producer" value={producer} onChange={setProducer} />
-            <CrewPicker role="Director" value={director} onChange={setDirector} />
-            <CrewPicker role="DOP" value={dop} onChange={setDop} />
-            <CrewPicker role="DIT" value={dit} onChange={setDit} />
+          <div className="flex items-center justify-between">
+            <div className="text-sm font-medium">Crew</div>
+            <RoleLegend kind="production" />
           </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <CrewPicker role="producer" value={producer} onChange={setProducer} />
+            <CrewPicker role="director" value={director} onChange={setDirector} />
+            <CrewPicker role="dop" value={dop} onChange={setDop} />
+            <CrewPicker role="dit" value={dit} onChange={setDit} />
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Additional Production Roles (Editor, Colorist, VFX, Sound, QC, Delivery…) can be
+            assigned per production later. See the role legend for what each role can do.
+          </p>
         </div>
 
         {/* Budget */}

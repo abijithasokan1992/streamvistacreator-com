@@ -686,7 +686,7 @@ function ShareProductionDialog({
                       {m.full_name || m.email || m.user_id.slice(0, 8)}
                       {m.email && m.full_name ? <span className="text-muted-foreground"> · {m.email}</span> : null}
                     </span>
-                    <Badge variant="outline" className="text-[10px]">{m.role}</Badge>
+                    <Badge variant="outline" className="text-[10px]">{labelForOrgRole(m.role)}</Badge>
                   </li>
                 ))}
               </ul>

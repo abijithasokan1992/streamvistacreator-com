@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { generateProductionNumber, getProductionNumber } from "@/lib/productionNumber";
+import { INVITABLE_ORG_ROLES, ORG_ROLE_LABEL, ORG_ROLE_BACKEND, labelForOrgRole } from "@/lib/rbac/labels";
 
 const CONTENT_TYPES = [
   "Feature Film", "Series", "Documentary", "Short Film",

@@ -901,6 +901,11 @@ function ActivityPanel({ activeProjectId, activeProjectName, activeProjectNumber
                 {scope === "active" ? `Scoped · ${activeProjectName}` : "All workspace jobs"}
               </span>
             )}
+            {activeProjectNumber && scope === "active" && (
+              <span className="text-[10px] font-mono border rounded-full px-2 py-0.5 bg-secondary/40 text-muted-foreground border-border/50">
+                {activeProjectNumber}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {activeProjectId && (

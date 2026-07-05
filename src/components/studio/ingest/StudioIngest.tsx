@@ -253,7 +253,13 @@ export default function StudioIngest({
   const [cameraPackageId, setCameraPackageId] = useState<string>("");
   const [assetClass, setAssetClass] = useState("");
   const [notes, setNotes] = useState("");
-  const [preserveStructure, setPreserveStructure] = useState(true);
+  // Upload layout mode — replaces the old boolean "preserve" checkbox with a
+  // required 3-way choice. Camera Card intake always defaults to `preserve`
+  // because DIT card layouts must match 1:1 with the physical card for
+  // relinking, checksum verification, and archive restoration.
+  const [layoutMode, setLayoutMode] = useState<"preserve" | "metadata" | "custom">("preserve");
+  const [customBasePath, setCustomBasePath] = useState<string>("");
+  const preserveStructure = layoutMode !== "metadata"; // kept for the existing DB column
   const [submitting, setSubmitting] = useState(false);
   const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
 

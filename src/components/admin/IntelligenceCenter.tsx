@@ -198,6 +198,45 @@ export default function IntelligenceCenter() {
     }
   };
 
+  const runStructured = async (lane: Lane, query: string) => {
+    setState((s) => ({
+      ...s,
+      [lane.id]: { ...s[lane.id], view: "structured", structuredLoading: true, structuredError: undefined },
+    }));
+    try {
+      const { data, error } = await supabase.functions.invoke("intelligence-agent", {
+        body: { lane: lane.id, query, limit: 5 },
+      });
+      if (error) throw new Error(error.message);
+      if ((data as { error?: string })?.error === "firecrawl_not_connected") {
+        setState((s) => ({
+          ...s,
+          [lane.id]: { ...s[lane.id], structuredLoading: false, structuredError: "Firecrawl not connected." },
+        }));
+        toast.error("Firecrawl not connected. Link it in Settings → Integrations.");
+        return;
+      }
+      const structured = data as StructuredLaneData;
+      setState((s) => ({
+        ...s,
+        [lane.id]: { ...s[lane.id], view: "structured", structured, structuredLoading: false },
+      }));
+    } catch (e) {
+      const msg = (e as Error).message;
+      setState((s) => ({
+        ...s,
+        [lane.id]: { ...s[lane.id], structuredLoading: false, structuredError: msg },
+      }));
+      toast.error(`Structured run failed: ${msg}`);
+    }
+  };
+
+  const toggleView = (laneId: LaneId, view: LaneView) => {
+    setState((s) => ({ ...s, [laneId]: { ...s[laneId], view } }));
+  };
+
+
+
   const saveSnapshot = async (finalState: Record<LaneId, LaneState>) => {
     setSavingSnapshot(true);
     try {

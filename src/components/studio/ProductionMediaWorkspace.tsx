@@ -246,7 +246,10 @@ export default function ProductionMediaWorkspace({
     return (
       <div className="rounded-2xl border border-dashed border-border/50 bg-secondary/10 p-8 text-center">
         <Film className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-        <p className="text-sm text-muted-foreground">No media ingested yet for {activeProjectName ?? "this production"}.</p>
+        <p className="text-sm text-muted-foreground">
+          No media ingested yet for {activeProjectName ?? "this production"}
+          {activeProjectNumber && <> · <span className="font-mono">{activeProjectNumber}</span></>}.
+        </p>
         <p className="text-xs text-muted-foreground mt-1">Ingest Media → Browser Upload · Camera Card · Camera-to-Cloud · Hard-disk Import · Archive Intake.</p>
       </div>
     );

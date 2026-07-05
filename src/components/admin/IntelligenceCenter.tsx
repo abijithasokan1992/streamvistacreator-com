@@ -548,6 +548,44 @@ export default function IntelligenceCenter() {
                   })}
                 </div>
 
+                <div className="flex items-center justify-between gap-2 border-t border-border/30 pt-3">
+                  <div className="inline-flex rounded-md border border-border/60 p-0.5 bg-secondary/30">
+                    <button
+                      onClick={() => toggleView(lane.id, "list")}
+                      className={`text-[11px] px-2 py-1 rounded ${
+                        (s.view ?? "list") === "list"
+                          ? "bg-background shadow-sm text-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      List
+                    </button>
+                    <button
+                      onClick={() => toggleView(lane.id, "structured")}
+                      className={`text-[11px] px-2 py-1 rounded inline-flex items-center gap-1 ${
+                        s.view === "structured"
+                          ? "bg-background shadow-sm text-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <TableIcon className="w-3 h-3" /> Structured
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => runStructured(lane, s.activeQuery ?? lane.queries[0].query)}
+                    disabled={s.structuredLoading}
+                    className="text-[11px] text-accent hover:underline inline-flex items-center gap-1 disabled:opacity-50"
+                  >
+                    {s.structuredLoading ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-3 h-3" />
+                    )}
+                    {s.structured ? "Re-extract structured" : "Extract structured"}
+                  </button>
+                </div>
+
+
                 {s.status === "idle" && (
                   <div className="text-xs text-muted-foreground italic">
                     Pick a preset above to run this lane.

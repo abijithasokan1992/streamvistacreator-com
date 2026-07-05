@@ -415,7 +415,17 @@ export default function StudioIngest({
         })
         .select("id")
         .single();
-      if (jobErr || !job) throw jobErr ?? new Error("Failed to create ingest job");
+      if (jobErr || !job) {
+        // Map RLS violations to an actionable message instead of the raw
+        // "new row violates row-level security policy" string.
+        const msg = String((jobErr as any)?.message ?? "");
+        if (/row-level security|row level security/i.test(msg)) {
+          throw new Error(
+            "You don't have permission to start an ingest. This requires workspace admin access and an active premium storage plan.",
+          );
+        }
+        throw jobErr ?? new Error("Failed to create ingest job");
+      }
 
       // 3. Job item rows — intelligent classification + legacy asset_class.
       //    The 14-way `detected_type` and confidence live in metadata JSONB so

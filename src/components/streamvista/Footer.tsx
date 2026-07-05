@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Lock, Cloud, ShieldCheck, type LucideIcon } from "lucide-react";
+import { CrayonsNetwork } from "./CrayonsNetwork";
 
 const LEGAL_LINKS = [
   { to: "/pricing", label: "Pricing" },

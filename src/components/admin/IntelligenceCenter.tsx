@@ -15,8 +15,10 @@ import {
   AlertTriangle,
   CheckCircle2,
   Clock,
+  Table as TableIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { IntelligenceLaneTable, type StructuredLaneData } from "./IntelligenceLaneTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -96,12 +98,17 @@ const LANES: Lane[] = [
 ];
 
 type LaneStatus = "idle" | "loading" | "success" | "error";
+type LaneView = "list" | "structured";
 type LaneState = {
   status: LaneStatus;
   activeQuery?: string;
   results?: ResearchResult[];
   ranAt?: number;
   error?: string;
+  view?: LaneView;
+  structured?: StructuredLaneData;
+  structuredLoading?: boolean;
+  structuredError?: string;
 };
 type SnapshotSummary = {
   id: string;
@@ -190,6 +197,45 @@ export default function IntelligenceCenter() {
       return next;
     }
   };
+
+  const runStructured = async (lane: Lane, query: string) => {
+    setState((s) => ({
+      ...s,
+      [lane.id]: { ...s[lane.id], view: "structured", structuredLoading: true, structuredError: undefined },
+    }));
+    try {
+      const { data, error } = await supabase.functions.invoke("intelligence-agent", {
+        body: { lane: lane.id, query, limit: 5 },
+      });
+      if (error) throw new Error(error.message);
+      if ((data as { error?: string })?.error === "firecrawl_not_connected") {
+        setState((s) => ({
+          ...s,
+          [lane.id]: { ...s[lane.id], structuredLoading: false, structuredError: "Firecrawl not connected." },
+        }));
+        toast.error("Firecrawl not connected. Link it in Settings → Integrations.");
+        return;
+      }
+      const structured = data as StructuredLaneData;
+      setState((s) => ({
+        ...s,
+        [lane.id]: { ...s[lane.id], view: "structured", structured, structuredLoading: false },
+      }));
+    } catch (e) {
+      const msg = (e as Error).message;
+      setState((s) => ({
+        ...s,
+        [lane.id]: { ...s[lane.id], structuredLoading: false, structuredError: msg },
+      }));
+      toast.error(`Structured run failed: ${msg}`);
+    }
+  };
+
+  const toggleView = (laneId: LaneId, view: LaneView) => {
+    setState((s) => ({ ...s, [laneId]: { ...s[laneId], view } }));
+  };
+
+
 
   const saveSnapshot = async (finalState: Record<LaneId, LaneState>) => {
     setSavingSnapshot(true);
@@ -502,6 +548,44 @@ export default function IntelligenceCenter() {
                   })}
                 </div>
 
+                <div className="flex items-center justify-between gap-2 border-t border-border/30 pt-3">
+                  <div className="inline-flex rounded-md border border-border/60 p-0.5 bg-secondary/30">
+                    <button
+                      onClick={() => toggleView(lane.id, "list")}
+                      className={`text-[11px] px-2 py-1 rounded ${
+                        (s.view ?? "list") === "list"
+                          ? "bg-background shadow-sm text-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      List
+                    </button>
+                    <button
+                      onClick={() => toggleView(lane.id, "structured")}
+                      className={`text-[11px] px-2 py-1 rounded inline-flex items-center gap-1 ${
+                        s.view === "structured"
+                          ? "bg-background shadow-sm text-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <TableIcon className="w-3 h-3" /> Structured
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => runStructured(lane, s.activeQuery ?? lane.queries[0].query)}
+                    disabled={s.structuredLoading}
+                    className="text-[11px] text-accent hover:underline inline-flex items-center gap-1 disabled:opacity-50"
+                  >
+                    {s.structuredLoading ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-3 h-3" />
+                    )}
+                    {s.structured ? "Re-extract structured" : "Extract structured"}
+                  </button>
+                </div>
+
+
                 {s.status === "idle" && (
                   <div className="text-xs text-muted-foreground italic">
                     Pick a preset above to run this lane.
@@ -534,7 +618,7 @@ export default function IntelligenceCenter() {
                   <div className="text-xs text-muted-foreground">No results for this query.</div>
                 )}
 
-                {s.status === "success" && s.results && s.results.length > 0 && (
+                {s.status === "success" && s.results && s.results.length > 0 && (s.view ?? "list") === "list" && (
                   <ul className="divide-y divide-border/40 -mx-1">
                     {s.results.map((r, i) => (
                       <li key={`${r.url ?? r.title}-${i}`} className="px-1 py-2.5">
@@ -559,6 +643,25 @@ export default function IntelligenceCenter() {
                     ))}
                   </ul>
                 )}
+
+                {s.view === "structured" && (
+                  <div className="space-y-2">
+                    {s.structuredLoading && (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" /> Extracting structured records…
+                      </div>
+                    )}
+                    {!s.structuredLoading && s.structuredError && (
+                      <div className="text-xs text-destructive bg-destructive/10 border border-destructive/30 rounded-md px-3 py-2">
+                        {s.structuredError}
+                      </div>
+                    )}
+                    {!s.structuredLoading && !s.structuredError && (
+                      <IntelligenceLaneTable lane={lane.id} data={s.structured} />
+                    )}
+                  </div>
+                )}
+
               </div>
             </section>
           );

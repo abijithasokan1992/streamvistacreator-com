@@ -1086,6 +1086,25 @@ export default function StudioIngest({
             </div>
             <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional notes for this ingest job (DIT comments, shoot context, archive intent)…"
                       className="mt-3 text-xs min-h-[64px]" />
+
+            {/* Destination Preview — read-only, computed from the same helpers
+                the upload loop uses so what you see is what will be written. */}
+            <div className="mt-3">
+              <IngestDestinationPreview
+                files={scan.files}
+                totalBytes={scan.totalBytes}
+                productionName={projects.find((p) => p.id === projectId)?.name ?? null}
+                shootDay={shootDay || null}
+                unit={unitLabel || null}
+                camera={[cameraBrand, cameraLabel].filter(Boolean).join(" ") || null}
+                card={cardLabel || null}
+                destinationBase={
+                  destinationType === "archive_vault" ? "archive_vault/" : "working_vault/"
+                }
+                layoutMode={layoutMode}
+                buildSubpath={buildSubpath}
+              />
+            </div>
           </Card>
         )}
 

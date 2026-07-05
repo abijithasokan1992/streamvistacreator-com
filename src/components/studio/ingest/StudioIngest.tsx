@@ -335,6 +335,15 @@ export default function StudioIngest({
   const startIngest = useCallback(async () => {
     if (!scan || !activeId || !user) return;
     if (!canWriteActive) { toast.error("You only have viewer access to this workspace"); return; }
+    if (!isWorkspaceAdmin) {
+      toast.error("Only workspace owners or admins can start an ingest. Ask an admin to promote you.");
+      return;
+    }
+    if (isPremiumEligible === false) {
+      toast.error("A premium storage plan is required to start uploads. Please activate a storage plan.");
+      quota.checkOrPaywall();
+      return;
+    }
     if (!quota.checkOrPaywall()) return;
     setSubmitting(true);
     try {

@@ -484,14 +484,8 @@ const DEFAULT_FOLDERS = [
   "LUTs", "Stills", "Masters", "Deliverables", "Archive",
 ] as const;
 
-function generateTitleNumber(): string {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `TTL-${yyyy}${mm}${dd}-${rand}`;
-}
+// Production Number generation is centralized in "@/lib/productionNumber".
+// (See generateProductionNumber import at the top of the file.)
 
 function fmtBytes(n: number): string {
   if (!Number.isFinite(n) || n <= 0) return "0 B";

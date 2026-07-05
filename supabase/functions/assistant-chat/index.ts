@@ -2,7 +2,7 @@
 // Streams via Lovable AI Gateway. Every tool query runs with the caller's
 // bearer token so existing RLS enforces read scope. No admin bypass.
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { streamText, tool, convertToModelMessages, stepCountIs, type UIMessage } from "npm:ai@5";
+import { generateText, tool, stepCountIs } from "npm:ai@5";
 import { createOpenAICompatible } from "npm:@ai-sdk/openai-compatible@1";
 import { z } from "npm:zod";
 import { buildCorsHeaders } from "../_shared/cors.ts";

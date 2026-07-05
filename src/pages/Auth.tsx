@@ -78,9 +78,18 @@ export default function Auth() {
   // Pre-fetch the mail-voice TTS so playback is instant after send.
   useEffect(() => { prewarmMailVoice(); }, []);
 
-  // Already signed in → bounce to role dashboard.
+  // Already signed in → return to consent flow if pending, else role dashboard.
   useEffect(() => {
     if (loading || !user) return;
+    const urlNext = new URLSearchParams(window.location.search).get("next");
+    let stashed: string | null = null;
+    try { stashed = sessionStorage.getItem("sv_consent_next"); } catch { /* noop */ }
+    const next = urlNext ?? stashed;
+    if (next && next.startsWith("/") && !next.startsWith("//")) {
+      try { sessionStorage.removeItem("sv_consent_next"); } catch { /* noop */ }
+      navigate(next, { replace: true });
+      return;
+    }
     navigate(dashboardForRole(role), { replace: true });
   }, [user, role, loading, navigate]);
 

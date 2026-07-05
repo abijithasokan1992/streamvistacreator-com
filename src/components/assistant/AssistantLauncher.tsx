@@ -67,7 +67,7 @@ function renderMarkdown(text: string) {
 
 export function AssistantLauncher() {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [turns, setTurns] = useState<Turn[]>([]);

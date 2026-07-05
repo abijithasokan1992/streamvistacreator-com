@@ -673,8 +673,13 @@ function ProductionPanel({
           <Card className="p-4 mb-4 space-y-3">
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="sm:col-span-2 space-y-1.5">
-                <Label htmlFor="p-name">Title Name</Label>
+                <Label htmlFor="p-name">Production Title</Label>
                 <Input id="p-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Untitled Feature 2026" />
+              </div>
+              <div className="sm:col-span-2 space-y-1.5">
+                <Label htmlFor="p-number">Production Number</Label>
+                <Input id="p-number" value={previewNumber} readOnly className="font-mono bg-muted/40" />
+                <p className="text-[11px] text-muted-foreground">Auto-generated. Assigned on create; editable later from Production Settings by admins.</p>
               </div>
               <div className="space-y-1.5">
                 <Label>Content Type</Label>

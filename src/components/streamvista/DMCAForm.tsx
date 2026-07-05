@@ -50,15 +50,16 @@ export const DMCAForm = () => {
     }
     setSubmitting(true);
     try {
-      let evidence_path: string | null = null;
-      if (file) {
-        const folder = crypto.randomUUID();
-        const path = `${folder}/${file.name.replace(/[^\w.\-]/g, "_")}`;
-        const { error: upErr } = await supabase.storage.from("dmca-evidence").upload(path, file, { upsert: false });
-        if (upErr) throw upErr;
-        evidence_path = path;
-      }
+      // Pre-generate the request id on the client so the anonymous flow does
+      // not need a SELECT-after-INSERT (which anon lacks a policy for).
+      const requestId = crypto.randomUUID();
+
+      // Insert the DMCA row FIRST so we can bind any storage upload to its id.
+      // Storage RLS on `dmca-evidence` requires the path's UUID prefix to match
+      // an existing dmca_requests.id, which prevents anonymous uploads to
+      // arbitrary UUID folders.
       const { error } = await supabase.from("dmca_requests").insert({
+        id: requestId,
         reporter_name: parsed.data.reporter_name,
         reporter_email: parsed.data.reporter_email,
         reporter_phone: form.reporter_phone || null,
@@ -69,12 +70,27 @@ export const DMCAForm = () => {
         signature: parsed.data.signature,
         good_faith_statement: true,
         accuracy_statement: true,
-        evidence_path,
+        evidence_path: null,
         status: "pending",
       });
       if (error) throw error;
+
+      if (file) {
+        const path = `${requestId}/${file.name.replace(/[^\w.\-]/g, "_")}`;
+        const { error: upErr } = await supabase.storage
+          .from("dmca-evidence")
+          .upload(path, file, { upsert: false });
+        // Non-fatal: the notice is already recorded. Surface a soft warning.
+        if (upErr) {
+          console.error("DMCA evidence upload failed", upErr);
+          toast.error("Notice submitted, but evidence upload failed. Our team will follow up.");
+        }
+      }
+
       setDone(true);
       toast.success("Takedown notice submitted");
+
+
     } catch (err) {
       console.error("DMCA submission error", err);
       toast.error("Submission failed. Please try again.");

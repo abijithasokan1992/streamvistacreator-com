@@ -91,13 +91,13 @@ type JobRow = {
 // semantics; no new pipeline, no backend redesign.
 const MODES: { id: IngestMode; label: string; icon: any; blurb: string }[] = [
   { id: "connected_drive", label: "Browser Upload", icon: HardDrive,
-    blurb: "Drag & drop files or a full folder from your computer. Also handles bulk uploads." },
+    blurb: "Drag and drop files from your computer." },
   { id: "camera_card",     label: "Camera Card",    icon: Camera,
-    blurb: "Offload a camera card or mag straight from the DIT cart." },
+    blurb: "Offload raw files straight from the camera." },
   { id: "watch_folder",    label: "Camera-to-Cloud", icon: FolderClock,
     blurb: "Live-scan a folder as the shoot continues — near-real-time ingest." },
   { id: "archive",         label: "Archive Intake", icon: Snowflake,
-    blurb: "Master bundles and completed projects for long-term vault." },
+    blurb: "Upload massive or completely finished projects." },
 ];
 
 const CAMERA_BRANDS = [

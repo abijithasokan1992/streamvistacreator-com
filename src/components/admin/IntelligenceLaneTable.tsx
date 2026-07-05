@@ -141,7 +141,7 @@ export function IntelligenceLaneTable({
   }
 
   if (lane === "industry") {
-    const rows = data.items ?? [];
+    const rows = data.insights ?? [];
     if (!rows.length) return <Empty />;
     return (
       <div className={wrap}>
@@ -149,7 +149,7 @@ export function IntelligenceLaneTable({
           <thead>
             <tr>
               <th className={th}>Headline</th>
-              <th className={th}>Vendor</th>
+              <th className={th}>Impact</th>
               <th className={th}>Topic</th>
               <th className={th}>Summary</th>
             </tr>
@@ -158,13 +158,15 @@ export function IntelligenceLaneTable({
             {rows.map((it, i) => (
               <tr key={`${it.headline}-${i}`} className="hover:bg-muted/30">
                 <td className={td}>
-                  <LinkCell href={it.url} label={it.headline} />
+                  <LinkCell href={it.source_url} label={it.headline} />
                 </td>
-                <td className={td}>{it.vendor || "—"}</td>
                 <td className={td}>
-                  {it.topic ? (
+                  <ImpactBadge value={it.impact_level} />
+                </td>
+                <td className={td}>
+                  {it.topic || it.vendor ? (
                     <span className="inline-flex items-center rounded-full border border-border/60 px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-                      {it.topic}
+                      {it.topic || it.vendor}
                     </span>
                   ) : (
                     "—"
@@ -180,32 +182,37 @@ export function IntelligenceLaneTable({
   }
 
   if (lane === "monitor") {
-    const rows = data.mentions ?? [];
+    const rows = data.alerts ?? [];
     if (!rows.length) return <Empty />;
     return (
       <div className={wrap}>
         <table className="w-full text-sm border-collapse">
           <thead>
             <tr>
-              <th className={th}>Brand</th>
-              <th className={th}>Sentiment</th>
-              <th className={th}>Summary</th>
-              <th className={th}>Source</th>
+              <th className={th}>Entity</th>
+              <th className={th}>Event</th>
+              <th className={th}>Detected</th>
+              <th className={th}>Reference</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/40">
             {rows.map((m, i) => (
-              <tr key={`${m.brand}-${i}`} className="hover:bg-muted/30">
-                <td className={`${td} font-medium`}>{m.brand}</td>
-                <td className={td}>
-                  <SentimentBadge value={m.sentiment} />
+              <tr key={`${m.entity}-${i}`} className="hover:bg-muted/30">
+                <td className={`${td} font-medium`}>
+                  {m.entity}
+                  {m.sentiment && (
+                    <div className="mt-1">
+                      <SentimentBadge value={m.sentiment} />
+                    </div>
+                  )}
                 </td>
-                <td className={`${td} text-muted-foreground`}>{m.summary || "—"}</td>
+                <td className={`${td} text-muted-foreground`}>{m.event || m.summary || "—"}</td>
+                <td className={`${td} whitespace-nowrap`}>{m.detected_at || "—"}</td>
                 <td className={td}>
-                  {isSafeUrl(m.url) ? (
-                    <LinkCell href={m.url} label={m.source || safeHost(m.url!)} />
+                  {isSafeUrl(m.reference_url) ? (
+                    <LinkCell href={m.reference_url} label={safeHost(m.reference_url!)} />
                   ) : (
-                    m.source || "—"
+                    "—"
                   )}
                 </td>
               </tr>

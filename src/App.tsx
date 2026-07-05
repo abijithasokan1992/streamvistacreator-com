@@ -12,6 +12,7 @@ import Onboarding from "./pages/Onboarding.tsx";
 import Index from "./pages/Index.tsx";
 import Auth from "./pages/Auth.tsx";
 import AuthCallback from "./pages/AuthCallback.tsx";
+import OAuthConsent from "./pages/OAuthConsent.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import Admin from "./pages/Admin.tsx";
 import ContentOwnerDashboard from "./pages/dashboards/ContentOwner.tsx";
@@ -94,6 +95,7 @@ const AdminRoutes = () => (
     <Route path="/" element={<AdminRoot />} />
     <Route path="/auth" element={<Auth />} />
     <Route path="/auth/callback" element={<AuthCallback />} />
+    <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
 
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/admin" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
@@ -128,6 +130,7 @@ const PublicRoutes = () => (
     <Route path="/" element={<Index />} />
     <Route path="/auth" element={<Auth />} />
     <Route path="/auth/callback" element={<AuthCallback />} />
+    <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
     <Route path="/reset-password" element={<ResetPassword />} />
 
     {/* Linear onboarding wizard — kept for legacy accounts only. */}

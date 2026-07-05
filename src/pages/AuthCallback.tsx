@@ -77,8 +77,6 @@ export default function AuthCallback() {
         // 3. Refresh role + redirect.
         await refreshRole();
         if (cancelled) return;
-        setMessage("Opening your workspace…");
-
         // Re-read role after the RPC took effect.
         const { data: rows } = await supabase
           .from("user_roles")
@@ -87,6 +85,16 @@ export default function AuthCallback() {
         const roles = (rows || []).map((r: any) => r.role as AppRole);
         const primary = pickPrimaryRole(roles);
 
+        // If we came here mid-way through an OAuth consent flow, return there.
+        let consentNext: string | null = null;
+        try { consentNext = sessionStorage.getItem("sv_consent_next"); } catch { /* noop */ }
+        if (consentNext && consentNext.startsWith("/") && !consentNext.startsWith("//")) {
+          try { sessionStorage.removeItem("sv_consent_next"); } catch { /* noop */ }
+          navigate(consentNext, { replace: true });
+          return;
+        }
+
+        setMessage("Opening your workspace…");
         navigate(dashboardForRole(primary), { replace: true });
       } catch (err) {
         console.error("auth callback failed", err);

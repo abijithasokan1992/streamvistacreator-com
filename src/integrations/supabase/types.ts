@@ -3864,6 +3864,7 @@ export type Database = {
           id: string
           legacy_film_id: number
           payload: Json
+          recovery_email_sent_at: string | null
           updated_at: string
           uploader_email: string
         }
@@ -3875,6 +3876,7 @@ export type Database = {
           id?: string
           legacy_film_id: number
           payload: Json
+          recovery_email_sent_at?: string | null
           updated_at?: string
           uploader_email: string
         }
@@ -3886,6 +3888,7 @@ export type Database = {
           id?: string
           legacy_film_id?: number
           payload?: Json
+          recovery_email_sent_at?: string | null
           updated_at?: string
           uploader_email?: string
         }
@@ -8823,6 +8826,13 @@ export type Database = {
       payment_trace_upsert: {
         Args: { p_order_id: string; p_patch: Json }
         Returns: string
+      }
+      pending_legacy_recovery_emails: {
+        Args: never
+        Returns: {
+          film_count: number
+          uploader_email: string
+        }[]
       }
       primary_role: {
         Args: { _user_id: string }

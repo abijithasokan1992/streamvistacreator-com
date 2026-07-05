@@ -867,6 +867,13 @@ export default function StudioIngest({
 
       <StorageWarningBanner />
 
+      {/* Auto Ingest — the one-button, three-step surface. Advanced modes below remain available. */}
+      <AutoIngestPanel />
+
+      <LiveIngestStrip />
+
+
+
       {/* Mode selector */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {MODES.map((m) => {

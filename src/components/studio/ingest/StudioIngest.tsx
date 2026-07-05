@@ -852,6 +852,16 @@ export default function StudioIngest({
         </div>
 
         {/* Scan summary */}
+        {scan && !canIngest && (
+          <Card className="p-3 border-amber-500/40 bg-amber-500/5 text-xs flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+            <div>
+              {!isWorkspaceAdmin
+                ? "Only workspace owners or admins can start an ingest job. Ask an admin to promote your role."
+                : "A premium storage plan is required to start uploads. Activate a storage plan to continue."}
+            </div>
+          </Card>
+        )}
         {scan && (
           <Card className="p-4 bg-secondary/10 border-accent/20">
             <div className="flex items-start justify-between gap-3 flex-wrap">

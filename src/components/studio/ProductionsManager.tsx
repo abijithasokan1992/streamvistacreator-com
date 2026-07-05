@@ -752,8 +752,8 @@ function CollaborationPanel({
         <h3 className="font-semibold text-sm">Team & Collaboration</h3>
       </div>
       <p className="text-xs text-muted-foreground mb-4 max-w-2xl">
-        Invite collaborators by email or search existing members. Roles control write access
-        (Admin can invite, Editor can create/edit productions, Viewer is read-only).
+        Invite collaborators by email or search existing members. Organization roles control workspace access —
+        Admin manages members and billing, Manager runs day-to-day operations, Member creates and edits productions, Viewer is read-only.
       </p>
 
       {canManage && (
@@ -771,9 +771,9 @@ function CollaborationPanel({
           <Select value={role} onValueChange={(v) => setRole(v as any)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="admin">Admin</SelectItem>
-              <SelectItem value="editor">Editor</SelectItem>
-              <SelectItem value="viewer">Viewer</SelectItem>
+              {INVITABLE_ORG_ROLES.map((r) => (
+                <SelectItem key={r} value={r}>{ORG_ROLE_LABEL[r]}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Button onClick={invite} disabled={!email.trim() || sending}>

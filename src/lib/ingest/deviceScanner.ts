@@ -83,8 +83,8 @@ async function walkHandle(
   const iter = (dirHandle as unknown as { values: () => AsyncIterableIterator<FileSystemHandle> }).values();
   for await (const entry of iter) {
     if (entry.kind === "file") {
-      if (!MEDIA_EXT_RE.test(entry.name)) continue;
-      const fileHandle = entry as FileSystemFileHandle;
+      const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+      if (!isIngestable(entry.name, rel)) continue;
       const file = await fileHandle.getFile();
       const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
       acc.push({ file, relativePath: rel, subpath: prefix });

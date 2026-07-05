@@ -151,9 +151,10 @@ export function LiveIngestStrip() {
             .eq("workspace_id", activeId)
             .eq("status", "failed"),
           // Current filename comes from the item currently uploading — we
-          // display the friendly source path, never any bucket or PAR URL.
+          // display the friendly relative path or file name, never any
+          // bucket URL or PAR link.
           supabase.from("ingest_job_items")
-            .select("source_path, updated_at")
+            .select("relative_path, file_name, updated_at")
             .eq("status", "uploading")
             .order("updated_at", { ascending: false })
             .limit(1)

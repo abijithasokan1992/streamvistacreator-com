@@ -132,10 +132,12 @@ export default function ProductionMediaWorkspace({
   workspaceId,
   activeProjectId,
   activeProjectName,
+  activeProjectNumber,
 }: {
   workspaceId: string | null;
   activeProjectId: string | null;
   activeProjectName?: string | null;
+  activeProjectNumber?: string | null;
 }) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [items, setItems] = useState<Item[]>([]);

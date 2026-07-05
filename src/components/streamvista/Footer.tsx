@@ -71,6 +71,9 @@ export const Footer = () => {
             </ul>
           )}
         </div>
+        <div className="mt-10 pt-6 border-t border-border/40">
+          <CrayonsNetwork />
+        </div>
       </div>
     </footer>
   );

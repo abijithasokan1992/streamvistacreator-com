@@ -43,6 +43,7 @@ import MyStudioProfile from "./pages/profile/MyStudioProfile.tsx";
 import StudioAdvancedSettings from "./pages/dashboards/StudioAdvancedSettings.tsx";
 import StudioProfileOnboardingGate from "./components/studio/StudioProfileOnboardingGate.tsx";
 import AdminHome from "./pages/AdminHome.tsx";
+import AdminIntegrations from "./pages/AdminIntegrations.tsx";
 import CollegeERP from "./pages/CollegeERP.tsx";
 // Smart Uploads is not MVP-ready — hidden until the checksum + bucket work is production-safe.
 // import SmartUploads from "./pages/SmartUploads.tsx";
@@ -103,6 +104,7 @@ const AdminRoutes = () => (
     <Route path="/admin/storage" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/comms" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/settings" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/integrations" element={<AdminErrorBoundary><AdminIntegrations /></AdminErrorBoundary>} />
     <Route path="/admin/audit" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/homepage" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/qc" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
@@ -167,6 +169,7 @@ const PublicRoutes = () => (
     <Route path="/admin/storage" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/comms" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/settings" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/integrations" element={<AdminErrorBoundary><AdminIntegrations /></AdminErrorBoundary>} />
     <Route path="/admin/audit" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/homepage" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/qc" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />

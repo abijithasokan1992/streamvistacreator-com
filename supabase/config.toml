@@ -41,3 +41,5 @@ project_id = "hllgmkfqgeuqlmpcirvn"
     verify_jwt = false
 
 
+  [functions.integrations-status]
+    verify_jwt = false

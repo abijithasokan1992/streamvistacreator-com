@@ -1,68 +1,73 @@
-# Production Readiness Pass
+# StreamVista Cloud X — Platform Integrations
 
-Reuses the existing pipeline. Adds one server-side gate, one checklist doc, and a small test file. No schema changes, no duplicate business logic.
+Reuse the existing app. Add integration configuration surface, a unified AI Assistant, and per-service wiring on top of the existing backend, RBAC, storage, billing, and workflows. No schema migrations, no duplicate modules, no UI redesign.
 
-## 1. Regression checklist (doc)
+## Scope
 
-Create `.lovable/production-readiness.md` with a Pass/Fail row for each area, populated from static analysis of the current codebase and pointers to the exact file/line evidence a reviewer would use to re-verify on the live URL:
+Nine platform services surfaced under one Settings → Integrations page:
 
-- Studio onboarding · Active Production · Studio Ingest · Storage allocation · Razorpay activation · OCI upload · Proxy generation · Production Media · Activity sync
+| Service | Purpose | Existing wiring |
+| --- | --- | --- |
+| Oracle Cloud (OCI) | Primary storage, media, archive | `supabase/functions/_shared/oci.ts`, `oci-upload`, `oci-multipart`, `verify-oci-connection`, `site_config.oracle_*` |
+| GPT-5.5 (OpenAI via Lovable AI) | Reasoning, metadata, natural language assistant | Lovable AI Gateway (`LOVABLE_API_KEY`) |
+| Gemini Enterprise | Semantic search, grounded assistant answers, content discovery | Standard connector `gemini_enterprise` (gateway) |
+| Firecrawl | Film / OTT / festival / market research | Standard connector `firecrawl` (gateway) |
+| Razorpay | Subscriptions, storage plans, invoices, billing history | `create-razorpay-*`, `verify-razorpay-payment`, `razorpay-webhook`, `check-razorpay-status` |
+| GitHub | Source, CI/CD, releases, deploy status (internal only) | Repo already linked; surface status read-only |
+| GatewayAPI | SMS / RCS / OTP / editorial / delivery notifications | Standard connector `gatewayapi` (gateway) |
+| Gmail | Verification, invites, password reset, billing, collab | Existing transactional email pipeline (`send-transactional-email`) |
+| Sanity (or Contentful) | Homepage, marketing, docs, news, help centre | Standard connector `sanity` (MCP) — public content only |
 
-For each row: current status (Pass / Needs Live Check), what code guarantees it, and the shortest reproduction path (URL + click sequence). Live-only checks (Razorpay live-mode order, real OCI PAR mint) stay marked "Needs Live Check" — the doc tells the reviewer exactly what to click.
+## Phases
 
-## 2. Server-side ingest preflight (new edge function)
+### Phase 1 — Integrations settings page  (this turn)
 
-New function `supabase/functions/ingest-preflight/index.ts`:
+- Route: `/admin/integrations` (super_admin / admin only, guarded by existing `RoleGate`).
+- Server function `integrations-status` returns a single JSON payload with per-service `{ connected, mode, last_sync, latency_ms, note }`.
+  - OCI: reuse `verify-oci-connection` result.
+  - Razorpay: reuse `check-razorpay-status` result.
+  - Lovable AI (GPT-5.5, Gemini via gateway): probe `LOVABLE_API_KEY` presence + one-shot chat ping.
+  - Firecrawl / GatewayAPI / Gemini Enterprise / Sanity: presence of connector secret (`FIRECRAWL_API_KEY`, `GATEWAYAPI_API_KEY`, `GEMINI_ENTERPRISE_API_KEY`, `SANITY_API_KEY`).
+  - Gmail: presence of transactional email config.
+  - GitHub: read-only presence marker (repo connected via Lovable ↔ GitHub sync).
+- UI: card grid, each card shows status pill, last checked, and buttons: **Test Connection**, **Configuration** (opens existing admin surface for that service — OCI card links to Storage Governance, Razorpay to Billing, etc.). Never expose secret values.
+- No new tables. State comes from `site_config` + environment presence.
 
-- Reads bearer token, resolves `auth.uid()`, rejects unauthenticated with `AUTH_REQUIRED`.
-- Validates body `{ workspace_id, project_id? }` with Zod.
-- Runs the same checks as the existing RLS policy but returns structured JSON instead of a raw RLS error:
-  - `WORKSPACE_ACCESS_DENIED` — no workspace_members row.
-  - `INSUFFICIENT_ROLE` — role not owner/admin.
-  - `PREMIUM_REQUIRED` — `has_premium_storage_entitlement()` false and not global admin.
-  - `STORAGE_REQUIRED` — active `workspace_storage_entitlements` row missing.
-  - `INVALID_PRODUCTION` — project_id present but not in workspace.
-- Never leaks internal SQL errors — maps unknown failures to `PREFLIGHT_FAILED`.
-- Structured console.log lines: `{"level":"warn","event":"ingest_preflight_denied","reason":"PREMIUM_REQUIRED","workspace_id":"…","user_id":"…"}`.
+### Phase 2 — StreamVista AI Assistant
 
-`supabase/config.toml` gains `[functions.ingest-preflight] verify_jwt = false` (we validate in-code, standard pattern for this repo).
+- Single conversational surface at `/assistant` (authenticated).
+- Server: `supabase/functions/assistant-chat/index.ts` streaming `streamText` via Lovable AI Gateway.
+- Default model `openai/gpt-5.5` with `google/gemini-2.5-pro` fallback (routing decided server-side by task class, never exposed to the user).
+- Tools (server-side, gated by caller's RBAC):
+  - `find_clips`, `search_productions`, `find_duplicate_media`, `locate_camera_cards` → existing production/media queries.
+  - `generate_metadata`, `generate_subtitles`, `summarize_script`, `smart_tag` → Lovable AI.
+  - `research_company`, `research_buyer`, `search_ott`, `industry_news` → Firecrawl `search` / `scrape`.
+  - `semantic_search` → Gemini Enterprise `streamAssist` / `search`.
+  - `generate_report` → existing `chief-report` / `system-report`.
+- UI: reuses existing `AgentDock` / `AgentChat` shells; adds a full-page route rendering the same components with the new endpoint. No new chat component library.
 
-## 3. Wire preflight into `StudioIngest`
+### Phase 3 — Per-service wiring passes
 
-In `startIngest`, call `supabase.functions.invoke("ingest-preflight", …)` before inserting into `ingest_sources` / `ingest_jobs`. On non-OK:
+Each pass edits only the touchpoints for that service; no module duplication.
 
-- Toast the friendly message returned by the function.
-- If reason is `PREMIUM_REQUIRED` or `STORAGE_REQUIRED`, open the existing storage paywall via `quota.checkOrPaywall()`.
-- Log a client-side telemetry breadcrumb via the existing `paymentTelemetry`/`uploads/uploadFailure` helper (no new lib).
+1. **Notifications** — extend `send-transactional-email` router so SMS/RCS/OTP flows fan out to a new `send-sms` edge function that calls GatewayAPI `/mobile/single` via the connector gateway. Reuses existing notification triggers (upload status, editorial, delivery).
+2. **AI enrichment on ingest** — existing `ingest-preflight` gains an optional post-hook that enqueues metadata/OCR/STT/subtitle jobs on Lovable AI. No new pipeline; jobs written to existing `recent_uploads` / job tables.
+3. **Semantic search** — production search UI switches from LIKE query to `assistant-chat` tool `semantic_search` (Gemini Enterprise) when connected; falls back to existing SQL search.
+4. **CMS** — public marketing pages read from Sanity via existing `mcp_sanity` connector. Productions / assets / users / billing / rights stay in Lovable Cloud.
+5. **GitHub** — read-only badge on Integrations page showing latest workflow status via existing GitHub App connection (no new auth).
 
-Existing client-side eligibility banner stays as UX; the server call is the real gate.
+## Rules honoured
 
-## 4. Tests
+- No new tables, no schema migration, no RLS changes.
+- No duplicate modules (Production / Studio / Ingest / Editorial / Delivery / Licensing / Marketplace / Analytics stay as-is).
+- All secrets stay server-side. UI never renders raw keys.
+- Existing RBAC (`useAuth().isAdmin`, `RoleGate`, `has_role`) gates every new surface.
+- Existing OCI upload pipeline, Razorpay payment workflow, and email/notification workflows are reused verbatim.
 
-Add `src/test/smoke/ingest-preflight.test.ts` — a unit test that mocks `supabase.functions.invoke` and asserts:
+## Files (Phase 1)
 
-- `startIngest` short-circuits and toasts when preflight returns `PREMIUM_REQUIRED`.
-- Successful preflight proceeds to insert.
-
-Add `src/test/smoke/studio-onboarding.test.tsx` covering the two regressions from the previous fix:
-
-- `isStudioOnboarded()` returns true for a completed profile → gate renders children.
-- Wizard reads `useWorkspaces().activeId` so gate/wizard target the same workspace.
-
-Live e2e (Playwright against the deployed URL) is intentionally out of scope for this change — the checklist doc gives the reviewer the click paths.
-
-## Files touched
-
-- Create `.lovable/production-readiness.md`
-- Create `supabase/functions/ingest-preflight/index.ts`
-- Edit `supabase/config.toml` (add function entry only)
-- Edit `src/components/studio/ingest/StudioIngest.tsx` (call preflight in `startIngest`, map reason codes)
-- Create `src/test/smoke/ingest-preflight.test.ts`
-- Create `src/test/smoke/studio-onboarding.test.tsx`
-
-## Out of scope (per your rules)
-
-- No changes to `ingest_jobs` RLS, `entity_profiles`, or any schema.
-- No new tables, no new columns, no data migration.
-- No changes to Razorpay, OCI, or proxy-generation code paths.
-- No new upload pipeline — preflight sits in front of the existing one.
+- Create `.lovable/plan.md` (this file — replaces the prior Production Readiness plan; that plan is now shipped).
+- Create `supabase/functions/integrations-status/index.ts`.
+- Create `src/pages/AdminIntegrations.tsx`.
+- Edit `src/App.tsx` — add `/admin/integrations` route.
+- Edit `src/pages/AdminHome.tsx` — add Integrations tile.

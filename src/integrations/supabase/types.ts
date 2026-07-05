@@ -3315,6 +3315,42 @@ export type Database = {
           },
         ]
       }
+      ingest_job_insert_failures: {
+        Row: {
+          created_at: string
+          error_code: string | null
+          id: string
+          project_id: string | null
+          reason: string
+          source_summary: Json
+          user_agent: string | null
+          user_id: string
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_code?: string | null
+          id?: string
+          project_id?: string | null
+          reason: string
+          source_summary?: Json
+          user_agent?: string | null
+          user_id: string
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_code?: string | null
+          id?: string
+          project_id?: string | null
+          reason?: string
+          source_summary?: Json
+          user_agent?: string | null
+          user_id?: string
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
       ingest_job_items: {
         Row: {
           asset_class: string | null

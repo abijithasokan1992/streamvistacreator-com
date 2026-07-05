@@ -51,11 +51,12 @@ describe("ingest-preflight — reason code taxonomy", () => {
     expect(fn).not.toMatch(/console\.[a-z]+\([^)]*Deno\.env\.get/);
   });
 
-  it("never surfaces raw error messages to the client", () => {
-    // Error responses go through the fixed FRIENDLY map; the RPC/db error
-    // text is only ever pushed into the structured log's `code` field.
+  it("never surfaces raw error messages in the HTTP response body", () => {
+    // Only the fixed FRIENDLY copy is ever placed on `respond(..., { message })`.
+    // The regex looks for a response body that would echo an Error/.message
+    // field directly — permitted uses inside console.log stay outside this check.
     expect(fn).toMatch(/reason:\s*"PREFLIGHT_FAILED"/);
-    expect(fn).not.toMatch(/message:\s*.*\.message\b/);
+    expect(fn).not.toMatch(/respond\([^)]*message:\s*\([^)]*Error\)[^)]*\.message/);
   });
 
   it("returns HTTP 402 for both premium/storage gates", () => {

@@ -182,7 +182,10 @@ export function LiveIngestStrip() {
           lastRef.current = { id: runningRow.id, bytes: transferred, at: now };
           currentJob = {
             id: runningRow.id,
-            currentFile: (currentItem.data as { source_path?: string } | null)?.source_path ?? null,
+            currentFile: (() => {
+              const row = currentItem.data as { relative_path?: string; file_name?: string } | null;
+              return row?.relative_path || row?.file_name || null;
+            })(),
             transferred,
             total: runningRow.total_bytes ?? 0,
           };

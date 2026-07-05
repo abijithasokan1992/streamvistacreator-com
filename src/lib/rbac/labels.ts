@@ -127,6 +127,7 @@ export type ProductionRole =
   | "executive_producer"
   | "director"
   | "production_manager"
+  | "dop"
   | "dit"
   | "camera_operator"
   | "camera_assistant"
@@ -146,6 +147,7 @@ export const PRODUCTION_ROLE_LABEL: Record<ProductionRole, string> = {
   executive_producer: "Executive Producer",
   director: "Director",
   production_manager: "Production Manager",
+  dop: "Director of Photography",
   dit: "DIT",
   camera_operator: "Camera Operator",
   camera_assistant: "Camera Assistant",
@@ -161,11 +163,33 @@ export const PRODUCTION_ROLE_LABEL: Record<ProductionRole, string> = {
   viewer: "Viewer",
 };
 
+export const PRODUCTION_ROLE_DESCRIPTION: Record<ProductionRole, string> = {
+  producer: "Owns the production. Approves scope, schedule, and budget.",
+  executive_producer: "Financial and strategic oversight across productions.",
+  director: "Creative lead on set and in post.",
+  production_manager: "Runs day-to-day logistics, crew, and schedule.",
+  dop: "Director of Photography — camera, lens, and lighting decisions.",
+  dit: "Digital Imaging Technician — on-set offload, checksum, and dailies handoff.",
+  camera_operator: "Operates a camera unit during the shoot.",
+  camera_assistant: "Focus pull, media swap, and camera support.",
+  editor: "Assembles picture cut and drives editorial delivery.",
+  assistant_editor: "Media management, syncing, and turnovers for editorial.",
+  colorist: "Grade, LUT, and colour delivery.",
+  vfx: "Visual effects design, plates, and comp turnovers.",
+  sound: "Location sound, dialogue, mix, and final audio delivery.",
+  qc: "Quality control — reviews masters against delivery spec.",
+  delivery: "Prepares and hands off final masters to buyers or platforms.",
+  subtitle: "Subtitle creation, timing, and QC.",
+  localization: "Dub, subtitle, and territory-specific versioning.",
+  viewer: "Read-only access to this production's media and reports.",
+};
+
 export const PRODUCTION_ROLES: ProductionRole[] = [
   "producer",
   "executive_producer",
   "director",
   "production_manager",
+  "dop",
   "dit",
   "camera_operator",
   "camera_assistant",
@@ -180,3 +204,14 @@ export const PRODUCTION_ROLES: ProductionRole[] = [
   "localization",
   "viewer",
 ];
+
+/** Look up a Production Role by its canonical ID or human label. */
+export function resolveProductionRole(input: string | null | undefined): ProductionRole | null {
+  if (!input) return null;
+  const key = input.toLowerCase().trim();
+  if ((PRODUCTION_ROLE_LABEL as Record<string, string>)[key]) return key as ProductionRole;
+  const match = (Object.entries(PRODUCTION_ROLE_LABEL) as Array<[ProductionRole, string]>).find(
+    ([, label]) => label.toLowerCase() === key,
+  );
+  return match ? match[0] : null;
+}

@@ -1215,6 +1215,7 @@ export default function StudioIngest({
                       </div>
                     </div>
                   </div>
+                  {isOpen && <IngestTimeline job={j} />}
                   {isOpen && <DetectedItemsPanel jobId={j.id} />}
                 </li>
               );

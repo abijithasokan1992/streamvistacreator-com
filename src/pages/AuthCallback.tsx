@@ -82,8 +82,8 @@ export default function AuthCallback() {
           const n = Number(claimed ?? 0);
           if (n > 0) {
             toast.success(
-              `${n} film${n === 1 ? "" : "s"} from your previous account restored as draft${n === 1 ? "" : "s"}. Finish them in your dashboard.`,
-              { duration: 8000 }
+              `Welcome back! ${n} legacy film${n === 1 ? "" : "s"} restored as draft${n === 1 ? "" : "s"}. Complete each title to 100% and submit for review.`,
+              { duration: 10000 }
             );
           }
         } catch (e) {

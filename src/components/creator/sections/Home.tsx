@@ -6,6 +6,7 @@ import { listTitles, fetchFreeTierStatus, type TitleRow, type FreeTierStatus } f
 import WorkspaceWelcome from "@/components/creator/WorkspaceWelcome";
 import ReviewNotesInbox from "@/components/creator/ReviewNotesInbox";
 import { UploadDiagnostics } from "@/components/creator/UploadDiagnostics";
+import LegacyRecoveryBanner from "@/components/creator/LegacyRecoveryBanner";
 
 import OnboardingChecklist from "@/components/creator/OnboardingChecklist";
 import CreatorQuickActions from "@/components/creator/CreatorQuickActions";
@@ -62,6 +63,9 @@ export default function HomeSection({ onNavigate, isFree }: { onNavigate: (s: Se
 
   return (
     <div className="space-y-8">
+      {/* Legacy Film Recovery — banner + checklist for creators whose films were restored from the old app */}
+      <LegacyRecoveryBanner onNavigate={onNavigate} />
+
       {/* 1. Identity + plan + storage + titles — the single at-a-glance block */}
       <WorkspaceWelcome />
 

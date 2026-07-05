@@ -712,7 +712,7 @@ function CollaborationPanel({
   canManage: boolean;
 }) {
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"admin" | "editor" | "viewer">("editor");
+  const [role, setRole] = useState<(typeof INVITABLE_ORG_ROLES)[number]>("member");
   const [query, setQuery] = useState("");
   const [sending, setSending] = useState(false);
 

@@ -449,7 +449,7 @@ function HealthStrip({ onJump }: { onJump: (t: TabKey) => void }) {
   }[] = [
     { label: "Unread Messages",     value: c?.unread ?? null,      tone: (c?.unread ?? 0) > 0 ? "warn" : "neutral",   onClick: () => onJump("notifications") },
     { label: "Pending Invitations", value: c?.invitations ?? null, tone: "neutral",                                    onClick: () => onJump("invitations") },
-    { label: "Scheduled Broadcasts",value: c?.scheduled ?? null,   tone: "neutral",                                    onClick: () => onJump("broadcast") },
+    { label: "Scheduled Announcements",value: c?.scheduled ?? null,   tone: "neutral",                                    onClick: () => onJump("broadcast") },
     { label: "Open Support Tickets",value: c?.supportOpen ?? null, tone: (c?.supportOpen ?? 0) > 0 ? "warn" : "neutral", onClick: () => onJump("support") },
     { label: "Failed Deliveries",   value: c?.failed ?? null,      tone: (c?.failed ?? 0) > 0 ? "danger" : "neutral",  onClick: () => onJump("activity") },
   ];

@@ -887,11 +887,54 @@ export default function StudioIngest({
         </div>
 
 
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <Switch checked={preserveStructure} onCheckedChange={setPreserveStructure} id="preserve" />
-            <Label htmlFor="preserve" className="text-xs">Preserve source folder structure</Label>
+        {/* Upload layout mode — required 3-way choice. */}
+        <Card className="p-3 space-y-2 border-border/40">
+          <Label className="text-[11px] uppercase tracking-widest text-muted-foreground font-mono">
+            Upload layout
+          </Label>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {[
+              { id: "preserve" as const, title: "Preserve Original Folder Structure",
+                desc: "Recommended. Keeps the exact source tree — required for camera cards, relinking and archive restoration." },
+              { id: "metadata" as const, title: "Organize by Production Metadata",
+                desc: "Auto-file into Shoot Day / Camera / Card / Asset Type." },
+              { id: "custom" as const, title: "Custom Destination",
+                desc: "Advanced. Prefix a custom base path, source subfolders are kept underneath." },
+            ].map((opt) => {
+              const isActive = layoutMode === opt.id;
+              const locked = mode === "camera_card" && opt.id !== "preserve";
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  disabled={locked}
+                  onClick={() => setLayoutMode(opt.id)}
+                  className={`text-left rounded-md border p-3 transition ${
+                    isActive ? "border-accent bg-accent/10" : "border-border/40 hover:border-border"
+                  } ${locked ? "opacity-40 cursor-not-allowed" : ""}`}
+                  title={locked ? "Camera Card intake must preserve the exact card layout" : undefined}
+                >
+                  <div className="text-xs font-medium">{opt.title}</div>
+                  <div className="text-[11px] text-muted-foreground mt-1">{opt.desc}</div>
+                </button>
+              );
+            })}
           </div>
+          {layoutMode === "custom" && (
+            <div className="flex items-center gap-2 pt-1">
+              <Label className="text-xs shrink-0">Base path</Label>
+              <Input value={customBasePath} onChange={(e) => setCustomBasePath(e.target.value)}
+                     placeholder="e.g. dailies/day_03/cam_a" className="h-8 text-xs" />
+            </div>
+          )}
+          {mode === "camera_card" && (
+            <p className="text-[11px] text-muted-foreground">
+              Camera Card intake locks to Preserve to keep card structure intact for verification.
+            </p>
+          )}
+        </Card>
+
+        <div className="flex flex-wrap items-center justify-end gap-3">
           <div className="flex gap-2">
             {mode === "watch_folder" && scan && (
               <Button variant="outline" size="sm" onClick={rescan}>

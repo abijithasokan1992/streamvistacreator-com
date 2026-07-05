@@ -293,8 +293,7 @@ export default function Auth() {
         </div>
 
         <div className="mt-8">
-          {/* Own-ecosystem lockup */}
-          {(() => { const C = require("@/components/streamvista/CrayonsNetwork").CrayonsNetwork; return <C />; })()}
+          <CrayonsNetwork />
         </div>
       </div>
     </main>

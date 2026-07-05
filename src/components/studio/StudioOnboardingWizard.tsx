@@ -276,10 +276,29 @@ export default function StudioOnboardingWizard({ onDone }: { onDone?: () => void
   }
 
   if (!canEdit) {
+    // If the user is admin/owner of a DIFFERENT workspace, offer to switch
+    // rather than dead-ending them on the wizard.
+    const adminElsewhere = memberWorkspaces.filter(
+      (w) => (w.role === "owner" || w.role === "admin") && w.id !== orgId,
+    );
     return (
       <main className="min-h-dvh grid place-items-center bg-background text-foreground p-6">
-        <Card className="p-6 max-w-md text-sm text-muted-foreground">
-          You need workspace owner or admin permissions to complete studio onboarding. Please ask an admin.
+        <Card className="p-6 max-w-md text-sm space-y-4">
+          <p className="text-muted-foreground">
+            You need workspace owner or admin permissions to complete studio onboarding for
+            <span className="text-foreground"> {wsList.find((w) => w.id === orgId)?.name ?? "this workspace"}</span>.
+          </p>
+          {adminElsewhere.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-xs text-muted-foreground">Switch to a workspace you administer:</div>
+              {adminElsewhere.map((w) => (
+                <Button key={w.id} variant="outline" size="sm" className="w-full justify-start"
+                  onClick={() => setActiveId(w.id)}>
+                  {w.name}
+                </Button>
+              ))}
+            </div>
+          )}
         </Card>
       </main>
     );

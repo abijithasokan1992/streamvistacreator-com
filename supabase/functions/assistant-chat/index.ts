@@ -161,6 +161,27 @@ Deno.serve(async (req) => {
         },
       }),
 
+      find_invoice: tool({
+        description: "Find a specific invoice by id, description keyword, or status.",
+        inputSchema: z.object({
+          query: z.string().optional(),
+          status: z.enum(["paid", "due", "failed", "refunded"]).optional(),
+          limit: z.number().min(1).max(10).default(5),
+        }),
+        execute: async ({ query, status, limit }) => {
+          let q = supa
+            .from("invoices")
+            .select("id, amount, currency, status, created_at, description")
+            .order("created_at", { ascending: false })
+            .limit(limit ?? 5);
+          if (status) q = q.eq("status", status);
+          if (query && query.trim()) q = q.or(`description.ilike.%${query.trim()}%,id.ilike.%${query.trim()}%`);
+          const { data, error } = await q;
+          if (error) return { error: "query_failed" };
+          return { invoices: data ?? [] };
+        },
+      }),
+
       research_web: tool({
         description:
           "Research a company, buyer, OTT platform, festival, or broadcaster via Firecrawl web search. Only available when Firecrawl is connected.",

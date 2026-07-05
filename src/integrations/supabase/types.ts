@@ -3599,6 +3599,36 @@ export type Database = {
           },
         ]
       }
+      intelligence_snapshots: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          lanes_count: number
+          payload: Json
+          source: string
+          total_signals: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lanes_count?: number
+          payload: Json
+          source?: string
+          total_signals?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lanes_count?: number
+          payload?: Json
+          source?: string
+          total_signals?: number
+        }
+        Relationships: []
+      }
       intro_invite_secrets: {
         Row: {
           created_at: string

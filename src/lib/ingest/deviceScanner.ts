@@ -77,7 +77,8 @@ async function walkHandle(
   for await (const entry of iter) {
     if (entry.kind === "file") {
       if (!MEDIA_EXT_RE.test(entry.name)) continue;
-      const file = await entry.getFile();
+      const fileHandle = entry as FileSystemFileHandle;
+      const file = await fileHandle.getFile();
       const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
       acc.push({ file, relativePath: rel, subpath: prefix });
     } else if (entry.kind === "directory") {

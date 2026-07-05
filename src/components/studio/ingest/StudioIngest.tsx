@@ -791,7 +791,17 @@ export default function StudioIngest({
       quota.refresh();
       onCompleted?.({ jobId: job.id, status: finalStatus as "completed" | "failed" });
     } catch (e) {
-      toast.error((e as Error).message ?? "Ingest failed");
+      // Route every terminal ingest failure through mapUploadError so raw
+      // internal exception text, OCI response bodies, or edge-function stack
+      // traces never surface in the UI. Structured log carries the raw code
+      // for ops without exposing it to the DIT.
+      const rawMsg = (e as Error)?.message ?? "";
+      const friendly = mapUploadError(e);
+      console.log(JSON.stringify({
+        level: "error", event: "ingest_job_failed",
+        workspace_id: activeId, code: rawMsg.slice(0, 60),
+      }));
+      toast.error(friendly);
       setLiveProgress((p) => ({ ...p, state: "error" }));
     } finally {
       setSubmitting(false);

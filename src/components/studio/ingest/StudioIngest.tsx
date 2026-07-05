@@ -313,6 +313,55 @@ export default function StudioIngest({
   const watchInputRef = useRef<HTMLInputElement>(null);
   const archiveInputRef = useRef<HTMLInputElement>(null);
 
+  // Camera card ingest → force "preserve" as the safe default so the card
+  // layout survives 1:1. Users can still switch modes for their session, but
+  // switching *into* camera_card resets the choice back to preserve.
+  useEffect(() => {
+    if (mode === "camera_card") setLayoutMode("preserve");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
+
+  // Slugify a metadata token so it is safe inside an object key. Empty parts
+  // collapse away so we never emit `//` or leading slashes.
+  const slug = (s: string) =>
+    (s ?? "").toString().trim().replace(/[^a-zA-Z0-9._-]+/g, "_").replace(/^_+|_+$/g, "");
+
+  // Map the intelligent classification to the asset-type folder buckets the
+  // user requested (RAW, Audio, Stills, Documents, Graphics, LUTs, VFX,
+  // Master Files). This is only used for the "metadata" layout mode.
+  const assetTypeFolder = (relPath: string, hintClass?: string): string => {
+    const cls = (hintClass || autoClassify(relPath)) as string;
+    const p = relPath.toLowerCase();
+    if (/\.(cube|3dl|look)$/.test(p) || /\/(luts?|colou?r)\//.test(p)) return "LUTs";
+    if (/\/(vfx|plates?|comps?)\//.test(p)) return "VFX";
+    if (/\/(masters?|deliverables?)\//.test(p) || /_master[._-]|final_master/.test(p)) return "Master Files";
+    if (/\/(graphics?|art|design|logos?|posters?|thumbnails?)\//.test(p)) return "Graphics";
+    if (/\.(jpg|jpeg|png|tif|tiff|heic|heif|webp|dng)$/.test(p) && !/\.(r3d|ari|arx|braw|crm|rmf)$/.test(p)) return "Stills";
+    if (cls === "audio") return "Audio";
+    if (cls === "reports") return "Documents";
+    if (cls === "rushes") return "RAW";
+    return "Media";
+  };
+
+  // Compute the object-key subpath for a scanned file according to the active
+  // layout mode. Filenames are NEVER rewritten and files are NEVER duplicated —
+  // only the directory prefix changes.
+  const buildSubpath = (f: ScannedFile): string => {
+    if (layoutMode === "preserve") return f.subpath;
+    if (layoutMode === "custom") {
+      const base = customBasePath.replace(/^\/+|\/+$/g, "");
+      return [base, f.subpath].filter(Boolean).join("/");
+    }
+    // metadata mode → Shoot Day / Camera / Card / Asset Type
+    const parts = [
+      shootDay && `day_${slug(shootDay)}`,
+      cameraLabel && slug(cameraLabel),
+      cardLabel && slug(cardLabel),
+      assetTypeFolder(f.relativePath, assetClass),
+    ].filter(Boolean) as string[];
+    return parts.join("/");
+  };
+
   const destinationType: "working_vault" | "archive_vault" =
     mode === "archive" ? "archive_vault" : "working_vault";
 

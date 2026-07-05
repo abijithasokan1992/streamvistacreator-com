@@ -32,7 +32,7 @@ describe("Studio Ingest preflight — contract", () => {
   it("blocks the ingest_jobs insert when preflight fails", () => {
     // The preflight block appears BEFORE the first ingest_jobs insert in
     // startIngest — regression fails if someone moves the insert above.
-    const invokeIdx = src.indexOf('functions.invoke("ingest-preflight"');
+    const invokeIdx = src.search(/functions\.invoke\(\s*["']ingest-preflight["']/);
     const insertIdx = src.search(/from\("ingest_jobs"\)\s*\.insert/);
     expect(invokeIdx).toBeGreaterThan(-1);
     expect(insertIdx).toBeGreaterThan(-1);

@@ -267,7 +267,7 @@ export default function StudioOnboardingWizard({ onDone }: { onDone?: () => void
     }
   };
 
-  if (wsLoading || loading || !profile || !studioExt) {
+  if (wsLoading || memberLoading || loading || !profile || !studioExt) {
     return (
       <main className="min-h-dvh grid place-items-center bg-background text-foreground">
         <Loader2 className="w-5 h-5 animate-spin text-accent" />

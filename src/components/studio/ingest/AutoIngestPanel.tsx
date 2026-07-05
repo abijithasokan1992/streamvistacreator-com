@@ -29,6 +29,9 @@ import {
   mapUploadError,
 } from "@/lib/ociMultipartUpload";
 import { classifyFile, enrichFile } from "@/lib/ingest/mediaIntelligence";
+import {
+  categorizeIngestError, logIngestInsertFailure, ingestFailureUserMessage,
+} from "@/lib/ingest/ingestFailureAudit";
 
 type Project = { id: string; name: string };
 
@@ -280,7 +283,19 @@ export function AutoIngestPanel() {
 
   const runImport = useCallback(async (entryId: string) => {
     const entry = jobsRef.current.find((j) => j.id === entryId);
-    if (!entry || !user || !activeWorkspaceId) return;
+    if (!entry) return;
+
+    // Harden the payload: reject the run before we touch the database if any
+    // of the identifiers PostgREST + RLS depend on are missing. Prevents
+    // "silent" failures where the INSERT would violate the WITH CHECK clause.
+    if (!user?.id) {
+      toast.error("You need to be signed in to import files.");
+      return;
+    }
+    if (!activeWorkspaceId) {
+      toast.error("No active workspace — reload the page and try again.");
+      return;
+    }
     if (!entry.projectId) {
       toast.error("Select a production first.");
       return;
@@ -293,6 +308,14 @@ export function AutoIngestPanel() {
     const projectId = entry.projectId;
     const ac = new AbortController();
     abortRef.current.set(entryId, ac);
+
+    const sourceSummary = {
+      root_label: scan.rootLabel,
+      top_level_folders: scan.topLevelFolders,
+      camera_family: scan.cameraFamily,
+      media_formats: scan.mediaFormats,
+      auto_ingest: true,
+    };
 
     try {
       // Ingest source row.
@@ -335,20 +358,39 @@ export function AutoIngestPanel() {
             status: "ready",
             total_files: scan.files.length,
             total_bytes: scan.totalBytes,
-            source_summary: {
-              root_label: scan.rootLabel,
-              top_level_folders: scan.topLevelFolders,
-              camera_family: scan.cameraFamily,
-              media_formats: scan.mediaFormats,
-              auto_ingest: true,
-            },
+            source_summary: sourceSummary,
           })
           .select("id")
           .single();
-        if (jobErr || !job) throw jobErr ?? new Error("Failed to create ingest job");
+        if (jobErr || !job) {
+          // Audit the failure so admins can investigate blocked inserts, and
+          // surface a rich user-facing error with the right next steps.
+          const cat = categorizeIngestError(jobErr);
+          await logIngestInsertFailure({
+            userId: user.id,
+            workspaceId: activeWorkspaceId,
+            projectId,
+            reason: cat.reason,
+            errorCode: cat.code,
+            category: cat.category,
+            sourceSummary,
+          });
+          const ui = ingestFailureUserMessage(cat.category);
+          toast.error(ui.title, {
+            description: `${ui.description}\n\n• ${ui.nextSteps.join("\n• ")}`,
+            duration: 12000,
+          });
+          updateJob(entryId, {
+            phase: "error",
+            message: `${ui.title} — ${cat.reason}`,
+            needsReconnect: false,
+          });
+          throw jobErr ?? new Error("Failed to create ingest job");
+        }
         dbJobId = job.id;
         updateJob(entryId, { dbJobId });
       }
+
 
       // Pre-compute per-file dedupe keys.
       const dedupeKeys = scan.files.map((f) => dedupeKeyFor(f.file, f.relativePath));

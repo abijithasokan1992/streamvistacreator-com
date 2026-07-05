@@ -6,11 +6,20 @@ import {
   type CompanyProfile,
   type FounderWork,
 } from "@/lib/companyProfile";
+import pictures from "@/assets/crayons-pictures.png.asset.json";
+import bridge from "@/assets/crayons-bridge.png.asset.json";
+import loop from "@/assets/crayons-loop.png.asset.json";
 
 const brandIcon: Record<string, JSX.Element> = {
   crayons_pictures: <Film className="w-5 h-5" />,
   crayons_bridge: <Radio className="w-5 h-5" />,
   crayons_loop: <Tv className="w-5 h-5" />,
+};
+
+const brandLogo: Record<string, string> = {
+  crayons_pictures: pictures.url,
+  crayons_bridge: bridge.url,
+  crayons_loop: loop.url,
 };
 
 export default function EcosystemAbout() {
@@ -74,15 +83,21 @@ export default function EcosystemAbout() {
                 key={b.key}
                 className="group relative rounded-2xl border border-border-strong/60 glass p-6 hover:border-primary/60 hover:-translate-y-1 transition-all duration-500"
               >
-                <div
-                  className="w-11 h-11 rounded-xl text-primary-foreground grid place-items-center mb-4 border border-primary/30"
-                  style={{
-                    backgroundImage: "var(--gradient-primary)",
-                    boxShadow: "0 1px 0 hsl(0 0% 100% / 0.25) inset, 0 -2px 0 hsl(225 60% 6% / 0.18) inset, 0 8px 22px -10px hsl(var(--primary) / 0.6)",
-                  }}
-                >
-                  {brandIcon[b.key] ?? <Sparkles className="w-5 h-5" />}
-                </div>
+                {brandLogo[b.key] ? (
+                  <div className="h-14 mb-4 flex items-center">
+                    <img src={brandLogo[b.key]} alt={b.title} className="h-10 md:h-12 w-auto object-contain" />
+                  </div>
+                ) : (
+                  <div
+                    className="w-11 h-11 rounded-xl text-primary-foreground grid place-items-center mb-4 border border-primary/30"
+                    style={{
+                      backgroundImage: "var(--gradient-primary)",
+                      boxShadow: "0 1px 0 hsl(0 0% 100% / 0.25) inset, 0 -2px 0 hsl(225 60% 6% / 0.18) inset, 0 8px 22px -10px hsl(var(--primary) / 0.6)",
+                    }}
+                  >
+                    {brandIcon[b.key] ?? <Sparkles className="w-5 h-5" />}
+                  </div>
+                )}
                 <h3 className="font-display text-xl font-black tracking-tight">{b.title}</h3>
                 <div className="text-[10px] font-mono-tech uppercase tracking-[0.22em] text-primary mt-1">
                   {b.one_liner}

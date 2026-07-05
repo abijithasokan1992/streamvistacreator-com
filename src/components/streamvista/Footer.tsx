@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Lock, Cloud, ShieldCheck, type LucideIcon } from "lucide-react";
+import { CrayonsNetwork } from "./CrayonsNetwork";
 
 const LEGAL_LINKS = [
   { to: "/pricing", label: "Pricing" },
@@ -69,6 +70,9 @@ export const Footer = () => {
               ))}
             </ul>
           )}
+        </div>
+        <div className="mt-10 pt-6 border-t border-border/40">
+          <CrayonsNetwork />
         </div>
       </div>
     </footer>

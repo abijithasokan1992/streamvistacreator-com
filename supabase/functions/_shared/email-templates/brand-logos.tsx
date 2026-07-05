@@ -17,7 +17,7 @@ export const BrandLogos = () => (
   <Section style={{ marginTop: '28px' }}>
     <Hr style={{ borderColor: '#eceef3', margin: '0 0 16px' }} />
     <Text style={{ fontSize: '11px', color: '#8a8f9c', letterSpacing: '0.16em', margin: '0 0 12px', textAlign: 'center' as const }}>
-      A STREAMVISTA PARTNER NETWORK
+      THE CRAYONS NETWORK
     </Text>
     <table role="presentation" cellPadding={0} cellSpacing={0} border={0} align="center" style={{ margin: '0 auto' }}>
       <tbody>

@@ -58,6 +58,28 @@ export default function BrandingSettings() {
           <Lock className="w-3 h-3" /> Admin only
         </span>
       </div>
+
+      {/* Canonical brand assets — read only reference */}
+      <div className="rounded-xl border border-border/50 bg-secondary/20 p-4">
+        <div className="text-[10px] font-mono-tech uppercase tracking-[0.22em] text-muted-foreground mb-3">
+          Official brand assets · The Crayons Network
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { name: "Crayons Pictures", url: "/__l5e/assets-v1/5555a121-bd40-4126-be14-47370e1c5210/crayons-pictures.png" },
+            { name: "Crayons Bridge",   url: "/__l5e/assets-v1/d6f6a6b8-1cdf-404b-8bf3-0c7b03349c78/crayons-bridge.png" },
+            { name: "Crayons Loop",     url: "/__l5e/assets-v1/27bcc856-a282-449e-9b01-311b6bfd20bb/crayons-loop.png" },
+          ].map((b) => (
+            <div key={b.name} className="rounded-lg border border-border/50 bg-background/40 p-3 grid place-items-center">
+              <img src={b.url} alt={b.name} className="h-10 w-auto object-contain" />
+              <div className="mt-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground text-center">{b.name}</div>
+            </div>
+          ))}
+        </div>
+        <p className="text-[11px] text-muted-foreground mt-3">
+          Canonical logos used across the site, auth screens, About page, and transactional emails. Managed via Lovable Assets — not user-uploadable.
+        </p>
+      </div>
       <p className="text-xs text-muted-foreground -mt-3">
         Upload a logo for the navbar and footer. Images auto-fit their containers (aspect ratio preserved).
       </p>

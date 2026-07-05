@@ -148,14 +148,32 @@ export function AutoIngestPanel() {
         .filter((r) => !!r.id)
         .map((r) => ({ id: r.id, name: r.name ?? "Untitled production" }));
       setProjects(mapped);
+      // Read the workspace's currently-open production. StudioDash persists
+      // this under `sv:active-project:<workspaceId>`; older builds used
+      // `sv:activeProjectId:<workspaceId>` — read both for compatibility so
+      // the Production dropdown auto-selects instead of showing "No productions yet".
       const remembered = typeof window !== "undefined"
-        ? window.localStorage.getItem(`sv:activeProjectId:${activeWorkspaceId}`)
+        ? (window.localStorage.getItem(`sv:active-project:${activeWorkspaceId}`)
+            ?? window.localStorage.getItem(`sv:activeProjectId:${activeWorkspaceId}`)
+            ?? window.localStorage.getItem("sv.activeProjectId"))
         : null;
       const preferred = mapped.find((p) => p.id === remembered) ?? mapped[0];
       setDefaultProjectId(preferred?.id ?? null);
     })();
     return () => { cancelled = true; };
   }, [activeWorkspaceId]);
+
+  // If a scan was already created before `defaultProjectId` resolved, back-fill
+  // the projectId so the Production dropdown reflects the active project and
+  // the Start Import button unlocks without a manual selection.
+  useEffect(() => {
+    if (!defaultProjectId) return;
+    setJobs((prev) => prev.map((j) => (
+      (j.phase === "detected" && !j.projectId)
+        ? { ...j, projectId: defaultProjectId, projectName: projects.find((p) => p.id === defaultProjectId)?.name ?? j.projectName }
+        : j
+    )));
+  }, [defaultProjectId, projects]);
 
   // Restore paused / running / errored jobs from the backend on mount so a
   // page refresh does not lose in-flight transfers.

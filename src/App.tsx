@@ -47,6 +47,7 @@ import AdminHome from "./pages/AdminHome.tsx";
 import AdminIntegrations from "./pages/AdminIntegrations.tsx";
 import AdminResearch from "./pages/AdminResearch.tsx";
 import CollegeERP from "./pages/CollegeERP.tsx";
+import Connect from "./pages/Connect.tsx";
 // Smart Uploads is not MVP-ready — hidden until the checksum + bucket work is production-safe.
 // import SmartUploads from "./pages/SmartUploads.tsx";
 

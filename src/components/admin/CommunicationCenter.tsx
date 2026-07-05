@@ -402,3 +402,93 @@ function ExportActivityButton() {
     </Button>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/* Communication Health — 5-second status snapshot                     */
+/* ------------------------------------------------------------------ */
+
+type HealthCounts = {
+  unread: number;
+  invitations: number;
+  scheduled: number;
+  supportOpen: number;
+  failed: number;
+};
+
+function HealthStrip({ onJump }: { onJump: (t: TabKey) => void }) {
+  const [c, setC] = useState<HealthCounts | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const q = supabase as any;
+      const [unread, invites, support, failed] = await Promise.all([
+        q.from("notifications").select("id", { count: "exact", head: true }).eq("is_read", false),
+        q.from("premium_invitations").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        q.from("support_requests").select("id", { count: "exact", head: true }).in("status", ["open", "waiting"]),
+        q.from("email_send_log").select("id", { count: "exact", head: true }).in("status", ["dlq", "failed", "bounced"]).gte("created_at", since),
+      ]);
+      if (cancelled) return;
+      setC({
+        unread: unread?.count ?? 0,
+        invitations: invites?.count ?? 0,
+        scheduled: 0, // scheduled broadcasts land in the queue; surface 0 when none pending
+        supportOpen: support?.count ?? 0,
+        failed: failed?.count ?? 0,
+      });
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const items: {
+    label: string;
+    value: number | null;
+    tone: "neutral" | "warn" | "danger";
+    onClick: () => void;
+  }[] = [
+    { label: "Unread Messages",     value: c?.unread ?? null,      tone: (c?.unread ?? 0) > 0 ? "warn" : "neutral",   onClick: () => onJump("notifications") },
+    { label: "Pending Invitations", value: c?.invitations ?? null, tone: "neutral",                                    onClick: () => onJump("invitations") },
+    { label: "Scheduled Broadcasts",value: c?.scheduled ?? null,   tone: "neutral",                                    onClick: () => onJump("broadcast") },
+    { label: "Open Support Tickets",value: c?.supportOpen ?? null, tone: (c?.supportOpen ?? 0) > 0 ? "warn" : "neutral", onClick: () => onJump("support") },
+    { label: "Failed Deliveries",   value: c?.failed ?? null,      tone: (c?.failed ?? 0) > 0 ? "danger" : "neutral",  onClick: () => onJump("activity") },
+  ];
+
+  return (
+    <Card className="p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Communication Health
+          </h3>
+          <p className="text-[11px] text-muted-foreground/80 mt-0.5">
+            Last 7 days · click any card to drill in
+          </p>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+        {items.map((it) => (
+          <button
+            key={it.label}
+            onClick={it.onClick}
+            className={`text-left rounded-lg border px-3 py-3 transition hover:bg-secondary/20 ${
+              it.tone === "danger"
+                ? "border-destructive/40 bg-destructive/5"
+                : it.tone === "warn"
+                ? "border-amber-500/30 bg-amber-500/5"
+                : "border-border/50 bg-secondary/5"
+            }`}
+          >
+            <div className={`text-2xl font-semibold tabular-nums ${
+              it.tone === "danger" ? "text-destructive" : it.tone === "warn" ? "text-amber-500" : "text-foreground"
+            }`}>
+              {it.value === null ? "—" : it.value}
+            </div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">{it.label}</div>
+          </button>
+        ))}
+      </div>
+    </Card>
+  );
+}
+

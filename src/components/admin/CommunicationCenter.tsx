@@ -77,7 +77,7 @@ export default function CommunicationCenter() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="default" onClick={() => setTab("broadcast")}>
-            <Plus className="w-4 h-4 mr-1.5" /> New Broadcast
+            <Plus className="w-4 h-4 mr-1.5" /> New Announcement
           </Button>
           <Button size="sm" variant="secondary" onClick={() => setTab("invitations")}>
             <UserPlus className="w-4 h-4 mr-1.5" /> Invite User

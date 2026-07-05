@@ -116,12 +116,12 @@ export function LiveIngestStrip() {
           {snap.ociHealthy ? (
             <>
               <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-              <span className="text-emerald-500">OCI healthy</span>
+              <span className="text-emerald-500">Cloud Status: Online</span>
             </>
           ) : (
             <>
               <AlertTriangle className="w-3 h-3 text-amber-500" />
-              <span className="text-amber-500">OCI degraded</span>
+              <span className="text-amber-500">Cloud Status: Offline</span>
             </>
           )}
         </div>
@@ -129,11 +129,11 @@ export function LiveIngestStrip() {
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
         <Tile icon={<HardDrive className="w-3 h-3" />} label="Storage" value={formatBytes(snap.storageUsedBytes)} />
         
-        <Tile icon={<Activity className="w-3 h-3" />} label="Active" value={String(snap.activeUploads)} />
+        <Tile icon={<Activity className="w-3 h-3" />} label="Current Uploads" value={String(snap.activeUploads)} />
         <Tile icon={<Layers className="w-3 h-3" />} label="Queue" value={String(snap.queueDepth)} />
         <Tile icon={<Gauge className="w-3 h-3" />} label="Speed" value={snap.currentSpeedBps ? `${formatBytes(snap.currentSpeedBps)}/s` : "—"} />
         <Tile icon={<Clock className="w-3 h-3" />} label="Last upload" value={relTime(snap.lastUploadAt)} />
-        <Tile icon={<ImageIcon className="w-3 h-3" />} label="Proxies" value={snap.proxyPending ? `${snap.proxyPending} queued` : "up to date"} />
+        <Tile icon={<ImageIcon className="w-3 h-3" />} label="Review Files" value={snap.proxyPending ? `${snap.proxyPending} queued` : "Ready"} />
         <Tile icon={<Cloud className="w-3 h-3" />} label="Health" value={snap.ociHealthy ? "OK" : "degraded"} />
       </div>
       {loading && (

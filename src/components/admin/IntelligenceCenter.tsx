@@ -98,12 +98,17 @@ const LANES: Lane[] = [
 ];
 
 type LaneStatus = "idle" | "loading" | "success" | "error";
+type LaneView = "list" | "structured";
 type LaneState = {
   status: LaneStatus;
   activeQuery?: string;
   results?: ResearchResult[];
   ranAt?: number;
   error?: string;
+  view?: LaneView;
+  structured?: StructuredLaneData;
+  structuredLoading?: boolean;
+  structuredError?: string;
 };
 type SnapshotSummary = {
   id: string;

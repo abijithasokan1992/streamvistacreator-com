@@ -37,9 +37,16 @@ export type ScanResult = {
   mediaFormats: string[];
 };
 
-// Extensions we care about, covering the requested professional formats.
-const MEDIA_EXT_RE =
-  /\.(ari|arx|r3d|braw|crm|dng|mov|mp4|mxf|m4v|avi|wav|aif|aiff|xml|xmp|cdl|3dl|cube|rmd|nfo|sidecar)$/i;
+// Files we skip regardless of selection — OS metadata, thumbnails, trash.
+// Everything else (any extension, or no extension at all) is ingested so
+// that Ctrl+A on the picker really does grab every file in the folder.
+const SKIP_NAME_RE = /^(\.DS_Store|Thumbs\.db|desktop\.ini|\._.*)$/i;
+const SKIP_DIR_RE = /(^|\/)(\.Trashes|\.Spotlight-V100|\.fseventsd|System Volume Information|\$RECYCLE\.BIN)(\/|$)/i;
+function isIngestable(name: string, relPath: string): boolean {
+  if (SKIP_NAME_RE.test(name)) return false;
+  if (SKIP_DIR_RE.test(relPath)) return false;
+  return true;
+}
 
 const FAMILY_SIGNATURES: Array<{ family: CameraFamily; label: string; test: (p: string) => boolean }> = [
   { family: "arri", label: "ARRI", test: (p) => /(^|\/)a\d{3}[a-z]?_.*\.(ari|arx|mxf)$/i.test(p) || /(^|\/)Alexa/i.test(p) },
@@ -76,10 +83,10 @@ async function walkHandle(
   const iter = (dirHandle as unknown as { values: () => AsyncIterableIterator<FileSystemHandle> }).values();
   for await (const entry of iter) {
     if (entry.kind === "file") {
-      if (!MEDIA_EXT_RE.test(entry.name)) continue;
+      const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+      if (!isIngestable(entry.name, rel)) continue;
       const fileHandle = entry as FileSystemFileHandle;
       const file = await fileHandle.getFile();
-      const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
       acc.push({ file, relativePath: rel, subpath: prefix });
     } else if (entry.kind === "directory") {
       await walkHandle(entry as FileSystemDirectoryHandle, prefix ? `${prefix}/${entry.name}` : entry.name, acc);
@@ -99,7 +106,7 @@ export function scanFileList(list: FileList): ScanResult {
   for (let i = 0; i < list.length; i++) {
     const f = list[i];
     const rel: string = (f as File & { webkitRelativePath?: string }).webkitRelativePath || f.name;
-    if (!MEDIA_EXT_RE.test(f.name)) continue;
+    if (!isIngestable(f.name, rel)) continue;
     const parts = rel.split("/");
     if (parts.length > 1 && rootLabel === "External media") rootLabel = parts[0];
     files.push({

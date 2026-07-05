@@ -95,6 +95,7 @@ const AdminRoutes = () => (
     <Route path="/" element={<AdminRoot />} />
     <Route path="/auth" element={<Auth />} />
     <Route path="/auth/callback" element={<AuthCallback />} />
+    <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
 
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/admin" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />

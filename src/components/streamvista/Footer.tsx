@@ -4,6 +4,7 @@ import { CrayonsNetwork } from "./CrayonsNetwork";
 
 const LEGAL_LINKS = [
   { to: "/pricing", label: "Pricing" },
+  { to: "/connect", label: "Agent integrations" },
   { to: "/terms", label: "Terms" },
   { to: "/privacy", label: "Privacy" },
   { to: "/ip-copyright", label: "IP & DMCA" },

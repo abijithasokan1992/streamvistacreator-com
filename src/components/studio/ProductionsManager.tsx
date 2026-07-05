@@ -37,6 +37,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { generateProductionNumber, getProductionNumber } from "@/lib/productionNumber";
 
 const CONTENT_TYPES = [
   "Feature Film", "Series", "Documentary", "Short Film",

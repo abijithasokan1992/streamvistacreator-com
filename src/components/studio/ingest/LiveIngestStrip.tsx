@@ -63,7 +63,7 @@ export function LiveIngestStrip() {
       try {
         const [usage, active, queued, proxy, lastItem] = await Promise.all([
           supabase.from("workspace_storage_usage")
-            .select("used_bytes, object_count")
+            .select("display_used_bytes, active_bytes")
             .eq("workspace_id", activeId)
             .maybeSingle(),
           supabase.from("ingest_jobs")

@@ -163,6 +163,18 @@ export function AutoIngestPanel() {
     return () => { cancelled = true; };
   }, [activeWorkspaceId]);
 
+  // If a scan was already created before `defaultProjectId` resolved, back-fill
+  // the projectId so the Production dropdown reflects the active project and
+  // the Start Import button unlocks without a manual selection.
+  useEffect(() => {
+    if (!defaultProjectId) return;
+    setJobs((prev) => prev.map((j) => (
+      (j.phase === "detected" && !j.projectId)
+        ? { ...j, projectId: defaultProjectId, projectName: projects.find((p) => p.id === defaultProjectId)?.name ?? j.projectName }
+        : j
+    )));
+  }, [defaultProjectId, projects]);
+
   // Restore paused / running / errored jobs from the backend on mount so a
   // page refresh does not lose in-flight transfers.
   useEffect(() => {

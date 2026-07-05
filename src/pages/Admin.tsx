@@ -37,6 +37,7 @@ import ContactInbox from "@/components/admin/ContactInbox";
 import EmailLogMonitor from "@/components/admin/EmailLogMonitor";
 import UniversalBroadcast from "@/components/admin/UniversalBroadcast";
 import CommunicationCenter from "@/components/admin/CommunicationCenter";
+import IntelligenceCenter from "@/components/admin/IntelligenceCenter";
 import BrandingSettings from "@/components/admin/BrandingSettings";
 import CompanyProfileSettings from "@/components/admin/CompanyProfileSettings";
 import PartnerLogos from "@/components/admin/PartnerLogos";

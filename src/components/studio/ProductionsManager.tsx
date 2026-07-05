@@ -730,12 +730,12 @@ function CollaborationPanel({
     setSending(true);
     try {
       const { data, error } = await supabase.functions.invoke("workspace-invite", {
-        body: { workspace_id: workspaceId, email: email.trim(), role },
+        body: { workspace_id: workspaceId, email: email.trim(), role: ORG_ROLE_BACKEND[role] },
       });
       if (error) throw error;
       const res = data as any;
       if (res?.pending) toast.success(`Invitation sent to ${email.trim()}`);
-      else toast.success(`${email.trim()} added as ${role}`);
+      else toast.success(`${email.trim()} added as ${ORG_ROLE_LABEL[role]}`);
       setEmail("");
       onChanged();
     } catch (e) {

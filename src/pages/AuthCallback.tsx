@@ -74,6 +74,24 @@ export default function AuthCallback() {
         );
         try { sessionStorage.removeItem("sv_pending_name"); } catch { /* noop */ }
 
+        // 2b. Claim any legacy films (from the old scrapped app) staged under
+        // this user's email. Each becomes a draft in content_titles they can
+        // finish at their pace. Silent if there are none.
+        try {
+          const { data: claimed } = await supabase.rpc("claim_legacy_films" as never);
+          const n = typeof claimed === "number" ? claimed : 0;
+          if (n > 0) {
+            toast.success(
+              `${n} film${n === 1 ? "" : "s"} from your previous account restored as draft${n === 1 ? "" : "s"}. Finish them in your dashboard.`,
+              { duration: 8000 }
+            );
+          }
+        } catch (e) {
+          console.warn("legacy claim skipped", e);
+        }
+
+
+
         // 3. Refresh role + redirect.
         await refreshRole();
         if (cancelled) return;

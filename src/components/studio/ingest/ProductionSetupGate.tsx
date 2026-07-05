@@ -418,7 +418,7 @@ export default function ProductionSetupGate() {
   // ---- Form state ----
   const defaults = useMemo(() => (activeId ? loadDefaults(activeId) : {}), [activeId]);
 
-  const [titleNumber, setTitleNumber] = useState(generateTitleNumber);
+  const [titleNumber, setTitleNumber] = useState(generateProductionNumber);
   const [name, setName] = useState("");
   const [contentType, setContentType] = useState<string>("Feature Film");
   const [company, setCompany] = useState("");

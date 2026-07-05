@@ -9,6 +9,7 @@ import { useAuth, dashboardForRole } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { getAppOrigin } from "@/lib/site";
 import { Seo } from "@/components/Seo";
+import { CrayonsNetwork } from "@/components/streamvista/CrayonsNetwork";
 import { playMailVoice, prewarmMailVoice } from "@/lib/mailVoice";
 
 /**

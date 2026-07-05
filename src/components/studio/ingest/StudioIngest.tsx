@@ -404,6 +404,31 @@ export default function StudioIngest({
       return;
     }
     if (!quota.checkOrPaywall()) return;
+
+    // Server-side preflight — runs the same checks as the RLS policy but
+    // returns a structured reason code so we can render a friendly message
+    // instead of a raw "row-level security policy" error.
+    try {
+      const { data: pf, error: pfErr } = await supabase.functions.invoke(
+        "ingest-preflight",
+        { body: { workspace_id: activeId, project_id: projectId || null } },
+      );
+      const reason = (pf as any)?.reason as string | undefined;
+      const message = (pf as any)?.message as string | undefined;
+      if (pfErr || !pf || (pf as any).ok !== true) {
+        if (reason === "PREMIUM_REQUIRED" || reason === "STORAGE_REQUIRED") {
+          quota.checkOrPaywall();
+        }
+        toast.error(message ?? "Could not verify ingest permissions.");
+        console.warn("[ingest] preflight blocked", { reason, workspace_id: activeId });
+        return;
+      }
+    } catch (e) {
+      console.warn("[ingest] preflight failed", (e as Error).message);
+      toast.error("Could not verify ingest permissions. Please try again.");
+      return;
+    }
+
     setSubmitting(true);
     try {
       // 1. Source row (label + summary metadata so future agent can reattach).

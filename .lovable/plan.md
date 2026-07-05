@@ -1,63 +1,68 @@
+# Production Readiness Pass
 
-# Stabilization Pass — Wire Existing Modules End-to-End
+Reuses the existing pipeline. Adds one server-side gate, one checklist doc, and a small test file. No schema changes, no duplicate business logic.
 
-Reuse the current database, edge functions, routes, and components. No new tables. No redesign. Hide incomplete surfaces instead of stubbing them.
+## 1. Regression checklist (doc)
 
-## Scope (in order)
+Create `.lovable/production-readiness.md` with a Pass/Fail row for each area, populated from static analysis of the current codebase and pointers to the exact file/line evidence a reviewer would use to re-verify on the live URL:
 
-### 1. Reviewer consoles (QC + Legal) — `/admin/qc`, `/admin/legal`
-Today both paths render the generic `Admin` shell. Replace the tab body for these two paths with a real reviewer console backed by existing tables:
-- `title_review_assignments` → assignment queue for the signed-in reviewer
-- `title_review_checklist` → checklist items (kind = qc | legal)
-- `title_review_issues` → raise/track issues
-- `title_review_notes` → reviewer notes
-- `content_approvals` → record approve / request-changes / reject
-- `content_titles.status` → advance status (`in_qc` → `in_legal` → `approved`)
+- Studio onboarding · Active Production · Studio Ingest · Storage allocation · Razorpay activation · OCI upload · Proxy generation · Production Media · Activity sync
 
-Reuse existing `src/lib/review/checklists.ts` and admin console layout components. Gate with `isQcReviewer` / `isLegalReviewer` (already in `useAuth`).
+For each row: current status (Pass / Needs Live Check), what code guarantees it, and the shortest reproduction path (URL + click sequence). Live-only checks (Razorpay live-mode order, real OCI PAR mint) stay marked "Needs Live Check" — the doc tells the reviewer exactly what to click.
 
-### 2. Creator → QC → Legal → Licensing chain
-Wire the transitions already implied by the schema:
-- Creator "Submit for review" button on existing title editor → sets `content_titles.status='in_qc'`, inserts `title_review_assignments` row for QC pool.
-- QC approve → status `in_legal`, reassign to legal pool.
-- Legal approve → status `approved`, unlock rights-availability + deal-memo surfaces.
-- Reject / request-changes → status `changes_requested` with note visible to creator dashboard.
+## 2. Server-side ingest preflight (new edge function)
 
-All via existing tables; no schema changes. Realtime subscription on `content_titles` so Admin sees live status.
+New function `supabase/functions/ingest-preflight/index.ts`:
 
-### 3. Buyer acquisition surface — reuse `BuyerDashboard`
-Add three panels to the existing Buyer dashboard (no new routes):
-- **Browse catalog** — `content_titles` where `status='approved'` + `title_commercial_profiles`
-- **Request screener** — insert into `screening_invites` (existing table), triggers existing `mint-screening-par` function
-- **Submit acquisition request** — insert into `acquisition_requests` (existing table)
+- Reads bearer token, resolves `auth.uid()`, rejects unauthenticated with `AUTH_REQUIRED`.
+- Validates body `{ workspace_id, project_id? }` with Zod.
+- Runs the same checks as the existing RLS policy but returns structured JSON instead of a raw RLS error:
+  - `WORKSPACE_ACCESS_DENIED` — no workspace_members row.
+  - `INSUFFICIENT_ROLE` — role not owner/admin.
+  - `PREMIUM_REQUIRED` — `has_premium_storage_entitlement()` false and not global admin.
+  - `STORAGE_REQUIRED` — active `workspace_storage_entitlements` row missing.
+  - `INVALID_PRODUCTION` — project_id present but not in workspace.
+- Never leaks internal SQL errors — maps unknown failures to `PREFLIGHT_FAILED`.
+- Structured console.log lines: `{"level":"warn","event":"ingest_preflight_denied","reason":"PREMIUM_REQUIRED","workspace_id":"…","user_id":"…"}`.
 
-Admin already has the reverse side; verify it renders these rows.
+`supabase/config.toml` gains `[functions.ingest-preflight] verify_jwt = false` (we validate in-code, standard pattern for this repo).
 
-### 4. Uploader consolidation
-Keep `SmartDropUploader`. Migrate the two call sites of `UploadManager` (Vault flows) to render `SmartDropUploader` with the same target bucket/prefix props. Leave `UploadManager.tsx` file in place but unused until we confirm no regressions in Oracle multipart, resumable, checksum. Do not delete yet.
+## 3. Wire preflight into `StudioIngest`
 
-### 5. Hide, don't stub
-- Dormant role dashboards (`/dashboard/localization`, `/dashboard/distribution`) — already redirect; leave.
-- Empty admin tabs with no data source → hide the tab trigger rather than showing a placeholder.
-- Founder Vault already cleaned; verify nothing references removed passphrase RPCs.
+In `startIngest`, call `supabase.functions.invoke("ingest-preflight", …)` before inserting into `ingest_sources` / `ingest_jobs`. On non-OK:
 
-## Explicitly out of scope this pass
-- No new tables, RLS policies, or edge functions.
-- No visual redesign; reuse shadcn components already in the project.
-- No College ERP / Oracle APEX / dormant role removals (user said not yet).
-- No transcode/proxy pipeline, delivery packaging, notification center, marketing CMS — deferred.
+- Toast the friendly message returned by the function.
+- If reason is `PREMIUM_REQUIRED` or `STORAGE_REQUIRED`, open the existing storage paywall via `quota.checkOrPaywall()`.
+- Log a client-side telemetry breadcrumb via the existing `paymentTelemetry`/`uploads/uploadFailure` helper (no new lib).
 
-## Technical notes
-- Reviewer consoles live at `src/components/admin/reviewer/QcConsole.tsx` and `LegalConsole.tsx`, mounted from `Admin.tsx` when `pathToTab` returns `qc` / `legal`. Reuse existing `AdminErrorBoundary` and admin layout.
-- Status transitions go through a single helper `src/lib/review/transitions.ts` (new file, no schema change) so Creator / QC / Legal / Admin all call the same function.
-- Realtime: enable publication on `content_titles`, `title_review_assignments`, `content_approvals` via migration (publication only — no table changes).
-- Buyer panels reuse `src/components/shared/tools/*` (QuickActionCard, StatusSummaryCard).
-- Every new query respects existing RLS; if a query fails permission-denied I'll surface the exact `GRANT` needed rather than loosening policy silently.
+Existing client-side eligibility banner stays as UX; the server call is the real gate.
 
-## Verification
-- `bunx vitest run` for smoke tests (`reviewer-routing`, `workflow-presence`, `user-journey`).
-- Playwright walk: creator submit → QC approve → legal approve → buyer requests screener → admin sees updated status. Screenshots at each step.
-- Confirm no console errors and no 404/WrongPortal for the 7 MVP roles.
+## 4. Tests
 
-## Deliverable
-One PR-sized change set touching ~10-15 files, no schema DDL beyond the realtime publication add.
+Add `src/test/smoke/ingest-preflight.test.ts` — a unit test that mocks `supabase.functions.invoke` and asserts:
+
+- `startIngest` short-circuits and toasts when preflight returns `PREMIUM_REQUIRED`.
+- Successful preflight proceeds to insert.
+
+Add `src/test/smoke/studio-onboarding.test.tsx` covering the two regressions from the previous fix:
+
+- `isStudioOnboarded()` returns true for a completed profile → gate renders children.
+- Wizard reads `useWorkspaces().activeId` so gate/wizard target the same workspace.
+
+Live e2e (Playwright against the deployed URL) is intentionally out of scope for this change — the checklist doc gives the reviewer the click paths.
+
+## Files touched
+
+- Create `.lovable/production-readiness.md`
+- Create `supabase/functions/ingest-preflight/index.ts`
+- Edit `supabase/config.toml` (add function entry only)
+- Edit `src/components/studio/ingest/StudioIngest.tsx` (call preflight in `startIngest`, map reason codes)
+- Create `src/test/smoke/ingest-preflight.test.ts`
+- Create `src/test/smoke/studio-onboarding.test.tsx`
+
+## Out of scope (per your rules)
+
+- No changes to `ingest_jobs` RLS, `entity_profiles`, or any schema.
+- No new tables, no new columns, no data migration.
+- No changes to Razorpay, OCI, or proxy-generation code paths.
+- No new upload pipeline — preflight sits in front of the existing one.

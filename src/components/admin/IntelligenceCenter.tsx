@@ -314,7 +314,7 @@ export default function IntelligenceCenter() {
         .map(
           (r) =>
             `<tr><td>${escapeHtml(r.title)}</td><td>${
-              r.url ? `<a href="${escapeHtml(r.url)}">${escapeHtml(r.url)}</a>` : ""
+              isSafeUrl(r.url) ? `<a href="${safeHref(r.url)}" rel="noreferrer noopener">${escapeHtml(r.url!)}</a>` : escapeHtml(r.url ?? "")
             }</td><td>${escapeHtml(r.description ?? "")}</td></tr>`,
         )
         .join("");
@@ -544,14 +544,14 @@ export default function IntelligenceCenter() {
                             {r.description}
                           </p>
                         )}
-                        {r.url && (
+                        {isSafeUrl(r.url) && (
                           <a
                             href={r.url}
                             target="_blank"
                             rel="noreferrer noopener"
                             className="text-[11px] text-primary hover:underline inline-flex items-center gap-1 mt-1"
                           >
-                            {safeHost(r.url)}
+                            {safeHost(r.url!)}
                             <ExternalLink className="w-3 h-3" />
                           </a>
                         )}
@@ -650,7 +650,7 @@ export default function IntelligenceCenter() {
                     {r.description}
                   </p>
                 )}
-                {r.url && (
+                {isSafeUrl(r.url) && (
                   <a
                     href={r.url}
                     target="_blank"
@@ -704,4 +704,27 @@ function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string),
   );
+}
+
+// Only allow http(s) URLs. Blocks javascript:, data:, vbscript:, etc. XSS via
+// externally-sourced Firecrawl result URLs rendered in the same-origin popup.
+function safeHref(url: string | undefined | null): string {
+  if (!url) return "#";
+  try {
+    const u = new URL(url);
+    if (u.protocol !== "http:" && u.protocol !== "https:") return "#";
+    return escapeHtml(u.toString());
+  } catch {
+    return "#";
+  }
+}
+
+function isSafeUrl(url: string | undefined | null): boolean {
+  if (!url) return false;
+  try {
+    const u = new URL(url);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
 }

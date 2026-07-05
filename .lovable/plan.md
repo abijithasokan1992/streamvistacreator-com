@@ -1,99 +1,73 @@
-# StreamVista Cloud X — Platform Integrations
+# Simplified Ingest Workflow
 
-Reuse the existing app. Add integration configuration surface, a unified AI Assistant, and per-service wiring on top of the existing backend, RBAC, storage, billing, and workflows. No schema migrations, no duplicate modules, no UI redesign.
+Preserve the existing StreamVista layout, navigation, styling, and page structure. All changes are additive: a new automated ingest surface layered inside the existing Ingest page and Storage page, plus background workers.
 
-## Scope
+## User-visible surface (no redesign)
 
-Nine platform services surfaced under one Settings → Integrations page:
+Inside the current Ingest page (`src/components/studio/ingest/StudioIngest.tsx`) add one new panel — **"Auto Ingest"** — placed at the top of the existing tab, using the current Card/Button/Tabs primitives. The existing manual dialogs (`IngestMediaDialog`, `HardDiskIntakeDialog`, `CameraToCloudIngest`) stay untouched as advanced fallbacks.
 
-| Service | Purpose | Existing wiring |
-| --- | --- | --- |
-| Oracle Cloud (OCI) | Primary storage, media, archive | `supabase/functions/_shared/oci.ts`, `oci-upload`, `oci-multipart`, `verify-oci-connection`, `site_config.oracle_*` |
-| GPT-5.5 (OpenAI via Lovable AI) | Reasoning, metadata, natural language assistant | Lovable AI Gateway (`LOVABLE_API_KEY`) |
-| Gemini Enterprise | Semantic search, grounded assistant answers, content discovery | Standard connector `gemini_enterprise` (gateway) |
-| Firecrawl | Film / OTT / festival / market research | Standard connector `firecrawl` (gateway) |
-| Razorpay | Subscriptions, storage plans, invoices, billing history | `create-razorpay-*`, `verify-razorpay-payment`, `razorpay-webhook`, `check-razorpay-status` |
-| GitHub | Source, CI/CD, releases, deploy status (internal only) | Repo already linked; surface status read-only |
-| GatewayAPI | SMS / RCS / OTP / editorial / delivery notifications | Standard connector `gatewayapi` (gateway) |
-| Gmail | Verification, invites, password reset, billing, collab | Existing transactional email pipeline (`send-transactional-email`) |
-| Sanity (or Contentful) | Homepage, marketing, docs, news, help centre | Standard connector `sanity` (MCP) — public content only |
+The Auto Ingest panel shows exactly three states:
 
-## Phases
+1. **Waiting for device** — instructions plus a "Connect device" button that opens the browser File System Access picker (or falls back to file input).
+2. **Device detected** — device label, detected clip count, total size, camera type guess, a production dropdown pre-filled with the current active production, and a single **Start Import** button.
+3. **Importing** — a compact progress row: filename, % complete, upload speed, ETA, plus a "Details" link that opens the existing IngestTimeline.
 
-### Phase 1 — Integrations settings page  (this turn)
+Everything else the user asked for (checksums, dedupe, resume, proxy, thumbnails, metadata, retries) runs in the background and only surfaces as a toast if manual action is required.
 
-- Route: `/admin/integrations` (super_admin / admin only, guarded by existing `RoleGate`).
-- Server function `integrations-status` returns a single JSON payload with per-service `{ connected, mode, last_sync, latency_ms, note }`.
-  - OCI: reuse `verify-oci-connection` result.
-  - Razorpay: reuse `check-razorpay-status` result.
-  - Lovable AI (GPT-5.5, Gemini via gateway): probe `LOVABLE_API_KEY` presence + one-shot chat ping.
-  - Firecrawl / GatewayAPI / Gemini Enterprise / Sanity: presence of connector secret (`FIRECRAWL_API_KEY`, `GATEWAYAPI_API_KEY`, `GEMINI_ENTERPRISE_API_KEY`, `SANITY_API_KEY`).
-  - Gmail: presence of transactional email config.
-  - GitHub: read-only presence marker (repo connected via Lovable ↔ GitHub sync).
-- UI: card grid, each card shows status pill, last checked, and buttons: **Test Connection**, **Configuration** (opens existing admin surface for that service — OCI card links to Storage Governance, Razorpay to Billing, etc.). Never expose secret values.
-- No new tables. State comes from `site_config` + environment presence.
+The Storage page (`src/pages/dashboards/StudioAdvancedSettings.tsx` / existing storage widgets) gets one additional read-only strip — **"Live ingest"** — showing: storage used, object count, active uploads, queue depth, current speed, last upload, proxy queue, OCI health dot. No new page, no layout change.
 
-### Phase 2 — StreamVista AI Assistant  (shipped)
+## Detection flow
 
-Command-palette launcher (global ⌘K / floating "Ask StreamVista" button, authenticated users only) that orchestrates existing modules read-only. Never modifies workflows.
+Browser supports two device paths:
 
-- `supabase/functions/assistant-chat/index.ts` — AI SDK `generateText` via Lovable AI Gateway. Default model `openai/gpt-5.5`; users never see model selection. Every tool query uses the caller's bearer token so RLS enforces scope — no admin bypass.
-- Tools (read-only): `find_productions`, `list_ingest_jobs`, `list_recent_uploads`, `storage_summary`, `list_invoices`, `research_web` (Firecrawl; disabled with a friendly message when the key is absent).
-- `src/components/assistant/AssistantLauncher.tsx` — command-palette dialog with suggested actions, recent-query history (localStorage), and active-production context passed from `sv.activeProjectId`.
-- Placeholders (not built): metadata generation, subtitles, reports, AI QC, analytics, workflow automation. Assistant surfaces these as "coming soon" instead of attempting them.
+- **File System Access API** (Chrome/Edge on desktop): `showDirectoryPicker()` returns a directory handle. We walk it, group by top-level folder (matches ARRI/RED/BMD card layouts), sniff for signature paths (`XDROOT/`, `PRIVATE/AVCHD/`, `CLIP/`, `DCIM/`, `RDC/`, `A001_...`) to label the camera family, and list media files by extension.
+- **Fallback** (`<input type="file" webkitdirectory multiple />`): same walker, no persistent handle — user re-picks on retry.
 
-Original Phase 2 plan (kept for reference):
+Supported extensions map to the requested formats: `.ari .arx` (ARRIRAW), `.r3d` (RED), `.braw` (Blackmagic), `.crm` (Canon RAW Light), `.dng` (CinemaDNG sequence), `.mov .mp4 .mxf` (ProRes/DNxHR/H.264/H.265 wrappers). Resolution and codec are read from the file container later, server-side.
 
-- Single conversational surface at `/assistant` (authenticated).
-- Server: `supabase/functions/assistant-chat/index.ts` streaming `streamText` via Lovable AI Gateway.
-- Default model `openai/gpt-5.5` with `google/gemini-2.5-pro` fallback (routing decided server-side by task class, never exposed to the user).
-- Tools (server-side, gated by caller's RBAC):
-  - `find_clips`, `search_productions`, `find_duplicate_media`, `locate_camera_cards` → existing production/media queries.
-  - `generate_metadata`, `generate_subtitles`, `summarize_script`, `smart_tag` → Lovable AI.
-  - `research_company`, `research_buyer`, `search_ott`, `industry_news` → Firecrawl `search` / `scrape`.
-  - `semantic_search` → Gemini Enterprise `streamAssist` / `search`.
-  - `generate_report` → existing `chief-report` / `system-report`.
-- UI: reuses existing `AgentDock` / `AgentChat` shells; adds a full-page route rendering the same components with the new endpoint. No new chat component library.
+## Background pipeline
 
-### Phase 3 — Per-service wiring passes
+The existing `ingest_jobs` / `ingest_job_items` / `ingest_telemetry` tables already model this. We add:
 
-Each pass edits only the touchpoints for that service; no module duplication.
+- `client_checksum` (bytea) and `dedupe_key` on `ingest_job_items` so duplicates against past imports are skipped without re-upload.
+- `proxy_status`, `thumbnail_status`, `technical_metadata` (jsonb) on `ingest_job_items` — populated after upload finishes.
+- `resume_token` on `upload_sessions` for OCI multipart resume (column already partially exists — verify and reuse).
 
-1. **Notifications** — extend `send-transactional-email` router so SMS/RCS/OTP flows fan out to a new `send-sms` edge function that calls GatewayAPI `/mobile/single` via the connector gateway. Reuses existing notification triggers (upload status, editorial, delivery).
-2. **AI enrichment on ingest** — existing `ingest-preflight` gains an optional post-hook that enqueues metadata/OCR/STT/subtitle jobs on Lovable AI. No new pipeline; jobs written to existing `recent_uploads` / job tables.
-3. **Semantic search** — production search UI switches from LIKE query to `assistant-chat` tool `semantic_search` (Gemini Enterprise) when connected; falls back to existing SQL search.
-4. **CMS** — public marketing pages read from Sanity via existing `mcp_sanity` connector. Productions / assets / users / billing / rights stay in Lovable Cloud.
-5. **GitHub** — read-only badge on Integrations page showing latest workflow status via existing GitHub App connection (no new auth).
+Client work per file (Web Worker):
 
-## Rules honoured
+1. Stream the file, compute SHA-256 in chunks (checksum + dedupe key).
+2. Ask edge function `ingest-start` for an OCI multipart URL set; if the checksum already exists under this workspace, mark item `duplicate` and skip.
+3. Upload parts to OCI directly via presigned URLs (existing `src/lib/ociMultipartUpload.ts`), reporting progress back to `ingest_telemetry` every N MB.
+4. On network error, exponential backoff up to 5 tries; store `resume_token` so a page reload picks up where it left off.
+5. On completion, call `ingest-complete` which enqueues proxy + thumbnail + metadata extraction (server-side via existing job runner).
 
-- No new tables, no schema migration, no RLS changes.
-- No duplicate modules (Production / Studio / Ingest / Editorial / Delivery / Licensing / Marketplace / Analytics stay as-is).
-- All secrets stay server-side. UI never renders raw keys.
-- Existing RBAC (`useAuth().isAdmin`, `RoleGate`, `has_role`) gates every new surface.
-- Existing OCI upload pipeline, Razorpay payment workflow, and email/notification workflows are reused verbatim.
+The original bytes are only ever read, never written — we never touch the source directory handle in write mode.
 
-## Files (Phase 1)
+## Camera-to-Cloud (scaffold only)
 
-- Create `.lovable/plan.md` (this file — replaces the prior Production Readiness plan; that plan is now shipped).
-- Create `supabase/functions/integrations-status/index.ts`.
-- Create `src/pages/AdminIntegrations.tsx`.
-- Edit `src/App.tsx` — add `/admin/integrations` route.
-- Edit `src/pages/AdminHome.tsx` — add Integrations tile.
+Add a stub edge function `c2c-session` that mints a short-lived ingest token bound to a production + workspace. The existing `CameraToCloudIngest.tsx` component gets a "Connect" button wired to this endpoint but the actual wireless transport is not built in this pass — everything after token mint reuses the same background pipeline.
 
-### Phase 3 — Intelligent service integration (shipped)
+## Files touched
 
-Every connected service is now context-aware inside StreamVista. No backend redesign, no schema changes, no duplicated business logic.
+- New: `src/components/studio/ingest/AutoIngestPanel.tsx` (the 3-state UI).
+- New: `src/lib/ingest/deviceScanner.ts` (directory walker + camera sniff).
+- New: `src/lib/ingest/checksumWorker.ts` (Web Worker for SHA-256).
+- New: `src/lib/ingest/autoIngestPipeline.ts` (orchestrates upload + retries).
+- New: `src/components/studio/ingest/LiveIngestStrip.tsx` (read-only storage widget).
+- Edit: `src/components/studio/ingest/StudioIngest.tsx` — mount `AutoIngestPanel` at top of existing tab; no other change.
+- Edit: existing Storage page — mount `LiveIngestStrip` inside the current card grid.
+- New edge functions: `ingest-start`, `ingest-complete`, `ingest-proxy` (proxy generation kicker), `c2c-session`.
+- Migration: additive columns on `ingest_job_items` and `upload_sessions` — no destructive schema change.
 
-- **integrations-status** now returns per-service `health`, `version`, `permissions`, `docs_url`, `last_sync`, `last_activity`, and service-specific `extra` (OCI used bytes / active uploads / archive / region; GitHub repo/branch; GatewayAPI SMS/RCS/email-fallback flags).
-- **AdminIntegrations UI** renders enriched cards: status pill, health, version, permissions row, last-sync + last-activity, per-service extras (OCI capacity, GitHub repo/branch, GatewayAPI channels), Test Connection, Open Settings, Documentation. Test buttons now cover Oracle, Razorpay, Firecrawl, GatewayAPI (SMS dialog), and the AI assistant path (GPT-5.5 / Gemini).
-- **Research Workspace** (`/admin/research`) — Firecrawl-backed research categorised into Production companies, Distributors, OTT, Broadcasters, Festivals, Markets, Post studios. Nothing is persisted; results carry a client-side "Mark for review" flag so users copy them into existing modules manually. No metadata duplication.
-- **send-sms-test** — admin-only edge function that routes one SMS through the existing GatewayAPI connector (`/mobile/single`). Reuses the notification pipeline; adds no new sender path.
-- **research-firecrawl** — admin-only proxy that adds category hints to Firecrawl v2 search and returns raw results without persisting.
-- **Assistant** — added `find_invoice` tool (billing quick-lookup) and kept the existing production / ingest / storage / research tools. GPT-5.5 stays the orchestration layer; Gemini remains available for OCR / STT / subtitles / translation / vision through the same gateway. Model selection is never exposed to the user.
+## Out of scope for this pass
 
-Constraints honoured throughout:
-- Reuses existing OCI, Razorpay, GatewayAPI, Firecrawl, Sanity, Gmail, and GitHub wiring.
-- Existing RBAC (`has_role('admin')`) gates every new function and route.
-- No new tables, no RLS changes, no duplicate upload/billing/storage/metadata paths.
-- Secrets are never returned to the client.
+- Actual server-side proxy transcoding (needs a media worker — we stub the job row and mark `pending`).
+- NAS discovery (listed as future in the request).
+- Wireless C2C transport (scaffold only).
+- Any change to global navigation, dashboard layout, colors, or typography.
+
+## Confirm before I start
+
+1. Auto-select the "current active production" from the last-viewed production in `productions` — OK, or require explicit selection every time?
+2. OCI multipart uploads already work in the codebase — I'll reuse `ociMultipartUpload.ts` as-is. Confirm this is still the intended path (vs. edge-function proxied uploads).
+3. Proxy generation: leave the server side as a stub (row marked `pending`) for now, or is a media worker already running that I should hook into?

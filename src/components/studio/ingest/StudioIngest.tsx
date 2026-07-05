@@ -46,6 +46,8 @@ import HardDiskIntakeDialog from "@/components/studio/HardDiskIntakeDialog";
 import { IngestDestinationPreview } from "./IngestDestinationPreview";
 import { IngestTimeline } from "./IngestTimeline";
 // IngestDiagnosticsPanel is rendered on the Advanced Settings page, not inline.
+import { AutoIngestPanel } from "./AutoIngestPanel";
+import { LiveIngestStrip } from "./LiveIngestStrip";
 
 type IngestMode = "connected_drive" | "camera_card" | "watch_folder" | "archive";
 
@@ -866,6 +868,13 @@ export default function StudioIngest({
       </div>
 
       <StorageWarningBanner />
+
+      {/* Auto Ingest — the one-button, three-step surface. Advanced modes below remain available. */}
+      <AutoIngestPanel />
+
+      <LiveIngestStrip />
+
+
 
       {/* Mode selector */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

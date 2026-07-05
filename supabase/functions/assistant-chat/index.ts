@@ -33,7 +33,8 @@ Deno.serve(async (req) => {
     if (!lovableKey) return json({ error: "assistant_not_configured" }, 500, cors);
 
     const body = await req.json().catch(() => ({}));
-    const messages: UIMessage[] = Array.isArray(body?.messages) ? body.messages : [];
+    const messages: Array<{ role: "user" | "assistant" | "system"; content: string }> =
+      Array.isArray(body?.messages) ? body.messages : [];
     const ctx = body?.context ?? {};
 
     const supa = createClient(

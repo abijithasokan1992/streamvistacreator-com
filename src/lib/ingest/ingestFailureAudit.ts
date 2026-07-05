@@ -61,7 +61,7 @@ export async function logIngestInsertFailure(ctx: IngestFailureContext): Promise
       project_id: ctx.projectId,
       reason: ctx.reason.slice(0, 2000),
       error_code: ctx.errorCode ?? ctx.category,
-      source_summary: (ctx.sourceSummary ?? {}) as Record<string, unknown>,
+      source_summary: JSON.parse(JSON.stringify(ctx.sourceSummary ?? {})),
       user_agent: ua,
     });
   } catch {

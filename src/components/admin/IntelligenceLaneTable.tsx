@@ -249,6 +249,23 @@ function SentimentBadge({ value }: { value?: string }) {
   );
 }
 
+function ImpactBadge({ value }: { value?: string }) {
+  const v = (value ?? "").toLowerCase();
+  const cls =
+    v === "high"
+      ? "bg-destructive/15 text-destructive border-destructive/30"
+      : v === "medium"
+        ? "bg-amber-500/15 text-amber-600 border-amber-500/30"
+        : v === "low"
+          ? "bg-emerald-500/15 text-emerald-600 border-emerald-500/30"
+          : "bg-muted text-muted-foreground border-border/60";
+  return (
+    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wider ${cls}`}>
+      {value || "—"}
+    </span>
+  );
+}
+
 function safeHost(url: string): string {
   try {
     return new URL(url).hostname;

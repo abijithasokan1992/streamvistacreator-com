@@ -1047,19 +1047,19 @@ export default function StudioIngest({
         </div>
 
 
-        {/* Upload layout mode — required 3-way choice. */}
+        {/* Upload layout mode — required 3-way choice. "Custom Destination" is
+            an advanced power-user option, so it lives behind a toggle. Beginners
+            see two clearly-labelled everyday options by default. */}
         <Card className="p-3 space-y-2 border-border/40">
           <Label className="text-[11px] uppercase tracking-widest text-muted-foreground font-mono">
             Upload layout
           </Label>
-          <div className="grid gap-2 sm:grid-cols-3">
+          <div className="grid gap-2 sm:grid-cols-2">
             {[
-              { id: "preserve" as const, title: "Preserve Original Folder Structure",
-                desc: "Recommended. Keeps the exact source tree — required for camera cards, relinking and archive restoration." },
-              { id: "metadata" as const, title: "Organize by Production Metadata",
-                desc: "Auto-file into Shoot Day / Camera / Card / Asset Type." },
-              { id: "custom" as const, title: "Custom Destination",
-                desc: "Advanced. Prefix a custom base path, source subfolders are kept underneath." },
+              { id: "preserve" as const, title: "Keep My Folders Exactly As They Are (Recommended)",
+                desc: "Keeps the exact source tree — best for camera cards, relinking and restoring later." },
+              { id: "metadata" as const, title: "Auto-Sort by Shoot Day & Camera",
+                desc: "Files are auto-filed into Shoot Day / Camera / Card / Asset Type." },
             ].map((opt) => {
               const isActive = layoutMode === opt.id;
               const locked = mode === "camera_card" && opt.id !== "preserve";
@@ -1080,16 +1080,37 @@ export default function StudioIngest({
               );
             })}
           </div>
-          {layoutMode === "custom" && (
-            <div className="flex items-center gap-2 pt-1">
-              <Label className="text-xs shrink-0">Base path</Label>
-              <Input value={customBasePath} onChange={(e) => setCustomBasePath(e.target.value)}
-                     placeholder="e.g. dailies/day_03/cam_a" className="h-8 text-xs" />
+
+          <details className="group pt-1">
+            <summary className="cursor-pointer list-none text-[11px] uppercase tracking-widest text-muted-foreground font-mono inline-flex items-center gap-1 select-none">
+              <span className="transition-transform group-open:rotate-90">›</span> Advanced Settings
+            </summary>
+            <div className="mt-2 space-y-2">
+              <button
+                type="button"
+                onClick={() => setLayoutMode("custom")}
+                className={`w-full text-left rounded-md border p-3 transition ${
+                  layoutMode === "custom" ? "border-accent bg-accent/10" : "border-border/40 hover:border-border"
+                }`}
+              >
+                <div className="text-xs font-medium">Custom Destination</div>
+                <div className="text-[11px] text-muted-foreground mt-1">
+                  Advanced. Prefix a custom base path — source subfolders are kept underneath.
+                </div>
+              </button>
+              {layoutMode === "custom" && (
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs shrink-0">Base path</Label>
+                  <Input value={customBasePath} onChange={(e) => setCustomBasePath(e.target.value)}
+                         placeholder="e.g. dailies/day_03/cam_a" className="h-8 text-xs" />
+                </div>
+              )}
             </div>
-          )}
+          </details>
+
           {mode === "camera_card" && (
             <p className="text-[11px] text-muted-foreground">
-              Camera Card intake locks to Preserve to keep card structure intact for verification.
+              Camera Card intake locks to "Keep My Folders Exactly As They Are" so the card structure stays intact for verification.
             </p>
           )}
         </Card>

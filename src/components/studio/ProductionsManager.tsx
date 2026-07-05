@@ -549,9 +549,16 @@ function ProductionForm({
     <Card className="p-4 space-y-3">
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="sm:col-span-2 space-y-1.5">
-          <Label htmlFor="pf-name">Production Name</Label>
+          <Label htmlFor="pf-name">Production Title</Label>
           <Input id="pf-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Untitled Feature 2026" />
         </div>
+        {mode === "edit" && getProductionNumber(project) && (
+          <div className="sm:col-span-2 space-y-1.5">
+            <Label>Production Number</Label>
+            <Input value={getProductionNumber(project) ?? ""} readOnly className="font-mono bg-muted/40" />
+            <p className="text-[11px] text-muted-foreground">Auto-generated identifier. Editable from Production Settings by workspace admins.</p>
+          </div>
+        )}
         <div className="space-y-1.5">
           <Label>Content Type</Label>
           <Select value={contentType} onValueChange={setContentType}>

@@ -8,6 +8,7 @@ import { template as invoiceReceipt } from './invoice-receipt.tsx'
 import { template as ingestAlert } from './ingest-alert.tsx'
 import { template as inauguralActivation } from './inaugural-activation.tsx'
 import { template as purchaseConfirmation } from './purchase-confirmation.tsx'
+import { template as legacyFilmRecovery } from './legacy-film-recovery.tsx'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -27,4 +28,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'ingest-alert': ingestAlert,
   'inaugural-activation': inauguralActivation,
   'purchase-confirmation': purchaseConfirmation,
+  'legacy-film-recovery': legacyFilmRecovery,
 }

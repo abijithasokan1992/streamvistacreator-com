@@ -351,7 +351,7 @@ function CrewPicker({
 
   return (
     <div className="space-y-1.5">
-      <Label>{role}</Label>
+      <Label>{PRODUCTION_ROLE_LABEL[role]}</Label>
       {value ? (
         <div className="flex items-center gap-2">
           <Badge variant="secondary" className="gap-1.5 py-1 px-2">

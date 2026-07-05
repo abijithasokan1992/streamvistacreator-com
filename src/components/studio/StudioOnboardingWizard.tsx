@@ -152,9 +152,20 @@ const EMPTY: Draft = {
 
 export default function StudioOnboardingWizard({ onDone }: { onDone?: () => void }) {
   const { user } = useAuth();
-  const { list: workspaces, loading: wsLoading } = useMyStudioWorkspaces();
-  const [orgId, setOrgId] = useState<string | null>(null);
-  useEffect(() => { if (!orgId && workspaces.length) setOrgId(workspaces[0].id); }, [workspaces, orgId]);
+  // Use the SAME active workspace id as StudioProfileOnboardingGate so the
+  // wizard reads and writes the exact `entity_profiles` row the gate checks.
+  // Falls back to the user's first workspace only when no active id is set.
+  const { activeId: wsActiveId, workspaces: wsList, setActiveId, loading: wsLoading } = useWorkspaces();
+  const { list: memberWorkspaces, loading: memberLoading } = useMyStudioWorkspaces();
+  const orgId = wsActiveId ?? memberWorkspaces[0]?.id ?? null;
+  // If the gate's activeId points to a workspace we can't see (edge case),
+  // pin it to the first workspace the user actually belongs to.
+  useEffect(() => {
+    if (!wsLoading && !memberLoading && wsActiveId && memberWorkspaces.length &&
+        !memberWorkspaces.some((w) => w.id === wsActiveId)) {
+      setActiveId(memberWorkspaces[0].id);
+    }
+  }, [wsLoading, memberLoading, wsActiveId, memberWorkspaces, setActiveId]);
 
   const { profile, studioExt, loading, saving, canEdit, saveProfile, saveStudioExt, refresh } =
     useEntityProfile({ kind: "studio", orgId });

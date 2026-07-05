@@ -431,6 +431,63 @@ export default function StudioIngest({
       return;
     }
 
+    // Synchronization pre-check — look for existing jobs on the same
+    // Production + Card so we can (a) resume a paused job, (b) reuse the
+    // destination safely, and (c) warn on duplicate filenames from a card
+    // that has already been offloaded. Never overwrites — always prompts.
+    try {
+      const cardKey = cardLabel.trim();
+      if (cardKey) {
+        const { data: priorJobs } = await supabase
+          .from("ingest_jobs")
+          .select("id,status,total_files,completed_files,source_summary,created_at")
+          .eq("workspace_id", activeId)
+          .eq("project_id", projectId || null as any)
+          .in("status", ["paused", "completed", "failed"])
+          .order("created_at", { ascending: false })
+          .limit(10);
+        const sameCard = (priorJobs ?? []).filter(
+          (j: any) => (j.source_summary?.card ?? "").toLowerCase() === cardKey.toLowerCase(),
+        );
+        const pausedMatch = sameCard.find((j: any) => j.status === "paused");
+        if (pausedMatch) {
+          const ok = window.confirm(
+            `A previous ingest for card "${cardKey}" was paused mid-upload. ` +
+            `Continue this new ingest anyway? Cancel to open the paused job and resume it instead.`,
+          );
+          if (!ok) return;
+        }
+        const priorCompleted = sameCard.find((j: any) => j.status === "completed");
+        if (priorCompleted) {
+          // Fetch item filenames+sizes so we can detect duplicates via existing
+          // checksum / file metadata without creating anything new.
+          const { data: priorItems } = await supabase
+            .from("ingest_job_items")
+            .select("file_name,size_bytes,metadata")
+            .eq("job_id", priorCompleted.id)
+            .limit(2000);
+          const priorSet = new Map<string, number>();
+          for (const it of (priorItems ?? []) as any[]) {
+            priorSet.set(`${it.file_name}::${it.size_bytes}`, 1);
+          }
+          const dupes = scan.files.filter(
+            (f) => priorSet.has(`${f.file.name}::${f.file.size}`),
+          );
+          if (dupes.length > 0) {
+            const ok = window.confirm(
+              `${dupes.length} file${dupes.length === 1 ? "" : "s"} on this source already exist ` +
+              `in a prior ingest for card "${cardKey}". Existing media will NOT be overwritten. ` +
+              `Continue anyway? (Duplicates will be recorded as new items you can reconcile in Production Media.)`,
+            );
+            if (!ok) return;
+          }
+        }
+      }
+    } catch (e) {
+      // Pre-check is best-effort — never block the DIT if the lookup itself fails.
+      console.warn("[ingest] pre-check failed", (e as Error).message);
+    }
+
     setSubmitting(true);
     try {
       // 1. Source row (label + summary metadata so future agent can reattach).

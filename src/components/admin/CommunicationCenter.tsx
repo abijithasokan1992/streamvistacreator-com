@@ -53,7 +53,7 @@ const TABS: { key: TabKey; label: string; icon: React.ReactNode; hint: string }[
   { key: "inbox",         label: "Inbox",         icon: <InboxIcon className="w-4 h-4" />,     hint: "Support & contact form submissions" },
   { key: "notifications", label: "Notifications", icon: <Bell className="w-4 h-4" />,          hint: "System notifications" },
   { key: "invitations",   label: "Invitations",   icon: <Send className="w-4 h-4" />,          hint: "Studio, buyer, team invites" },
-  { key: "broadcast",     label: "Broadcast",     icon: <Megaphone className="w-4 h-4" />,     hint: "Email · SMS · RCS · in-app" },
+  { key: "broadcast",     label: "Announcements", icon: <Megaphone className="w-4 h-4" />,     hint: "Email · SMS · RCS · in-app" },
   { key: "support",       label: "Support",       icon: <LifeBuoy className="w-4 h-4" />,      hint: "Support conversations" },
   { key: "activity",      label: "Activity",      icon: <ActivityIcon className="w-4 h-4" />,  hint: "Recent communication activity" },
 ];
@@ -77,7 +77,7 @@ export default function CommunicationCenter() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="default" onClick={() => setTab("broadcast")}>
-            <Plus className="w-4 h-4 mr-1.5" /> New Broadcast
+            <Plus className="w-4 h-4 mr-1.5" /> New Announcement
           </Button>
           <Button size="sm" variant="secondary" onClick={() => setTab("invitations")}>
             <UserPlus className="w-4 h-4 mr-1.5" /> Invite User
@@ -136,7 +136,7 @@ export default function CommunicationCenter() {
         </TabsContent>
 
         <TabsContent value="broadcast" className="mt-4 space-y-4">
-          <SectionCaption title="Broadcast" hint="Send platform announcements over email, SMS, RCS or in-app. Reuses existing GatewayAPI + Gmail + notifications." />
+          <SectionCaption title="Announcements" hint="Send platform announcements over email, SMS, RCS or in-app. Reuses existing GatewayAPI + Gmail + notifications." />
           <UniversalBroadcast />
         </TabsContent>
 
@@ -449,7 +449,7 @@ function HealthStrip({ onJump }: { onJump: (t: TabKey) => void }) {
   }[] = [
     { label: "Unread Messages",     value: c?.unread ?? null,      tone: (c?.unread ?? 0) > 0 ? "warn" : "neutral",   onClick: () => onJump("notifications") },
     { label: "Pending Invitations", value: c?.invitations ?? null, tone: "neutral",                                    onClick: () => onJump("invitations") },
-    { label: "Scheduled Broadcasts",value: c?.scheduled ?? null,   tone: "neutral",                                    onClick: () => onJump("broadcast") },
+    { label: "Scheduled Announcements",value: c?.scheduled ?? null,   tone: "neutral",                                    onClick: () => onJump("broadcast") },
     { label: "Open Support Tickets",value: c?.supportOpen ?? null, tone: (c?.supportOpen ?? 0) > 0 ? "warn" : "neutral", onClick: () => onJump("support") },
     { label: "Failed Deliveries",   value: c?.failed ?? null,      tone: (c?.failed ?? 0) > 0 ? "danger" : "neutral",  onClick: () => onJump("activity") },
   ];

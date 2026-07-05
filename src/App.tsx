@@ -44,6 +44,7 @@ import StudioAdvancedSettings from "./pages/dashboards/StudioAdvancedSettings.ts
 import StudioProfileOnboardingGate from "./components/studio/StudioProfileOnboardingGate.tsx";
 import AdminHome from "./pages/AdminHome.tsx";
 import AdminIntegrations from "./pages/AdminIntegrations.tsx";
+import AdminResearch from "./pages/AdminResearch.tsx";
 import CollegeERP from "./pages/CollegeERP.tsx";
 // Smart Uploads is not MVP-ready — hidden until the checksum + bucket work is production-safe.
 // import SmartUploads from "./pages/SmartUploads.tsx";
@@ -106,6 +107,7 @@ const AdminRoutes = () => (
     <Route path="/admin/comms" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/settings" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/integrations" element={<AdminErrorBoundary><AdminIntegrations /></AdminErrorBoundary>} />
+    <Route path="/admin/research" element={<AdminErrorBoundary><AdminResearch /></AdminErrorBoundary>} />
     <Route path="/admin/audit" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/homepage" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/qc" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
@@ -171,6 +173,7 @@ const PublicRoutes = () => (
     <Route path="/admin/comms" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/settings" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/integrations" element={<AdminErrorBoundary><AdminIntegrations /></AdminErrorBoundary>} />
+    <Route path="/admin/research" element={<AdminErrorBoundary><AdminResearch /></AdminErrorBoundary>} />
     <Route path="/admin/audit" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/homepage" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/qc" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />

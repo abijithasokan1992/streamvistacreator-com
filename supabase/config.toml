@@ -45,3 +45,7 @@ project_id = "hllgmkfqgeuqlmpcirvn"
     verify_jwt = false
   [functions.assistant-chat]
     verify_jwt = true
+  [functions.send-sms-test]
+    verify_jwt = false
+  [functions.research-firecrawl]
+    verify_jwt = false

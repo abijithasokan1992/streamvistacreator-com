@@ -221,10 +221,26 @@ export default function StudioIngest({
   };
 } = {}) {
   const { user } = useAuth();
-  const { workspaces, activeId, setActiveId, canWriteActive } = useWorkspaces();
+  const { workspaces, activeId, active, setActiveId, canWriteActive } = useWorkspaces();
   const quota = useStorageQuota();
   const projects = useWorkspaceProjects(activeId ?? null);
   const queue = useIngestQueue(activeId ?? null);
+
+  // RLS on ingest_jobs requires workspace admin/owner AND a premium storage
+  // entitlement (or global admin). Pre-flight this on the client so the user
+  // gets a clear, actionable message instead of a raw RLS violation.
+  const [isPremiumEligible, setIsPremiumEligible] = useState<boolean | null>(null);
+  useEffect(() => {
+    let alive = true;
+    if (!user) { setIsPremiumEligible(null); return; }
+    (async () => {
+      const { data } = await (supabase as any).rpc("has_premium_storage_entitlement", { _user_id: user.id });
+      if (alive) setIsPremiumEligible(Boolean(data));
+    })();
+    return () => { alive = false; };
+  }, [user?.id]);
+  const isWorkspaceAdmin = active?.role === "owner" || active?.role === "admin";
+  const canIngest = isWorkspaceAdmin && isPremiumEligible !== false;
 
   const [mode, setMode] = useState<IngestMode>("connected_drive");
   const [scan, setScan] = useState<ScanSummary | null>(null);

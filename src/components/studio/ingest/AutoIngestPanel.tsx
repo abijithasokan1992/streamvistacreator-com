@@ -203,7 +203,7 @@ export function AutoIngestPanel() {
 
       // 3. Item rows (batched).
       const items = scan.files.map((f) => {
-        const c = classifyFile(f.file, f.relativePath);
+        const c = classifyFile(f.file.name, f.relativePath);
         return {
           job_id: job.id,
           relative_path: f.relativePath,

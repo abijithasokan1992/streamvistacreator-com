@@ -609,7 +609,9 @@ function ShareProductionDialog({
   onInvited: () => void;
 }) {
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"admin" | "editor" | "viewer">("editor");
+  // UI holds the canonical Organization Role; we map to the backend value at
+  // invite time so the workspace_members row uses the existing enum.
+  const [role, setRole] = useState<(typeof INVITABLE_ORG_ROLES)[number]>("member");
   const [sending, setSending] = useState(false);
 
   const invite = async () => {
@@ -617,12 +619,12 @@ function ShareProductionDialog({
     setSending(true);
     try {
       const { data, error } = await supabase.functions.invoke("workspace-invite", {
-        body: { workspace_id: workspaceId, email: email.trim(), role },
+        body: { workspace_id: workspaceId, email: email.trim(), role: ORG_ROLE_BACKEND[role] },
       });
       if (error) throw error;
       const res = data as any;
       if (res?.pending) toast.success(`Invitation sent to ${email.trim()}`);
-      else toast.success(`${email.trim()} added as ${role}`);
+      else toast.success(`${email.trim()} added as ${ORG_ROLE_LABEL[role]}`);
       setEmail("");
       onInvited();
     } catch (e) {

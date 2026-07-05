@@ -432,6 +432,7 @@ function buildDepartments(args: {
       desc: "Unified Communication Center.",
       sections: [
         { id: "center", label: "Center", hint: "Inbox · Notifications · Invitations · Broadcast · Support · Activity", content: <CommunicationCenter /> },
+        { id: "intelligence", label: "✦ Intelligence", hint: "AI-powered market, buyer and competitor intelligence", content: <IntelligenceCenter /> },
         { id: "email", label: "Email log", hint: "Raw email delivery log", content: <EmailLogMonitor /> },
       ],
     },

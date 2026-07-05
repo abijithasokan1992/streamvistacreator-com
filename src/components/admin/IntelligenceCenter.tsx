@@ -15,8 +15,10 @@ import {
   AlertTriangle,
   CheckCircle2,
   Clock,
+  Table as TableIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { IntelligenceLaneTable, type StructuredLaneData } from "./IntelligenceLaneTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";

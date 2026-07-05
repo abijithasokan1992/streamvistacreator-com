@@ -205,6 +205,7 @@ export default function ProductionSettingsPanel({
   activeProjectCrew?: Crew | null;
   onSaved?: () => void;
 }) {
+  const navigate = useNavigate();
   const [s, setS] = useState<Settings>(() => crewToSettings(activeProjectCrew));
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);

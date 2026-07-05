@@ -944,9 +944,18 @@ export default function StudioIngest({
           </p>
         )}
 
-        {/* Required shoot context: Project → Shoot Day → Unit → Camera → Card */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
-          <div className="space-y-1.5">
+        {/* Required shoot context: Project → Shoot Day → Unit → Camera → Card.
+            When "Keep My Folders Exactly As They Are" is chosen the metadata
+            boxes are informational — fade + soft-lock them so beginners know
+            they don't have to fill them out. Project remains fully editable. */}
+        <div
+          className={`grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 transition-opacity ${
+            layoutMode === "preserve" ? "opacity-60" : ""
+          }`}
+          aria-disabled={layoutMode === "preserve"}
+          title={layoutMode === "preserve" ? "Optional — 'Keep My Folders Exactly As They Are' doesn't require these labels." : undefined}
+        >
+          <div className="space-y-1.5 opacity-100">
             <Label className="text-xs">Project</Label>
             <Select value={projectId || "__none"} onValueChange={(v) => setProjectId(v === "__none" ? "" : v)}>
               <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select project" /></SelectTrigger>
@@ -959,6 +968,7 @@ export default function StudioIngest({
           <div className="space-y-1.5">
             <Label className="text-xs">Shoot day</Label>
             <Input value={shootDay} onChange={(e) => setShootDay(e.target.value)} className="h-9 text-xs" placeholder="Day 03" />
+            <p className="text-[10px] text-muted-foreground">These labels help you search for your files later.</p>
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs">Unit / Team</Label>
@@ -979,6 +989,7 @@ export default function StudioIngest({
                     ))}
                   </SelectContent>
                 </Select>
+                <p className="text-[10px] text-muted-foreground">These labels help you search for your files later.</p>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Card / Mag</Label>
@@ -1004,6 +1015,7 @@ export default function StudioIngest({
                     {CAMERA_BRANDS.map((b) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
                   </SelectContent>
                 </Select>
+                <p className="text-[10px] text-muted-foreground">These labels help you search for your files later.</p>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Camera</Label>

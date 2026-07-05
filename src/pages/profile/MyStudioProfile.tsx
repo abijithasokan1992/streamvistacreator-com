@@ -358,7 +358,7 @@ export default function MyStudioProfile({
               </Card>
             )}
 
-            <FieldGroup title="Identity" description="How this studio appears on StreamVista and on legal documents.">
+            <FieldGroup collapsible title="Identity" description="How this studio appears on StreamVista and on legal documents.">
               <div className="space-y-1.5">
                 <Label className="text-xs">Display name</Label>
                 <Input disabled={!canEdit} value={merged.display_name ?? ""} onChange={(e) => setP("display_name", e.target.value)} />
@@ -386,7 +386,7 @@ export default function MyStudioProfile({
               </div>
             </FieldGroup>
 
-            <FieldGroup title="Studio contact" description="Primary point of contact for production partners.">
+            <FieldGroup collapsible title="Studio contact" description="Primary point of contact for production partners.">
               <div className="space-y-1.5">
                 <Label className="text-xs">Primary contact name</Label>
                 <Input disabled={!canEdit} value={mergedExt.primary_contact_name ?? ""} onChange={(e) => setE("primary_contact_name", e.target.value)} />
@@ -436,7 +436,7 @@ export default function MyStudioProfile({
               </div>
             </FieldGroup>
 
-            <FieldGroup title="Registered address">
+            <FieldGroup collapsible title="Registered address">
               <div className="md:col-span-2 space-y-1.5">
                 <Label className="text-xs">Address line 1</Label>
                 <Input disabled={!canEdit} value={merged.address_line1 ?? ""} onChange={(e) => setP("address_line1", e.target.value)} />
@@ -466,7 +466,7 @@ export default function MyStudioProfile({
               </div>
             </FieldGroup>
 
-            <FieldGroup title="Tax identity" description="PAN, GST, TAN and CIN as applicable.">
+            <FieldGroup collapsible title="Tax identity" description="PAN, GST, TAN and CIN as applicable.">
               <div className="space-y-1.5">
                 <Label className="text-xs">PAN</Label>
                 <Input disabled={!canEdit} value={merged.pan_number ?? ""}
@@ -522,7 +522,7 @@ export default function MyStudioProfile({
               </div>
             </FieldGroup>
 
-            <FieldGroup title="Billing identity" description="Used on invoices issued to and by this studio.">
+            <FieldGroup collapsible title="Billing identity" description="Used on invoices issued to and by this studio.">
               <div className="space-y-1.5">
                 <Label className="text-xs">Billing legal name</Label>
                 <Input disabled={!canEdit} value={merged.billing_legal_name ?? ""} onChange={(e) => setP("billing_legal_name", e.target.value)} />
@@ -574,7 +574,7 @@ export default function MyStudioProfile({
               </div>
             </FieldGroup>
 
-            <FieldGroup title="Studio capabilities" description="Helps creators and buyers find the right studio.">
+            <FieldGroup collapsible title="Studio capabilities" description="Helps creators and buyers find the right studio.">
               <div className="md:col-span-2 space-y-1.5">
                 <Label className="text-xs">Services offered (comma-separated)</Label>
                 <Input
@@ -613,7 +613,7 @@ export default function MyStudioProfile({
               </div>
             </FieldGroup>
 
-            <FieldGroup title="Public links" description="Studio website, showreels, IMDb, social profiles.">
+            <FieldGroup collapsible title="Public links" description="Studio website, showreels, IMDb, social profiles.">
               <div className="md:col-span-2">
                 <SocialLinksGrid
                   socials={socials}
@@ -624,7 +624,7 @@ export default function MyStudioProfile({
               </div>
             </FieldGroup>
 
-            <FieldGroup title="Verification" description="Once you save your tax & billing details our team will verify them.">
+            <FieldGroup collapsible title="Verification" description="Once you save your tax & billing details our team will verify them.">
               <div className="md:col-span-2 flex items-center justify-between rounded-md border border-border/40 p-3">
                 <div className="space-y-1">
                   <VerificationBadge status={merged.verification_status} />

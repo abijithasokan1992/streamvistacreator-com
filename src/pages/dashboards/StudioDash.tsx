@@ -804,10 +804,14 @@ function ProductionGroup({
                   <p className="text-sm font-medium flex items-center gap-2 truncate">
                     <span className="truncate">{p.name}</span>
                     {isActive && <StatusPill tone="ok">Active</StatusPill>}
+                    {getProductionNumber(p) && (
+                      <span className="text-[10px] font-mono border rounded-full px-1.5 py-0.5 bg-accent/10 text-accent border-accent/30">
+                        {getProductionNumber(p)}
+                      </span>
+                    )}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
                     {p.crew?.content_type ?? "Production"} · {p.crew?.title_status ?? "Active"}
-                    {p.crew?.title_number && <> · <span className="font-mono">{p.crew.title_number}</span></>}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">

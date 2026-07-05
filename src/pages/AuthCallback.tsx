@@ -79,7 +79,7 @@ export default function AuthCallback() {
         // finish at their pace. Silent if there are none.
         try {
           const { data: claimed } = await supabase.rpc("claim_legacy_films" as never);
-          const n = typeof claimed === "number" ? claimed : 0;
+          const n = Number(claimed ?? 0);
           if (n > 0) {
             toast.success(
               `${n} film${n === 1 ? "" : "s"} from your previous account restored as draft${n === 1 ? "" : "s"}. Finish them in your dashboard.`,

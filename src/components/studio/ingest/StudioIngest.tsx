@@ -224,6 +224,9 @@ export default function StudioIngest({
       lut?: string;
       card_prefix?: string;
     }>;
+    /** Read-only display in the ingest header. */
+    productionNumber?: string;
+    projectName?: string;
   };
   /** Fires once an ingest job reaches its terminal status. Parent dialogs
    *  (e.g. IngestMediaDialog) use this to auto-close after Save. */

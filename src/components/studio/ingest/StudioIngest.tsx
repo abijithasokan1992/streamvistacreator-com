@@ -682,14 +682,16 @@ export default function StudioIngest({
       setScan(null);
       queue.refresh();
       quota.refresh();
+      onCompleted?.({ jobId: job.id, status: finalStatus as "completed" | "failed" });
     } catch (e) {
       toast.error((e as Error).message ?? "Ingest failed");
       setLiveProgress((p) => ({ ...p, state: "error" }));
     } finally {
       setSubmitting(false);
     }
-  }, [scan, activeId, user, canWriteActive, quota, mode, destinationType, preserveStructure,
-      projectId, shootDay, unitLabel, cameraBrand, cameraLabel, cardLabel, assetClass, notes, queue]);
+  }, [scan, activeId, user, canWriteActive, quota, mode, destinationType, layoutMode, customBasePath,
+      projectId, shootDay, unitLabel, cameraBrand, cameraLabel, cardLabel, assetClass, notes, queue, onCompleted,
+      isWorkspaceAdmin, isPremiumEligible]);
 
   const currentModeMeta = useMemo(() => MODES.find((m) => m.id === mode)!, [mode]);
 

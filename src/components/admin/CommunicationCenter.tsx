@@ -249,14 +249,14 @@ function NotificationsList({ search }: { search: string }) {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-medium truncate">{n.title || "Notification"}</p>
-                    {!n.read_at && <Badge variant="secondary" className="text-[10px]">Unread</Badge>}
+                    {!n.is_read && <Badge variant="secondary" className="text-[10px]">Unread</Badge>}
                   </div>
                   {n.message && <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{n.message}</p>}
                   <p className="text-[10px] text-muted-foreground/70 mt-1">
                     {new Date(n.created_at).toLocaleString()} · user {n.user_id?.slice(0, 8) ?? "—"}
                   </p>
                 </div>
-                {!n.read_at && (
+                {!n.is_read && (
                   <Button size="sm" variant="ghost" onClick={() => markRead(n.id)}>Mark read</Button>
                 )}
               </div>

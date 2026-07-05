@@ -579,6 +579,10 @@ function ProductionPanel({
   const [company, setCompany] = useState("");
   const [startDate, setStartDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
   const [status, setStatus] = useState<string>("Pre-Production");
+  // Preview a Production Number while the create form is open; regenerated
+  // on the server-side insert below so the persisted value is authoritative.
+  const [previewNumber, setPreviewNumber] = useState<string>(() => generateProductionNumber());
+  useEffect(() => { if (showForm) setPreviewNumber(generateProductionNumber()); }, [showForm]);
 
   const refresh = useCallback(async () => {
     if (!activeId) { setProjects([]); setLoading(false); return; }

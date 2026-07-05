@@ -781,10 +781,16 @@ function CollaborationPanel({
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               {INVITABLE_ORG_ROLES.map((r) => (
-                <SelectItem key={r} value={r}>{ORG_ROLE_LABEL[r]}</SelectItem>
+                <SelectItem key={r} value={r}>
+                  <div className="flex flex-col">
+                    <span>{ORG_ROLE_LABEL[r]}</span>
+                    <span className="text-[10px] text-muted-foreground leading-snug">{ORG_ROLE_DESCRIPTION[r]}</span>
+                  </div>
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
+          <RoleLegend kind="org" compact />
           <Button onClick={invite} disabled={!email.trim() || sending}>
             {sending ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5 mr-1.5" />}
             Invite

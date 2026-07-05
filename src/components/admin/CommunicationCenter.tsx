@@ -89,6 +89,10 @@ export default function CommunicationCenter() {
         </div>
       </div>
 
+      {/* Communication Health — 5-second status snapshot */}
+      <HealthStrip onJump={(t) => setTab(t)} />
+
+
       {/* Global search */}
       <div className="relative">
         <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -177,7 +181,7 @@ type NotificationRow = {
   user_id: string | null;
   title: string | null;
   message: string | null;
-  read_at: string | null;
+  is_read: boolean | null;
   created_at: string;
 };
 
@@ -191,7 +195,7 @@ function NotificationsList({ search }: { search: string }) {
       setLoading(true);
       const { data, error } = await (supabase as any)
         .from("notifications")
-        .select("id, user_id, title, message, read_at, created_at")
+        .select("id, user_id, title, message, is_read, created_at")
         .order("created_at", { ascending: false })
         .limit(200);
       if (error) {
@@ -205,7 +209,7 @@ function NotificationsList({ search }: { search: string }) {
   const visible = useMemo(() => {
     const s = search.trim().toLowerCase();
     return rows.filter((r) => {
-      if (filter === "unread" && r.read_at) return false;
+      if (filter === "unread" && r.is_read) return false;
       if (!s) return true;
       return (
         (r.title ?? "").toLowerCase().includes(s) ||
@@ -217,14 +221,15 @@ function NotificationsList({ search }: { search: string }) {
   const markRead = async (id: string) => {
     const { error } = await (supabase as any)
       .from("notifications")
-      .update({ read_at: new Date().toISOString() })
+      .update({ is_read: true })
       .eq("id", id);
     if (error) {
       toast({ title: "Could not mark read", description: error.message, variant: "destructive" });
       return;
     }
-    setRows((r) => r.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n)));
+    setRows((r) => r.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
   };
+
 
   if (loading) return <p className="text-xs text-muted-foreground">Loading…</p>;
 
@@ -244,14 +249,14 @@ function NotificationsList({ search }: { search: string }) {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-medium truncate">{n.title || "Notification"}</p>
-                    {!n.read_at && <Badge variant="secondary" className="text-[10px]">Unread</Badge>}
+                    {!n.is_read && <Badge variant="secondary" className="text-[10px]">Unread</Badge>}
                   </div>
                   {n.message && <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{n.message}</p>}
                   <p className="text-[10px] text-muted-foreground/70 mt-1">
                     {new Date(n.created_at).toLocaleString()} · user {n.user_id?.slice(0, 8) ?? "—"}
                   </p>
                 </div>
-                {!n.read_at && (
+                {!n.is_read && (
                   <Button size="sm" variant="ghost" onClick={() => markRead(n.id)}>Mark read</Button>
                 )}
               </div>
@@ -397,3 +402,93 @@ function ExportActivityButton() {
     </Button>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/* Communication Health — 5-second status snapshot                     */
+/* ------------------------------------------------------------------ */
+
+type HealthCounts = {
+  unread: number;
+  invitations: number;
+  scheduled: number;
+  supportOpen: number;
+  failed: number;
+};
+
+function HealthStrip({ onJump }: { onJump: (t: TabKey) => void }) {
+  const [c, setC] = useState<HealthCounts | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const q = supabase as any;
+      const [unread, invites, support, failed] = await Promise.all([
+        q.from("notifications").select("id", { count: "exact", head: true }).eq("is_read", false),
+        q.from("premium_invitations").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        q.from("support_requests").select("id", { count: "exact", head: true }).in("status", ["open", "waiting"]),
+        q.from("email_send_log").select("id", { count: "exact", head: true }).in("status", ["dlq", "failed", "bounced"]).gte("created_at", since),
+      ]);
+      if (cancelled) return;
+      setC({
+        unread: unread?.count ?? 0,
+        invitations: invites?.count ?? 0,
+        scheduled: 0, // scheduled broadcasts land in the queue; surface 0 when none pending
+        supportOpen: support?.count ?? 0,
+        failed: failed?.count ?? 0,
+      });
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const items: {
+    label: string;
+    value: number | null;
+    tone: "neutral" | "warn" | "danger";
+    onClick: () => void;
+  }[] = [
+    { label: "Unread Messages",     value: c?.unread ?? null,      tone: (c?.unread ?? 0) > 0 ? "warn" : "neutral",   onClick: () => onJump("notifications") },
+    { label: "Pending Invitations", value: c?.invitations ?? null, tone: "neutral",                                    onClick: () => onJump("invitations") },
+    { label: "Scheduled Broadcasts",value: c?.scheduled ?? null,   tone: "neutral",                                    onClick: () => onJump("broadcast") },
+    { label: "Open Support Tickets",value: c?.supportOpen ?? null, tone: (c?.supportOpen ?? 0) > 0 ? "warn" : "neutral", onClick: () => onJump("support") },
+    { label: "Failed Deliveries",   value: c?.failed ?? null,      tone: (c?.failed ?? 0) > 0 ? "danger" : "neutral",  onClick: () => onJump("activity") },
+  ];
+
+  return (
+    <Card className="p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Communication Health
+          </h3>
+          <p className="text-[11px] text-muted-foreground/80 mt-0.5">
+            Last 7 days · click any card to drill in
+          </p>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+        {items.map((it) => (
+          <button
+            key={it.label}
+            onClick={it.onClick}
+            className={`text-left rounded-lg border px-3 py-3 transition hover:bg-secondary/20 ${
+              it.tone === "danger"
+                ? "border-destructive/40 bg-destructive/5"
+                : it.tone === "warn"
+                ? "border-amber-500/30 bg-amber-500/5"
+                : "border-border/50 bg-secondary/5"
+            }`}
+          >
+            <div className={`text-2xl font-semibold tabular-nums ${
+              it.tone === "danger" ? "text-destructive" : it.tone === "warn" ? "text-amber-500" : "text-foreground"
+            }`}>
+              {it.value === null ? "—" : it.value}
+            </div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">{it.label}</div>
+          </button>
+        ))}
+      </div>
+    </Card>
+  );
+}
+

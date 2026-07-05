@@ -73,8 +73,8 @@ async function walkHandle(
   prefix: string,
   acc: ScannedFile[],
 ): Promise<void> {
-  // @ts-expect-error — .values() is standard but not yet in every TS lib.dom
-  for await (const entry of dirHandle.values()) {
+  const iter = (dirHandle as unknown as { values: () => AsyncIterableIterator<FileSystemHandle> }).values();
+  for await (const entry of iter) {
     if (entry.kind === "file") {
       if (!MEDIA_EXT_RE.test(entry.name)) continue;
       const file = await entry.getFile();

@@ -98,8 +98,7 @@ export function scanFileList(list: FileList): ScanResult {
   let rootLabel = "External media";
   for (let i = 0; i < list.length; i++) {
     const f = list[i];
-    // @ts-expect-error webkitRelativePath is present on directory-picked inputs.
-    const rel: string = f.webkitRelativePath || f.name;
+    const rel: string = (f as File & { webkitRelativePath?: string }).webkitRelativePath || f.name;
     if (!MEDIA_EXT_RE.test(f.name)) continue;
     const parts = rel.split("/");
     if (parts.length > 1 && rootLabel === "External media") rootLabel = parts[0];

@@ -52,6 +52,35 @@ export async function getStudioWorkspaceIds(ctx: ToolContext): Promise<string[]>
   return Array.from(ids);
 }
 
+export function notCreator() {
+  return {
+    content: [
+      {
+        type: "text" as const,
+        text: "This tool is available to StreamVista Creator accounts only. Contact support if you believe you should have access.",
+      },
+    ],
+    isError: true as const,
+  };
+}
+
+/**
+ * Returns true when the signed-in caller holds a Creator role. Uses the
+ * existing `user_roles` table under RLS — the same source `useAuth` reads.
+ * "content_owner" is the current Creator role; the legacy "creator" enum value
+ * is also accepted for accounts migrated from the earlier data model.
+ */
+export async function isCreatorUser(ctx: ToolContext): Promise<boolean> {
+  const uid = ctx.getUserId();
+  if (!uid) return false;
+  const { data } = await userClient(ctx)
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", uid);
+  const roles = (data ?? []).map((r: any) => r.role as string);
+  return roles.includes("content_owner") || roles.includes("creator");
+}
+
 export function formatBytes(bytes: number | null | undefined): string {
   if (!bytes || bytes <= 0) return "0 B";
   const units = ["B", "KB", "MB", "GB", "TB"];

@@ -1167,7 +1167,7 @@ export default function StudioDashboard() {
             totalGb={totalGb}
             usedGb={usedGbTotal}
             onIngest={startIngest}
-            onOpenLibrary={() => setTab("media")}
+            onOpenLibrary={() => setTab("workspace")}
             onNew={() => { setProductionsFormOpen(true); setTab("productions"); }}
             onEdit={() => { setProductionsFormOpen(false); setTab("productions"); }}
             onSwitch={() => { setProductionsFormOpen(false); setTab("productions"); }}

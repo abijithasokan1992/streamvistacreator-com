@@ -88,7 +88,7 @@ export default function LegacyRecoveryBanner({ onNavigate }: { onNavigate?: (s: 
           return {
             id: r.id, title: r.title, synopsis: r.synopsis, language: r.language,
             duration_minutes: r.duration_minutes, status: r.status, metadata: meta,
-            assetKinds: kinds, steps, percent: Math.round((done / steps.length) * 100),
+            assetKinds: cats, steps, percent: Math.round((done / steps.length) * 100),
           };
         });
 

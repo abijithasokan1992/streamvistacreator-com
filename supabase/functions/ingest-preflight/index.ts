@@ -63,15 +63,17 @@ function logDenied(reason: Reason, ctx: Record<string, unknown>) {
 
 function respond(status: number, body: {
   ok: boolean; reason?: Reason; message?: string;
-}) {
+}, cors: HeadersInit) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...cors, "Content-Type": "application/json" },
   });
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const cors = buildCorsHeaders(req);
+  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+
 
   try {
     const authHeader = req.headers.get("Authorization") ?? "";

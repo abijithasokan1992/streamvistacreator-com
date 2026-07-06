@@ -113,7 +113,15 @@ export default function AuthCallback() {
         }
 
         setMessage("Opening your workspace…");
-        navigate(dashboardForRole(primary), { replace: true });
+        const dash = dashboardForRole(primary);
+        // First-login / account-creation intro — one-time, skippable, non-blocking.
+        let seen = false;
+        try { seen = !!localStorage.getItem(`sv:seen-workspace-intro:${user.id}`); } catch { /* noop */ }
+        if (!seen) {
+          navigate(`/my-workspace?first=1&next=${encodeURIComponent(dash)}`, { replace: true });
+        } else {
+          navigate(dash, { replace: true });
+        }
       } catch (err) {
         console.error("auth callback failed", err);
         toast.error("Couldn't complete sign-in. Please try again.");

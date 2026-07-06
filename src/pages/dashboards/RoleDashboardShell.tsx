@@ -50,6 +50,9 @@ export default function RoleDashboardShell({
           </Link>
           <div className="flex items-center gap-3">
             <ThemeToggle />
+            <Link to="/my-workspace" className="text-xs text-muted-foreground hover:text-foreground">
+              My Workspace
+            </Link>
             <button
               onClick={signOut}
               className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5"

@@ -94,6 +94,12 @@ export default function ContentOwnerDashboard() {
             <EntitlementChip />
             <CreatorGuide />
             <ThemeToggle />
+            <Link
+              to="/my-workspace"
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              My Workspace
+            </Link>
             <button
               onClick={signOut}
               className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5"

@@ -44,6 +44,7 @@ import MyStudioProfile from "./pages/profile/MyStudioProfile.tsx";
 import StudioAdvancedSettings from "./pages/dashboards/StudioAdvancedSettings.tsx";
 import StudioProfileOnboardingGate from "./components/studio/StudioProfileOnboardingGate.tsx";
 import IngestEnginePage from "./pages/studio/IngestEngine.tsx";
+import MyWorkspace from "./pages/MyWorkspace.tsx";
 import AdminHome from "./pages/AdminHome.tsx";
 import AdminIntegrations from "./pages/AdminIntegrations.tsx";
 import AdminResearch from "./pages/AdminResearch.tsx";
@@ -148,6 +149,7 @@ const PublicRoutes = () => (
     <Route path="/dashboard/studio/profile" element={<OnboardingGate><MyStudioProfile /></OnboardingGate>} />
     <Route path="/dashboard/studio/settings/advanced" element={<OnboardingGate><RoleGate allow={["studio"]}><StudioAdvancedSettings /></RoleGate></OnboardingGate>} />
     <Route path="/studio/ingest/engine" element={<OnboardingGate><RoleGate allow={["studio"]}><IngestEnginePage /></RoleGate></OnboardingGate>} />
+    <Route path="/my-workspace" element={<MyWorkspace />} />
     <Route path="/dashboard/localization" element={<CanonicalDashboardRedirect />} />
     <Route path="/dashboard/distribution" element={<CanonicalDashboardRedirect />} />
 

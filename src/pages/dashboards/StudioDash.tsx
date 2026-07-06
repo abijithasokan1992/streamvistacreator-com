@@ -1176,6 +1176,7 @@ export default function StudioDashboard() {
             onInviteTeam={() => setTab("workspace")}
             onOpenBilling={() => setTab("storage")}
             onOpenStorage={() => setTab("storage")}
+            onOpenReports={() => setTab("workspace")}
             productionHeroSlot={
               <ProductionHero
                 workspaceId={workspaceId ?? null}

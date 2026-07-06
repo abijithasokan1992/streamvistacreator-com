@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
     const tools = {
       find_productions: tool({
         description:
-          "Search the user's productions (projects) by keyword. Returns id, name, production_number, status, updated_at.",
+          "Search the user's productions (projects) by keyword. Returns id, name, production_number (from crew.title_number), updated_at.",
         inputSchema: z.object({
           query: z.string().optional().describe("Free-text keyword. Omit to list recent."),
           limit: z.number().min(1).max(25).default(10),
@@ -75,13 +75,19 @@ Deno.serve(async (req) => {
         execute: async ({ query, limit }) => {
           let q = supa
             .from("projects")
-            .select("id, name, production_number, status, updated_at")
+            .select("id, name, crew, updated_at")
             .order("updated_at", { ascending: false })
             .limit(limit ?? 10);
           if (query && query.trim()) q = q.ilike("name", `%${query.trim()}%`);
           const { data, error } = await q;
           if (error) return { error: "query_failed" };
-          return { productions: data ?? [] };
+          const productions = (data ?? []).map((r: any) => ({
+            id: r.id,
+            name: r.name,
+            production_number: (r.crew && typeof r.crew === "object" ? (r.crew as any).title_number : null) ?? null,
+            updated_at: r.updated_at,
+          }));
+          return { productions };
         },
       }),
 
@@ -90,13 +96,16 @@ Deno.serve(async (req) => {
           "List recent ingest jobs (upload/proxy/archive). Optionally filter by production id and status.",
         inputSchema: z.object({
           production_id: z.string().uuid().optional(),
-          status: z.enum(["queued", "running", "succeeded", "failed", "cancelled"]).optional(),
+          status: z.enum([
+            "draft", "scanning", "ready", "uploading", "paused",
+            "retrying", "verifying", "completed", "failed", "cancelled",
+          ]).optional(),
           limit: z.number().min(1).max(50).default(20),
         }),
         execute: async ({ production_id, status, limit }) => {
           let q = supa
             .from("ingest_jobs")
-            .select("id, project_id, kind, status, progress, error_message, created_at, updated_at")
+            .select("id, project_id, job_mode, status, total_files, completed_files, failed_files, total_bytes, transferred_bytes, error_message, created_at, updated_at")
             .order("created_at", { ascending: false })
             .limit(limit ?? 20);
           if (production_id) q = q.eq("project_id", production_id);
@@ -109,7 +118,7 @@ Deno.serve(async (req) => {
 
       list_recent_uploads: tool({
         description:
-          "List the user's recent uploaded media (Production Media). Supports free-text search on file name and filters by camera, card, shoot day, or asset kind when those columns exist on the row.",
+          "List the user's recent uploaded media (Production Media). Supports free-text search on file name.",
         inputSchema: z.object({
           query: z.string().optional(),
           status: z.enum(["uploading", "uploaded", "failed", "processing"]).optional(),
@@ -118,7 +127,7 @@ Deno.serve(async (req) => {
         execute: async ({ query, status, limit }) => {
           let q = supa
             .from("recent_uploads")
-            .select("id, file_name, object_key, size_bytes, status, created_at, error_message")
+            .select("id, file_name, object_key, file_size, status, created_at, error_message")
             .order("created_at", { ascending: false })
             .limit(limit ?? 20);
           if (status) q = q.eq("status", status);
@@ -136,10 +145,10 @@ Deno.serve(async (req) => {
         execute: async () => {
           const { data, error } = await supa
             .from("recent_uploads")
-            .select("size_bytes, status");
+            .select("file_size, status");
           if (error) return { error: "query_failed" };
           const rows = data ?? [];
-          const used = rows.reduce((n, r: any) => n + (Number(r.size_bytes) || 0), 0);
+          const used = rows.reduce((n, r: any) => n + (Number(r.file_size) || 0), 0);
           const byStatus: Record<string, number> = {};
           for (const r of rows) byStatus[(r as any).status ?? "unknown"] =
             (byStatus[(r as any).status ?? "unknown"] ?? 0) + 1;
@@ -148,12 +157,12 @@ Deno.serve(async (req) => {
       }),
 
       list_invoices: tool({
-        description: "List the user's recent invoices (billing history).",
+        description: "List the user's recent invoices (billing history). Amounts are in paise (INR minor units).",
         inputSchema: z.object({ limit: z.number().min(1).max(25).default(10) }),
         execute: async ({ limit }) => {
           const { data, error } = await supa
             .from("invoices")
-            .select("id, amount, currency, status, created_at, description")
+            .select("id, invoice_number, total_paise, subtotal_paise, gst_paise, currency, status, created_at, description")
             .order("created_at", { ascending: false })
             .limit(limit ?? 10);
           if (error) return { error: "query_failed" };
@@ -162,7 +171,7 @@ Deno.serve(async (req) => {
       }),
 
       find_invoice: tool({
-        description: "Find a specific invoice by id, description keyword, or status.",
+        description: "Find a specific invoice by id, description keyword, or status. Amounts are in paise.",
         inputSchema: z.object({
           query: z.string().optional(),
           status: z.enum(["paid", "due", "failed", "refunded"]).optional(),
@@ -171,16 +180,17 @@ Deno.serve(async (req) => {
         execute: async ({ query, status, limit }) => {
           let q = supa
             .from("invoices")
-            .select("id, amount, currency, status, created_at, description")
+            .select("id, invoice_number, total_paise, subtotal_paise, gst_paise, currency, status, created_at, description")
             .order("created_at", { ascending: false })
             .limit(limit ?? 5);
           if (status) q = q.eq("status", status);
-          if (query && query.trim()) q = q.or(`description.ilike.%${query.trim()}%,id.ilike.%${query.trim()}%`);
+          if (query && query.trim()) q = q.or(`description.ilike.%${query.trim()}%,invoice_number.ilike.%${query.trim()}%`);
           const { data, error } = await q;
           if (error) return { error: "query_failed" };
           return { invoices: data ?? [] };
         },
       }),
+
 
       research_web: tool({
         description:

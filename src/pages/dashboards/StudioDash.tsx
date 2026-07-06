@@ -1169,7 +1169,7 @@ export default function StudioDashboard() {
             usedGbTotal={usedGbTotal}
             availableGb={availableGb}
             storageLocked={!!quota.locked}
-            currentUserId={null}
+            currentUserId={user?.id ?? null}
             onNewProduction={() => { setProductionsFormOpen(true); setTab("productions"); }}
             onImportMedia={startIngest}
             onOpenProduction={() => setTab("workspace")}

@@ -37,6 +37,7 @@ import IngestMediaDialog, { runIngestValidation } from "@/components/studio/Inge
 import ProductionMediaWorkspace from "@/components/studio/ProductionMediaWorkspace";
 import ProductionSettingsPanel from "@/components/studio/ProductionSettingsPanel";
 import ProductionsManager from "@/components/studio/ProductionsManager";
+import ProductionWorkspace from "@/components/studio/ProductionWorkspace";
 import type { VaultProduct } from "@/lib/studioVault";
 import { useCreatorPaygPrice } from "@/hooks/usePublicPlans";
 import { generateProductionNumber, getProductionNumber } from "@/lib/productionNumber";
@@ -1152,8 +1153,8 @@ export default function StudioDashboard() {
         <TabsList className="grid grid-cols-3 sm:grid-cols-6 w-full">
           <TabsTrigger value="dashboard"><Activity className="w-3.5 h-3.5 mr-1.5" />Dashboard</TabsTrigger>
           <TabsTrigger value="productions"><Clapperboard className="w-3.5 h-3.5 mr-1.5" />Productions</TabsTrigger>
+          <TabsTrigger value="workspace"><Film className="w-3.5 h-3.5 mr-1.5" />Production Workspace</TabsTrigger>
           <TabsTrigger value="ingest"><UploadCloud className="w-3.5 h-3.5 mr-1.5" />Ingest</TabsTrigger>
-          <TabsTrigger value="media"><Film className="w-3.5 h-3.5 mr-1.5" />Production Media</TabsTrigger>
           <TabsTrigger value="storage"><Database className="w-3.5 h-3.5 mr-1.5" />Storage</TabsTrigger>
           <TabsTrigger value="settings"><Wrench className="w-3.5 h-3.5 mr-1.5" />Settings</TabsTrigger>
         </TabsList>
@@ -1200,7 +1201,7 @@ export default function StudioDashboard() {
           <ProductionsManager
             activeProjectId={activeProjectId}
             onSetActive={setActiveProjectId}
-            onOpenProduction={() => setTab("media")}
+            onOpenProduction={(id) => { setActiveProjectId(id); setTab("workspace"); }}
             initialFormOpen={productionsFormOpen}
             onFormClose={() => setProductionsFormOpen(false)}
           />
@@ -1213,13 +1214,43 @@ export default function StudioDashboard() {
           />
         </TabsContent>
 
-        <TabsContent value="media" className="mt-6">
-          <ProductionMediaWorkspace
-            workspaceId={workspaceId ?? null}
-            activeProjectId={activeProjectId}
-            activeProjectName={activeProject?.name ?? null}
-            activeProjectNumber={getProductionNumber(activeProject)}
-          />
+        <TabsContent value="workspace" className="mt-6">
+          {activeProject ? (
+            <ProductionWorkspace
+              project={activeProject as any}
+              workspaceId={workspaceId ?? null}
+              onBack={() => setTab("productions")}
+              onEdit={() => setTab("productions")}
+              onShare={() => setTab("productions")}
+              filesSlot={
+                <ProductionMediaWorkspace
+                  workspaceId={workspaceId ?? null}
+                  activeProjectId={activeProjectId}
+                  activeProjectName={activeProject?.name ?? null}
+                  activeProjectNumber={getProductionNumber(activeProject)}
+                />
+              }
+              uploadsSlot={
+                <StudioIngest
+                  activeProjectId={activeProjectId ?? undefined}
+                  activeProjectDefaults={ingestDefaults}
+                />
+              }
+              activitySlot={
+                <ActivityPanel
+                  activeProjectId={activeProjectId}
+                  activeProjectName={activeProject?.name ?? null}
+                  activeProjectNumber={getProductionNumber(activeProject)}
+                />
+              }
+            />
+          ) : (
+            <div className="rounded-2xl border border-dashed border-border/50 bg-secondary/10 p-8 text-center">
+              <Clapperboard className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">Pick or create a production to open its workspace.</p>
+              <Button size="sm" className="mt-4" onClick={() => setTab("productions")}>Go to Productions</Button>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="storage" className="mt-6">

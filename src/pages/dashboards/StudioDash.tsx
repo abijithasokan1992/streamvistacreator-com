@@ -1160,41 +1160,41 @@ export default function StudioDashboard() {
           <TabsTrigger value="settings"><Wrench className="w-3.5 h-3.5 mr-1.5" />Settings</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="dashboard" className="mt-6 space-y-6">
-          {/* Active Production */}
-          <ProductionHero
+        <TabsContent value="dashboard" className="mt-6">
+          <StudioDashboardHome
             workspaceId={workspaceId ?? null}
             activeProject={activeProject}
-            totalGb={totalGb}
-            usedGb={usedGbTotal}
-            onIngest={startIngest}
-            onOpenLibrary={() => setTab("workspace")}
-            onNew={() => { setProductionsFormOpen(true); setTab("productions"); }}
-            onEdit={() => { setProductionsFormOpen(false); setTab("productions"); }}
-            onSwitch={() => { setProductionsFormOpen(false); setTab("productions"); }}
-          />
-
-          {/* System Status */}
-          <SystemStatusStrip
-            storageReady={paidGbTotal > 0 && availableGb > 0}
-            billingActive={paidGbTotal > 0}
+            paidGbTotal={paidGbTotal}
+            usedGbTotal={usedGbTotal}
+            availableGb={availableGb}
             storageLocked={!!quota.locked}
-          />
-
-          {/* Storage summary */}
-          <StudioPlanStrip
-            hasPaidVault={paidGbTotal > 0}
-            hasTesting={quota.testingModeEnabled && quota.testingOverrideGb > 0}
-            totalGb={totalGb}
-            usedGb={usedGbTotal}
-            onUpgrade={() => setTab("storage")}
-          />
-
-          {/* Recent Activity */}
-          <ActivityPanel
-            activeProjectId={activeProjectId}
-            activeProjectName={activeProject?.name ?? null}
-            activeProjectNumber={getProductionNumber(activeProject)}
+            currentUserId={null}
+            onNewProduction={() => { setProductionsFormOpen(true); setTab("productions"); }}
+            onImportMedia={startIngest}
+            onOpenProduction={() => setTab("workspace")}
+            onInviteTeam={() => setTab("workspace")}
+            onOpenBilling={() => setTab("storage")}
+            onOpenStorage={() => setTab("storage")}
+            productionHeroSlot={
+              <ProductionHero
+                workspaceId={workspaceId ?? null}
+                activeProject={activeProject}
+                totalGb={totalGb}
+                usedGb={usedGbTotal}
+                onIngest={startIngest}
+                onOpenLibrary={() => setTab("workspace")}
+                onNew={() => { setProductionsFormOpen(true); setTab("productions"); }}
+                onEdit={() => { setProductionsFormOpen(false); setTab("productions"); }}
+                onSwitch={() => { setProductionsFormOpen(false); setTab("productions"); }}
+              />
+            }
+            activityPanelSlot={
+              <ActivityPanel
+                activeProjectId={activeProjectId}
+                activeProjectName={activeProject?.name ?? null}
+                activeProjectNumber={getProductionNumber(activeProject)}
+              />
+            }
           />
         </TabsContent>
 

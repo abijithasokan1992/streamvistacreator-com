@@ -67,17 +67,17 @@ Deno.serve(async (req) => {
     // Pull a compact list of item metadata to feed the model.
     const { data: items } = await admin
       .from("ingest_job_items")
-      .select("file_name, relative_path, byte_size, mime_type, status, proxy_status, checksum_sha256")
+      .select("file_name, relative_path, size_bytes, mime_guess, status, proxy_status, client_checksum")
       .eq("job_id", jobId)
       .limit(50);
 
     const itemSummary = (items ?? []).map((it: any) => ({
       name: it.relative_path || it.file_name,
-      size: Number(it.byte_size ?? 0),
-      mime: it.mime_type || null,
+      size: Number(it.size_bytes ?? 0),
+      mime: it.mime_guess || null,
       status: it.status || null,
       proxy: it.proxy_status || null,
-      hasChecksum: !!it.checksum_sha256,
+      hasChecksum: !!it.client_checksum,
     }));
 
     // 3) Flip to scanning.

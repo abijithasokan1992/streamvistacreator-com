@@ -61,22 +61,22 @@ export default function LegacyRecoveryBanner({ onNavigate }: { onNavigate?: (s: 
         const ids = list.map((r) => r.id);
         const { data: assets } = await (supabase as any)
           .from("title_assets")
-          .select("title_id, kind")
+          .select("title_id, category")
           .in("title_id", ids);
 
         const byTitle = new Map<string, Set<string>>();
         for (const a of (assets ?? []) as any[]) {
           const set = byTitle.get(a.title_id) ?? new Set<string>();
-          set.add(String(a.kind).toLowerCase());
+          set.add(String(a.category).toLowerCase());
           byTitle.set(a.title_id, set);
         }
 
         const computed: LegacyTitle[] = list.map((r) => {
           const meta = (r.metadata ?? {}) as Record<string, any>;
-          const kinds = byTitle.get(r.id) ?? new Set<string>();
-          const hasPoster = kinds.has("poster") || kinds.has("key_art");
-          const hasTrailer = kinds.has("trailer");
-          const hasMaster = kinds.has("master") || kinds.has("video") || kinds.has("proxy");
+          const cats = byTitle.get(r.id) ?? new Set<string>();
+          const hasPoster = cats.has("poster") || cats.has("key_art") || cats.has("artwork");
+          const hasTrailer = cats.has("trailer");
+          const hasMaster = cats.has("master") || cats.has("video") || cats.has("proxy") || cats.has("feature");
           const steps = [
             { label: "Title & synopsis", done: !!r.title && !!r.synopsis && r.synopsis.trim().length > 20 },
             { label: "Language & runtime", done: !!r.language && !!r.duration_minutes },
@@ -88,7 +88,7 @@ export default function LegacyRecoveryBanner({ onNavigate }: { onNavigate?: (s: 
           return {
             id: r.id, title: r.title, synopsis: r.synopsis, language: r.language,
             duration_minutes: r.duration_minutes, status: r.status, metadata: meta,
-            assetKinds: kinds, steps, percent: Math.round((done / steps.length) * 100),
+            assetKinds: cats, steps, percent: Math.round((done / steps.length) * 100),
           };
         });
 

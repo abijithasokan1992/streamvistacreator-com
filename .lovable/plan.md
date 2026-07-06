@@ -1,73 +1,111 @@
-# Simplified Ingest Workflow
+# Media Ingest Engine — Design Plan
 
-Preserve the existing StreamVista layout, navigation, styling, and page structure. All changes are additive: a new automated ingest surface layered inside the existing Ingest page and Storage page, plus background workers.
+A safety-first, resumable, checksum-verified ingest pipeline for DIT / studio / broadcast workflows. Preserves the existing `ingest_jobs` + `ingest_job_items` schema, OCI upload pipeline, and Supabase RLS. No new backend surface unless listed below.
 
-## User-visible surface (no redesign)
+## 1. Safety contract (non-negotiable)
 
-Inside the current Ingest page (`src/components/studio/ingest/StudioIngest.tsx`) add one new panel — **"Auto Ingest"** — placed at the top of the existing tab, using the current Card/Button/Tabs primitives. The existing manual dialogs (`IngestMediaDialog`, `HardDiskIntakeDialog`, `CameraToCloudIngest`) stay untouched as advanced fallbacks.
+- **Read-only source access.** Source `FileSystemDirectoryHandle` is opened with `mode: "read"`. `<input webkitdirectory>` fallback is inherently read-only. No `createWritable`, no `remove()`, no `move()` calls anywhere in the ingest path — enforced by a lint rule (`no-restricted-syntax`) on `src/lib/ingest/**`.
+- **No source mutation.** We never rename, delete, or touch source mtime. Copy = read stream → OCI write. Verification reads the source a second time; it never writes back.
+- **No unsafe permissions.** No `navigator.usb`, no `navigator.hid`, no elevated prompts, no native helpers. Everything runs inside the standard File System Access sandbox the user explicitly granted per-session.
+- **Graceful device removal.** All reads are wrapped; `NotFoundError` / `NotReadableError` / `AbortError` transition the job item to `paused_device_lost` (new state), not `failed`, so resume works when the device is re-mounted.
 
-The Auto Ingest panel shows exactly three states:
+## 2. Device coverage matrix
 
-1. **Waiting for device** — instructions plus a "Connect device" button that opens the browser File System Access picker (or falls back to file input).
-2. **Device detected** — device label, detected clip count, total size, camera type guess, a production dropdown pre-filled with the current active production, and a single **Start Import** button.
-3. **Importing** — a compact progress row: filename, % complete, upload speed, ETA, plus a "Details" link that opens the existing IngestTimeline.
+| Source | Path |
+|---|---|
+| SD / CFexpress / USB / SSD / HDD / RAID (mounted as a folder) | `showDirectoryPicker({ mode: "read" })` on Chromium; `<input webkitdirectory>` fallback on Firefox/Safari |
+| NAS (SMB/AFP mounts) | Same — appears as a mounted folder to the OS |
+| Phones / tablets over USB (MTP → mounted) | Same folder picker |
+| Phones / tablets in-browser | Existing `SmartDropUploader` (already file-picker based) |
+| Camera direct (CCU / C2C) | Existing `CameraToCloudIngest` component — untouched |
 
-Everything else the user asked for (checksums, dedupe, resume, proxy, thumbnails, metadata, retries) runs in the background and only surfaces as a toast if manual action is required.
+No native drivers, no OS bypass. If a device is not mounted by the OS, we surface a clear "Mount the device in Finder / Explorer / Files, then click Rescan" message.
 
-The Storage page (`src/pages/dashboards/StudioAdvancedSettings.tsx` / existing storage widgets) gets one additional read-only strip — **"Live ingest"** — showing: storage used, object count, active uploads, queue depth, current speed, last upload, proxy queue, OCI health dot. No new page, no layout change.
+## 3. Architecture
 
-## Detection flow
+```text
+ ┌─ Device picker ─────────┐    ┌─ Planner ──────────────┐    ┌─ Transfer worker pool ─┐
+ │ scanDirectoryHandle()   │───▶│ classify + dedupe +    │───▶│ chunked read → OCI     │
+ │ scanFileList()          │    │ format validation +    │    │ multipart upload +     │
+ │ (existing)              │    │ manifest build         │    │ per-chunk SHA-256      │
+ └─────────────────────────┘    └─────────┬──────────────┘    └───────────┬────────────┘
+                                          │                               │
+                                          ▼                               ▼
+                                ┌────────────────────┐          ┌────────────────────┐
+                                │ ingest_jobs (row)  │          │ ingest_job_items   │
+                                │ + manifest JSONB   │◀────────▶│ status machine +   │
+                                │ + resume_token     │          │ verify_state       │
+                                └────────────────────┘          └────────────────────┘
+```
 
-Browser supports two device paths:
+New client modules (all under `src/lib/ingest/`, none touch existing files except to import):
 
-- **File System Access API** (Chrome/Edge on desktop): `showDirectoryPicker()` returns a directory handle. We walk it, group by top-level folder (matches ARRI/RED/BMD card layouts), sniff for signature paths (`XDROOT/`, `PRIVATE/AVCHD/`, `CLIP/`, `DCIM/`, `RDC/`, `A001_...`) to label the camera family, and list media files by extension.
-- **Fallback** (`<input type="file" webkitdirectory multiple />`): same walker, no persistent handle — user re-picks on retry.
+- `deviceManifest.ts` — turns a `ScanResult` into a stable manifest keyed by `(relativePath, size, mtime)`; dedupes against prior `ingest_job_items` for the same workspace using the client-side SHA (small files) or `(size + head-1MB-hash)` fingerprint (large files).
+- `formatPolicy.ts` — thin wrapper over existing `mediaIntelligence.classifyFile` + `supabase/functions/_shared/uploadValidation.ts` rules exposed to the client via a small mirrored constant. Rejects forbidden extensions before we open a job.
+- `transferWorker.ts` — Web Worker that streams 8 MiB chunks, computes SHA-256 incrementally (`crypto.subtle` incremental via `@noble/hashes` sha256, already tree-shakeable), pushes each chunk through the existing `ociMultipartUpload` driver, and reports progress.
+- `verifier.ts` — after all chunks land, re-reads the source file a second time to produce an independent whole-file SHA-256, compares to (a) the incremental hash from transfer, and (b) the server-side checksum the OCI pipeline already computes. Three-way match = `verified`. Two-of-three mismatch = `corrupt`, item quarantined, source untouched.
+- `resumeController.ts` — persists a `resume_token` (job_id + per-item byte offsets + chunk ETags) in `ingest_jobs.metadata.resume` after every successful chunk. On reopen, we walk the manifest, skip items already `verified`, and continue in-flight items from their last acked chunk.
+- `ingestEngine.ts` — orchestrator that stitches the above and exposes `startIngest()`, `pauseIngest()`, `resumeIngest()`, `cancelIngest()` to the UI.
 
-Supported extensions map to the requested formats: `.ari .arx` (ARRIRAW), `.r3d` (RED), `.braw` (Blackmagic), `.crm` (Canon RAW Light), `.dng` (CinemaDNG sequence), `.mov .mp4 .mxf` (ProRes/DNxHR/H.264/H.265 wrappers). Resolution and codec are read from the file container later, server-side.
+## 4. Status machine (per item)
 
-## Background pipeline
+`queued → hashing → uploading → server_checksum → verifying → verified`
+Side branches: `duplicate_skipped`, `format_rejected`, `paused_device_lost`, `paused_user`, `corrupt`, `failed`.
 
-The existing `ingest_jobs` / `ingest_job_items` / `ingest_telemetry` tables already model this. We add:
+All states already fit `ingest_job_items.status` (text). New values are additive — no migration required beyond documenting them. The three "transient" states that drive polling (`hashing`, `uploading`, `verifying`) plug into the existing `IngestQCPanel` polling loop.
 
-- `client_checksum` (bytea) and `dedupe_key` on `ingest_job_items` so duplicates against past imports are skipped without re-upload.
-- `proxy_status`, `thumbnail_status`, `technical_metadata` (jsonb) on `ingest_job_items` — populated after upload finishes.
-- `resume_token` on `upload_sessions` for OCI multipart resume (column already partially exists — verify and reuse).
+## 5. Duplicate detection
 
-Client work per file (Web Worker):
+Two-tier:
+1. **Local, pre-transfer:** manifest fingerprint = `size + first-1MB-SHA + last-1MB-SHA`. Matches within the current pick are collapsed; matches against prior `ingest_job_items` (queried by `workspace_id` + fingerprint stored in `metadata.fingerprint`) mark the item `duplicate_skipped` before any upload.
+2. **Server, post-transfer:** existing OCI pipeline's full checksum stays authoritative. A late duplicate is retagged `duplicate_skipped` and the OCI object is garbage-collected by the existing lifecycle rule.
 
-1. Stream the file, compute SHA-256 in chunks (checksum + dedupe key).
-2. Ask edge function `ingest-start` for an OCI multipart URL set; if the checksum already exists under this workspace, mark item `duplicate` and skip.
-3. Upload parts to OCI directly via presigned URLs (existing `src/lib/ociMultipartUpload.ts`), reporting progress back to `ingest_telemetry` every N MB.
-4. On network error, exponential backoff up to 5 tries; store `resume_token` so a page reload picks up where it left off.
-5. On completion, call `ingest-complete` which enqueues proxy + thumbnail + metadata extraction (server-side via existing job runner).
+## 6. Corruption protection
 
-The original bytes are only ever read, never written — we never touch the source directory handle in write mode.
+- Chunk-level SHA-256 sent with each multipart part; OCI rejects mismatched parts (existing behavior).
+- Whole-file SHA-256 computed twice on the client (streaming during upload + independent re-read in `verifier.ts`).
+- Server-side checksum from the existing pipeline is the third witness.
+- Any 2-of-3 disagreement → item `corrupt`, transfer halted for that item only, source never touched, UI surfaces which witness disagreed.
 
-## Camera-to-Cloud (scaffold only)
+## 7. Resume
 
-Add a stub edge function `c2c-session` that mints a short-lived ingest token bound to a production + workspace. The existing `CameraToCloudIngest.tsx` component gets a "Connect" button wired to this endpoint but the actual wireless transport is not built in this pass — everything after token mint reuses the same background pipeline.
+- `ingest_jobs.metadata.resume = { version: 1, items: { [item_id]: { uploadId, parts: [{n, etag, sha}], offset } } }`
+- Written after each acknowledged chunk (throttled to 1/s).
+- On page reload / device replug, `resumeController.rehydrate(jobId)` loads the token, verifies each item's source still matches its manifest fingerprint (size + mtime + head hash), and resumes. If the source changed, the item goes to `source_changed` and waits for user decision — we never silently re-upload.
 
-## Files touched
+## 8. UI
 
-- New: `src/components/studio/ingest/AutoIngestPanel.tsx` (the 3-state UI).
-- New: `src/lib/ingest/deviceScanner.ts` (directory walker + camera sniff).
-- New: `src/lib/ingest/checksumWorker.ts` (Web Worker for SHA-256).
-- New: `src/lib/ingest/autoIngestPipeline.ts` (orchestrates upload + retries).
-- New: `src/components/studio/ingest/LiveIngestStrip.tsx` (read-only storage widget).
-- Edit: `src/components/studio/ingest/StudioIngest.tsx` — mount `AutoIngestPanel` at top of existing tab; no other change.
-- Edit: existing Storage page — mount `LiveIngestStrip` inside the current card grid.
-- New edge functions: `ingest-start`, `ingest-complete`, `ingest-proxy` (proxy generation kicker), `c2c-session`.
-- Migration: additive columns on `ingest_job_items` and `upload_sessions` — no destructive schema change.
+New route: `/studio/ingest/engine` (studio-scoped). Three panels:
 
-## Out of scope for this pass
+- **Source panel** — picker button, mounted-device summary (label, family from existing `deviceScanner`, total bytes, format list), Rescan, Eject-safe indicator.
+- **Plan panel** — manifest table: filename, size, detected type, fingerprint status (new / duplicate / rejected), destination bucket/prefix. Bulk actions: exclude, mark as proxy, override category (only where confidence < 0.6).
+- **Transfer panel** — per-item progress bars, throughput, ETA, verify state (3-way witnesses shown as tiny badges), pause/resume/cancel, detailed log drawer with copy-to-clipboard and CSV export.
 
-- Actual server-side proxy transcoding (needs a media worker — we stub the job row and mark `pending`).
-- NAS discovery (listed as future in the request).
-- Wireless C2C transport (scaffold only).
-- Any change to global navigation, dashboard layout, colors, or typography.
+All panels use existing Studio Professional dark tokens (`zinc-950` surface) — no hardcoded colors.
 
-## Confirm before I start
+## 9. Backend touchpoints (minimal)
 
-1. Auto-select the "current active production" from the last-viewed production in `productions` — OK, or require explicit selection every time?
-2. OCI multipart uploads already work in the codebase — I'll reuse `ociMultipartUpload.ts` as-is. Confirm this is still the intended path (vs. edge-function proxied uploads).
-3. Proxy generation: leave the server side as a stub (row marked `pending`) for now, or is a media worker already running that I should hook into?
+- **No schema migration.** All new fields live inside existing JSONB (`ingest_jobs.metadata`, `ingest_job_items.metadata`).
+- **No new edge function.** Uses existing `oci-multipart` init/complete + existing `run-qc-scan` post-ingest.
+- **RLS unchanged.** All writes go through the client under the user's JWT; existing policies on `ingest_jobs` / `ingest_job_items` scope by `owner_user_id` / `workspace_id`.
+
+## 10. Observability
+
+- Every state transition writes an `ingest_telemetry` row (table already exists) with `event`, `item_id`, `bytes`, `duration_ms`, `witness_a/b/c` hashes truncated to 12 chars.
+- Client console logs are structured JSON behind a `DEBUG_INGEST` flag; never on by default.
+
+## 11. Out of scope (called out explicitly)
+
+- No LTO / tape offload — different pipeline.
+- No on-device transcoding — proxies remain server-side.
+- No auto-eject — OS-owned.
+- No background-tab transfers on Safari (browser limitation) — we surface a "keep this tab open" banner.
+
+## 12. Rollout
+
+1. Land `src/lib/ingest/{deviceManifest,formatPolicy,transferWorker,verifier,resumeController,ingestEngine}.ts` with unit tests (fingerprint, resume-token round-trip, 3-way verify).
+2. Land `/studio/ingest/engine` route + three panels.
+3. Feature-flag behind `entity_profile.studio_ext.features.ingest_engine_v2` so existing `CameraToCloudIngest` stays default until QA passes.
+4. Enable for internal studios, then GA.
+
+No files are changed in this plan step. On approval I implement modules 1–2 first, wired to a feature flag, without touching the existing ingest components.

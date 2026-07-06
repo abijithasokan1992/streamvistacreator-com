@@ -194,22 +194,42 @@ export default function MyTitlesSection() {
 
 
       {loading ? (
-        <div className="grid place-items-center py-16">
-          <Loader2 className="w-4 h-4 animate-spin text-accent" />
+        <div
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"
+          role="status"
+          aria-label="Loading your titles"
+        >
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="rounded-xl border border-border/40 bg-secondary/5 p-4 flex flex-col gap-3 animate-pulse"
+            >
+              <div className="h-4 w-2/3 bg-secondary/40 rounded" />
+              <div className="h-3 w-1/2 bg-secondary/30 rounded" />
+              <div className="h-4 w-20 bg-secondary/30 rounded-full mt-1" />
+              <div className="flex gap-1.5 mt-auto pt-2">
+                <div className="h-7 flex-1 bg-secondary/30 rounded-md" />
+                <div className="h-7 flex-1 bg-secondary/30 rounded-md" />
+              </div>
+            </div>
+          ))}
+          <span className="sr-only">Loading titles…</span>
         </div>
       ) : titles.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border/50 bg-secondary/5 p-6 sm:p-10 text-center">
-          <Film className="w-6 h-6 text-muted-foreground mx-auto mb-3" />
-          <p className="font-semibold">No titles yet</p>
-          <p className="text-sm text-muted-foreground mt-1 max-w-sm mx-auto">
-            Tap <span className="text-foreground font-medium">New Title</span> above to start your first one. It only takes a name to begin — you can add files later.
+        <div className="rounded-2xl border border-dashed border-border/50 bg-secondary/5 p-8 sm:p-12 text-center">
+          <div className="mx-auto w-12 h-12 rounded-full bg-accent/10 grid place-items-center mb-4">
+            <Film className="w-5 h-5 text-accent" aria-hidden="true" />
+          </div>
+          <h2 className="font-display font-semibold text-lg">No titles yet</h2>
+          <p className="text-sm text-muted-foreground mt-1.5 max-w-sm mx-auto leading-relaxed">
+            Start your first title with just a name — you can add metadata, assets, and legal documents at your own pace.
           </p>
           <button
             onClick={handleStartCreate}
             disabled={freeLimitHit}
-            className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-accent text-accent-foreground text-xs px-3 py-1.5 disabled:opacity-50"
+            className="mt-5 inline-flex items-center gap-1.5 rounded-md bg-accent text-accent-foreground text-sm font-medium px-4 py-2 disabled:opacity-50 hover:bg-accent/90 transition-colors"
           >
-            <Plus className="w-3.5 h-3.5" /> New Title
+            <Plus className="w-4 h-4" aria-hidden="true" /> New Title
           </button>
         </div>
 
@@ -225,37 +245,56 @@ export default function MyTitlesSection() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-          {visible.map((t) => (
-            <article key={t.id} className="rounded-xl border border-border/40 bg-secondary/5 hover:bg-secondary/10 transition-colors p-4 flex flex-col gap-3 min-w-0">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-medium truncate text-sm sm:text-base">{t.title}</h3>
-                  <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
-                    {CONTENT_TYPE_LABEL[t.metadata.format] ?? "Title"} · Updated {new Date(t.updated_at).toLocaleDateString()}
-                  </p>
-                </div>
-                {t.locked && <Lock className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" aria-label="Locked" />}
-              </div>
-              <StatusBadge status={t.status} />
-              <div className="flex items-center gap-1.5 mt-auto pt-2">
-                <button
-                  onClick={() => { setEditorId(t.id); setEditorMode("view"); }}
-                  className="flex-1 inline-flex items-center justify-center gap-1 rounded-md border border-border/50 text-xs px-2 py-1.5 hover:bg-secondary/30"
-                >
-                  <Eye className="w-3 h-3" /> View
-                </button>
-                <button
-                  disabled={t.locked}
-                  onClick={() => { setEditorId(t.id); setEditorMode("edit"); }}
-                  className="flex-1 inline-flex items-center justify-center gap-1 rounded-md border border-border/50 text-xs px-2 py-1.5 hover:bg-secondary/30 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <Pencil className="w-3 h-3" /> Edit
-                </button>
-              </div>
-            </article>
-          ))}
-        </div>
+        <ul
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 list-none p-0"
+          aria-label="Your titles"
+        >
+          {visible.map((t) => {
+            const typeLabel = CONTENT_TYPE_LABEL[t.metadata.format] ?? "Title";
+            const updated = new Date(t.updated_at).toLocaleDateString();
+            return (
+              <li key={t.id} className="min-w-0">
+                <article className="h-full rounded-xl border border-border/40 bg-secondary/5 hover:bg-secondary/10 hover:border-border/60 transition-colors p-4 flex flex-col gap-3 min-w-0 focus-within:ring-2 focus-within:ring-accent/40">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-medium truncate text-sm sm:text-base leading-tight">{t.title}</h3>
+                      <p className="text-[11px] text-muted-foreground mt-1 truncate">
+                        <span>{typeLabel}</span>
+                        <span aria-hidden="true"> · </span>
+                        <span>Updated {updated}</span>
+                      </p>
+                    </div>
+                    {t.locked && (
+                      <Lock
+                        className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5"
+                        aria-label="Locked — submitted for review"
+                      />
+                    )}
+                  </div>
+                  <StatusBadge status={t.status} />
+                  <div className="flex items-center gap-1.5 mt-auto pt-2">
+                    <button
+                      onClick={() => { setEditorId(t.id); setEditorMode("view"); }}
+                      aria-label={`View ${t.title}`}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border border-border/50 text-xs px-2 py-2 min-h-9 hover:bg-secondary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+                    >
+                      <Eye className="w-3.5 h-3.5" aria-hidden="true" /> View
+                    </button>
+                    <button
+                      disabled={t.locked}
+                      onClick={() => { setEditorId(t.id); setEditorMode("edit"); }}
+                      aria-label={t.locked ? `${t.title} is locked` : `Edit ${t.title}`}
+                      title={t.locked ? "Locked while under review" : undefined}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border border-border/50 text-xs px-2 py-2 min-h-9 hover:bg-secondary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <Pencil className="w-3.5 h-3.5" aria-hidden="true" /> Edit
+                    </button>
+                  </div>
+                </article>
+              </li>
+            );
+          })}
+        </ul>
       )}
 
       {editorId && (

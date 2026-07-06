@@ -22,7 +22,7 @@
  *   PREFLIGHT_FAILED            – unexpected internal error (details hidden)
  */
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { buildCorsHeaders } from "../_shared/cors.ts";
 import { z } from "npm:zod@3.23.8";
 
 const BodySchema = z.object({

@@ -79,7 +79,7 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization") ?? "";
     if (!authHeader.toLowerCase().startsWith("bearer ")) {
       logDenied("AUTH_REQUIRED", {});
-      return respond(401, { ok: false, reason: "AUTH_REQUIRED", message: FRIENDLY.AUTH_REQUIRED });
+      return respond(401, { ok: false, reason: "AUTH_REQUIRED", message: FRIENDLY.AUTH_REQUIRED }, cors);
     }
 
     const supabase = createClient(
@@ -92,7 +92,7 @@ Deno.serve(async (req) => {
     const { data: claims, error: claimsErr } = await supabase.auth.getClaims(token);
     if (claimsErr || !claims?.claims?.sub) {
       logDenied("AUTH_REQUIRED", {});
-      return respond(401, { ok: false, reason: "AUTH_REQUIRED", message: FRIENDLY.AUTH_REQUIRED });
+      return respond(401, { ok: false, reason: "AUTH_REQUIRED", message: FRIENDLY.AUTH_REQUIRED }, cors);
     }
     const userId = claims.claims.sub as string;
 
@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
     const parsed = BodySchema.safeParse(raw);
     if (!parsed.success) {
       logDenied("INVALID_INPUT", { user_id: userId });
-      return respond(400, { ok: false, reason: "INVALID_INPUT", message: FRIENDLY.INVALID_INPUT });
+      return respond(400, { ok: false, reason: "INVALID_INPUT", message: FRIENDLY.INVALID_INPUT }, cors);
     }
     const { workspace_id, project_id } = parsed.data;
 
@@ -115,17 +115,17 @@ Deno.serve(async (req) => {
     if (memErr) {
       console.log(JSON.stringify({ level: "error", event: "ingest_preflight_error",
         stage: "member_lookup", code: memErr.code ?? null }));
-      return respond(500, { ok: false, reason: "PREFLIGHT_FAILED", message: FRIENDLY.PREFLIGHT_FAILED });
+      return respond(500, { ok: false, reason: "PREFLIGHT_FAILED", message: FRIENDLY.PREFLIGHT_FAILED }, cors);
     }
     if (!member) {
       logDenied("WORKSPACE_ACCESS_DENIED", { user_id: userId, workspace_id });
-      return respond(403, { ok: false, reason: "WORKSPACE_ACCESS_DENIED", message: FRIENDLY.WORKSPACE_ACCESS_DENIED });
+      return respond(403, { ok: false, reason: "WORKSPACE_ACCESS_DENIED", message: FRIENDLY.WORKSPACE_ACCESS_DENIED }, cors);
     }
     const role = (member as { role: string }).role;
     const isWorkspaceAdmin = role === "owner" || role === "admin";
     if (!isWorkspaceAdmin) {
       logDenied("INSUFFICIENT_ROLE", { user_id: userId, workspace_id, role });
-      return respond(403, { ok: false, reason: "INSUFFICIENT_ROLE", message: FRIENDLY.INSUFFICIENT_ROLE });
+      return respond(403, { ok: false, reason: "INSUFFICIENT_ROLE", message: FRIENDLY.INSUFFICIENT_ROLE }, cors);
     }
 
     // 2. Global admin bypass on the entitlement check — mirrors the policy's
@@ -138,11 +138,11 @@ Deno.serve(async (req) => {
       if (entErr) {
         console.log(JSON.stringify({ level: "error", event: "ingest_preflight_error",
           stage: "entitlement_rpc", code: entErr.code ?? null }));
-        return respond(500, { ok: false, reason: "PREFLIGHT_FAILED", message: FRIENDLY.PREFLIGHT_FAILED });
+        return respond(500, { ok: false, reason: "PREFLIGHT_FAILED", message: FRIENDLY.PREFLIGHT_FAILED }, cors);
       }
       if (!hasPremium) {
         logDenied("PREMIUM_REQUIRED", { user_id: userId, workspace_id });
-        return respond(402, { ok: false, reason: "PREMIUM_REQUIRED", message: FRIENDLY.PREMIUM_REQUIRED });
+        return respond(402, { ok: false, reason: "PREMIUM_REQUIRED", message: FRIENDLY.PREMIUM_REQUIRED }, cors);
       }
     }
 
@@ -158,7 +158,7 @@ Deno.serve(async (req) => {
       // maybeSingle returns null for no rows — treat as missing plan.
       // (Any RLS/permission error just falls through to the RLS gate.)
       logDenied("STORAGE_REQUIRED", { user_id: userId, workspace_id });
-      return respond(402, { ok: false, reason: "STORAGE_REQUIRED", message: FRIENDLY.STORAGE_REQUIRED });
+      return respond(402, { ok: false, reason: "STORAGE_REQUIRED", message: FRIENDLY.STORAGE_REQUIRED }, cors);
     }
 
     // 4. Project belongs to this workspace, if provided.
@@ -170,14 +170,14 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (!proj || (proj as { workspace_id: string }).workspace_id !== workspace_id) {
         logDenied("INVALID_PRODUCTION", { user_id: userId, workspace_id, project_id });
-        return respond(400, { ok: false, reason: "INVALID_PRODUCTION", message: FRIENDLY.INVALID_PRODUCTION });
+        return respond(400, { ok: false, reason: "INVALID_PRODUCTION", message: FRIENDLY.INVALID_PRODUCTION }, cors);
       }
     }
 
-    return respond(200, { ok: true });
+    return respond(200, { ok: true }, cors);
   } catch (e) {
     console.log(JSON.stringify({ level: "error", event: "ingest_preflight_error",
       stage: "uncaught", message: (e as Error).message?.slice(0, 200) ?? null }));
-    return respond(500, { ok: false, reason: "PREFLIGHT_FAILED", message: FRIENDLY.PREFLIGHT_FAILED });
+    return respond(500, { ok: false, reason: "PREFLIGHT_FAILED", message: FRIENDLY.PREFLIGHT_FAILED }, cors);
   }
 });

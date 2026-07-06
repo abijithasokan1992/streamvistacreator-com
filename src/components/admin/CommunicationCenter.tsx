@@ -370,14 +370,14 @@ function ExportActivityButton() {
     try {
       const { data } = await (supabase as any)
         .from("admin_audit_log")
-        .select("id, action, target_type, target_id, actor_user_id, created_at")
+        .select("id, action, target_email, target_user_id, admin_user_id, admin_email, created_at")
         .order("created_at", { ascending: false })
         .limit(1000);
       const rows = data ?? [];
-      const header = "id,action,target_type,target_id,actor_user_id,created_at";
+      const header = "id,action,target_email,target_user_id,admin_user_id,admin_email,created_at";
       const body = rows
         .map((r: any) =>
-          [r.id, r.action, r.target_type ?? "", r.target_id ?? "", r.actor_user_id ?? "", r.created_at]
+          [r.id, r.action, r.target_email ?? "", r.target_user_id ?? "", r.admin_user_id ?? "", r.admin_email ?? "", r.created_at]
             .map((v) => `"${String(v).replace(/"/g, '""')}"`)
             .join(","),
         )

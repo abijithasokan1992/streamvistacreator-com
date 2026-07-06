@@ -80,7 +80,7 @@ export default function MyWorkspace() {
       // Shared: profile completeness, plan/storage summary (creator + studio + buyer).
       const [prof, pa, alloc, titles, workspaces] = await Promise.all([
         supabase.from("user_profiles")
-          .select("display_name, studio_name, first_name, last_name, phone_e164, country_code, onboarding_step, plan_tier")
+          .select("display_name, studio_name, first_name, last_name, whatsapp, onboarding_step, plan_tier")
           .eq("user_id", user.id).maybeSingle(),
         (supabase as any).from("plan_assignments")
           .select("plan:plans(name, storage_gb)")
@@ -97,7 +97,7 @@ export default function MyWorkspace() {
       const name = active?.name || p.studio_name || p.display_name || user.email?.split("@")[0] || "there";
       setDisplayName(name);
 
-      const profileComplete = !!(p.display_name && p.phone_e164 && p.country_code);
+      const profileComplete = !!(p.display_name && (p.first_name || p.full_name) && (p.whatsapp || p.onboarding_step === "complete"));
       const planName: string = pa.data?.plan?.name || (p.plan_tier && p.plan_tier !== "free"
         ? p.plan_tier.charAt(0).toUpperCase() + p.plan_tier.slice(1)
         : "Free");

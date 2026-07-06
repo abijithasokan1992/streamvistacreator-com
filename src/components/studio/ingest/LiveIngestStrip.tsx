@@ -116,7 +116,7 @@ export function LiveIngestStrip() {
             .eq("workspace_id", activeId)
             .maybeSingle(),
           supabase.from("workspace_storage_entitlements")
-            .select("total_bytes")
+            .select("total_storage_gb")
             .eq("workspace_id", activeId)
             .maybeSingle(),
           supabase.from("ingest_jobs")

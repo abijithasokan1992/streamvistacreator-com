@@ -75,7 +75,7 @@ export async function buildManifest(scan: ScanResult, opts: BuildOptions = {}): 
     let rejectReason: string | undefined;
     let dupLocal: string | undefined;
 
-    if (!policy.allowed) {
+    if (policy.allowed === false) {
       status = "rejected";
       rejectReason = policy.reason;
     } else if (seenFingerprints.has(fp)) {

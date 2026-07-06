@@ -252,21 +252,23 @@ export async function createIngestJob(params: {
   itemCount: number;
 }): Promise<string> {
   const { data: userRes } = await supabase.auth.getUser();
-  const ownerUserId = userRes?.user?.id;
+  const createdBy = userRes?.user?.id;
+  if (!createdBy) throw new Error("Sign in required to start ingest");
   const { data, error } = await supabase
     .from("ingest_jobs")
     .insert({
       workspace_id: params.workspaceId,
-      title_id: params.titleId ?? null,
-      owner_user_id: ownerUserId,
-      status: "uploading",
-      source_label: params.rootLabel,
-      source_kind: "device",
+      created_by: createdBy,
+      job_mode: "camera_card",
+      destination_type: "working_vault",
+      status: "ready",
+      total_files: params.itemCount,
       total_bytes: params.totalBytes,
-      item_count: params.itemCount,
       metadata: {
         engine: "ingest_engine_v2",
+        source_label: params.rootLabel,
         camera_family: params.cameraFamilyLabel,
+        title_id: params.titleId ?? null,
       },
     })
     .select("id")

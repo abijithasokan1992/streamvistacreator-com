@@ -43,7 +43,7 @@ const STATUS_BADGE: Record<ItemRuntimeStatus, { label: string; tone: string }> =
 };
 
 export default function IngestEnginePage() {
-  const { activeWorkspace } = useWorkspaces();
+  const { active } = useWorkspaces();
   const [phase, setPhase] = useState<Phase>("idle");
   const [scan, setScan] = useState<ScanResult | null>(null);
   const [manifest, setManifest] = useState<Manifest | null>(null);
@@ -94,7 +94,7 @@ export default function IngestEnginePage() {
       setPhase("planning");
       setPlanProgress({ done: 0, total: s.files.length });
       const m = await buildManifest(s, {
-        workspaceId: activeWorkspace?.id ?? null,
+        workspaceId: active?.id ?? null,
         onProgress: (done, total) => setPlanProgress({ done, total }),
       });
       setManifest(m);
@@ -104,14 +104,14 @@ export default function IngestEnginePage() {
         `Planned ${m.counts.total} files — ${m.counts.new} new, ${m.counts.duplicateInPick + m.counts.duplicateKnown} duplicate, ${m.counts.rejected} rejected.`,
       );
     },
-    [activeWorkspace?.id, appendLog],
+    [active?.id, appendLog],
   );
 
   const start = useCallback(async () => {
-    if (!manifest || !activeWorkspace?.id) return;
+    if (!manifest || !active?.id) return;
     try {
       const jobId = await createIngestJob({
-        workspaceId: activeWorkspace.id,
+        workspaceId: active.id,
         rootLabel: manifest.rootLabel,
         cameraFamilyLabel: manifest.cameraFamilyLabel,
         totalBytes: manifest.totalBytes,
@@ -121,7 +121,7 @@ export default function IngestEnginePage() {
       const ctrl = new AbortController();
       abortRef.current = ctrl;
       const engine = new IngestEngine(manifest, {
-        workspaceId: activeWorkspace.id,
+        workspaceId: active.id,
         jobId,
         signal: ctrl.signal,
         onEvent: (evt) => {
@@ -155,7 +155,7 @@ export default function IngestEnginePage() {
       appendLog("error", (err as Error).message || "Failed to start ingest");
       setPhase("ready");
     }
-  }, [manifest, activeWorkspace?.id, appendLog]);
+  }, [manifest, active?.id, appendLog]);
 
   const pause = useCallback(() => {
     engineRef.current?.pause();
@@ -206,7 +206,7 @@ export default function IngestEnginePage() {
           onRescan={rescan}
           planProgress={planProgress}
         />
-        <PlanPanel manifest={manifest} phase={phase} onStart={start} canStart={!!activeWorkspace?.id} />
+        <PlanPanel manifest={manifest} phase={phase} onStart={start} canStart={!!active?.id} />
         <TransferPanel runtimes={runtimes} totals={totals} phase={phase} onPause={pause} />
       </main>
 

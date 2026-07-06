@@ -12,7 +12,7 @@
   "mcp": {
     "server": {
       "name": "streamvista-mcp",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "title": "StreamVista Cloud X"
     },
     "tools": [
@@ -33,9 +33,25 @@
         "outputSchema": null
       },
       {
-        "name": "list_titles",
+        "name": "creator_my_workspace",
+        "title": "My workspace",
+        "description": "Overview of the signed-in Creator's workspace: total titles, titles by review stage, and active distribution offers.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "creator_list_titles",
         "title": "List my titles",
-        "description": "List content titles owned by the signed-in creator. Returns id, title, status, genre, language, and updated_at.",
+        "description": "List the signed-in Creator's titles with title, status, genre, language, duration, and last-updated time.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -48,7 +64,7 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 100,
-              "description": "Max rows to return (default 20)."
+              "description": "Max rows to return (default 25)."
             },
             "status": {
               "type": "string",
@@ -61,9 +77,9 @@
         "outputSchema": null
       },
       {
-        "name": "get_title",
-        "title": "Get a title",
-        "description": "Fetch full details for a single content title by id (RLS-scoped to the signed-in user).",
+        "name": "creator_open_title",
+        "title": "Open a title",
+        "description": "Open one of the signed-in Creator's titles by id and return its core details, current status, and last-updated time.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -75,7 +91,7 @@
             "id": {
               "type": "string",
               "format": "uuid",
-              "description": "The title id (UUID)."
+              "description": "The title id."
             }
           },
           "required": [
@@ -87,9 +103,9 @@
         "outputSchema": null
       },
       {
-        "name": "list_ingest_jobs",
-        "title": "List ingest jobs",
-        "description": "List recent Studio ingest jobs visible to the signed-in user (RLS-scoped). Returns status, progress, and workspace/project ids.",
+        "name": "creator_submission_status",
+        "title": "Submission status",
+        "description": "Show the review/approval status of the signed-in Creator's titles, grouped by stage, and list the most recently updated titles.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -102,13 +118,201 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 100,
-              "description": "Max rows to return (default 20)."
-            },
-            "status": {
-              "type": "string",
-              "description": "Optional exact status filter (e.g. 'queued', 'uploading', 'complete', 'failed')."
+              "description": "Max recent titles to list (default 20)."
             }
           },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "creator_rights_status",
+        "title": "Rights status",
+        "description": "Show rights availability for one of the signed-in Creator's titles: territory, language, category, exclusivity, term dates, and current status.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "title_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The title id to inspect."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "description": "Max rights rows (default 100)."
+            }
+          },
+          "required": [
+            "title_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "creator_list_assets",
+        "title": "List title assets",
+        "description": "List the files (masters, artwork, subtitles, etc.) attached to one of the signed-in Creator's titles.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "title_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The title id."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Max rows (default 50)."
+            }
+          },
+          "required": [
+            "title_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "creator_review_notes",
+        "title": "Review notes",
+        "description": "Latest review notes posted by the review team on the signed-in Creator's titles. Includes the review decision and the note text.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Max notes (default 20)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "creator_distribution_status",
+        "title": "Distribution status",
+        "description": "List distribution program offers held by the signed-in Creator, showing program name, term, revenue split, and current status.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "description": "Optional exact status filter (e.g. 'offered', 'accepted', 'rejected')."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Max offers (default 25)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "creator_storage_usage",
+        "title": "Storage usage",
+        "description": "Report the signed-in Creator's storage plan, allocated capacity, used capacity, and remaining headroom.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "creator_notifications",
+        "title": "Notifications",
+        "description": "Recent notifications for the signed-in Creator, newest first, including whether each has been read.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Max notifications (default 20)."
+            },
+            "unread_only": {
+              "type": "boolean",
+              "description": "If true, only unread notifications are returned."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "creator_search_my_titles",
+        "title": "Search my titles",
+        "description": "Search the signed-in Creator's titles by name (case-insensitive substring). Returns id, title, status, genre, and last-updated time.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Substring to match against title name."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Max results (default 25)."
+            }
+          },
+          "required": [
+            "query"
+          ],
           "additionalProperties": false,
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
@@ -348,6 +552,88 @@
           "required": [
             "query"
           ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_titles",
+        "title": "List my titles",
+        "description": "List content titles owned by the signed-in creator. Returns id, title, status, genre, language, and updated_at.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Max rows to return (default 20)."
+            },
+            "status": {
+              "type": "string",
+              "description": "Optional exact status filter (e.g. 'draft', 'submitted', 'approved')."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_title",
+        "title": "Get a title",
+        "description": "Fetch full details for a single content title by id (RLS-scoped to the signed-in user).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The title id (UUID)."
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_ingest_jobs",
+        "title": "List ingest jobs",
+        "description": "List recent Studio ingest jobs visible to the signed-in user (RLS-scoped). Returns status, progress, and workspace/project ids.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Max rows to return (default 20)."
+            },
+            "status": {
+              "type": "string",
+              "description": "Optional exact status filter (e.g. 'queued', 'uploading', 'complete', 'failed')."
+            }
+          },
           "additionalProperties": false,
           "$schema": "http://json-schema.org/draft-07/schema#"
         },

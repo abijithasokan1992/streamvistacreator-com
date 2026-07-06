@@ -188,6 +188,24 @@ async function getStudioWorkspaceIds(ctx) {
   (member.data ?? []).forEach((r) => ids.add(r.workspace_id));
   return Array.from(ids);
 }
+function notCreator() {
+  return {
+    content: [
+      {
+        type: "text",
+        text: "This tool is available to StreamVista Creator accounts only. Contact support if you believe you should have access."
+      }
+    ],
+    isError: true
+  };
+}
+async function isCreatorUser(ctx) {
+  const uid = ctx.getUserId();
+  if (!uid) return false;
+  const { data } = await userClient4(ctx).from("user_roles").select("role").eq("user_id", uid);
+  const roles = (data ?? []).map((r) => r.role);
+  return roles.includes("content_owner") || roles.includes("creator");
+}
 function formatBytes(bytes) {
   if (!bytes || bytes <= 0) return "0 B";
   const units = ["B", "KB", "MB", "GB", "TB"];
@@ -589,22 +607,374 @@ var search_files_default = defineTool14({
   }
 });
 
+// src/lib/mcp/tools/creator-my-workspace.ts
+import { defineTool as defineTool15 } from "npm:@lovable.dev/mcp-js@0.20.0";
+var creator_my_workspace_default = defineTool15({
+  name: "creator_my_workspace",
+  title: "My workspace",
+  description: "Overview of the signed-in Creator's workspace: total titles, titles by review stage, and active distribution offers.",
+  inputSchema: {},
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async (_input, ctx) => {
+    if (!ctx.isAuthenticated()) return unauth();
+    if (!await isCreatorUser(ctx)) return notCreator();
+    const uid = ctx.getUserId();
+    const sb = userClient4(ctx);
+    const [titles, offers] = await Promise.all([
+      sb.from("content_titles").select("id, status").eq("owner_user_id", uid),
+      sb.from("distribution_program_offers").select("id, status").eq("creator_user_id", uid)
+    ]);
+    if (titles.error || offers.error) {
+      return { content: [{ type: "text", text: "Could not load your workspace summary." }], isError: true };
+    }
+    const byStatus = {};
+    (titles.data ?? []).forEach((t) => {
+      const s = t.status || "draft";
+      byStatus[s] = (byStatus[s] ?? 0) + 1;
+    });
+    const activeOffers = (offers.data ?? []).filter(
+      (o) => o.status && o.status !== "rejected" && o.status !== "expired"
+    ).length;
+    return ok(
+      {
+        total_titles: (titles.data ?? []).length,
+        titles_by_status: byStatus,
+        active_distribution_offers: activeOffers
+      },
+      `You have ${(titles.data ?? []).length} title${(titles.data ?? []).length === 1 ? "" : "s"} and ${activeOffers} active distribution offer${activeOffers === 1 ? "" : "s"}.`
+    );
+  }
+});
+
+// src/lib/mcp/tools/creator-list-titles.ts
+import { defineTool as defineTool16 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z11 } from "npm:zod@^3.25.76";
+var creator_list_titles_default = defineTool16({
+  name: "creator_list_titles",
+  title: "List my titles",
+  description: "List the signed-in Creator's titles with title, status, genre, language, duration, and last-updated time.",
+  inputSchema: {
+    limit: z11.number().int().min(1).max(100).optional().describe("Max rows to return (default 25)."),
+    status: z11.string().optional().describe("Optional exact status filter (e.g. 'draft', 'submitted', 'approved').")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ limit, status }, ctx) => {
+    if (!ctx.isAuthenticated()) return unauth();
+    if (!await isCreatorUser(ctx)) return notCreator();
+    let q = userClient4(ctx).from("content_titles").select("id, title, status, genre, language, duration_minutes, updated_at").eq("owner_user_id", ctx.getUserId()).order("updated_at", { ascending: false }).limit(limit ?? 25);
+    if (status) q = q.eq("status", status);
+    const { data, error } = await q;
+    if (error) return { content: [{ type: "text", text: "Could not load your titles." }], isError: true };
+    return ok(
+      { titles: data ?? [], total: (data ?? []).length },
+      (data ?? []).length ? `Showing ${data.length} title${data.length === 1 ? "" : "s"}.` : "No titles yet."
+    );
+  }
+});
+
+// src/lib/mcp/tools/creator-open-title.ts
+import { defineTool as defineTool17 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z12 } from "npm:zod@^3.25.76";
+var creator_open_title_default = defineTool17({
+  name: "creator_open_title",
+  title: "Open a title",
+  description: "Open one of the signed-in Creator's titles by id and return its core details, current status, and last-updated time.",
+  inputSchema: { id: z12.string().uuid().describe("The title id.") },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ id }, ctx) => {
+    if (!ctx.isAuthenticated()) return unauth();
+    if (!await isCreatorUser(ctx)) return notCreator();
+    const { data, error } = await userClient4(ctx).from("content_titles").select(
+      "id, title, status, genre, language, duration_minutes, synopsis, submitted_at, approved_at, published_at, updated_at, created_at"
+    ).eq("id", id).eq("owner_user_id", ctx.getUserId()).maybeSingle();
+    if (error) return { content: [{ type: "text", text: "Could not open that title." }], isError: true };
+    if (!data) return { content: [{ type: "text", text: "Title not found in your workspace." }], isError: true };
+    return ok({ title: data }, `${data.title} \u2014 status: ${data.status ?? "draft"}.`);
+  }
+});
+
+// src/lib/mcp/tools/creator-submission-status.ts
+import { defineTool as defineTool18 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z13 } from "npm:zod@^3.25.76";
+var creator_submission_status_default = defineTool18({
+  name: "creator_submission_status",
+  title: "Submission status",
+  description: "Show the review/approval status of the signed-in Creator's titles, grouped by stage, and list the most recently updated titles.",
+  inputSchema: {
+    limit: z13.number().int().min(1).max(100).optional().describe("Max recent titles to list (default 20).")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ limit }, ctx) => {
+    if (!ctx.isAuthenticated()) return unauth();
+    if (!await isCreatorUser(ctx)) return notCreator();
+    const { data, error } = await userClient4(ctx).from("content_titles").select("id, title, status, submitted_at, approved_at, published_at, updated_at").eq("owner_user_id", ctx.getUserId()).order("updated_at", { ascending: false }).limit(limit ?? 20);
+    if (error) return { content: [{ type: "text", text: "Could not load submission status." }], isError: true };
+    const buckets = {};
+    (data ?? []).forEach((t) => {
+      const s = t.status || "draft";
+      buckets[s] = (buckets[s] ?? 0) + 1;
+    });
+    return ok(
+      { by_stage: buckets, recent: data ?? [] },
+      `Reviewed ${(data ?? []).length} recent title${(data ?? []).length === 1 ? "" : "s"}.`
+    );
+  }
+});
+
+// src/lib/mcp/tools/creator-rights-status.ts
+import { defineTool as defineTool19 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z14 } from "npm:zod@^3.25.76";
+var creator_rights_status_default = defineTool19({
+  name: "creator_rights_status",
+  title: "Rights status",
+  description: "Show rights availability for one of the signed-in Creator's titles: territory, language, category, exclusivity, term dates, and current status.",
+  inputSchema: {
+    title_id: z14.string().uuid().describe("The title id to inspect."),
+    limit: z14.number().int().min(1).max(200).optional().describe("Max rights rows (default 100).")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ title_id, limit }, ctx) => {
+    if (!ctx.isAuthenticated()) return unauth();
+    if (!await isCreatorUser(ctx)) return notCreator();
+    const sb = userClient4(ctx);
+    const owner = await sb.from("content_titles").select("id, title").eq("id", title_id).eq("owner_user_id", ctx.getUserId()).maybeSingle();
+    if (owner.error || !owner.data) {
+      return { content: [{ type: "text", text: "Title not found in your workspace." }], isError: true };
+    }
+    const { data, error } = await sb.from("title_rights_availability").select("id, right_category, territory, language, exclusivity, status, term_start, term_end, notes, updated_at").eq("title_id", title_id).order("updated_at", { ascending: false }).limit(limit ?? 100);
+    if (error) return { content: [{ type: "text", text: "Could not load rights availability." }], isError: true };
+    return ok(
+      { title: owner.data.title, rights: data ?? [] },
+      (data ?? []).length ? `${(data ?? []).length} rights entr${(data ?? []).length === 1 ? "y" : "ies"} on "${owner.data.title}".` : `No rights configured yet on "${owner.data.title}".`
+    );
+  }
+});
+
+// src/lib/mcp/tools/creator-list-assets.ts
+import { defineTool as defineTool20 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z15 } from "npm:zod@^3.25.76";
+var creator_list_assets_default = defineTool20({
+  name: "creator_list_assets",
+  title: "List title assets",
+  description: "List the files (masters, artwork, subtitles, etc.) attached to one of the signed-in Creator's titles.",
+  inputSchema: {
+    title_id: z15.string().uuid().describe("The title id."),
+    limit: z15.number().int().min(1).max(100).optional().describe("Max rows (default 50).")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ title_id, limit }, ctx) => {
+    if (!ctx.isAuthenticated()) return unauth();
+    if (!await isCreatorUser(ctx)) return notCreator();
+    const sb = userClient4(ctx);
+    const owner = await sb.from("content_titles").select("id, title").eq("id", title_id).eq("owner_user_id", ctx.getUserId()).maybeSingle();
+    if (owner.error || !owner.data) {
+      return { content: [{ type: "text", text: "Title not found in your workspace." }], isError: true };
+    }
+    const { data, error } = await sb.from("title_assets").select(
+      "id, category, is_primary, created_at, upload:recent_uploads(id, file_name, file_size, mime_type, status, created_at)"
+    ).eq("title_id", title_id).order("created_at", { ascending: false }).limit(limit ?? 50);
+    if (error) return { content: [{ type: "text", text: "Could not load assets for that title." }], isError: true };
+    const assets = (data ?? []).map((row) => ({
+      id: row.id,
+      category: row.category,
+      is_primary: row.is_primary,
+      file_name: row.upload?.file_name ?? null,
+      file_size: formatBytes(row.upload?.file_size ?? null),
+      file_type: row.upload?.mime_type ?? null,
+      upload_status: row.upload?.status ?? null,
+      added_at: row.created_at
+    }));
+    return ok(
+      { title: owner.data.title, assets },
+      assets.length ? `${assets.length} file${assets.length === 1 ? "" : "s"} on "${owner.data.title}".` : `No files attached yet on "${owner.data.title}".`
+    );
+  }
+});
+
+// src/lib/mcp/tools/creator-review-notes.ts
+import { defineTool as defineTool21 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z16 } from "npm:zod@^3.25.76";
+var creator_review_notes_default = defineTool21({
+  name: "creator_review_notes",
+  title: "Review notes",
+  description: "Latest review notes posted by the review team on the signed-in Creator's titles. Includes the review decision and the note text.",
+  inputSchema: {
+    limit: z16.number().int().min(1).max(100).optional().describe("Max notes (default 20).")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ limit }, ctx) => {
+    if (!ctx.isAuthenticated()) return unauth();
+    if (!await isCreatorUser(ctx)) return notCreator();
+    const sb = userClient4(ctx);
+    const titles = await sb.from("content_titles").select("id, title").eq("owner_user_id", ctx.getUserId());
+    if (titles.error) return { content: [{ type: "text", text: "Could not load your titles." }], isError: true };
+    const titleIds = (titles.data ?? []).map((t) => t.id);
+    if (titleIds.length === 0) return ok({ notes: [] }, "No review notes yet.");
+    const titleMap = new Map((titles.data ?? []).map((t) => [t.id, t.title]));
+    const { data, error } = await sb.from("content_approvals").select("id, title_id, to_status, note, created_at").in("title_id", titleIds).not("note", "is", null).order("created_at", { ascending: false }).limit(limit ?? 20);
+    if (error) return { content: [{ type: "text", text: "Could not load review notes." }], isError: true };
+    const notes = (data ?? []).map((r) => ({
+      id: r.id,
+      title_id: r.title_id,
+      title: titleMap.get(r.title_id) ?? "Untitled",
+      decision: r.to_status,
+      note: r.note,
+      posted_at: r.created_at
+    }));
+    return ok(
+      { notes },
+      notes.length ? `${notes.length} review note${notes.length === 1 ? "" : "s"} from the review team.` : "No review notes yet."
+    );
+  }
+});
+
+// src/lib/mcp/tools/creator-distribution-status.ts
+import { defineTool as defineTool22 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z17 } from "npm:zod@^3.25.76";
+var creator_distribution_status_default = defineTool22({
+  name: "creator_distribution_status",
+  title: "Distribution status",
+  description: "List distribution program offers held by the signed-in Creator, showing program name, term, revenue split, and current status.",
+  inputSchema: {
+    status: z17.string().optional().describe("Optional exact status filter (e.g. 'offered', 'accepted', 'rejected')."),
+    limit: z17.number().int().min(1).max(100).optional().describe("Max offers (default 25).")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ status, limit }, ctx) => {
+    if (!ctx.isAuthenticated()) return unauth();
+    if (!await isCreatorUser(ctx)) return notCreator();
+    let q = userClient4(ctx).from("distribution_program_offers").select(
+      "id, program_name, status, revenue_model, rights_holder_share_pct, streamvista_share_pct, term_years, term_start_date, term_end_date, is_non_exclusive, offered_at, accepted_at, rejected_at, title_id, updated_at"
+    ).eq("creator_user_id", ctx.getUserId()).order("updated_at", { ascending: false }).limit(limit ?? 25);
+    if (status) q = q.eq("status", status);
+    const { data, error } = await q;
+    if (error) return { content: [{ type: "text", text: "Could not load distribution offers." }], isError: true };
+    return ok(
+      { offers: data ?? [] },
+      (data ?? []).length ? `Showing ${data.length} distribution offer${data.length === 1 ? "" : "s"}.` : "No distribution offers yet."
+    );
+  }
+});
+
+// src/lib/mcp/tools/creator-storage-usage.ts
+import { defineTool as defineTool23 } from "npm:@lovable.dev/mcp-js@0.20.0";
+var GB = 1024 ** 3;
+var creator_storage_usage_default = defineTool23({
+  name: "creator_storage_usage",
+  title: "Storage usage",
+  description: "Report the signed-in Creator's storage plan, allocated capacity, used capacity, and remaining headroom.",
+  inputSchema: {},
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async (_input, ctx) => {
+    if (!ctx.isAuthenticated()) return unauth();
+    if (!await isCreatorUser(ctx)) return notCreator();
+    const sb = userClient4(ctx);
+    const uid = ctx.getUserId();
+    const [entRes, usageRes] = await Promise.all([
+      sb.from("workspace_storage_entitlements").select("plan_code, total_storage_gb, included_storage_gb, paid_storage_gb, admin_bonus_storage_gb, billing_status, effective_from").eq("user_id", uid).order("effective_from", { ascending: false }).limit(1).maybeSingle(),
+      sb.from("workspace_storage_usage").select("display_used_bytes, active_bytes, archived_bytes, last_recalculated_at").eq("user_id", uid).order("last_recalculated_at", { ascending: false }).limit(1).maybeSingle()
+    ]);
+    const ent = entRes.data;
+    const usage = usageRes.data;
+    if (!ent && !usage) {
+      return ok({ configured: false }, "No storage plan is active on your account yet.");
+    }
+    const totalBytes = Number(ent?.total_storage_gb ?? 0) * GB;
+    const usedBytes = Number(usage?.display_used_bytes ?? 0);
+    const remaining = Math.max(0, totalBytes - usedBytes);
+    const pct = totalBytes > 0 ? Math.round(100 * usedBytes / totalBytes) : 0;
+    return ok(
+      {
+        plan: ent?.plan_code ?? null,
+        billing_status: ent?.billing_status ?? null,
+        total: formatBytes(totalBytes),
+        used: formatBytes(usedBytes),
+        available: formatBytes(remaining),
+        archived: formatBytes(Number(usage?.archived_bytes ?? 0)),
+        percent_used: pct
+      },
+      `${formatBytes(usedBytes)} of ${formatBytes(totalBytes)} used (${pct}%).`
+    );
+  }
+});
+
+// src/lib/mcp/tools/creator-notifications.ts
+import { defineTool as defineTool24 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z18 } from "npm:zod@^3.25.76";
+var creator_notifications_default = defineTool24({
+  name: "creator_notifications",
+  title: "Notifications",
+  description: "Recent notifications for the signed-in Creator, newest first, including whether each has been read.",
+  inputSchema: {
+    limit: z18.number().int().min(1).max(100).optional().describe("Max notifications (default 20)."),
+    unread_only: z18.boolean().optional().describe("If true, only unread notifications are returned.")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ limit, unread_only }, ctx) => {
+    if (!ctx.isAuthenticated()) return unauth();
+    if (!await isCreatorUser(ctx)) return notCreator();
+    let q = userClient4(ctx).from("notifications").select("id, title, message, is_read, created_at").eq("user_id", ctx.getUserId()).order("created_at", { ascending: false }).limit(limit ?? 20);
+    if (unread_only) q = q.eq("is_read", false);
+    const { data, error } = await q;
+    if (error) return { content: [{ type: "text", text: "Could not load notifications." }], isError: true };
+    const unread = (data ?? []).filter((n) => !n.is_read).length;
+    return ok(
+      { notifications: data ?? [], unread_count: unread },
+      (data ?? []).length ? `${(data ?? []).length} notification${(data ?? []).length === 1 ? "" : "s"} (${unread} unread).` : "No notifications yet."
+    );
+  }
+});
+
+// src/lib/mcp/tools/creator-search-my-titles.ts
+import { defineTool as defineTool25 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z19 } from "npm:zod@^3.25.76";
+var creator_search_my_titles_default = defineTool25({
+  name: "creator_search_my_titles",
+  title: "Search my titles",
+  description: "Search the signed-in Creator's titles by name (case-insensitive substring). Returns id, title, status, genre, and last-updated time.",
+  inputSchema: {
+    query: z19.string().min(1).describe("Substring to match against title name."),
+    limit: z19.number().int().min(1).max(100).optional().describe("Max results (default 25).")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ query, limit }, ctx) => {
+    if (!ctx.isAuthenticated()) return unauth();
+    if (!await isCreatorUser(ctx)) return notCreator();
+    const { data, error } = await userClient4(ctx).from("content_titles").select("id, title, status, genre, language, updated_at").eq("owner_user_id", ctx.getUserId()).ilike("title", `%${query}%`).order("updated_at", { ascending: false }).limit(limit ?? 25);
+    if (error) return { content: [{ type: "text", text: "Could not search your titles." }], isError: true };
+    return ok(
+      { titles: data ?? [], total: (data ?? []).length, query },
+      (data ?? []).length ? `${(data ?? []).length} title${(data ?? []).length === 1 ? "" : "s"} match "${query}".` : `No titles match "${query}".`
+    );
+  }
+});
+
 // src/lib/mcp/index.ts
 var projectRef = "hllgmkfqgeuqlmpcirvn";
 var mcp_default = defineMcp({
   name: "streamvista-mcp",
   title: "StreamVista Cloud X",
-  version: "0.2.0",
-  instructions: "Tools for a signed-in StreamVista Cloud X user. Creator tools: `list_titles`, `get_title`. Studio Workspace tools: `list_productions`, `open_production`, `show_todays_work`, `show_upload_progress`, `show_storage_usage`, `show_recent_activity`, `show_team`, `show_deliveries`, `show_billing`, `search_files`. Studio tools return a friendly access message when called by non-Studio users. Use `whoami` to verify identity. All data is scoped to the signed-in user via RLS.",
+  version: "0.3.0",
+  instructions: "Tools for a signed-in StreamVista Cloud X user. Creator Workspace tools (Creator accounts only): `creator_my_workspace`, `creator_list_titles`, `creator_open_title`, `creator_submission_status`, `creator_rights_status`, `creator_list_assets`, `creator_review_notes`, `creator_distribution_status`, `creator_storage_usage`, `creator_notifications`, `creator_search_my_titles`. Studio Workspace tools (Studio accounts only): `list_productions`, `open_production`, `show_todays_work`, `show_upload_progress`, `show_storage_usage`, `show_recent_activity`, `show_team`, `show_deliveries`, `show_billing`, `search_files`. Legacy read tools kept for compatibility: `list_titles`, `get_title`, `list_ingest_jobs`. Tools that are not available to the caller's role return a friendly access message instead of data. Use `whoami` to verify identity. All data is scoped to the signed-in user via RLS.",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated"
   }),
   tools: [
     whoami_default,
-    list_titles_default,
-    get_title_default,
-    list_ingest_jobs_default,
+    // Creator Workspace
+    creator_my_workspace_default,
+    creator_list_titles_default,
+    creator_open_title_default,
+    creator_submission_status_default,
+    creator_rights_status_default,
+    creator_list_assets_default,
+    creator_review_notes_default,
+    creator_distribution_status_default,
+    creator_storage_usage_default,
+    creator_notifications_default,
+    creator_search_my_titles_default,
+    // Studio Workspace
     list_productions_default,
     open_production_default,
     show_todays_work_default,
@@ -614,7 +984,11 @@ var mcp_default = defineMcp({
     show_team_default,
     show_deliveries_default,
     show_billing_default,
-    search_files_default
+    search_files_default,
+    // Legacy read tools
+    list_titles_default,
+    get_title_default,
+    list_ingest_jobs_default
   ]
 });
 

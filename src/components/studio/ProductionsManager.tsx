@@ -162,11 +162,11 @@ export default function ProductionsManager({
     let profMap: Record<string, { email?: string | null; full_name?: string | null }> = {};
     if (ids.length > 0) {
       const { data: profs } = await (supabase as any)
-        .from("profiles")
-        .select("id,email,full_name")
-        .in("id", ids);
+        .from("user_profiles")
+        .select("user_id,display_name,full_name")
+        .in("user_id", ids);
       for (const p of (profs as any[]) ?? []) {
-        profMap[p.id] = { email: p.email, full_name: p.full_name };
+        profMap[p.user_id] = { email: null, full_name: p.full_name ?? p.display_name ?? null };
       }
     }
     setMembers(rows.map((r) => ({

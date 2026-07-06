@@ -367,6 +367,7 @@ function buildDepartments(args: {
         { id: "overview", label: "Overview", hint: "Platform metrics", content: (
           <div className="space-y-8"><PlatformOverview /><QuickNav navigate={navigate} /></div>
         )},
+        { id: "readiness", label: "Readiness", hint: "Live 5-pillar readiness matrix", content: <PlatformReadinessCenter /> },
       ],
     },
     {

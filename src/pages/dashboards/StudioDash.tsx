@@ -1059,6 +1059,7 @@ function StoragePanel({ rows, loading, onGoBuy, onPurchased }: {
  * ============================================================ */
 export default function StudioDashboard() {
   const [tab, setTab] = useState<string>("dashboard");
+  const { user } = useAuth();
   const { rows, loading, refresh } = useStudioVaultRows();
   const quota = useStorageQuota();
   const { activeId: workspaceId, canWriteActive } = useWorkspaces();

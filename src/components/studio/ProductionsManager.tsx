@@ -495,11 +495,29 @@ function ProductionForm({
   const [name, setName] = useState(project?.name ?? "");
   const [contentType, setContentType] = useState<string>(project?.crew?.content_type ?? "Feature Film");
   const [company, setCompany] = useState<string>(project?.crew?.production_company ?? "");
+  const [client, setClient] = useState<string>(project?.crew?.client ?? "");
+  const [director, setDirector] = useState<string>(project?.crew?.director ?? "");
+  const [producer, setProducer] = useState<string>(project?.crew?.producer ?? "");
   const [startDate, setStartDate] = useState<string>(project?.crew?.start_date ?? new Date().toISOString().slice(0, 10));
+  const [expectedFinish, setExpectedFinish] = useState<string>(project?.crew?.expected_finish ?? "");
   const [status, setStatus] = useState<string>(project?.crew?.title_status ?? "Pre-Production");
+  const [notes, setNotes] = useState<string>(project?.crew?.notes ?? "");
   const [submitting, setSubmitting] = useState(false);
 
   const canSubmit = !!name.trim() && !!company.trim() && !!contentType && !!startDate && !!status && !!workspaceId;
+
+  const buildCrew = (base: any) => ({
+    ...(base ?? {}),
+    content_type: contentType,
+    production_company: company.trim(),
+    client: client.trim() || null,
+    director: director.trim() || null,
+    producer: producer.trim() || null,
+    start_date: startDate,
+    expected_finish: expectedFinish || null,
+    title_status: status,
+    notes: notes.trim() || null,
+  });
 
   const submit = async () => {
     if (!canSubmit || !workspaceId) return;
@@ -512,11 +530,8 @@ function ProductionForm({
           user_id: user.id,
           name: name.trim(),
           crew: {
+            ...buildCrew({}),
             title_number: generateProductionNumber(),
-            content_type: contentType,
-            production_company: company.trim(),
-            start_date: startDate,
-            title_status: status,
             folders: DEFAULT_FOLDERS,
             members: [],
           } as any,
@@ -525,13 +540,7 @@ function ProductionForm({
         toast.success("Production created");
         onSaved(data?.id);
       } else if (project) {
-        const nextCrew = {
-          ...(project.crew ?? {}),
-          content_type: contentType,
-          production_company: company.trim(),
-          start_date: startDate,
-          title_status: status,
-        };
+        const nextCrew = buildCrew(project.crew);
         const { error } = await supabase
           .from("projects")
           .update({ name: name.trim(), crew: nextCrew })
@@ -551,7 +560,7 @@ function ProductionForm({
     <Card className="p-4 space-y-3">
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="sm:col-span-2 space-y-1.5">
-          <Label htmlFor="pf-name">Production Title</Label>
+          <Label htmlFor="pf-name">Production Name</Label>
           <Input id="pf-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Untitled Feature 2026" />
         </div>
         {mode === "edit" && getProductionNumber(project) && (
@@ -562,7 +571,7 @@ function ProductionForm({
           </div>
         )}
         <div className="space-y-1.5">
-          <Label>Content Type</Label>
+          <Label>Project Type</Label>
           <Select value={contentType} onValueChange={setContentType}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -584,8 +593,37 @@ function ProductionForm({
           <Input id="pf-company" value={company} onChange={(e) => setCompany(e.target.value)} placeholder="e.g. Northlight Pictures Pvt. Ltd." />
         </div>
         <div className="space-y-1.5">
+          <Label htmlFor="pf-client">Client</Label>
+          <Input id="pf-client" value={client} onChange={(e) => setClient(e.target.value)} placeholder="e.g. Netflix, Studio buyer, or in-house" />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="pf-director">Director</Label>
+          <Input id="pf-director" value={director} onChange={(e) => setDirector(e.target.value)} placeholder="Director name" />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="pf-producer">Producer</Label>
+          <Input id="pf-producer" value={producer} onChange={(e) => setProducer(e.target.value)} placeholder="Producer name" />
+        </div>
+        <div className="space-y-1.5">
           <Label htmlFor="pf-start">Start Date</Label>
           <Input id="pf-start" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="pf-finish">Expected Finish</Label>
+          <Input id="pf-finish" type="date" value={expectedFinish} onChange={(e) => setExpectedFinish(e.target.value)} />
+        </div>
+        <div className="sm:col-span-2 space-y-1.5">
+          <Label htmlFor="pf-notes">Notes</Label>
+          <Textarea
+            id="pf-notes"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Scope, delivery expectations, key contacts, anything the team should know."
+            rows={3}
+          />
+          <p className="text-[11px] text-muted-foreground">
+            Team members are managed in the Production Workspace → Team tab.
+          </p>
         </div>
       </div>
       <div className="flex items-center justify-end gap-2">
@@ -598,6 +636,7 @@ function ProductionForm({
     </Card>
   );
 }
+
 
 /* ---------- Share dialog: invite collaborators ---------- */
 function ShareProductionDialog({

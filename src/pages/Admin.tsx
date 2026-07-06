@@ -12,6 +12,7 @@ import DeptSubNav, { type DeptSubSection } from "@/components/admin/DeptSubNav";
 
 // Kept (MVP 8 buckets)
 import PlatformOverview from "@/components/admin/PlatformOverview";
+import PlatformReadinessCenter from "@/components/admin/PlatformReadinessCenter";
 import RolesManager from "@/components/admin/RolesManager";
 import UsersAndCredentials from "@/components/admin/UsersAndCredentials";
 import AdminTeamManager from "@/components/admin/AdminTeamManager";
@@ -366,6 +367,7 @@ function buildDepartments(args: {
         { id: "overview", label: "Overview", hint: "Platform metrics", content: (
           <div className="space-y-8"><PlatformOverview /><QuickNav navigate={navigate} /></div>
         )},
+        { id: "readiness", label: "Readiness", hint: "Live 5-pillar readiness matrix", content: <PlatformReadinessCenter /> },
       ],
     },
     {

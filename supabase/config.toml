@@ -43,6 +43,8 @@ project_id = "hllgmkfqgeuqlmpcirvn"
 
   [functions.integrations-status]
     verify_jwt = false
+  [functions.platform-readiness]
+    verify_jwt = false
   [functions.assistant-chat]
     verify_jwt = true
   [functions.send-sms-test]

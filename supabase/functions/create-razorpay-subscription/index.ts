@@ -28,16 +28,9 @@ async function rzpFetch(path: string, auth: string, init: RequestInit = {}) {
   });
 }
 
-async function ensurePlan(auth: string, supabase: any): Promise<string> {
-  // Cache the Razorpay plan id on the razorpay_config table for idempotency.
-  const { data: cfg } = await supabase
-    .from("razorpay_config")
-    .select("creator_plan_id")
-    .eq("id", true)
-    .maybeSingle()
-    .catch(() => ({ data: null }));
-  if (cfg?.creator_plan_id) return cfg.creator_plan_id;
-
+async function ensurePlan(auth: string, _supabase: any): Promise<string> {
+  // Razorpay dedupes on notes.local_id — no DB caching layer needed here
+  // because razorpay_config does not carry a plan cache column in the current schema.
   const res = await rzpFetch("/plans", auth, {
     method: "POST",
     body: JSON.stringify({
@@ -57,10 +50,6 @@ async function ensurePlan(auth: string, supabase: any): Promise<string> {
     console.error("Razorpay plan create failed", plan);
     throw new Error(plan?.error?.description || "Plan creation failed");
   }
-  // Best-effort cache; ignore if column doesn't exist.
-  try {
-    await supabase.from("razorpay_config").update({ creator_plan_id: plan.id }).eq("id", true);
-  } catch (_) {}
   return plan.id as string;
 }
 

@@ -287,7 +287,7 @@ function ActivityFeed({ search }: { search: string }) {
 
       const { data: audit } = await (supabase as any)
         .from("admin_audit_log")
-        .select("id, action, target_type, target_id, created_at, metadata")
+        .select("id, action, target_email, target_user_id, created_at, details")
         .order("created_at", { ascending: false })
         .limit(80);
       for (const a of audit ?? []) {
@@ -295,7 +295,7 @@ function ActivityFeed({ search }: { search: string }) {
           id: `au-${a.id}`,
           kind: humanKind(a.action),
           title: a.action,
-          detail: `${a.target_type ?? ""}${a.target_id ? ` · ${String(a.target_id).slice(0, 8)}` : ""}`,
+          detail: `${a.target_email ?? ""}${a.target_user_id ? ` · ${String(a.target_user_id).slice(0, 8)}` : ""}`,
           at: a.created_at,
         });
       }

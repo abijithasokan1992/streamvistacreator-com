@@ -20,7 +20,7 @@ export default defineTool({
     const { data, error } = await userClient(ctx)
       .from("content_titles")
       .select(
-        "id, title, status, genre, language, duration_minutes, synopsis, tags, updated_at, created_at",
+        "id, title, status, genre, language, duration_minutes, synopsis, submitted_at, approved_at, published_at, updated_at, created_at",
       )
       .eq("id", id)
       .eq("owner_user_id", ctx.getUserId()!)

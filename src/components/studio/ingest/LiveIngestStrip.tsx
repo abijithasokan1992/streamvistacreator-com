@@ -116,7 +116,7 @@ export function LiveIngestStrip() {
             .eq("workspace_id", activeId)
             .maybeSingle(),
           supabase.from("workspace_storage_entitlements")
-            .select("total_bytes")
+            .select("total_storage_gb")
             .eq("workspace_id", activeId)
             .maybeSingle(),
           supabase.from("ingest_jobs")
@@ -164,7 +164,8 @@ export function LiveIngestStrip() {
         if (cancelled) return;
 
         const usedBytes = (usage.data as { display_used_bytes?: number } | null)?.display_used_bytes ?? 0;
-        const totalBytes = (entitlement.data as { total_bytes?: number } | null)?.total_bytes ?? null;
+        const totalGb = (entitlement.data as { total_storage_gb?: number } | null)?.total_storage_gb ?? null;
+        const totalBytes = totalGb != null ? Math.round(Number(totalGb) * 1024 * 1024 * 1024) : null;
         const percent = totalBytes && totalBytes > 0 ? Math.round((usedBytes / totalBytes) * 100) : null;
 
         const runningRow = running.data as { id: string; transferred_bytes?: number; total_bytes?: number } | null;

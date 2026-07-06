@@ -79,9 +79,9 @@ export default function ProductionWorkspace({
       const ids = rows.map((r) => r.user_id);
       let profMap: Record<string, { email?: string | null; full_name?: string | null }> = {};
       if (ids.length) {
-        const { data: profs } = await (supabase as any).from("profiles")
-          .select("id,email,full_name").in("id", ids);
-        for (const p of (profs as any[]) ?? []) profMap[p.id] = { email: p.email, full_name: p.full_name };
+        const { data: profs } = await (supabase as any).from("user_profiles")
+          .select("user_id,display_name,full_name").in("user_id", ids);
+        for (const p of (profs as any[]) ?? []) profMap[p.user_id] = { email: null, full_name: p.full_name ?? p.display_name ?? null };
       }
       if (cancelled) return;
       setMembers(rows.map((r) => ({
@@ -95,24 +95,37 @@ export default function ProductionWorkspace({
     return () => { cancelled = true; };
   }, [workspaceId]);
 
-  // Deliveries — reuse existing deal_deliveries, scoped to this project when
-  // linked. Falls back to workspace-scope for cross-production visibility.
+  // Deliveries — reuse existing deal_deliveries, scoped by title_id when the
+  // production is linked to a content title (crew.title_id). deal_deliveries
+  // has no project_id/workspace_id columns, so we only surface deliveries when
+  // the production is linked to a title.
   useEffect(() => {
     let cancelled = false;
+    const titleId = crew?.title_id as string | undefined;
+    if (!titleId) { setDeliveries([]); setDvLoading(false); return; }
     (async () => {
       setDvLoading(true);
       const { data } = await (supabase as any).from("deal_deliveries")
-        .select("id,title,status,due_at,created_at,project_id,workspace_id")
-        .or(`project_id.eq.${project.id}${workspaceId ? `,workspace_id.eq.${workspaceId}` : ""}`)
+        .select("id,status,expires_at,created_at,title_id")
+        .eq("title_id", titleId)
         .order("created_at", { ascending: false })
         .limit(20);
       if (cancelled) return;
-      const rows = ((data as any[]) ?? []).filter((r) => r.project_id === project.id || !r.project_id);
+      const rows = ((data as any[]) ?? []).map((r) => ({
+        id: r.id,
+        title: null,
+        status: r.status,
+        due_at: r.expires_at ?? null,
+        created_at: r.created_at,
+        project_id: null,
+        workspace_id: null,
+      }));
       setDeliveries(rows as Delivery[]);
       setDvLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [project.id, workspaceId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [crew?.title_id]);
 
   // Quality Review — reuse existing title_review_issues if this production is
   // linked to a content_titles row (crew.title_id).
@@ -123,12 +136,13 @@ export default function ProductionWorkspace({
     (async () => {
       setQrLoading(true);
       const { data } = await (supabase as any).from("title_review_issues")
-        .select("id,severity,status,title,stage,raised_at")
+        .select("id,severity,status,category_label,stage,raised_at")
         .eq("title_id", titleId)
         .order("raised_at", { ascending: false })
         .limit(20);
       if (cancelled) return;
-      setQcIssues(((data as Issue[]) ?? []));
+      const rows = ((data as any[]) ?? []).map((r) => ({ ...r, title: r.category_label }));
+      setQcIssues((rows as Issue[]) ?? []);
       setQrLoading(false);
     })();
     return () => { cancelled = true; };

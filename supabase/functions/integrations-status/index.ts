@@ -70,12 +70,12 @@ Deno.serve(async (req) => {
     let ociLastActivity: string | undefined;
     try {
       const [{ data: usedRows }, { data: activeRows }, { data: lastRow }] = await Promise.all([
-        admin.from('recent_uploads').select('size_bytes').limit(5000),
+        admin.from('recent_uploads').select('file_size').limit(5000),
         admin.from('recent_uploads').select('id', { count: 'exact', head: true }).eq('status', 'uploading'),
         admin.from('recent_uploads').select('created_at').order('created_at', { ascending: false }).limit(1),
       ]);
       const used = (usedRows ?? []).reduce(
-        (n: number, r: { size_bytes?: number | null }) => n + (Number(r.size_bytes) || 0),
+        (n: number, r: { file_size?: number | null }) => n + (Number(r.file_size) || 0),
         0,
       );
       ociExtra = {

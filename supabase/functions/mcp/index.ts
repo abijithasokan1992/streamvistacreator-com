@@ -142,18 +142,480 @@ var list_ingest_jobs_default = defineTool4({
   }
 });
 
+// src/lib/mcp/tools/list-productions.ts
+import { defineTool as defineTool5 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z4 } from "npm:zod@^3.25.76";
+
+// src/lib/mcp/tools/_shared.ts
+import { createClient as createClient4 } from "npm:@supabase/supabase-js@^2.105.4";
+function userClient4(ctx) {
+  return createClient4(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY,
+    {
+      global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
+      auth: { persistSession: false, autoRefreshToken: false }
+    }
+  );
+}
+function unauth() {
+  return {
+    content: [{ type: "text", text: "Please sign in to your StreamVista Studio account." }],
+    isError: true
+  };
+}
+function notStudio() {
+  return {
+    content: [
+      {
+        type: "text",
+        text: "This tool is available to StreamVista Studio users only. Ask your workspace owner for access."
+      }
+    ],
+    isError: true
+  };
+}
+async function getStudioWorkspaceIds(ctx) {
+  const sb = userClient4(ctx);
+  const uid = ctx.getUserId();
+  if (!uid) return [];
+  const [owned, member] = await Promise.all([
+    sb.from("workspaces").select("id").eq("owner_id", uid),
+    sb.from("workspace_members").select("workspace_id").eq("user_id", uid)
+  ]);
+  const ids = /* @__PURE__ */ new Set();
+  (owned.data ?? []).forEach((r) => ids.add(r.id));
+  (member.data ?? []).forEach((r) => ids.add(r.workspace_id));
+  return Array.from(ids);
+}
+function formatBytes(bytes) {
+  if (!bytes || bytes <= 0) return "0 B";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let v = bytes;
+  let i = 0;
+  while (v >= 1024 && i < units.length - 1) {
+    v /= 1024;
+    i++;
+  }
+  return `${v.toFixed(v >= 100 ? 0 : 1)} ${units[i]}`;
+}
+function ok(structured, summary) {
+  return {
+    content: [{ type: "text", text: summary }],
+    structuredContent: structured
+  };
+}
+
+// src/lib/mcp/tools/list-productions.ts
+var list_productions_default = defineTool5({
+  name: "list_productions",
+  title: "List productions",
+  description: "List the signed-in Studio user's active productions across their studio workspaces. Returns each production's name, title number, banner, and last-updated time.",
+  inputSchema: {
+    limit: z4.number().int().min(1).max(100).optional().describe("Max productions to return (default 25)."),
+    search: z4.string().optional().describe("Optional case-insensitive substring match on production name.")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ limit, search }, ctx) => {
+    if (!ctx.isAuthenticated()) return unauth();
+    const wsIds = await getStudioWorkspaceIds(ctx);
+    if (wsIds.length === 0) return notStudio();
+    let q = userClient4(ctx).from("projects").select("id, name, description, workspace_id, production_banner, crew, updated_at, created_at").in("workspace_id", wsIds).order("updated_at", { ascending: false }).limit(limit ?? 25);
+    if (search) q = q.ilike("name", `%${search}%`);
+    const { data, error } = await q;
+    if (error) return { content: [{ type: "text", text: "Could not load productions right now." }], isError: true };
+    const productions = (data ?? []).map((p) => ({
+      id: p.id,
+      name: p.name,
+      description: p.description ?? null,
+      title_number: p.crew?.title_number ?? null,
+      banner: p.production_banner ?? p.crew?.production_house ?? null,
+      last_updated: p.updated_at
+    }));
+    return ok(
+      { productions, total: productions.length },
+      productions.length ? `Found ${productions.length} production${productions.length === 1 ? "" : "s"}.` : "No productions yet in your studio workspace."
+    );
+  }
+});
+
+// src/lib/mcp/tools/open-production.ts
+import { defineTool as defineTool6 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z5 } from "npm:zod@^3.25.76";
+var open_production_default = defineTool6({
+  name: "open_production",
+  title: "Open production",
+  description: "Open a single production and return its overview: name, banner, title number, team crew summary, active ingest jobs, and asset totals. Studio-scoped by RLS.",
+  inputSchema: {
+    id: z5.string().uuid().describe("The production id (UUID) from `list_productions`.")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ id }, ctx) => {
+    if (!ctx.isAuthenticated()) return unauth();
+    const wsIds = await getStudioWorkspaceIds(ctx);
+    if (wsIds.length === 0) return notStudio();
+    const sb = userClient4(ctx);
+    const { data: p, error } = await sb.from("projects").select("id, name, description, workspace_id, production_banner, crew, created_at, updated_at").eq("id", id).maybeSingle();
+    if (error || !p) return { content: [{ type: "text", text: "Production not found or access denied." }], isError: true };
+    const [jobs, assets] = await Promise.all([
+      sb.from("ingest_jobs").select("id, status, total_files, completed_files, transferred_bytes, total_bytes, updated_at").eq("project_id", id).order("updated_at", { ascending: false }).limit(5),
+      sb.from("studio_assets").select("id, total_size_bytes", { count: "exact" }).eq("project_id", id)
+    ]);
+    const assetCount = assets.count ?? (assets.data?.length ?? 0);
+    const totalBytes = (assets.data ?? []).reduce(
+      (n, a) => n + (Number(a.total_size_bytes) || 0),
+      0
+    );
+    return ok(
+      {
+        production: {
+          id: p.id,
+          name: p.name,
+          description: p.description ?? null,
+          banner: p.production_banner ?? p.crew?.production_house ?? null,
+          title_number: p.crew?.title_number ?? null,
+          crew: p.crew ?? {},
+          last_updated: p.updated_at
+        },
+        recent_uploads: jobs.data ?? [],
+        asset_totals: { count: assetCount, total_bytes: totalBytes }
+      },
+      `Opened production "${p.name}".`
+    );
+  }
+});
+
+// src/lib/mcp/tools/show-todays-work.ts
+import { defineTool as defineTool7 } from "npm:@lovable.dev/mcp-js@0.20.0";
+var show_todays_work_default = defineTool7({
+  name: "show_todays_work",
+  title: "Show today's work",
+  description: "Summarize what the signed-in Studio user should do next today: unread alerts, in-flight uploads, and deliveries awaiting action.",
+  inputSchema: {},
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async (_input, ctx) => {
+    if (!ctx.isAuthenticated()) return unauth();
+    const wsIds = await getStudioWorkspaceIds(ctx);
+    if (wsIds.length === 0) return notStudio();
+    const sb = userClient4(ctx);
+    const uid = ctx.getUserId();
+    const [notifs, active, pendingDeliveries] = await Promise.all([
+      sb.from("notifications").select("id, title, message, is_read, created_at").eq("user_id", uid).eq("is_read", false).order("created_at", { ascending: false }).limit(10),
+      sb.from("ingest_jobs").select("id, status, total_files, completed_files, updated_at, project_id").in("workspace_id", wsIds).in("status", ["queued", "uploading", "processing", "verifying"]).order("updated_at", { ascending: false }).limit(10),
+      sb.from("deal_deliveries").select("id, status, recipient_email, buyer_org_name, updated_at").in("status", ["pending", "in_progress", "shared"]).order("updated_at", { ascending: false }).limit(10)
+    ]);
+    const tasks = [];
+    (notifs.data ?? []).forEach(
+      (n) => tasks.push({ kind: "alert", label: n.title || n.message || "New alert", id: n.id })
+    );
+    (active.data ?? []).forEach(
+      (j) => tasks.push({
+        kind: "upload",
+        label: `Upload in progress \xB7 ${j.completed_files ?? 0}/${j.total_files ?? 0} files`,
+        id: j.id
+      })
+    );
+    (pendingDeliveries.data ?? []).forEach(
+      (d) => tasks.push({
+        kind: "delivery",
+        label: `Delivery to ${d.buyer_org_name ?? d.recipient_email ?? "buyer"} \xB7 ${d.status}`,
+        id: d.id
+      })
+    );
+    return ok(
+      {
+        unread_alerts: notifs.data ?? [],
+        active_uploads: active.data ?? [],
+        pending_deliveries: pendingDeliveries.data ?? [],
+        tasks
+      },
+      tasks.length ? `You have ${tasks.length} item${tasks.length === 1 ? "" : "s"} needing attention today.` : "You're all caught up \u2014 no pending items today."
+    );
+  }
+});
+
+// src/lib/mcp/tools/show-upload-progress.ts
+import { defineTool as defineTool8 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z6 } from "npm:zod@^3.25.76";
+var show_upload_progress_default = defineTool8({
+  name: "show_upload_progress",
+  title: "Show upload progress",
+  description: "Show current and recent media uploads for the signed-in Studio user, with human-readable progress and transfer size.",
+  inputSchema: {
+    limit: z6.number().int().min(1).max(50).optional().describe("Max uploads to return (default 10).")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ limit }, ctx) => {
+    if (!ctx.isAuthenticated()) return unauth();
+    const wsIds = await getStudioWorkspaceIds(ctx);
+    if (wsIds.length === 0) return notStudio();
+    const { data, error } = await userClient4(ctx).from("ingest_jobs").select(
+      "id, status, total_files, completed_files, failed_files, total_bytes, transferred_bytes, started_at, completed_at, updated_at, project_id"
+    ).in("workspace_id", wsIds).order("updated_at", { ascending: false }).limit(limit ?? 10);
+    if (error) return { content: [{ type: "text", text: "Could not load upload progress." }], isError: true };
+    const uploads = (data ?? []).map((j) => {
+      const pct = j.total_files && j.total_files > 0 ? Math.round(100 * (j.completed_files ?? 0) / j.total_files) : 0;
+      return {
+        id: j.id,
+        status: j.status,
+        files_completed: j.completed_files ?? 0,
+        files_total: j.total_files ?? 0,
+        files_failed: j.failed_files ?? 0,
+        percent_complete: pct,
+        transferred: formatBytes(j.transferred_bytes),
+        total_size: formatBytes(j.total_bytes),
+        started_at: j.started_at,
+        completed_at: j.completed_at
+      };
+    });
+    return ok(
+      { uploads },
+      uploads.length ? `Showing ${uploads.length} upload${uploads.length === 1 ? "" : "s"}.` : "No uploads yet."
+    );
+  }
+});
+
+// src/lib/mcp/tools/show-storage-usage.ts
+import { defineTool as defineTool9 } from "npm:@lovable.dev/mcp-js@0.20.0";
+var show_storage_usage_default = defineTool9({
+  name: "show_storage_usage",
+  title: "Show storage usage",
+  description: "Report the signed-in Studio user's storage plan, allocated capacity, used capacity, and remaining headroom.",
+  inputSchema: {},
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async (_input, ctx) => {
+    if (!ctx.isAuthenticated()) return unauth();
+    const wsIds = await getStudioWorkspaceIds(ctx);
+    if (wsIds.length === 0) return notStudio();
+    const sb = userClient4(ctx);
+    const [ent, usage] = await Promise.all([
+      sb.from("workspace_storage_entitlements").select("workspace_id, plan_code, total_storage_gb, included_storage_gb, paid_storage_gb, admin_bonus_storage_gb, billing_status").in("workspace_id", wsIds),
+      sb.from("workspace_storage_usage").select("workspace_id, billable_bytes, display_used_bytes, last_recalculated_at").in("workspace_id", wsIds)
+    ]);
+    const usageByWs = /* @__PURE__ */ new Map();
+    (usage.data ?? []).forEach((u) => usageByWs.set(u.workspace_id, u));
+    const workspaces = (ent.data ?? []).map((e) => {
+      const u = usageByWs.get(e.workspace_id);
+      const usedBytes = Number(u?.display_used_bytes ?? u?.billable_bytes ?? 0);
+      const totalBytes = Number(e.total_storage_gb ?? 0) * 1024 ** 3;
+      const remaining = Math.max(0, totalBytes - usedBytes);
+      const pct = totalBytes > 0 ? Math.round(100 * usedBytes / totalBytes) : 0;
+      return {
+        workspace_id: e.workspace_id,
+        plan: e.plan_code,
+        total: formatBytes(totalBytes),
+        used: formatBytes(usedBytes),
+        available: formatBytes(remaining),
+        percent_used: pct,
+        billing_status: e.billing_status
+      };
+    });
+    return ok({ workspaces }, workspaces.length ? "Storage summary ready." : "No storage plan is active yet.");
+  }
+});
+
+// src/lib/mcp/tools/show-recent-activity.ts
+import { defineTool as defineTool10 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z7 } from "npm:zod@^3.25.76";
+var show_recent_activity_default = defineTool10({
+  name: "show_recent_activity",
+  title: "Show recent activity",
+  description: "Show the signed-in Studio user's recent notifications and activity feed.",
+  inputSchema: {
+    limit: z7.number().int().min(1).max(100).optional().describe("Max entries (default 20).")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ limit }, ctx) => {
+    if (!ctx.isAuthenticated()) return unauth();
+    const wsIds = await getStudioWorkspaceIds(ctx);
+    if (wsIds.length === 0) return notStudio();
+    const { data, error } = await userClient4(ctx).from("notifications").select("id, title, message, is_read, created_at").eq("user_id", ctx.getUserId()).order("created_at", { ascending: false }).limit(limit ?? 20);
+    if (error) return { content: [{ type: "text", text: "Could not load recent activity." }], isError: true };
+    return ok({ activity: data ?? [] }, `Recent activity: ${(data ?? []).length} entries.`);
+  }
+});
+
+// src/lib/mcp/tools/show-team.ts
+import { defineTool as defineTool11 } from "npm:@lovable.dev/mcp-js@0.20.0";
+var show_team_default = defineTool11({
+  name: "show_team",
+  title: "Show team",
+  description: "List the signed-in Studio user's team members across their workspaces, including each member's role.",
+  inputSchema: {},
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async (_input, ctx) => {
+    if (!ctx.isAuthenticated()) return unauth();
+    const wsIds = await getStudioWorkspaceIds(ctx);
+    if (wsIds.length === 0) return notStudio();
+    const sb = userClient4(ctx);
+    const { data: members, error } = await sb.from("workspace_members").select("workspace_id, user_id, role, created_at").in("workspace_id", wsIds);
+    if (error) return { content: [{ type: "text", text: "Could not load team members." }], isError: true };
+    const userIds = Array.from(new Set((members ?? []).map((m) => m.user_id)));
+    let profiles = [];
+    if (userIds.length > 0) {
+      const { data: profs } = await sb.from("user_profiles").select("id, display_name, email, avatar_url").in("id", userIds);
+      profiles = profs ?? [];
+    }
+    const byId = new Map(profiles.map((p) => [p.id, p]));
+    const team = (members ?? []).map((m) => {
+      const p = byId.get(m.user_id) ?? {};
+      return {
+        workspace_id: m.workspace_id,
+        role: m.role,
+        name: p.display_name ?? null,
+        email: p.email ?? null,
+        joined_at: m.created_at
+      };
+    });
+    return ok(
+      { team, total: team.length },
+      team.length ? `Your team has ${team.length} member${team.length === 1 ? "" : "s"}.` : "No team members yet."
+    );
+  }
+});
+
+// src/lib/mcp/tools/show-deliveries.ts
+import { defineTool as defineTool12 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z8 } from "npm:zod@^3.25.76";
+var show_deliveries_default = defineTool12({
+  name: "show_deliveries",
+  title: "Show deliveries",
+  description: "List the signed-in Studio user's recent buyer deliveries, including recipient, delivery status, and share expiry.",
+  inputSchema: {
+    limit: z8.number().int().min(1).max(100).optional().describe("Max deliveries to return (default 20)."),
+    status: z8.string().optional().describe("Optional exact status filter (e.g. 'pending', 'shared', 'delivered').")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ limit, status }, ctx) => {
+    if (!ctx.isAuthenticated()) return unauth();
+    const wsIds = await getStudioWorkspaceIds(ctx);
+    if (wsIds.length === 0) return notStudio();
+    let q = userClient4(ctx).from("deal_deliveries").select(
+      "id, status, method, buyer_org_name, recipient_email, share_url, expires_at, shared_at, delivered_at, updated_at"
+    ).order("updated_at", { ascending: false }).limit(limit ?? 20);
+    if (status) q = q.eq("status", status);
+    const { data, error } = await q;
+    if (error) return { content: [{ type: "text", text: "Could not load deliveries." }], isError: true };
+    return ok(
+      { deliveries: data ?? [] },
+      (data ?? []).length ? `Showing ${data.length} deliver${data.length === 1 ? "y" : "ies"}.` : "No deliveries yet."
+    );
+  }
+});
+
+// src/lib/mcp/tools/show-billing.ts
+import { defineTool as defineTool13 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z9 } from "npm:zod@^3.25.76";
+function money(paise, currency) {
+  if (paise == null) return "";
+  const amount = paise / 100;
+  const cur = (currency || "INR").toUpperCase();
+  const symbol = cur === "INR" ? "\u20B9" : cur === "USD" ? "$" : cur === "EUR" ? "\u20AC" : `${cur} `;
+  return `${symbol}${amount.toFixed(2)}`;
+}
+var show_billing_default = defineTool13({
+  name: "show_billing",
+  title: "Show billing",
+  description: "Summarize the signed-in Studio user's recent invoices, showing invoice number, amount, currency, status, and issued date.",
+  inputSchema: {
+    limit: z9.number().int().min(1).max(100).optional().describe("Max invoices to return (default 20).")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ limit }, ctx) => {
+    if (!ctx.isAuthenticated()) return unauth();
+    const wsIds = await getStudioWorkspaceIds(ctx);
+    if (wsIds.length === 0) return notStudio();
+    const { data, error } = await userClient4(ctx).from("invoices").select("id, invoice_number, description, currency, total_paise, status, issued_at, source").eq("user_id", ctx.getUserId()).order("issued_at", { ascending: false }).limit(limit ?? 20);
+    if (error) return { content: [{ type: "text", text: "Could not load billing history." }], isError: true };
+    const invoices = (data ?? []).map((r) => ({
+      id: r.id,
+      number: r.invoice_number,
+      description: r.description,
+      amount: money(r.total_paise, r.currency),
+      currency: r.currency,
+      status: r.status,
+      issued_at: r.issued_at,
+      source: r.source
+    }));
+    const outstanding = invoices.filter((i) => i.status && i.status !== "paid" && i.status !== "refunded").length;
+    return ok(
+      { invoices, outstanding_count: outstanding },
+      invoices.length ? `${invoices.length} invoice${invoices.length === 1 ? "" : "s"}${outstanding ? `, ${outstanding} still open` : ""}.` : "No billing history yet."
+    );
+  }
+});
+
+// src/lib/mcp/tools/search-files.ts
+import { defineTool as defineTool14 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z10 } from "npm:zod@^3.25.76";
+var search_files_default = defineTool14({
+  name: "search_files",
+  title: "Search files",
+  description: "Search the signed-in Studio user's media library by file title. Returns matching assets with size, camera info, and shoot date.",
+  inputSchema: {
+    query: z10.string().min(1).describe("Substring to match against the file title (case-insensitive)."),
+    limit: z10.number().int().min(1).max(100).optional().describe("Max results (default 25)."),
+    production_id: z10.string().uuid().optional().describe("Optional: limit results to a specific production.")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ query, limit, production_id }, ctx) => {
+    if (!ctx.isAuthenticated()) return unauth();
+    const wsIds = await getStudioWorkspaceIds(ctx);
+    if (wsIds.length === 0) return notStudio();
+    let q = userClient4(ctx).from("studio_assets").select(
+      "id, title, asset_type, total_size_bytes, file_count, camera_make, camera_model, codec, resolution, fps, shoot_date, status, project_id, workspace_id, updated_at"
+    ).in("workspace_id", wsIds).ilike("title", `%${query}%`).order("updated_at", { ascending: false }).limit(limit ?? 25);
+    if (production_id) q = q.eq("project_id", production_id);
+    const { data, error } = await q;
+    if (error) return { content: [{ type: "text", text: "Could not search your media library." }], isError: true };
+    const files = (data ?? []).map((a) => ({
+      id: a.id,
+      title: a.title,
+      type: a.asset_type,
+      size: formatBytes(a.total_size_bytes),
+      file_count: a.file_count,
+      camera: [a.camera_make, a.camera_model].filter(Boolean).join(" ") || null,
+      codec: a.codec,
+      resolution: a.resolution,
+      fps: a.fps,
+      shoot_date: a.shoot_date,
+      status: a.status,
+      production_id: a.project_id
+    }));
+    return ok(
+      { files, total: files.length, query },
+      files.length ? `Found ${files.length} file${files.length === 1 ? "" : "s"} matching "${query}".` : `No files match "${query}".`
+    );
+  }
+});
+
 // src/lib/mcp/index.ts
 var projectRef = "hllgmkfqgeuqlmpcirvn";
 var mcp_default = defineMcp({
   name: "streamvista-mcp",
   title: "StreamVista Cloud X",
-  version: "0.1.0",
-  instructions: "Read-only tools for a signed-in StreamVista Cloud X user. Use `whoami` to verify identity, `list_titles`/`get_title` for creator content, and `list_ingest_jobs` for Studio ingest progress. All data is scoped to the authenticated user via RLS.",
+  version: "0.2.0",
+  instructions: "Tools for a signed-in StreamVista Cloud X user. Creator tools: `list_titles`, `get_title`. Studio Workspace tools: `list_productions`, `open_production`, `show_todays_work`, `show_upload_progress`, `show_storage_usage`, `show_recent_activity`, `show_team`, `show_deliveries`, `show_billing`, `search_files`. Studio tools return a friendly access message when called by non-Studio users. Use `whoami` to verify identity. All data is scoped to the signed-in user via RLS.",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated"
   }),
-  tools: [whoami_default, list_titles_default, get_title_default, list_ingest_jobs_default]
+  tools: [
+    whoami_default,
+    list_titles_default,
+    get_title_default,
+    list_ingest_jobs_default,
+    list_productions_default,
+    open_production_default,
+    show_todays_work_default,
+    show_upload_progress_default,
+    show_storage_usage_default,
+    show_recent_activity_default,
+    show_team_default,
+    show_deliveries_default,
+    show_billing_default,
+    search_files_default
+  ]
 });
 
 // lovable-mcp-supabase-entry.ts

@@ -9022,6 +9022,18 @@ export type Database = {
           uploader_email: string
         }[]
       }
+      pgmq_delete_dlq: {
+        Args: { msg_id: number; queue_name: string }
+        Returns: boolean
+      }
+      pgmq_read_dlq: {
+        Args: { n?: number; queue_name: string }
+        Returns: {
+          enqueued_at: string
+          message: Json
+          msg_id: number
+        }[]
+      }
       primary_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]

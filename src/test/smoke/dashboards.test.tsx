@@ -6,8 +6,7 @@ import CreatorPlanStrip from "@/components/creator/CreatorPlanStrip";
 import CreatorQuickActions from "@/components/creator/CreatorQuickActions";
 import StudioPlanStrip from "@/components/studio/StudioPlanStrip";
 import StudioQuickActions from "@/components/studio/StudioQuickActions";
-import BuyerPlanStrip from "@/components/buyer/BuyerPlanStrip";
-import BuyerQuickActions from "@/components/buyer/BuyerQuickActions";
+import BuyerNav from "@/components/buyer/sections/BuyerNav";
 import AdminCommandBar from "@/components/admin/AdminCommandBar";
 
 const wrap = (ui: React.ReactNode) => render(<MemoryRouter>{ui}</MemoryRouter>);
@@ -87,34 +86,15 @@ describe("Studio dashboard smoke", () => {
 });
 
 describe("Buyer dashboard smoke", () => {
-  it("plan strip shows managed access summary", () => {
-    const onNewRequest = vi.fn();
-    wrap(
-      <BuyerPlanStrip
-        openRequests={2}
-        activeConversations={1}
-        approvedScreeners={3}
-        onNewRequest={onNewRequest}
-      />,
-    );
-    expect(screen.getByText(/buyer · admin-mediated access/i)).toBeInTheDocument();
-    expect(screen.getByText(/2 open/i)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /new request/i }));
-    expect(onNewRequest).toHaveBeenCalled();
-  });
-
-  it("quick actions trigger new request callback", () => {
-    const onNewRequest = vi.fn();
-    const onCatalogRequest = vi.fn();
-    wrap(
-      <BuyerQuickActions
-        onNewRequest={onNewRequest}
-        onCatalogRequest={onCatalogRequest}
-      />,
-    );
-    expect(screen.getByText(/buyer tools/i)).toBeInTheDocument();
-    fireEvent.click(screen.getByText(/new request wizard/i));
-    expect(onNewRequest).toHaveBeenCalled();
+  it("navigation exposes buyer journey sections", () => {
+    const onChange = vi.fn();
+    wrap(<BuyerNav section="dashboard" onChange={onChange} badges={{ requests: 2 }} />);
+    // Journey sections are advertised (mobile + desktop copies)
+    expect(screen.getAllByText(/find content/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/screeners/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/commercial/i).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getAllByText(/find content/i)[0]);
+    expect(onChange).toHaveBeenCalledWith("find");
   });
 });
 

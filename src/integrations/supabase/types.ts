@@ -8769,6 +8769,14 @@ export type Database = {
         Returns: boolean
       }
       invoke_edge_function: { Args: { fn_name: string }; Returns: number }
+      is_assigned_reviewer: {
+        Args: { _stage: string; _title_id: string }
+        Returns: boolean
+      }
+      is_assigned_reviewer_any: {
+        Args: { _title_id: string }
+        Returns: boolean
+      }
       is_free_tier_user: { Args: { _user_id: string }; Returns: boolean }
       is_legal_reviewer: { Args: { _user_id: string }; Returns: boolean }
       is_producer_of: {

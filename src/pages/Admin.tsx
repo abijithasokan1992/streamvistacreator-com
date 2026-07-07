@@ -491,6 +491,8 @@ function buildDepartments(args: {
       desc: "System settings, audit, email, AI, security, homepage CMS.",
       sections: [
         { id: "health", label: "Infrastructure Health", hint: "Live probes · no cached state", content: <InfrastructureHealth /> },
+        { id: "metrics", label: "Metrics", hint: "Latency percentiles, throughput, failure rates", content: <MetricsDashboard /> },
+        { id: "tests", label: "Test Runner", hint: "Live smoke + integration tests", content: <AdminTestRunner /> },
         { id: "runbook", label: "Runbook", hint: "In-app operations playbooks", content: <AdminRunbook /> },
         ...systemSections,
         { id: "email", label: "Email Log", hint: "Raw email delivery log", content: <EmailLogMonitor /> },

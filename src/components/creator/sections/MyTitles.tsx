@@ -39,6 +39,7 @@ export default function MyTitlesSection() {
   const [editorMode, setEditorMode] = useState<"edit" | "view">("edit");
   const [filter, setFilter] = useState<"all" | "drafts" | "in_review" | "approved">("all");
   const [sort, setSort] = useState<"newest" | "oldest" | "updated">("updated");
+  const [deleteTarget, setDeleteTarget] = useState<TitleRow | null>(null);
 
   const reload = useCallback(async () => {
     if (!user) return;

@@ -146,7 +146,7 @@ export default function CreatorQuickActions({
       <HelpDrawer
         open={drawer === "commercial"}
         onOpenChange={(o) => !o && setDrawer(null)}
-        title="Commercial Path Summary"
+        title="Business Options"
       >
         {isFree ? (
           <>

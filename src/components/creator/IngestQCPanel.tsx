@@ -116,10 +116,10 @@ export default function IngestQCPanel() {
           </div>
           <div>
             <p className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground/80 font-semibold">
-              Ingest &amp; QC Status
+              Processing
             </p>
             <p className="text-sm font-semibold mt-0.5">
-              {jobs.length === 0 ? "No ingest activity" : `${jobs.length} recent job${jobs.length === 1 ? "" : "s"}`}
+              {jobs.length === 0 ? "No files being processed" : `${jobs.length} recent file${jobs.length === 1 ? "" : "s"}`}
             </p>
           </div>
         </div>

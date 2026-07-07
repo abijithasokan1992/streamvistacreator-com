@@ -54,17 +54,31 @@ async function invoke<T>(action: "search" | "preview", body: Record<string, unkn
   return data as T;
 }
 
+// In-memory per-session cache so repeated searches / previews don't re-hit the
+// edge function. Cleared on page reload; no persistent storage.
+const searchCache = new Map<string, MetadataSearchResult[]>();
+const previewCache = new Map<string, MetadataPreview>();
+
 export async function searchMetadata(query: string, opts: { year?: number; kind?: "movie" | "tv" } = {}) {
+  const key = `${(opts.kind ?? "any")}::${(opts.year ?? "")}::${query.trim().toLowerCase()}`;
+  const cached = searchCache.get(key);
+  if (cached) return cached;
   const data = await invoke<{ provider: string; results: MetadataSearchResult[] }>("search", {
     query,
     year: opts.year,
     kind: opts.kind,
   });
-  return data.results ?? [];
+  const results = data.results ?? [];
+  searchCache.set(key, results);
+  return results;
 }
 
 export async function previewMetadata(id: string | number, kind: "movie" | "tv") {
+  const key = `${kind}::${id}`;
+  const cached = previewCache.get(key);
+  if (cached) return cached;
   const data = await invoke<{ provider: string; preview: MetadataPreview }>("preview", { id, kind });
+  previewCache.set(key, data.preview);
   return data.preview;
 }
 

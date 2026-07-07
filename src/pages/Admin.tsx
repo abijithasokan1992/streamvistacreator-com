@@ -458,29 +458,47 @@ function buildDepartments(args: {
 }
 
 function AdminMainPanel({
-  isSuperAdmin, location, searchParams, navigate,
+  isSuperAdmin, isReviewer = false, reviewerKind = null, location, searchParams, navigate,
 }: {
   isSuperAdmin: boolean;
+  isReviewer?: boolean;
+  reviewerKind?: "qc" | "legal" | null;
   location: { pathname: string };
   searchParams: URLSearchParams;
   navigate: (p: string) => void;
 }) {
-  const initial = pathToDept(location.pathname, searchParams);
+  const pathTab = location.pathname.toLowerCase().startsWith("/admin/qc") ? "qc_review"
+    : location.pathname.toLowerCase().startsWith("/admin/legal") ? "legal_review"
+    : undefined;
+
+  // Reviewers are pinned to Operations · Approvals with the correct review tab.
+  const reviewerDefaultTab = reviewerKind === "qc" ? "qc_review" : reviewerKind === "legal" ? "legal_review" : undefined;
+  const reviewInitialTab = pathTab ?? reviewerDefaultTab;
+
+  const initial: DeptKey = isReviewer ? "operations" : pathToDept(location.pathname, searchParams);
   const [dept, setDept] = useState<DeptKey>(initial);
   const [sectionByDept, setSectionByDept] = useState<Record<string, string>>(() => {
+    if (isReviewer) return { operations: "approvals" };
     const s = searchParams.get("section");
     return s ? { [initial]: s } : {};
   });
 
-  const reviewInitialTab: "qc_review" | "legal_review" | undefined =
-    location.pathname.toLowerCase().startsWith("/admin/qc") ? "qc_review"
-    : location.pathname.toLowerCase().startsWith("/admin/legal") ? "legal_review"
-    : undefined;
-
-  const departments = useMemo(
+  const allDepartments = useMemo(
     () => buildDepartments({ isSuperAdmin, navigate, reviewInitialTab }),
     [isSuperAdmin, navigate, reviewInitialTab],
   );
+
+  // Reviewers see only the Operations department, and only the Approvals sub-section.
+  const departments = useMemo(() => {
+    if (!isReviewer) return allDepartments;
+    const ops = allDepartments.find((d) => d.id === "operations");
+    if (!ops) return allDepartments;
+    return [{
+      ...ops,
+      desc: reviewerKind === "legal" ? "Legal review queue." : "QC review queue.",
+      sections: ops.sections.filter((s) => s.id === "approvals"),
+    }];
+  }, [allDepartments, isReviewer, reviewerKind]);
 
   const cmdDepartments: AdminDepartment[] = useMemo(
     () => departments.map((d) => ({

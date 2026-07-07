@@ -108,7 +108,9 @@ function pathToDept(path: string, search: URLSearchParams): DeptKey {
 
 
 export default function Admin() {
-  const { user, isAdmin, isSuperAdmin, loading, signOut } = useAuth();
+  const { user, isAdmin, isSuperAdmin, isQcReviewer, isLegalReviewer, loading, signOut } = useAuth();
+  const isReviewer = isQcReviewer || isLegalReviewer;
+  const canEnter = isAdmin || isReviewer;
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();

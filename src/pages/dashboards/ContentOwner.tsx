@@ -123,9 +123,10 @@ export default function ContentOwnerDashboard() {
           )}
           {effectiveSection === "home" && <HomeSection onNavigate={setSection} isFree={isFree} />}
           {effectiveSection === "titles" && <MyTitlesSection />}
-          {effectiveSection === "submissions" && <SubmissionsSection onNavigate={setSection} />}
-          {effectiveSection === "updates" && <UpdatesSection />}
+          {(effectiveSection === "business" || effectiveSection === "submissions") && <SubmissionsSection onNavigate={setSection} />}
+          {(effectiveSection === "messages" || effectiveSection === "activity" || effectiveSection === "updates") && <UpdatesSection />}
           {(effectiveSection === "statements" || effectiveSection === "billing") && <StatementsSection />}
+          {effectiveSection === "storage" && <StorageSection />}
           {effectiveSection === "delivery_vault" && <DeliveryVaultSection />}
           {effectiveSection === "help" && <HelpSection />}
           {effectiveSection === "profile" && <MyCreatorProfile embedded />}

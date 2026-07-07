@@ -386,63 +386,58 @@ function buildDepartments(args: {
 
   return [
     {
-      id: "dashboard",
-      label: "Dashboard",
-      icon: <LayoutDashboard className="w-4 h-4" />,
-      desc: "Platform health and quick jumps.",
+      id: "mission",
+      label: "Mission Control",
+      icon: <Rocket className="w-4 h-4" />,
+      desc: "What needs action, what's healthy, what changed today.",
       sections: [
-        { id: "overview", label: "Overview", hint: "Platform metrics", content: (
-          <div className="space-y-8"><PlatformOverview /><QuickNav navigate={navigate} /></div>
-        )},
-        { id: "readiness", label: "Readiness", hint: "Live 5-pillar readiness matrix", content: <PlatformReadinessCenter /> },
+        { id: "mission", label: "Mission Control", hint: "Live operations dashboard", content: <MissionControl /> },
+        { id: "overview", label: "Platform Overview", hint: "Historical metrics", content: <PlatformOverview /> },
+        { id: "readiness", label: "Readiness", hint: "5-pillar readiness matrix", content: <PlatformReadinessCenter /> },
+        { id: "jump", label: "Quick Jumps", hint: "Fast navigation", content: <QuickNav navigate={navigate} /> },
       ],
     },
     {
-      id: "operations",
-      label: "Operations",
-      icon: <ClipboardCheck className="w-4 h-4" />,
-      desc: "Content review, pipeline and catalog ops.",
+      id: "content",
+      label: "Content",
+      icon: <Film className="w-4 h-4" />,
+      desc: "Titles, QC, legal review, publishing and catalog.",
       sections: [
         { id: "approvals", label: "Content Review", hint: "Title QC & legal review", content: (
           <ContentReviewWorkflow initialTab={args.reviewInitialTab} />
         )},
         { id: "pipeline", label: "Pipeline", hint: "Title edits & QC flow", content: <TitleEditRequestsInbox /> },
-        { id: "catalog-ops", label: "Catalog Ops", hint: "Global assets", content: <GlobalAssetManager /> },
+        { id: "catalog-ops", label: "Catalog & Assets", hint: "Global assets", content: <GlobalAssetManager /> },
       ],
     },
     {
-      id: "ecosystem",
-      label: "Ecosystem",
-      icon: <Network className="w-4 h-4" />,
-      desc: "Organizations, invitations, channel partners and onboarding — one source of truth.",
+      id: "users",
+      label: "Users",
+      icon: <UsersIcon className="w-4 h-4" />,
+      desc: "Creators, studios, buyers, organizations, invitations, support.",
       sections: [
+        { id: "users", label: "Users", hint: "Creators, studios, buyers", content: <UsersAndCredentials /> },
         { id: "organizations", label: "Organizations", hint: "Creators · Studios · Buyers · Partners", content: <OrganizationsConsole /> },
         { id: "invitations", label: "Invitations", hint: "Role-aware invites", content: <InvitationsConsole /> },
         { id: "channel-partners", label: "Channel Partners", hint: "Publish to /partners", content: <ChannelPartnersConsole /> },
-        { id: "onboarding", label: "Onboarding Queue", hint: "Approvals & activations", content: <OnboardingApprovals /> },
-      ],
-    },
-    {
-      id: "accounts",
-      label: "Accounts",
-      icon: <UsersIcon className="w-4 h-4" />,
-      desc: "Users, organizations, roles & access.",
-      sections: [
-        { id: "users", label: "Users", hint: "Creators, studios, buyers", content: <UsersAndCredentials /> },
-        { id: "organizations", label: "Organizations", hint: "Internal team", content: <AdminTeamManager /> },
+        { id: "onboarding", label: "Onboarding", hint: "Approvals & activations", content: <OnboardingApprovals /> },
+        { id: "team", label: "Internal Team", hint: "Admin staff", content: <AdminTeamManager /> },
         { id: "roles", label: "Roles & Access", hint: "Role assignments", content: <RolesManager /> },
+        { id: "support", label: "Support & Messages", hint: "Tickets, contact, broadcasts", content: (
+          <div className="space-y-6"><CommunicationCenter /></div>
+        )},
       ],
     },
     {
-      id: "commerce",
-      label: "Commerce",
+      id: "business",
+      label: "Business",
       icon: <Briefcase className="w-4 h-4" />,
-      desc: "Plans, billing, entitlements and commercial requests.",
+      desc: "Plans, subscriptions, payments, invoices, rights, licensing.",
       sections: [
         { id: "plans", label: "Plans & Pricing", hint: "Products, vault pricing, free tier", content: (
           <div className="space-y-6"><ProductsAndPlans /><StudioVaultPricing /><FreeTierConfig /></div>
         )},
-        { id: "billing", label: "Billing", hint: "Invoices and finance ops", content: (
+        { id: "billing", label: "Billing & Payments", hint: "Invoices and finance ops", content: (
           <div className="space-y-6">
             <RazorpayOpsBanner />
             <AdminFinanceConsole />
@@ -453,36 +448,29 @@ function buildDepartments(args: {
             <RazorpayAuditLog />
           </div>
         )},
+        { id: "vault", label: "Vault Purchases", hint: "Studio Vault revenue", content: <AdminStudioVaultPurchases /> },
+        { id: "intelligence", label: "Market Intelligence", hint: "Buyer & competitor intelligence", content: <IntelligenceCenter /> },
       ],
     },
     {
-      id: "storage",
-      label: "Storage & Delivery",
-      icon: <HardDrive className="w-4 h-4" />,
-      desc: "Storage health, uploads and vault delivery.",
+      id: "cloud",
+      label: "Cloud",
+      icon: <Cloud className="w-4 h-4" />,
+      desc: "Uploads, storage, Oracle Cloud, delivery, backups.",
       sections: [
-        { id: "storage-health", label: "Storage", hint: "OCI monitor", content: <OracleStorageMonitor /> },
-        { id: "vault-purchases", label: "Vault / Delivery", hint: "Studio Vault purchases", content: <AdminStudioVaultPurchases /> },
-        { id: "storage-advanced", label: "Advanced", hint: "OCI credentials & buckets", content: <OracleOciStorageCard /> },
+        { id: "storage", label: "Storage", hint: "OCI monitor", content: <OracleStorageMonitor /> },
+        { id: "advanced", label: "OCI Advanced", hint: "Credentials & buckets", content: <OracleOciStorageCard /> },
       ],
     },
     {
-      id: "comms",
-      label: "Comms",
-      icon: <Inbox className="w-4 h-4" />,
-      desc: "Unified Communication Center.",
-      sections: [
-        { id: "center", label: "Center", hint: "Inbox · Notifications · Invitations · Broadcast · Support · Activity", content: <CommunicationCenter /> },
-        { id: "intelligence", label: "✦ Intelligence", hint: "AI-powered market, buyer and competitor intelligence", content: <IntelligenceCenter /> },
-        { id: "email", label: "Email log", hint: "Raw email delivery log", content: <EmailLogMonitor /> },
-      ],
-    },
-    {
-      id: "system",
-      label: "System",
+      id: "platform",
+      label: "Platform",
       icon: <SettingsIcon className="w-4 h-4" />,
-      desc: "Homepage CMS, settings, audit, and Founder Vault.",
-      sections: systemSections,
+      desc: "System settings, audit, email, AI, security, homepage CMS.",
+      sections: [
+        ...systemSections,
+        { id: "email", label: "Email Log", hint: "Raw email delivery log", content: <EmailLogMonitor /> },
+      ],
     },
   ];
 }

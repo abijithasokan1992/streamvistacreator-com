@@ -493,10 +493,10 @@ function AdminMainPanel({
   const reviewerDefaultTab = reviewerKind === "qc" ? "qc_review" : reviewerKind === "legal" ? "legal_review" : undefined;
   const reviewInitialTab = pathTab ?? reviewerDefaultTab;
 
-  const initial: DeptKey = isReviewer ? "operations" : pathToDept(location.pathname, searchParams);
+  const initial: DeptKey = isReviewer ? "content" : pathToDept(location.pathname, searchParams);
   const [dept, setDept] = useState<DeptKey>(initial);
   const [sectionByDept, setSectionByDept] = useState<Record<string, string>>(() => {
-    if (isReviewer) return { operations: "approvals" };
+    if (isReviewer) return { content: "approvals" };
     const s = searchParams.get("section");
     return s ? { [initial]: s } : {};
   });
@@ -506,10 +506,10 @@ function AdminMainPanel({
     [isSuperAdmin, navigate, reviewInitialTab],
   );
 
-  // Reviewers see only the Operations department, and only the Approvals sub-section.
+  // Reviewers see only the Content workspace, and only the Approvals sub-section.
   const departments = useMemo(() => {
     if (!isReviewer) return allDepartments;
-    const ops = allDepartments.find((d) => d.id === "operations");
+    const ops = allDepartments.find((d) => d.id === "content");
     if (!ops) return allDepartments;
     return [{
       ...ops,

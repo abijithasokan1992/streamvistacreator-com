@@ -375,7 +375,7 @@ function computeRows(meta: TitleMetadata, currentTitle: string, p: MetadataPrevi
       display: (v) => String(v ?? ""), hasIncoming: (v) => !!String(v ?? "").trim() },
     { key: "tmdb_id", label: "TMDb ID", current: meta.tmdb_id, incoming: p.tmdb_id,
       display: (v) => String(v ?? ""), hasIncoming: (v) => !!String(v ?? "").trim() },
-    { key: "trailer_url", label: "Trailer URL", current: "", incoming: p.trailer_url,
+    { key: "trailer_url", label: "Trailer URL", current: trailerUrl, incoming: p.trailer_url,
       display: (v) => String(v ?? ""), hasIncoming: (v) => !!String(v ?? "").trim() },
   ];
 

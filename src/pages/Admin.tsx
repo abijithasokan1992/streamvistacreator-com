@@ -307,6 +307,8 @@ export default function Admin() {
 
       <AdminMainPanel
         isSuperAdmin={isSuperAdmin}
+        isReviewer={isReviewer}
+        reviewerKind={isQcReviewer ? "qc" : isLegalReviewer ? "legal" : null}
         location={location}
         searchParams={searchParams}
         navigate={navigate}

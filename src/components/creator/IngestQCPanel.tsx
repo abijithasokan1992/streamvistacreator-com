@@ -116,10 +116,10 @@ export default function IngestQCPanel() {
           </div>
           <div>
             <p className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground/80 font-semibold">
-              Ingest &amp; QC Status
+              Processing
             </p>
             <p className="text-sm font-semibold mt-0.5">
-              {jobs.length === 0 ? "No ingest activity" : `${jobs.length} recent job${jobs.length === 1 ? "" : "s"}`}
+              {jobs.length === 0 ? "No files being processed" : `${jobs.length} recent file${jobs.length === 1 ? "" : "s"}`}
             </p>
           </div>
         </div>
@@ -133,7 +133,7 @@ export default function IngestQCPanel() {
 
       {jobs.length === 0 ? (
         <div className="rounded-md border border-zinc-800/60 bg-zinc-950/60 p-4 text-xs text-muted-foreground">
-          No Data Found. Upload a master file to see live ingest progress and run QC scans here.
+          Nothing to show yet. Upload a master file to see progress and run a quality check here.
         </div>
       ) : (
         <ul className="space-y-2.5">
@@ -183,7 +183,7 @@ export default function IngestQCPanel() {
                       : "border-amber-500/30 bg-amber-500/5 text-amber-300"
                   }`}>
                     <p className="font-semibold">
-                      QC {qcResult.verdict === "pass" ? "passed" : "flagged"} · Gemini analysis
+                      Quality check {qcResult.verdict === "pass" ? "passed" : "needs attention"}
                     </p>
                     {qcResult.summary && <p className="mt-0.5 opacity-90">{qcResult.summary}</p>}
                     {qcResult.findings && qcResult.findings.length > 0 && (
@@ -201,8 +201,8 @@ export default function IngestQCPanel() {
                     className="text-[11px] inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-cyan-500/40 bg-cyan-500/5 text-cyan-300 hover:bg-cyan-500/10 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {isScanning
-                      ? <><Loader2 className="w-3 h-3 animate-spin" /> Scanning…</>
-                      : <><Sparkles className="w-3 h-3" /> Run QC Scan</>}
+                      ? <><Loader2 className="w-3 h-3 animate-spin" /> Checking…</>
+                      : <><Sparkles className="w-3 h-3" /> Run quality check</>}
                   </button>
                 </div>
               </li>

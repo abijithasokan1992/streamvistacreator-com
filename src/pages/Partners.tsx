@@ -24,6 +24,7 @@ export default function Partners() {
   return (
     <>
       <Seo
+        path="/partners"
         title="Partners — StreamVista Cloud X"
         description="The distribution and streaming platforms in the StreamVista ecosystem — from mass-reach SVOD to premium TVOD, regional-first services and short-form networks."
       />

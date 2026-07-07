@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { Loader2, LogOut, ShieldCheck, Crown, RefreshCw, Copy, Check, Wallet, Inbox, Users as UsersIcon, LayoutDashboard, HardDrive, LifeBuoy, Settings as SettingsIcon, ArrowRight, Package, FileText, ClipboardCheck, Megaphone, Code2, Image as ImageIcon, Briefcase, Activity, Server, Network } from "lucide-react";
+import { Loader2, LogOut, ShieldCheck, Crown, RefreshCw, Copy, Check, Wallet, Inbox, Users as UsersIcon, LayoutDashboard, HardDrive, LifeBuoy, Settings as SettingsIcon, ArrowRight, Package, FileText, ClipboardCheck, Megaphone, Code2, Image as ImageIcon, Briefcase, Activity, Server, Network, Rocket, Cloud, Film } from "lucide-react";
+import MissionControl from "@/components/admin/MissionControl";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
@@ -78,41 +79,49 @@ interface Row {
 // Legacy `?tab=` and `/admin/<old>` URLs are still resolved
 // by mapping them to the equivalent new department.
 // ============================================================
-const DEPT_KEYS = ["dashboard", "operations", "ecosystem", "accounts", "commerce", "storage", "comms", "system"] as const;
+const DEPT_KEYS = ["mission", "content", "users", "business", "cloud", "platform"] as const;
 type DeptKey = typeof DEPT_KEYS[number];
 
+// Map legacy department + tab keys onto the new 6-workspace IA.
 const LEGACY_TAB_TO_DEPT: Record<string, DeptKey> = {
-  overview: "dashboard",
-  users: "accounts",
-  approvals: "ecosystem",
-  onboarding: "ecosystem",
-  invitations: "ecosystem",
-  organizations: "ecosystem",
-  partners: "ecosystem",
-  catalog: "commerce",
-  billing: "commerce",
-  storage: "storage",
-  comms: "comms",
-  homepage: "system",
-  settings: "system",
-  audit: "system",
-  vault: "system",
+  overview: "mission",
+  dashboard: "mission",
+  operations: "content",
+  approvals: "content",
+  catalog: "content",
+  pipeline: "content",
+  users: "users",
+  accounts: "users",
+  ecosystem: "users",
+  onboarding: "users",
+  invitations: "users",
+  organizations: "users",
+  partners: "users",
+  comms: "users",
+  commerce: "business",
+  billing: "business",
+  storage: "cloud",
+  homepage: "platform",
+  settings: "platform",
+  audit: "platform",
+  vault: "platform",
+  system: "platform",
 };
 
 function pathToDept(path: string, search: URLSearchParams): DeptKey {
   const q = search.get("dept") as DeptKey | null;
   if (q && (DEPT_KEYS as readonly string[]).includes(q)) return q;
+  const legacyDept = search.get("dept");
+  if (legacyDept && LEGACY_TAB_TO_DEPT[legacyDept]) return LEGACY_TAB_TO_DEPT[legacyDept];
   const legacyTab = search.get("tab");
   if (legacyTab && LEGACY_TAB_TO_DEPT[legacyTab]) return LEGACY_TAB_TO_DEPT[legacyTab];
   const p = path.toLowerCase();
-  if (p.startsWith("/admin/ecosystem") || p.startsWith("/admin/approvals") || p.startsWith("/admin/onboarding") || p.startsWith("/admin/invitations") || p.startsWith("/admin/partners") || p.startsWith("/admin/organizations")) return "ecosystem";
-  if (p.startsWith("/admin/operations") || p.startsWith("/admin/content") || p.startsWith("/admin/qc") || p.startsWith("/admin/legal") || p.startsWith("/admin/pipeline")) return "operations";
-  if (p.startsWith("/admin/accounts") || p.startsWith("/admin/users") || p.startsWith("/admin/team") || p.startsWith("/admin/roles")) return "accounts";
-  if (p.startsWith("/admin/commerce") || p.startsWith("/admin/catalog") || p.startsWith("/admin/products") || p.startsWith("/admin/plans") || p.startsWith("/admin/billing") || p.startsWith("/admin/finance") || p.startsWith("/admin/entitlements") || p.startsWith("/admin/rights")) return "commerce";
-  if (p.startsWith("/admin/storage") || p.startsWith("/admin/delivery") || p.startsWith("/admin/vault-delivery")) return "storage";
-  if (p.startsWith("/admin/comms") || p.startsWith("/admin/support") || p.startsWith("/admin/email") || p.startsWith("/admin/notifications")) return "comms";
-  if (p.startsWith("/admin/system") || p.startsWith("/admin/homepage") || p.startsWith("/admin/cms") || p.startsWith("/admin/marketing") || p.startsWith("/admin/settings") || p.startsWith("/admin/audit") || p.startsWith("/admin/reports") || p.startsWith("/admin/security") || p.startsWith("/admin/vault") || p.startsWith("/admin/founder-vault")) return "system";
-  return "dashboard";
+  if (p.startsWith("/admin/ecosystem") || p.startsWith("/admin/approvals") || p.startsWith("/admin/onboarding") || p.startsWith("/admin/invitations") || p.startsWith("/admin/partners") || p.startsWith("/admin/organizations") || p.startsWith("/admin/users") || p.startsWith("/admin/team") || p.startsWith("/admin/roles") || p.startsWith("/admin/support") || p.startsWith("/admin/comms")) return "users";
+  if (p.startsWith("/admin/operations") || p.startsWith("/admin/content") || p.startsWith("/admin/qc") || p.startsWith("/admin/legal") || p.startsWith("/admin/pipeline") || p.startsWith("/admin/catalog")) return "content";
+  if (p.startsWith("/admin/commerce") || p.startsWith("/admin/products") || p.startsWith("/admin/plans") || p.startsWith("/admin/billing") || p.startsWith("/admin/finance") || p.startsWith("/admin/entitlements") || p.startsWith("/admin/rights")) return "business";
+  if (p.startsWith("/admin/storage") || p.startsWith("/admin/delivery") || p.startsWith("/admin/vault-delivery") || p.startsWith("/admin/cloud")) return "cloud";
+  if (p.startsWith("/admin/system") || p.startsWith("/admin/homepage") || p.startsWith("/admin/cms") || p.startsWith("/admin/marketing") || p.startsWith("/admin/settings") || p.startsWith("/admin/audit") || p.startsWith("/admin/reports") || p.startsWith("/admin/security") || p.startsWith("/admin/vault") || p.startsWith("/admin/founder-vault") || p.startsWith("/admin/email") || p.startsWith("/admin/platform")) return "platform";
+  return "mission";
 }
 
 
@@ -377,63 +386,58 @@ function buildDepartments(args: {
 
   return [
     {
-      id: "dashboard",
-      label: "Dashboard",
-      icon: <LayoutDashboard className="w-4 h-4" />,
-      desc: "Platform health and quick jumps.",
+      id: "mission",
+      label: "Mission Control",
+      icon: <Rocket className="w-4 h-4" />,
+      desc: "What needs action, what's healthy, what changed today.",
       sections: [
-        { id: "overview", label: "Overview", hint: "Platform metrics", content: (
-          <div className="space-y-8"><PlatformOverview /><QuickNav navigate={navigate} /></div>
-        )},
-        { id: "readiness", label: "Readiness", hint: "Live 5-pillar readiness matrix", content: <PlatformReadinessCenter /> },
+        { id: "mission", label: "Mission Control", hint: "Live operations dashboard", content: <MissionControl /> },
+        { id: "overview", label: "Platform Overview", hint: "Historical metrics", content: <PlatformOverview /> },
+        { id: "readiness", label: "Readiness", hint: "5-pillar readiness matrix", content: <PlatformReadinessCenter /> },
+        { id: "jump", label: "Quick Jumps", hint: "Fast navigation", content: <QuickNav navigate={navigate} /> },
       ],
     },
     {
-      id: "operations",
-      label: "Operations",
-      icon: <ClipboardCheck className="w-4 h-4" />,
-      desc: "Content review, pipeline and catalog ops.",
+      id: "content",
+      label: "Content",
+      icon: <Film className="w-4 h-4" />,
+      desc: "Titles, QC, legal review, publishing and catalog.",
       sections: [
         { id: "approvals", label: "Content Review", hint: "Title QC & legal review", content: (
           <ContentReviewWorkflow initialTab={args.reviewInitialTab} />
         )},
         { id: "pipeline", label: "Pipeline", hint: "Title edits & QC flow", content: <TitleEditRequestsInbox /> },
-        { id: "catalog-ops", label: "Catalog Ops", hint: "Global assets", content: <GlobalAssetManager /> },
+        { id: "catalog-ops", label: "Catalog & Assets", hint: "Global assets", content: <GlobalAssetManager /> },
       ],
     },
     {
-      id: "ecosystem",
-      label: "Ecosystem",
-      icon: <Network className="w-4 h-4" />,
-      desc: "Organizations, invitations, channel partners and onboarding — one source of truth.",
+      id: "users",
+      label: "Users",
+      icon: <UsersIcon className="w-4 h-4" />,
+      desc: "Creators, studios, buyers, organizations, invitations, support.",
       sections: [
+        { id: "users", label: "Users", hint: "Creators, studios, buyers", content: <UsersAndCredentials /> },
         { id: "organizations", label: "Organizations", hint: "Creators · Studios · Buyers · Partners", content: <OrganizationsConsole /> },
         { id: "invitations", label: "Invitations", hint: "Role-aware invites", content: <InvitationsConsole /> },
         { id: "channel-partners", label: "Channel Partners", hint: "Publish to /partners", content: <ChannelPartnersConsole /> },
-        { id: "onboarding", label: "Onboarding Queue", hint: "Approvals & activations", content: <OnboardingApprovals /> },
-      ],
-    },
-    {
-      id: "accounts",
-      label: "Accounts",
-      icon: <UsersIcon className="w-4 h-4" />,
-      desc: "Users, organizations, roles & access.",
-      sections: [
-        { id: "users", label: "Users", hint: "Creators, studios, buyers", content: <UsersAndCredentials /> },
-        { id: "organizations", label: "Organizations", hint: "Internal team", content: <AdminTeamManager /> },
+        { id: "onboarding", label: "Onboarding", hint: "Approvals & activations", content: <OnboardingApprovals /> },
+        { id: "team", label: "Internal Team", hint: "Admin staff", content: <AdminTeamManager /> },
         { id: "roles", label: "Roles & Access", hint: "Role assignments", content: <RolesManager /> },
+        { id: "support", label: "Support & Messages", hint: "Tickets, contact, broadcasts", content: (
+          <div className="space-y-6"><CommunicationCenter /></div>
+        )},
       ],
     },
     {
-      id: "commerce",
-      label: "Commerce",
+      id: "business",
+      label: "Business",
       icon: <Briefcase className="w-4 h-4" />,
-      desc: "Plans, billing, entitlements and commercial requests.",
+      desc: "Plans, subscriptions, payments, invoices, rights, licensing.",
       sections: [
         { id: "plans", label: "Plans & Pricing", hint: "Products, vault pricing, free tier", content: (
           <div className="space-y-6"><ProductsAndPlans /><StudioVaultPricing /><FreeTierConfig /></div>
         )},
-        { id: "billing", label: "Billing", hint: "Invoices and finance ops", content: (
+        { id: "billing", label: "Billing & Payments", hint: "Invoices and finance ops", content: (
           <div className="space-y-6">
             <RazorpayOpsBanner />
             <AdminFinanceConsole />
@@ -444,36 +448,29 @@ function buildDepartments(args: {
             <RazorpayAuditLog />
           </div>
         )},
+        { id: "vault", label: "Vault Purchases", hint: "Studio Vault revenue", content: <AdminStudioVaultPurchases /> },
+        { id: "intelligence", label: "Market Intelligence", hint: "Buyer & competitor intelligence", content: <IntelligenceCenter /> },
       ],
     },
     {
-      id: "storage",
-      label: "Storage & Delivery",
-      icon: <HardDrive className="w-4 h-4" />,
-      desc: "Storage health, uploads and vault delivery.",
+      id: "cloud",
+      label: "Cloud",
+      icon: <Cloud className="w-4 h-4" />,
+      desc: "Uploads, storage, Oracle Cloud, delivery, backups.",
       sections: [
-        { id: "storage-health", label: "Storage", hint: "OCI monitor", content: <OracleStorageMonitor /> },
-        { id: "vault-purchases", label: "Vault / Delivery", hint: "Studio Vault purchases", content: <AdminStudioVaultPurchases /> },
-        { id: "storage-advanced", label: "Advanced", hint: "OCI credentials & buckets", content: <OracleOciStorageCard /> },
+        { id: "storage", label: "Storage", hint: "OCI monitor", content: <OracleStorageMonitor /> },
+        { id: "advanced", label: "OCI Advanced", hint: "Credentials & buckets", content: <OracleOciStorageCard /> },
       ],
     },
     {
-      id: "comms",
-      label: "Comms",
-      icon: <Inbox className="w-4 h-4" />,
-      desc: "Unified Communication Center.",
-      sections: [
-        { id: "center", label: "Center", hint: "Inbox · Notifications · Invitations · Broadcast · Support · Activity", content: <CommunicationCenter /> },
-        { id: "intelligence", label: "✦ Intelligence", hint: "AI-powered market, buyer and competitor intelligence", content: <IntelligenceCenter /> },
-        { id: "email", label: "Email log", hint: "Raw email delivery log", content: <EmailLogMonitor /> },
-      ],
-    },
-    {
-      id: "system",
-      label: "System",
+      id: "platform",
+      label: "Platform",
       icon: <SettingsIcon className="w-4 h-4" />,
-      desc: "Homepage CMS, settings, audit, and Founder Vault.",
-      sections: systemSections,
+      desc: "System settings, audit, email, AI, security, homepage CMS.",
+      sections: [
+        ...systemSections,
+        { id: "email", label: "Email Log", hint: "Raw email delivery log", content: <EmailLogMonitor /> },
+      ],
     },
   ];
 }
@@ -496,10 +493,10 @@ function AdminMainPanel({
   const reviewerDefaultTab = reviewerKind === "qc" ? "qc_review" : reviewerKind === "legal" ? "legal_review" : undefined;
   const reviewInitialTab = pathTab ?? reviewerDefaultTab;
 
-  const initial: DeptKey = isReviewer ? "operations" : pathToDept(location.pathname, searchParams);
+  const initial: DeptKey = isReviewer ? "content" : pathToDept(location.pathname, searchParams);
   const [dept, setDept] = useState<DeptKey>(initial);
   const [sectionByDept, setSectionByDept] = useState<Record<string, string>>(() => {
-    if (isReviewer) return { operations: "approvals" };
+    if (isReviewer) return { content: "approvals" };
     const s = searchParams.get("section");
     return s ? { [initial]: s } : {};
   });
@@ -509,10 +506,10 @@ function AdminMainPanel({
     [isSuperAdmin, navigate, reviewInitialTab],
   );
 
-  // Reviewers see only the Operations department, and only the Approvals sub-section.
+  // Reviewers see only the Content workspace, and only the Approvals sub-section.
   const departments = useMemo(() => {
     if (!isReviewer) return allDepartments;
-    const ops = allDepartments.find((d) => d.id === "operations");
+    const ops = allDepartments.find((d) => d.id === "content");
     if (!ops) return allDepartments;
     return [{
       ...ops,
@@ -565,7 +562,7 @@ function AdminMainPanel({
         onValueChange={(v) => setDept(v as DeptKey)}
         className="w-full"
       >
-        <TabsList className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-1.5 h-auto p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-6">
+        <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 h-auto p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-6">
           {departments.map((d) => (
             <DeptTab key={d.id} value={d.id} icon={d.icon} label={d.label} />
           ))}

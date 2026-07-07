@@ -333,6 +333,15 @@ export default function Admin() {
         searchParams={searchParams}
         navigate={navigate}
       />
+
+      {/* Single-operator surface: assistant + universal action center.
+          Hidden for reviewers (they are pinned to a single queue).      */}
+      {!isReviewer && (
+        <>
+          <AiOpsAssistant />
+          <ActionCenter />
+        </>
+      )}
     </main>
   );
 }

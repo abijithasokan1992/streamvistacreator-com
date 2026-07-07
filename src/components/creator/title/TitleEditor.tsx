@@ -1064,6 +1064,21 @@ function MetadataTab({
 
   return (
     <div className="space-y-6">
+      {!readOnly && (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-secondary/20 px-3 py-2">
+          <div className="min-w-0">
+            <div className="text-xs font-medium">Save time with Smart Metadata Import</div>
+            <div className="text-[11px] text-muted-foreground">
+              Pull verified details from trusted sources. You review every field before it's applied — nothing is submitted.
+            </div>
+          </div>
+          <SmartMetadataImportButton
+            meta={meta}
+            currentTitle={currentTitle}
+            onApply={onSmartImport}
+          />
+        </div>
+      )}
       {/* Shared crew-role suggestions — powers the <input list="crew-role-options"> below. */}
       <datalist id="crew-role-options">
         {[

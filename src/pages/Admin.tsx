@@ -565,7 +565,7 @@ function AdminMainPanel({
         onValueChange={(v) => setDept(v as DeptKey)}
         className="w-full"
       >
-        <TabsList className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 h-auto p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-6">
+        <TabsList className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-1.5 h-auto p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-6">
           {departments.map((d) => (
             <DeptTab key={d.id} value={d.id} icon={d.icon} label={d.label} />
           ))}

@@ -593,7 +593,7 @@ function AdminMainPanel({
 function QuickNav({ navigate }: { navigate: (p: string) => void }) {
   const tiles = [
     { path: "/admin/users",     icon: <UsersIcon className="w-5 h-5" />,      label: "Users & Roles", desc: "Roles, invites, team" },
-    { path: "/admin/approvals", icon: <ClipboardCheck className="w-5 h-5" />, label: "Approvals",     desc: "Onboarding & titles" },
+    { path: "/admin/ecosystem?dept=ecosystem&section=onboarding", icon: <ClipboardCheck className="w-5 h-5" />, label: "Ecosystem",     desc: "Orgs · invites · partners · onboarding" },
     { path: "/admin/homepage",  icon: <ImageIcon className="w-5 h-5" />,      label: "Homepage CMS",  desc: "Hero banners, licensed contents" },
     { path: "/admin/catalog",   icon: <Package className="w-5 h-5" />,        label: "Catalog",       desc: "Plans, pricing, assets" },
     { path: "/admin/billing",   icon: <Wallet className="w-5 h-5" />,         label: "Billing",       desc: "Invoices, Razorpay" },

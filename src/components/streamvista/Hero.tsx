@@ -240,9 +240,6 @@ const TrustStrip = () => (
 
 const DefaultHeadline = () => (
   <div>
-    <div className="mb-6 font-mono-tech text-[11px] uppercase tracking-[0.3em] text-accent">
-      StreamVista Cloud X
-    </div>
     <h1 className="font-display font-black uppercase leading-[0.88] tracking-tight text-[clamp(2.4rem,7.6vw,6rem)]">
       The Digital Media
       <br />

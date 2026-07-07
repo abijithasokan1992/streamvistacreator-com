@@ -25,6 +25,7 @@ import IPCopyright from "./pages/IPCopyright.tsx";
 import Refund from "./pages/Refund.tsx";
 import About from "./pages/About.tsx";
 import Partners from "./pages/Partners.tsx";
+import CreatorPreview from "./pages/CreatorPreview.tsx";
 import CheckoutReturn from "./pages/CheckoutReturn.tsx";
 import CheckoutStorage from "./pages/CheckoutStorage.tsx";
 import PricingPage from "./pages/Pricing.tsx";
@@ -216,6 +217,8 @@ const PublicRoutes = () => (
     <Route path="/pricing" element={<PricingPage />} />
     <Route path="/about" element={<About />} />
     <Route path="/partners" element={<Partners />} />
+    <Route path="/creator-preview" element={<CreatorPreview />} />
+
 
     <Route path="/c2c-setup" element={<C2CSetupManual />} />
     <Route path="/blog/camera-to-cloud-guide" element={<CameraToCloudGuide />} />

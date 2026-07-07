@@ -445,7 +445,17 @@ export function TitleEditor({
                   <OverviewSnapshot title={title} meta={meta} assets={assets} timeline={timeline} />
                 )}
                 {tab === "metadata" && (
-                  <MetadataTab meta={meta} setMeta={setMeta} readOnly={metadataLocked} />
+                  <MetadataTab
+                    meta={meta}
+                    setMeta={setMeta}
+                    readOnly={metadataLocked}
+                    currentTitle={name}
+                    onSmartImport={({ title: importedTitle, metadataPatch }) => {
+                      if (importedTitle && importedTitle.trim()) setName(importedTitle.trim());
+                      setMeta({ ...meta, ...metadataPatch } as TitleMetadata);
+                      setDirty(true);
+                    }}
+                  />
                 )}
                 {tab === "assets" && (
                   <div className="space-y-8">

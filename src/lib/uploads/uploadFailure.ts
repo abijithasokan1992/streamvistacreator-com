@@ -9,6 +9,7 @@
  * Reuses existing infra — no new tables, no new edge functions.
  */
 import { supabase } from "@/integrations/supabase/client";
+import { classifyUploadError, type UploadDiagnostic } from "./classifyUploadError";
 
 export type UploadStage =
   | "validation"        // client-side guard before we ever hit the network
@@ -114,10 +115,51 @@ function shouldReport(stage: UploadStage, message: string): boolean {
  * Best-effort write into `support_requests` so admins see real upload
  * failures alongside billing failures. Never throws.
  */
-export async function reportUploadFailure(ctx: UploadFailureContext): Promise<void> {
+export async function reportUploadFailure(ctx: UploadFailureContext): Promise<UploadDiagnostic | null> {
+  const message = ctx.error instanceof Error ? ctx.error.message : String(ctx.error ?? "");
+  const diagnostic = classifyUploadError(ctx.error);
+
+  // Best-effort: persist the structural diagnostic onto the ingest_job_items
+  // row so admins inspecting the failed asset see the same categorized cause
+  // the user's client tagged it with. RLS restricts updates to the job owner,
+  // workspace admin, or platform admin — non-owners are silently ignored.
+  if (ctx.uploadRowId) {
+    try {
+      const { data: existing } = await (supabase as any)
+        .from("ingest_job_items")
+        .select("id, metadata")
+        .eq("upload_id", ctx.uploadRowId)
+        .limit(1)
+        .maybeSingle();
+      if (existing?.id) {
+        const prevMeta = (existing.metadata && typeof existing.metadata === "object") ? existing.metadata : {};
+        await (supabase as any)
+          .from("ingest_job_items")
+          .update({
+            status: "failed",
+            error_message: `[${diagnostic.code}] ${diagnostic.detail}`.slice(0, 500),
+            metadata: {
+              ...prevMeta,
+              upload_diagnostic: {
+                category: diagnostic.category,
+                code: diagnostic.code,
+                detail: diagnostic.detail,
+                http_status: diagnostic.httpStatus ?? null,
+                raw: diagnostic.raw ?? null,
+                surface: ctx.surface,
+                stage: ctx.stage,
+                oci_upload_id: ctx.ociUploadId ?? null,
+                classified_at: new Date().toISOString(),
+              },
+            },
+          })
+          .eq("id", existing.id);
+      }
+    } catch { /* never block on diagnostics */ }
+  }
+
   try {
-    const message = ctx.error instanceof Error ? ctx.error.message : String(ctx.error ?? "");
-    if (!shouldReport(ctx.stage, message)) return;
+    if (!shouldReport(ctx.stage, message)) return diagnostic;
 
     const metadata = {
       kind: "upload_failure",
@@ -132,15 +174,24 @@ export async function reportUploadFailure(ctx: UploadFailureContext): Promise<vo
       oci_upload_id: ctx.ociUploadId,
       error_message: message,
       error_at: new Date().toISOString(),
+      diagnostic: {
+        category: diagnostic.category,
+        code: diagnostic.code,
+        detail: diagnostic.detail,
+        http_status: diagnostic.httpStatus ?? null,
+      },
       ...(ctx.extra ?? {}),
     };
 
     await (supabase as any).from("support_requests").insert({
       user_id: ctx.userId ?? null,
       request_type: "upload_failure",
-      subject: `Upload failure · ${ctx.surface} · ${ctx.stage} · ${ctx.fileName ?? "(unnamed)"}`,
+      subject: `Upload failure · ${diagnostic.category} · ${ctx.surface} · ${ctx.fileName ?? "(unnamed)"}`,
       message:
         `An upload failed and was logged automatically.\n\n` +
+        `Category: ${diagnostic.category} (${diagnostic.code})\n` +
+        `Detail: ${diagnostic.detail}\n` +
+        `HTTP status: ${diagnostic.httpStatus ?? "—"}\n\n` +
         `Surface: ${ctx.surface}\n` +
         `Stage: ${ctx.stage}\n` +
         `File: ${ctx.fileName ?? "—"} (${ctx.fileSize ?? "?"} bytes)\n` +
@@ -148,11 +199,12 @@ export async function reportUploadFailure(ctx: UploadFailureContext): Promise<vo
         `Title / Category: ${ctx.titleId ?? "—"} / ${ctx.category ?? "—"}\n` +
         `OCI upload id: ${ctx.ociUploadId ?? "—"}\n` +
         `User: ${ctx.userEmail ?? ctx.userId ?? "—"}\n\n` +
-        `Error:\n${message || "(no message)"}\n`,
+        `Raw error:\n${message || "(no message)"}\n`,
       status: "open",
       metadata,
     });
   } catch {
     /* never block the user on logging */
   }
+  return diagnostic;
 }

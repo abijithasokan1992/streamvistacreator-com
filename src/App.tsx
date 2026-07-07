@@ -51,6 +51,7 @@ import AdminResearch from "./pages/AdminResearch.tsx";
 import AdminLegacyRecovery from "./pages/admin/LegacyRecovery.tsx";
 import CollegeERP from "./pages/CollegeERP.tsx";
 import Connect from "./pages/Connect.tsx";
+import Connectors from "./pages/Connectors.tsx";
 // Smart Uploads is not MVP-ready — hidden until the checksum + bucket work is production-safe.
 // import SmartUploads from "./pages/SmartUploads.tsx";
 
@@ -102,6 +103,7 @@ const AdminRoutes = () => (
     <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
 
     <Route path="/reset-password" element={<ResetPassword />} />
+    <Route path="/connectors" element={<Connectors />} />
     <Route path="/admin" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/home" element={<AdminHome />} />
     <Route path="/admin/super" element={<Navigate to="/admin" replace />} />
@@ -137,6 +139,7 @@ const PublicRoutes = () => (
     <Route path="/auth/callback" element={<AuthCallback />} />
     <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
     <Route path="/reset-password" element={<ResetPassword />} />
+    <Route path="/connectors" element={<Connectors />} />
 
     {/* Linear onboarding wizard — kept for legacy accounts only. */}
     <Route path="/onboarding" element={<Onboarding />} />

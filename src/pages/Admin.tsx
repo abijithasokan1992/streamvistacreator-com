@@ -50,6 +50,8 @@ import AdminReportsConsole from "@/components/admin/AdminReportsConsole";
 import PaymentSecurityEvents from "@/components/admin/PaymentSecurityEvents";
 import MarketingCMS from "@/components/admin/MarketingCMS";
 import FounderVault from "@/components/admin/FounderVault";
+import AiMcpControlCenter from "@/components/admin/AiMcpControlCenter";
+import McpHealthCenter from "@/components/admin/McpHealthCenter";
 
 interface Row {
   id: string;
@@ -346,6 +348,9 @@ function buildDepartments(args: {
     )},
     { id: "audit", label: "Audit", hint: "Finance reports, payment security", content: (
       <div className="space-y-6"><AdminReportsConsole /><PaymentSecurityEvents /></div>
+    )},
+    { id: "mcp-health", label: "MCP Health", hint: "AI Agent connector health & OAuth audit", content: (
+      <div className="space-y-6"><McpHealthCenter /><AiMcpControlCenter /></div>
     )},
   ];
   if (isSuperAdmin) {

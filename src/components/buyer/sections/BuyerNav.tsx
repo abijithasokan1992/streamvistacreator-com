@@ -1,14 +1,14 @@
-import { LayoutDashboard, Store, Bookmark, Inbox, Package, Receipt, LifeBuoy } from "lucide-react";
+import { LayoutDashboard, Search, Inbox, Film, Briefcase, Receipt, LifeBuoy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const BUYER_SECTIONS = [
-  { id: "dashboard",   label: "Dashboard",            icon: LayoutDashboard },
-  { id: "marketplace", label: "Marketplace",          icon: Store },
-  { id: "watchlist",   label: "Watchlist",            icon: Bookmark },
-  { id: "requests",    label: "Acquisition Requests", icon: Inbox },
-  { id: "deliveries",  label: "Deliveries",           icon: Package },
-  { id: "billing",     label: "Billing",              icon: Receipt },
-  { id: "help",        label: "Help",                 icon: LifeBuoy },
+  { id: "dashboard",  label: "Dashboard",   icon: LayoutDashboard },
+  { id: "find",       label: "Find Content", icon: Search },
+  { id: "requests",   label: "My Requests", icon: Inbox },
+  { id: "screeners",  label: "Screeners",   icon: Film },
+  { id: "commercial", label: "Commercial",  icon: Briefcase },
+  { id: "billing",    label: "Billing",     icon: Receipt },
+  { id: "help",       label: "Help",        icon: LifeBuoy },
 ] as const;
 
 export type BuyerSectionId = typeof BUYER_SECTIONS[number]["id"];
@@ -24,11 +24,8 @@ export default function BuyerNav({
 }) {
   return (
     <>
-      {/* Mobile / tablet: horizontal scroll strip */}
-      <nav
-        aria-label="Buyer sections"
-        className="lg:hidden -mx-2 px-2 overflow-x-auto"
-      >
+      {/* Mobile / tablet */}
+      <nav aria-label="Buyer sections" className="lg:hidden -mx-2 px-2 overflow-x-auto">
         <ul className="flex gap-1.5 min-w-max pb-2">
           {BUYER_SECTIONS.map(s => {
             const Icon = s.icon;
@@ -58,11 +55,8 @@ export default function BuyerNav({
         </ul>
       </nav>
 
-      {/* Desktop: vertical sidebar */}
-      <nav
-        aria-label="Buyer sections"
-        className="hidden lg:block sticky top-6 self-start"
-      >
+      {/* Desktop */}
+      <nav aria-label="Buyer sections" className="hidden lg:block sticky top-6 self-start">
         <ul className="space-y-1">
           {BUYER_SECTIONS.map(s => {
             const Icon = s.icon;

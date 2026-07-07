@@ -18,6 +18,7 @@ import { RightsAvailabilityPanel } from "./RightsAvailabilityPanel";
 import { FreeSubmissionTermsModal } from "./FreeSubmissionTermsModal";
 import RequestEditButton from "@/components/creator/RequestEditButton";
 import { useTitleLock } from "@/hooks/useTitleLock";
+import { SmartMetadataImportButton } from "./SmartMetadataImport";
 
 type TabId = "overview" | "metadata" | "assets" | "legal" | "submission";
 

@@ -412,8 +412,9 @@ function buildDepartments(args: {
       desc: "What needs action, what's healthy, what changed today.",
       sections: [
         { id: "mission", label: "Mission Control", hint: "Live operations dashboard", content: <MissionControl /> },
+        { id: "launch", label: "Launch Readiness", hint: "Aggregated production readiness report", content: <ProductionReadinessReport /> },
         { id: "overview", label: "Platform Overview", hint: "Historical metrics", content: <PlatformOverview /> },
-        { id: "readiness", label: "Readiness", hint: "5-pillar readiness matrix", content: <PlatformReadinessCenter /> },
+        { id: "readiness", label: "Readiness Matrix", hint: "5-pillar readiness matrix", content: <PlatformReadinessCenter /> },
         { id: "jump", label: "Quick Jumps", hint: "Fast navigation", content: <QuickNav navigate={navigate} /> },
       ],
     },

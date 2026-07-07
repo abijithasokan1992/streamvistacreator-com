@@ -392,13 +392,25 @@ function buildDepartments(args: {
       id: "operations",
       label: "Operations",
       icon: <ClipboardCheck className="w-4 h-4" />,
-      desc: "Approvals, pipeline and catalog ops.",
+      desc: "Content review, pipeline and catalog ops.",
       sections: [
-        { id: "approvals", label: "Approvals", hint: "Onboarding & content review", content: (
-          <div className="space-y-6"><OnboardingApprovals /><ContentReviewWorkflow initialTab={args.reviewInitialTab} /></div>
+        { id: "approvals", label: "Content Review", hint: "Title QC & legal review", content: (
+          <ContentReviewWorkflow initialTab={args.reviewInitialTab} />
         )},
         { id: "pipeline", label: "Pipeline", hint: "Title edits & QC flow", content: <TitleEditRequestsInbox /> },
         { id: "catalog-ops", label: "Catalog Ops", hint: "Global assets", content: <GlobalAssetManager /> },
+      ],
+    },
+    {
+      id: "ecosystem",
+      label: "Ecosystem",
+      icon: <Network className="w-4 h-4" />,
+      desc: "Organizations, invitations, channel partners and onboarding — one source of truth.",
+      sections: [
+        { id: "organizations", label: "Organizations", hint: "Creators · Studios · Buyers · Partners", content: <OrganizationsConsole /> },
+        { id: "invitations", label: "Invitations", hint: "Role-aware invites", content: <InvitationsConsole /> },
+        { id: "channel-partners", label: "Channel Partners", hint: "Publish to /partners", content: <ChannelPartnersConsole /> },
+        { id: "onboarding", label: "Onboarding Queue", hint: "Approvals & activations", content: <OnboardingApprovals /> },
       ],
     },
     {

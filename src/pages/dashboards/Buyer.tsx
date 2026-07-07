@@ -7,24 +7,23 @@ import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { AgreementGate } from "@/components/legal/AgreementGate";
 import BuyerNav, { type BuyerSectionId } from "@/components/buyer/sections/BuyerNav";
 import DashboardSection from "@/components/buyer/sections/DashboardSection";
-import MarketplaceSection from "@/components/buyer/sections/MarketplaceSection";
-import WatchlistSection from "@/components/buyer/sections/WatchlistSection";
+import FindContentSection from "@/components/buyer/sections/FindContentSection";
 import RequestsSection from "@/components/buyer/sections/RequestsSection";
-import DeliveriesSection from "@/components/buyer/sections/DeliveriesSection";
+import ScreenersSection from "@/components/buyer/sections/ScreenersSection";
+import CommercialSection from "@/components/buyer/sections/CommercialSection";
 import BillingSection from "@/components/buyer/sections/BillingSection";
 import HelpSection from "@/components/buyer/sections/HelpSection";
 import { useBuyerRequests } from "@/components/buyer/requests/useBuyerRequests";
 import { OPEN_STATES, type Category } from "@/components/buyer/requests/shared";
 import type { MarketplaceTitle } from "@/components/buyer/marketplace/useMarketplaceCatalog";
 
-const VALID: BuyerSectionId[] = ["dashboard", "marketplace", "watchlist", "requests", "deliveries", "billing", "help"];
+const VALID: BuyerSectionId[] = ["dashboard", "find", "requests", "screeners", "commercial", "billing", "help"];
 
 /**
- * Buyer Workspace — read-only until a commercial workflow requires action.
- *
- * Layout: seven-section nav (Dashboard, Marketplace, Watchlist, Requests,
- * Deliveries, Billing, Help). All data is live and reuses existing tables,
- * RLS and edge functions.
+ * Buyer Workspace — organised around the buyer journey:
+ *   Dashboard → Find Content → My Requests → Screeners → Commercial → Billing → Help
+ * Read-only until a commercial workflow requires action. All data is live and
+ * reuses existing tables, RLS policies and edge functions.
  */
 export default function BuyerDashboard() {
   const { user, role, dashboardRole, loading, signOut } = useAuth();
@@ -34,16 +33,20 @@ export default function BuyerDashboard() {
     if (typeof window === "undefined") return "dashboard";
     const p = new URLSearchParams(window.location.search).get("section");
     const h = window.location.hash.replace(/^#/, "");
-    return (VALID.includes(p as BuyerSectionId) ? p
-         : VALID.includes(h as BuyerSectionId) ? h
-         : "dashboard") as BuyerSectionId;
+    // Backwards compat: old links (marketplace/watchlist/deliveries) redirect
+    const legacy: Record<string, BuyerSectionId> = {
+      marketplace: "find", watchlist: "find", deliveries: "commercial",
+    };
+    const raw = (p ?? h) as string;
+    if (raw in legacy) return legacy[raw];
+    return (VALID.includes(raw as BuyerSectionId) ? (raw as BuyerSectionId) : "dashboard");
   });
 
   const [needsGate, setNeedsGate] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
   const [prefill, setPrefill] = useState<{ category?: Category; title?: string } | null>(null);
 
-  // Deep-link support: ?type=<category> opens the Requests composer.
+  // Deep-link support: ?type=<category> opens the request wizard.
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
     const t = p.get("type");
@@ -79,17 +82,12 @@ export default function BuyerDashboard() {
     ?? "there";
 
   const openBadge = rows.filter(r => OPEN_STATES.includes(r.state)).length;
+
   const requestForTitle = (t: MarketplaceTitle, hint: "screener" | "acquisition") => {
     setPrefill({
       category: hint === "screener" ? "screener" : "acquisition_interest",
       title: t.title,
     });
-    setComposerOpen(true);
-    setSection("requests");
-  };
-
-  const goRequestForWatch = (item: { id: string; title: string }) => {
-    setPrefill({ category: "acquisition_interest", title: item.title });
     setComposerOpen(true);
     setSection("requests");
   };
@@ -120,7 +118,7 @@ export default function BuyerDashboard() {
           <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground/70">Buyer workspace</p>
           <h1 className="font-display text-2xl md:text-3xl mt-2">Welcome, {String(displayName)}.</h1>
           <p className="text-sm text-muted-foreground mt-2 max-w-xl">
-            Acquisition, licensing and screener workflows. Every commercial action is admin-mediated.
+            Discover, evaluate and license content. Every commercial action is admin-mediated.
           </p>
         </div>
 
@@ -141,10 +139,9 @@ export default function BuyerDashboard() {
           />
 
           <div className="min-w-0">
-            {section === "dashboard"   && <DashboardSection rows={rows} screenerCount={screenerCount} onGo={setSection} onRequestForTitle={requestForTitle} />}
-            {section === "marketplace" && <MarketplaceSection onRequestForTitle={requestForTitle} />}
-            {section === "watchlist"   && <WatchlistSection onRequestForWatch={goRequestForWatch} />}
-            {section === "requests"    && (
+            {section === "dashboard"  && <DashboardSection rows={rows} screenerCount={screenerCount} onGo={setSection} />}
+            {section === "find"       && <FindContentSection onRequestForTitle={requestForTitle} />}
+            {section === "requests"   && (
               <RequestsSection
                 rows={rows}
                 loading={reqLoading}
@@ -156,7 +153,8 @@ export default function BuyerDashboard() {
                 onPrefillConsumed={() => setPrefill(null)}
               />
             )}
-            {section === "deliveries" && <DeliveriesSection />}
+            {section === "screeners"  && <ScreenersSection />}
+            {section === "commercial" && <CommercialSection rows={rows} />}
             {section === "billing"    && <BillingSection />}
             {section === "help"       && <HelpSection />}
           </div>

@@ -11,6 +11,7 @@ const NAV_LINKS = [
   { to: "/", label: "Home" },
   { to: "/#platform", label: "Solutions" },
   { to: "/pricing", label: "Pricing" },
+  { to: "/partners", label: "Partners" },
   { to: "/about", label: "About" },
   { to: "/contact", label: "Contact" },
 ];

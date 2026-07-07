@@ -4669,6 +4669,159 @@ export type Database = {
         }
         Relationships: []
       }
+      partner_profiles: {
+        Row: {
+          audio_requirements: string | null
+          categories: string[]
+          contact_email: string | null
+          content_preferences: string[]
+          created_at: string
+          deal_timeline_days: number | null
+          description: string | null
+          exclusivity: string | null
+          hero_image_url: string | null
+          id: string
+          is_active: boolean
+          is_featured: boolean
+          languages: string[]
+          licensing_models: string[]
+          logo_url: string | null
+          min_resolution: string | null
+          name: string
+          revenue_share_notes: string | null
+          runtime_max_minutes: number | null
+          runtime_min_minutes: number | null
+          slug: string
+          sort_order: number
+          submission_requirements: string | null
+          subtitle_requirements: string | null
+          tagline: string | null
+          territories: string[]
+          updated_at: string
+          website_url: string | null
+        }
+        Insert: {
+          audio_requirements?: string | null
+          categories?: string[]
+          contact_email?: string | null
+          content_preferences?: string[]
+          created_at?: string
+          deal_timeline_days?: number | null
+          description?: string | null
+          exclusivity?: string | null
+          hero_image_url?: string | null
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          languages?: string[]
+          licensing_models?: string[]
+          logo_url?: string | null
+          min_resolution?: string | null
+          name: string
+          revenue_share_notes?: string | null
+          runtime_max_minutes?: number | null
+          runtime_min_minutes?: number | null
+          slug: string
+          sort_order?: number
+          submission_requirements?: string | null
+          subtitle_requirements?: string | null
+          tagline?: string | null
+          territories?: string[]
+          updated_at?: string
+          website_url?: string | null
+        }
+        Update: {
+          audio_requirements?: string | null
+          categories?: string[]
+          contact_email?: string | null
+          content_preferences?: string[]
+          created_at?: string
+          deal_timeline_days?: number | null
+          description?: string | null
+          exclusivity?: string | null
+          hero_image_url?: string | null
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          languages?: string[]
+          licensing_models?: string[]
+          logo_url?: string | null
+          min_resolution?: string | null
+          name?: string
+          revenue_share_notes?: string | null
+          runtime_max_minutes?: number | null
+          runtime_min_minutes?: number | null
+          slug?: string
+          sort_order?: number
+          submission_requirements?: string | null
+          subtitle_requirements?: string | null
+          tagline?: string | null
+          territories?: string[]
+          updated_at?: string
+          website_url?: string | null
+        }
+        Relationships: []
+      }
+      partner_title_matches: {
+        Row: {
+          ai_rationale: string | null
+          breakdown: Json
+          created_at: string
+          gaps: string[]
+          id: string
+          owner_user_id: string
+          partner_profile_id: string
+          rule_score: number
+          score: number
+          strengths: string[]
+          title_id: string
+          updated_at: string
+        }
+        Insert: {
+          ai_rationale?: string | null
+          breakdown?: Json
+          created_at?: string
+          gaps?: string[]
+          id?: string
+          owner_user_id: string
+          partner_profile_id: string
+          rule_score: number
+          score: number
+          strengths?: string[]
+          title_id: string
+          updated_at?: string
+        }
+        Update: {
+          ai_rationale?: string | null
+          breakdown?: Json
+          created_at?: string
+          gaps?: string[]
+          id?: string
+          owner_user_id?: string
+          partner_profile_id?: string
+          rule_score?: number
+          score?: number
+          strengths?: string[]
+          title_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_title_matches_partner_profile_id_fkey"
+            columns: ["partner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_title_matches_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_debug_logs: {
         Row: {
           action_type: string

@@ -8537,6 +8537,13 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_failure_counts: {
+        Args: { stale_minutes?: number }
+        Returns: {
+          failed_emails: number
+          failed_uploads: number
+        }[]
+      }
       admin_grant_invoice_entitlement: {
         Args: { _invoice_id: string }
         Returns: string

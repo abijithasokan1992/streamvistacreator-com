@@ -41,18 +41,34 @@ export function useMissionSignals(pollMs = 60_000) {
       return;
     }
     setLoading(true);
-    const [qc, legal, tickets, failedUploads, failedEmails, failedPayments, storageAlerts, pendingOnboarding, editRequests, contactUnread] = await Promise.all([
+    // Authoritative failure counts come from a SECURITY DEFINER RPC that
+    // aggregates directly from ingest_job_items (terminal + stale) and
+    // dedupes email_send_log by message_id → latest status. No caching,
+    // no optimistic UI — force=true bypasses the 60s memoization above.
+    const failureCountsPromise = (async () => {
+      try {
+        const { data, error } = await (supabase as any).rpc("admin_failure_counts", { stale_minutes: 30 });
+        if (error) return { failed_uploads: 0, failed_emails: 0 };
+        const row = Array.isArray(data) ? data[0] : data;
+        return {
+          failed_uploads: Number(row?.failed_uploads ?? 0),
+          failed_emails: Number(row?.failed_emails ?? 0),
+        };
+      } catch { return { failed_uploads: 0, failed_emails: 0 }; }
+    })();
+    const [qc, legal, tickets, failures, failedPayments, storageAlerts, pendingOnboarding, editRequests, contactUnread] = await Promise.all([
       safeCount("content_titles", (q) => q.eq("status", "in_review")),
       safeCount("content_titles", (q) => q.eq("status", "legal_review")),
       safeCount("support_requests", (q) => q.eq("status", "open")),
-      safeCount("ingest_job_items", (q) => q.eq("status", "failed")),
-      safeCount("email_send_log", (q) => q.in("status", ["failed", "error", "bounced"])),
+      failureCountsPromise,
       safeCount("billing_payment_attempts", (q) => q.in("status", ["failed", "error"])),
       safeCount("storage_topups", (q) => q.eq("status", "failed")),
       safeCount("onboarding_requests", (q) => q.eq("onboarding_status", "pending")),
       safeCount("title_edit_requests", (q) => q.eq("status", "pending")),
       safeCount("contact_messages", (q) => q.eq("status", "new")),
     ]);
+    const failedUploads = failures.failed_uploads;
+    const failedEmails = failures.failed_emails;
     const next: MissionSignal[] = [
       { key: "qc",         label: "Titles awaiting QC",       count: qc,               dept: "content",  section: "approvals",  tone: "warn",   effortSec: 240 },
       { key: "legal",      label: "Titles awaiting Legal",    count: legal,            dept: "content",  section: "approvals",  tone: "warn",   effortSec: 300 },

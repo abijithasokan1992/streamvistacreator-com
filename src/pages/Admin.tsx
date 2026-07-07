@@ -582,6 +582,10 @@ function AdminMainPanel({
         {!isReviewer && <AdminCommandBar departments={cmdDepartments} onJump={jumpTo} />}
       </div>
 
+      {!isReviewer && <QuickActions onJump={jumpTo} />}
+
+
+
       <Tabs
         value={dept}
         onValueChange={(v) => setDept(v as DeptKey)}

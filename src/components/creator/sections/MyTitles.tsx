@@ -301,6 +301,15 @@ export default function MyTitlesSection() {
                     >
                       <Pencil className="w-3.5 h-3.5" aria-hidden="true" /> Edit
                     </button>
+                    {user?.id === t.owner_user_id && (
+                      <button
+                        onClick={() => setDeleteTarget(t)}
+                        aria-label={`Delete ${t.title}`}
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border border-destructive/40 text-destructive text-xs px-2 py-2 min-h-9 hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" aria-hidden="true" /> Delete
+                      </button>
+                    )}
                   </div>
                 </article>
               </li>

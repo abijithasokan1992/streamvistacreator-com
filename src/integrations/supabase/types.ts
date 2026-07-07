@@ -4583,9 +4583,13 @@ export type Database = {
           id: string
           logo_url: string | null
           name: string
+          org_kind: Database["public"]["Enums"]["org_kind"]
           primary_color: string | null
+          published: boolean
+          status: Database["public"]["Enums"]["org_status"]
           subscription_plan: string | null
           subscription_status: string | null
+          updated_at: string
         }
         Insert: {
           created_at?: string | null
@@ -4593,9 +4597,13 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name: string
+          org_kind?: Database["public"]["Enums"]["org_kind"]
           primary_color?: string | null
+          published?: boolean
+          status?: Database["public"]["Enums"]["org_status"]
           subscription_plan?: string | null
           subscription_status?: string | null
+          updated_at?: string
         }
         Update: {
           created_at?: string | null
@@ -4603,9 +4611,13 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name?: string
+          org_kind?: Database["public"]["Enums"]["org_kind"]
           primary_color?: string | null
+          published?: boolean
+          status?: Database["public"]["Enums"]["org_status"]
           subscription_plan?: string | null
           subscription_status?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -4688,6 +4700,7 @@ export type Database = {
           logo_url: string | null
           min_resolution: string | null
           name: string
+          organization_id: string | null
           revenue_share_notes: string | null
           runtime_max_minutes: number | null
           runtime_min_minutes: number | null
@@ -4718,6 +4731,7 @@ export type Database = {
           logo_url?: string | null
           min_resolution?: string | null
           name: string
+          organization_id?: string | null
           revenue_share_notes?: string | null
           runtime_max_minutes?: number | null
           runtime_min_minutes?: number | null
@@ -4748,6 +4762,7 @@ export type Database = {
           logo_url?: string | null
           min_resolution?: string | null
           name?: string
+          organization_id?: string | null
           revenue_share_notes?: string | null
           runtime_max_minutes?: number | null
           runtime_min_minutes?: number | null
@@ -4760,7 +4775,15 @@ export type Database = {
           updated_at?: string
           website_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "partner_profiles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       partner_title_matches: {
         Row: {
@@ -9148,6 +9171,7 @@ export type Database = {
         | "qc_reviewer"
         | "legal_reviewer"
         | "founder"
+        | "channel_partner"
       billing_attempt_status:
         | "initiated"
         | "succeeded"
@@ -9271,6 +9295,8 @@ export type Database = {
         | "free_tier_commercial"
         | "screener_access"
         | "antipiracy_addendum"
+      org_kind: "creator" | "studio" | "buyer" | "channel_partner"
+      org_status: "draft" | "invited" | "onboarding" | "active" | "suspended"
       plan_assignment_status: "active" | "suspended" | "expired" | "cancelled"
       production_banner: "Crayons Pictures" | "Abhijith Asokan Productions"
       protection_tier: "baseline" | "enhanced" | "forensic"
@@ -9464,6 +9490,7 @@ export const Constants = {
         "qc_reviewer",
         "legal_reviewer",
         "founder",
+        "channel_partner",
       ],
       billing_attempt_status: [
         "initiated",
@@ -9602,6 +9629,8 @@ export const Constants = {
         "screener_access",
         "antipiracy_addendum",
       ],
+      org_kind: ["creator", "studio", "buyer", "channel_partner"],
+      org_status: ["draft", "invited", "onboarding", "active", "suspended"],
       plan_assignment_status: ["active", "suspended", "expired", "cancelled"],
       production_banner: ["Crayons Pictures", "Abhijith Asokan Productions"],
       protection_tier: ["baseline", "enhanced", "forensic"],

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { Loader2, LogOut, ShieldCheck, Crown, RefreshCw, Copy, Check, Wallet, Inbox, Users as UsersIcon, LayoutDashboard, HardDrive, LifeBuoy, Settings as SettingsIcon, ArrowRight, Package, FileText, ClipboardCheck, Megaphone, Code2, Image as ImageIcon, Briefcase, Activity, Server } from "lucide-react";
+import { Loader2, LogOut, ShieldCheck, Crown, RefreshCw, Copy, Check, Wallet, Inbox, Users as UsersIcon, LayoutDashboard, HardDrive, LifeBuoy, Settings as SettingsIcon, ArrowRight, Package, FileText, ClipboardCheck, Megaphone, Code2, Image as ImageIcon, Briefcase, Activity, Server, Network } from "lucide-react";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,6 +53,10 @@ import FounderVault from "@/components/admin/FounderVault";
 import AiMcpControlCenter from "@/components/admin/AiMcpControlCenter";
 import McpHealthCenter from "@/components/admin/McpHealthCenter";
 
+import OrganizationsConsole from "@/components/admin/ecosystem/OrganizationsConsole";
+import InvitationsConsole from "@/components/admin/ecosystem/InvitationsConsole";
+import ChannelPartnersConsole from "@/components/admin/ecosystem/ChannelPartnersConsole";
+
 interface Row {
   id: string;
   client_name: string;
@@ -74,13 +78,17 @@ interface Row {
 // Legacy `?tab=` and `/admin/<old>` URLs are still resolved
 // by mapping them to the equivalent new department.
 // ============================================================
-const DEPT_KEYS = ["dashboard", "operations", "accounts", "commerce", "storage", "comms", "system"] as const;
+const DEPT_KEYS = ["dashboard", "operations", "ecosystem", "accounts", "commerce", "storage", "comms", "system"] as const;
 type DeptKey = typeof DEPT_KEYS[number];
 
 const LEGACY_TAB_TO_DEPT: Record<string, DeptKey> = {
   overview: "dashboard",
   users: "accounts",
-  approvals: "operations",
+  approvals: "ecosystem",
+  onboarding: "ecosystem",
+  invitations: "ecosystem",
+  organizations: "ecosystem",
+  partners: "ecosystem",
   catalog: "commerce",
   billing: "commerce",
   storage: "storage",
@@ -97,7 +105,8 @@ function pathToDept(path: string, search: URLSearchParams): DeptKey {
   const legacyTab = search.get("tab");
   if (legacyTab && LEGACY_TAB_TO_DEPT[legacyTab]) return LEGACY_TAB_TO_DEPT[legacyTab];
   const p = path.toLowerCase();
-  if (p.startsWith("/admin/operations") || p.startsWith("/admin/approvals") || p.startsWith("/admin/content") || p.startsWith("/admin/qc") || p.startsWith("/admin/legal") || p.startsWith("/admin/pipeline")) return "operations";
+  if (p.startsWith("/admin/ecosystem") || p.startsWith("/admin/approvals") || p.startsWith("/admin/onboarding") || p.startsWith("/admin/invitations") || p.startsWith("/admin/partners") || p.startsWith("/admin/organizations")) return "ecosystem";
+  if (p.startsWith("/admin/operations") || p.startsWith("/admin/content") || p.startsWith("/admin/qc") || p.startsWith("/admin/legal") || p.startsWith("/admin/pipeline")) return "operations";
   if (p.startsWith("/admin/accounts") || p.startsWith("/admin/users") || p.startsWith("/admin/team") || p.startsWith("/admin/roles")) return "accounts";
   if (p.startsWith("/admin/commerce") || p.startsWith("/admin/catalog") || p.startsWith("/admin/products") || p.startsWith("/admin/plans") || p.startsWith("/admin/billing") || p.startsWith("/admin/finance") || p.startsWith("/admin/entitlements") || p.startsWith("/admin/rights")) return "commerce";
   if (p.startsWith("/admin/storage") || p.startsWith("/admin/delivery") || p.startsWith("/admin/vault-delivery")) return "storage";
@@ -383,13 +392,25 @@ function buildDepartments(args: {
       id: "operations",
       label: "Operations",
       icon: <ClipboardCheck className="w-4 h-4" />,
-      desc: "Approvals, pipeline and catalog ops.",
+      desc: "Content review, pipeline and catalog ops.",
       sections: [
-        { id: "approvals", label: "Approvals", hint: "Onboarding & content review", content: (
-          <div className="space-y-6"><OnboardingApprovals /><ContentReviewWorkflow initialTab={args.reviewInitialTab} /></div>
+        { id: "approvals", label: "Content Review", hint: "Title QC & legal review", content: (
+          <ContentReviewWorkflow initialTab={args.reviewInitialTab} />
         )},
         { id: "pipeline", label: "Pipeline", hint: "Title edits & QC flow", content: <TitleEditRequestsInbox /> },
         { id: "catalog-ops", label: "Catalog Ops", hint: "Global assets", content: <GlobalAssetManager /> },
+      ],
+    },
+    {
+      id: "ecosystem",
+      label: "Ecosystem",
+      icon: <Network className="w-4 h-4" />,
+      desc: "Organizations, invitations, channel partners and onboarding — one source of truth.",
+      sections: [
+        { id: "organizations", label: "Organizations", hint: "Creators · Studios · Buyers · Partners", content: <OrganizationsConsole /> },
+        { id: "invitations", label: "Invitations", hint: "Role-aware invites", content: <InvitationsConsole /> },
+        { id: "channel-partners", label: "Channel Partners", hint: "Publish to /partners", content: <ChannelPartnersConsole /> },
+        { id: "onboarding", label: "Onboarding Queue", hint: "Approvals & activations", content: <OnboardingApprovals /> },
       ],
     },
     {
@@ -544,7 +565,7 @@ function AdminMainPanel({
         onValueChange={(v) => setDept(v as DeptKey)}
         className="w-full"
       >
-        <TabsList className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 h-auto p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-6">
+        <TabsList className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-1.5 h-auto p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full mb-6">
           {departments.map((d) => (
             <DeptTab key={d.id} value={d.id} icon={d.icon} label={d.label} />
           ))}
@@ -572,7 +593,7 @@ function AdminMainPanel({
 function QuickNav({ navigate }: { navigate: (p: string) => void }) {
   const tiles = [
     { path: "/admin/users",     icon: <UsersIcon className="w-5 h-5" />,      label: "Users & Roles", desc: "Roles, invites, team" },
-    { path: "/admin/approvals", icon: <ClipboardCheck className="w-5 h-5" />, label: "Approvals",     desc: "Onboarding & titles" },
+    { path: "/admin/ecosystem?dept=ecosystem&section=onboarding", icon: <ClipboardCheck className="w-5 h-5" />, label: "Ecosystem",     desc: "Orgs · invites · partners · onboarding" },
     { path: "/admin/homepage",  icon: <ImageIcon className="w-5 h-5" />,      label: "Homepage CMS",  desc: "Hero banners, licensed contents" },
     { path: "/admin/catalog",   icon: <Package className="w-5 h-5" />,        label: "Catalog",       desc: "Plans, pricing, assets" },
     { path: "/admin/billing",   icon: <Wallet className="w-5 h-5" />,         label: "Billing",       desc: "Invoices, Razorpay" },

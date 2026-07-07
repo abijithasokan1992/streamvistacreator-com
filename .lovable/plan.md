@@ -1,111 +1,102 @@
-# Media Ingest Engine — Design Plan
 
-A safety-first, resumable, checksum-verified ingest pipeline for DIT / studio / broadcast workflows. Preserves the existing `ingest_jobs` + `ingest_job_items` schema, OCI upload pipeline, and Supabase RLS. No new backend surface unless listed below.
+## Goal
 
-## 1. Safety contract (non-negotiable)
+Replace the scattered Channel Partner / Onboarding / Invitations surfaces with one **Admin → Ecosystem** department that manages every external organization (Creator, Studio, Buyer, Channel Partner) through a single data model, invitation flow, and audit trail. The public `/partners` page becomes a read-only projection of published Channel Partner records.
 
-- **Read-only source access.** Source `FileSystemDirectoryHandle` is opened with `mode: "read"`. `<input webkitdirectory>` fallback is inherently read-only. No `createWritable`, no `remove()`, no `move()` calls anywhere in the ingest path — enforced by a lint rule (`no-restricted-syntax`) on `src/lib/ingest/**`.
-- **No source mutation.** We never rename, delete, or touch source mtime. Copy = read stream → OCI write. Verification reads the source a second time; it never writes back.
-- **No unsafe permissions.** No `navigator.usb`, no `navigator.hid`, no elevated prompts, no native helpers. Everything runs inside the standard File System Access sandbox the user explicitly granted per-session.
-- **Graceful device removal.** All reads are wrapped; `NotFoundError` / `NotReadableError` / `AbortError` transition the job item to `paused_device_lost` (new state), not `failed`, so resume works when the device is re-mounted.
+## Reused existing pieces (no rebuild)
 
-## 2. Device coverage matrix
+- Admin shell: `src/pages/Admin.tsx` + `AdminCommandBar` + `DeptSubNav` (add one new dept, not a new page).
+- Auth / RBAC: `useAuth`, `RoleGate`, `has_role`, existing `user_roles` table.
+- Audit: `admin_audit_log` (existing helper patterns).
+- Onboarding data: `onboarding_requests`, `onboarding_notifications`, `onboarding_audit_log` — kept as source, wrapped in new views instead of forked tables.
+- Invitations: existing `role_invitations`, `premium_invitations`, `intro_invites` — unified behind one admin surface, not replaced.
+- Workspaces: existing `workspaces`, `workspace_members`, `organizations` auto-provisioner (already used by onboarding approval flow).
+- Partner data: existing `partner_profiles` becomes the Channel Partner projection layer; existing `partner_logos` stays for marketing thumbnails only.
 
-| Source | Path |
-|---|---|
-| SD / CFexpress / USB / SSD / HDD / RAID (mounted as a folder) | `showDirectoryPicker({ mode: "read" })` on Chromium; `<input webkitdirectory>` fallback on Firefox/Safari |
-| NAS (SMB/AFP mounts) | Same — appears as a mounted folder to the OS |
-| Phones / tablets over USB (MTP → mounted) | Same folder picker |
-| Phones / tablets in-browser | Existing `SmartDropUploader` (already file-picker based) |
-| Camera direct (CCU / C2C) | Existing `CameraToCloudIngest` component — untouched |
+## Data model (additive, no duplication)
 
-No native drivers, no OS bypass. If a device is not mounted by the OS, we surface a clear "Mount the device in Finder / Explorer / Files, then click Rescan" message.
-
-## 3. Architecture
+One new organization-type discriminator table + one linking column. Everything else references existing tables.
 
 ```text
- ┌─ Device picker ─────────┐    ┌─ Planner ──────────────┐    ┌─ Transfer worker pool ─┐
- │ scanDirectoryHandle()   │───▶│ classify + dedupe +    │───▶│ chunked read → OCI     │
- │ scanFileList()          │    │ format validation +    │    │ multipart upload +     │
- │ (existing)              │    │ manifest build         │    │ per-chunk SHA-256      │
- └─────────────────────────┘    └─────────┬──────────────┘    └───────────┬────────────┘
-                                          │                               │
-                                          ▼                               ▼
-                                ┌────────────────────┐          ┌────────────────────┐
-                                │ ingest_jobs (row)  │          │ ingest_job_items   │
-                                │ + manifest JSONB   │◀────────▶│ status machine +   │
-                                │ + resume_token     │          │ verify_state       │
-                                └────────────────────┘          └────────────────────┘
+organizations (existing)
+  + org_kind enum: 'creator' | 'studio' | 'buyer' | 'channel_partner'    NEW COLUMN
+  + status enum:  'draft' | 'invited' | 'onboarding' | 'active' | 'suspended'  NEW COLUMN
+  + published boolean default false   NEW COLUMN   (only channel_partner uses)
+  + partner_profile_id uuid FK partner_profiles(id) nullable  NEW COLUMN
+
+partner_profiles (existing) — becomes the extended profile for org_kind='channel_partner'
+  + organization_id uuid FK organizations(id)  NEW COLUMN (1:1)
+  + Reserved future columns already present (licensing, territories, submission_requirements)
+
+onboarding_requests (existing) — unchanged; gains implicit link via organization_id already present.
+
+role_invitations (existing) — reused; a new admin view groups all invitation types.
 ```
 
-New client modules (all under `src/lib/ingest/`, none touch existing files except to import):
+RLS: admin full access; `anon` can `SELECT` on `partner_profiles` only where the linked org is `org_kind='channel_partner' AND published=true AND status='active'`. Authenticated users get the same public view; a future migration will add a creator-scoped policy exposing the extended licensing/submission columns (already reserved).
 
-- `deviceManifest.ts` — turns a `ScanResult` into a stable manifest keyed by `(relativePath, size, mtime)`; dedupes against prior `ingest_job_items` for the same workspace using the client-side SHA (small files) or `(size + head-1MB-hash)` fingerprint (large files).
-- `formatPolicy.ts` — thin wrapper over existing `mediaIntelligence.classifyFile` + `supabase/functions/_shared/uploadValidation.ts` rules exposed to the client via a small mirrored constant. Rejects forbidden extensions before we open a job.
-- `transferWorker.ts` — Web Worker that streams 8 MiB chunks, computes SHA-256 incrementally (`crypto.subtle` incremental via `@noble/hashes` sha256, already tree-shakeable), pushes each chunk through the existing `ociMultipartUpload` driver, and reports progress.
-- `verifier.ts` — after all chunks land, re-reads the source file a second time to produce an independent whole-file SHA-256, compares to (a) the incremental hash from transfer, and (b) the server-side checksum the OCI pipeline already computes. Three-way match = `verified`. Two-of-three mismatch = `corrupt`, item quarantined, source untouched.
-- `resumeController.ts` — persists a `resume_token` (job_id + per-item byte offsets + chunk ETags) in `ingest_jobs.metadata.resume` after every successful chunk. On reopen, we walk the manifest, skip items already `verified`, and continue in-flight items from their last acked chunk.
-- `ingestEngine.ts` — orchestrator that stitches the above and exposes `startIngest()`, `pauseIngest()`, `resumeIngest()`, `cancelIngest()` to the UI.
+Grants included in the migration for every touched table.
 
-## 4. Status machine (per item)
+## Admin → Ecosystem UI
 
-`queued → hashing → uploading → server_checksum → verifying → verified`
-Side branches: `duplicate_skipped`, `format_rejected`, `paused_device_lost`, `paused_user`, `corrupt`, `failed`.
+New dept in `Admin.tsx`, key `ecosystem`, four sub-sections in `DeptSubNav`:
 
-All states already fit `ingest_job_items.status` (text). New values are additive — no migration required beyond documenting them. The three "transient" states that drive polling (`hashing`, `uploading`, `verifying`) plug into the existing `IngestQCPanel` polling loop.
+1. **Organizations** — table of all orgs across the four kinds; filters by kind/status; row detail drawer shows workspace, members, linked onboarding request, audit trail. Reuses existing `AdminTeamManager` row components.
+2. **Invitations** — unified list over `role_invitations` (all roles including `channel_partner`). Create-invite dialog picks `org_kind`; on acceptance the existing onboarding flow runs with role-aware steps.
+3. **Channel Partners** — filtered view of Organizations where `org_kind='channel_partner'`, plus the partner_profile editor (tagline, description, logo, licensing, territories, submission requirements) and a **Publish** toggle that flips `organizations.published`. This replaces the standalone Channel Partners module and the current `PartnerLogos` admin card links here.
+4. **Onboarding Queue** — the existing `OnboardingApprovals` component moved under Ecosystem (removed from Operations dept nav; route redirect kept). Approving still calls the same provisioning code path.
 
-## 5. Duplicate detection
+Legacy routes `/admin/approvals`, `/admin/users` continue to work — `pathToDept` gets an `ecosystem` branch and legacy tab keys `approvals`, `partners`, `invitations` map into it.
 
-Two-tier:
-1. **Local, pre-transfer:** manifest fingerprint = `size + first-1MB-SHA + last-1MB-SHA`. Matches within the current pick are collapsed; matches against prior `ingest_job_items` (queried by `workspace_id` + fingerprint stored in `metadata.fingerprint`) mark the item `duplicate_skipped` before any upload.
-2. **Server, post-transfer:** existing OCI pipeline's full checksum stays authoritative. A late duplicate is retagged `duplicate_skipped` and the OCI object is garbage-collected by the existing lifecycle rule.
+## Onboarding + provisioning
 
-## 6. Corruption protection
+One shared server-side function `provision_organization(org_kind, submitter_user_id, payload)` (Postgres function, `security definer`) that:
 
-- Chunk-level SHA-256 sent with each multipart part; OCI rejects mismatched parts (existing behavior).
-- Whole-file SHA-256 computed twice on the client (streaming during upload + independent re-read in `verifier.ts`).
-- Server-side checksum from the existing pipeline is the third witness.
-- Any 2-of-3 disagreement → item `corrupt`, transfer halted for that item only, source never touched, UI surfaces which witness disagreed.
+- inserts/updates the `organizations` row with the right `org_kind`,
+- creates the workspace + `workspace_members` owner row,
+- links the `onboarding_request`,
+- for `channel_partner` also inserts the `partner_profiles` row (unpublished),
+- writes an `admin_audit_log` entry.
 
-## 7. Resume
+Both admin approval and invitation acceptance call this same function — no forked logic.
 
-- `ingest_jobs.metadata.resume = { version: 1, items: { [item_id]: { uploadId, parts: [{n, etag, sha}], offset } } }`
-- Written after each acknowledged chunk (throttled to 1/s).
-- On page reload / device replug, `resumeController.rehydrate(jobId)` loads the token, verifies each item's source still matches its manifest fingerprint (size + mtime + head hash), and resumes. If the source changed, the item goes to `source_changed` and waits for user decision — we never silently re-upload.
+## Public `/partners`
 
-## 8. UI
+`src/pages/Partners.tsx` and `src/lib/partnerProfiles.ts` are updated to query:
 
-New route: `/studio/ingest/engine` (studio-scoped). Three panels:
+```sql
+select pp.*
+from partner_profiles pp
+join organizations o on o.id = pp.organization_id
+where o.org_kind = 'channel_partner'
+  and o.published = true
+  and o.status = 'active'
+```
 
-- **Source panel** — picker button, mounted-device summary (label, family from existing `deviceScanner`, total bytes, format list), Rescan, Eject-safe indicator.
-- **Plan panel** — manifest table: filename, size, detected type, fingerprint status (new / duplicate / rejected), destination bucket/prefix. Bulk actions: exclude, mark as proxy, override category (only where confidence < 0.6).
-- **Transfer panel** — per-item progress bars, throughput, ETA, verify state (3-way witnesses shown as tiny badges), pause/resume/cancel, detailed log drawer with copy-to-clipboard and CSV export.
+No admin action = no listing. Draft partners never appear.
 
-All panels use existing Studio Professional dark tokens (`zinc-950` surface) — no hardcoded colors.
+## Creator workspace future hook (not built now, but reserved)
 
-## 9. Backend touchpoints (minimal)
+The migration adds columns `licensing_models jsonb`, `submission_requirements jsonb`, `territories text[]` on `partner_profiles` (if not already present) plus an RLS policy stub commented out for `authenticated` role. A follow-up story enables it — no schema churn required later.
 
-- **No schema migration.** All new fields live inside existing JSONB (`ingest_jobs.metadata`, `ingest_job_items.metadata`).
-- **No new edge function.** Uses existing `oci-multipart` init/complete + existing `run-qc-scan` post-ingest.
-- **RLS unchanged.** All writes go through the client under the user's JWT; existing policies on `ingest_jobs` / `ingest_job_items` scope by `owner_user_id` / `workspace_id`.
+## Files to touch
 
-## 10. Observability
+- New migration: `organizations` columns + enum, `partner_profiles.organization_id`, RLS/grants, `provision_organization` function, backfill of existing partner rows.
+- New: `src/components/admin/ecosystem/EcosystemDashboard.tsx`, `OrganizationsTable.tsx`, `InvitationsConsole.tsx`, `ChannelPartnersConsole.tsx`, `PartnerProfileEditor.tsx`.
+- Edit: `src/pages/Admin.tsx` (register `ecosystem` dept + sub-sections; move `OnboardingApprovals` there; keep legacy tab redirects).
+- Edit: `src/components/admin/AdminCommandBar.tsx` + `DeptSubNav.tsx` to surface the new dept and its sections.
+- Edit: `src/pages/Partners.tsx`, `src/lib/partnerProfiles.ts` to filter on `published=true`.
+- Delete/redirect: any standalone `ChannelPartners*` page or route (there is none currently; only `PartnerLogos` admin card, which becomes a link into Ecosystem → Channel Partners).
 
-- Every state transition writes an `ingest_telemetry` row (table already exists) with `event`, `item_id`, `bytes`, `duration_ms`, `witness_a/b/c` hashes truncated to 12 chars.
-- Client console logs are structured JSON behind a `DEBUG_INGEST` flag; never on by default.
+## Rollout order
 
-## 11. Out of scope (called out explicitly)
+1. Migration (schema + function + backfill + RLS).
+2. Ecosystem admin UI wired to existing components.
+3. Partners public page filter switch.
+4. Redirect legacy admin routes.
 
-- No LTO / tape offload — different pipeline.
-- No on-device transcoding — proxies remain server-side.
-- No auto-eject — OS-owned.
-- No background-tab transfers on Safari (browser limitation) — we surface a "keep this tab open" banner.
+## Out of scope
 
-## 12. Rollout
-
-1. Land `src/lib/ingest/{deviceManifest,formatPolicy,transferWorker,verifier,resumeController,ingestEngine}.ts` with unit tests (fingerprint, resume-token round-trip, 3-way verify).
-2. Land `/studio/ingest/engine` route + three panels.
-3. Feature-flag behind `entity_profile.studio_ext.features.ingest_engine_v2` so existing `CameraToCloudIngest` stays default until QA passes.
-4. Enable for internal studios, then GA.
-
-No files are changed in this plan step. On approval I implement modules 1–2 first, wired to a feature flag, without touching the existing ingest components.
+- Creator-authenticated partner extension UI (reserved data only).
+- AI compatibility scoring changes (existing `partner_title_matches` untouched).
+- Any changes to Studio/Buyer dashboards.

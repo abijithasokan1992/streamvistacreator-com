@@ -110,6 +110,7 @@ const AdminRoutes = () => (
     <Route path="/admin/super" element={<Navigate to="/admin" replace />} />
     <Route path="/admin/users" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/approvals" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/ecosystem" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/catalog" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/billing" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/storage" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
@@ -181,6 +182,7 @@ const PublicRoutes = () => (
     <Route path="/admin/super" element={<Navigate to="/admin" replace />} />
     <Route path="/admin/users" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/approvals" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    <Route path="/admin/ecosystem" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/catalog" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/billing" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/storage" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />

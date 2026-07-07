@@ -551,6 +551,17 @@ function AdminMainPanel({
     window.history.replaceState(null, "", url.toString());
   };
 
+  // Priority Inbox + Quick Actions dispatch this event to route the operator
+  // to the exact department + sub-section without duplicating routing logic.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { dept?: string; section?: string } | undefined;
+      if (detail?.dept && detail?.section) jumpTo(detail.dept, detail.section);
+    };
+    window.addEventListener("admin:jump", handler as EventListener);
+    return () => window.removeEventListener("admin:jump", handler as EventListener);
+  }, []);
+
   const current = departments.find((d) => d.id === dept) ?? departments[0];
 
   return (

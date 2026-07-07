@@ -58,47 +58,47 @@ export default function CreatorQuickActions({
       >
         <QuickActionCard
           icon={Plus}
-          title="New Title Wizard"
-          description="Start a draft and we'll guide metadata, assets, and submission."
+          title="New Title"
+          description="Start a draft and we'll guide you through details, files and submission."
           cta="Start"
           tone="accent"
           onClick={() => onNavigate("titles")}
         />
         <QuickActionCard
           icon={ClipboardCheck}
-          title="Submission Readiness Checker"
+          title="Ready to Submit"
           description="See exactly what's missing before you submit."
           cta="Run check"
           onClick={() => setDrawer("readiness")}
         />
         <QuickActionCard
           icon={UploadCloud}
-          title="Metadata / Asset Upload Guide"
-          description="Formats, sizes, and recommended settings."
+          title="Submission Guide"
+          description="Recommended file formats, sizes and settings."
           cta="Open guide"
           onClick={() => setDrawer("upload")}
         />
         <QuickActionCard
           icon={Receipt}
-          title="Commercial Path Summary"
+          title="Business Options"
           description={isFree
             ? "Free plan defaults: Worldwide · Revenue Share · Non-exclusive."
-            : "Premium: per-territory rights matrix and buy-out options."}
+            : "Premium: per-territory rights and buy-out options."}
           cta="View details"
           onClick={() => setDrawer("commercial")}
         />
         <QuickActionCard
           icon={Sparkles}
-          title="Upgrade / Plan Help"
-          description={isFree ? "Upgrade for 5 TB + multiple submissions." : "Manage your plan and add-ons."}
+          title="Plan & Upgrade"
+          description={isFree ? "Upgrade for more storage and multiple submissions." : "Manage your plan and add-ons."}
           cta="Go to Billing"
           tone={isFree ? "warning" : "default"}
           onClick={() => onNavigate("billing")}
         />
         <QuickActionCard
           icon={LifeBuoy}
-          title="Support Shortcut"
-          description="Reach our team for review, payments, or technical help."
+          title="Get Support"
+          description="Reach our team for reviews, payments or technical help."
           cta="Get support"
           onClick={() => onNavigate("help")}
         />

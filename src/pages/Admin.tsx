@@ -526,13 +526,17 @@ function AdminMainPanel({
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight">
-            {isSuperAdmin ? "Platform Owner · Media Operations" : "Admin Console"}
+            {isReviewer
+              ? (reviewerKind === "legal" ? "Legal Reviewer Console" : "QC Reviewer Console")
+              : isSuperAdmin ? "Platform Owner · Media Operations" : "Admin Console"}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Departments on the left. Sub-sections appear inside each department.
+            {isReviewer
+              ? "Review queue is scoped to your assignments. All decisions are audited."
+              : "Departments on the left. Sub-sections appear inside each department."}
           </p>
         </div>
-        <AdminCommandBar departments={cmdDepartments} onJump={jumpTo} />
+        {!isReviewer && <AdminCommandBar departments={cmdDepartments} onJump={jumpTo} />}
       </div>
 
       <Tabs

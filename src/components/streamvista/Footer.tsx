@@ -74,6 +74,13 @@ export const Footer = () => {
         </div>
         <div className="mt-10 pt-6 border-t border-border/40">
           <CrayonsNetwork />
+          <p className="mt-6 text-center text-[11px] font-mono-tech uppercase tracking-[0.22em] text-muted-foreground opacity-50">
+            StreamVista Syndicates — Powered by The Crayons Network
+            <span className="mx-2">·</span>
+            Crayons Pictures <span className="mx-1.5">•</span>
+            Crayons Bridge <span className="mx-1.5">•</span>
+            Crayons Loop
+          </p>
         </div>
       </div>
     </footer>

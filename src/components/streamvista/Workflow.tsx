@@ -12,12 +12,6 @@ const STEPS = [
   { icon: TrendingUp, step: "05", title: "Monetize", body: "Close licensing deals and grow revenue." },
 ];
 
-const TRUST = [
-  { icon: ShieldCheck, label: "Protect your intellectual property." },
-  { icon: Users, label: "Collaborate securely with approved partners." },
-  { icon: History, label: "Full audit trail on every asset." },
-  { icon: Fingerprint, label: "Enterprise-grade access controls." },
-];
 
 export const Workflow = () => (
   <section id="workflow" className="py-20 lg:py-24 border-b border-border/40 relative overflow-hidden">

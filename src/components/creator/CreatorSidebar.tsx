@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import {
   Home, Film, Inbox, Bell, Wallet, LifeBuoy, Lock, Database, UserCircle,
+  Briefcase, Activity as ActivityIcon, HardDrive,
 } from "lucide-react";
 import {
   Tooltip,
@@ -10,14 +11,16 @@ import {
 } from "@/components/ui/tooltip";
 
 export type SectionId =
-  | "home" | "titles" | "submissions" | "updates"
+  | "home" | "titles"
   | "delivery_vault"
-  | "profile"
+  | "business" | "messages" | "activity" | "storage"
   | "billing" | "help"
+  | "profile"
   // legacy aliases kept so old URLs resolve cleanly
+  | "submissions" | "updates"
   | "insights" | "statements" | "schedule" | "upgrade";
 
-export type SectionGroup = "main" | "storage" | "account";
+export type SectionGroup = "work" | "business" | "account";
 
 type SectionDef = {
   id: SectionId;
@@ -35,24 +38,28 @@ type SectionDef = {
 };
 
 export const SECTIONS: ReadonlyArray<SectionDef> = [
-  // Main
-  { id: "home",           label: "Home",         heading: "Home",         tip: "Your dashboard overview.",                              icon: Home,    group: "main" },
-  { id: "titles",         label: "Titles",       heading: "Titles",       tip: "Add and manage your films and shows.",                  icon: Film,    group: "main" },
+  // Work — what am I working on?
+  { id: "home",           label: "Home",     heading: "Home",     tip: "Your workspace at a glance.",                     icon: Home,     group: "work" },
+  { id: "titles",         label: "Titles",   heading: "Titles",   tip: "Add and manage your films and shows.",            icon: Film,     group: "work" },
+  { id: "delivery_vault", label: "Library",  heading: "Library",  subhead: "Masters, deliveries, archives.", tip: "Secure storage for your master files.", icon: Database, group: "work" },
 
-  // Storage
-  { id: "delivery_vault", label: "Library",      heading: "Library",      subhead: "Masters, deliveries, archives.", tip: "Secure storage for your master files.", icon: Database, group: "storage" },
+  // Business — where is the commercial activity?
+  { id: "business",       label: "Business", heading: "Business", subhead: "Buyer interest, offers, and deals.", tip: "Buyer interest, offers and deals.", icon: Briefcase,   group: "business", proOnly: true },
+  { id: "messages",       label: "Messages", heading: "Messages", subhead: "Notes from our team and buyers.", tip: "Messages and notes from our team.", icon: Bell,        group: "business" },
+  { id: "activity",       label: "Activity", heading: "Activity", subhead: "Recent progress across your titles.", tip: "Everything that happened recently.", icon: ActivityIcon, group: "business" },
 
   // Account
-  { id: "billing",        label: "Billing",      heading: "Billing",      subhead: "Plan, storage, invoices.",       tip: "Your plan, storage and invoices.",       icon: Wallet,  group: "account" },
-  { id: "help",           label: "Help",         heading: "Help",         tip: "Contact us or get answers fast.",                         icon: LifeBuoy, group: "account" },
+  { id: "storage",        label: "Storage",  heading: "Storage",  subhead: "How much space you're using.", tip: "How much space you're using.", icon: HardDrive, group: "account" },
+  { id: "billing",        label: "Billing",  heading: "Billing",  subhead: "Plan, invoices and payments.", tip: "Your plan, invoices and payments.", icon: Wallet,   group: "account" },
+  { id: "help",           label: "Help",     heading: "Help",     tip: "Contact us or browse answers.",   icon: LifeBuoy, group: "account" },
 
-  // Hidden from sidebar but still routable (deep links + Home cards still work)
-  { id: "submissions",    label: "Review Queue", heading: "Review Queue", tip: "Track which titles are being reviewed.",                icon: Inbox,   group: "main", proOnly: true, hidden: true },
-  { id: "updates",        label: "Inbox",        heading: "Inbox",        tip: "Messages and notes from our team.",                     icon: Bell,    group: "main", proOnly: true, hidden: true },
-  { id: "profile",        label: "My Profile",   heading: "My Profile",   subhead: "Identity, contact, tax and billing details.", tip: "Your identity, contact, tax and billing details.", icon: UserCircle, group: "account", hidden: true },
+  // Hidden but still routable (legacy deep links keep working)
+  { id: "submissions",    label: "Business", heading: "Business", tip: "Buyer interest and deals.", icon: Briefcase, group: "business", proOnly: true, hidden: true },
+  { id: "updates",        label: "Messages", heading: "Messages", tip: "Messages from our team.",   icon: Bell,      group: "business", hidden: true },
+  { id: "profile",        label: "My Profile", heading: "My Profile", subhead: "Identity, contact, tax and billing details.", tip: "Your identity, contact, tax and billing details.", icon: UserCircle, group: "account", hidden: true },
 ];
 
-const GROUP_ORDER: SectionGroup[] = ["main", "storage", "account"];
+const GROUP_ORDER: SectionGroup[] = ["work", "business", "account"];
 
 
 /** Items visible in the sidebar for a given tier. Pro-only items are hidden for Free. */

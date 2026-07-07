@@ -353,7 +353,9 @@ function DeleteTitleDialog({
       const { data, error } = await (supabase as any).rpc("title_delete_eligibility", { _title_id: title.id });
       if (!alive) return;
       if (error) {
-        setElig({ allow: false, reason: "We couldn't check this title right now. Please try again in a moment." });
+        // Log server-side error so support can trace which validation failed.
+        console.error("[title_delete_eligibility] RPC error", { titleId: title.id, error });
+        setElig({ allow: false, reason: "Unable to verify deletion requirements. Please try again." });
       } else {
         setElig(data as DeleteEligibility);
       }

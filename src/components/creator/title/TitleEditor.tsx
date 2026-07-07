@@ -1047,8 +1047,14 @@ function RepeatList<T>({
 }
 
 function MetadataTab({
-  meta, setMeta, readOnly,
-}: { meta: TitleMetadata; setMeta: (m: TitleMetadata) => void; readOnly: boolean }) {
+  meta, setMeta, readOnly, currentTitle, onSmartImport,
+}: {
+  meta: TitleMetadata;
+  setMeta: (m: TitleMetadata) => void;
+  readOnly: boolean;
+  currentTitle: string;
+  onSmartImport: (next: { title?: string; metadataPatch: Partial<TitleMetadata> }) => void;
+}) {
   const upd = <K extends keyof TitleMetadata>(k: K, v: TitleMetadata[K]) => setMeta({ ...meta, [k]: v });
   const synopsisWords = (meta.synopsis || "").trim().split(/\s+/).filter(Boolean).length;
   const overLimit = synopsisWords > SYNOPSIS_WORD_LIMIT;

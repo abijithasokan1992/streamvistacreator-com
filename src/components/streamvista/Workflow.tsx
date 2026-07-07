@@ -65,27 +65,6 @@ export const Workflow = () => (
         ))}
       </ol>
 
-      {/* Compact trust strip */}
-      <ul className="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {TRUST.map(({ icon: Icon, label }) => (
-          <li
-            key={label}
-            className="flex items-center gap-3 rounded-lg border border-border/40 bg-background/50 p-3.5"
-          >
-            <div
-              className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center"
-              style={{
-                background:
-                  "linear-gradient(135deg, hsl(var(--primary) / 0.15), hsl(var(--accent) / 0.15))",
-                boxShadow: "inset 0 0 0 1px hsl(var(--accent) / 0.25)",
-              }}
-            >
-              <Icon className="w-4 h-4 text-accent" />
-            </div>
-            <span className="text-[13px] text-foreground/90 leading-snug">{label}</span>
-          </li>
-        ))}
-      </ul>
     </div>
   </section>
 );

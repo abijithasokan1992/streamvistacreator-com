@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Loader2, Pencil, Eye, Lock, Crown, AlertTriangle, X, Film } from "lucide-react";
+import { Plus, Loader2, Pencil, Eye, Lock, Crown, AlertTriangle, X, Film, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspaces } from "@/hooks/useWorkspaces";
 import {
@@ -11,8 +11,19 @@ import { CONTENT_TYPE_OPTIONS, CONTENT_TYPE_LABEL, type TitleMetadata } from "@/
 import { StatusBadge } from "@/components/creator/title/StatusBadge";
 import { TitleEditor } from "@/components/creator/title/TitleEditor";
 import { AgreementGate } from "@/components/legal/AgreementGate";
+import { supabase } from "@/integrations/supabase/client";
 
 import { cn } from "@/lib/utils";
+
+type DeleteEligibility = {
+  allow: boolean;
+  reason: string;
+  blockers?: string[];
+  lock_days_remaining?: number;
+  lock_active?: boolean;
+  early_termination_fee_inr?: number;
+  status?: string;
+};
 
 type Format = TitleMetadata["format"];
 

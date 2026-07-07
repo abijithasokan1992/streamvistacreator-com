@@ -5,6 +5,8 @@ import { Loader2, LogOut, ShieldCheck, Crown, RefreshCw, Copy, Check, Wallet, In
 import MissionControl from "@/components/admin/MissionControl";
 import AiOpsAssistant from "@/components/admin/AiOpsAssistant";
 import ActionCenter from "@/components/admin/ActionCenter";
+import PriorityInbox from "@/components/admin/PriorityInbox";
+import QuickActions from "@/components/admin/QuickActions";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
@@ -313,6 +315,7 @@ export default function Admin() {
               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-1" />
             </div>
 
+            {!isReviewer && <PriorityInbox />}
             <ThemeToggle />
             <button onClick={load} disabled={fetching} className="px-3 py-2 text-sm rounded-md border border-border hover:bg-secondary flex items-center gap-2">
               <RefreshCw className={`w-4 h-4 ${fetching ? "animate-spin" : ""}`} /> Refresh
@@ -548,6 +551,17 @@ function AdminMainPanel({
     window.history.replaceState(null, "", url.toString());
   };
 
+  // Priority Inbox + Quick Actions dispatch this event to route the operator
+  // to the exact department + sub-section without duplicating routing logic.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { dept?: string; section?: string } | undefined;
+      if (detail?.dept && detail?.section) jumpTo(detail.dept, detail.section);
+    };
+    window.addEventListener("admin:jump", handler as EventListener);
+    return () => window.removeEventListener("admin:jump", handler as EventListener);
+  }, []);
+
   const current = departments.find((d) => d.id === dept) ?? departments[0];
 
   return (
@@ -567,6 +581,10 @@ function AdminMainPanel({
         </div>
         {!isReviewer && <AdminCommandBar departments={cmdDepartments} onJump={jumpTo} />}
       </div>
+
+      {!isReviewer && <QuickActions onJump={jumpTo} />}
+
+
 
       <Tabs
         value={dept}

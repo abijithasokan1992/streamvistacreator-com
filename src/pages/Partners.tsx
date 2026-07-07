@@ -26,7 +26,6 @@ export default function Partners() {
       <Seo
         title="Partners — StreamVista Cloud X"
         description="The distribution and streaming platforms in the StreamVista ecosystem — from mass-reach SVOD to premium TVOD, regional-first services and short-form networks."
-        canonical="/partners"
       />
       <Navbar />
       <main className="pt-24">

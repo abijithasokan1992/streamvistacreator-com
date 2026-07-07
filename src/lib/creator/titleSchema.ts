@@ -48,6 +48,9 @@ export const TitleMetadataSchema = z.object({
   crew: z.array(PersonSchema).default([]),
   imdb_id: z.string().max(50).default(""),
   tmdb_id: z.string().max(50).default(""),
+  original_title: z.string().max(300).default(""),
+  release_date: z.string().max(40).default(""),
+  trailer_url: z.string().max(500).default(""),
   festivals: z.array(FestivalSchema).default([]),
   awards: z.array(AwardSchema).default([]),
   ratings: z.object({

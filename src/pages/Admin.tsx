@@ -38,6 +38,7 @@ import PaymentTrace from "@/components/admin/PaymentTrace";
 import OracleStorageMonitor from "@/components/admin/OracleStorageMonitor";
 import AdminStudioVaultPurchases from "@/components/admin/AdminStudioVaultPurchases";
 import OracleOciStorageCard from "@/components/admin/OracleOciStorageCard";
+import FailedUploadsInspector from "@/components/admin/FailedUploadsInspector";
 import SupportInbox from "@/components/admin/SupportInbox";
 import ContactInbox from "@/components/admin/ContactInbox";
 import EmailLogMonitor from "@/components/admin/EmailLogMonitor";

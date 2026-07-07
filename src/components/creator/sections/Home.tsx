@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
-  Plus, ArrowRight, Bell, Film, Inbox, Crown, Play,
-  Briefcase, LifeBuoy, CheckCircle2, Sparkles,
+  Plus, ArrowRight, Bell, Film, Crown, Play,
+  Briefcase, LifeBuoy, Sparkles, HardDrive,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,18 +21,18 @@ const REVIEW_STATES = new Set(["submitted", "in_review", "qc_review", "legal_rev
 const APPROVED_STATES = new Set(["approved", "ready_for_distribution"]);
 
 /**
- * Creator Home — creator-first, business language only.
+ * Creator Home — organised around the daily workflow.
  *
- *  1. Continue Working
- *  2. My Titles
- *  3. What's Next
- *  4. Activity
- *  5. Business
- *  6. Messages
- *  7. Storage
- *  8. Support
+ *  1. Continue Working   — primary hero, jump back into latest title
+ *  2. Today's Focus      — one clear next action
+ *  3. My Titles          — recent work with status counts
+ *  4. Updates            — merged activity + messages timeline
+ *  5. Business           — buyer interest, offers, deals, revenue
+ *  6. Workspace          — plan, storage, usage in one compact card
+ *  7. Help
  *
- * Reuses existing queries and components — no new backend logic.
+ * Storage and Messages appear in exactly one place each.
+ * Reuses existing queries/components — no new backend logic.
  */
 export default function HomeSection({
   onNavigate, isFree,
@@ -54,7 +54,7 @@ export default function HomeSection({
             .select("id, title, message, created_at")
             .eq("user_id", user.id)
             .order("created_at", { ascending: false })
-            .limit(5),
+            .limit(8),
           fetchFreeTierStatus().catch(() => null),
         ]);
         setTitles(t);
@@ -72,9 +72,8 @@ export default function HomeSection({
   const recent    = titles[0];
 
   const capped = isFree && tier && !tier.can_create_draft && tier.lifecycle_count >= 1;
-
-  // Single "next action" logic — one clear step at a time.
   const nextAction = deriveNextAction(titles);
+  const timeline = buildTimeline(titles, updates);
 
   return (
     <div className="space-y-8">
@@ -82,8 +81,8 @@ export default function HomeSection({
 
       <WorkspaceWelcome />
 
-      {/* 1 · Continue Working */}
-      <Section title="Continue Working" hint="Jump back into your latest title.">
+      {/* 1 · Continue Working — Where did I leave off? */}
+      <Section title="Continue Working" hint="Pick up right where you left off.">
         {loading ? (
           <div className="rounded-xl border border-border/40 bg-secondary/5 p-5 h-[92px] animate-pulse" />
         ) : recent ? (
@@ -117,19 +116,8 @@ export default function HomeSection({
         )}
       </Section>
 
-      {/* 2 · My Titles */}
-      <Section title="My Titles" hint="Everything you've created, at a glance.">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          <CountTile label="Drafts"    value={loading ? "…" : String(drafts.length)}    onClick={() => onNavigate("titles")} />
-          <CountTile label="In Review" value={loading ? "…" : String(inReview.length)}  onClick={() => onNavigate(isFree ? "titles" : "submissions")} />
-          <CountTile label="Approved"  value={loading ? "…" : String(approved.length)}  onClick={() => onNavigate("titles")} />
-          <CountTile label="Published" value={loading ? "…" : String(published.length)} onClick={() => onNavigate("titles")} />
-          <CountTile label="Archived"  value={loading ? "…" : String(archived.length)}  onClick={() => onNavigate("titles")} />
-        </div>
-      </Section>
-
-      {/* 3 · What's Next */}
-      <Section title="What's Next" hint="One clear next step.">
+      {/* 2 · Today's Focus — What should I do next? */}
+      <Section title="Today's Focus" hint="One clear step to move forward.">
         <button
           onClick={() => onNavigate(nextAction.section)}
           className="w-full rounded-xl border border-border/50 bg-secondary/10 hover:bg-secondary/20 p-4 sm:p-5 text-left flex items-center gap-3 transition-colors"
@@ -143,40 +131,71 @@ export default function HomeSection({
         </button>
       </Section>
 
-      {/* 4 · Activity */}
-      <Section title="Activity" hint="Recent progress on your work.">
-        <ActivityList items={activityFrom(titles, updates)} loading={loading} />
+      {/* 3 · My Titles — Where does my work stand? */}
+      <Section title="My Titles" hint="Your work, by stage.">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <CountTile label="Drafts"    value={loading ? "…" : String(drafts.length)}    onClick={() => onNavigate("titles")} />
+          <CountTile label="In Review" value={loading ? "…" : String(inReview.length)}  onClick={() => onNavigate(isFree ? "titles" : "submissions")} />
+          <CountTile label="Approved"  value={loading ? "…" : String(approved.length)}  onClick={() => onNavigate("titles")} />
+          <CountTile label="Published" value={loading ? "…" : String(published.length)} onClick={() => onNavigate("titles")} />
+          <CountTile label="Archived"  value={loading ? "…" : String(archived.length)}  onClick={() => onNavigate("titles")} />
+        </div>
       </Section>
 
-      {/* 5 · Business */}
+      {/* 4 · Updates — What's new? (merged activity + messages) */}
+      <Section title="Updates" hint="Progress on your titles and messages from our team.">
+        <TimelineList
+          items={timeline}
+          loading={loading}
+          onOpenAll={() => onNavigate("updates")}
+        />
+      </Section>
+
+      {/* 5 · Business — Where's the commercial activity? */}
       {!isFree && (
-        <Section title="Business" hint="Requests, offers and revenue.">
+        <Section title="Business" hint="Buyer interest, offers, deals and revenue.">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <LinkTile icon={Briefcase} title="Requests & Offers" hint="Interest from buyers." onClick={() => onNavigate("submissions")} />
-            <LinkTile icon={CheckCircle2} title="Deals & Contracts" hint="Signed and active agreements." onClick={() => onNavigate("submissions")} />
-            <LinkTile icon={Crown} title="Revenue & Payments" hint="Statements and payouts." onClick={() => onNavigate("billing")} />
+            <LinkTile icon={Sparkles}  title="Deals & Contracts" hint="Signed and active agreements." onClick={() => onNavigate("submissions")} />
+            <LinkTile icon={Crown}     title="Revenue & Payments" hint="Statements and payouts." onClick={() => onNavigate("billing")} />
           </div>
         </Section>
       )}
 
-      {/* 6 · Messages */}
-      {!isFree && (
-        <Section title="Messages" hint="Updates from our team and buyers.">
-          <MessagesPreview items={updates} loading={loading} onOpen={() => onNavigate("updates")} />
-        </Section>
-      )}
-
-      {/* 7 · Storage */}
-      <Section title="Storage" hint="Your plan and how much you've used.">
-        <StorageLive />
+      {/* 6 · Workspace — Plan + storage in one compact card */}
+      <Section title="Workspace" hint="Your plan and storage in one place.">
+        <div className="rounded-xl border border-border/40 bg-secondary/5 p-4 sm:p-5 space-y-4">
+          <div className="flex items-start gap-3">
+            <HardDrive className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold">
+                {isFree ? "Free plan" : "Active plan"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {isFree
+                  ? "1 title included. Upgrade for more submissions and storage."
+                  : "Manage your plan and storage below."}
+              </p>
+            </div>
+            <button
+              onClick={() => onNavigate("billing")}
+              className="text-xs text-accent hover:underline shrink-0"
+            >
+              Manage →
+            </button>
+          </div>
+          <StorageLive />
+        </div>
       </Section>
 
-      {/* 8 · Support */}
-      <Section title="Support" hint="We're here to help.">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <LinkTile icon={LifeBuoy} title="Contact Support" hint="Reach our team for any question." onClick={() => onNavigate("help")} />
-          <LinkTile icon={Inbox} title="Help & FAQs" hint="Answers to common questions." onClick={() => onNavigate("help")} />
-        </div>
+      {/* 7 · Help */}
+      <Section title="Help" hint="We're here when you need us.">
+        <LinkTile
+          icon={LifeBuoy}
+          title="Get help"
+          hint="Contact support or browse answers to common questions."
+          onClick={() => onNavigate("help")}
+        />
       </Section>
     </div>
   );
@@ -219,7 +238,7 @@ function LinkTile({
   return (
     <button
       onClick={onClick}
-      className="text-left rounded-xl border border-border/40 bg-secondary/5 p-4 hover:bg-secondary/15 transition-colors flex items-start gap-3 min-w-0"
+      className="w-full text-left rounded-xl border border-border/40 bg-secondary/5 p-4 hover:bg-secondary/15 transition-colors flex items-start gap-3 min-w-0"
     >
       <Icon className="w-4 h-4 text-accent shrink-0 mt-0.5" />
       <div className="flex-1 min-w-0">
@@ -249,65 +268,38 @@ function UpgradeCta({ onClick }: { onClick: () => void }) {
   );
 }
 
-function ActivityList({ items, loading }: { items: ActivityItem[]; loading: boolean }) {
+function TimelineList({
+  items, loading, onOpenAll,
+}: { items: TimelineItem[]; loading: boolean; onOpenAll: () => void }) {
   if (loading) {
-    return <div className="rounded-xl border border-border/40 bg-secondary/5 p-4 h-[96px] animate-pulse" />;
+    return <div className="rounded-xl border border-border/40 bg-secondary/5 p-4 h-[120px] animate-pulse" />;
   }
   if (items.length === 0) {
     return (
       <div className="rounded-xl border border-border/40 bg-secondary/5 p-4 text-sm text-muted-foreground">
-        No activity yet. As you work, your latest progress will appear here.
-      </div>
-    );
-  }
-  return (
-    <ul className="rounded-xl border border-border/40 bg-secondary/5 divide-y divide-border/40">
-      {items.slice(0, 6).map((it, i) => (
-        <li key={i} className="p-3.5 flex items-start gap-3 min-w-0">
-          <it.icon className="w-4 h-4 text-accent shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm truncate">{it.label}</p>
-            {it.hint && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{it.hint}</p>}
-          </div>
-          <time className="text-[11px] text-muted-foreground shrink-0">{it.when}</time>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function MessagesPreview({
-  items, loading, onOpen,
-}: { items: UpdateRow[]; loading: boolean; onOpen: () => void }) {
-  if (loading) {
-    return <div className="rounded-xl border border-border/40 bg-secondary/5 p-4 h-[96px] animate-pulse" />;
-  }
-  if (items.length === 0) {
-    return (
-      <div className="rounded-xl border border-border/40 bg-secondary/5 p-4 text-sm text-muted-foreground">
-        No messages yet.
+        Nothing new yet. Progress on your titles and messages will show up here.
       </div>
     );
   }
   return (
     <div className="rounded-xl border border-border/40 bg-secondary/5">
       <ul className="divide-y divide-border/40">
-        {items.slice(0, 3).map((u) => (
-          <li key={u.id} className="p-3.5 flex items-start gap-3 min-w-0">
-            <Bell className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+        {items.slice(0, 6).map((it, i) => (
+          <li key={i} className="p-3.5 flex items-start gap-3 min-w-0">
+            <it.icon className="w-4 h-4 text-accent shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{u.title}</p>
-              {u.message && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{u.message}</p>}
+              <p className="text-sm truncate">{it.label}</p>
+              {it.hint && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{it.hint}</p>}
             </div>
-            <time className="text-[11px] text-muted-foreground shrink-0">{relative(u.created_at)}</time>
+            <time className="text-[11px] text-muted-foreground shrink-0">{it.when}</time>
           </li>
         ))}
       </ul>
       <button
-        onClick={onOpen}
+        onClick={onOpenAll}
         className="w-full text-xs text-accent hover:underline py-2.5 border-t border-border/40"
       >
-        View all messages →
+        View all updates →
       </button>
     </div>
   );
@@ -338,24 +330,26 @@ function deriveNextAction(titles: TitleRow[]): NextAction {
   return { label: "Start a new title", hint: "Ready for your next project?", section: "titles" };
 }
 
-type ActivityItem = { icon: React.ComponentType<{ className?: string }>; label: string; hint?: string; when: string };
+type TimelineItem = {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string; hint?: string; when: string; at: number;
+};
 
-function activityFrom(titles: TitleRow[], updates: UpdateRow[]): ActivityItem[] {
-  const t: ActivityItem[] = titles.slice(0, 4).map((row) => ({
+function buildTimeline(titles: TitleRow[], updates: UpdateRow[]): TimelineItem[] {
+  const t: TimelineItem[] = titles.slice(0, 6).map((row) => ({
     icon: Film,
     label: `${row.title || "Untitled"} — ${friendlyStatus(row.status)}`,
-    hint: undefined,
     when: relative(row.updated_at),
+    at: +new Date(row.updated_at),
   }));
-  const n: ActivityItem[] = updates.slice(0, 3).map((u) => ({
+  const n: TimelineItem[] = updates.slice(0, 6).map((u) => ({
     icon: Bell,
     label: u.title,
     hint: u.message || undefined,
     when: relative(u.created_at),
+    at: +new Date(u.created_at),
   }));
-  return [...t, ...n]
-    .sort((a, b) => (a.when > b.when ? -1 : 1))
-    .slice(0, 6);
+  return [...t, ...n].sort((a, b) => b.at - a.at).slice(0, 6);
 }
 
 function friendlyStatus(s: string): string {

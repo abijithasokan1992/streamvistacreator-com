@@ -1,4 +1,4 @@
-import { Upload, FolderKanban, Users, Send, TrendingUp, ArrowRight, ShieldCheck, History, Fingerprint } from "lucide-react";
+import { Upload, FolderKanban, Users, Send, TrendingUp, ArrowRight } from "lucide-react";
 
 /**
  * Workflow — business-value pipeline. Upload → Manage → Collaborate → Distribute → Monetize.

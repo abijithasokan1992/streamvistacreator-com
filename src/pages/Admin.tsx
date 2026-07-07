@@ -3,6 +3,8 @@ import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Loader2, LogOut, ShieldCheck, Crown, RefreshCw, Copy, Check, Wallet, Inbox, Users as UsersIcon, LayoutDashboard, HardDrive, LifeBuoy, Settings as SettingsIcon, ArrowRight, Package, FileText, ClipboardCheck, Megaphone, Code2, Image as ImageIcon, Briefcase, Activity, Server, Network, Rocket, Cloud, Film } from "lucide-react";
 import MissionControl from "@/components/admin/MissionControl";
+import AiOpsAssistant from "@/components/admin/AiOpsAssistant";
+import ActionCenter from "@/components/admin/ActionCenter";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
@@ -331,6 +333,15 @@ export default function Admin() {
         searchParams={searchParams}
         navigate={navigate}
       />
+
+      {/* Single-operator surface: assistant + universal action center.
+          Hidden for reviewers (they are pinned to a single queue).      */}
+      {!isReviewer && (
+        <>
+          <AiOpsAssistant />
+          <ActionCenter />
+        </>
+      )}
     </main>
   );
 }
@@ -540,7 +551,7 @@ function AdminMainPanel({
   const current = departments.find((d) => d.id === dept) ?? departments[0];
 
   return (
-    <section className="container py-10">
+    <section className="container py-10 xl:pr-[340px]">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight">

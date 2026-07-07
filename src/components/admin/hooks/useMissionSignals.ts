@@ -1,0 +1,93 @@
+import { useCallback, useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
+export type MissionSignal = {
+  key: string;
+  label: string;
+  count: number;
+  dept: string;
+  section: string;
+  tone: "danger" | "warn" | "info";
+  /** Rough seconds per item — feeds "time to clear" estimate. */
+  effortSec: number;
+};
+
+async function safeCount(table: string, filter?: (q: any) => any): Promise<number> {
+  try {
+    let q: any = (supabase as any).from(table).select("*", { count: "exact", head: true });
+    if (filter) q = filter(q);
+    const { count, error } = await q;
+    if (error) return 0;
+    return count ?? 0;
+  } catch { return 0; }
+}
+
+let cache: { at: number; signals: MissionSignal[] } | null = null;
+const TTL_MS = 60_000;
+
+/**
+ * Centralized pending-work snapshot for the single-operator surface.
+ * Cached 60s so the AI assistant, Action Center and Mission Control cards
+ * don't each hit the DB independently.
+ */
+export function useMissionSignals(pollMs = 60_000) {
+  const [signals, setSignals] = useState<MissionSignal[]>(cache?.signals ?? []);
+  const [loading, setLoading] = useState(!cache);
+  const [lastUpdated, setLastUpdated] = useState<number | null>(cache?.at ?? null);
+
+  const load = useCallback(async (force = false) => {
+    if (!force && cache && Date.now() - cache.at < TTL_MS) {
+      setSignals(cache.signals); setLastUpdated(cache.at); setLoading(false);
+      return;
+    }
+    setLoading(true);
+    const [qc, legal, tickets, failedUploads, failedEmails, failedPayments, storageAlerts, pendingOnboarding, editRequests, contactUnread] = await Promise.all([
+      safeCount("content_titles", (q) => q.eq("status", "in_review")),
+      safeCount("content_titles", (q) => q.eq("status", "legal_review")),
+      safeCount("support_requests", (q) => q.eq("status", "open")),
+      safeCount("ingest_job_items", (q) => q.eq("status", "failed")),
+      safeCount("email_send_log", (q) => q.in("status", ["failed", "error", "bounced"])),
+      safeCount("billing_payment_attempts", (q) => q.in("status", ["failed", "error"])),
+      safeCount("storage_topups", (q) => q.eq("status", "failed")),
+      safeCount("onboarding_requests", (q) => q.eq("onboarding_status", "pending")),
+      safeCount("title_edit_requests", (q) => q.eq("status", "pending")),
+      safeCount("contact_messages", (q) => q.eq("status", "new")),
+    ]);
+    const next: MissionSignal[] = [
+      { key: "qc",         label: "Titles awaiting QC",       count: qc,               dept: "content",  section: "approvals",  tone: "warn",   effortSec: 240 },
+      { key: "legal",      label: "Titles awaiting Legal",    count: legal,            dept: "content",  section: "approvals",  tone: "warn",   effortSec: 300 },
+      { key: "tickets",    label: "Open support tickets",     count: tickets,          dept: "users",    section: "support",    tone: "info",   effortSec: 180 },
+      { key: "up_fail",    label: "Failed uploads",           count: failedUploads,    dept: "cloud",    section: "storage",    tone: "danger", effortSec: 60  },
+      { key: "em_fail",    label: "Failed emails",            count: failedEmails,     dept: "platform", section: "email",      tone: "danger", effortSec: 30  },
+      { key: "pay_fail",   label: "Failed payments",          count: failedPayments,   dept: "business", section: "billing",    tone: "danger", effortSec: 240 },
+      { key: "storage",    label: "Storage alerts",           count: storageAlerts,    dept: "cloud",    section: "storage",    tone: "warn",   effortSec: 60  },
+      { key: "onboarding", label: "Pending onboarding",       count: pendingOnboarding,dept: "users",    section: "onboarding", tone: "info",   effortSec: 180 },
+      { key: "edits",      label: "Title edit requests",      count: editRequests,     dept: "content",  section: "pipeline",   tone: "info",   effortSec: 120 },
+      { key: "contact",    label: "New contact messages",     count: contactUnread,    dept: "users",    section: "support",    tone: "info",   effortSec: 120 },
+    ];
+    cache = { at: Date.now(), signals: next };
+    setSignals(next); setLastUpdated(cache.at); setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    load();
+    if (!pollMs) return;
+    const t = setInterval(() => load(true), pollMs);
+    return () => clearInterval(t);
+  }, [load, pollMs]);
+
+  const totalOpen = signals.reduce((s, x) => s + x.count, 0);
+  const critical = signals.filter(s => s.tone === "danger" && s.count > 0);
+  const attention = signals.filter(s => s.tone === "warn" && s.count > 0);
+  const info = signals.filter(s => s.tone === "info" && s.count > 0);
+  const etaMin = Math.ceil(signals.reduce((s, x) => s + x.count * x.effortSec, 0) / 60);
+
+  const health = (() => {
+    if (critical.some(c => c.count >= 5)) return { status: "red" as const, note: "Multiple failures" };
+    if (critical.length > 0) return { status: "yellow" as const, note: `${critical.length} failure lane${critical.length > 1 ? "s" : ""}` };
+    if (attention.length > 0) return { status: "yellow" as const, note: "Queues building" };
+    return { status: "green" as const, note: "All systems nominal" };
+  })();
+
+  return { signals, loading, lastUpdated, totalOpen, critical, attention, info, etaMin, health, refresh: () => load(true) };
+}

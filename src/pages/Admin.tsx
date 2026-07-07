@@ -50,6 +50,8 @@ import AdminReportsConsole from "@/components/admin/AdminReportsConsole";
 import PaymentSecurityEvents from "@/components/admin/PaymentSecurityEvents";
 import MarketingCMS from "@/components/admin/MarketingCMS";
 import FounderVault from "@/components/admin/FounderVault";
+import AiMcpControlCenter from "@/components/admin/AiMcpControlCenter";
+import McpHealthCenter from "@/components/admin/McpHealthCenter";
 
 interface Row {
   id: string;

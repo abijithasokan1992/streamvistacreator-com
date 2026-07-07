@@ -130,7 +130,7 @@ export default function CreatorQuickActions({
       <HelpDrawer
         open={drawer === "upload"}
         onOpenChange={(o) => !o && setDrawer(null)}
-        title="Metadata & Asset Upload Guide"
+        title="Submission Guide"
         description="Recommended formats and sizes."
       >
         <ul className="space-y-2">

@@ -9,6 +9,7 @@
  * Reuses existing infra — no new tables, no new edge functions.
  */
 import { supabase } from "@/integrations/supabase/client";
+import { classifyUploadError, type UploadDiagnostic } from "./classifyUploadError";
 
 export type UploadStage =
   | "validation"        // client-side guard before we ever hit the network

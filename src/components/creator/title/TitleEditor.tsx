@@ -23,10 +23,10 @@ type TabId = "overview" | "metadata" | "assets" | "legal" | "submission";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "overview",   label: "Overview" },
-  { id: "metadata",   label: "Metadata" },
-  { id: "assets",     label: "Assets" },
-  { id: "legal",      label: "Legal & Rights" },
-  { id: "submission", label: "Submission" },
+  { id: "metadata",   label: "Details" },
+  { id: "assets",     label: "Files" },
+  { id: "legal",      label: "Business" },
+  { id: "submission", label: "Submit" },
 ];
 
 export function TitleEditor({

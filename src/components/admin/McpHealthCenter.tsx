@@ -396,8 +396,8 @@ export default function McpHealthCenter() {
 
       {/* Check grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {(checks.length ? checks : Array.from({ length: 6 }, (_, i) => ({
-          id: `p-${i}`, label: "Running…", hint: "", status: "pending" as Status, icon: <RefreshCw className="w-4 h-4 animate-spin" />,
+        {(checks.length ? checks : Array.from({ length: 6 }, (_, i): CheckResult => ({
+          id: `p-${i}`, label: "Running…", hint: "", status: "pending", icon: <RefreshCw className="w-4 h-4 animate-spin" />,
         }))).map((c) => (
           <div key={c.id} className="rounded-xl border border-border/50 bg-background/30 p-4">
             <div className="flex items-start justify-between gap-3">

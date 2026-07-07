@@ -24,6 +24,7 @@ import Privacy from "./pages/Privacy.tsx";
 import IPCopyright from "./pages/IPCopyright.tsx";
 import Refund from "./pages/Refund.tsx";
 import About from "./pages/About.tsx";
+import Partners from "./pages/Partners.tsx";
 import CheckoutReturn from "./pages/CheckoutReturn.tsx";
 import CheckoutStorage from "./pages/CheckoutStorage.tsx";
 import PricingPage from "./pages/Pricing.tsx";

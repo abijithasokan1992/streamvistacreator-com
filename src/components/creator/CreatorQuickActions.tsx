@@ -107,7 +107,7 @@ export default function CreatorQuickActions({
       <HelpDrawer
         open={drawer === "readiness"}
         onOpenChange={(o) => !o && setDrawer(null)}
-        title="Submission Readiness"
+        title="Ready to Submit"
         description={`You have ${drafts} draft${drafts === 1 ? "" : "s"}, ${submitted} in review, ${approved} approved.`}
       >
         <p className="text-muted-foreground">Before submitting a title, confirm:</p>

@@ -79,41 +79,49 @@ interface Row {
 // Legacy `?tab=` and `/admin/<old>` URLs are still resolved
 // by mapping them to the equivalent new department.
 // ============================================================
-const DEPT_KEYS = ["dashboard", "operations", "ecosystem", "accounts", "commerce", "storage", "comms", "system"] as const;
+const DEPT_KEYS = ["mission", "content", "users", "business", "cloud", "platform"] as const;
 type DeptKey = typeof DEPT_KEYS[number];
 
+// Map legacy department + tab keys onto the new 6-workspace IA.
 const LEGACY_TAB_TO_DEPT: Record<string, DeptKey> = {
-  overview: "dashboard",
-  users: "accounts",
-  approvals: "ecosystem",
-  onboarding: "ecosystem",
-  invitations: "ecosystem",
-  organizations: "ecosystem",
-  partners: "ecosystem",
-  catalog: "commerce",
-  billing: "commerce",
-  storage: "storage",
-  comms: "comms",
-  homepage: "system",
-  settings: "system",
-  audit: "system",
-  vault: "system",
+  overview: "mission",
+  dashboard: "mission",
+  operations: "content",
+  approvals: "content",
+  catalog: "content",
+  pipeline: "content",
+  users: "users",
+  accounts: "users",
+  ecosystem: "users",
+  onboarding: "users",
+  invitations: "users",
+  organizations: "users",
+  partners: "users",
+  comms: "users",
+  commerce: "business",
+  billing: "business",
+  storage: "cloud",
+  homepage: "platform",
+  settings: "platform",
+  audit: "platform",
+  vault: "platform",
+  system: "platform",
 };
 
 function pathToDept(path: string, search: URLSearchParams): DeptKey {
   const q = search.get("dept") as DeptKey | null;
   if (q && (DEPT_KEYS as readonly string[]).includes(q)) return q;
+  const legacyDept = search.get("dept");
+  if (legacyDept && LEGACY_TAB_TO_DEPT[legacyDept]) return LEGACY_TAB_TO_DEPT[legacyDept];
   const legacyTab = search.get("tab");
   if (legacyTab && LEGACY_TAB_TO_DEPT[legacyTab]) return LEGACY_TAB_TO_DEPT[legacyTab];
   const p = path.toLowerCase();
-  if (p.startsWith("/admin/ecosystem") || p.startsWith("/admin/approvals") || p.startsWith("/admin/onboarding") || p.startsWith("/admin/invitations") || p.startsWith("/admin/partners") || p.startsWith("/admin/organizations")) return "ecosystem";
-  if (p.startsWith("/admin/operations") || p.startsWith("/admin/content") || p.startsWith("/admin/qc") || p.startsWith("/admin/legal") || p.startsWith("/admin/pipeline")) return "operations";
-  if (p.startsWith("/admin/accounts") || p.startsWith("/admin/users") || p.startsWith("/admin/team") || p.startsWith("/admin/roles")) return "accounts";
-  if (p.startsWith("/admin/commerce") || p.startsWith("/admin/catalog") || p.startsWith("/admin/products") || p.startsWith("/admin/plans") || p.startsWith("/admin/billing") || p.startsWith("/admin/finance") || p.startsWith("/admin/entitlements") || p.startsWith("/admin/rights")) return "commerce";
-  if (p.startsWith("/admin/storage") || p.startsWith("/admin/delivery") || p.startsWith("/admin/vault-delivery")) return "storage";
-  if (p.startsWith("/admin/comms") || p.startsWith("/admin/support") || p.startsWith("/admin/email") || p.startsWith("/admin/notifications")) return "comms";
-  if (p.startsWith("/admin/system") || p.startsWith("/admin/homepage") || p.startsWith("/admin/cms") || p.startsWith("/admin/marketing") || p.startsWith("/admin/settings") || p.startsWith("/admin/audit") || p.startsWith("/admin/reports") || p.startsWith("/admin/security") || p.startsWith("/admin/vault") || p.startsWith("/admin/founder-vault")) return "system";
-  return "dashboard";
+  if (p.startsWith("/admin/ecosystem") || p.startsWith("/admin/approvals") || p.startsWith("/admin/onboarding") || p.startsWith("/admin/invitations") || p.startsWith("/admin/partners") || p.startsWith("/admin/organizations") || p.startsWith("/admin/users") || p.startsWith("/admin/team") || p.startsWith("/admin/roles") || p.startsWith("/admin/support") || p.startsWith("/admin/comms")) return "users";
+  if (p.startsWith("/admin/operations") || p.startsWith("/admin/content") || p.startsWith("/admin/qc") || p.startsWith("/admin/legal") || p.startsWith("/admin/pipeline") || p.startsWith("/admin/catalog")) return "content";
+  if (p.startsWith("/admin/commerce") || p.startsWith("/admin/products") || p.startsWith("/admin/plans") || p.startsWith("/admin/billing") || p.startsWith("/admin/finance") || p.startsWith("/admin/entitlements") || p.startsWith("/admin/rights")) return "business";
+  if (p.startsWith("/admin/storage") || p.startsWith("/admin/delivery") || p.startsWith("/admin/vault-delivery") || p.startsWith("/admin/cloud")) return "cloud";
+  if (p.startsWith("/admin/system") || p.startsWith("/admin/homepage") || p.startsWith("/admin/cms") || p.startsWith("/admin/marketing") || p.startsWith("/admin/settings") || p.startsWith("/admin/audit") || p.startsWith("/admin/reports") || p.startsWith("/admin/security") || p.startsWith("/admin/vault") || p.startsWith("/admin/founder-vault") || p.startsWith("/admin/email") || p.startsWith("/admin/platform")) return "platform";
+  return "mission";
 }
 
 

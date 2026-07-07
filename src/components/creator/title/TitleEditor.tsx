@@ -18,6 +18,7 @@ import { RightsAvailabilityPanel } from "./RightsAvailabilityPanel";
 import { FreeSubmissionTermsModal } from "./FreeSubmissionTermsModal";
 import RequestEditButton from "@/components/creator/RequestEditButton";
 import { useTitleLock } from "@/hooks/useTitleLock";
+import { SmartMetadataImportButton } from "./SmartMetadataImport";
 
 type TabId = "overview" | "metadata" | "assets" | "legal" | "submission";
 
@@ -445,7 +446,17 @@ export function TitleEditor({
                   <OverviewSnapshot title={title} meta={meta} assets={assets} timeline={timeline} />
                 )}
                 {tab === "metadata" && (
-                  <MetadataTab meta={meta} setMeta={setMeta} readOnly={metadataLocked} />
+                  <MetadataTab
+                    meta={meta}
+                    setMeta={setMeta}
+                    readOnly={metadataLocked}
+                    currentTitle={name}
+                    onSmartImport={({ title: importedTitle, metadataPatch }) => {
+                      if (importedTitle && importedTitle.trim()) setName(importedTitle.trim());
+                      setMeta({ ...meta, ...metadataPatch } as TitleMetadata);
+                      setDirty(true);
+                    }}
+                  />
                 )}
                 {tab === "assets" && (
                   <div className="space-y-8">
@@ -1037,8 +1048,14 @@ function RepeatList<T>({
 }
 
 function MetadataTab({
-  meta, setMeta, readOnly,
-}: { meta: TitleMetadata; setMeta: (m: TitleMetadata) => void; readOnly: boolean }) {
+  meta, setMeta, readOnly, currentTitle, onSmartImport,
+}: {
+  meta: TitleMetadata;
+  setMeta: (m: TitleMetadata) => void;
+  readOnly: boolean;
+  currentTitle: string;
+  onSmartImport: (next: { title?: string; metadataPatch: Partial<TitleMetadata> }) => void;
+}) {
   const upd = <K extends keyof TitleMetadata>(k: K, v: TitleMetadata[K]) => setMeta({ ...meta, [k]: v });
   const synopsisWords = (meta.synopsis || "").trim().split(/\s+/).filter(Boolean).length;
   const overLimit = synopsisWords > SYNOPSIS_WORD_LIMIT;
@@ -1048,6 +1065,21 @@ function MetadataTab({
 
   return (
     <div className="space-y-6">
+      {!readOnly && (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-secondary/20 px-3 py-2">
+          <div className="min-w-0">
+            <div className="text-xs font-medium">Save time with Smart Metadata Import</div>
+            <div className="text-[11px] text-muted-foreground">
+              Pull verified details from trusted sources. You review every field before it's applied — nothing is submitted.
+            </div>
+          </div>
+          <SmartMetadataImportButton
+            meta={meta}
+            currentTitle={currentTitle}
+            onApply={onSmartImport}
+          />
+        </div>
+      )}
       {/* Shared crew-role suggestions — powers the <input list="crew-role-options"> below. */}
       <datalist id="crew-role-options">
         {[

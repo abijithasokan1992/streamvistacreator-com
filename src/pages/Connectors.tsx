@@ -39,6 +39,7 @@ export default function Connectors() {
       <Seo
         title="StreamVista Connectors — MCP Endpoint & Tools"
         description="Connect StreamVista to any MCP-compatible AI client using OAuth 2.1. Full list of advertised tools and integration steps."
+        path="/connectors"
       />
       <header className="border-b border-border/40">
         <div className="max-w-4xl mx-auto px-6 py-5 flex items-center justify-between">

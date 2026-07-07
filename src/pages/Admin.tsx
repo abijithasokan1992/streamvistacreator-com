@@ -108,7 +108,9 @@ function pathToDept(path: string, search: URLSearchParams): DeptKey {
 
 
 export default function Admin() {
-  const { user, isAdmin, isSuperAdmin, loading, signOut } = useAuth();
+  const { user, isAdmin, isSuperAdmin, isQcReviewer, isLegalReviewer, loading, signOut } = useAuth();
+  const isReviewer = isQcReviewer || isLegalReviewer;
+  const canEnter = isAdmin || isReviewer;
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -215,7 +217,7 @@ export default function Admin() {
 
   if (loading) return <div className="min-h-dvh grid place-items-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
 
-  if (!isAdmin) {
+  if (!canEnter) {
     return (
       <main className="min-h-dvh grid place-items-center px-4">
         <div className="glass-strong rounded-3xl p-10 max-w-md text-center animate-fade-in">
@@ -305,6 +307,8 @@ export default function Admin() {
 
       <AdminMainPanel
         isSuperAdmin={isSuperAdmin}
+        isReviewer={isReviewer}
+        reviewerKind={isQcReviewer ? "qc" : isLegalReviewer ? "legal" : null}
         location={location}
         searchParams={searchParams}
         navigate={navigate}
@@ -454,29 +458,47 @@ function buildDepartments(args: {
 }
 
 function AdminMainPanel({
-  isSuperAdmin, location, searchParams, navigate,
+  isSuperAdmin, isReviewer = false, reviewerKind = null, location, searchParams, navigate,
 }: {
   isSuperAdmin: boolean;
+  isReviewer?: boolean;
+  reviewerKind?: "qc" | "legal" | null;
   location: { pathname: string };
   searchParams: URLSearchParams;
   navigate: (p: string) => void;
 }) {
-  const initial = pathToDept(location.pathname, searchParams);
+  const pathTab = location.pathname.toLowerCase().startsWith("/admin/qc") ? "qc_review"
+    : location.pathname.toLowerCase().startsWith("/admin/legal") ? "legal_review"
+    : undefined;
+
+  // Reviewers are pinned to Operations · Approvals with the correct review tab.
+  const reviewerDefaultTab = reviewerKind === "qc" ? "qc_review" : reviewerKind === "legal" ? "legal_review" : undefined;
+  const reviewInitialTab = pathTab ?? reviewerDefaultTab;
+
+  const initial: DeptKey = isReviewer ? "operations" : pathToDept(location.pathname, searchParams);
   const [dept, setDept] = useState<DeptKey>(initial);
   const [sectionByDept, setSectionByDept] = useState<Record<string, string>>(() => {
+    if (isReviewer) return { operations: "approvals" };
     const s = searchParams.get("section");
     return s ? { [initial]: s } : {};
   });
 
-  const reviewInitialTab: "qc_review" | "legal_review" | undefined =
-    location.pathname.toLowerCase().startsWith("/admin/qc") ? "qc_review"
-    : location.pathname.toLowerCase().startsWith("/admin/legal") ? "legal_review"
-    : undefined;
-
-  const departments = useMemo(
+  const allDepartments = useMemo(
     () => buildDepartments({ isSuperAdmin, navigate, reviewInitialTab }),
     [isSuperAdmin, navigate, reviewInitialTab],
   );
+
+  // Reviewers see only the Operations department, and only the Approvals sub-section.
+  const departments = useMemo(() => {
+    if (!isReviewer) return allDepartments;
+    const ops = allDepartments.find((d) => d.id === "operations");
+    if (!ops) return allDepartments;
+    return [{
+      ...ops,
+      desc: reviewerKind === "legal" ? "Legal review queue." : "QC review queue.",
+      sections: ops.sections.filter((s) => s.id === "approvals"),
+    }];
+  }, [allDepartments, isReviewer, reviewerKind]);
 
   const cmdDepartments: AdminDepartment[] = useMemo(
     () => departments.map((d) => ({
@@ -504,13 +526,17 @@ function AdminMainPanel({
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight">
-            {isSuperAdmin ? "Platform Owner · Media Operations" : "Admin Console"}
+            {isReviewer
+              ? (reviewerKind === "legal" ? "Legal Reviewer Console" : "QC Reviewer Console")
+              : isSuperAdmin ? "Platform Owner · Media Operations" : "Admin Console"}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Departments on the left. Sub-sections appear inside each department.
+            {isReviewer
+              ? "Review queue is scoped to your assignments. All decisions are audited."
+              : "Departments on the left. Sub-sections appear inside each department."}
           </p>
         </div>
-        <AdminCommandBar departments={cmdDepartments} onJump={jumpTo} />
+        {!isReviewer && <AdminCommandBar departments={cmdDepartments} onJump={jumpTo} />}
       </div>
 
       <Tabs

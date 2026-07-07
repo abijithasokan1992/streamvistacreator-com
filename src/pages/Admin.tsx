@@ -41,6 +41,9 @@ import OracleOciStorageCard from "@/components/admin/OracleOciStorageCard";
 import FailedUploadsInspector from "@/components/admin/FailedUploadsInspector";
 import InfrastructureHealth from "@/components/admin/InfrastructureHealth";
 import AdminRunbook from "@/components/admin/AdminRunbook";
+import ProductionReadinessReport from "@/components/admin/ProductionReadinessReport";
+import MetricsDashboard from "@/components/admin/MetricsDashboard";
+import AdminTestRunner from "@/components/admin/AdminTestRunner";
 import SupportInbox from "@/components/admin/SupportInbox";
 import ContactInbox from "@/components/admin/ContactInbox";
 import EmailLogMonitor from "@/components/admin/EmailLogMonitor";
@@ -409,8 +412,9 @@ function buildDepartments(args: {
       desc: "What needs action, what's healthy, what changed today.",
       sections: [
         { id: "mission", label: "Mission Control", hint: "Live operations dashboard", content: <MissionControl /> },
+        { id: "launch", label: "Launch Readiness", hint: "Aggregated production readiness report", content: <ProductionReadinessReport /> },
         { id: "overview", label: "Platform Overview", hint: "Historical metrics", content: <PlatformOverview /> },
-        { id: "readiness", label: "Readiness", hint: "5-pillar readiness matrix", content: <PlatformReadinessCenter /> },
+        { id: "readiness", label: "Readiness Matrix", hint: "5-pillar readiness matrix", content: <PlatformReadinessCenter /> },
         { id: "jump", label: "Quick Jumps", hint: "Fast navigation", content: <QuickNav navigate={navigate} /> },
       ],
     },
@@ -487,6 +491,8 @@ function buildDepartments(args: {
       desc: "System settings, audit, email, AI, security, homepage CMS.",
       sections: [
         { id: "health", label: "Infrastructure Health", hint: "Live probes · no cached state", content: <InfrastructureHealth /> },
+        { id: "metrics", label: "Metrics", hint: "Latency percentiles, throughput, failure rates", content: <MetricsDashboard /> },
+        { id: "tests", label: "Test Runner", hint: "Live smoke + integration tests", content: <AdminTestRunner /> },
         { id: "runbook", label: "Runbook", hint: "In-app operations playbooks", content: <AdminRunbook /> },
         ...systemSections,
         { id: "email", label: "Email Log", hint: "Raw email delivery log", content: <EmailLogMonitor /> },

@@ -133,7 +133,7 @@ export default function IngestQCPanel() {
 
       {jobs.length === 0 ? (
         <div className="rounded-md border border-zinc-800/60 bg-zinc-950/60 p-4 text-xs text-muted-foreground">
-          No Data Found. Upload a master file to see live ingest progress and run QC scans here.
+          Nothing to show yet. Upload a master file to see progress and run a quality check here.
         </div>
       ) : (
         <ul className="space-y-2.5">

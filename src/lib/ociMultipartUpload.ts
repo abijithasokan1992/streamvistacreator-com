@@ -151,20 +151,49 @@ async function fileSha256Hex(file: File): Promise<string | null> {
   }
 }
 
+/**
+ * Wait for the browser to be back online (or timeout). Used so a chunk retry
+ * during a wifi drop doesn't burn all retry budget while offline.
+ */
+async function waitForOnline(maxWaitMs = 30_000, signal?: AbortSignal): Promise<void> {
+  if (typeof navigator === "undefined" || navigator.onLine !== false) return;
+  await new Promise<void>((resolve) => {
+    const timer = setTimeout(cleanup, maxWaitMs);
+    const onOnline = () => cleanup();
+    const onAbort = () => cleanup();
+    function cleanup() {
+      clearTimeout(timer);
+      window.removeEventListener("online", onOnline);
+      signal?.removeEventListener("abort", onAbort);
+      resolve();
+    }
+    window.addEventListener("online", onOnline);
+    signal?.addEventListener("abort", onAbort);
+  });
+}
+
+/**
+ * Chunk PUT with resilient retries:
+ *  - 6 attempts with exponential + jittered backoff
+ *  - waits for `navigator.onLine` before retrying on offline drops
+ *  - retries on 5xx and 408/429 as well as network errors
+ *  - never retries on 4xx (other than 408/429) — those are permanent
+ *  - propagates UploadSessionExpiredError immediately so the caller re-inits
+ */
 async function putChunkWithRetry(
   url: string,
   headers: Record<string, string>,
   body: ArrayBuffer,
-  attempts = 3,
+  attempts = 6,
   signal?: AbortSignal,
 ): Promise<{ etag: string; status: number; durationMs: number }> {
   let lastErr: unknown;
   for (let i = 0; i < attempts; i++) {
+    if (signal?.aborted) throw new Error("upload aborted");
+    // If we're offline, wait for the network before burning an attempt.
+    await waitForOnline(30_000, signal);
     const started = performance.now();
     try {
-      // Browsers refuse to set host/content-length — OCI accepts the request
-      // because those values are derived from the URL/body and match what was
-      // signed server-side.
       const safeHeaders: Record<string, string> = {};
       for (const [k, v] of Object.entries(headers)) {
         const lk = k.toLowerCase();
@@ -175,24 +204,31 @@ async function putChunkWithRetry(
       const durationMs = Math.round(performance.now() - started);
       if (!resp.ok) {
         const text = await resp.text().catch(() => "");
-        // Terminal for this multipart session — do NOT retry, surface so the
-        // caller can clean state and re-init from scratch.
         if (resp.status === 404 && /UploadNotFound/i.test(text)) {
           throw new UploadSessionExpiredError(`OCI PUT 404: ${text.slice(0, 200)}`);
         }
-        throw new Error(`OCI PUT ${resp.status}: ${text.slice(0, 200)}`);
+        // 4xx (other than 408/429) is permanent — do not retry.
+        const retriable = resp.status >= 500 || resp.status === 408 || resp.status === 429;
+        const err = new Error(`OCI PUT ${resp.status}: ${text.slice(0, 200)}`);
+        if (!retriable) throw err;
+        lastErr = err;
+      } else {
+        const etag = (resp.headers.get("etag") || resp.headers.get("ETag") || "").replace(/^"|"$/g, "");
+        if (!etag) throw new Error("OCI did not return ETag");
+        return { etag, status: resp.status, durationMs };
       }
-      const etag = (resp.headers.get("etag") || resp.headers.get("ETag") || "").replace(/^"|"$/g, "");
-      if (!etag) throw new Error("OCI did not return ETag");
-      return { etag, status: resp.status, durationMs };
     } catch (e) {
       if (e instanceof UploadSessionExpiredError) throw e;
-      lastErr = e;
       if (signal?.aborted) throw e;
-      await new Promise((r) => setTimeout(r, 500 * Math.pow(3, i)));
+      lastErr = e;
     }
+    // Exponential backoff with jitter, capped at 30s. Base grows 0.5s → 1.5s
+    // → 4.5s → 13.5s → 30s → 30s.
+    const base = Math.min(30_000, 500 * Math.pow(3, i));
+    const jitter = Math.floor(Math.random() * 500);
+    await new Promise((r) => setTimeout(r, base + jitter));
   }
-  throw lastErr instanceof Error ? lastErr : new Error("chunk upload failed");
+  throw lastErr instanceof Error ? lastErr : new Error("chunk upload failed after retries");
 }
 
 /** Error thrown when the upload was interrupted but is fully resumable. */

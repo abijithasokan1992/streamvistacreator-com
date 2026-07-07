@@ -326,6 +326,132 @@ export default function MyTitlesSection() {
           onSubmitted={() => { setEditorId(null); reload(); toast.success("Submitted for review."); }}
         />
       )}
+
+      {deleteTarget && (
+        <DeleteTitleDialog
+          title={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onDeleted={async () => { setDeleteTarget(null); await reload(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function DeleteTitleDialog({
+  title, onClose, onDeleted,
+}: { title: TitleRow; onClose: () => void; onDeleted: () => void }) {
+  const [checking, setChecking] = useState(true);
+  const [elig, setElig] = useState<DeleteEligibility | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [ack, setAck] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      setChecking(true);
+      const { data, error } = await (supabase as any).rpc("title_delete_eligibility", { _title_id: title.id });
+      if (!alive) return;
+      if (error) {
+        setElig({ allow: false, reason: "We couldn't check this title right now. Please try again in a moment." });
+      } else {
+        setElig(data as DeleteEligibility);
+      }
+      setChecking(false);
+    })();
+    return () => { alive = false; };
+  }, [title.id]);
+
+  const confirm = async () => {
+    if (!elig?.allow) return;
+    setBusy(true);
+    try {
+      const { data, error } = await (supabase as any).rpc("delete_creator_title", {
+        _title_id: title.id, _reason: "creator_self_service",
+      });
+      if (error) {
+        toast.error("We couldn't remove this title right now. Please try again.");
+        return;
+      }
+      const res = data as { ok: boolean; message?: string };
+      if (res?.ok) {
+        toast.success(res.message || "Title removed.");
+        onDeleted();
+      } else {
+        toast.error(res?.message || "This title cannot be removed right now.");
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const lockActive = !!elig?.lock_active && (elig?.lock_days_remaining ?? 0) > 0;
+  const fee = elig?.early_termination_fee_inr ?? 0;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm grid place-items-center p-4" role="dialog" aria-modal="true" aria-label="Delete title">
+      <div className="bg-background border border-border/50 rounded-2xl w-[calc(100vw-2rem)] sm:w-full max-w-lg">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border/40">
+          <div>
+            <h2 className="font-semibold">Delete title</h2>
+            <p className="text-xs text-muted-foreground mt-0.5 truncate max-w-[22rem]">{title.title}</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded hover:bg-secondary/30" aria-label="Close">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="px-5 py-5 space-y-4 text-sm">
+          {checking ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" /> Checking whether this title can be removed…
+            </div>
+          ) : elig?.allow ? (
+            <>
+              <p>Removing this title cannot be undone. Metadata, uploaded assets and draft history will be permanently deleted.</p>
+              <label className="flex items-start gap-2 text-xs text-muted-foreground">
+                <input type="checkbox" className="mt-0.5" checked={ack} onChange={(e) => setAck(e.target.checked)} />
+                <span>I understand this action is permanent.</span>
+              </label>
+            </>
+          ) : (
+            <>
+              <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-xs flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-300 mt-0.5 shrink-0" />
+                <div className="whitespace-pre-line leading-relaxed">{elig?.reason}</div>
+              </div>
+              {lockActive && (
+                <div className="rounded-md border border-border/40 bg-secondary/10 p-3 text-xs space-y-1">
+                  <div><span className="text-muted-foreground">Contractual lock remaining:</span> <span className="font-medium">{elig?.lock_days_remaining} day(s)</span></div>
+                  {fee > 0 && (
+                    <div><span className="text-muted-foreground">Early Termination Fee:</span> <span className="font-medium">₹{fee.toLocaleString("en-IN")} + GST</span></div>
+                  )}
+                  <div className="text-muted-foreground pt-1">Deletion can only proceed after this obligation is cleared and payment is verified. Please contact your account manager.</div>
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Next steps: close any open buyer conversations, complete or cancel pending deliveries, and once nothing commercial remains, try again.
+              </p>
+            </>
+          )}
+        </div>
+
+        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-border/40">
+          <button onClick={onClose} className="text-xs text-muted-foreground hover:text-foreground px-3 py-1.5">
+            {elig?.allow ? "Cancel" : "Close"}
+          </button>
+          {elig?.allow && (
+            <button
+              onClick={confirm}
+              disabled={busy || !ack}
+              className="inline-flex items-center gap-1.5 rounded-md bg-destructive text-destructive-foreground text-xs px-3 py-1.5 disabled:opacity-50 hover:bg-destructive/90"
+            >
+              {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+              Delete permanently
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Globe, Languages, Film, Radio, Sparkles } from "lucide-react";
 import { Navbar } from "@/components/streamvista/Navbar";
 import { Footer } from "@/components/streamvista/Footer";
-import Seo from "@/components/Seo";
+import { Seo } from "@/components/Seo";
 import { fetchPartnerProfiles, type PartnerProfile } from "@/lib/partnerProfiles";
 import { Badge } from "@/components/ui/badge";
 

@@ -8561,6 +8561,7 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_infra_snapshot: { Args: never; Returns: Json }
       admin_issue_manual_invoice: {
         Args: { _invoice_id: string }
         Returns: undefined

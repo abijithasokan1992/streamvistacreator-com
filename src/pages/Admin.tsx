@@ -551,7 +551,7 @@ function AdminMainPanel({
   const current = departments.find((d) => d.id === dept) ?? departments[0];
 
   return (
-    <section className="container py-10">
+    <section className="container py-10 xl:pr-[340px]">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight">

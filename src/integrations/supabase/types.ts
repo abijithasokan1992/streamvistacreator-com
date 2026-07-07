@@ -8665,6 +8665,10 @@ export type Database = {
           sample_memo: string
         }[]
       }
+      delete_creator_title: {
+        Args: { _reason?: string; _title_id: string }
+        Returns: Json
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -8919,6 +8923,7 @@ export type Database = {
       }
       sweep_manual_invoices_overdue: { Args: never; Returns: number }
       sweep_screening_invites_expired: { Args: never; Returns: number }
+      title_delete_eligibility: { Args: { _title_id: string }; Returns: Json }
       title_review_summary: { Args: { _title_id: string }; Returns: Json }
       title_submission_readiness: { Args: { _title_id: string }; Returns: Json }
       title_write_allowed: { Args: { _title_id: string }; Returns: boolean }

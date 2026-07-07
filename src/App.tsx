@@ -213,6 +213,7 @@ const PublicRoutes = () => (
     <Route path="/refund" element={<Refund />} />
     <Route path="/pricing" element={<PricingPage />} />
     <Route path="/about" element={<About />} />
+    <Route path="/partners" element={<Partners />} />
 
     <Route path="/c2c-setup" element={<C2CSetupManual />} />
     <Route path="/blog/camera-to-cloud-guide" element={<CameraToCloudGuide />} />

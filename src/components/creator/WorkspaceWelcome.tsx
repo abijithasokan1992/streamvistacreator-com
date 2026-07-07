@@ -105,13 +105,11 @@ export default function WorkspaceWelcome() {
         </span>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3 mt-5">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3 mt-5">
         <Stat icon={HardDrive} label="Storage" primary={`${s.usedGb.toFixed(2)} GB`}
           secondary={`of ${s.allocatedGb} GB · ${pct}% used`} tone={pct >= 80 ? "warn" : "default"} />
         <Stat icon={Film} label="Titles" primary={String(s.titleCount)}
           secondary={s.titleLimit ? `of ${s.titleLimit} included` : "No plan cap"} />
-        <Stat icon={Crown} label="Plan" primary={s.planName}
-          secondary={s.isFree ? "Upgrade available" : "Active"} />
       </div>
     </section>
   );

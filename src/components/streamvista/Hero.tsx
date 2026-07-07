@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -141,14 +141,8 @@ export const Hero = () => {
       <div className="absolute bottom-0 -right-32 w-[36rem] h-[36rem] rounded-full bg-primary-glow/10 blur-[140px]" />
 
       <div className="container relative">
-        <div className="flex flex-wrap items-center gap-2 mb-8 animate-fade-in">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-accent/40 bg-accent/5">
-            <Sparkles className="w-3 h-3 text-accent" />
-            <span className="font-mono-tech text-[10px] uppercase tracking-[0.25em] text-accent">
-              StreamVista Cloud X
-            </span>
-          </div>
-        </div>
+
+
 
         {/* Crossfade copy layer per slide */}
         <div className="relative">
@@ -246,9 +240,6 @@ const TrustStrip = () => (
 
 const DefaultHeadline = () => (
   <div>
-    <div className="mb-6 font-mono-tech text-[11px] uppercase tracking-[0.3em] text-accent">
-      StreamVista Cloud X
-    </div>
     <h1 className="font-display font-black uppercase leading-[0.88] tracking-tight text-[clamp(2.4rem,7.6vw,6rem)]">
       The Digital Media
       <br />

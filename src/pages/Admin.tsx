@@ -349,6 +349,9 @@ function buildDepartments(args: {
     { id: "audit", label: "Audit", hint: "Finance reports, payment security", content: (
       <div className="space-y-6"><AdminReportsConsole /><PaymentSecurityEvents /></div>
     )},
+    { id: "mcp-health", label: "MCP Health", hint: "AI Agent connector health & OAuth audit", content: (
+      <div className="space-y-6"><McpHealthCenter /><AiMcpControlCenter /></div>
+    )},
   ];
   if (isSuperAdmin) {
     systemSections.push({

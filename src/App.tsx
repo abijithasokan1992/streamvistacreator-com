@@ -25,6 +25,7 @@ import IPCopyright from "./pages/IPCopyright.tsx";
 import Refund from "./pages/Refund.tsx";
 import About from "./pages/About.tsx";
 import Partners from "./pages/Partners.tsx";
+import CreatorPreview from "./pages/CreatorPreview.tsx";
 import CheckoutReturn from "./pages/CheckoutReturn.tsx";
 import CheckoutStorage from "./pages/CheckoutStorage.tsx";
 import PricingPage from "./pages/Pricing.tsx";

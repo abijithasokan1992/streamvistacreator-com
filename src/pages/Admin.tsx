@@ -486,6 +486,8 @@ function buildDepartments(args: {
       icon: <SettingsIcon className="w-4 h-4" />,
       desc: "System settings, audit, email, AI, security, homepage CMS.",
       sections: [
+        { id: "health", label: "Infrastructure Health", hint: "Live probes · no cached state", content: <InfrastructureHealth /> },
+        { id: "runbook", label: "Runbook", hint: "In-app operations playbooks", content: <AdminRunbook /> },
         ...systemSections,
         { id: "email", label: "Email Log", hint: "Raw email delivery log", content: <EmailLogMonitor /> },
       ],

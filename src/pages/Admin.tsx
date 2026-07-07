@@ -74,13 +74,17 @@ interface Row {
 // Legacy `?tab=` and `/admin/<old>` URLs are still resolved
 // by mapping them to the equivalent new department.
 // ============================================================
-const DEPT_KEYS = ["dashboard", "operations", "accounts", "commerce", "storage", "comms", "system"] as const;
+const DEPT_KEYS = ["dashboard", "operations", "ecosystem", "accounts", "commerce", "storage", "comms", "system"] as const;
 type DeptKey = typeof DEPT_KEYS[number];
 
 const LEGACY_TAB_TO_DEPT: Record<string, DeptKey> = {
   overview: "dashboard",
   users: "accounts",
-  approvals: "operations",
+  approvals: "ecosystem",
+  onboarding: "ecosystem",
+  invitations: "ecosystem",
+  organizations: "ecosystem",
+  partners: "ecosystem",
   catalog: "commerce",
   billing: "commerce",
   storage: "storage",
@@ -97,7 +101,8 @@ function pathToDept(path: string, search: URLSearchParams): DeptKey {
   const legacyTab = search.get("tab");
   if (legacyTab && LEGACY_TAB_TO_DEPT[legacyTab]) return LEGACY_TAB_TO_DEPT[legacyTab];
   const p = path.toLowerCase();
-  if (p.startsWith("/admin/operations") || p.startsWith("/admin/approvals") || p.startsWith("/admin/content") || p.startsWith("/admin/qc") || p.startsWith("/admin/legal") || p.startsWith("/admin/pipeline")) return "operations";
+  if (p.startsWith("/admin/ecosystem") || p.startsWith("/admin/approvals") || p.startsWith("/admin/onboarding") || p.startsWith("/admin/invitations") || p.startsWith("/admin/partners") || p.startsWith("/admin/organizations")) return "ecosystem";
+  if (p.startsWith("/admin/operations") || p.startsWith("/admin/content") || p.startsWith("/admin/qc") || p.startsWith("/admin/legal") || p.startsWith("/admin/pipeline")) return "operations";
   if (p.startsWith("/admin/accounts") || p.startsWith("/admin/users") || p.startsWith("/admin/team") || p.startsWith("/admin/roles")) return "accounts";
   if (p.startsWith("/admin/commerce") || p.startsWith("/admin/catalog") || p.startsWith("/admin/products") || p.startsWith("/admin/plans") || p.startsWith("/admin/billing") || p.startsWith("/admin/finance") || p.startsWith("/admin/entitlements") || p.startsWith("/admin/rights")) return "commerce";
   if (p.startsWith("/admin/storage") || p.startsWith("/admin/delivery") || p.startsWith("/admin/vault-delivery")) return "storage";

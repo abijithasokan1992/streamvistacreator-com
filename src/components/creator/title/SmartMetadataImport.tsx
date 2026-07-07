@@ -337,6 +337,8 @@ function joinPeople(list: { name: string; role: string }[] | undefined): string 
 
 function computeRows(meta: TitleMetadata, currentTitle: string, p: MetadataPreview): FieldRow[] {
   const releaseDate = (meta as any).release_date ?? "";
+  const originalTitle = (meta as any).original_title ?? "";
+  const trailerUrl = (meta as any).trailer_url ?? "";
   const defs: Array<{
     key: keyof MetadataPreview;
     label: string;
@@ -347,8 +349,7 @@ function computeRows(meta: TitleMetadata, currentTitle: string, p: MetadataPrevi
   }> = [
     { key: "title", label: "Title", current: currentTitle, incoming: p.title,
       display: (v) => String(v ?? ""), hasIncoming: (v) => !!String(v ?? "").trim() },
-    { key: "original_title", label: "Original title", current: meta.production_company ? "" : "", incoming: p.original_title,
-      // "Original title" isn't a first-class meta field; import maps to a note-safe field via patch handler if needed.
+    { key: "original_title", label: "Original title", current: originalTitle, incoming: p.original_title,
       display: (v) => String(v ?? ""), hasIncoming: (v) => !!String(v ?? "").trim() },
     { key: "synopsis", label: "Synopsis", current: meta.synopsis, incoming: p.synopsis,
       display: (v) => String(v ?? ""), hasIncoming: (v) => !!String(v ?? "").trim() },

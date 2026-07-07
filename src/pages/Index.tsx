@@ -35,7 +35,7 @@ const Index = () => {
       <Hero />
       <PlatformOverview />
       <Workflow />
-      <WhyStreamVista />
+      
       <Partners />
       <FinalCta />
       <Footer />

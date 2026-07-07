@@ -4,7 +4,7 @@ import { Hero } from "@/components/streamvista/Hero";
 import { PlatformOverview } from "@/components/streamvista/PlatformOverview";
 import { Partners } from "@/components/streamvista/Partners";
 import { Workflow } from "@/components/streamvista/Workflow";
-import { WhyStreamVista } from "@/components/streamvista/WhyStreamVista";
+
 import { FinalCta } from "@/components/streamvista/FinalCta";
 import { Footer } from "@/components/streamvista/Footer";
 import { Seo } from "@/components/Seo";

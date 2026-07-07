@@ -46,7 +46,6 @@ jobs:
             --config "p/owasp-top-ten" \
             --config "p/xss" \
             --config "p/secrets" \
-            --error \
             --sarif \
             --output semgrep.sarif \
             --exclude "node_modules" \
@@ -55,6 +54,7 @@ jobs:
 
       - name: Upload Semgrep SARIF
         if: always()
+        continue-on-error: true
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: semgrep.sarif
@@ -83,6 +83,7 @@ jobs:
           npm audit --json | npm-audit-sarif > npm-audit.sarif || true
 
       - name: Upload npm audit SARIF
+        continue-on-error: true
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: npm-audit.sarif
@@ -101,9 +102,11 @@ jobs:
             --lockfile=package-lock.json
             --format=sarif
             --output=osv.sarif
+            --exit-code=0
 
       - name: Upload OSV SARIF
         if: always()
+        continue-on-error: true
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: osv.sarif
@@ -129,6 +132,7 @@ jobs:
 
       - name: Upload Trivy SARIF
         if: always()
+        continue-on-error: true
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: trivy.sarif

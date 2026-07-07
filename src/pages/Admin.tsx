@@ -217,7 +217,7 @@ export default function Admin() {
 
   if (loading) return <div className="min-h-dvh grid place-items-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
 
-  if (!isAdmin) {
+  if (!canEnter) {
     return (
       <main className="min-h-dvh grid place-items-center px-4">
         <div className="glass-strong rounded-3xl p-10 max-w-md text-center animate-fade-in">

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
-  Plus, ArrowRight, Bell, Film, Inbox, Crown, Play, HardDrive,
-  Briefcase, LifeBuoy, CheckCircle2, Clock, Sparkles,
+  Plus, ArrowRight, Bell, Film, Inbox, Crown, Play,
+  Briefcase, LifeBuoy, CheckCircle2, Sparkles,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";

@@ -141,14 +141,8 @@ export const Hero = () => {
       <div className="absolute bottom-0 -right-32 w-[36rem] h-[36rem] rounded-full bg-primary-glow/10 blur-[140px]" />
 
       <div className="container relative">
-        <div className="flex flex-wrap items-center gap-2 mb-8 animate-fade-in">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-accent/40 bg-accent/5">
-            <Sparkles className="w-3 h-3 text-accent" />
-            <span className="font-mono-tech text-[10px] uppercase tracking-[0.25em] text-accent">
-              StreamVista Cloud X
-            </span>
-          </div>
-        </div>
+
+
 
         {/* Crossfade copy layer per slide */}
         <div className="relative">

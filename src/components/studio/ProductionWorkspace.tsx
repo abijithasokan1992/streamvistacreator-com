@@ -11,13 +11,17 @@ import { Link } from "react-router-dom";
 import {
   ArrowLeft, Clapperboard, FolderTree, UploadCloud, Users, Activity as ActivityIcon,
   ShieldCheck, PackageCheck, StickyNote, Calendar, Building2, User, Film, Loader2,
-  MoreHorizontal,
+  MoreHorizontal, Search, Pencil, UserPlus,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { labelForOrgRole } from "@/lib/rbac/labels";
 import { getProductionNumber } from "@/lib/productionNumber";
 

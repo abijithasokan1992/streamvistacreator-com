@@ -384,7 +384,7 @@ export default function ProductionsManager({
                 onChange={(e) => setQuery(e.target.value)}
               />
             </div>
-            <FilterChips
+            <FilterChips<"all" | "mine" | "shared">
               value={ownerFilter}
               onChange={setOwnerFilter}
               options={[
@@ -393,7 +393,7 @@ export default function ProductionsManager({
                 { id: "shared", label: "Shared", count: counts.shared },
               ]}
             />
-            <FilterChips
+            <FilterChips<"live" | "archived">
               value={statusFilter}
               onChange={setStatusFilter}
               options={[

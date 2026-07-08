@@ -568,99 +568,187 @@ export default function ProductionsManager({
   );
 }
 
-/* ---------- Production group list ---------- */
-function ProductionGroup({
-  title, tone, items, stats, activeProjectId,
-  onSetActive, onOpen, onEdit, onShare, onArchive, onDelete,
-  emptyHint, dim,
+/* ---------- Filter chip group ---------- */
+function FilterChips<T extends string>({
+  value, onChange, options,
 }: {
-  title: string;
-  tone: "accent" | "muted";
+  value: T;
+  onChange: (v: T) => void;
+  options: Array<{ id: T; label: string; count?: number }>;
+}) {
+  return (
+    <div className="inline-flex rounded-lg border border-border/50 bg-secondary/10 p-0.5 text-xs">
+      {options.map((o) => (
+        <button
+          key={o.id}
+          onClick={() => onChange(o.id)}
+          className={cn(
+            "px-2.5 py-1 rounded-md transition-colors whitespace-nowrap",
+            "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/50",
+            value === o.id
+              ? "bg-accent/15 text-foreground ring-1 ring-inset ring-accent/25"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          {o.label}
+          {typeof o.count === "number" && (
+            <span className="ml-1 text-[10px] text-muted-foreground/70 tabular-nums">{o.count}</span>
+          )}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ---------- Unified production list (rows) ---------- */
+function ProductionList({
+  items, stats, activeProjectId, selection,
+  onToggleSelect, onToggleSelectAll,
+  onSetActive, onOpen, onEdit, onShare, onArchive, onDelete,
+  dim, query,
+}: {
   items: ProjectRow[];
   stats: Record<string, ProductionStats>;
   activeProjectId: string | null;
+  selection: Set<string>;
+  onToggleSelect: (id: string) => void;
+  onToggleSelectAll: () => void;
   onSetActive: (id: string) => void;
   onOpen?: (id: string) => void;
   onEdit: (p: ProjectRow) => void;
   onShare: (p: ProjectRow) => void;
   onArchive: (p: ProjectRow) => void;
   onDelete: (p: ProjectRow) => void;
-  emptyHint: string;
   dim?: boolean;
+  query: string;
 }) {
-  const toneCls = tone === "accent"
-    ? "bg-accent/10 text-accent border-accent/30"
-    : "bg-secondary/40 text-muted-foreground border-border/50";
-  return (
-    <section className={`rounded-2xl border border-border/50 p-5 ${dim ? "opacity-85" : ""}`}>
-      <div className="flex items-center gap-2 mb-3">
-        <h3 className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-mono">{title}</h3>
-        <span className={`text-[10px] font-mono border rounded-full px-2 py-0.5 ${toneCls}`}>{items.length}</span>
+  if (items.length === 0) {
+    return (
+      <div className="py-8 text-center text-sm text-muted-foreground rounded-xl border border-dashed border-border/50 bg-secondary/5">
+        {query ? "No productions match your search." : "Nothing here."}
       </div>
-      {items.length === 0 ? (
-        emptyHint ? <p className="text-xs text-muted-foreground pl-1">{emptyHint}</p> : null
-      ) : (
-        <div className="divide-y divide-border/30">
-          {items.map((p) => {
-            const s = stats[p.id];
-            const isActive = p.id === activeProjectId;
-            const assetCount = s?.assetCount ?? 0;
-            const canDelete = assetCount === 0;
-            return (
-              <div key={p.id} className={`py-3 flex flex-wrap items-center justify-between gap-3 ${isActive ? "bg-accent/5 rounded-md px-2" : ""}`}>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-sm font-medium truncate">{p.name}</p>
-                    {getProductionNumber(p) && (
-                      <Badge variant="outline" className="text-[10px] font-mono bg-accent/10 text-accent border-accent/30">
-                        {getProductionNumber(p)}
-                      </Badge>
-                    )}
-                    {isActive && <Badge variant="outline" className="text-[10px] bg-emerald-500/15 text-emerald-300 border-emerald-400/30">Active</Badge>}
-                    {p.crew?.title_status && (
-                      <Badge variant="outline" className="text-[10px]">{p.crew.title_status}</Badge>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-x-4 gap-y-1 mt-1.5 text-[11px] text-muted-foreground">
-                    <span>Type: <span className="text-foreground">{p.crew?.content_type ?? "—"}</span></span>
-                    <span>Created: <span className="text-foreground">{new Date(p.created_at).toLocaleDateString()}</span></span>
-                    <span>Last activity: <span className="text-foreground">{s?.lastActivity ? new Date(s.lastActivity).toLocaleDateString() : "—"}</span></span>
-                    <span>Storage: <span className="text-foreground">{fmtBytes(s?.storageBytes ?? 0)}</span></span>
-                    <span>Assets: <span className="text-foreground">{assetCount}</span></span>
-                    <span>Members: <span className="text-foreground">{(p.crew?.members?.length ?? 0) + 1}</span></span>
-                  </div>
+    );
+  }
+  const allSelected = selection.size === items.length && items.length > 0;
+  return (
+    <section className={cn("rounded-xl border border-border/50 bg-secondary/5", dim && "opacity-90")}>
+      {/* Select-all header — visible once list has rows. */}
+      <header className="px-3 py-2 flex items-center gap-2 border-b border-border/40 text-[11px] uppercase tracking-wider text-muted-foreground">
+        <Checkbox
+          checked={allSelected}
+          onCheckedChange={onToggleSelectAll}
+          aria-label="Select all"
+          className="ml-1"
+        />
+        <span className="font-mono">{items.length} production{items.length === 1 ? "" : "s"}</span>
+      </header>
+      <ul className="divide-y divide-border/30">
+        {items.map((p) => {
+          const s = stats[p.id];
+          const isActive = p.id === activeProjectId;
+          const assetCount = s?.assetCount ?? 0;
+          const canDelete = assetCount === 0;
+          const isSelected = selection.has(p.id);
+          // Hide empty/optional metadata (progressive disclosure).
+          const meta: Array<{ label: string; value: string }> = [];
+          if (p.crew?.content_type) meta.push({ label: "Type", value: p.crew.content_type });
+          if (s?.lastActivity) meta.push({ label: "Active", value: new Date(s.lastActivity).toLocaleDateString() });
+          if ((s?.storageBytes ?? 0) > 0) meta.push({ label: "Storage", value: fmtBytes(s!.storageBytes) });
+          if (assetCount > 0) meta.push({ label: "Assets", value: String(assetCount) });
+          return (
+            <li
+              key={p.id}
+              className={cn(
+                "px-3 py-2.5 flex items-center gap-3 min-w-0",
+                isActive && "bg-accent/5",
+                isSelected && "bg-accent/10",
+              )}
+            >
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={() => onToggleSelect(p.id)}
+                aria-label={`Select ${p.name}`}
+              />
+              <button
+                onClick={() => { onSetActive(p.id); onOpen?.(p.id); }}
+                className="min-w-0 flex-1 text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/50 rounded"
+              >
+                <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                  <span className="text-sm font-medium truncate">{p.name}</span>
+                  {getProductionNumber(p) && (
+                    <Badge variant="outline" className="text-[10px] font-mono bg-accent/10 text-accent border-accent/30">
+                      {getProductionNumber(p)}
+                    </Badge>
+                  )}
+                  {isActive && (
+                    <Badge variant="outline" className="text-[10px] bg-emerald-500/15 text-emerald-300 border-emerald-400/30">
+                      Active
+                    </Badge>
+                  )}
+                  {p.crew?.title_status && p.crew.title_status !== "Archived" && (
+                    <Badge variant="outline" className="text-[10px]">{p.crew.title_status}</Badge>
+                  )}
                 </div>
-                <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
-                  {!isActive && (
-                    <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => onSetActive(p.id)}>
-                      Set active
+                {meta.length > 0 && (
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-[11px] text-muted-foreground">
+                    {meta.map((m) => (
+                      <span key={m.label}>
+                        {m.label}: <span className="text-foreground/80">{m.value}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </button>
+              <div className="flex items-center gap-1 shrink-0">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs"
+                  onClick={() => { onSetActive(p.id); onOpen?.(p.id); }}
+                >
+                  Open <ArrowUpRight className="w-3 h-3 ml-1" />
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" aria-label="More actions">
+                      <MoreHorizontal className="w-3.5 h-3.5" />
                     </Button>
-                  )}
-                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { onSetActive(p.id); onOpen?.(p.id); }}>
-                    <ArrowUpRight className="w-3 h-3 mr-1" /> Open
-                  </Button>
-                  <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => onEdit(p)}>
-                    <Pencil className="w-3 h-3 mr-1" /> Edit
-                  </Button>
-                  <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => onShare(p)}>
-                    <Share2 className="w-3 h-3 mr-1" /> Share
-                  </Button>
-                  {String(p.crew?.title_status ?? "").toLowerCase() !== "archived" && (
-                    <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => onArchive(p)}>
-                      <Archive className="w-3 h-3 mr-1" /> Archive
-                    </Button>
-                  )}
-                  {canDelete && (
-                    <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive hover:text-destructive" onClick={() => onDelete(p)}>
-                      <Trash2 className="w-3 h-3 mr-1" /> Delete
-                    </Button>
-                  )}
-                </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40">
+                    {!isActive && (
+                      <DropdownMenuItem onClick={() => onSetActive(p.id)}>
+                        Set active
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem onClick={() => onEdit(p)}>
+                      <Pencil className="w-3.5 h-3.5 mr-2" /> Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onShare(p)}>
+                      <Share2 className="w-3.5 h-3.5 mr-2" /> Share
+                    </DropdownMenuItem>
+                    {String(p.crew?.title_status ?? "").toLowerCase() !== "archived" && (
+                      <DropdownMenuItem onClick={() => onArchive(p)}>
+                        <Archive className="w-3.5 h-3.5 mr-2" /> Archive
+                      </DropdownMenuItem>
+                    )}
+                    {canDelete && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => onDelete(p)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
-            );
-          })}
-        </div>
-      )}
+            </li>
+          );
+        })}
+      </ul>
     </section>
   );
 }

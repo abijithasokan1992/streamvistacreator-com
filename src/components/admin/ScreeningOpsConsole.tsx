@@ -200,13 +200,14 @@ export default function ScreeningOpsConsole() {
                         <td className="px-2 text-xs">{new Date(inv.expires_at).toLocaleDateString()}</td>
                         <td className="px-2">
                           <div className="flex flex-wrap gap-1">
-                            <Button size="icon" variant="ghost" title="Copy link" onClick={() => copyLink(inv.token)}><Copy className="w-3.5 h-3.5" /></Button>
-                            <Button size="icon" variant="ghost" title="Open" onClick={() => window.open(screeningUrl(inv.token), "_blank")}><ExternalLink className="w-3.5 h-3.5" /></Button>
-                            <Button size="icon" variant="ghost" title="Extend expiry" onClick={() => extend(inv.id)}><Clock className="w-3.5 h-3.5" /></Button>
-                            <Button size="icon" variant="ghost" title="Rotate playback URL" onClick={() => rotateUrl(inv.id)}><RefreshCw className="w-3.5 h-3.5" /></Button>
+                            <Button size="icon" variant="ghost" title="Copy link" aria-label="Copy screening invite link" onClick={() => copyLink(inv.token)}><Copy className="w-3.5 h-3.5" aria-hidden="true" /></Button>
+                            <Button size="icon" variant="ghost" title="Open" aria-label="Open screening in new tab" onClick={() => window.open(screeningUrl(inv.token), "_blank")}><ExternalLink className="w-3.5 h-3.5" aria-hidden="true" /></Button>
+                            <Button size="icon" variant="ghost" title="Extend expiry" aria-label="Extend screening expiry" onClick={() => extend(inv.id)}><Clock className="w-3.5 h-3.5" aria-hidden="true" /></Button>
+                            <Button size="icon" variant="ghost" title="Rotate playback URL" aria-label="Rotate playback URL" onClick={() => rotateUrl(inv.id)}><RefreshCw className="w-3.5 h-3.5" aria-hidden="true" /></Button>
                             {inv.status !== "revoked" && (
-                              <Button size="icon" variant="ghost" title="Revoke" onClick={() => revoke(inv.id)}><Ban className="w-3.5 h-3.5 text-red-500" /></Button>
+                              <Button size="icon" variant="ghost" title="Revoke" aria-label="Revoke screening access" onClick={() => revoke(inv.id)}><Ban className="w-3.5 h-3.5 text-red-500" aria-hidden="true" /></Button>
                             )}
+
                           </div>
                         </td>
                       </tr>

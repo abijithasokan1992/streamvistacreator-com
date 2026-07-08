@@ -8,8 +8,10 @@ const LEGAL_LINKS = [
   { to: "/terms", label: "Terms" },
   { to: "/privacy", label: "Privacy" },
   { to: "/ip-copyright", label: "IP & DMCA" },
+  { to: "/accessibility", label: "Accessibility" },
   { to: "/contact", label: "Contact" },
 ];
+
 
 const TRUST: { icon: LucideIcon; label: string }[] = [
   { icon: Lock, label: "256-bit SSL" },
@@ -27,11 +29,16 @@ export const Footer = () => {
 
       <div className="container py-10">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          <Link to="/" className="font-display font-black tracking-tight text-base uppercase">
-            STREAMVISTA <span className="gradient-text">CLOUD X</span>
-          </Link>
+          <div>
+            <Link to="/" className="font-display font-black tracking-tight text-base uppercase" aria-label="StreamVista home">
+              STREAMVISTA <span className="gradient-text">CLOUD X</span>
+            </Link>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              One Secure Cloud for Films, Series &amp; Shows
+            </p>
+          </div>
 
-          <nav className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          <nav className="flex flex-wrap items-center gap-x-5 gap-y-2" aria-label="Footer">
             {LEGAL_LINKS.map((l) => (
               <Link
                 key={l.to}
@@ -43,6 +50,7 @@ export const Footer = () => {
             ))}
           </nav>
         </div>
+
 
         <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
           <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground/60">Trust &amp; Safety</span>

@@ -50,7 +50,7 @@ export default function ContentOwnerDashboard() {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const [t, ts] = await Promise.all([fetchFreeTierStatus(), listTitles().catch(() => [])]);
+      const [t, ts] = await Promise.all([fetchFreeTierStatus(), listTitles(user.id).catch(() => [] as TitleRow[])]);
       setTier(t ?? null);
       setIsFree(!!t?.is_free);
       setTitles(Array.isArray(ts) ? ts : []);

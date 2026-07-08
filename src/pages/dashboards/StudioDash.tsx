@@ -39,6 +39,8 @@ import ProductionSettingsPanel from "@/components/studio/ProductionSettingsPanel
 import ProductionsManager from "@/components/studio/ProductionsManager";
 import ProductionWorkspace from "@/components/studio/ProductionWorkspace";
 import StudioDashboardHome from "@/components/studio/StudioDashboardHome";
+import StudioShell, { type StudioSectionId } from "@/components/studio/StudioShell";
+import StudioMvpHome from "@/components/studio/dashboard/StudioMvpHome";
 import type { VaultProduct } from "@/lib/studioVault";
 import { useCreatorPaygPrice } from "@/hooks/usePublicPlans";
 import { generateProductionNumber, getProductionNumber } from "@/lib/productionNumber";

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, ArrowRight, Film, Play, Briefcase, Bell, Upload, FolderOpen,
 } from "lucide-react";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
-  listTitles, fetchFreeTierStatus,
+  listTitlesPage, fetchFreeTierStatus,
   type TitleRow, type FreeTierStatus,
 } from "@/lib/creator/titleApi";
 import StorageLive from "@/components/creator/StorageLive";
@@ -17,73 +17,103 @@ import { QuickActionCard } from "@/components/shared/tools/QuickActionCard";
 import type { SectionId } from "@/components/creator/CreatorSidebar";
 
 /**
- * Creator Home — premium, workflow-first dashboard.
+ * Creator Home — enterprise-scale performance edition.
  *
- * Sections (in order):
- *   1. Continue Working      — primary title card with quick actions
- *   2. Recent Titles         — large poster previews with hover Open action
- *   3. Storage               — single compact StorageLive card
- *   4. Business              — contextual CTA card
- *   5. Recent Activity       — notifications + approval log
- *
- * No backend changes. Reuses existing title_assets, recent_uploads,
- * notifications, and content_approvals queries. Poster URLs come from the
- * primary poster asset's `par_url`. All navigation uses existing section ids.
+ * UI is unchanged. Under the hood:
+ *   • Paginated Recent Titles via `listTitlesPage` + IntersectionObserver
+ *     infinite scroll (page size 12, capped by RECENT_MAX for the Home surface).
+ *   • Poster URLs cached in a module-level Map so navigations back are instant
+ *     and re-renders never re-hit the DB.
+ *   • Titles cached per user across mounts; instant first paint on return.
+ *   • Poster <img> uses native lazy + async decoding; tiles use
+ *     content-visibility auto for cheap offscreen skipping (thousands of tiles).
+ *   • Skeleton loaders on first paint and on load-more.
+ *   • Recent activity and free-tier are decoupled from title paging.
  */
+
+// ─── module-level caches (survive component unmount / re-mounts) ────────────
+const posterCache = new Map<string, string>();          // titleId → par_url
+const posterFetched = new Set<string>();                 // titleIds we've already looked up
+type TitlesCacheEntry = { rows: TitleRow[]; hasMore: boolean; nextOffset: number };
+const titlesCache = new Map<string, TitlesCacheEntry>(); // userId → paged state
+
+const PAGE_SIZE = 12;
+const RECENT_MAX = 240; // hard cap on the Home poster feed; the full catalog lives on the Titles page
+
+async function hydratePosters(titleIds: string[]) {
+  const missing = titleIds.filter((id) => !posterFetched.has(id));
+  if (missing.length === 0) return;
+  missing.forEach((id) => posterFetched.add(id));
+  const { data } = await (supabase as any)
+    .from("title_assets")
+    .select("title_id, is_primary, category, upload:recent_uploads(par_url)")
+    .in("title_id", missing)
+    .eq("category", "poster")
+    .eq("is_primary", true);
+  for (const a of ((data ?? []) as any[])) {
+    const url = a?.upload?.par_url;
+    if (url && !posterCache.has(a.title_id)) posterCache.set(a.title_id, url);
+  }
+}
+
 export default function HomeSection({
   onNavigate, isFree,
 }: { onNavigate: (s: SectionId) => void; isFree: boolean }) {
   const { user } = useAuth();
-  const [titles, setTitles] = useState<TitleRow[]>([]);
-  const [posters, setPosters] = useState<Record<string, string>>({});
+  const cacheKey = user?.id ?? "";
+  const cached = cacheKey ? titlesCache.get(cacheKey) : undefined;
+
+  const [titles, setTitles] = useState<TitleRow[]>(cached?.rows ?? []);
+  const [hasMore, setHasMore] = useState<boolean>(cached?.hasMore ?? true);
+  const [nextOffset, setNextOffset] = useState<number>(cached?.nextOffset ?? 0);
   const [tier, setTier] = useState<FreeTierStatus | null>(null);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(!cached);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [posterVersion, setPosterVersion] = useState(0); // trigger re-render when cache fills
+  const inflightRef = useRef(false);
 
+  const persist = useCallback((rows: TitleRow[], more: boolean, offset: number) => {
+    if (cacheKey) titlesCache.set(cacheKey, { rows, hasMore: more, nextOffset: offset });
+  }, [cacheKey]);
+
+  // ── initial page + auxiliary data ─────────────────────────────────────────
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
     (async () => {
-      setLoading(true);
+      if (!cached) setLoading(true);
       try {
-        const [t, fs] = await Promise.all([
-          listTitles(user.id),
+        const [page, fs] = await Promise.all([
+          listTitlesPage(user.id, 0, PAGE_SIZE),
           fetchFreeTierStatus().catch(() => null),
         ]);
         if (cancelled) return;
-        setTitles(t);
         setTier(fs);
+        setTitles(page.rows);
+        setHasMore(page.hasMore);
+        setNextOffset(page.rows.length);
+        persist(page.rows, page.hasMore, page.rows.length);
 
-        const recentIds = t.slice(0, 6).map((x) => x.id);
-        if (recentIds.length) {
-          const { data: assets } = await (supabase as any)
-            .from("title_assets")
-            .select("title_id, is_primary, category, upload:recent_uploads(par_url)")
-            .in("title_id", recentIds)
-            .eq("category", "poster")
-            .eq("is_primary", true);
-          const map: Record<string, string> = {};
-          for (const a of (assets ?? []) as any[]) {
-            const url = a?.upload?.par_url;
-            if (url && !map[a.title_id]) map[a.title_id] = url;
-          }
-          if (!cancelled) setPosters(map);
-        }
+        // Posters for the first page.
+        await hydratePosters(page.rows.map((r) => r.id));
+        if (!cancelled) setPosterVersion((v) => v + 1);
 
-        // Recent activity: notifications + approval log (last 6 combined)
+        // Recent activity (independent of paging).
+        const titleIds = page.rows.map((x) => x.id);
         const [notes, appr] = await Promise.all([
           (supabase as any).from("notifications")
             .select("id, title, message, created_at")
             .eq("user_id", user.id)
             .order("created_at", { ascending: false }).limit(6),
-          t.length
+          titleIds.length
             ? (supabase as any).from("content_approvals")
                 .select("id, title_id, to_status, note, created_at")
-                .in("title_id", t.map((x) => x.id))
+                .in("title_id", titleIds)
                 .order("created_at", { ascending: false }).limit(6)
             : Promise.resolve({ data: [] }),
         ]);
-        const tmap = new Map(t.map((x) => [x.id, x.title]));
+        const tmap = new Map(page.rows.map((x) => [x.id, x.title]));
         const items: ActivityItem[] = [
           ...((notes.data ?? []) as any[]).map((n) => ({
             id: `n-${n.id}`, label: n.title || "Update",
@@ -102,11 +132,52 @@ export default function HomeSection({
       }
     })();
     return () => { cancelled = true; };
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  // ── load-more (infinite scroll) ──────────────────────────────────────────
+  const loadMore = useCallback(async () => {
+    if (!user || inflightRef.current || !hasMore) return;
+    if (titles.length >= RECENT_MAX) { setHasMore(false); return; }
+    inflightRef.current = true;
+    setLoadingMore(true);
+    try {
+      const remaining = RECENT_MAX - titles.length;
+      const limit = Math.min(PAGE_SIZE, remaining);
+      const page = await listTitlesPage(user.id, nextOffset, limit);
+      const merged = [...titles, ...page.rows];
+      const more = page.hasMore && merged.length < RECENT_MAX;
+      setTitles(merged);
+      setHasMore(more);
+      setNextOffset(merged.length);
+      persist(merged, more, merged.length);
+      await hydratePosters(page.rows.map((r) => r.id));
+      setPosterVersion((v) => v + 1);
+    } finally {
+      setLoadingMore(false);
+      inflightRef.current = false;
+    }
+  }, [user, hasMore, titles, nextOffset, persist]);
+
+  // ── IntersectionObserver sentinel ────────────────────────────────────────
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !hasMore || loading) return;
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) loadMore();
+    }, { rootMargin: "600px 0px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasMore, loading, loadMore]);
 
   const recent = titles[0];
   const capped = isFree && tier && !tier.can_create_draft && tier.lifecycle_count >= 1;
-  const posterTitles = useMemo(() => titles.slice(0, 6), [titles]);
+  // `posterVersion` is referenced so the memo re-computes when the poster cache fills.
+  const posterOf = useMemo(() => {
+    void posterVersion;
+    return (id: string) => posterCache.get(id);
+  }, [posterVersion]);
 
   return (
     <div className="space-y-10">
@@ -126,10 +197,12 @@ export default function HomeSection({
         ) : recent ? (
           <div className="rounded-xl border border-border/50 bg-card/40 p-4 sm:p-5 flex flex-col sm:flex-row gap-4">
             <div className="shrink-0">
-              {posters[recent.id] ? (
+              {posterOf(recent.id) ? (
                 <img
-                  src={posters[recent.id]}
+                  src={posterOf(recent.id)}
                   alt=""
+                  loading="lazy"
+                  decoding="async"
                   className="w-16 h-24 sm:w-20 sm:h-28 rounded-lg object-cover border border-border/50"
                 />
               ) : (
@@ -170,7 +243,7 @@ export default function HomeSection({
         )}
       </Section>
 
-      {/* 2 · Recent Titles — large poster grid */}
+      {/* 2 · Recent Titles — infinite scroll poster grid */}
       <Section
         title="Recent Titles"
         action={titles.length > 0 ? { label: "View all", onClick: () => onNavigate("titles") } : undefined}
@@ -181,12 +254,8 @@ export default function HomeSection({
         ) : undefined}
       >
         {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="aspect-[2/3] rounded-xl border border-border/40 bg-secondary/10 animate-pulse" />
-            ))}
-          </div>
-        ) : posterTitles.length === 0 ? (
+          <PosterGridSkeleton count={PAGE_SIZE} />
+        ) : titles.length === 0 ? (
           <EmptyState
             icon={Film}
             title="Your catalog is empty"
@@ -195,16 +264,24 @@ export default function HomeSection({
             onClick={() => onNavigate(capped ? "billing" : "titles")}
           />
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {posterTitles.map((t) => (
-              <PosterTile
-                key={t.id}
-                title={t}
-                poster={posters[t.id]}
-                onClick={() => onNavigate("titles")}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {titles.map((t) => (
+                <PosterTile
+                  key={t.id}
+                  title={t}
+                  poster={posterOf(t.id)}
+                  onClick={() => onNavigate("titles")}
+                />
+              ))}
+              {loadingMore && Array.from({ length: 5 }).map((_, i) => (
+                <div key={`sk-${i}`} className="aspect-[2/3] rounded-xl border border-border/40 bg-secondary/10 animate-pulse" />
+              ))}
+            </div>
+            {hasMore && (
+              <div ref={sentinelRef} aria-hidden className="h-8 w-full" />
+            )}
+          </>
         )}
       </Section>
 
@@ -292,6 +369,16 @@ function Skeleton({ h }: { h: string }) {
   return <div className="rounded-xl border border-border/40 bg-secondary/5 animate-pulse" style={{ height: h }} />;
 }
 
+function PosterGridSkeleton({ count }: { count: number }) {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="aspect-[2/3] rounded-xl border border-border/40 bg-secondary/10 animate-pulse" />
+      ))}
+    </div>
+  );
+}
+
 function EmptyState({
   icon: Icon, title, message, cta, onClick,
 }: {
@@ -315,6 +402,13 @@ function EmptyState({
   );
 }
 
+/**
+ * PosterTile
+ *
+ * `content-visibility: auto` + `contain-intrinsic-size` lets the browser skip
+ * layout/paint for offscreen tiles — this is what makes rendering thousands
+ * of posters feasible without a heavy virtualization library.
+ */
 function PosterTile({
   title, poster, onClick,
 }: { title: TitleRow; poster?: string; onClick: () => void }) {
@@ -323,6 +417,7 @@ function PosterTile({
       onClick={onClick}
       className="group text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-xl"
       aria-label={`Open ${title.title || "Untitled"}`}
+      style={{ contentVisibility: "auto", containIntrinsicSize: "320px 480px" } as React.CSSProperties}
     >
       <div className="relative aspect-[2/3] rounded-xl overflow-hidden border border-border/40 bg-gradient-to-br from-secondary/30 to-secondary/5">
         {poster ? (
@@ -330,6 +425,7 @@ function PosterTile({
             src={poster}
             alt=""
             loading="lazy"
+            decoding="async"
             className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
           />
         ) : (

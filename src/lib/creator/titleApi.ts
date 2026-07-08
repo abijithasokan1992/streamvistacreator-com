@@ -106,6 +106,33 @@ export async function listTitles(userId: string): Promise<TitleRow[]> {
   return (data ?? []).map((r: any) => ({ ...r, metadata: parseMetadata(r.metadata) }));
 }
 
+/**
+ * Paginated title listing for large catalogs. Reuses the same
+ * `content_titles` query surface as `listTitles` but returns a
+ * bounded range instead of the full result set.
+ */
+export async function listTitlesPage(
+  userId: string,
+  offset: number,
+  limit: number,
+): Promise<{ rows: TitleRow[]; hasMore: boolean }> {
+  const from = Math.max(0, offset);
+  const to = from + Math.max(1, limit); // fetch one extra to detect hasMore
+  const { data, error } = await (supabase as any)
+    .from("content_titles")
+    .select("*")
+    .eq("owner_user_id", userId)
+    .order("updated_at", { ascending: false })
+    .range(from, to);
+  if (error) throw error;
+  const all = (data ?? []) as any[];
+  const hasMore = all.length > limit;
+  const rows = (hasMore ? all.slice(0, limit) : all).map(
+    (r: any) => ({ ...r, metadata: parseMetadata(r.metadata) }),
+  );
+  return { rows, hasMore };
+}
+
 export async function getTitle(id: string): Promise<TitleRow | null> {
   const { data, error } = await (supabase as any)
     .from("content_titles")

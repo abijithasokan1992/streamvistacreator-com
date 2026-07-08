@@ -313,15 +313,15 @@ export default function ProductionSettingsPanel({
   }
 
   return (
-    <div className="space-y-6">
-      <Card className="p-4 md:p-5 flex items-start gap-3 border-primary/20">
-        <Sparkles className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-        <div className="flex-1">
-          <div className="text-sm font-semibold">Single source of truth</div>
-          <p className="text-xs text-muted-foreground">
-            Configure once. Every new ingest, camera card, clip, proxy job, editorial delivery
-            and archive job on <span className="font-medium text-foreground">{activeProjectName ?? "this production"}</span>{" "}
-            inherits these values automatically.
+    <div className="space-y-4">
+      <Card className="p-3 flex items-center gap-3 border-primary/20 sticky top-2 z-10 backdrop-blur bg-background/85">
+        <Sparkles className="w-4 h-4 text-primary shrink-0" />
+        <div className="flex-1 min-w-0">
+          <div className="text-xs font-semibold truncate">
+            Defaults for <span className="text-foreground">{activeProjectName ?? "this production"}</span>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Every ingest, proxy, editorial and delivery job inherits these values.
           </p>
         </div>
         <Button onClick={save} disabled={!canSave} size="sm">

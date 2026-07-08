@@ -1140,57 +1140,82 @@ export default function StudioDashboard() {
 
 
 
+  // MVP: sidebar sections replace the tab bar. Legacy tab keys map to sections
+  // so any existing `setTab("workspace"|"ingest"|...)` callback keeps working
+  // without changing the underlying panels.
+  const section: StudioSectionId =
+    tab === "ingest" ? "upload" :
+    tab === "workspace" ? "productions" :
+    tab === "settings" ? "settings" :
+    tab === "storage" ? "storage" :
+    tab === "productions" ? "productions" :
+    "dashboard";
+
+  const setSection = (s: StudioSectionId) => {
+    // Preserve original tab semantics for internal callers.
+    if (s === "upload") setTab("ingest");
+    else if (s === "productions") setTab("productions");
+    else setTab(s);
+  };
+
+  const openBuyStorage = () => {
+    if (liveSku) setBuyOpen(true);
+    else setTab("storage");
+  };
+
+  const storagePct = totalGb > 0 ? Math.round((usedGbTotal / totalGb) * 100) : 0;
+  const planLabel = rows.length > 0 ? "Vault Active" : (quota.testingModeEnabled ? "Trial" : "Free");
+
   return (
-    <RoleDashboardShell expectedRole="studio" title="Studio" subtitle={subtitle}>
-      <div className="mb-4 flex justify-end">
-        <Link
-          to="/dashboard/studio/profile"
-          className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 rounded-md border border-border/40 px-3 py-1.5"
-        >
-          <ShieldCheck className="w-3.5 h-3.5" /> My Studio Profile
-        </Link>
-      </div>
+    <StudioShell
+      section={section}
+      onSectionChange={setSection}
+      onBuyStorage={openBuyStorage}
+      onUpgradePlan={() => setTab("storage")}
+      storagePct={storagePct}
+    >
+      {section === "dashboard" && (
+        <StudioMvpHome
+          workspaceId={workspaceId ?? null}
+          activeProject={activeProject}
+          productionCount={0 /* count comes from ProductionsManager cache; keep 0 fallback */}
+          totalGb={totalGb}
+          usedGb={usedGbTotal}
+          hasPaidVault={rows.length > 0}
+          planLabel={planLabel}
+          onNewProduction={() => { setProductionsFormOpen(true); setTab("productions"); }}
+          onContinueProduction={() => setTab("workspace")}
+          onUpload={startIngest}
+          onBuyStorage={openBuyStorage}
+          onUpgradePlan={() => setTab("storage")}
+          onOpenProductions={() => setTab("productions")}
+          onOpenStorage={() => setTab("storage")}
+        />
+      )}
 
-      <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="grid grid-cols-3 sm:grid-cols-6 w-full">
-          <TabsTrigger value="dashboard"><Activity className="w-3.5 h-3.5 mr-1.5" />Dashboard</TabsTrigger>
-          <TabsTrigger value="productions"><Clapperboard className="w-3.5 h-3.5 mr-1.5" />Productions</TabsTrigger>
-          <TabsTrigger value="workspace"><Film className="w-3.5 h-3.5 mr-1.5" />Production Workspace</TabsTrigger>
-          <TabsTrigger value="ingest"><UploadCloud className="w-3.5 h-3.5 mr-1.5" />Ingest</TabsTrigger>
-          <TabsTrigger value="storage"><Database className="w-3.5 h-3.5 mr-1.5" />Storage</TabsTrigger>
-          <TabsTrigger value="settings"><Wrench className="w-3.5 h-3.5 mr-1.5" />Settings</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="dashboard" className="mt-6">
-          <StudioDashboardHome
+      {section === "productions" && (
+        tab === "workspace" && activeProject ? (
+          <ProductionWorkspace
+            project={activeProject as any}
             workspaceId={workspaceId ?? null}
-            activeProject={activeProject}
-            paidGbTotal={paidGbTotal}
-            usedGbTotal={usedGbTotal}
-            availableGb={availableGb}
-            storageLocked={!!quota.locked}
-            currentUserId={user?.id ?? null}
-            onNewProduction={() => { setProductionsFormOpen(true); setTab("productions"); }}
-            onImportMedia={startIngest}
-            onOpenProduction={() => setTab("workspace")}
-            onInviteTeam={() => setTab("workspace")}
-            onOpenBilling={() => setTab("storage")}
-            onOpenStorage={() => setTab("storage")}
-            onOpenReports={() => setTab("workspace")}
-            productionHeroSlot={
-              <ProductionHero
+            onBack={() => setTab("productions")}
+            onEdit={() => setTab("productions")}
+            onShare={() => setTab("productions")}
+            filesSlot={
+              <ProductionMediaWorkspace
                 workspaceId={workspaceId ?? null}
-                activeProject={activeProject}
-                totalGb={totalGb}
-                usedGb={usedGbTotal}
-                onIngest={startIngest}
-                onOpenLibrary={() => setTab("workspace")}
-                onNew={() => { setProductionsFormOpen(true); setTab("productions"); }}
-                onEdit={() => { setProductionsFormOpen(false); setTab("productions"); }}
-                onSwitch={() => { setProductionsFormOpen(false); setTab("productions"); }}
+                activeProjectId={activeProjectId}
+                activeProjectName={activeProject?.name ?? null}
+                activeProjectNumber={getProductionNumber(activeProject)}
               />
             }
-            activityPanelSlot={
+            uploadsSlot={
+              <StudioIngest
+                activeProjectId={activeProjectId ?? undefined}
+                activeProjectDefaults={ingestDefaults}
+              />
+            }
+            activitySlot={
               <ActivityPanel
                 activeProjectId={activeProjectId}
                 activeProjectName={activeProject?.name ?? null}
@@ -1198,9 +1223,7 @@ export default function StudioDashboard() {
               />
             }
           />
-        </TabsContent>
-
-        <TabsContent value="productions" className="mt-6">
+        ) : (
           <ProductionsManager
             activeProjectId={activeProjectId}
             onSetActive={setActiveProjectId}
@@ -1208,67 +1231,28 @@ export default function StudioDashboard() {
             initialFormOpen={productionsFormOpen}
             onFormClose={() => setProductionsFormOpen(false)}
           />
-        </TabsContent>
+        )
+      )}
 
-        <TabsContent value="ingest" className="mt-6">
-          <StudioIngest
-            activeProjectId={activeProjectId ?? undefined}
-            activeProjectDefaults={ingestDefaults}
-          />
-        </TabsContent>
+      {section === "upload" && (
+        <StudioIngest
+          activeProjectId={activeProjectId ?? undefined}
+          activeProjectDefaults={ingestDefaults}
+        />
+      )}
 
-        <TabsContent value="workspace" className="mt-6">
-          {activeProject ? (
-            <ProductionWorkspace
-              project={activeProject as any}
-              workspaceId={workspaceId ?? null}
-              onBack={() => setTab("productions")}
-              onEdit={() => setTab("productions")}
-              onShare={() => setTab("productions")}
-              filesSlot={
-                <ProductionMediaWorkspace
-                  workspaceId={workspaceId ?? null}
-                  activeProjectId={activeProjectId}
-                  activeProjectName={activeProject?.name ?? null}
-                  activeProjectNumber={getProductionNumber(activeProject)}
-                />
-              }
-              uploadsSlot={
-                <StudioIngest
-                  activeProjectId={activeProjectId ?? undefined}
-                  activeProjectDefaults={ingestDefaults}
-                />
-              }
-              activitySlot={
-                <ActivityPanel
-                  activeProjectId={activeProjectId}
-                  activeProjectName={activeProject?.name ?? null}
-                  activeProjectNumber={getProductionNumber(activeProject)}
-                />
-              }
-            />
-          ) : (
-            <div className="rounded-2xl border border-dashed border-border/50 bg-secondary/10 p-8 text-center">
-              <Clapperboard className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">Pick or create a production to open its workspace.</p>
-              <Button size="sm" className="mt-4" onClick={() => setTab("productions")}>Go to Productions</Button>
-            </div>
-          )}
-        </TabsContent>
+      {section === "storage" && (
+        <StoragePanel rows={rows} loading={loading} onGoBuy={() => setTab("storage")} onPurchased={refreshAfterPurchase} />
+      )}
 
-        <TabsContent value="storage" className="mt-6">
-          <StoragePanel rows={rows} loading={loading} onGoBuy={() => setTab("storage")} onPurchased={refreshAfterPurchase} />
-        </TabsContent>
-
-        <TabsContent value="settings" className="mt-6">
-          <ProductionSettingsPanel
-            activeProjectId={activeProjectId}
-            activeProjectName={activeProject?.name ?? null}
-            activeProjectCrew={activeProject?.crew ?? null}
-            onSaved={refreshActiveProject}
-          />
-        </TabsContent>
-      </Tabs>
+      {section === "settings" && (
+        <ProductionSettingsPanel
+          activeProjectId={activeProjectId}
+          activeProjectName={activeProject?.name ?? null}
+          activeProjectCrew={activeProject?.crew ?? null}
+          onSaved={refreshActiveProject}
+        />
+      )}
 
       {/* Ingest Workspace dialog — reused when triggered from Dashboard hero. */}
       <IngestMediaDialog
@@ -1285,6 +1269,6 @@ export default function StudioDashboard() {
         onOpenChange={(o) => { setBuyOpen(o); if (!o) setResumeIngestAfterBuy(false); }}
         onPurchased={handlePurchased}
       />
-    </RoleDashboardShell>
+    </StudioShell>
   );
 }

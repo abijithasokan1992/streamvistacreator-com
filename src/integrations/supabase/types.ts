@@ -8029,6 +8029,7 @@ export type Database = {
           plan_code: string
           source: string
           storage_addon_blocks: number
+          total_bytes: number | null
           total_storage_gb: number | null
           updated_at: string
           urgent_threshold_pct: number
@@ -8052,6 +8053,7 @@ export type Database = {
           plan_code?: string
           source?: string
           storage_addon_blocks?: number
+          total_bytes?: number | null
           total_storage_gb?: number | null
           updated_at?: string
           urgent_threshold_pct?: number
@@ -8075,6 +8077,7 @@ export type Database = {
           plan_code?: string
           source?: string
           storage_addon_blocks?: number
+          total_bytes?: number | null
           total_storage_gb?: number | null
           updated_at?: string
           urgent_threshold_pct?: number

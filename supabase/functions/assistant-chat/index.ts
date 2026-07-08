@@ -59,9 +59,9 @@ Deno.serve(async (req) => {
       },
     });
 
-    // Auto-select best available model. Users never see this.
-    // Prefer GPT-5.5 for reasoning; the gateway handles fallback when unavailable.
-    const modelId = "openai/gpt-5.5";
+    // Default chat model on Lovable AI Gateway. Free-tier friendly, fast,
+    // supports tools + long context. Avoids 402 credit-exhaustion on GPT-5.5.
+    const modelId = "google/gemini-3-flash-preview";
     const model = gateway(modelId);
 
     const tools = {

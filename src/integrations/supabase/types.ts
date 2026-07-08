@@ -8927,6 +8927,7 @@ export type Database = {
         Returns: Json
       }
       grant_creator_role: { Args: { _user_id: string }; Returns: undefined }
+      handle_global_platform_maintenance: { Args: never; Returns: Json }
       has_accepted_agreement: {
         Args: {
           _type: Database["public"]["Enums"]["legal_agreement_type"]

@@ -44,15 +44,36 @@ export default function InvitationsConsole() {
   const [notes, setNotes] = useState("");
   const [filter, setFilter] = useState<"all" | "pending" | "accepted">("all");
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   const load = async () => {
     setLoading(true);
-    const { data, error } = await (supabase as any)
-      .from("role_invitations")
-      .select("*")
-      .order("created_at", { ascending: false });
-    setLoading(false);
-    if (error) { toast.error("Could not load invitations"); return; }
-    setRows((data ?? []) as Invite[]);
+    setLoadError(null);
+    try {
+      const { data, error } = await (supabase as any)
+        .from("role_invitations")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) {
+        const code = error.code ? ` [${error.code}]` : "";
+        const hint = error.hint ? ` — ${error.hint}` : "";
+        const msg = `${error.message ?? "Unknown error"}${hint}`;
+        setLoadError(`Could not load invitations${code}: ${msg}`);
+        toast.error(`Could not load invitations${code}`, { description: msg });
+        // eslint-disable-next-line no-console
+        console.error("[role_invitations.select]", error);
+        setRows([]);
+        return;
+      }
+      setRows((data ?? []) as Invite[]);
+    } catch (e) {
+      const err = e as { code?: string; message?: string };
+      const msg = err?.message ?? "Unknown error";
+      setLoadError(`Could not load invitations: ${msg}`);
+      toast.error("Could not load invitations", { description: msg });
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, []);
@@ -178,7 +199,12 @@ export default function InvitationsConsole() {
                 <Loader2 className="w-4 h-4 inline animate-spin mr-2" /> Loading…
               </td></tr>
             )}
-            {!loading && filtered.length === 0 && (
+            {!loading && loadError && (
+              <tr><td colSpan={5} className="p-6 text-center text-destructive text-xs whitespace-pre-wrap break-words">
+                {loadError}
+              </td></tr>
+            )}
+            {!loading && !loadError && filtered.length === 0 && (
               <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">No invitations.</td></tr>
             )}
             {filtered.map((r) => (

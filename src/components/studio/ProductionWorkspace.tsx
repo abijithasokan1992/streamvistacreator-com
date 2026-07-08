@@ -11,13 +11,17 @@ import { Link } from "react-router-dom";
 import {
   ArrowLeft, Clapperboard, FolderTree, UploadCloud, Users, Activity as ActivityIcon,
   ShieldCheck, PackageCheck, StickyNote, Calendar, Building2, User, Film, Loader2,
-  MoreHorizontal,
+  MoreHorizontal, Search, Pencil, UserPlus,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { labelForOrgRole } from "@/lib/rbac/labels";
 import { getProductionNumber } from "@/lib/productionNumber";
 
@@ -166,99 +170,128 @@ export default function ProductionWorkspace({
   const [advOpen, setAdvOpen] = useState(false);
   const [advTab, setAdvTab] = useState("activity");
 
+  // Team search — for enterprise scale (hundreds of members). Client-side.
+  const [teamQuery, setTeamQuery] = useState("");
+  const filteredMembers = useMemo(() => {
+    const q = teamQuery.trim().toLowerCase();
+    if (!q) return members;
+    return members.filter((m) =>
+      (m.full_name ?? "").toLowerCase().includes(q) ||
+      (m.email ?? "").toLowerCase().includes(q) ||
+      m.user_id.toLowerCase().includes(q),
+    );
+  }, [members, teamQuery]);
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <section className="rounded-2xl border border-border/50 bg-secondary/10 p-6">
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div className="min-w-0">
-            <Button size="sm" variant="ghost" className="text-xs mb-2 -ml-2" onClick={onBack}>
-              <ArrowLeft className="w-3.5 h-3.5 mr-1" /> All productions
+    <div className="space-y-4">
+      {/* Slim header — back link, title + badges, primary + overflow actions. */}
+      <section className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="min-w-0">
+          <Button size="sm" variant="ghost" className="text-xs mb-1 -ml-2 h-7" onClick={onBack}>
+            <ArrowLeft className="w-3.5 h-3.5 mr-1" /> All productions
+          </Button>
+          <div className="flex items-center gap-2 flex-wrap min-w-0">
+            <h2 className="font-display text-xl leading-tight truncate">{project.name}</h2>
+            {number && (
+              <Badge variant="outline" className="text-[10px] font-mono bg-accent/10 text-accent border-accent/30">
+                {number}
+              </Badge>
+            )}
+            {crew.title_status && (
+              <Badge variant="outline" className="text-[10px]">{crew.title_status}</Badge>
+            )}
+          </div>
+        </div>
+        <div className="flex gap-1.5 shrink-0">
+          {onEdit && (
+            <Button size="sm" variant="outline" onClick={onEdit} className="h-8">
+              <Pencil className="w-3.5 h-3.5 mr-1.5" /> Edit
             </Button>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="font-display text-2xl truncate">{project.name}</h2>
-              {number && (
-                <Badge variant="outline" className="text-[10px] font-mono bg-accent/10 text-accent border-accent/30">
-                  {number}
-                </Badge>
-              )}
-              {crew.title_status && <Badge variant="outline" className="text-[10px]">{crew.title_status}</Badge>}
-            </div>
-          </div>
-          <div className="flex gap-2 shrink-0">
-            {onShare && <Button size="sm" variant="outline" onClick={onShare}>Invite</Button>}
-            {onEdit && <Button size="sm" variant="outline" onClick={onEdit}>Edit</Button>}
-            <Sheet open={advOpen} onOpenChange={setAdvOpen}>
-              <SheetTrigger asChild>
-                <Button size="sm" variant="outline">
-                  <MoreHorizontal className="w-3.5 h-3.5 mr-1.5" /> Advanced
+          )}
+          <Sheet open={advOpen} onOpenChange={setAdvOpen}>
+            <SheetTrigger asChild>
+              <Button size="sm" variant="outline" className="h-8">
+                Advanced
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>Advanced — {project.name}</SheetTitle>
+              </SheetHeader>
+              <Tabs value={advTab} onValueChange={setAdvTab} className="w-full mt-4">
+                <TabsList className="grid grid-cols-4 w-full">
+                  <TabsTrigger value="uploads"><UploadCloud className="w-3.5 h-3.5 mr-1.5" />Uploads</TabsTrigger>
+                  <TabsTrigger value="activity"><ActivityIcon className="w-3.5 h-3.5 mr-1.5" />Activity</TabsTrigger>
+                  <TabsTrigger value="qc"><ShieldCheck className="w-3.5 h-3.5 mr-1.5" />Quality</TabsTrigger>
+                  <TabsTrigger value="deliveries"><PackageCheck className="w-3.5 h-3.5 mr-1.5" />Deliveries</TabsTrigger>
+                </TabsList>
+                <TabsContent value="uploads" className="mt-4">{uploadsSlot}</TabsContent>
+                <TabsContent value="activity" className="mt-4">{activitySlot}</TabsContent>
+                <TabsContent value="qc" className="mt-4">
+                  <section className="rounded-xl border border-border/50 p-4">
+                    {qrLoading ? (
+                      <div className="py-6 text-center text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin inline" /></div>
+                    ) : qcIssues.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">No QC findings yet.</p>
+                    ) : (
+                      <ul className="divide-y divide-border/30">
+                        {qcIssues.map((i) => (
+                          <li key={i.id} className="py-2 flex items-center justify-between gap-3 text-xs">
+                            <span className="min-w-0 truncate">
+                              <span className="font-medium">{i.title ?? "Untitled finding"}</span>
+                              {i.stage && <span className="text-muted-foreground"> · {i.stage}</span>}
+                            </span>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <Badge variant="outline" className="text-[10px]">{i.severity}</Badge>
+                              <Badge variant="outline" className="text-[10px]">{i.status}</Badge>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <p className="text-[11px] text-muted-foreground mt-3">
+                      Formal reviews run from the <Link to="/admin/qc" className="underline">Reviewer console</Link>.
+                    </p>
+                  </section>
+                </TabsContent>
+                <TabsContent value="deliveries" className="mt-4">
+                  <section className="rounded-xl border border-border/50 p-4">
+                    {dvLoading ? (
+                      <div className="py-6 text-center text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin inline" /></div>
+                    ) : deliveries.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">No deliveries scheduled yet.</p>
+                    ) : (
+                      <ul className="divide-y divide-border/30">
+                        {deliveries.map((d) => (
+                          <li key={d.id} className="py-2 flex items-center justify-between gap-3 text-xs">
+                            <span className="min-w-0 truncate">
+                              <span className="font-medium">{d.title ?? "Delivery"}</span>
+                              {d.due_at && <span className="text-muted-foreground"> · due {new Date(d.due_at).toLocaleDateString()}</span>}
+                            </span>
+                            <Badge variant="outline" className="text-[10px]">{d.status ?? "pending"}</Badge>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
+                </TabsContent>
+              </Tabs>
+            </SheetContent>
+          </Sheet>
+          {onShare && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="ghost" className="h-8 w-8 p-0" aria-label="More actions">
+                  <MoreHorizontal className="w-4 h-4" />
                 </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
-                <SheetHeader>
-                  <SheetTitle>Advanced — {project.name}</SheetTitle>
-                </SheetHeader>
-                <Tabs value={advTab} onValueChange={setAdvTab} className="w-full mt-4">
-                  <TabsList className="grid grid-cols-4 w-full">
-                    <TabsTrigger value="uploads"><UploadCloud className="w-3.5 h-3.5 mr-1.5" />Uploads</TabsTrigger>
-                    <TabsTrigger value="activity"><ActivityIcon className="w-3.5 h-3.5 mr-1.5" />Activity</TabsTrigger>
-                    <TabsTrigger value="qc"><ShieldCheck className="w-3.5 h-3.5 mr-1.5" />Quality</TabsTrigger>
-                    <TabsTrigger value="deliveries"><PackageCheck className="w-3.5 h-3.5 mr-1.5" />Deliveries</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="uploads" className="mt-4">{uploadsSlot}</TabsContent>
-                  <TabsContent value="activity" className="mt-4">{activitySlot}</TabsContent>
-                  <TabsContent value="qc" className="mt-4">
-                    <section className="rounded-xl border border-border/50 p-4">
-                      {qrLoading ? (
-                        <div className="py-6 text-center text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin inline" /></div>
-                      ) : qcIssues.length === 0 ? (
-                        <p className="text-xs text-muted-foreground">No QC findings yet.</p>
-                      ) : (
-                        <ul className="divide-y divide-border/30">
-                          {qcIssues.map((i) => (
-                            <li key={i.id} className="py-2 flex items-center justify-between gap-3 text-xs">
-                              <span className="min-w-0 truncate">
-                                <span className="font-medium">{i.title ?? "Untitled finding"}</span>
-                                {i.stage && <span className="text-muted-foreground"> · {i.stage}</span>}
-                              </span>
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <Badge variant="outline" className="text-[10px]">{i.severity}</Badge>
-                                <Badge variant="outline" className="text-[10px]">{i.status}</Badge>
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                      <p className="text-[11px] text-muted-foreground mt-3">
-                        Formal reviews run from the <Link to="/admin/qc" className="underline">Reviewer console</Link>.
-                      </p>
-                    </section>
-                  </TabsContent>
-                  <TabsContent value="deliveries" className="mt-4">
-                    <section className="rounded-xl border border-border/50 p-4">
-                      {dvLoading ? (
-                        <div className="py-6 text-center text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin inline" /></div>
-                      ) : deliveries.length === 0 ? (
-                        <p className="text-xs text-muted-foreground">No deliveries scheduled yet.</p>
-                      ) : (
-                        <ul className="divide-y divide-border/30">
-                          {deliveries.map((d) => (
-                            <li key={d.id} className="py-2 flex items-center justify-between gap-3 text-xs">
-                              <span className="min-w-0 truncate">
-                                <span className="font-medium">{d.title ?? "Delivery"}</span>
-                                {d.due_at && <span className="text-muted-foreground"> · due {new Date(d.due_at).toLocaleDateString()}</span>}
-                              </span>
-                              <Badge variant="outline" className="text-[10px]">{d.status ?? "pending"}</Badge>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </section>
-                  </TabsContent>
-                </Tabs>
-              </SheetContent>
-            </Sheet>
-          </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onShare}>
+                  <UserPlus className="w-3.5 h-3.5 mr-2" /> Invite member
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </section>
 
@@ -269,15 +302,15 @@ export default function ProductionWorkspace({
           <TabsTrigger value="team"><Users className="w-3.5 h-3.5 mr-1.5" />Team</TabsTrigger>
         </TabsList>
 
-        {/* Overview */}
-        <TabsContent value="overview" className="mt-6 space-y-4">
-          <section className="rounded-2xl border border-border/50 p-5">
+        {/* Overview — only non-empty facts. */}
+        <TabsContent value="overview" className="mt-5 space-y-3">
+          <section className="rounded-xl border border-border/50 bg-secondary/5 p-4">
             {overviewFacts.length === 0 ? (
               <p className="text-xs text-muted-foreground">
                 No production details yet. Use <button onClick={onEdit} className="underline">Edit</button> to add director, status and more.
               </p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 {overviewFacts.map((f) => {
                   const Icon = f.icon;
                   return (
@@ -293,7 +326,7 @@ export default function ProductionWorkspace({
             )}
           </section>
           {crew.notes && (
-            <section className="rounded-2xl border border-border/50 p-5">
+            <section className="rounded-xl border border-border/50 bg-secondary/5 p-4">
               <h3 className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-mono mb-2 flex items-center gap-1.5">
                 <StickyNote className="w-3.5 h-3.5" /> Notes
               </h3>
@@ -302,26 +335,37 @@ export default function ProductionWorkspace({
           )}
         </TabsContent>
 
-        {/* Files — existing ProductionMediaWorkspace, injected as slot */}
-        <TabsContent value="files" className="mt-6">{filesSlot}</TabsContent>
+        <TabsContent value="files" className="mt-5">{filesSlot}</TabsContent>
 
-        {/* Team */}
-        <TabsContent value="team" className="mt-6">
-          <section className="rounded-2xl border border-border/50 p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-mono">
-                Team ({members.length})
-              </h3>
-              {onShare && <Button size="sm" variant="outline" onClick={onShare}>Invite member</Button>}
-            </div>
+        {/* Team — search + list. Scales to hundreds of members. */}
+        <TabsContent value="team" className="mt-5">
+          <section className="rounded-xl border border-border/50 bg-secondary/5">
+            <header className="flex items-center gap-2 px-4 py-2.5 border-b border-border/40 flex-wrap">
+              <div className="relative flex-1 min-w-[180px]">
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  className="pl-8 h-8 text-sm"
+                  placeholder={`Search ${members.length} member${members.length === 1 ? "" : "s"}…`}
+                  value={teamQuery}
+                  onChange={(e) => setTeamQuery(e.target.value)}
+                />
+              </div>
+              {onShare && (
+                <Button size="sm" variant="outline" className="h-8" onClick={onShare}>
+                  <UserPlus className="w-3.5 h-3.5 mr-1.5" /> Invite
+                </Button>
+              )}
+            </header>
             {membersLoading ? (
               <div className="py-6 text-center text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin inline" /></div>
-            ) : members.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No team members yet — invite collaborators.</p>
+            ) : filteredMembers.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-6">
+                {members.length === 0 ? "No team members yet — invite collaborators." : "No members match your search."}
+              </p>
             ) : (
               <ul className="divide-y divide-border/30">
-                {members.map((m) => (
-                  <li key={m.user_id} className="py-2 flex items-center justify-between text-xs">
+                {filteredMembers.map((m) => (
+                  <li key={m.user_id} className="px-4 py-2 flex items-center justify-between text-xs">
                     <span className="min-w-0 truncate">
                       <span className="font-medium">{m.full_name || m.email || m.user_id.slice(0, 8)}</span>
                       {m.email && m.full_name ? <span className="text-muted-foreground"> · {m.email}</span> : null}

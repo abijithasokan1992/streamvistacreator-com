@@ -268,7 +268,7 @@ export default function ProductionMediaWorkspace({
           />
         </div>
         <Select value={filterDay} onValueChange={setFilterDay}>
-          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Shoot Day" /></SelectTrigger>
+          <SelectTrigger className="w-[140px] h-9"><SelectValue placeholder="Shoot Day" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All days</SelectItem>
             {allDays.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}

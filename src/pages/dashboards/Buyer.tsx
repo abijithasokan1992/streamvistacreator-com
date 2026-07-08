@@ -10,6 +10,7 @@ import DashboardSection from "@/components/buyer/sections/DashboardSection";
 import FindContentSection from "@/components/buyer/sections/FindContentSection";
 import RequestsSection from "@/components/buyer/sections/RequestsSection";
 import ScreenersSection from "@/components/buyer/sections/ScreenersSection";
+import WatchlistSection from "@/components/buyer/sections/WatchlistSection";
 import CommercialSection from "@/components/buyer/sections/CommercialSection";
 import BillingSection from "@/components/buyer/sections/BillingSection";
 import HelpSection from "@/components/buyer/sections/HelpSection";

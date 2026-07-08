@@ -1,14 +1,15 @@
-import { LayoutDashboard, Search, Inbox, Film, Briefcase, Receipt, LifeBuoy } from "lucide-react";
+import { LayoutDashboard, Search, Bookmark, Inbox, Film, Briefcase, Receipt, LifeBuoy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const BUYER_SECTIONS = [
-  { id: "dashboard",  label: "Dashboard",   icon: LayoutDashboard },
-  { id: "find",       label: "Find Content", icon: Search },
-  { id: "requests",   label: "My Requests", icon: Inbox },
-  { id: "screeners",  label: "Screeners",   icon: Film },
-  { id: "commercial", label: "Commercial",  icon: Briefcase },
-  { id: "billing",    label: "Billing",     icon: Receipt },
-  { id: "help",       label: "Help",        icon: LifeBuoy },
+  { id: "dashboard",  label: "Dashboard",     icon: LayoutDashboard },
+  { id: "find",       label: "Find Content",  icon: Search },
+  { id: "watchlist",  label: "Watchlist",     icon: Bookmark },
+  { id: "requests",   label: "My Requests",   icon: Inbox },
+  { id: "screeners",  label: "Screeners",     icon: Film },
+  { id: "commercial", label: "Commercial",    icon: Briefcase },
+  { id: "billing",    label: "Billing",       icon: Receipt },
+  { id: "help",       label: "Help",          icon: LifeBuoy },
 ] as const;
 
 export type BuyerSectionId = typeof BUYER_SECTIONS[number]["id"];

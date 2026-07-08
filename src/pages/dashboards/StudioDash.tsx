@@ -1153,7 +1153,7 @@ export default function StudioDashboard() {
 
       <Tabs value={tab} onValueChange={setTab} className="w-full">
         <TabsList className="grid grid-cols-3 sm:grid-cols-6 w-full">
-          <TabsTrigger value="dashboard"><Activity className="w-3.5 h-3.5 mr-1.5" />Dashboard</TabsTrigger>
+          <TabsTrigger value="dashboard"><Activity className="w-3.5 h-3.5 mr-1.5" />Workspace</TabsTrigger>
           <TabsTrigger value="productions"><Clapperboard className="w-3.5 h-3.5 mr-1.5" />Productions</TabsTrigger>
           <TabsTrigger value="workspace"><Film className="w-3.5 h-3.5 mr-1.5" />Production Workspace</TabsTrigger>
           <TabsTrigger value="ingest"><UploadCloud className="w-3.5 h-3.5 mr-1.5" />Ingest</TabsTrigger>

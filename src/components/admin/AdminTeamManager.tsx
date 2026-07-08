@@ -268,9 +268,10 @@ export default function AdminTeamManager() {
                       />
                     )}
                   </Dialog>
-                  <Button variant="ghost" size="icon" onClick={() => deleteStaff(s.user_id)} title="Remove staff profile">
-                    <Trash2 className="w-4 h-4 text-destructive" />
+                  <Button variant="ghost" size="icon" onClick={() => deleteStaff(s.user_id)} title="Remove staff profile" aria-label="Remove staff profile">
+                    <Trash2 className="w-4 h-4 text-destructive" aria-hidden="true" />
                   </Button>
+
                 </div>
               </div>
             );

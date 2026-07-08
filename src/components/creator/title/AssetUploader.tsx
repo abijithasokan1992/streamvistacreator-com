@@ -277,15 +277,27 @@ export function AssetUploader({
 
       {/* Cinematic progress card */}
       {busy && telemetry && (
-        <div className="rounded-md border border-border/60 bg-card/50 p-3 space-y-2 text-xs">
+        <div
+          className="rounded-md border border-border/60 bg-card/50 p-3 space-y-2 text-xs"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
           <div className="flex items-center justify-between">
             <span className="font-medium flex items-center gap-1.5">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
               {STAGE_LABEL[telemetry.stage]}
             </span>
             <span className="tabular-nums text-foreground">{pct}%</span>
           </div>
-          <div className="h-1.5 rounded-full bg-border/40 overflow-hidden">
+          <div
+            className="h-1.5 rounded-full bg-border/40 overflow-hidden"
+            role="progressbar"
+            aria-valuenow={pct}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`${STAGE_LABEL[telemetry.stage]}: ${pct} percent complete`}
+          >
             <div
               className="h-full bg-accent transition-[width] duration-300"
               style={{ width: `${pct}%` }}
@@ -308,11 +320,16 @@ export function AssetUploader({
         </div>
       )}
 
+
       {/* Success card */}
       {success && !busy && (
-        <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-3 text-xs space-y-1">
+        <div
+          className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-3 text-xs space-y-1"
+          role="status"
+          aria-live="polite"
+        >
           <div className="flex items-center gap-2 font-medium text-emerald-300">
-            <CheckCircle2 className="w-4 h-4" /> Upload Complete
+            <CheckCircle2 className="w-4 h-4" aria-hidden="true" /> Upload Complete
           </div>
           <dl className="grid grid-cols-[110px_1fr] gap-y-0.5 text-muted-foreground">
             <dt>Filename</dt> <dd className="text-foreground truncate">{success.name}</dd>
@@ -321,6 +338,7 @@ export function AssetUploader({
           <p className="text-emerald-300 pt-1">Ready for submission.</p>
         </div>
       )}
+
     </div>
   );
 }

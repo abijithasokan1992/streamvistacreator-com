@@ -196,10 +196,11 @@ export default function GlobalAssetManager() {
             </div>
             <div className="col-span-2 text-muted-foreground">{fmtBytes(u.file_size)}</div>
             <div className="col-span-3 flex items-center justify-end gap-1">
-              <Button size="icon" variant="ghost" onClick={() => onDownload(u)} title="Download"><Download className="h-4 w-4" /></Button>
-              <Button size="icon" variant="ghost" onClick={() => { setRenaming(u); setRenameValue(u.file_name); }} title="Rename"><Pencil className="h-4 w-4" /></Button>
-              <Button size="icon" variant="ghost" onClick={() => { setSharing(u); setShareUrl(null); setShareHours(168); setShareMax(""); }} title="Share"><Link2 className="h-4 w-4" /></Button>
-              <Button size="icon" variant="ghost" onClick={() => onDelete(u)} title="Delete" className="text-red-400 hover:text-red-300"><Trash2 className="h-4 w-4" /></Button>
+              <Button size="icon" variant="ghost" onClick={() => onDownload(u)} title="Download" aria-label={`Download ${u.file_name}`}><Download className="h-4 w-4" aria-hidden="true" /></Button>
+              <Button size="icon" variant="ghost" onClick={() => { setRenaming(u); setRenameValue(u.file_name); }} title="Rename" aria-label={`Rename ${u.file_name}`}><Pencil className="h-4 w-4" aria-hidden="true" /></Button>
+              <Button size="icon" variant="ghost" onClick={() => { setSharing(u); setShareUrl(null); setShareHours(168); setShareMax(""); }} title="Share" aria-label={`Share ${u.file_name}`}><Link2 className="h-4 w-4" aria-hidden="true" /></Button>
+              <Button size="icon" variant="ghost" onClick={() => onDelete(u)} title="Delete" aria-label={`Delete ${u.file_name}`} className="text-red-400 hover:text-red-300"><Trash2 className="h-4 w-4" aria-hidden="true" /></Button>
+
             </div>
           </div>
         ))}

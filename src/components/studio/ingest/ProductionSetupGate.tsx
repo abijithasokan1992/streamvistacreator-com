@@ -356,9 +356,10 @@ function CrewPicker({
           <Badge variant="secondary" className="gap-1.5 py-1 px-2">
             {value.user_id ? "@" : ""}{value.display_name || value.email}
           </Badge>
-          <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => onChange(null)}>
-            <X className="h-3.5 w-3.5" />
+          <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => onChange(null)} aria-label="Clear selection">
+            <X className="h-3.5 w-3.5" aria-hidden="true" />
           </Button>
+
         </div>
       ) : (
         <Popover open={open} onOpenChange={setOpen}>

@@ -1066,22 +1066,22 @@ function CollaborationPanel({
   };
 
   return (
-    <section className="rounded-2xl border border-border/50 bg-secondary/5 p-5">
+    <section className="rounded-xl border border-border/50 bg-secondary/5 p-4">
       <div className="flex items-center gap-2 mb-3">
         <Users className="w-4 h-4 text-accent" />
-        <h3 className="font-semibold text-sm">Team & Collaboration</h3>
+        <h3 className="font-semibold text-sm">Team</h3>
+        <span className="text-[11px] text-muted-foreground font-mono">
+          {members.length} {members.length === 1 ? "member" : "members"}
+        </span>
+        <div className="ml-auto"><RoleLegend kind="org" compact /></div>
       </div>
-      <p className="text-xs text-muted-foreground mb-4 max-w-2xl">
-        Invite collaborators by email or search existing members. Organization roles control workspace access —
-        Admin manages members and billing, Manager runs day-to-day operations, Member creates and edits productions, Viewer is read-only.
-      </p>
 
       {canManage && (
-        <div className="grid gap-2 sm:grid-cols-[1fr_140px_auto] mb-4">
+        <div className="grid gap-2 sm:grid-cols-[1fr_150px_auto] mb-3">
           <div className="relative">
             <Mail className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
-              className="pl-8"
+              className="pl-8 h-9"
               type="email"
               placeholder="teammate@studio.com"
               value={email}
@@ -1089,7 +1089,7 @@ function CollaborationPanel({
             />
           </div>
           <Select value={role} onValueChange={(v) => setRole(v as any)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
             <SelectContent>
               {INVITABLE_ORG_ROLES.map((r) => (
                 <SelectItem key={r} value={r}>
@@ -1101,8 +1101,7 @@ function CollaborationPanel({
               ))}
             </SelectContent>
           </Select>
-          <RoleLegend kind="org" compact />
-          <Button onClick={invite} disabled={!email.trim() || sending}>
+          <Button onClick={invite} disabled={!email.trim() || sending} className="h-9">
             {sending ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5 mr-1.5" />}
             Invite
           </Button>
@@ -1112,7 +1111,7 @@ function CollaborationPanel({
       <div className="relative mb-2">
         <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <Input
-          className="pl-8"
+          className="pl-8 h-9"
           placeholder="Search members…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}

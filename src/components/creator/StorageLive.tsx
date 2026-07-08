@@ -30,7 +30,7 @@ type Row = {
   lastRecalculatedAt: string | null;
 };
 
-export default function StorageLive() {
+export default function StorageLive({ compact }: { compact?: boolean }) {
   const { user } = useAuth();
   const { activeId } = useWorkspaces();
   const [row, setRow] = useState<Row | null>(null);
@@ -126,6 +126,62 @@ export default function StorageLive() {
   const totalGb = row.totalGb ?? 0;
   const pct = totalGb > 0 ? Math.min(100, (usedGb / totalGb) * 100) : 0;
   const remainingGb = Math.max(0, totalGb - usedGb);
+
+  if (compact) {
+    const barTone =
+      pct >= 90 ? "bg-destructive"
+      : pct >= 75 ? "bg-warning"
+      : "bg-accent";
+
+    return (
+      <section className="rounded-xl border border-border/50 bg-card/40 p-5 space-y-4">
+        <header className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-accent/15 grid place-items-center">
+              <HardDrive className="w-5 h-5 text-accent" />
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
+                Cloud Storage
+              </p>
+              <p className="text-sm font-semibold mt-0.5">
+                {formatGb(usedGb)} of {formatGb(totalGb)} used
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider">
+            <Cloud className="w-3 h-3 text-success" />
+            <span className="text-success">{row.billingStatus ?? "provisioned"}</span>
+            {row.planCode && (
+              <span className="text-muted-foreground">· {row.planCode}</span>
+            )}
+          </div>
+        </header>
+
+        <div>
+          <div className="h-2 rounded-full bg-muted overflow-hidden">
+            <div
+              className={`h-full transition-[width] duration-500 ${barTone}`}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground mt-2 tabular-nums">
+            <span>{pct.toFixed(1)}% used</span>
+            <span>{formatGb(remainingGb)} remaining</span>
+          </div>
+        </div>
+
+        {pct >= 90 && (
+          <div className="rounded-md border border-destructive/40 bg-destructive/5 p-2.5 text-[11px] flex items-start gap-2">
+            <AlertTriangle className="w-3.5 h-3.5 text-destructive shrink-0 mt-0.5" />
+            <span className="text-destructive">
+              Storage is nearly full. Add capacity from Storage &amp; Billing to keep uploads running.
+            </span>
+          </div>
+        )}
+      </section>
+    );
+  }
 
   const barTone =
     pct >= 90 ? "bg-red-500"

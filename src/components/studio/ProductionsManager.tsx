@@ -119,6 +119,17 @@ export default function ProductionsManager({
   const [confirmDelete, setConfirmDelete] = useState<ProjectRow | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  // MVP: unified filter / search state (progressive disclosure over the old
+  // three separate My/Partner/Archived sections). Backend & row semantics
+  // unchanged — this only narrows the client-side view.
+  const [query, setQuery] = useState("");
+  const [ownerFilter, setOwnerFilter] = useState<"all" | "mine" | "shared">("all");
+  const [statusFilter, setStatusFilter] = useState<"live" | "archived">("live");
+  const [selection, setSelection] = useState<Set<string>>(new Set());
+  const [showTeam, setShowTeam] = useState(false);
+  const [bulkArchiveOpen, setBulkArchiveOpen] = useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+
   useEffect(() => { if (initialFormOpen) setShowForm(true); }, [initialFormOpen]);
 
   const refresh = useCallback(async () => {

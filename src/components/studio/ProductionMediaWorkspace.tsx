@@ -281,10 +281,13 @@ export default function ProductionMediaWorkspace({
             {allCameras.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
           </SelectContent>
         </Select>
+        <span className="text-[11px] text-muted-foreground font-mono whitespace-nowrap">
+          {totalClips.toLocaleString()} clips · {fmtBytes(totalSize)}
+        </span>
       </div>
 
       {/* Tree */}
-      <div className="rounded-2xl border border-border/50 bg-secondary/5 divide-y divide-border/40">
+      <div className="rounded-xl border border-border/50 bg-secondary/5 divide-y divide-border/40">
         {Object.entries(tree)
           .filter(([day]) => filterDay === "all" || day === filterDay)
           .sort(([a], [b]) => b.localeCompare(a))

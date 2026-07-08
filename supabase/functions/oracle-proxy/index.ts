@@ -198,7 +198,19 @@ Deno.serve(async (req) => {
   const keyId = `${cfg!.oracle_tenancy_ocid}/${cfg!.oracle_user_ocid}/${cfg!.oracle_fingerprint}`;
 
   try {
-    if (action === "test" || action === "health" || action === "ping") {
+    // Lightweight liveness probe used by the Infrastructure Health dashboard.
+    // Verifies credentials load and the PEM parses (already done above), then
+    // returns immediately WITHOUT issuing a signed HEAD to OCI — that round trip
+    // to Ashburn/Mumbai adds ~800–1500ms and made the probe amber even on healthy
+    // deployments. Use `action: "test"` for the full end-to-end signed HEAD.
+    if (action === "health" || action === "ping") {
+      return new Response(
+        JSON.stringify({ ok: true, mode: "config", bucket, region, namespace: ns }),
+        { headers: cors },
+      );
+    }
+
+    if (action === "test") {
       const r = await ociFetch({
         method: "HEAD",
         host,

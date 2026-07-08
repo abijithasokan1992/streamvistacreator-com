@@ -275,7 +275,7 @@ export default function ProductionMediaWorkspace({
           </SelectContent>
         </Select>
         <Select value={filterCamera} onValueChange={setFilterCamera}>
-          <SelectTrigger className="w-[180px]"><SelectValue placeholder="Camera" /></SelectTrigger>
+          <SelectTrigger className="w-[160px] h-9"><SelectValue placeholder="Camera" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All cameras</SelectItem>
             {allCameras.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}

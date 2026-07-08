@@ -18,7 +18,7 @@ import { useBuyerRequests } from "@/components/buyer/requests/useBuyerRequests";
 import { OPEN_STATES, type Category } from "@/components/buyer/requests/shared";
 import type { MarketplaceTitle } from "@/components/buyer/marketplace/useMarketplaceCatalog";
 
-const VALID: BuyerSectionId[] = ["dashboard", "find", "requests", "screeners", "commercial", "billing", "help"];
+const VALID: BuyerSectionId[] = ["dashboard", "find", "watchlist", "requests", "screeners", "commercial", "billing", "help"];
 
 /**
  * Buyer Workspace — organised around the buyer journey:
@@ -34,9 +34,9 @@ export default function BuyerDashboard() {
     if (typeof window === "undefined") return "dashboard";
     const p = new URLSearchParams(window.location.search).get("section");
     const h = window.location.hash.replace(/^#/, "");
-    // Backwards compat: old links (marketplace/watchlist/deliveries) redirect
+    // Backwards compat: old "marketplace" and "deliveries" links redirect.
     const legacy: Record<string, BuyerSectionId> = {
-      marketplace: "find", watchlist: "find", deliveries: "commercial",
+      marketplace: "find", deliveries: "commercial",
     };
     const raw = (p ?? h) as string;
     if (raw in legacy) return legacy[raw];
@@ -154,6 +154,7 @@ export default function BuyerDashboard() {
                 onPrefillConsumed={() => setPrefill(null)}
               />
             )}
+            {section === "watchlist" && <WatchlistSection onGoFind={() => setSection("find")} />}
             {section === "screeners"  && <ScreenersSection />}
             {section === "commercial" && <CommercialSection rows={rows} />}
             {section === "billing"    && <BillingSection />}

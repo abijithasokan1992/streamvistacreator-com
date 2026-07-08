@@ -259,20 +259,52 @@ export default function ProductionWorkspace({
                     {dvLoading ? (
                       <div className="py-6 text-center text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin inline" /></div>
                     ) : deliveries.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">No deliveries scheduled yet.</p>
-                    ) : (
-                      <ul className="divide-y divide-border/30">
-                        {deliveries.map((d) => (
-                          <li key={d.id} className="py-2 flex items-center justify-between gap-3 text-xs">
-                            <span className="min-w-0 truncate">
-                              <span className="font-medium">{d.title ?? "Delivery"}</span>
-                              {d.due_at && <span className="text-muted-foreground"> · due {new Date(d.due_at).toLocaleDateString()}</span>}
-                            </span>
-                            <Badge variant="outline" className="text-[10px]">{d.status ?? "pending"}</Badge>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
+                      <p className="text-xs text-muted-foreground">
+                        {crew?.title_id
+                          ? "No deliveries scheduled yet."
+                          : "Link this production to a content title to track deliveries."}
+                      </p>
+                    ) : (() => {
+                      const done = deliveries.filter(d => /deliver|complete|done|ready/i.test(d.status ?? "")).length;
+                      const sorted = [...deliveries].sort((a, b) => {
+                        const ad = a.due_at ? new Date(a.due_at).getTime() : Infinity;
+                        const bd = b.due_at ? new Date(b.due_at).getTime() : Infinity;
+                        return ad - bd;
+                      });
+                      return (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-[11px] font-mono text-muted-foreground">
+                            <span>{done}/{deliveries.length} complete</span>
+                            <span>{deliveries.length - done} pending</span>
+                          </div>
+                          <ul className="divide-y divide-border/30">
+                            {sorted.map((d) => {
+                              const isDone = /deliver|complete|done|ready/i.test(d.status ?? "");
+                              const overdue = !isDone && d.due_at && new Date(d.due_at).getTime() < Date.now();
+                              return (
+                                <li key={d.id} className="py-2 flex items-center justify-between gap-3 text-xs">
+                                  <span className="min-w-0 truncate">
+                                    <span className="font-medium">{d.title ?? "Delivery"}</span>
+                                    {d.due_at && (
+                                      <span className={`ml-1.5 ${overdue ? "text-destructive" : "text-muted-foreground"}`}>
+                                        · due {new Date(d.due_at).toLocaleDateString()}
+                                        {overdue && " (overdue)"}
+                                      </span>
+                                    )}
+                                  </span>
+                                  <Badge
+                                    variant={isDone ? "secondary" : overdue ? "destructive" : "outline"}
+                                    className="text-[10px]"
+                                  >
+                                    {d.status ?? "pending"}
+                                  </Badge>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      );
+                    })()}
                   </section>
                 </TabsContent>
               </Tabs>

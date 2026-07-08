@@ -277,15 +277,27 @@ export function AssetUploader({
 
       {/* Cinematic progress card */}
       {busy && telemetry && (
-        <div className="rounded-md border border-border/60 bg-card/50 p-3 space-y-2 text-xs">
+        <div
+          className="rounded-md border border-border/60 bg-card/50 p-3 space-y-2 text-xs"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
           <div className="flex items-center justify-between">
             <span className="font-medium flex items-center gap-1.5">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
               {STAGE_LABEL[telemetry.stage]}
             </span>
             <span className="tabular-nums text-foreground">{pct}%</span>
           </div>
-          <div className="h-1.5 rounded-full bg-border/40 overflow-hidden">
+          <div
+            className="h-1.5 rounded-full bg-border/40 overflow-hidden"
+            role="progressbar"
+            aria-valuenow={pct}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`${STAGE_LABEL[telemetry.stage]}: ${pct} percent complete`}
+          >
             <div
               className="h-full bg-accent transition-[width] duration-300"
               style={{ width: `${pct}%` }}
@@ -307,6 +319,7 @@ export function AssetUploader({
           </dl>
         </div>
       )}
+
 
       {/* Success card */}
       {success && !busy && (

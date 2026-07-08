@@ -53,13 +53,47 @@ export default function QuickActions({ onJump }: { onJump: (dept: string, sectio
     if (isProcessing) return;
     setIsProcessing(true);
     try {
-      // Cast avoids waiting on regenerated types after fresh migration.
+      // Verify we have an authenticated session before invoking the RPC so
+      // any failure is unambiguously attributable (auth vs. RLS vs. RPC).
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        toast.error("Authentication error", {
+          description: `Could not read session: ${sessionError.message}`,
+        });
+        return;
+      }
+      if (!sessionData.session) {
+        toast.error("Not signed in", {
+          description: "Sign in as an admin before running global maintenance.",
+        });
+        return;
+      }
+
+      // Invoke via the standard authenticated client. The user's JWT is
+      // attached automatically; the RPC's has_role() gate enforces admin-only.
       const { data, error } = await (supabase.rpc as unknown as (
         fn: "handle_global_platform_maintenance",
-      ) => Promise<{ data: MaintenanceResult | null; error: { message: string } | null }>)(
-        "handle_global_platform_maintenance",
-      );
-      if (error) throw error;
+      ) => Promise<{
+        data: MaintenanceResult | null;
+        error: (Error & { code?: string; details?: string; hint?: string }) | null;
+      }>)("handle_global_platform_maintenance");
+
+      if (error) {
+        const code = error.code ? ` [${error.code}]` : "";
+        const hint = error.hint ? ` — ${error.hint}` : "";
+        toast.error(`Global maintenance failed${code}`, {
+          description: `${error.message}${hint}`,
+        });
+        // eslint-disable-next-line no-console
+        console.error("[handle_global_platform_maintenance]", {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+        });
+        return;
+      }
+
       const r = (data ?? {}) as MaintenanceResult;
       toast.success("Global maintenance complete", {
         description:
@@ -68,8 +102,11 @@ export default function QuickActions({ onJump }: { onJump: (dept: string, sectio
           `Legal reviews reset: ${r.legal_reviews_reset ?? 0}`,
       });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Unknown error";
-      toast.error("Global maintenance failed", { description: msg });
+      const err = e as { code?: string; message?: string };
+      const code = err?.code ? ` [${err.code}]` : "";
+      toast.error(`Global maintenance failed${code}`, {
+        description: err?.message ?? "Unknown error",
+      });
     } finally {
       setIsProcessing(false);
     }

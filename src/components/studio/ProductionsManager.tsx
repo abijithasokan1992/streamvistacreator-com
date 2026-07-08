@@ -16,7 +16,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Clapperboard, Plus, Loader2, Pencil, Share2, Archive, Trash2,
-  ArrowUpRight, UserPlus, Users, Mail, Search, RefreshCw,
+  ArrowUpRight, UserPlus, Users, Mail, Search, RefreshCw, MoreHorizontal,
+  ChevronDown,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -27,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -37,6 +39,11 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { generateProductionNumber, getProductionNumber } from "@/lib/productionNumber";
 import { INVITABLE_ORG_ROLES, ORG_ROLE_LABEL, ORG_ROLE_DESCRIPTION, ORG_ROLE_BACKEND, labelForOrgRole } from "@/lib/rbac/labels";
@@ -111,6 +118,17 @@ export default function ProductionsManager({
   const [sharing, setSharing] = useState<ProjectRow | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<ProjectRow | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // MVP: unified filter / search state (progressive disclosure over the old
+  // three separate My/Partner/Archived sections). Backend & row semantics
+  // unchanged — this only narrows the client-side view.
+  const [query, setQuery] = useState("");
+  const [ownerFilter, setOwnerFilter] = useState<"all" | "mine" | "shared">("all");
+  const [statusFilter, setStatusFilter] = useState<"live" | "archived">("live");
+  const [selection, setSelection] = useState<Set<string>>(new Set());
+  const [showTeam, setShowTeam] = useState(false);
+  const [bulkArchiveOpen, setBulkArchiveOpen] = useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   useEffect(() => { if (initialFormOpen) setShowForm(true); }, [initialFormOpen]);
 
@@ -190,17 +208,72 @@ export default function ProductionsManager({
     }
   }, [loading, projects, activeProjectId, onSetActive]);
 
-  const { mine, partner, archived } = useMemo(() => {
-    const mine: ProjectRow[] = [];
-    const partner: ProjectRow[] = [];
-    const archived: ProjectRow[] = [];
-    for (const p of projects) {
+  // Unified filtered + searched view. Owner/status chips replace the previous
+  // three separate sections; empty search matches everything.
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return projects.filter((p) => {
       const isArchived = String(p.crew?.title_status ?? "").toLowerCase() === "archived";
-      if (isArchived) { archived.push(p); continue; }
-      if (user?.id && p.user_id === user.id) mine.push(p); else partner.push(p);
+      if (statusFilter === "archived" ? !isArchived : isArchived) return false;
+      if (ownerFilter === "mine" && p.user_id !== user?.id) return false;
+      if (ownerFilter === "shared" && p.user_id === user?.id) return false;
+      if (!q) return true;
+      const hay = [
+        p.name,
+        p.crew?.content_type,
+        p.crew?.production_company,
+        p.crew?.client,
+        getProductionNumber(p),
+      ].filter(Boolean).join(" ").toLowerCase();
+      return hay.includes(q);
+    });
+  }, [projects, query, ownerFilter, statusFilter, user?.id]);
+
+  // Selection is scoped to the current filtered view. When the view changes,
+  // prune ids that are no longer visible.
+  useEffect(() => {
+    setSelection((prev) => {
+      const visible = new Set(filtered.map((p) => p.id));
+      let changed = false;
+      const next = new Set<string>();
+      for (const id of prev) {
+        if (visible.has(id)) next.add(id);
+        else changed = true;
+      }
+      return changed ? next : prev;
+    });
+  }, [filtered]);
+
+  const counts = useMemo(() => {
+    let live = 0, arch = 0, mine = 0, shared = 0;
+    for (const p of projects) {
+      const isArch = String(p.crew?.title_status ?? "").toLowerCase() === "archived";
+      if (isArch) arch++; else live++;
+      if (p.user_id === user?.id) mine++; else shared++;
     }
-    return { mine, partner, archived };
+    return { live, arch, mine, shared };
   }, [projects, user?.id]);
+
+  const toggleSelect = (id: string) => {
+    setSelection((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    setSelection((prev) => {
+      if (prev.size === filtered.length) return new Set();
+      return new Set(filtered.map((p) => p.id));
+    });
+  };
+
+  const selectedRows = useMemo(
+    () => filtered.filter((p) => selection.has(p.id)),
+    [filtered, selection],
+  );
+  const selectedDeletable = selectedRows.filter((p) => (stats[p.id]?.assetCount ?? 0) === 0);
 
   const handleArchive = async (p: ProjectRow) => {
     if (!canWriteActive) { toast.error("Viewer role — read-only"); return; }
@@ -223,30 +296,58 @@ export default function ProductionsManager({
     setConfirmDelete(null);
   };
 
+  const handleBulkArchive = async () => {
+    if (!canWriteActive || selectedRows.length === 0) return;
+    let ok = 0, fail = 0;
+    for (const p of selectedRows) {
+      const next = { ...(p.crew ?? {}), title_status: "Archived" };
+      const { error } = await supabase.from("projects").update({ crew: next }).eq("id", p.id);
+      if (error) fail++; else ok++;
+    }
+    if (ok) toast.success(`${ok} production${ok === 1 ? "" : "s"} archived`);
+    if (fail) toast.error(`${fail} failed to archive`);
+    setBulkArchiveOpen(false);
+    setSelection(new Set());
+    refresh();
+  };
+
+  const handleBulkDelete = async () => {
+    if (!canWriteActive || selectedDeletable.length === 0) return;
+    const ids = selectedDeletable.map((p) => p.id);
+    const { error } = await supabase.from("projects").delete().in("id", ids);
+    if (error) toast.error(error.message);
+    else {
+      toast.success(`${ids.length} deleted`);
+      if (activeProjectId && ids.includes(activeProjectId)) onSetActive(null);
+    }
+    setBulkDeleteOpen(false);
+    setSelection(new Set());
+    refresh();
+  };
+
+  const hasNoProjects = !loading && projects.length === 0;
+
   return (
-    <div className="space-y-6">
-      <section className="rounded-2xl border border-border/50 bg-secondary/10 p-6">
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div>
-            <span className="text-[11px] uppercase tracking-[0.25em] text-accent font-mono">Workspace</span>
-            <h2 className="font-display text-xl mt-1.5">{activeWs?.name ?? "No workspace selected"}</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              {activeWs
-                ? `${projects.length} production${projects.length === 1 ? "" : "s"} · ${members.length} member${members.length === 1 ? "" : "s"}`
-                : "Select a workspace to begin."}
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={refresh} disabled={loading}>
-              <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`} />
-              Refresh
+    <div className="space-y-4">
+      {/* Compact header — workspace context + primary CTA. */}
+      <section className="flex items-end justify-between gap-3 flex-wrap">
+        <div className="min-w-0">
+          <h2 className="font-display text-xl leading-tight truncate">
+            {activeWs?.name ?? "No workspace"}
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {counts.live} live · {counts.arch} archived · {members.length} member{members.length === 1 ? "" : "s"}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button size="sm" variant="ghost" onClick={refresh} disabled={loading} aria-label="Refresh">
+            <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
+          </Button>
+          {workspaceId && (
+            <Button size="sm" onClick={() => setShowForm((s) => !s)}>
+              <Plus className="w-3.5 h-3.5 mr-1.5" /> New Production
             </Button>
-            {workspaceId && (
-              <Button size="sm" onClick={() => setShowForm((s) => !s)}>
-                <Plus className="w-3.5 h-3.5 mr-1.5" /> New Production
-              </Button>
-            )}
-          </div>
+          )}
         </div>
       </section>
 
@@ -264,75 +365,157 @@ export default function ProductionsManager({
         />
       )}
 
-      {loading ? (
-        <div className="grid place-items-center py-8 text-muted-foreground">
-          <Loader2 className="w-5 h-5 animate-spin" />
-        </div>
-      ) : projects.length === 0 ? (
-        <div className="py-10 text-center rounded-2xl border border-dashed border-border/50 bg-secondary/10">
+      {hasNoProjects ? (
+        <div className="py-10 text-center rounded-xl border border-dashed border-border/50 bg-secondary/10">
           <Clapperboard className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
-          <p className="font-display text-lg">No Productions Yet</p>
+          <p className="font-display text-lg">No productions yet</p>
           <p className="text-sm text-muted-foreground mt-1">Create your first Production.</p>
         </div>
       ) : (
         <>
-          <ProductionGroup
-            title="My Productions"
-            tone="accent"
-            items={mine}
-            stats={stats}
-            activeProjectId={activeProjectId}
-            onSetActive={onSetActive}
-            onOpen={onOpenProduction}
-            onEdit={(p) => setEditing(p)}
-            onShare={(p) => setSharing(p)}
-            onArchive={handleArchive}
-            onDelete={(p) => setConfirmDelete(p)}
-            emptyHint="Productions you create appear here."
-          />
-
-          <div className="space-y-4">
-            <ProductionGroup
-              title="Partner Productions"
-              tone="muted"
-              items={partner}
-              stats={stats}
-              activeProjectId={activeProjectId}
-              onSetActive={onSetActive}
-              onOpen={onOpenProduction}
-              onEdit={(p) => setEditing(p)}
-              onShare={(p) => setSharing(p)}
-              onArchive={handleArchive}
-              onDelete={(p) => setConfirmDelete(p)}
-              emptyHint="Invite collaborators or wait for shared productions to appear."
+          {/* Toolbar: search + filter chips. Scales to hundreds of rows. */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                className="pl-8 h-9"
+                placeholder="Search productions…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </div>
+            <FilterChips<"all" | "mine" | "shared">
+              value={ownerFilter}
+              onChange={setOwnerFilter}
+              options={[
+                { id: "all", label: "All", count: counts.mine + counts.shared },
+                { id: "mine", label: "Mine", count: counts.mine },
+                { id: "shared", label: "Shared", count: counts.shared },
+              ]}
             />
-            <CollaborationPanel
-              workspaceId={workspaceId}
-              members={members}
-              onChanged={refreshMembers}
-              canManage={canWriteActive}
+            <FilterChips<"live" | "archived">
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={[
+                { id: "live", label: "Live", count: counts.live },
+                { id: "archived", label: "Archived", count: counts.arch },
+              ]}
             />
           </div>
 
-          {archived.length > 0 && (
-            <ProductionGroup
-              title="Archived Productions"
-              tone="muted"
-              items={archived}
+          {/* Bulk action bar — appears only when rows are selected. */}
+          {selection.size > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-accent/30 bg-accent/10 px-3 py-2">
+              <span className="text-xs">
+                {selection.size} selected
+              </span>
+              <div className="flex gap-1.5">
+                <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelection(new Set())}>
+                  Clear
+                </Button>
+                {statusFilter === "live" && (
+                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setBulkArchiveOpen(true)}>
+                    <Archive className="w-3 h-3 mr-1" /> Archive
+                  </Button>
+                )}
+                {selectedDeletable.length > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs text-destructive hover:text-destructive"
+                    onClick={() => setBulkDeleteOpen(true)}
+                  >
+                    <Trash2 className="w-3 h-3 mr-1" /> Delete ({selectedDeletable.length})
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {loading ? (
+            <div className="grid place-items-center py-8 text-muted-foreground">
+              <Loader2 className="w-5 h-5 animate-spin" />
+            </div>
+          ) : (
+            <ProductionList
+              items={filtered}
               stats={stats}
               activeProjectId={activeProjectId}
+              selection={selection}
+              onToggleSelect={toggleSelect}
+              onToggleSelectAll={toggleSelectAll}
               onSetActive={onSetActive}
               onOpen={onOpenProduction}
               onEdit={(p) => setEditing(p)}
               onShare={(p) => setSharing(p)}
               onArchive={handleArchive}
               onDelete={(p) => setConfirmDelete(p)}
-              emptyHint=""
-              dim
+              dim={statusFilter === "archived"}
+              query={query}
             />
           )}
+
+          {/* Team panel — hidden by default; workspace-level invites remain accessible. */}
+          <details
+            className="rounded-xl border border-border/50 bg-secondary/5 group"
+            open={showTeam}
+            onToggle={(e) => setShowTeam((e.currentTarget as HTMLDetailsElement).open)}
+          >
+            <summary className="cursor-pointer list-none flex items-center justify-between px-4 py-2.5 text-xs">
+              <span className="inline-flex items-center gap-2 font-medium">
+                <Users className="w-3.5 h-3.5 text-accent" />
+                Workspace Team
+                <span className="text-muted-foreground">· {members.length}</span>
+              </span>
+              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="px-4 pb-4">
+              <CollaborationPanel
+                workspaceId={workspaceId}
+                members={members}
+                onChanged={refreshMembers}
+                canManage={canWriteActive}
+              />
+            </div>
+          </details>
         </>
       )}
+
+      {/* Bulk archive confirm */}
+      <AlertDialog open={bulkArchiveOpen} onOpenChange={setBulkArchiveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive {selection.size} production{selection.size === 1 ? "" : "s"}?</AlertDialogTitle>
+            <AlertDialogDescription>They will be hidden from Live views. You can restore them from the Archived filter.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkArchive}>Archive</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk delete confirm */}
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedDeletable.length} production{selectedDeletable.length === 1 ? "" : "s"}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Only productions with no media assets will be deleted. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
       {editing && (
         <Dialog open onOpenChange={(o) => !o && setEditing(null)}>
@@ -385,99 +568,187 @@ export default function ProductionsManager({
   );
 }
 
-/* ---------- Production group list ---------- */
-function ProductionGroup({
-  title, tone, items, stats, activeProjectId,
-  onSetActive, onOpen, onEdit, onShare, onArchive, onDelete,
-  emptyHint, dim,
+/* ---------- Filter chip group ---------- */
+function FilterChips<T extends string>({
+  value, onChange, options,
 }: {
-  title: string;
-  tone: "accent" | "muted";
+  value: T;
+  onChange: (v: T) => void;
+  options: Array<{ id: T; label: string; count?: number }>;
+}) {
+  return (
+    <div className="inline-flex rounded-lg border border-border/50 bg-secondary/10 p-0.5 text-xs">
+      {options.map((o) => (
+        <button
+          key={o.id}
+          onClick={() => onChange(o.id)}
+          className={cn(
+            "px-2.5 py-1 rounded-md transition-colors whitespace-nowrap",
+            "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/50",
+            value === o.id
+              ? "bg-accent/15 text-foreground ring-1 ring-inset ring-accent/25"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          {o.label}
+          {typeof o.count === "number" && (
+            <span className="ml-1 text-[10px] text-muted-foreground/70 tabular-nums">{o.count}</span>
+          )}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ---------- Unified production list (rows) ---------- */
+function ProductionList({
+  items, stats, activeProjectId, selection,
+  onToggleSelect, onToggleSelectAll,
+  onSetActive, onOpen, onEdit, onShare, onArchive, onDelete,
+  dim, query,
+}: {
   items: ProjectRow[];
   stats: Record<string, ProductionStats>;
   activeProjectId: string | null;
+  selection: Set<string>;
+  onToggleSelect: (id: string) => void;
+  onToggleSelectAll: () => void;
   onSetActive: (id: string) => void;
   onOpen?: (id: string) => void;
   onEdit: (p: ProjectRow) => void;
   onShare: (p: ProjectRow) => void;
   onArchive: (p: ProjectRow) => void;
   onDelete: (p: ProjectRow) => void;
-  emptyHint: string;
   dim?: boolean;
+  query: string;
 }) {
-  const toneCls = tone === "accent"
-    ? "bg-accent/10 text-accent border-accent/30"
-    : "bg-secondary/40 text-muted-foreground border-border/50";
-  return (
-    <section className={`rounded-2xl border border-border/50 p-5 ${dim ? "opacity-85" : ""}`}>
-      <div className="flex items-center gap-2 mb-3">
-        <h3 className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-mono">{title}</h3>
-        <span className={`text-[10px] font-mono border rounded-full px-2 py-0.5 ${toneCls}`}>{items.length}</span>
+  if (items.length === 0) {
+    return (
+      <div className="py-8 text-center text-sm text-muted-foreground rounded-xl border border-dashed border-border/50 bg-secondary/5">
+        {query ? "No productions match your search." : "Nothing here."}
       </div>
-      {items.length === 0 ? (
-        emptyHint ? <p className="text-xs text-muted-foreground pl-1">{emptyHint}</p> : null
-      ) : (
-        <div className="divide-y divide-border/30">
-          {items.map((p) => {
-            const s = stats[p.id];
-            const isActive = p.id === activeProjectId;
-            const assetCount = s?.assetCount ?? 0;
-            const canDelete = assetCount === 0;
-            return (
-              <div key={p.id} className={`py-3 flex flex-wrap items-center justify-between gap-3 ${isActive ? "bg-accent/5 rounded-md px-2" : ""}`}>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-sm font-medium truncate">{p.name}</p>
-                    {getProductionNumber(p) && (
-                      <Badge variant="outline" className="text-[10px] font-mono bg-accent/10 text-accent border-accent/30">
-                        {getProductionNumber(p)}
-                      </Badge>
-                    )}
-                    {isActive && <Badge variant="outline" className="text-[10px] bg-emerald-500/15 text-emerald-300 border-emerald-400/30">Active</Badge>}
-                    {p.crew?.title_status && (
-                      <Badge variant="outline" className="text-[10px]">{p.crew.title_status}</Badge>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-x-4 gap-y-1 mt-1.5 text-[11px] text-muted-foreground">
-                    <span>Type: <span className="text-foreground">{p.crew?.content_type ?? "—"}</span></span>
-                    <span>Created: <span className="text-foreground">{new Date(p.created_at).toLocaleDateString()}</span></span>
-                    <span>Last activity: <span className="text-foreground">{s?.lastActivity ? new Date(s.lastActivity).toLocaleDateString() : "—"}</span></span>
-                    <span>Storage: <span className="text-foreground">{fmtBytes(s?.storageBytes ?? 0)}</span></span>
-                    <span>Assets: <span className="text-foreground">{assetCount}</span></span>
-                    <span>Members: <span className="text-foreground">{(p.crew?.members?.length ?? 0) + 1}</span></span>
-                  </div>
+    );
+  }
+  const allSelected = selection.size === items.length && items.length > 0;
+  return (
+    <section className={cn("rounded-xl border border-border/50 bg-secondary/5", dim && "opacity-90")}>
+      {/* Select-all header — visible once list has rows. */}
+      <header className="px-3 py-2 flex items-center gap-2 border-b border-border/40 text-[11px] uppercase tracking-wider text-muted-foreground">
+        <Checkbox
+          checked={allSelected}
+          onCheckedChange={onToggleSelectAll}
+          aria-label="Select all"
+          className="ml-1"
+        />
+        <span className="font-mono">{items.length} production{items.length === 1 ? "" : "s"}</span>
+      </header>
+      <ul className="divide-y divide-border/30">
+        {items.map((p) => {
+          const s = stats[p.id];
+          const isActive = p.id === activeProjectId;
+          const assetCount = s?.assetCount ?? 0;
+          const canDelete = assetCount === 0;
+          const isSelected = selection.has(p.id);
+          // Hide empty/optional metadata (progressive disclosure).
+          const meta: Array<{ label: string; value: string }> = [];
+          if (p.crew?.content_type) meta.push({ label: "Type", value: p.crew.content_type });
+          if (s?.lastActivity) meta.push({ label: "Active", value: new Date(s.lastActivity).toLocaleDateString() });
+          if ((s?.storageBytes ?? 0) > 0) meta.push({ label: "Storage", value: fmtBytes(s!.storageBytes) });
+          if (assetCount > 0) meta.push({ label: "Assets", value: String(assetCount) });
+          return (
+            <li
+              key={p.id}
+              className={cn(
+                "px-3 py-2.5 flex items-center gap-3 min-w-0",
+                isActive && "bg-accent/5",
+                isSelected && "bg-accent/10",
+              )}
+            >
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={() => onToggleSelect(p.id)}
+                aria-label={`Select ${p.name}`}
+              />
+              <button
+                onClick={() => { onSetActive(p.id); onOpen?.(p.id); }}
+                className="min-w-0 flex-1 text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/50 rounded"
+              >
+                <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                  <span className="text-sm font-medium truncate">{p.name}</span>
+                  {getProductionNumber(p) && (
+                    <Badge variant="outline" className="text-[10px] font-mono bg-accent/10 text-accent border-accent/30">
+                      {getProductionNumber(p)}
+                    </Badge>
+                  )}
+                  {isActive && (
+                    <Badge variant="outline" className="text-[10px] bg-emerald-500/15 text-emerald-300 border-emerald-400/30">
+                      Active
+                    </Badge>
+                  )}
+                  {p.crew?.title_status && p.crew.title_status !== "Archived" && (
+                    <Badge variant="outline" className="text-[10px]">{p.crew.title_status}</Badge>
+                  )}
                 </div>
-                <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
-                  {!isActive && (
-                    <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => onSetActive(p.id)}>
-                      Set active
+                {meta.length > 0 && (
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-[11px] text-muted-foreground">
+                    {meta.map((m) => (
+                      <span key={m.label}>
+                        {m.label}: <span className="text-foreground/80">{m.value}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </button>
+              <div className="flex items-center gap-1 shrink-0">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs"
+                  onClick={() => { onSetActive(p.id); onOpen?.(p.id); }}
+                >
+                  Open <ArrowUpRight className="w-3 h-3 ml-1" />
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" aria-label="More actions">
+                      <MoreHorizontal className="w-3.5 h-3.5" />
                     </Button>
-                  )}
-                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { onSetActive(p.id); onOpen?.(p.id); }}>
-                    <ArrowUpRight className="w-3 h-3 mr-1" /> Open
-                  </Button>
-                  <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => onEdit(p)}>
-                    <Pencil className="w-3 h-3 mr-1" /> Edit
-                  </Button>
-                  <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => onShare(p)}>
-                    <Share2 className="w-3 h-3 mr-1" /> Share
-                  </Button>
-                  {String(p.crew?.title_status ?? "").toLowerCase() !== "archived" && (
-                    <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => onArchive(p)}>
-                      <Archive className="w-3 h-3 mr-1" /> Archive
-                    </Button>
-                  )}
-                  {canDelete && (
-                    <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive hover:text-destructive" onClick={() => onDelete(p)}>
-                      <Trash2 className="w-3 h-3 mr-1" /> Delete
-                    </Button>
-                  )}
-                </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40">
+                    {!isActive && (
+                      <DropdownMenuItem onClick={() => onSetActive(p.id)}>
+                        Set active
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem onClick={() => onEdit(p)}>
+                      <Pencil className="w-3.5 h-3.5 mr-2" /> Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onShare(p)}>
+                      <Share2 className="w-3.5 h-3.5 mr-2" /> Share
+                    </DropdownMenuItem>
+                    {String(p.crew?.title_status ?? "").toLowerCase() !== "archived" && (
+                      <DropdownMenuItem onClick={() => onArchive(p)}>
+                        <Archive className="w-3.5 h-3.5 mr-2" /> Archive
+                      </DropdownMenuItem>
+                    )}
+                    {canDelete && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => onDelete(p)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
-            );
-          })}
-        </div>
-      )}
+            </li>
+          );
+        })}
+      </ul>
     </section>
   );
 }

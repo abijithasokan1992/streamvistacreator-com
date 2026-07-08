@@ -264,12 +264,41 @@
   .font-mono-tech { font-family: 'JetBrains Mono', ui-monospace, monospace; }
   /* Calibrated selection — brand-accurate on every display */
   ::selection { background: hsl(var(--primary) / 0.35); color: hsl(var(--foreground)); }
-  /* Refined focus ring — accessible, not jarring */
-  :focus-visible { outline: 2px solid hsl(var(--ring) / 0.7); outline-offset: 2px; border-radius: 4px; }
+  /* Refined focus ring — subtle accent, WCAG 2.2 AA visible on every surface */
+  :focus-visible {
+    outline: 2px solid hsl(var(--accent));
+    outline-offset: 2px;
+    border-radius: 4px;
+    box-shadow: 0 0 0 4px hsl(var(--accent) / 0.18);
+  }
+  /* Skip-to-content link — visually hidden until focused */
+  .skip-to-content {
+    position: fixed;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: 100;
+    padding: 0.625rem 1rem;
+    border-radius: 0.5rem;
+    background: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+    font-weight: 600;
+    font-size: 0.875rem;
+    box-shadow: 0 6px 20px -4px hsl(var(--accent) / 0.5);
+    transform: translateY(-150%);
+    transition: transform 160ms ease-out;
+  }
+  .skip-to-content:focus,
+  .skip-to-content:focus-visible {
+    transform: translateY(0);
+    outline: 2px solid hsl(var(--foreground));
+    outline-offset: 2px;
+  }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    .skip-to-content { transition: none; }
   }
 }
+
 
 
 @layer components {

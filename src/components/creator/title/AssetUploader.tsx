@@ -323,9 +323,13 @@ export function AssetUploader({
 
       {/* Success card */}
       {success && !busy && (
-        <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-3 text-xs space-y-1">
+        <div
+          className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-3 text-xs space-y-1"
+          role="status"
+          aria-live="polite"
+        >
           <div className="flex items-center gap-2 font-medium text-emerald-300">
-            <CheckCircle2 className="w-4 h-4" /> Upload Complete
+            <CheckCircle2 className="w-4 h-4" aria-hidden="true" /> Upload Complete
           </div>
           <dl className="grid grid-cols-[110px_1fr] gap-y-0.5 text-muted-foreground">
             <dt>Filename</dt> <dd className="text-foreground truncate">{success.name}</dd>
@@ -334,6 +338,7 @@ export function AssetUploader({
           <p className="text-emerald-300 pt-1">Ready for submission.</p>
         </div>
       )}
+
     </div>
   );
 }

@@ -14,7 +14,7 @@ import HelpSection from "@/components/creator/sections/Help";
 import MyCreatorProfile from "@/pages/profile/MyCreatorProfile";
 import EntitlementChip from "@/components/creator/EntitlementChip";
 import CreatorGuide from "@/components/creator/CreatorGuide";
-import { fetchFreeTierStatus } from "@/lib/creator/titleApi";
+import { fetchFreeTierStatus, listTitles, type FreeTierStatus, type TitleRow } from "@/lib/creator/titleApi";
 import CreatorTour, { hasSeenCreatorTour } from "@/components/creator/CreatorTour";
 import { markOnboardingStep } from "@/components/creator/OnboardingChecklist";
 import { WorkspaceShell } from "@/components/px/WorkspaceShell";

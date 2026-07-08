@@ -114,8 +114,11 @@ Deno.serve(async (req) => {
     }
 
     // ── 3) admin_infra_snapshot (cron + pgmq + queue depths + last errors) ─
+    // The snapshot RPC is SECURITY DEFINER but authorizes on `auth.uid()`, so it
+    // must be invoked with the caller's JWT (anon client). Calling it through the
+    // service-role client returns `forbidden` because `auth.uid()` is NULL there.
     const snap = await timed(async () => {
-      const { data, error } = await admin.rpc('admin_infra_snapshot');
+      const { data, error } = await anon.rpc('admin_infra_snapshot');
       if (error) throw new Error(error.message);
       return data as any;
     });

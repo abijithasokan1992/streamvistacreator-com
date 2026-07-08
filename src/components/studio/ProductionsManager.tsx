@@ -208,17 +208,72 @@ export default function ProductionsManager({
     }
   }, [loading, projects, activeProjectId, onSetActive]);
 
-  const { mine, partner, archived } = useMemo(() => {
-    const mine: ProjectRow[] = [];
-    const partner: ProjectRow[] = [];
-    const archived: ProjectRow[] = [];
-    for (const p of projects) {
+  // Unified filtered + searched view. Owner/status chips replace the previous
+  // three separate sections; empty search matches everything.
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return projects.filter((p) => {
       const isArchived = String(p.crew?.title_status ?? "").toLowerCase() === "archived";
-      if (isArchived) { archived.push(p); continue; }
-      if (user?.id && p.user_id === user.id) mine.push(p); else partner.push(p);
+      if (statusFilter === "archived" ? !isArchived : isArchived) return false;
+      if (ownerFilter === "mine" && p.user_id !== user?.id) return false;
+      if (ownerFilter === "shared" && p.user_id === user?.id) return false;
+      if (!q) return true;
+      const hay = [
+        p.name,
+        p.crew?.content_type,
+        p.crew?.production_company,
+        p.crew?.client,
+        getProductionNumber(p),
+      ].filter(Boolean).join(" ").toLowerCase();
+      return hay.includes(q);
+    });
+  }, [projects, query, ownerFilter, statusFilter, user?.id]);
+
+  // Selection is scoped to the current filtered view. When the view changes,
+  // prune ids that are no longer visible.
+  useEffect(() => {
+    setSelection((prev) => {
+      const visible = new Set(filtered.map((p) => p.id));
+      let changed = false;
+      const next = new Set<string>();
+      for (const id of prev) {
+        if (visible.has(id)) next.add(id);
+        else changed = true;
+      }
+      return changed ? next : prev;
+    });
+  }, [filtered]);
+
+  const counts = useMemo(() => {
+    let live = 0, arch = 0, mine = 0, shared = 0;
+    for (const p of projects) {
+      const isArch = String(p.crew?.title_status ?? "").toLowerCase() === "archived";
+      if (isArch) arch++; else live++;
+      if (p.user_id === user?.id) mine++; else shared++;
     }
-    return { mine, partner, archived };
+    return { live, arch, mine, shared };
   }, [projects, user?.id]);
+
+  const toggleSelect = (id: string) => {
+    setSelection((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    setSelection((prev) => {
+      if (prev.size === filtered.length) return new Set();
+      return new Set(filtered.map((p) => p.id));
+    });
+  };
+
+  const selectedRows = useMemo(
+    () => filtered.filter((p) => selection.has(p.id)),
+    [filtered, selection],
+  );
+  const selectedDeletable = selectedRows.filter((p) => (stats[p.id]?.assetCount ?? 0) === 0);
 
   const handleArchive = async (p: ProjectRow) => {
     if (!canWriteActive) { toast.error("Viewer role — read-only"); return; }
@@ -241,30 +296,58 @@ export default function ProductionsManager({
     setConfirmDelete(null);
   };
 
+  const handleBulkArchive = async () => {
+    if (!canWriteActive || selectedRows.length === 0) return;
+    let ok = 0, fail = 0;
+    for (const p of selectedRows) {
+      const next = { ...(p.crew ?? {}), title_status: "Archived" };
+      const { error } = await supabase.from("projects").update({ crew: next }).eq("id", p.id);
+      if (error) fail++; else ok++;
+    }
+    if (ok) toast.success(`${ok} production${ok === 1 ? "" : "s"} archived`);
+    if (fail) toast.error(`${fail} failed to archive`);
+    setBulkArchiveOpen(false);
+    setSelection(new Set());
+    refresh();
+  };
+
+  const handleBulkDelete = async () => {
+    if (!canWriteActive || selectedDeletable.length === 0) return;
+    const ids = selectedDeletable.map((p) => p.id);
+    const { error } = await supabase.from("projects").delete().in("id", ids);
+    if (error) toast.error(error.message);
+    else {
+      toast.success(`${ids.length} deleted`);
+      if (activeProjectId && ids.includes(activeProjectId)) onSetActive(null);
+    }
+    setBulkDeleteOpen(false);
+    setSelection(new Set());
+    refresh();
+  };
+
+  const hasNoProjects = !loading && projects.length === 0;
+
   return (
-    <div className="space-y-6">
-      <section className="rounded-2xl border border-border/50 bg-secondary/10 p-6">
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div>
-            <span className="text-[11px] uppercase tracking-[0.25em] text-accent font-mono">Workspace</span>
-            <h2 className="font-display text-xl mt-1.5">{activeWs?.name ?? "No workspace selected"}</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              {activeWs
-                ? `${projects.length} production${projects.length === 1 ? "" : "s"} · ${members.length} member${members.length === 1 ? "" : "s"}`
-                : "Select a workspace to begin."}
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={refresh} disabled={loading}>
-              <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`} />
-              Refresh
+    <div className="space-y-4">
+      {/* Compact header — workspace context + primary CTA. */}
+      <section className="flex items-end justify-between gap-3 flex-wrap">
+        <div className="min-w-0">
+          <h2 className="font-display text-xl leading-tight truncate">
+            {activeWs?.name ?? "No workspace"}
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {counts.live} live · {counts.arch} archived · {members.length} member{members.length === 1 ? "" : "s"}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button size="sm" variant="ghost" onClick={refresh} disabled={loading} aria-label="Refresh">
+            <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
+          </Button>
+          {workspaceId && (
+            <Button size="sm" onClick={() => setShowForm((s) => !s)}>
+              <Plus className="w-3.5 h-3.5 mr-1.5" /> New Production
             </Button>
-            {workspaceId && (
-              <Button size="sm" onClick={() => setShowForm((s) => !s)}>
-                <Plus className="w-3.5 h-3.5 mr-1.5" /> New Production
-              </Button>
-            )}
-          </div>
+          )}
         </div>
       </section>
 
@@ -282,75 +365,157 @@ export default function ProductionsManager({
         />
       )}
 
-      {loading ? (
-        <div className="grid place-items-center py-8 text-muted-foreground">
-          <Loader2 className="w-5 h-5 animate-spin" />
-        </div>
-      ) : projects.length === 0 ? (
-        <div className="py-10 text-center rounded-2xl border border-dashed border-border/50 bg-secondary/10">
+      {hasNoProjects ? (
+        <div className="py-10 text-center rounded-xl border border-dashed border-border/50 bg-secondary/10">
           <Clapperboard className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
-          <p className="font-display text-lg">No Productions Yet</p>
+          <p className="font-display text-lg">No productions yet</p>
           <p className="text-sm text-muted-foreground mt-1">Create your first Production.</p>
         </div>
       ) : (
         <>
-          <ProductionGroup
-            title="My Productions"
-            tone="accent"
-            items={mine}
-            stats={stats}
-            activeProjectId={activeProjectId}
-            onSetActive={onSetActive}
-            onOpen={onOpenProduction}
-            onEdit={(p) => setEditing(p)}
-            onShare={(p) => setSharing(p)}
-            onArchive={handleArchive}
-            onDelete={(p) => setConfirmDelete(p)}
-            emptyHint="Productions you create appear here."
-          />
-
-          <div className="space-y-4">
-            <ProductionGroup
-              title="Partner Productions"
-              tone="muted"
-              items={partner}
-              stats={stats}
-              activeProjectId={activeProjectId}
-              onSetActive={onSetActive}
-              onOpen={onOpenProduction}
-              onEdit={(p) => setEditing(p)}
-              onShare={(p) => setSharing(p)}
-              onArchive={handleArchive}
-              onDelete={(p) => setConfirmDelete(p)}
-              emptyHint="Invite collaborators or wait for shared productions to appear."
+          {/* Toolbar: search + filter chips. Scales to hundreds of rows. */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                className="pl-8 h-9"
+                placeholder="Search productions…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </div>
+            <FilterChips
+              value={ownerFilter}
+              onChange={setOwnerFilter}
+              options={[
+                { id: "all", label: "All", count: counts.mine + counts.shared },
+                { id: "mine", label: "Mine", count: counts.mine },
+                { id: "shared", label: "Shared", count: counts.shared },
+              ]}
             />
-            <CollaborationPanel
-              workspaceId={workspaceId}
-              members={members}
-              onChanged={refreshMembers}
-              canManage={canWriteActive}
+            <FilterChips
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={[
+                { id: "live", label: "Live", count: counts.live },
+                { id: "archived", label: "Archived", count: counts.arch },
+              ]}
             />
           </div>
 
-          {archived.length > 0 && (
-            <ProductionGroup
-              title="Archived Productions"
-              tone="muted"
-              items={archived}
+          {/* Bulk action bar — appears only when rows are selected. */}
+          {selection.size > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-accent/30 bg-accent/10 px-3 py-2">
+              <span className="text-xs">
+                {selection.size} selected
+              </span>
+              <div className="flex gap-1.5">
+                <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelection(new Set())}>
+                  Clear
+                </Button>
+                {statusFilter === "live" && (
+                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setBulkArchiveOpen(true)}>
+                    <Archive className="w-3 h-3 mr-1" /> Archive
+                  </Button>
+                )}
+                {selectedDeletable.length > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs text-destructive hover:text-destructive"
+                    onClick={() => setBulkDeleteOpen(true)}
+                  >
+                    <Trash2 className="w-3 h-3 mr-1" /> Delete ({selectedDeletable.length})
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {loading ? (
+            <div className="grid place-items-center py-8 text-muted-foreground">
+              <Loader2 className="w-5 h-5 animate-spin" />
+            </div>
+          ) : (
+            <ProductionList
+              items={filtered}
               stats={stats}
               activeProjectId={activeProjectId}
+              selection={selection}
+              onToggleSelect={toggleSelect}
+              onToggleSelectAll={toggleSelectAll}
               onSetActive={onSetActive}
               onOpen={onOpenProduction}
               onEdit={(p) => setEditing(p)}
               onShare={(p) => setSharing(p)}
               onArchive={handleArchive}
               onDelete={(p) => setConfirmDelete(p)}
-              emptyHint=""
-              dim
+              dim={statusFilter === "archived"}
+              query={query}
             />
           )}
+
+          {/* Team panel — hidden by default; workspace-level invites remain accessible. */}
+          <details
+            className="rounded-xl border border-border/50 bg-secondary/5 group"
+            open={showTeam}
+            onToggle={(e) => setShowTeam((e.currentTarget as HTMLDetailsElement).open)}
+          >
+            <summary className="cursor-pointer list-none flex items-center justify-between px-4 py-2.5 text-xs">
+              <span className="inline-flex items-center gap-2 font-medium">
+                <Users className="w-3.5 h-3.5 text-accent" />
+                Workspace Team
+                <span className="text-muted-foreground">· {members.length}</span>
+              </span>
+              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="px-4 pb-4">
+              <CollaborationPanel
+                workspaceId={workspaceId}
+                members={members}
+                onChanged={refreshMembers}
+                canManage={canWriteActive}
+              />
+            </div>
+          </details>
         </>
       )}
+
+      {/* Bulk archive confirm */}
+      <AlertDialog open={bulkArchiveOpen} onOpenChange={setBulkArchiveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive {selection.size} production{selection.size === 1 ? "" : "s"}?</AlertDialogTitle>
+            <AlertDialogDescription>They will be hidden from Live views. You can restore them from the Archived filter.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkArchive}>Archive</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk delete confirm */}
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedDeletable.length} production{selectedDeletable.length === 1 ? "" : "s"}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Only productions with no media assets will be deleted. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
       {editing && (
         <Dialog open onOpenChange={(o) => !o && setEditing(null)}>

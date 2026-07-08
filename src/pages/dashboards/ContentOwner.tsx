@@ -152,7 +152,7 @@ export default function ContentOwnerDashboard() {
             <h2 id="rr-actions" className="text-[10px] font-mono-tech uppercase tracking-[0.2em] text-muted-foreground mb-2">
               Quick Actions
             </h2>
-            <CreatorQuickActions onNavigate={setSection as any} />
+            <CreatorQuickActions onNavigate={setSection} isFree={isFree} tier={tier as FreeTierStatus} titles={titles} />
           </section>
         </div>
       }

@@ -201,13 +201,22 @@ Deno.serve(async (req) => {
         });
         const txt = await resp.text();
         if (!resp.ok) throw new Error(`oracle-proxy HTTP ${resp.status}: ${txt.slice(0, 160)}`);
-        return txt;
+        // oracle-proxy always replies HTTP 200 for known actions; inspect the JSON
+        // body's `ok` field so a failed signed HEAD (bucket not found, bad creds)
+        // surfaces here instead of being masked as healthy.
+        let parsed: any = null;
+        try { parsed = JSON.parse(txt); } catch { /* ignore */ }
+        if (parsed && parsed.ok === false) {
+          throw new Error(parsed.error || `oracle-proxy reported not ok (status ${parsed.status ?? 'n/a'})`);
+        }
+        return parsed ?? txt;
       });
+      // OCI HEAD across regions can legitimately take >1s; only warn above 3s.
       add({
         id: 'oci_storage',
         label: 'OCI Object Storage',
         category: 'storage',
-        status: r.error ? 'critical' : r.ms > 1500 ? 'warning' : 'healthy',
+        status: r.error ? 'critical' : r.ms > 3000 ? 'warning' : 'healthy',
         response_ms: r.ms,
         last_checked: nowIso(),
         last_failure: r.error ? nowIso() : null,
@@ -215,6 +224,7 @@ Deno.serve(async (req) => {
         suggested_action: r.error
           ? 'OCI unreachable via signed proxy. Verify OCI credentials in Admin → Cloud → OCI Advanced.'
           : null,
+        detail: (r.value && typeof r.value === 'object') ? (r.value as Record<string, unknown>) : undefined,
       });
     }
 

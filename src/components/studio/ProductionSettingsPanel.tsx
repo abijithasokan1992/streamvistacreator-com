@@ -313,15 +313,15 @@ export default function ProductionSettingsPanel({
   }
 
   return (
-    <div className="space-y-6">
-      <Card className="p-4 md:p-5 flex items-start gap-3 border-primary/20">
-        <Sparkles className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-        <div className="flex-1">
-          <div className="text-sm font-semibold">Single source of truth</div>
-          <p className="text-xs text-muted-foreground">
-            Configure once. Every new ingest, camera card, clip, proxy job, editorial delivery
-            and archive job on <span className="font-medium text-foreground">{activeProjectName ?? "this production"}</span>{" "}
-            inherits these values automatically.
+    <div className="space-y-4">
+      <Card className="p-3 flex items-center gap-3 border-primary/20 sticky top-2 z-10 backdrop-blur bg-background/85">
+        <Sparkles className="w-4 h-4 text-primary shrink-0" />
+        <div className="flex-1 min-w-0">
+          <div className="text-xs font-semibold truncate">
+            Defaults for <span className="text-foreground">{activeProjectName ?? "this production"}</span>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Every ingest, proxy, editorial and delivery job inherits these values.
           </p>
         </div>
         <Button onClick={save} disabled={!canSave} size="sm">
@@ -385,78 +385,80 @@ export default function ProductionSettingsPanel({
             </Field>
           </FieldGroup>
 
-          <FieldGroup title="Folder Structure" description="Auto-generated for every shoot day, unit and camera card.">
-            <Field label="Root Folder">
-              <Input value={s.folder_root} onChange={(e) => set("folder_root", e.target.value)} placeholder="/{project}" />
-            </Field>
-            <Field label="Folder Pattern">
-              <Input value={s.folder_pattern} onChange={(e) => set("folder_pattern", e.target.value)} />
-            </Field>
-            <Field label="Preview" full>
-              <div className="rounded-md bg-muted/50 border border-border/40 px-3 py-2 font-mono text-xs text-muted-foreground break-all">
-                {s.folder_root.replace(/\/$/, "")}/{folderPreview}
-              </div>
-              <TokenHints />
-            </Field>
-          </FieldGroup>
+          <details className="rounded-xl border border-border/50 bg-secondary/5 open:bg-secondary/10">
+            <summary className="cursor-pointer select-none px-4 py-2.5 text-sm font-semibold flex items-center gap-2 hover:text-foreground">
+              <ChevronDown className="w-3.5 h-3.5 transition-transform [details[open]_&]:rotate-180" />
+              Advanced defaults
+              <span className="text-[10px] font-mono text-muted-foreground ml-2">Folder · Naming · Proxy · Editorial · Delivery</span>
+            </summary>
+            <div className="px-4 pb-4 space-y-4 pt-1">
+              <FieldGroup title="Folder Structure" description="Auto-generated for every shoot day, unit and camera card.">
+                <Field label="Root Folder">
+                  <Input value={s.folder_root} onChange={(e) => set("folder_root", e.target.value)} placeholder="/{project}" />
+                </Field>
+                <Field label="Folder Pattern">
+                  <Input value={s.folder_pattern} onChange={(e) => set("folder_pattern", e.target.value)} />
+                </Field>
+                <Field label="Preview" full>
+                  <div className="rounded-md bg-muted/50 border border-border/40 px-3 py-2 font-mono text-xs text-muted-foreground break-all">
+                    {s.folder_root.replace(/\/$/, "")}/{folderPreview}
+                  </div>
+                  <TokenHints />
+                </Field>
+              </FieldGroup>
 
-          <FieldGroup title="Naming Convention" description="Used to auto-name clips at ingest time.">
-            <Field label="Clip Name Pattern" full>
-              <Input value={s.naming_pattern} onChange={(e) => set("naming_pattern", e.target.value)} />
-            </Field>
-            <Field label="Preview" full>
-              <div className="rounded-md bg-muted/50 border border-border/40 px-3 py-2 font-mono text-xs text-muted-foreground break-all">
-                {namingPreview}.mov
-              </div>
-              <TokenHints />
-            </Field>
-          </FieldGroup>
+              <FieldGroup title="Naming Convention" description="Used to auto-name clips at ingest time.">
+                <Field label="Clip Name Pattern" full>
+                  <Input value={s.naming_pattern} onChange={(e) => set("naming_pattern", e.target.value)} />
+                </Field>
+                <Field label="Preview" full>
+                  <div className="rounded-md bg-muted/50 border border-border/40 px-3 py-2 font-mono text-xs text-muted-foreground break-all">
+                    {namingPreview}.mov
+                  </div>
+                  <TokenHints />
+                </Field>
+              </FieldGroup>
 
-          <FieldGroup title="Proxy Defaults" description="Applied to every automatic proxy generation job.">
-            <Field label="Proxy Codec">
-              <SearchSelect value={s.proxy_codec} onChange={(v) => set("proxy_codec", v)} options={PROXY_CODECS} />
-            </Field>
-            <Field label="Proxy Resolution">
-              <SearchSelect value={s.proxy_resolution} onChange={(v) => set("proxy_resolution", v)} options={PROXY_RES} />
-            </Field>
-            <Field label="Burn-in">
-              <SearchSelect
-                value={s.proxy_burnin ? "Timecode + Clip name" : "None"}
-                onChange={(v) => set("proxy_burnin", v !== "None")}
-                options={["Timecode + Clip name", "None"]}
-              />
-            </Field>
-          </FieldGroup>
+              <FieldGroup title="Proxy Defaults" description="Applied to every automatic proxy generation job.">
+                <Field label="Proxy Codec">
+                  <SearchSelect value={s.proxy_codec} onChange={(v) => set("proxy_codec", v)} options={PROXY_CODECS} />
+                </Field>
+                <Field label="Proxy Resolution">
+                  <SearchSelect value={s.proxy_resolution} onChange={(v) => set("proxy_resolution", v)} options={PROXY_RES} />
+                </Field>
+                <Field label="Burn-in">
+                  <SearchSelect
+                    value={s.proxy_burnin ? "Timecode + Clip name" : "None"}
+                    onChange={(v) => set("proxy_burnin", v !== "None")}
+                    options={["Timecode + Clip name", "None"]}
+                  />
+                </Field>
+              </FieldGroup>
 
-          <FieldGroup title="Editorial Defaults" description="Used when handing off to editorial or the NLE bin structure.">
-            <Field label="NLE Target">
-              <SearchSelect value={s.editorial_nle} onChange={(v) => set("editorial_nle", v)} options={NLE_TARGETS} />
-            </Field>
-            <Field label="Bin Structure">
-              <Input value={s.editorial_bin_structure} onChange={(e) => set("editorial_bin_structure", e.target.value)} />
-            </Field>
-            <Field label="Editorial Notes" full>
-              <Textarea rows={2} value={s.editorial_notes} onChange={(e) => set("editorial_notes", e.target.value)}
-                placeholder="Any editorial hand-off preferences…" />
-            </Field>
-          </FieldGroup>
+              <FieldGroup title="Editorial Defaults" description="Used when handing off to editorial or the NLE bin structure.">
+                <Field label="NLE Target">
+                  <SearchSelect value={s.editorial_nle} onChange={(v) => set("editorial_nle", v)} options={NLE_TARGETS} />
+                </Field>
+                <Field label="Bin Structure">
+                  <Input value={s.editorial_bin_structure} onChange={(e) => set("editorial_bin_structure", e.target.value)} />
+                </Field>
+                <Field label="Editorial Notes" full>
+                  <Textarea rows={2} value={s.editorial_notes} onChange={(e) => set("editorial_notes", e.target.value)}
+                    placeholder="Any editorial hand-off preferences…" />
+                </Field>
+              </FieldGroup>
 
-          <FieldGroup title="Delivery Defaults" description="Default delivery target and specs for finished masters.">
-            <Field label="Delivery Target">
-              <SearchSelect value={s.delivery_target} onChange={(v) => set("delivery_target", v)} options={DELIVERY_TARGETS} />
-            </Field>
-            <Field label="Delivery Specs" full>
-              <Textarea rows={2} value={s.delivery_specs} onChange={(e) => set("delivery_specs", e.target.value)}
-                placeholder="Container, codec, LUFS, subtitle format…" />
-            </Field>
-          </FieldGroup>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <Button onClick={save} disabled={!canSave}>
-              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Save className="w-4 h-4 mr-1.5" />}
-              Save Production Settings
-            </Button>
-          </div>
+              <FieldGroup title="Delivery Defaults" description="Default delivery target and specs for finished masters.">
+                <Field label="Delivery Target">
+                  <SearchSelect value={s.delivery_target} onChange={(v) => set("delivery_target", v)} options={DELIVERY_TARGETS} />
+                </Field>
+                <Field label="Delivery Specs" full>
+                  <Textarea rows={2} value={s.delivery_specs} onChange={(e) => set("delivery_specs", e.target.value)}
+                    placeholder="Container, codec, LUFS, subtitle format…" />
+                </Field>
+              </FieldGroup>
+            </div>
+          </details>
         </>
       )}
     </div>

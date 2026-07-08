@@ -1,0 +1,8 @@
+{
+  "mcpVersion": "2025-06-18",
+  "serverName": "streamvista-admin",
+  "title": "StreamVista Admin MCP",
+  "version": "0.1.0",
+  "description": "Static manifest stub served from the app origin so the Admin MCP Health Center can probe /.lovable/mcp/manifest.json without a 404. The authoritative MCP server is the Supabase Edge Function at /functions/v1/mcp; see .lovable/mcp/manifest.json for its extracted tool catalog.",
+  "tools": []
+}

@@ -435,11 +435,13 @@ export default function ProductionMediaWorkspace({
           })}
       </div>
 
-      {/* Legend: pipeline stages */}
-      <div className="flex flex-wrap gap-1.5 text-[10px] text-muted-foreground">
-        <span className="uppercase tracking-widest font-mono mr-1">Pipeline:</span>
-        {STAGES.map(s => <Badge key={s} variant="outline" className="text-[10px]">{s}</Badge>)}
-      </div>
+      {/* Legend: pipeline stages (collapsed by default) */}
+      <details className="text-[10px] text-muted-foreground">
+        <summary className="cursor-pointer select-none uppercase tracking-widest font-mono hover:text-foreground">Pipeline stages</summary>
+        <div className="flex flex-wrap gap-1.5 mt-2">
+          {STAGES.map(s => <Badge key={s} variant="outline" className="text-[10px]">{s}</Badge>)}
+        </div>
+      </details>
     </div>
   );
 }

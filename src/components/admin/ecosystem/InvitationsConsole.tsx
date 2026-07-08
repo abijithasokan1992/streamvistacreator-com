@@ -266,8 +266,30 @@ export default function InvitationsConsole() {
               </td></tr>
             )}
             {!loading && loadError && (
-              <tr><td colSpan={5} className="p-6 text-center text-destructive text-xs whitespace-pre-wrap break-words">
-                {loadError}
+              <tr><td colSpan={5} className="p-6">
+                <div className="mx-auto max-w-xl text-left space-y-2">
+                  <div className="text-sm font-semibold text-destructive">
+                    Couldn't load invitations
+                    {loadError.retried && (
+                      <span className="ml-2 text-[10px] font-normal text-muted-foreground">
+                        (retried once)
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    This is usually a transient network or permission issue. Try refreshing;
+                    if it persists, share the details below with an admin.
+                  </div>
+                  <pre className="text-[11px] whitespace-pre-wrap break-words rounded-md border border-destructive/30 bg-destructive/5 p-2 text-destructive">
+{loadError.code ? `code:    ${loadError.code}\n` : ""}{`message: ${loadError.message}`}{loadError.hint ? `\nhint:    ${loadError.hint}` : ""}{loadError.details ? `\ndetails: ${loadError.details}` : ""}
+                  </pre>
+                  <button
+                    onClick={load}
+                    className="text-xs px-3 py-1.5 rounded-md border border-border/60 hover:bg-secondary/40 inline-flex items-center gap-1.5"
+                  >
+                    <RefreshCw className="w-3 h-3" /> Try again
+                  </button>
+                </div>
               </td></tr>
             )}
             {!loading && !loadError && filtered.length === 0 && (

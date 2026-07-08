@@ -227,7 +227,7 @@ export default function ProductionMediaWorkspace({
 
   if (!activeProjectId) {
     return (
-      <div className="rounded-2xl border border-dashed border-border/50 bg-secondary/10 p-8 text-center">
+      <div className="rounded-xl border border-dashed border-border/50 bg-secondary/10 p-6 text-center">
         <Clapperboard className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
         <p className="text-sm text-muted-foreground">Pick an active production to view its media workspace.</p>
       </div>
@@ -236,7 +236,7 @@ export default function ProductionMediaWorkspace({
 
   if (loading) {
     return (
-      <div className="p-8 text-center text-sm text-muted-foreground">
+      <div className="p-6 text-center text-sm text-muted-foreground">
         <Loader2 className="w-4 h-4 animate-spin inline mr-2" /> Loading production media…
       </div>
     );
@@ -244,31 +244,18 @@ export default function ProductionMediaWorkspace({
 
   if (jobs.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-border/50 bg-secondary/10 p-8 text-center">
+      <div className="rounded-xl border border-dashed border-border/50 bg-secondary/10 p-6 text-center">
         <Film className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-        <p className="text-sm text-muted-foreground">
-          No media ingested yet for {activeProjectName ?? "this production"}
-          {activeProjectNumber && <> · <span className="font-mono">{activeProjectNumber}</span></>}.
-        </p>
-        <p className="text-xs text-muted-foreground mt-1">Ingest Media → Browser Upload · Camera Card · Camera-to-Cloud · Hard-disk Import · Archive Intake.</p>
+        <p className="text-sm text-muted-foreground">No media ingested yet. Start with Ingest Media above.</p>
       </div>
     );
   }
 
+  const totalClips = items.length;
+  const totalSize = items.reduce((s, i) => s + (i.size_bytes || 0), 0);
+
   return (
-    <div className="space-y-4">
-      {(activeProjectName || activeProjectNumber) && (
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          {activeProjectName && (
-            <span className="font-display text-sm text-foreground truncate">{activeProjectName}</span>
-          )}
-          {activeProjectNumber && (
-            <span className="text-[10px] font-mono border rounded-full px-2 py-0.5 bg-accent/10 text-accent border-accent/30">
-              {activeProjectNumber}
-            </span>
-          )}
-        </div>
-      )}
+    <div className="space-y-3">
       {/* Header + filters */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[220px]">

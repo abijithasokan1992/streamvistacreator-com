@@ -55,8 +55,6 @@ import CollegeERP from "./pages/CollegeERP.tsx";
 import Connect from "./pages/Connect.tsx";
 import Connectors from "./pages/Connectors.tsx";
 import AccessibilityPage from "./pages/Accessibility.tsx";
-import WorkspacePreview from "./pages/WorkspacePreview.tsx";
-
 
 // Smart Uploads is not MVP-ready — hidden until the checksum + bucket work is production-safe.
 // import SmartUploads from "./pages/SmartUploads.tsx";
@@ -235,8 +233,6 @@ const PublicRoutes = () => (
     <Route path="/college-erp" element={<CollegeERP />} />
     <Route path="/connect" element={<Connect />} />
     <Route path="/accessibility" element={<AccessibilityPage />} />
-    <Route path="/workspace/preview" element={<WorkspacePreview />} />
-
     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
 
     <Route path="*" element={<NotFound />} />

@@ -2,16 +2,15 @@ import { LayoutDashboard, Search, Bookmark, Inbox, Film, Briefcase, Receipt, Lif
 import { cn } from "@/lib/utils";
 
 export const BUYER_SECTIONS = [
-  { id: "dashboard",  label: "Workspace",     icon: LayoutDashboard },
-  { id: "find",       label: "Marketplace",   icon: Search },
-  { id: "watchlist",  label: "Collections",   icon: Bookmark },
-  { id: "requests",   label: "Requests",      icon: Inbox },
+  { id: "dashboard",  label: "Dashboard",     icon: LayoutDashboard },
+  { id: "find",       label: "Find Content",  icon: Search },
+  { id: "watchlist",  label: "Watchlist",     icon: Bookmark },
+  { id: "requests",   label: "My Requests",   icon: Inbox },
   { id: "screeners",  label: "Screeners",     icon: Film },
-  { id: "commercial", label: "Licensing",     icon: Briefcase },
+  { id: "commercial", label: "Commercial",    icon: Briefcase },
   { id: "billing",    label: "Billing",       icon: Receipt },
-  { id: "help",       label: "Support",       icon: LifeBuoy },
+  { id: "help",       label: "Help",          icon: LifeBuoy },
 ] as const;
-
 
 export type BuyerSectionId = typeof BUYER_SECTIONS[number]["id"];
 
@@ -27,7 +26,7 @@ export default function BuyerNav({
   return (
     <>
       {/* Mobile / tablet */}
-      <nav aria-label="Buyer workspace sections" className="lg:hidden -mx-2 px-2 overflow-x-auto">
+      <nav aria-label="Buyer sections" className="lg:hidden -mx-2 px-2 overflow-x-auto">
         <ul className="flex gap-1.5 min-w-max pb-2">
           {BUYER_SECTIONS.map(s => {
             const Icon = s.icon;
@@ -58,7 +57,7 @@ export default function BuyerNav({
       </nav>
 
       {/* Desktop */}
-      <nav aria-label="Buyer workspace sections" className="hidden lg:block sticky top-6 self-start">
+      <nav aria-label="Buyer sections" className="hidden lg:block sticky top-6 self-start">
         <ul className="space-y-1">
           {BUYER_SECTIONS.map(s => {
             const Icon = s.icon;

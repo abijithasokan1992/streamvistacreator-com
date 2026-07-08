@@ -64,10 +64,9 @@ export default function RoleDashboardShell({
       </header>
 
       <div className="max-w-6xl mx-auto px-6 py-14">
-        <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground/70">{title} Workspace</p>
+        <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground/70">{title}</p>
         <h1 className="font-display text-3xl md:text-4xl mt-2">Welcome, {String(displayName)}.</h1>
         <p className="text-sm text-muted-foreground mt-2 max-w-xl">{subtitle}</p>
-
 
         <div className="mt-10">{children}</div>
       </div>

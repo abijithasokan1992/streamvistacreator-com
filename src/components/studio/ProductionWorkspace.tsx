@@ -151,16 +151,20 @@ export default function ProductionWorkspace({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [crew?.title_id]);
 
-  const overviewFacts = useMemo(() => ([
-    { icon: Film, label: "Project Type", value: crew.content_type ?? "—" },
-    { icon: Building2, label: "Production Company", value: crew.production_company ?? "—" },
-    { icon: User, label: "Client", value: crew.client ?? "—" },
-    { icon: User, label: "Director", value: crew.director ?? "—" },
-    { icon: User, label: "Producer", value: crew.producer ?? "—" },
-    { icon: Calendar, label: "Start Date", value: crew.start_date ?? "—" },
-    { icon: Calendar, label: "Expected Finish", value: crew.expected_finish ?? "—" },
-    { icon: Clapperboard, label: "Status", value: crew.title_status ?? "—" },
-  ]), [crew]);
+  // MVP overview: only the essentials, and skip empty fields entirely so
+  // the page doesn't render rows of dashes.
+  const overviewFacts = useMemo(() => {
+    const rows: Array<{ icon: any; label: string; value: string }> = [];
+    if (crew.content_type)        rows.push({ icon: Film,        label: "Production Type", value: crew.content_type });
+    if (crew.director)            rows.push({ icon: User,        label: "Director",        value: crew.director });
+    if (crew.title_status)        rows.push({ icon: Clapperboard,label: "Status",          value: crew.title_status });
+    if (crew.production_company)  rows.push({ icon: Building2,   label: "Production Co.",  value: crew.production_company });
+    if (crew.start_date)          rows.push({ icon: Calendar,    label: "Start Date",      value: crew.start_date });
+    return rows;
+  }, [crew]);
+
+  const [advOpen, setAdvOpen] = useState(false);
+  const [advTab, setAdvTab] = useState("activity");
 
   return (
     <div className="space-y-6">
@@ -180,46 +184,113 @@ export default function ProductionWorkspace({
               )}
               {crew.title_status && <Badge variant="outline" className="text-[10px]">{crew.title_status}</Badge>}
             </div>
-            <p className="text-xs text-muted-foreground mt-1.5">
-              {crew.production_company ?? "—"}
-              {crew.client ? <> · Client: <span className="text-foreground">{crew.client}</span></> : null}
-            </p>
           </div>
           <div className="flex gap-2 shrink-0">
             {onShare && <Button size="sm" variant="outline" onClick={onShare}>Invite</Button>}
             {onEdit && <Button size="sm" variant="outline" onClick={onEdit}>Edit</Button>}
+            <Sheet open={advOpen} onOpenChange={setAdvOpen}>
+              <SheetTrigger asChild>
+                <Button size="sm" variant="outline">
+                  <MoreHorizontal className="w-3.5 h-3.5 mr-1.5" /> Advanced
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
+                <SheetHeader>
+                  <SheetTitle>Advanced — {project.name}</SheetTitle>
+                </SheetHeader>
+                <Tabs value={advTab} onValueChange={setAdvTab} className="w-full mt-4">
+                  <TabsList className="grid grid-cols-4 w-full">
+                    <TabsTrigger value="uploads"><UploadCloud className="w-3.5 h-3.5 mr-1.5" />Uploads</TabsTrigger>
+                    <TabsTrigger value="activity"><ActivityIcon className="w-3.5 h-3.5 mr-1.5" />Activity</TabsTrigger>
+                    <TabsTrigger value="qc"><ShieldCheck className="w-3.5 h-3.5 mr-1.5" />Quality</TabsTrigger>
+                    <TabsTrigger value="deliveries"><PackageCheck className="w-3.5 h-3.5 mr-1.5" />Deliveries</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="uploads" className="mt-4">{uploadsSlot}</TabsContent>
+                  <TabsContent value="activity" className="mt-4">{activitySlot}</TabsContent>
+                  <TabsContent value="qc" className="mt-4">
+                    <section className="rounded-xl border border-border/50 p-4">
+                      {qrLoading ? (
+                        <div className="py-6 text-center text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin inline" /></div>
+                      ) : qcIssues.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">No QC findings yet.</p>
+                      ) : (
+                        <ul className="divide-y divide-border/30">
+                          {qcIssues.map((i) => (
+                            <li key={i.id} className="py-2 flex items-center justify-between gap-3 text-xs">
+                              <span className="min-w-0 truncate">
+                                <span className="font-medium">{i.title ?? "Untitled finding"}</span>
+                                {i.stage && <span className="text-muted-foreground"> · {i.stage}</span>}
+                              </span>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <Badge variant="outline" className="text-[10px]">{i.severity}</Badge>
+                                <Badge variant="outline" className="text-[10px]">{i.status}</Badge>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      <p className="text-[11px] text-muted-foreground mt-3">
+                        Formal reviews run from the <Link to="/admin/qc" className="underline">Reviewer console</Link>.
+                      </p>
+                    </section>
+                  </TabsContent>
+                  <TabsContent value="deliveries" className="mt-4">
+                    <section className="rounded-xl border border-border/50 p-4">
+                      {dvLoading ? (
+                        <div className="py-6 text-center text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin inline" /></div>
+                      ) : deliveries.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">No deliveries scheduled yet.</p>
+                      ) : (
+                        <ul className="divide-y divide-border/30">
+                          {deliveries.map((d) => (
+                            <li key={d.id} className="py-2 flex items-center justify-between gap-3 text-xs">
+                              <span className="min-w-0 truncate">
+                                <span className="font-medium">{d.title ?? "Delivery"}</span>
+                                {d.due_at && <span className="text-muted-foreground"> · due {new Date(d.due_at).toLocaleDateString()}</span>}
+                              </span>
+                              <Badge variant="outline" className="text-[10px]">{d.status ?? "pending"}</Badge>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </section>
+                  </TabsContent>
+                </Tabs>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </section>
 
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="grid grid-cols-4 md:grid-cols-7 w-full">
+        <TabsList className="grid grid-cols-3 w-full max-w-md">
           <TabsTrigger value="overview"><Clapperboard className="w-3.5 h-3.5 mr-1.5" />Overview</TabsTrigger>
           <TabsTrigger value="files"><FolderTree className="w-3.5 h-3.5 mr-1.5" />Files</TabsTrigger>
-          <TabsTrigger value="uploads"><UploadCloud className="w-3.5 h-3.5 mr-1.5" />Uploads</TabsTrigger>
           <TabsTrigger value="team"><Users className="w-3.5 h-3.5 mr-1.5" />Team</TabsTrigger>
-          <TabsTrigger value="activity"><ActivityIcon className="w-3.5 h-3.5 mr-1.5" />Activity</TabsTrigger>
-          <TabsTrigger value="qc"><ShieldCheck className="w-3.5 h-3.5 mr-1.5" />Quality Review</TabsTrigger>
-          <TabsTrigger value="deliveries"><PackageCheck className="w-3.5 h-3.5 mr-1.5" />Deliveries</TabsTrigger>
         </TabsList>
 
         {/* Overview */}
         <TabsContent value="overview" className="mt-6 space-y-4">
           <section className="rounded-2xl border border-border/50 p-5">
-            <h3 className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-mono mb-4">Production Master</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {overviewFacts.map((f) => {
-                const Icon = f.icon;
-                return (
-                  <div key={f.label} className="min-w-0">
-                    <div className="text-[10px] uppercase tracking-widest font-mono text-muted-foreground flex items-center gap-1.5">
-                      <Icon className="w-3 h-3" /> {f.label}
+            {overviewFacts.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                No production details yet. Use <button onClick={onEdit} className="underline">Edit</button> to add director, status and more.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {overviewFacts.map((f) => {
+                  const Icon = f.icon;
+                  return (
+                    <div key={f.label} className="min-w-0">
+                      <div className="text-[10px] uppercase tracking-widest font-mono text-muted-foreground flex items-center gap-1.5">
+                        <Icon className="w-3 h-3" /> {f.label}
+                      </div>
+                      <div className="text-sm mt-1 truncate">{f.value}</div>
                     </div>
-                    <div className="text-sm mt-1 truncate">{f.value}</div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </section>
           {crew.notes && (
             <section className="rounded-2xl border border-border/50 p-5">
@@ -234,9 +305,6 @@ export default function ProductionWorkspace({
         {/* Files — existing ProductionMediaWorkspace, injected as slot */}
         <TabsContent value="files" className="mt-6">{filesSlot}</TabsContent>
 
-        {/* Uploads — existing StudioIngest, injected as slot */}
-        <TabsContent value="uploads" className="mt-6">{uploadsSlot}</TabsContent>
-
         {/* Team */}
         <TabsContent value="team" className="mt-6">
           <section className="rounded-2xl border border-border/50 p-5">
@@ -249,7 +317,7 @@ export default function ProductionWorkspace({
             {membersLoading ? (
               <div className="py-6 text-center text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin inline" /></div>
             ) : members.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No team members yet — invite collaborators to this production.</p>
+              <p className="text-xs text-muted-foreground">No team members yet — invite collaborators.</p>
             ) : (
               <ul className="divide-y divide-border/30">
                 {members.map((m) => (
@@ -259,71 +327,6 @@ export default function ProductionWorkspace({
                       {m.email && m.full_name ? <span className="text-muted-foreground"> · {m.email}</span> : null}
                     </span>
                     <Badge variant="outline" className="text-[10px]">{labelForOrgRole(m.role)}</Badge>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        </TabsContent>
-
-        {/* Activity — existing ActivityPanel, injected as slot */}
-        <TabsContent value="activity" className="mt-6">{activitySlot}</TabsContent>
-
-        {/* Quality Review */}
-        <TabsContent value="qc" className="mt-6">
-          <section className="rounded-2xl border border-border/50 p-5">
-            <h3 className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-mono mb-3">
-              Quality Review
-            </h3>
-            {qrLoading ? (
-              <div className="py-6 text-center text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin inline" /></div>
-            ) : qcIssues.length === 0 ? (
-              <p className="text-xs text-muted-foreground">
-                No QC findings yet. Once masters are submitted for review, checklist items and open issues appear here.
-              </p>
-            ) : (
-              <ul className="divide-y divide-border/30">
-                {qcIssues.map((i) => (
-                  <li key={i.id} className="py-2 flex items-center justify-between gap-3 text-xs">
-                    <span className="min-w-0 truncate">
-                      <span className="font-medium">{i.title ?? "Untitled finding"}</span>
-                      {i.stage && <span className="text-muted-foreground"> · {i.stage}</span>}
-                    </span>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <Badge variant="outline" className="text-[10px]">{i.severity}</Badge>
-                      <Badge variant="outline" className="text-[10px]">{i.status}</Badge>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <p className="text-[11px] text-muted-foreground mt-4">
-              Formal reviews and legal checks run from the <Link to="/admin/qc" className="underline">Reviewer console</Link>.
-            </p>
-          </section>
-        </TabsContent>
-
-        {/* Deliveries */}
-        <TabsContent value="deliveries" className="mt-6">
-          <section className="rounded-2xl border border-border/50 p-5">
-            <h3 className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-mono mb-3">
-              Deliveries
-            </h3>
-            {dvLoading ? (
-              <div className="py-6 text-center text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin inline" /></div>
-            ) : deliveries.length === 0 ? (
-              <p className="text-xs text-muted-foreground">
-                No deliveries scheduled yet. Deliveries created against this production or workspace will appear here.
-              </p>
-            ) : (
-              <ul className="divide-y divide-border/30">
-                {deliveries.map((d) => (
-                  <li key={d.id} className="py-2 flex items-center justify-between gap-3 text-xs">
-                    <span className="min-w-0 truncate">
-                      <span className="font-medium">{d.title ?? "Delivery"}</span>
-                      {d.due_at && <span className="text-muted-foreground"> · due {new Date(d.due_at).toLocaleDateString()}</span>}
-                    </span>
-                    <Badge variant="outline" className="text-[10px]">{d.status ?? "pending"}</Badge>
                   </li>
                 ))}
               </ul>

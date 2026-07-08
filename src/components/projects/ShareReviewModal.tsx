@@ -176,11 +176,9 @@ export default function ShareReviewModal({
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="inline-flex items-center gap-2">
-            <Link2 className="w-4 h-4" /> Share / Review — {projectName}
+            <Link2 className="w-4 h-4" /> Share for review
           </DialogTitle>
-          <DialogDescription>
-            Generate secure review links with expiry, view limits, and optional password.
-          </DialogDescription>
+          <DialogDescription className="truncate">{projectName}</DialogDescription>
         </DialogHeader>
 
         {loading ? (
@@ -192,30 +190,29 @@ export default function ShareReviewModal({
             No uploads found in this workspace yet. Upload media first, then come back to create review links.
           </div>
         ) : (
-          <div className="space-y-5">
+          <div className="space-y-4">
             {/* Create form */}
-            <div className="rounded-xl border border-border/60 p-4 space-y-3 bg-card/40">
-              <div className="space-y-2">
-                <Label htmlFor="rl-asset">Asset</Label>
-                <select
-                  id="rl-asset"
-                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
-                  value={uploadId}
-                  onChange={(e) => setUploadId(e.target.value)}
-                >
-                  {uploads.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.file_name}
-                      {u.mime_type ? ` · ${u.mime_type}` : ""}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="rl-expiry" className="inline-flex items-center gap-1">
-                    <Clock className="w-3 h-3" /> Expires in (hrs)
+            <div className="rounded-xl border border-border/60 p-3 space-y-3 bg-card/40">
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="rl-asset" className="text-xs">Asset</Label>
+                  <select
+                    id="rl-asset"
+                    className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                    value={uploadId}
+                    onChange={(e) => setUploadId(e.target.value)}
+                  >
+                    {uploads.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.file_name}
+                        {u.mime_type ? ` · ${u.mime_type}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="rl-expiry" className="text-xs inline-flex items-center gap-1">
+                    <Clock className="w-3 h-3" /> Expires (hrs)
                   </Label>
                   <Input
                     id="rl-expiry"
@@ -223,45 +220,56 @@ export default function ShareReviewModal({
                     min={0}
                     value={expiresHours}
                     onChange={(e) => setExpiresHours(e.target.value)}
-                    placeholder="0 = no expiry"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="rl-views" className="inline-flex items-center gap-1">
-                    <Eye className="w-3 h-3" /> Max views
-                  </Label>
-                  <Input
-                    id="rl-views"
-                    type="number"
-                    min={1}
-                    value={maxViews}
-                    onChange={(e) => setMaxViews(e.target.value)}
-                    placeholder="Unlimited"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="rl-pwd" className="inline-flex items-center gap-1">
-                    <Shield className="w-3 h-3" /> Password
-                  </Label>
-                  <Input
-                    id="rl-pwd"
-                    type="text"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Optional"
-                    maxLength={128}
+                    placeholder="0 = never"
+                    className="h-9"
                   />
                 </div>
               </div>
 
+              <details className="group">
+                <summary className="cursor-pointer select-none text-[11px] uppercase tracking-widest font-mono text-muted-foreground hover:text-foreground">
+                  Advanced options
+                </summary>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="rl-views" className="text-xs inline-flex items-center gap-1">
+                      <Eye className="w-3 h-3" /> Max views
+                    </Label>
+                    <Input
+                      id="rl-views"
+                      type="number"
+                      min={1}
+                      value={maxViews}
+                      onChange={(e) => setMaxViews(e.target.value)}
+                      placeholder="Unlimited"
+                      className="h-9"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="rl-pwd" className="text-xs inline-flex items-center gap-1">
+                      <Shield className="w-3 h-3" /> Password
+                    </Label>
+                    <Input
+                      id="rl-pwd"
+                      type="text"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Optional"
+                      maxLength={128}
+                      className="h-9"
+                    />
+                  </div>
+                </div>
+              </details>
+
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Switch id="rl-view-only" checked={viewOnly} onCheckedChange={setViewOnly} />
-                  <Label htmlFor="rl-view-only" className="text-xs">View only (no download UI)</Label>
+                  <Label htmlFor="rl-view-only" className="text-xs">View only</Label>
                 </div>
-                <Button onClick={createLink} disabled={creating || !uploadId} className="gap-2">
+                <Button onClick={createLink} disabled={creating || !uploadId} size="sm" className="gap-2">
                   {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                  Create Link
+                  Create link
                 </Button>
               </div>
             </div>

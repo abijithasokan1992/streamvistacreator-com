@@ -199,7 +199,12 @@ export default function InvitationsConsole() {
                 <Loader2 className="w-4 h-4 inline animate-spin mr-2" /> Loading…
               </td></tr>
             )}
-            {!loading && filtered.length === 0 && (
+            {!loading && loadError && (
+              <tr><td colSpan={5} className="p-6 text-center text-destructive text-xs whitespace-pre-wrap break-words">
+                {loadError}
+              </td></tr>
+            )}
+            {!loading && !loadError && filtered.length === 0 && (
               <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">No invitations.</td></tr>
             )}
             {filtered.map((r) => (

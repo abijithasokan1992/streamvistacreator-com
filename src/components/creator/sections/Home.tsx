@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  Plus, ArrowRight, Film, Play, Briefcase, Bell,
+  Plus, ArrowRight, Film, Play, Briefcase, Bell, Upload, FolderOpen,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -11,20 +13,22 @@ import {
 import StorageLive from "@/components/creator/StorageLive";
 import LegacyRecoveryBanner from "@/components/creator/LegacyRecoveryBanner";
 import { StatusBadge } from "@/components/creator/title/StatusBadge";
+import { QuickActionCard } from "@/components/shared/tools/QuickActionCard";
 import type { SectionId } from "@/components/creator/CreatorSidebar";
 
 /**
- * Creator Home — premium, media-first.
+ * Creator Home — premium, workflow-first dashboard.
  *
  * Sections (in order):
- *   1. Continue Working
- *   2. Recent Titles      — large poster previews
- *   3. Storage            — single StorageLive instance
- *   4. Business           — link into Business section
- *   5. Recent Activity    — notifications + approval log
+ *   1. Continue Working      — primary title card with quick actions
+ *   2. Recent Titles         — large poster previews with hover Open action
+ *   3. Storage               — single compact StorageLive card
+ *   4. Business              — contextual CTA card
+ *   5. Recent Activity       — notifications + approval log
  *
- * No backend changes. Uses existing title_assets/recent_uploads/notifications
- * queries. Poster URLs come from the primary poster asset's `par_url`.
+ * No backend changes. Reuses existing title_assets, recent_uploads,
+ * notifications, and content_approvals queries. Poster URLs come from the
+ * primary poster asset's `par_url`. All navigation uses existing section ids.
  */
 export default function HomeSection({
   onNavigate, isFree,
@@ -105,63 +109,93 @@ export default function HomeSection({
   const posterTitles = useMemo(() => titles.slice(0, 6), [titles]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <LegacyRecoveryBanner onNavigate={onNavigate} />
+
+      <header className="space-y-1">
+        <h1 className="font-display text-2xl md:text-3xl">Welcome back</h1>
+        <p className="text-sm text-muted-foreground">
+          Your creator workspace at a glance.
+        </p>
+      </header>
 
       {/* 1 · Continue Working */}
       <Section title="Continue Working">
         {loading ? (
-          <Skeleton h="92px" />
+          <Skeleton h="128px" />
         ) : recent ? (
-          <button
-            onClick={() => onNavigate("titles")}
-            className="w-full rounded-xl border border-accent/40 bg-accent/10 hover:bg-accent/15 p-4 sm:p-5 text-left flex items-center gap-3 transition-colors"
-          >
-            <Play className="w-5 h-5 text-accent shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm sm:text-base truncate">{recent.title || "Untitled"}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {friendlyStatus(recent.status)} · Continue editing
-              </p>
+          <div className="rounded-xl border border-border/50 bg-card/40 p-4 sm:p-5 flex flex-col sm:flex-row gap-4">
+            <div className="shrink-0">
+              {posters[recent.id] ? (
+                <img
+                  src={posters[recent.id]}
+                  alt=""
+                  className="w-16 h-24 sm:w-20 sm:h-28 rounded-lg object-cover border border-border/50"
+                />
+              ) : (
+                <div className="w-16 h-24 sm:w-20 sm:h-28 rounded-lg bg-secondary/50 grid place-items-center border border-border/50">
+                  <Film className="w-8 h-8 text-muted-foreground/50" />
+                </div>
+              )}
             </div>
-            <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
-          </button>
+            <div className="flex-1 min-w-0 flex flex-col">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Continue working on</p>
+                  <p className="font-semibold text-base sm:text-lg truncate">{recent.title || "Untitled"}</p>
+                </div>
+                <StatusBadge status={recent.status} />
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                {friendlyStatus(recent.status)} · Last updated {timeAgo(recent.updated_at)}
+              </p>
+              <div className="flex items-center gap-2 mt-auto pt-4">
+                <Button size="sm" onClick={() => onNavigate("titles")}>
+                  <Play className="w-4 h-4" /> Continue
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => onNavigate("titles")}>
+                  <FolderOpen className="w-4 h-4" /> Open
+                </Button>
+              </div>
+            </div>
+          </div>
         ) : (
-          <button
+          <EmptyState
+            icon={Film}
+            title="No titles yet"
+            message="Start your first title to upload posters, trailers, and masters."
+            cta={capped ? "Upgrade to upload" : "Upload first title"}
             onClick={() => onNavigate(capped ? "billing" : "titles")}
-            className="w-full rounded-xl border border-accent/40 bg-accent/10 hover:bg-accent/15 p-4 sm:p-5 text-left flex items-center gap-3 transition-colors"
-          >
-            <Plus className="w-5 h-5 text-accent shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm sm:text-base">
-                {capped ? "Upgrade to add more titles" : "Start a new title"}
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {capped ? "Free plan includes 1 title." : "Add details, upload files, and submit when ready."}
-              </p>
-            </div>
-            <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
-          </button>
+          />
         )}
       </Section>
 
-      {/* 2 · Recent Titles — poster grid */}
+      {/* 2 · Recent Titles — large poster grid */}
       <Section
         title="Recent Titles"
         action={titles.length > 0 ? { label: "View all", onClick: () => onNavigate("titles") } : undefined}
+        right={titles.length > 0 && !capped ? (
+          <Button size="sm" onClick={() => onNavigate("titles")}>
+            <Upload className="w-4 h-4" /> Upload
+          </Button>
+        ) : undefined}
       >
         {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="aspect-[2/3] rounded-xl border border-border/40 bg-secondary/10 animate-pulse" />
             ))}
           </div>
         ) : posterTitles.length === 0 ? (
-          <div className="rounded-xl border border-border/40 bg-secondary/5 p-6 text-sm text-muted-foreground text-center">
-            No titles yet — start your first one.
-          </div>
+          <EmptyState
+            icon={Film}
+            title="Your catalog is empty"
+            message="Recent titles will appear here once you start adding content."
+            cta={capped ? "Upgrade to upload" : "Upload first title"}
+            onClick={() => onNavigate(capped ? "billing" : "titles")}
+          />
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {posterTitles.map((t) => (
               <PosterTile
                 key={t.id}
@@ -174,28 +208,24 @@ export default function HomeSection({
         )}
       </Section>
 
-      {/* 3 · Storage — single instance */}
-      <Section title="Storage">
-        <StorageLive />
+      {/* 3 · Storage — single compact card */}
+      <Section
+        title="Storage"
+        action={{ label: "Manage storage", onClick: () => onNavigate("storage") }}
+      >
+        <StorageLive compact />
       </Section>
 
       {/* 4 · Business */}
       <Section title="Business">
-        <button
+        <QuickActionCard
+          icon={Briefcase}
+          title={isFree ? "Unlock buyer interest & offers" : "Buyer interest, offers and deals"}
+          description={isFree ? "Upgrade to open commercial activity." : "Track commercial activity on your titles."}
+          cta={isFree ? "Upgrade plan" : "Open business"}
+          tone="accent"
           onClick={() => onNavigate(isFree ? "billing" : "business")}
-          className="w-full rounded-xl border border-border/50 bg-secondary/10 hover:bg-secondary/20 p-4 sm:p-5 text-left flex items-center gap-3 transition-colors"
-        >
-          <Briefcase className="w-5 h-5 text-accent shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm sm:text-base">
-              {isFree ? "Unlock buyer interest & offers" : "Buyer interest, offers and deals"}
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {isFree ? "Upgrade to open commercial activity." : "Track commercial activity on your titles."}
-            </p>
-          </div>
-          <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
-        </button>
+        />
       </Section>
 
       {/* 5 · Recent Activity */}
@@ -206,8 +236,8 @@ export default function HomeSection({
         {loading ? (
           <Skeleton h="140px" />
         ) : activity.length === 0 ? (
-          <div className="rounded-xl border border-border/40 bg-secondary/5 p-4 text-sm text-muted-foreground">
-            No activity yet.
+          <div className="rounded-xl border border-dashed border-border/60 bg-card/30 p-6 text-center">
+            <p className="text-sm text-muted-foreground">No activity yet.</p>
           </div>
         ) : (
           <div className="rounded-xl border border-border/40 bg-secondary/5 divide-y divide-border/40">
@@ -233,21 +263,25 @@ export default function HomeSection({
 /* ─────────── UI helpers ─────────── */
 
 function Section({
-  title, action, children,
+  title, action, right, children,
 }: {
   title: string;
   action?: { label: string; onClick: () => void };
+  right?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
-    <section className="space-y-3">
-      <div className="flex items-end justify-between gap-2">
-        <h2 className="font-display text-lg md:text-xl">{title}</h2>
-        {action && (
-          <button onClick={action.onClick} className="text-xs text-accent hover:underline shrink-0">
-            {action.label} →
-          </button>
-        )}
+    <section className="space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <h2 className="font-display text-lg md:text-xl tracking-tight">{title}</h2>
+        <div className="flex items-center gap-3">
+          {right}
+          {action && (
+            <button onClick={action.onClick} className="text-xs text-accent hover:underline shrink-0">
+              {action.label} →
+            </button>
+          )}
+        </div>
       </div>
       {children}
     </section>
@@ -256,6 +290,29 @@ function Section({
 
 function Skeleton({ h }: { h: string }) {
   return <div className="rounded-xl border border-border/40 bg-secondary/5 animate-pulse" style={{ height: h }} />;
+}
+
+function EmptyState({
+  icon: Icon, title, message, cta, onClick,
+}: {
+  icon: LucideIcon;
+  title: string;
+  message: string;
+  cta: string;
+  onClick: () => void;
+}) {
+  return (
+    <div className="rounded-xl border border-dashed border-border/60 bg-card/30 p-6 sm:p-8 text-center">
+      <div className="w-12 h-12 rounded-xl bg-secondary/50 grid place-items-center mx-auto mb-3">
+        <Icon className="w-6 h-6 text-muted-foreground" />
+      </div>
+      <p className="font-semibold text-base">{title}</p>
+      <p className="text-sm text-muted-foreground mt-1 max-w-xs mx-auto">{message}</p>
+      <Button size="sm" className="mt-4" onClick={onClick}>
+        <Upload className="w-4 h-4" /> {cta}
+      </Button>
+    </div>
+  );
 }
 
 function PosterTile({
@@ -280,7 +337,13 @@ function PosterTile({
             <Film className="w-8 h-8 text-muted-foreground/50" />
           </div>
         )}
-        <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-background/90 text-foreground px-3 py-1.5 text-xs font-medium shadow-sm">
+            <FolderOpen className="w-3.5 h-3.5" />
+            Open
+          </span>
+        </div>
+        <div className="absolute inset-x-0 bottom-0 p-2.5 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
           <p className="text-xs font-semibold text-white truncate">{title.title || "Untitled"}</p>
         </div>
         <div className="absolute top-2 left-2">

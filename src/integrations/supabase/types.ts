@@ -1457,6 +1457,7 @@ export type Database = {
           title_id: string | null
           title_query: string | null
           updated_at: string
+          workspace_id: string | null
         }
         Insert: {
           accepted_agreement_id?: string | null
@@ -1476,6 +1477,7 @@ export type Database = {
           title_id?: string | null
           title_query?: string | null
           updated_at?: string
+          workspace_id?: string | null
         }
         Update: {
           accepted_agreement_id?: string | null
@@ -1495,6 +1497,7 @@ export type Database = {
           title_id?: string | null
           title_query?: string | null
           updated_at?: string
+          workspace_id?: string | null
         }
         Relationships: [
           {
@@ -3763,6 +3766,7 @@ export type Database = {
           id: string
           invoice_number: string
           issued_at: string
+          paid_at: string | null
           plan_id: string | null
           razorpay_order_id: string | null
           razorpay_payment_id: string | null
@@ -3772,6 +3776,7 @@ export type Database = {
           subtotal_paise: number
           support_request_id: string | null
           topup_id: string | null
+          total_amount: number | null
           total_paise: number
           updated_at: string
           user_id: string
@@ -3787,6 +3792,7 @@ export type Database = {
           id?: string
           invoice_number?: string
           issued_at?: string
+          paid_at?: string | null
           plan_id?: string | null
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
@@ -3796,6 +3802,7 @@ export type Database = {
           subtotal_paise: number
           support_request_id?: string | null
           topup_id?: string | null
+          total_amount?: number | null
           total_paise: number
           updated_at?: string
           user_id: string
@@ -3811,6 +3818,7 @@ export type Database = {
           id?: string
           invoice_number?: string
           issued_at?: string
+          paid_at?: string | null
           plan_id?: string | null
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
@@ -3820,6 +3828,7 @@ export type Database = {
           subtotal_paise?: number
           support_request_id?: string | null
           topup_id?: string | null
+          total_amount?: number | null
           total_paise?: number
           updated_at?: string
           user_id?: string
@@ -8123,6 +8132,7 @@ export type Database = {
           production_banner:
             | Database["public"]["Enums"]["production_banner"]
             | null
+          total_bytes: number | null
           updated_at: string
         }
         Insert: {
@@ -8133,6 +8143,7 @@ export type Database = {
           production_banner?:
             | Database["public"]["Enums"]["production_banner"]
             | null
+          total_bytes?: number | null
           updated_at?: string
         }
         Update: {
@@ -8143,6 +8154,7 @@ export type Database = {
           production_banner?:
             | Database["public"]["Enums"]["production_banner"]
             | null
+          total_bytes?: number | null
           updated_at?: string
         }
         Relationships: []

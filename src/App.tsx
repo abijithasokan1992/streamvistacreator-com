@@ -54,6 +54,8 @@ import AdminLegacyRecovery from "./pages/admin/LegacyRecovery.tsx";
 import CollegeERP from "./pages/CollegeERP.tsx";
 import Connect from "./pages/Connect.tsx";
 import Connectors from "./pages/Connectors.tsx";
+import AccessibilityPage from "./pages/Accessibility.tsx";
+
 // Smart Uploads is not MVP-ready — hidden until the checksum + bucket work is production-safe.
 // import SmartUploads from "./pages/SmartUploads.tsx";
 
@@ -230,7 +232,9 @@ const PublicRoutes = () => (
     <Route path="/invoice/manual/:id" element={<ManualInvoiceReceipt />} />
     <Route path="/college-erp" element={<CollegeERP />} />
     <Route path="/connect" element={<Connect />} />
+    <Route path="/accessibility" element={<AccessibilityPage />} />
     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
@@ -253,6 +257,9 @@ const App = () => (
                 <StorageQuotaProvider>
                   <GlobalErrorListener />
 
+                  <a href="#main-content" className="skip-to-content">
+                    Skip to main content
+                  </a>
                   <ReferralCapture />
                   <ErrorBoundary>
                     <HostAwareRoutes />
@@ -260,6 +267,7 @@ const App = () => (
                     <AssistantLauncher />
                   </ErrorBoundary>
                 </StorageQuotaProvider>
+
               </SystemMessageProvider>
             </AuthProvider>
           </BrowserRouter>

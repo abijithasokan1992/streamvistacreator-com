@@ -198,7 +198,7 @@ Deno.serve(async (req) => {
   const keyId = `${cfg!.oracle_tenancy_ocid}/${cfg!.oracle_user_ocid}/${cfg!.oracle_fingerprint}`;
 
   try {
-    if (action === "test") {
+    if (action === "test" || action === "health" || action === "ping") {
       const r = await ociFetch({
         method: "HEAD",
         host,

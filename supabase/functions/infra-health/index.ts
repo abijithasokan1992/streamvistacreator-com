@@ -250,10 +250,19 @@ Deno.serve(async (req) => {
       } else {
         const r = await timed(async () => {
           const resp = await fetch('https://ai.gateway.lovable.dev/v1/models', {
-            headers: { Authorization: `Bearer ${key}` },
+            headers: {
+              'Lovable-API-Key': key,
+              Authorization: `Bearer ${key}`,
+            },
           });
-          if (!resp.ok) throw new Error(`AI gateway HTTP ${resp.status}`);
           await resp.text();
+          // AI Gateway is reachable as long as we don't get a 5xx. 401/403 → auth issue;
+          // 404 on /v1/models is treated as reachable (endpoint variant) — surface only
+          // hard server errors as critical.
+          if (resp.status >= 500) throw new Error(`AI gateway HTTP ${resp.status}`);
+          if (resp.status === 401 || resp.status === 403) {
+            throw new Error(`AI gateway auth failed (HTTP ${resp.status}) — rotate LOVABLE_API_KEY.`);
+          }
           return true;
         });
         add({

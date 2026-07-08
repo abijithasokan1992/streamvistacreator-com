@@ -44,33 +44,99 @@ export default function InvitationsConsole() {
   const [notes, setNotes] = useState("");
   const [filter, setFilter] = useState<"all" | "pending" | "accepted">("all");
 
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<{
+    code?: string;
+    message: string;
+    hint?: string;
+    details?: string;
+    retried: boolean;
+  } | null>(null);
+
+  // PostgREST/Postgres error codes that are worth retrying once:
+  // - PGRST* transient codes (connection reset, timeout)
+  // - 08* connection exceptions, 40001/40P01 serialization/deadlock,
+  //   57014 statement timeout, 53300 too_many_connections
+  const TRANSIENT_CODES = new Set([
+    "PGRST000", "PGRST001", "PGRST002",
+    "08000", "08003", "08006", "08001", "08004",
+    "40001", "40P01", "57014", "53300",
+  ]);
+  const isTransient = (err: { code?: string; message?: string } | null) => {
+    if (!err) return false;
+    if (err.code && TRANSIENT_CODES.has(err.code)) return true;
+    const m = (err.message ?? "").toLowerCase();
+    return (
+      m.includes("timeout") ||
+      m.includes("temporarily unavailable") ||
+      m.includes("connection") ||
+      m.includes("fetch failed") ||
+      m.includes("network")
+    );
+  };
+
+  const fetchOnce = async () =>
+    (supabase as any)
+      .from("role_invitations")
+      .select("*")
+      .order("created_at", { ascending: false });
 
   const load = async () => {
     setLoading(true);
     setLoadError(null);
     try {
-      const { data, error } = await (supabase as any)
-        .from("role_invitations")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) {
+      let { data, error } = await fetchOnce();
+
+      // Retry once on transient errors (network/timeout, not RLS/auth 42xxx)
+      if (error && isTransient(error)) {
+        await new Promise((r) => setTimeout(r, 600));
+        const retry = await fetchOnce();
+        data = retry.data;
+        error = retry.error;
+        if (!error) {
+          toast.success("Invitations loaded after retry");
+        }
+        if (error) {
+          setLoadError({
+            code: error.code,
+            message: error.message ?? "Unknown error",
+            hint: error.hint,
+            details: error.details,
+            retried: true,
+          });
+          const code = error.code ? ` [${error.code}]` : "";
+          toast.error(`Could not load invitations${code}`, {
+            description: `${error.message}${error.hint ? ` — ${error.hint}` : ""}`,
+          });
+          console.error("[role_invitations.select retry]", error);
+          setRows([]);
+          return;
+        }
+      } else if (error) {
+        setLoadError({
+          code: error.code,
+          message: error.message ?? "Unknown error",
+          hint: error.hint,
+          details: error.details,
+          retried: false,
+        });
         const code = error.code ? ` [${error.code}]` : "";
-        const hint = error.hint ? ` — ${error.hint}` : "";
-        const msg = `${error.message ?? "Unknown error"}${hint}`;
-        setLoadError(`Could not load invitations${code}: ${msg}`);
-        toast.error(`Could not load invitations${code}`, { description: msg });
-        // eslint-disable-next-line no-console
+        toast.error(`Could not load invitations${code}`, {
+          description: `${error.message}${error.hint ? ` — ${error.hint}` : ""}`,
+        });
         console.error("[role_invitations.select]", error);
         setRows([]);
         return;
       }
+
       setRows((data ?? []) as Invite[]);
     } catch (e) {
       const err = e as { code?: string; message?: string };
-      const msg = err?.message ?? "Unknown error";
-      setLoadError(`Could not load invitations: ${msg}`);
-      toast.error("Could not load invitations", { description: msg });
+      setLoadError({
+        code: err?.code,
+        message: err?.message ?? "Unknown error",
+        retried: false,
+      });
+      toast.error("Could not load invitations", { description: err?.message ?? "Unknown error" });
     } finally {
       setLoading(false);
     }
@@ -200,8 +266,30 @@ export default function InvitationsConsole() {
               </td></tr>
             )}
             {!loading && loadError && (
-              <tr><td colSpan={5} className="p-6 text-center text-destructive text-xs whitespace-pre-wrap break-words">
-                {loadError}
+              <tr><td colSpan={5} className="p-6">
+                <div className="mx-auto max-w-xl text-left space-y-2">
+                  <div className="text-sm font-semibold text-destructive">
+                    Couldn't load invitations
+                    {loadError.retried && (
+                      <span className="ml-2 text-[10px] font-normal text-muted-foreground">
+                        (retried once)
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    This is usually a transient network or permission issue. Try refreshing;
+                    if it persists, share the details below with an admin.
+                  </div>
+                  <pre className="text-[11px] whitespace-pre-wrap break-words rounded-md border border-destructive/30 bg-destructive/5 p-2 text-destructive">
+{loadError.code ? `code:    ${loadError.code}\n` : ""}{`message: ${loadError.message}`}{loadError.hint ? `\nhint:    ${loadError.hint}` : ""}{loadError.details ? `\ndetails: ${loadError.details}` : ""}
+                  </pre>
+                  <button
+                    onClick={load}
+                    className="text-xs px-3 py-1.5 rounded-md border border-border/60 hover:bg-secondary/40 inline-flex items-center gap-1.5"
+                  >
+                    <RefreshCw className="w-3 h-3" /> Try again
+                  </button>
+                </div>
               </td></tr>
             )}
             {!loading && !loadError && filtered.length === 0 && (

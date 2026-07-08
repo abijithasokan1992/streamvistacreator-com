@@ -16,7 +16,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Clapperboard, Plus, Loader2, Pencil, Share2, Archive, Trash2,
-  ArrowUpRight, UserPlus, Users, Mail, Search, RefreshCw,
+  ArrowUpRight, UserPlus, Users, Mail, Search, RefreshCw, MoreHorizontal,
+  ChevronDown,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -27,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -37,6 +39,11 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { generateProductionNumber, getProductionNumber } from "@/lib/productionNumber";
 import { INVITABLE_ORG_ROLES, ORG_ROLE_LABEL, ORG_ROLE_DESCRIPTION, ORG_ROLE_BACKEND, labelForOrgRole } from "@/lib/rbac/labels";

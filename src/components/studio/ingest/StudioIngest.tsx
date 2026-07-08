@@ -822,26 +822,18 @@ export default function StudioIngest({
     !!projectId && !!shootDay.trim() && !!unitLabel.trim() && !!cameraLabel.trim() && !!cardLabel.trim();
 
   return (
-    <div className="space-y-6">
-      {/* Workspace + mode header */}
-      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
-        <div className="min-w-0">
-          <h2 className="font-display text-xl sm:text-2xl">Studio Ingest</h2>
-          {(activeProjectDefaults?.projectName || activeProjectDefaults?.productionNumber) && (
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
-              {activeProjectDefaults?.projectName && (
-                <span className="text-foreground truncate">{activeProjectDefaults.projectName}</span>
-              )}
-              {activeProjectDefaults?.productionNumber && (
-                <span className="text-[10px] font-mono border rounded-full px-2 py-0.5 bg-accent/10 text-accent border-accent/30">
-                  {activeProjectDefaults.productionNumber}
-                </span>
-              )}
-            </div>
+    <div className="space-y-4">
+      {/* Workspace + project header — dialog already titles this surface */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="min-w-0 flex flex-wrap items-center gap-2 text-xs">
+          {activeProjectDefaults?.projectName && (
+            <span className="text-foreground truncate font-medium">{activeProjectDefaults.projectName}</span>
           )}
-          <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            Bring in footage from drives, camera cards or live folders. Files are auto-sorted into RAW, Proxy, Audio, Documents and Reports.
-          </p>
+          {activeProjectDefaults?.productionNumber && (
+            <span className="text-[10px] font-mono border rounded-full px-2 py-0.5 bg-accent/10 text-accent border-accent/30">
+              {activeProjectDefaults.productionNumber}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {workspaces.length > 0 && (
@@ -874,10 +866,8 @@ export default function StudioIngest({
 
       <LiveIngestStrip />
 
-
-
       {/* Mode selector */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {MODES.map((m) => {
           const Icon = m.icon;
           const active = m.id === mode;
@@ -885,7 +875,7 @@ export default function StudioIngest({
             <button
               key={m.id}
               onClick={() => { setMode(m.id); setScan(null); }}
-              className={`text-left rounded-xl border p-4 transition-colors ${
+              className={`text-left rounded-lg border p-3 transition-colors ${
                 active
                   ? "border-accent/60 bg-accent/10 ring-1 ring-accent/40"
                   : "border-border/40 bg-secondary/10 hover:bg-secondary/20"
@@ -893,16 +883,16 @@ export default function StudioIngest({
             >
               <div className="flex items-center gap-2 text-accent">
                 <Icon className="w-4 h-4" />
-                <span className="font-medium text-foreground">{m.label}</span>
+                <span className="font-medium text-foreground text-sm">{m.label}</span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1.5">{m.blurb}</p>
+              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{m.blurb}</p>
             </button>
           );
         })}
       </div>
 
       {/* Picker / scan / submit panel */}
-      <Card className="p-5 space-y-4">
+      <Card className="p-4 space-y-4">
         <div className="flex items-center gap-2">
           <currentModeMeta.icon className="w-4 h-4 text-accent" />
           <h3 className="font-semibold">{currentModeMeta.label}</h3>

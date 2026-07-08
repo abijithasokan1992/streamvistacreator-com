@@ -40,6 +40,8 @@ export default function ContentOwnerDashboard() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const [isFree, setIsFree] = useState<boolean>(true);
+  const [tier, setTier] = useState<FreeTierStatus | null>(null);
+  const [titles, setTitles] = useState<TitleRow[]>([]);
   const [tourOpen, setTourOpen] = useState(false);
   const raw = (params.get("section") as SectionId) || "home";
   // Backward-compat: legacy `?section=upgrade` deep links resolve to Storage & Billing.
@@ -48,8 +50,10 @@ export default function ContentOwnerDashboard() {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const t = await fetchFreeTierStatus();
+      const [t, ts] = await Promise.all([fetchFreeTierStatus(), listTitles().catch(() => [])]);
+      setTier(t ?? null);
       setIsFree(!!t?.is_free);
+      setTitles(Array.isArray(ts) ? ts : []);
     })();
   }, [user?.id]);
 

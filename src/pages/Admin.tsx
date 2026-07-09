@@ -473,6 +473,7 @@ function buildDepartments(args: {
         )},
         { id: "vault", label: "Vault Purchases", hint: "Studio Vault revenue", content: <AdminStudioVaultPurchases /> },
         { id: "intelligence", label: "Market Intelligence", hint: "Buyer & competitor intelligence", content: <IntelligenceCenter /> },
+        { id: "bi", label: "Business Intelligence", hint: "Uploads · Revenue · Rights · Delivery · AI Insights · Automation", content: <BusinessIntelligenceHub /> },
       ],
     },
     {

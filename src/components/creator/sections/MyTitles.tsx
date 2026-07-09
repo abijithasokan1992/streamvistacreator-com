@@ -121,6 +121,9 @@ export default function MyTitlesSection() {
       {/* Upgrade CTA lives on the Billing section — the inline free-plan banner above
           already surfaces the limit here and links straight to Billing. */}
 
+      {user && <CollectionsFranchisesManager userId={user.id} titles={titles} />}
+
+
       <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <p className="text-xs text-muted-foreground">
           {loading ? "Loading…" : `${visible.length} of ${titles.length} title${titles.length === 1 ? "" : "s"}`}

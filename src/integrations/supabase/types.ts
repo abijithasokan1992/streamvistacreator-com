@@ -5242,6 +5242,33 @@ export type Database = {
         }
         Relationships: []
       }
+      paddle_customers: {
+        Row: {
+          created_at: string
+          customer_id: string
+          email: string
+          environment: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          email: string
+          environment?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          email?: string
+          environment?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       partner_logos: {
         Row: {
           created_at: string
@@ -7938,6 +7965,8 @@ export type Database = {
           razorpay_plan_id: string | null
           razorpay_subscription_id: string | null
           razorpay_token_id: string | null
+          scheduled_change_action: string | null
+          scheduled_change_at: string | null
           status: string
           storage_quantity_tb: number | null
           stripe_customer_id: string | null
@@ -7966,6 +7995,8 @@ export type Database = {
           razorpay_plan_id?: string | null
           razorpay_subscription_id?: string | null
           razorpay_token_id?: string | null
+          scheduled_change_action?: string | null
+          scheduled_change_at?: string | null
           status?: string
           storage_quantity_tb?: number | null
           stripe_customer_id?: string | null
@@ -7994,6 +8025,8 @@ export type Database = {
           razorpay_plan_id?: string | null
           razorpay_subscription_id?: string | null
           razorpay_token_id?: string | null
+          scheduled_change_action?: string | null
+          scheduled_change_at?: string | null
           status?: string
           storage_quantity_tb?: number | null
           stripe_customer_id?: string | null

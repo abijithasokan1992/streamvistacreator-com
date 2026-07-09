@@ -6,6 +6,9 @@ import { useAuth, dashboardForRole, type AppRole } from "@/hooks/useAuth";
 import { useWorkspaces } from "@/hooks/useWorkspaces";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Button } from "@/components/ui/button";
+import WorkspacePlanCard from "@/components/workspace/PlanCard";
+import WorkspaceStorageCard from "@/components/workspace/StorageCard";
+import WorkspaceInsightsCard from "@/components/workspace/InsightsCard";
 
 /**
  * "My Workspace" — a read-only, minimal overview shown:
@@ -126,24 +129,6 @@ export default function MyWorkspace() {
         status: profileComplete ? "ready" : "setup",
       });
 
-      if (bucket === "creator" || bucket === "studio" || bucket === "buyer") {
-        items.push({
-          title: "Plan",
-          description: isFree
-            ? "You're on the Free tier. Upgrade for higher storage limits and premium tools."
-            : `${planName} is active on this account.`,
-          status: isFree ? "upgrade" : "included",
-        });
-
-        items.push({
-          title: "Storage",
-          description: allocatedGb > 0
-            ? `${allocatedGb.toFixed(0)} GB allocated to your workspace.`
-            : "No storage allocated yet — a Free allowance is applied on first upload.",
-          status: allocatedGb > 0 ? "included" : "setup",
-        });
-      }
-
       if (bucket === "creator") {
         items.push({
           title: "Your Titles",
@@ -193,11 +178,6 @@ export default function MyWorkspace() {
         description: "Password, magic links and OAuth are active on your account.",
         status: "ready",
       });
-      items.push({
-        title: "Insights & Analytics",
-        description: "Deeper usage reports and creator insights.",
-        status: "soon",
-      });
 
       setSections(items);
       setReady(true);
@@ -215,6 +195,8 @@ export default function MyWorkspace() {
   if (!user) return <Navigate to="/auth" replace />;
 
   const title = workspaceTitle(role);
+  const bucket = bucketFor(role);
+  const showModules = bucket === "creator" || bucket === "studio" || bucket === "buyer";
 
   const goNext = () => {
     try {
@@ -277,6 +259,21 @@ export default function MyWorkspace() {
             );
           })}
         </section>
+
+        {showModules && ready && (
+          <section className="mt-10 space-y-6">
+            <div className="flex items-baseline justify-between">
+              <h2 className="font-display text-xl">Your modules</h2>
+              <p className="text-[11px] text-muted-foreground/70">Live data · updated on load</p>
+            </div>
+            <div className="grid grid-cols-1 gap-6">
+              <WorkspacePlanCard />
+              <WorkspaceStorageCard />
+              <WorkspaceInsightsCard />
+            </div>
+          </section>
+        )}
+
 
         <div className="mt-10 flex flex-wrap items-center gap-3">
           <Button onClick={goNext} className="gap-2">

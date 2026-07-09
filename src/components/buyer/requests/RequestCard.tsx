@@ -3,6 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { STATE_LABEL, STATE_TONE, CATEGORY_LABEL, type Row } from "./shared";
 import { Clock } from "lucide-react";
+import { OfferNegotiationThread } from "@/components/licensing/OfferNegotiationThread";
+import { RightsMatrixTable } from "@/components/licensing/RightsMatrixTable";
 
 function StateBadge({ state }: { state: string }) {
   return (
@@ -141,6 +143,10 @@ export function RequestCard({ row }: { row: Row }) {
         <DetailBlock label="Timeline">
           <RequestTimeline requestId={row.id} />
         </DetailBlock>
+      </div>
+      <div className="mt-3 grid gap-3">
+        <OfferNegotiationThread commercialRequestId={row.id} party="buyer" />
+        {row.title_id && <RightsMatrixTable titleId={row.title_id} />}
       </div>
     </details>
   );

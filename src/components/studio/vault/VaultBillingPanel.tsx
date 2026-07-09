@@ -195,6 +195,7 @@ export default function VaultBillingPanel() {
     setPortalLoading(true);
     setPortalError(null);
     setPortalUrl(null);
+    setShowUrlFallback(false);
     portalBusyStore.set(true);
     portalAbortRef.current?.abort();
     dismissLoadingToast();

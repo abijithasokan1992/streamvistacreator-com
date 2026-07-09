@@ -174,6 +174,7 @@ export default function VaultBillingPanel() {
   const [portalLoading, setPortalLoading] = useState(false);
   const [portalUrl, setPortalUrl] = useState<string | null>(null);
   const [portalError, setPortalError] = useState<{ title: string; description: string } | null>(null);
+  const [portalCopied, setPortalCopied] = useState(false);
   const portalPendingRef = useRef(false);
   const portalAbortRef = useRef<AbortController | null>(null);
   const loadingToastRef = useRef<string | number | undefined>(undefined);

@@ -268,6 +268,18 @@ export default function VaultBillingPanel() {
     }
   };
 
+  const copyPortalUrl = async () => {
+    if (!portalUrl) return;
+    try {
+      await navigator.clipboard.writeText(portalUrl);
+      setPortalCopied(true);
+      toast.success("Portal link copied");
+      window.setTimeout(() => setPortalCopied(false), 2000);
+    } catch {
+      toast.error("Could not copy link");
+    }
+  };
+
   useEffect(() => {
     isMountedRef.current = true;
     return () => {

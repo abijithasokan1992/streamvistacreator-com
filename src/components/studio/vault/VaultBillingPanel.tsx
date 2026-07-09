@@ -124,8 +124,7 @@ export default function VaultBillingPanel() {
       }
       if (res.error === "abort") return;
       if (!res.ok) {
-        toast.dismiss(loadingToastRef.current);
-        loadingToastRef.current = null;
+        dismissLoadingToast();
         const { title, description } = friendlyPortalError(res);
         toast.error(title, {
           description,

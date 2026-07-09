@@ -49,6 +49,18 @@ export default function VaultBillingPanel() {
   const [topups, setTopups] = useState<Topup[]>([]);
   const [loading, setLoading] = useState(true);
   const [showIncomplete, setShowIncomplete] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
+
+  const handleManage = async () => {
+    setPortalLoading(true);
+    const res = await openPaddlePortal();
+    if (!res.ok) {
+      toast({ title: "Couldn't open billing portal", description: res.error, variant: "destructive" });
+      setPortalLoading(false);
+    }
+    // On success we redirect, no need to reset state.
+  };
+
 
   useEffect(() => {
     if (!user) return;

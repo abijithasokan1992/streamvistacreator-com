@@ -175,9 +175,11 @@ export default function VaultBillingPanel() {
   const [portalUrl, setPortalUrl] = useState<string | null>(null);
   const [portalError, setPortalError] = useState<{ title: string; description: string } | null>(null);
   const [portalCopied, setPortalCopied] = useState(false);
+  const [showUrlFallback, setShowUrlFallback] = useState(false);
   const portalPendingRef = useRef(false);
   const portalAbortRef = useRef<AbortController | null>(null);
   const loadingToastRef = useRef<string | number | undefined>(undefined);
+  const fallbackInputRef = useRef<HTMLInputElement>(null);
   const isMountedRef = useRef(true);
 
   const dismissLoadingToast = () => {
@@ -193,6 +195,7 @@ export default function VaultBillingPanel() {
     setPortalLoading(true);
     setPortalError(null);
     setPortalUrl(null);
+    setShowUrlFallback(false);
     portalBusyStore.set(true);
     portalAbortRef.current?.abort();
     dismissLoadingToast();
@@ -273,6 +276,7 @@ export default function VaultBillingPanel() {
     try {
       await navigator.clipboard.writeText(portalUrl);
       setPortalCopied(true);
+      setShowUrlFallback(false);
       toast.success("Portal link copied");
       window.setTimeout(() => setPortalCopied(false), 2000);
     } catch (err) {
@@ -280,15 +284,15 @@ export default function VaultBillingPanel() {
         err instanceof DOMException &&
         (err.name === "NotAllowedError" || err.name === "PermissionDeniedError");
       toast.error(
-        isPermissionError
-          ? "Clipboard access denied"
-          : "Could not copy link",
+        isPermissionError ? "Clipboard access denied" : "Could not copy link",
         {
           description: isPermissionError
-            ? "Your browser or page permissions blocked clipboard access. Allow clipboard access and try again, or copy the URL manually."
+            ? "Your browser blocked clipboard access. Select the URL below and copy it manually."
             : "Something went wrong while copying the portal link.",
         }
       );
+      setShowUrlFallback(true);
+      window.setTimeout(() => fallbackInputRef.current?.select(), 50);
     }
   };
 
@@ -392,6 +396,24 @@ export default function VaultBillingPanel() {
           </button>
         </div>
       </div>
+
+      {showUrlFallback && portalUrl && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
+          <label htmlFor="portal-url-fallback" className="text-xs font-medium text-amber-200 mb-1.5 block">
+            Clipboard access blocked. Copy the portal URL manually:
+          </label>
+          <input
+            ref={fallbackInputRef}
+            id="portal-url-fallback"
+            type="text"
+            readOnly
+            value={portalUrl}
+            onFocus={(e) => e.currentTarget.select()}
+            className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+            aria-label="Paddle portal URL"
+          />
+        </div>
+      )}
 
       {portalError && (
         <div

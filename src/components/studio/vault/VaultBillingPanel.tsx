@@ -162,6 +162,7 @@ export default function VaultBillingPanel() {
     if (portalLoading || portalPendingRef.current) return;
     portalPendingRef.current = true;
     setPortalLoading(true);
+    portalBusyStore.set(true);
     portalAbortRef.current?.abort();
     dismissLoadingToast();
     const controller = new AbortController();
@@ -180,37 +181,42 @@ export default function VaultBillingPanel() {
       if (res.error === "abort") return;
       if (!res.ok) {
         const { title, description } = friendlyPortalError(res);
-        toast.error(title, {
-          id: loadingToastRef.current,
-          description,
-          action: {
-            label: "Retry",
-            onClick: () => {
-              toast.dismiss();
-              handleManage();
-            },
-          },
-        });
+        toast.custom(
+          (t) => (
+            <PortalErrorToast
+              title={title}
+              description={description}
+              onRetry={() => {
+                toast.dismiss(t.id);
+                handleManage();
+              }}
+            />
+          ),
+          { id: loadingToastRef.current, duration: Infinity }
+        );
       }
     } catch (err) {
       const { title, description } = friendlyPortalError({
         error: err instanceof Error ? err.message : "Unable to reach the billing portal.",
       });
-      toast.error(title, {
-        id: loadingToastRef.current,
-        description,
-        action: {
-          label: "Retry",
-          onClick: () => {
-            toast.dismiss();
-            handleManage();
-          },
-        },
-      });
+      toast.custom(
+        (t) => (
+          <PortalErrorToast
+            title={title}
+            description={description}
+            onRetry={() => {
+              toast.dismiss(t.id);
+              handleManage();
+            }}
+          />
+        ),
+        { id: loadingToastRef.current, duration: Infinity }
+      );
     } finally {
       if (portalAbortRef.current === controller) {
         portalPendingRef.current = false;
         setPortalLoading(false);
+        portalBusyStore.set(false);
         portalAbortRef.current = null;
       }
     }

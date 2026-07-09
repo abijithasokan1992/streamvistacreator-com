@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Trash2, Loader2, Layers, Film, Languages, Send, Link2 } from "lucide-react";
+import { Plus, Trash2, Loader2, Layers, Film, Languages, Send, Link2, FolderTree, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   listChildren, createChildTitle, updateTitleHierarchy,
@@ -8,19 +8,24 @@ import {
   listMediaVersions, upsertMediaVersion, deleteMediaVersion,
   listLocalizations, upsertLocalization, deleteLocalization,
   getPublishing, upsertPublishing,
+  listCollections, createCollection,
+  listCollectionsContainingTitle, addTitleToCollection, removeTitleFromCollection,
+  listDeliveriesForTitle,
   MEDIA_VERSION_LABELS, LOCALIZATION_LABELS,
   type TitleKind, type MediaVersion, type MediaVersionType,
   type Localization, type LocalizationKind,
-  type PublishingRecord, type Franchise,
+  type PublishingRecord, type Franchise, type Collection, type DeliveryRow,
 } from "@/lib/creator/mediaCmsApi";
 
-type Sub = "hierarchy" | "versions" | "localization" | "publishing";
+type Sub = "hierarchy" | "collections" | "versions" | "localization" | "publishing" | "delivery";
 
 const SUBS: { id: Sub; label: string; icon: any }[] = [
-  { id: "hierarchy",    label: "Structure",     icon: Layers   },
-  { id: "versions",     label: "Media Versions", icon: Film    },
-  { id: "localization", label: "Localization",  icon: Languages },
-  { id: "publishing",   label: "Publishing",    icon: Send     },
+  { id: "hierarchy",    label: "Structure",      icon: Layers     },
+  { id: "collections",  label: "Collections",    icon: FolderTree },
+  { id: "versions",     label: "Media Versions", icon: Film       },
+  { id: "localization", label: "Localization",   icon: Languages  },
+  { id: "publishing",   label: "Publishing",     icon: Send       },
+  { id: "delivery",     label: "Delivery",       icon: Truck      },
 ];
 
 const VERSION_TYPES: MediaVersionType[] = ["master","broadcast","ott","hdr","sdr","proxy","trailer","screener","clip"];
@@ -51,10 +56,146 @@ export function MediaCmsPanel({
       </div>
 
       {sub === "hierarchy"    && <HierarchyTab titleId={titleId} ownerUserId={ownerUserId} workspaceId={workspaceId} titleKind={titleKind} readOnly={readOnly} />}
+      {sub === "collections"  && <CollectionsTab titleId={titleId} ownerUserId={ownerUserId} readOnly={readOnly} />}
       {sub === "versions"     && <VersionsTab titleId={titleId} readOnly={readOnly} />}
       {sub === "localization" && <LocalizationTab titleId={titleId} readOnly={readOnly} />}
       {sub === "publishing"   && <PublishingTab titleId={titleId} readOnly={readOnly} />}
+      {sub === "delivery"     && <DeliveryTab titleId={titleId} />}
     </div>
+  );
+}
+
+/* ============ Collections ============ */
+function CollectionsTab({ titleId, ownerUserId, readOnly }: { titleId: string; ownerUserId: string; readOnly: boolean }) {
+  const [all, setAll] = useState<Collection[]>([]);
+  const [memberships, setMemberships] = useState<Array<{ id: string; collection: Collection | null }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [newName, setNewName] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const reload = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [a, m] = await Promise.all([listCollections(ownerUserId), listCollectionsContainingTitle(titleId)]);
+      setAll(a); setMemberships(m as any);
+    } finally { setLoading(false); }
+  }, [ownerUserId, titleId]);
+  useEffect(() => { void reload(); }, [reload]);
+
+  const memberIds = new Set(memberships.map((m) => m.collection?.id).filter(Boolean) as string[]);
+
+  const toggle = async (c: Collection) => {
+    setBusy(true);
+    try {
+      if (memberIds.has(c.id)) {
+        const item = memberships.find((m) => m.collection?.id === c.id);
+        if (item) await removeTitleFromCollection(item.id);
+      } else {
+        await addTitleToCollection(c.id, titleId);
+      }
+      await reload();
+    } catch (e: any) { toast.error(e.message ?? "Could not update"); }
+    finally { setBusy(false); }
+  };
+
+  const addNew = async () => {
+    if (!newName.trim()) return;
+    setBusy(true);
+    try {
+      const c = await createCollection(ownerUserId, newName.trim());
+      await addTitleToCollection(c.id, titleId);
+      setNewName("");
+      await reload();
+      toast.success("Collection created");
+    } catch (e: any) { toast.error(e.message ?? "Could not create"); }
+    finally { setBusy(false); }
+  };
+
+  if (loading) return <p className="text-xs text-muted-foreground"><Loader2 className="w-3.5 h-3.5 inline animate-spin" /> Loading…</p>;
+
+  return (
+    <div className="space-y-4">
+      <Card title="Collections">
+        {all.length === 0 ? (
+          <p className="text-xs text-muted-foreground">No collections yet.</p>
+        ) : (
+          <ul className="space-y-1">
+            {all.map((c) => (
+              <li key={c.id} className="flex items-center justify-between text-xs px-2.5 py-2 rounded-md bg-background/40 border border-border/40">
+                <span className="truncate">
+                  <Link2 className="w-3 h-3 inline mr-1 text-muted-foreground" />
+                  <span className="font-medium">{c.name}</span>
+                  {c.description && <span className="text-muted-foreground"> · {c.description}</span>}
+                </span>
+                <button disabled={readOnly || busy} onClick={() => toggle(c)}
+                  className={cn("text-[11px] px-2 py-1 rounded-md border transition-colors",
+                    memberIds.has(c.id)
+                      ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-200"
+                      : "border-border/50 text-muted-foreground hover:bg-secondary/30")}>
+                  {memberIds.has(c.id) ? "In collection" : "Add"}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {!readOnly && (
+          <div className="flex flex-wrap gap-2 mt-3">
+            <input placeholder="New collection name" value={newName} onChange={(e) => setNewName(e.target.value)}
+              className="flex-1 min-w-[200px] rounded-md bg-background/60 border border-border/50 text-xs px-2 py-1.5" />
+            <button disabled={busy || !newName.trim()} onClick={addNew}
+              className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md bg-accent text-accent-foreground disabled:opacity-40">
+              <Plus className="w-3.5 h-3.5" /> Create & add
+            </button>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+/* ============ Delivery history (read-only) ============ */
+function DeliveryTab({ titleId }: { titleId: string }) {
+  const [rows, setRows] = useState<DeliveryRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try { setRows(await listDeliveriesForTitle(titleId)); }
+      catch (e: any) { toast.error(e.message ?? "Could not load"); }
+      finally { setLoading(false); }
+    })();
+  }, [titleId]);
+  if (loading) return <p className="text-xs text-muted-foreground"><Loader2 className="w-3.5 h-3.5 inline animate-spin" /> Loading…</p>;
+  if (rows.length === 0) return <p className="text-xs text-muted-foreground">No deliveries dispatched yet.</p>;
+  const badge = (s: string) => {
+    const cls = s === "delivered" ? "bg-emerald-500/15 text-emerald-200"
+      : s === "failed" ? "bg-rose-500/15 text-rose-200"
+      : s === "in_progress" || s === "queued" ? "bg-amber-500/15 text-amber-200"
+      : "bg-secondary/40 text-muted-foreground";
+    return <span className={cn("text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded", cls)}>{s.replace(/_/g," ")}</span>;
+  };
+  return (
+    <ul className="space-y-2">
+      {rows.map((r) => (
+        <li key={r.id} className="rounded-md border border-border/40 bg-background/40 p-3 text-xs">
+          <div className="flex items-center justify-between mb-1">
+            <span className="font-medium">
+              {r.partner?.name ?? "Partner"} <span className="text-muted-foreground">· {r.protocol}</span>
+            </span>
+            {badge(r.status)}
+          </div>
+          <div className="grid sm:grid-cols-3 gap-x-4 gap-y-0.5 text-muted-foreground">
+            <span>Attempt: <span className="text-foreground">#{r.attempt_no}</span></span>
+            {r.dispatched_at && <span>Dispatched: <span className="text-foreground">{new Date(r.dispatched_at).toLocaleString()}</span></span>}
+            {r.delivered_at && <span>Delivered: <span className="text-foreground">{new Date(r.delivered_at).toLocaleString()}</span></span>}
+            {r.bytes_transferred != null && <span>Bytes: <span className="text-foreground">{Number(r.bytes_transferred).toLocaleString()}</span></span>}
+            {r.duration_ms != null && <span>Duration: <span className="text-foreground">{r.duration_ms} ms</span></span>}
+            {r.error_code && <span className="text-rose-300">Error: {r.error_code}</span>}
+          </div>
+          {r.error_message && <div className="mt-1 text-rose-300/80">{r.error_message}</div>}
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -245,6 +386,7 @@ function VersionsTab({ titleId, readOnly }: { titleId: string; readOnly: boolean
             <Input label="Loudness LUFS"  value={draft.loudness_lufs?.toString() ?? ""} onChange={(v) => setDraft({ ...draft, loudness_lufs: v ? Number(v) : null })} placeholder="-23.0" />
             <JsonInput label="HDR Metadata" value={draft.hdr_metadata ?? {}} onChange={(v) => setDraft({ ...draft, hdr_metadata: v })} />
             <JsonInput label="IMF Metadata" value={draft.imf_metadata ?? {}} onChange={(v) => setDraft({ ...draft, imf_metadata: v })} />
+            <JsonInput label="Technical Metadata" value={draft.tech_metadata ?? {}} onChange={(v) => setDraft({ ...draft, tech_metadata: v })} />
           </div>
           <div className="flex gap-2 mt-3">
             <button onClick={save} className="text-xs px-3 py-1.5 rounded-md bg-accent text-accent-foreground">Save</button>

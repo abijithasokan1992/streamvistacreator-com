@@ -199,3 +199,36 @@ export async function upsertPublishing(row: Partial<PublishingRecord> & { title_
   if (error) throw error;
   return data as PublishingRecord;
 }
+
+/* ---------- Delivery history (read-only view over distribution_deliveries) ---------- */
+export type DeliveryRow = {
+  id: string; title_id: string; partner_id: string; protocol: string;
+  status: string; attempt_no: number;
+  bytes_transferred: number | null; duration_ms: number | null;
+  dispatched_at: string | null; delivered_at: string | null; failed_at: string | null;
+  error_code: string | null; error_message: string | null;
+  partner?: { id: string; name: string; protocol: string } | null;
+};
+export async function listDeliveriesForTitle(titleId: string): Promise<DeliveryRow[]> {
+  const { data, error } = await sb.from("distribution_deliveries")
+    .select("id, title_id, partner_id, protocol, status, attempt_no, bytes_transferred, duration_ms, dispatched_at, delivered_at, failed_at, error_code, error_message")
+    .eq("title_id", titleId)
+    .order("dispatched_at", { ascending: false, nullsFirst: false })
+    .limit(25);
+  if (error) throw error;
+  const rows = (data ?? []) as DeliveryRow[];
+  const partnerIds = Array.from(new Set(rows.map((r) => r.partner_id).filter(Boolean)));
+  if (partnerIds.length === 0) return rows;
+  const { data: partners } = await sb.rpc("list_active_distribution_partners");
+  const pmap = new Map(((partners as any[]) ?? []).map((p: any) => [p.id, p]));
+  return rows.map((r) => ({ ...r, partner: pmap.get(r.partner_id) ?? null }));
+}
+
+/* ---------- Collections membership for a specific title ---------- */
+export async function listCollectionsContainingTitle(titleId: string) {
+  const { data, error } = await sb.from("title_collection_items")
+    .select("id, sort_order, collection:title_collections(id,name,description)")
+    .eq("title_id", titleId);
+  if (error) throw error;
+  return (data ?? []) as Array<{ id: string; sort_order: number; collection: Collection | null }>;
+}

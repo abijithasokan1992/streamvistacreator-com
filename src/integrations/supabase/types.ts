@@ -1653,17 +1653,23 @@ export type Database = {
           approved_by: string | null
           created_at: string
           duration_minutes: number | null
+          episode_number: number | null
+          franchise_id: string | null
           genre: string | null
           id: string
+          kind: Database["public"]["Enums"]["title_kind"]
           language: string | null
           locked: boolean
           locked_at: string | null
           locked_by: string | null
           metadata: Json
           owner_user_id: string
+          parent_title_id: string | null
           previous_status: Database["public"]["Enums"]["content_status"] | null
           published_at: string | null
           requested_from_stage: string | null
+          season_number: number | null
+          sort_order: number
           status: Database["public"]["Enums"]["content_status"]
           submitted_at: string | null
           synopsis: string | null
@@ -1676,17 +1682,23 @@ export type Database = {
           approved_by?: string | null
           created_at?: string
           duration_minutes?: number | null
+          episode_number?: number | null
+          franchise_id?: string | null
           genre?: string | null
           id?: string
+          kind?: Database["public"]["Enums"]["title_kind"]
           language?: string | null
           locked?: boolean
           locked_at?: string | null
           locked_by?: string | null
           metadata?: Json
           owner_user_id: string
+          parent_title_id?: string | null
           previous_status?: Database["public"]["Enums"]["content_status"] | null
           published_at?: string | null
           requested_from_stage?: string | null
+          season_number?: number | null
+          sort_order?: number
           status?: Database["public"]["Enums"]["content_status"]
           submitted_at?: string | null
           synopsis?: string | null
@@ -1699,17 +1711,23 @@ export type Database = {
           approved_by?: string | null
           created_at?: string
           duration_minutes?: number | null
+          episode_number?: number | null
+          franchise_id?: string | null
           genre?: string | null
           id?: string
+          kind?: Database["public"]["Enums"]["title_kind"]
           language?: string | null
           locked?: boolean
           locked_at?: string | null
           locked_by?: string | null
           metadata?: Json
           owner_user_id?: string
+          parent_title_id?: string | null
           previous_status?: Database["public"]["Enums"]["content_status"] | null
           published_at?: string | null
           requested_from_stage?: string | null
+          season_number?: number | null
+          sort_order?: number
           status?: Database["public"]["Enums"]["content_status"]
           submitted_at?: string | null
           synopsis?: string | null
@@ -1717,7 +1735,22 @@ export type Database = {
           updated_at?: string
           workspace_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "content_titles_franchise_id_fkey"
+            columns: ["franchise_id"]
+            isOneToOne: false
+            referencedRelation: "title_franchises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_titles_parent_title_id_fkey"
+            columns: ["parent_title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       deal_deliveries: {
         Row: {
@@ -6955,6 +6988,84 @@ export type Database = {
           },
         ]
       }
+      title_collection_items: {
+        Row: {
+          collection_id: string
+          created_at: string
+          id: string
+          note: string | null
+          sort_order: number
+          title_id: string
+        }
+        Insert: {
+          collection_id: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          sort_order?: number
+          title_id: string
+        }
+        Update: {
+          collection_id?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          sort_order?: number
+          title_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "title_collection_items_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "title_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "title_collection_items_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      title_collections: {
+        Row: {
+          cover_asset_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          metadata: Json
+          name: string
+          owner_user_id: string
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          cover_asset_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json
+          name: string
+          owner_user_id: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          cover_asset_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json
+          name?: string
+          owner_user_id?: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
       title_commercial_profiles: {
         Row: {
           acquisition_open: boolean
@@ -7109,6 +7220,89 @@ export type Database = {
           },
         ]
       }
+      title_franchises: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          metadata: Json
+          name: string
+          owner_user_id: string
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json
+          name: string
+          owner_user_id: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json
+          name?: string
+          owner_user_id?: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
+      title_localizations: {
+        Row: {
+          asset_id: string | null
+          created_at: string
+          id: string
+          is_default: boolean
+          kind: Database["public"]["Enums"]["localization_kind"]
+          label: string | null
+          language: string
+          payload: Json
+          region: string | null
+          title_id: string
+          updated_at: string
+        }
+        Insert: {
+          asset_id?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          kind: Database["public"]["Enums"]["localization_kind"]
+          label?: string | null
+          language: string
+          payload?: Json
+          region?: string | null
+          title_id: string
+          updated_at?: string
+        }
+        Update: {
+          asset_id?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          kind?: Database["public"]["Enums"]["localization_kind"]
+          label?: string | null
+          language?: string
+          payload?: Json
+          region?: string | null
+          title_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "title_localizations_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       title_lock_state: {
         Row: {
           current_submission_state: string
@@ -7140,6 +7334,130 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "title_lock_state_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: true
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      title_media_versions: {
+        Row: {
+          aspect_ratio: string | null
+          audio_layout: string | null
+          bitrate_kbps: number | null
+          codec: string | null
+          container: string | null
+          created_at: string
+          frame_rate: number | null
+          hdr_metadata: Json
+          id: string
+          imf_metadata: Json
+          label: string | null
+          loudness_lufs: number | null
+          notes: string | null
+          source_asset_id: string | null
+          tech_metadata: Json
+          title_id: string
+          updated_at: string
+          version_type: Database["public"]["Enums"]["media_version_type"]
+        }
+        Insert: {
+          aspect_ratio?: string | null
+          audio_layout?: string | null
+          bitrate_kbps?: number | null
+          codec?: string | null
+          container?: string | null
+          created_at?: string
+          frame_rate?: number | null
+          hdr_metadata?: Json
+          id?: string
+          imf_metadata?: Json
+          label?: string | null
+          loudness_lufs?: number | null
+          notes?: string | null
+          source_asset_id?: string | null
+          tech_metadata?: Json
+          title_id: string
+          updated_at?: string
+          version_type: Database["public"]["Enums"]["media_version_type"]
+        }
+        Update: {
+          aspect_ratio?: string | null
+          audio_layout?: string | null
+          bitrate_kbps?: number | null
+          codec?: string | null
+          container?: string | null
+          created_at?: string
+          frame_rate?: number | null
+          hdr_metadata?: Json
+          id?: string
+          imf_metadata?: Json
+          label?: string | null
+          loudness_lufs?: number | null
+          notes?: string | null
+          source_asset_id?: string | null
+          tech_metadata?: Json
+          title_id?: string
+          updated_at?: string
+          version_type?: Database["public"]["Enums"]["media_version_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "title_media_versions_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      title_publishing: {
+        Row: {
+          approval: Database["public"]["Enums"]["publish_approval_status"]
+          availability: Database["public"]["Enums"]["availability_status"]
+          available_from: string | null
+          available_until: string | null
+          created_at: string
+          delivery: Database["public"]["Enums"]["delivery_status"]
+          distribution: Database["public"]["Enums"]["distribution_readiness"]
+          metadata: Json
+          notes: string | null
+          title_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          approval?: Database["public"]["Enums"]["publish_approval_status"]
+          availability?: Database["public"]["Enums"]["availability_status"]
+          available_from?: string | null
+          available_until?: string | null
+          created_at?: string
+          delivery?: Database["public"]["Enums"]["delivery_status"]
+          distribution?: Database["public"]["Enums"]["distribution_readiness"]
+          metadata?: Json
+          notes?: string | null
+          title_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          approval?: Database["public"]["Enums"]["publish_approval_status"]
+          availability?: Database["public"]["Enums"]["availability_status"]
+          available_from?: string | null
+          available_until?: string | null
+          created_at?: string
+          delivery?: Database["public"]["Enums"]["delivery_status"]
+          distribution?: Database["public"]["Enums"]["distribution_readiness"]
+          metadata?: Json
+          notes?: string | null
+          title_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "title_publishing_title_id_fkey"
             columns: ["title_id"]
             isOneToOne: true
             referencedRelation: "content_titles"
@@ -9208,6 +9526,12 @@ export type Database = {
         | "legal_reviewer"
         | "founder"
         | "channel_partner"
+      availability_status:
+        | "draft"
+        | "scheduled"
+        | "available"
+        | "expired"
+        | "withdrawn"
       billing_attempt_status:
         | "initiated"
         | "succeeded"
@@ -9284,6 +9608,12 @@ export type Database = {
         | "acquisition"
         | "distribution_representation"
         | "rights_information"
+      delivery_status:
+        | "not_started"
+        | "queued"
+        | "in_progress"
+        | "delivered"
+        | "failed"
       distribution_offer_status:
         | "draft"
         | "offered"
@@ -9291,6 +9621,7 @@ export type Database = {
         | "rejected"
         | "expired"
         | "cancelled"
+      distribution_readiness: "not_ready" | "in_prep" | "ready" | "blocked"
       internal_department:
         | "finance"
         | "billing"
@@ -9331,11 +9662,32 @@ export type Database = {
         | "free_tier_commercial"
         | "screener_access"
         | "antipiracy_addendum"
+      localization_kind:
+        | "audio_track"
+        | "subtitle"
+        | "closed_caption"
+        | "dub"
+        | "localized_metadata"
+      media_version_type:
+        | "master"
+        | "broadcast"
+        | "ott"
+        | "hdr"
+        | "sdr"
+        | "proxy"
+        | "trailer"
+        | "screener"
+        | "clip"
       org_kind: "creator" | "studio" | "buyer" | "channel_partner"
       org_status: "draft" | "invited" | "onboarding" | "active" | "suspended"
       plan_assignment_status: "active" | "suspended" | "expired" | "cancelled"
       production_banner: "Crayons Pictures" | "Abhijith Asokan Productions"
       protection_tier: "baseline" | "enhanced" | "forensic"
+      publish_approval_status:
+        | "pending"
+        | "approved"
+        | "rejected"
+        | "changes_requested"
       right_category:
         | "screening"
         | "digital_ott"
@@ -9366,6 +9718,7 @@ export type Database = {
         | "rejected"
         | "fulfilled"
         | "cancelled"
+      title_kind: "film" | "series" | "season" | "episode" | "collection_entry"
       title_section_unlock_status: "open" | "closed" | "expired"
       workspace_role: "owner" | "admin" | "editor" | "viewer"
     }
@@ -9528,6 +9881,13 @@ export const Constants = {
         "founder",
         "channel_partner",
       ],
+      availability_status: [
+        "draft",
+        "scheduled",
+        "available",
+        "expired",
+        "withdrawn",
+      ],
       billing_attempt_status: [
         "initiated",
         "succeeded",
@@ -9613,6 +9973,13 @@ export const Constants = {
         "distribution_representation",
         "rights_information",
       ],
+      delivery_status: [
+        "not_started",
+        "queued",
+        "in_progress",
+        "delivered",
+        "failed",
+      ],
       distribution_offer_status: [
         "draft",
         "offered",
@@ -9621,6 +9988,7 @@ export const Constants = {
         "expired",
         "cancelled",
       ],
+      distribution_readiness: ["not_ready", "in_prep", "ready", "blocked"],
       internal_department: [
         "finance",
         "billing",
@@ -9665,11 +10033,35 @@ export const Constants = {
         "screener_access",
         "antipiracy_addendum",
       ],
+      localization_kind: [
+        "audio_track",
+        "subtitle",
+        "closed_caption",
+        "dub",
+        "localized_metadata",
+      ],
+      media_version_type: [
+        "master",
+        "broadcast",
+        "ott",
+        "hdr",
+        "sdr",
+        "proxy",
+        "trailer",
+        "screener",
+        "clip",
+      ],
       org_kind: ["creator", "studio", "buyer", "channel_partner"],
       org_status: ["draft", "invited", "onboarding", "active", "suspended"],
       plan_assignment_status: ["active", "suspended", "expired", "cancelled"],
       production_banner: ["Crayons Pictures", "Abhijith Asokan Productions"],
       protection_tier: ["baseline", "enhanced", "forensic"],
+      publish_approval_status: [
+        "pending",
+        "approved",
+        "rejected",
+        "changes_requested",
+      ],
       right_category: [
         "screening",
         "digital_ott",
@@ -9704,6 +10096,7 @@ export const Constants = {
         "fulfilled",
         "cancelled",
       ],
+      title_kind: ["film", "series", "season", "episode", "collection_entry"],
       title_section_unlock_status: ["open", "closed", "expired"],
       workspace_role: ["owner", "admin", "editor", "viewer"],
     },

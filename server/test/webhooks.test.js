@@ -145,14 +145,26 @@ function signPaddle(body, secret = process.env.PADDLE_WEBHOOK_SECRET, ts = Math.
   return `ts=${ts};h1=${h1}`;
 }
 
-function post(app, payload, { signature, secret } = {}) {
+async function post(app, payload, { signature, secret, rawOverride } = {}) {
   const raw = typeof payload === 'string' ? payload : JSON.stringify(payload);
   const sig = signature ?? signPaddle(raw, secret);
-  return request(app)
-    .post('/api/webhooks/paddle')
-    .set('Content-Type', 'application/json')
-    .set('paddle-signature', sig)
-    .send(Buffer.from(raw));
+  const bodyToSend = rawOverride ?? raw;
+  const server = app.listen(0);
+  try {
+    const { port } = server.address();
+    const resp = await fetch(`http://127.0.0.1:${port}/api/webhooks/paddle`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'paddle-signature': sig,
+      },
+      body: bodyToSend,
+    });
+    const text = await resp.text();
+    return { status: resp.status, text };
+  } finally {
+    server.close();
+  }
 }
 
 // ---------- Sample payloads (shape mirrors real Paddle notifications) ----------

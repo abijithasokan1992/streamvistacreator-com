@@ -216,9 +216,58 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "unsupported_protocol" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // Apply partner metadata mappings — reshape the manifest into partner-specific fields.
+    const { data: mappings } = await admin.from("distribution_metadata_mappings")
+      .select("target_field,source_field,transform,required,default_value")
+      .eq("partner_id", partner.id);
+    const baseManifest = pkg.manifest ?? {};
+    let mappedMeta: Record<string, unknown> = {};
+    const missingRequired: string[] = [];
+    if (mappings && mappings.length) {
+      const getPath = (obj: any, path: string | null) => {
+        if (!path) return undefined;
+        return path.split(".").reduce((acc: any, k) => (acc == null ? acc : acc[k]), obj);
+      };
+      const applyTransform = (v: any, t: string | null) => {
+        if (!t) return v;
+        try {
+          if (t === "upper") return typeof v === "string" ? v.toUpperCase() : v;
+          if (t === "lower") return typeof v === "string" ? v.toLowerCase() : v;
+          if (t === "iso_date") return v ? new Date(String(v)).toISOString() : v;
+          if (t === "string") return v == null ? v : String(v);
+          if (t === "number") return v == null ? v : Number(v);
+        } catch { /* fall through */ }
+        return v;
+      };
+      for (const m of mappings as any[]) {
+        let v = getPath(baseManifest, m.source_field);
+        if (v == null || v === "") v = m.default_value ?? undefined;
+        v = applyTransform(v, m.transform);
+        if ((v == null || v === "") && m.required) missingRequired.push(m.target_field);
+        if (v !== undefined) mappedMeta[m.target_field] = v;
+      }
+      await log("info", "metadata_map", `Applied ${mappings.length} field mappings`, { fields: Object.keys(mappedMeta) });
+    }
+    if (missingRequired.length) {
+      await log("error", "metadata_map", `Missing required mapped fields: ${missingRequired.join(", ")}`);
+      await admin.from("distribution_deliveries").update({
+        status: "failed", failed_at: new Date().toISOString(),
+        error_code: "metadata_incomplete",
+        error_message: `Missing required partner fields: ${missingRequired.join(", ")}`,
+      }).eq("id", delivery?.id);
+      await admin.from("distribution_queue").update({
+        status: "failed", last_error_code: "metadata_incomplete",
+        last_error: `Missing required partner fields: ${missingRequired.join(", ")}`,
+      }).eq("id", queueId);
+      return new Response(JSON.stringify({ ok: false, error: "metadata_incomplete", missing: missingRequired, correlation_id: correlationId }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const enrichedManifest = { ...baseManifest, partner_metadata: mappedMeta };
     const started = Date.now();
     const result = await driver({
-      partner: partner as Partner, pkg, manifest: pkg.manifest ?? {}, correlationId, log,
+      partner: partner as Partner, pkg, manifest: enrichedManifest, correlationId, log,
     });
     const durationMs = Date.now() - started;
 

@@ -42,6 +42,7 @@ export const SECTIONS: ReadonlyArray<SectionDef> = [
   { id: "home",           label: "Home",     heading: "Home",     tip: "Your workspace at a glance.",                     icon: Home,     group: "work" },
   { id: "titles",         label: "Titles",   heading: "Titles",   tip: "Add and manage your films and shows.",            icon: Film,     group: "work" },
   { id: "delivery_vault", label: "Library",  heading: "Library",  subhead: "Masters, deliveries, archives.", tip: "Secure storage for your master files.", icon: Database, group: "work" },
+  { id: "distribution",   label: "Distribution", heading: "Distribution", subhead: "Package and deliver to partners.", tip: "Deliver masters to partners via API, FTP/SFTP, Aspera or Signiant.", icon: Radio, group: "work" },
 
   // Business — where is the commercial activity?
   { id: "business",       label: "Business", heading: "Business", subhead: "Buyer interest, offers, and deals.", tip: "Buyer interest, offers and deals.", icon: Briefcase,   group: "business", proOnly: true },

@@ -248,10 +248,7 @@ test.beforeEach(() => resetStore());
 
 test('rejects request with missing paddle-signature header', async () => {
   const app = buildApp();
-  const res = await request(app)
-    .post('/api/webhooks/paddle')
-    .set('Content-Type', 'application/json')
-    .send(Buffer.from(JSON.stringify(customerCreated)));
+  const res = await post(app, customerCreated, { signature: '' });
   assert.equal(res.status, 401);
   assert.equal(store.customers.size, 0);
 });
@@ -270,11 +267,7 @@ test('rejects request whose body was mutated after signing', async () => {
   const raw = JSON.stringify(customerCreated);
   const sig = signPaddle(raw);
   const mutated = raw.replace('alice@example.com', 'attacker@example.com');
-  const res = await request(app)
-    .post('/api/webhooks/paddle')
-    .set('Content-Type', 'application/json')
-    .set('paddle-signature', sig)
-    .send(Buffer.from(mutated));
+  const res = await post(app, raw, { signature: sig, rawOverride: mutated });
   assert.equal(res.status, 401);
 });
 

@@ -63,6 +63,8 @@ import MarketingCMS from "@/components/admin/MarketingCMS";
 import FounderVault from "@/components/admin/FounderVault";
 import AiMcpControlCenter from "@/components/admin/AiMcpControlCenter";
 import McpHealthCenter from "@/components/admin/McpHealthCenter";
+import PartnerNetworkHub from "@/components/admin/PartnerNetworkHub";
+import BusinessIntelligenceHub from "@/components/admin/BusinessIntelligenceHub";
 
 import OrganizationsConsole from "@/components/admin/ecosystem/OrganizationsConsole";
 import InvitationsConsole from "@/components/admin/ecosystem/InvitationsConsole";
@@ -471,6 +473,7 @@ function buildDepartments(args: {
         )},
         { id: "vault", label: "Vault Purchases", hint: "Studio Vault revenue", content: <AdminStudioVaultPurchases /> },
         { id: "intelligence", label: "Market Intelligence", hint: "Buyer & competitor intelligence", content: <IntelligenceCenter /> },
+        { id: "bi", label: "Business Intelligence", hint: "Uploads · Revenue · Rights · Delivery · AI Insights · Automation", content: <BusinessIntelligenceHub /> },
       ],
     },
     {
@@ -482,6 +485,7 @@ function buildDepartments(args: {
         { id: "storage", label: "Storage", hint: "OCI monitor", content: <OracleStorageMonitor /> },
         { id: "failed-uploads", label: "Failed Uploads", hint: "Structural diagnostics", content: <FailedUploadsInspector /> },
         { id: "advanced", label: "OCI Advanced", hint: "Credentials & buckets", content: <OracleOciStorageCard /> },
+        { id: "partner-network", label: "Partner Network", hint: "Directory · Profiles · Templates · Connectors · Credentials · Contacts · History", content: <PartnerNetworkHub /> },
       ],
     },
     {

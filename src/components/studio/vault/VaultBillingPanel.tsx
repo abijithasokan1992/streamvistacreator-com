@@ -326,17 +326,30 @@ export default function VaultBillingPanel() {
           <Receipt className="w-5 h-5 text-accent" />
           <h2 className="font-display text-xl">Vault Billing</h2>
         </div>
-        <button
-          type="button"
-          onClick={handleManage}
-          disabled={portalLoading}
-          aria-busy={portalLoading}
-          aria-label={portalLoading ? "Opening billing portal…" : "Manage subscription"}
-          className="inline-flex items-center gap-2 rounded-md border border-border/60 px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] hover:bg-accent/10 disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          {portalLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" /> : <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />}
-          {portalLoading ? "Opening portal…" : "Manage subscription"}
-        </button>
+        <div className="flex items-center gap-2">
+          {portalUrl ? (
+            <button
+              type="button"
+              onClick={openPortal}
+              className="inline-flex items-center gap-2 rounded-md bg-accent text-white px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
+              aria-label="Open Paddle portal"
+            >
+              <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+              Open Paddle portal
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={handleManage}
+            disabled={portalLoading}
+            aria-busy={portalLoading}
+            aria-label={portalLoading ? "Opening billing portal…" : "Manage subscription"}
+            className="inline-flex items-center gap-2 rounded-md border border-border/60 px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] hover:bg-accent/10 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {portalLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" /> : <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />}
+            {portalLoading ? "Opening portal…" : "Manage subscription"}
+          </button>
+        </div>
       </div>
 
       {portalError && (

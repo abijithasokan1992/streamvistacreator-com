@@ -257,6 +257,21 @@ export default function MyWorkspace() {
           })}
         </section>
 
+        {showModules && ready && (
+          <section className="mt-10 space-y-6">
+            <div className="flex items-baseline justify-between">
+              <h2 className="font-display text-xl">Your modules</h2>
+              <p className="text-[11px] text-muted-foreground/70">Live data · updated on load</p>
+            </div>
+            <div className="grid grid-cols-1 gap-6">
+              <WorkspacePlanCard />
+              <WorkspaceStorageCard />
+              <WorkspaceInsightsCard />
+            </div>
+          </section>
+        )}
+
+
         <div className="mt-10 flex flex-wrap items-center gap-3">
           <Button onClick={goNext} className="gap-2">
             Continue <ArrowRight className="w-4 h-4" />

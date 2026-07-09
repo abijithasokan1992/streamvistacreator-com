@@ -109,6 +109,7 @@ export default function VaultBillingPanel() {
     portalPendingRef.current = true;
     setPortalLoading(true);
     portalAbortRef.current?.abort();
+    dismissLoadingToast();
     const controller = new AbortController();
     portalAbortRef.current = controller;
     loadingToastRef.current = toast.loading("Generating your billing portal…");

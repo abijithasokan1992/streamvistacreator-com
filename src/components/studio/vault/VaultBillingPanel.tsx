@@ -1,9 +1,27 @@
 import { useEffect, useState } from "react";
-import { Receipt, Loader2 } from "lucide-react";
+import { Receipt, Loader2, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { fmtINRDecimal } from "@/lib/studioVault";
 import { Link } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
+
+async function openPaddlePortal(): Promise<{ ok: boolean; error?: string }> {
+  const { data: sess } = await supabase.auth.getSession();
+  const token = sess.session?.access_token;
+  if (!token) return { ok: false, error: "Please sign in again." };
+  const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/paddle-portal?mode=json`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    return { ok: false, error: body?.error || `Portal error (${res.status})` };
+  }
+  const { url: portalUrl } = await res.json();
+  if (!portalUrl) return { ok: false, error: "Portal URL missing." };
+  window.location.href = portalUrl;
+  return { ok: true };
+}
+
 
 type Invoice = {
   id: string;
@@ -31,6 +49,18 @@ export default function VaultBillingPanel() {
   const [topups, setTopups] = useState<Topup[]>([]);
   const [loading, setLoading] = useState(true);
   const [showIncomplete, setShowIncomplete] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
+
+  const handleManage = async () => {
+    setPortalLoading(true);
+    const res = await openPaddlePortal();
+    if (!res.ok) {
+      toast({ title: "Couldn't open billing portal", description: res.error, variant: "destructive" });
+      setPortalLoading(false);
+    }
+    // On success we redirect, no need to reset state.
+  };
+
 
   useEffect(() => {
     if (!user) return;
@@ -67,10 +97,22 @@ export default function VaultBillingPanel() {
 
   return (
     <div className="rounded-2xl border border-border/50 bg-secondary/10 p-6 space-y-6">
-      <div className="flex items-center gap-2">
-        <Receipt className="w-5 h-5 text-accent" />
-        <h2 className="font-display text-xl">Vault Billing</h2>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <Receipt className="w-5 h-5 text-accent" />
+          <h2 className="font-display text-xl">Vault Billing</h2>
+        </div>
+        <button
+          type="button"
+          onClick={handleManage}
+          disabled={portalLoading}
+          className="inline-flex items-center gap-2 rounded-md border border-border/60 px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] hover:bg-accent/10 disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {portalLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ExternalLink className="w-3.5 h-3.5" />}
+          Manage subscription
+        </button>
       </div>
+
 
       <div>
         <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Recent purchases</div>

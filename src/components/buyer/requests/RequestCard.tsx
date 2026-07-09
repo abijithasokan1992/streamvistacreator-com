@@ -3,6 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { STATE_LABEL, STATE_TONE, CATEGORY_LABEL, type Row } from "./shared";
 import { Clock } from "lucide-react";
+import { OfferNegotiationThread } from "@/components/licensing/OfferNegotiationThread";
+import { RightsMatrixTable } from "@/components/licensing/RightsMatrixTable";
 
 function StateBadge({ state }: { state: string }) {
   return (

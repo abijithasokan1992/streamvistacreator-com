@@ -109,14 +109,15 @@ export default function VaultBillingPanel() {
     portalPendingRef.current = true;
     setPortalLoading(true);
     portalAbortRef.current?.abort();
+    dismissLoadingToast();
     const controller = new AbortController();
     portalAbortRef.current = controller;
     loadingToastRef.current = toast.loading("Generating your billing portal…");
     try {
       const res = await openPaddlePortal(controller.signal);
       if (res.ok && res.url) {
-        dismissLoadingToast();
         toast.success("Billing portal ready", {
+          id: loadingToastRef.current,
           description: "Refreshing your subscription management page…",
         });
         window.location.href = res.url;
@@ -124,9 +125,9 @@ export default function VaultBillingPanel() {
       }
       if (res.error === "abort") return;
       if (!res.ok) {
-        dismissLoadingToast();
         const { title, description } = friendlyPortalError(res);
         toast.error(title, {
+          id: loadingToastRef.current,
           description,
           action: {
             label: "Retry",
@@ -138,11 +139,11 @@ export default function VaultBillingPanel() {
         });
       }
     } catch (err) {
-      dismissLoadingToast();
       const { title, description } = friendlyPortalError({
         error: err instanceof Error ? err.message : "Unable to reach the billing portal.",
       });
       toast.error(title, {
+        id: loadingToastRef.current,
         description,
         action: {
           label: "Retry",

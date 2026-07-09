@@ -320,20 +320,7 @@ export default function VaultBillingPanel() {
             <div className="text-xs text-muted-foreground leading-relaxed mt-0.5">{portalError.description}</div>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            <button
-              type="button"
-              onClick={handleManage}
-              disabled={portalLoading}
-              aria-busy={portalLoading}
-              className="inline-flex items-center gap-1.5 rounded-md bg-accent text-white px-2.5 py-1.5 text-xs font-semibold hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-            >
-              {portalLoading ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
-              ) : (
-                <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
-              )}
-              {portalLoading ? "Retrying…" : "Retry"}
-            </button>
+            <InlinePortalRetryButton onRetry={handleManage} />
             <button
               type="button"
               onClick={() => setPortalError(null)}

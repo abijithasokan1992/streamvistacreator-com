@@ -292,7 +292,14 @@ export default function VaultBillingPanel() {
         }
       );
       setShowUrlFallback(true);
-      window.setTimeout(() => fallbackInputRef.current?.select(), 50);
+      // Defer focus/select until the input is rendered and React has flushed state.
+      window.setTimeout(() => {
+        const input = fallbackInputRef.current;
+        if (input) {
+          input.focus();
+          input.select();
+        }
+      }, 50);
     }
   };
 
@@ -313,6 +320,29 @@ export default function VaultBillingPanel() {
       }
     };
   }, []);
+
+  // Auto-focus and select the fallback URL input whenever it appears.
+  useEffect(() => {
+    if (!showUrlFallback || !portalUrl) return;
+    const input = fallbackInputRef.current;
+    if (!input) return;
+    input.focus();
+    input.select();
+  }, [showUrlFallback, portalUrl]);
+
+  // Keyboard helpers for the fallback URL input.
+  const handleFallbackKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Cmd/Ctrl+C is native; provide explicit select-all on Ctrl+A just in case.
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "a") {
+      e.currentTarget.select();
+    }
+    // Esc collapses the fallback panel.
+    if (e.key === "Escape") {
+      e.preventDefault();
+      setShowUrlFallback(false);
+    }
+  };
+
 
 
   useEffect(() => {
@@ -409,6 +439,7 @@ export default function VaultBillingPanel() {
             readOnly
             value={portalUrl}
             onFocus={(e) => e.currentTarget.select()}
+            onKeyDown={handleFallbackKeyDown}
             className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
             aria-label="Paddle portal URL"
           />

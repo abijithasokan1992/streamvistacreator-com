@@ -321,6 +321,29 @@ export default function VaultBillingPanel() {
     };
   }, []);
 
+  // Auto-focus and select the fallback URL input whenever it appears.
+  useEffect(() => {
+    if (!showUrlFallback || !portalUrl) return;
+    const input = fallbackInputRef.current;
+    if (!input) return;
+    input.focus();
+    input.select();
+  }, [showUrlFallback, portalUrl]);
+
+  // Keyboard helpers for the fallback URL input.
+  const handleFallbackKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Cmd/Ctrl+C is native; provide explicit select-all on Ctrl+A just in case.
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "a") {
+      e.currentTarget.select();
+    }
+    // Esc collapses the fallback panel.
+    if (e.key === "Escape") {
+      e.preventDefault();
+      setShowUrlFallback(false);
+    }
+  };
+
+
 
   useEffect(() => {
     if (!user) return;

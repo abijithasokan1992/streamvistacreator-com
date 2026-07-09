@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useSyncExternalStore } from "react";
-import { Receipt, Loader2, ExternalLink, AlertTriangle, X } from "lucide-react";
+import { Receipt, Loader2, ExternalLink, AlertTriangle, X, Copy, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { fmtINRDecimal } from "@/lib/studioVault";

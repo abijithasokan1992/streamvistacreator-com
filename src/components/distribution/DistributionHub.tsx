@@ -38,6 +38,7 @@ export function DistributionHub({ titleId }: { titleId: string }) {
   const [deliveries, setDeliveries] = useState<DistributionDelivery[]>([]);
   const [logs, setLogs] = useState<Record<string, DistributionDeliveryLog[]>>({});
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [mappingsOpen, setMappingsOpen] = useState<string | null>(null);
 
   const reload = async () => {
     setLoading(true);

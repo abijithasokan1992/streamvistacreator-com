@@ -1,9 +1,27 @@
 import { useEffect, useState } from "react";
-import { Receipt, Loader2 } from "lucide-react";
+import { Receipt, Loader2, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { fmtINRDecimal } from "@/lib/studioVault";
 import { Link } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
+
+async function openPaddlePortal(): Promise<{ ok: boolean; error?: string }> {
+  const { data: sess } = await supabase.auth.getSession();
+  const token = sess.session?.access_token;
+  if (!token) return { ok: false, error: "Please sign in again." };
+  const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/paddle-portal?mode=json`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    return { ok: false, error: body?.error || `Portal error (${res.status})` };
+  }
+  const { url: portalUrl } = await res.json();
+  if (!portalUrl) return { ok: false, error: "Portal URL missing." };
+  window.location.href = portalUrl;
+  return { ok: true };
+}
+
 
 type Invoice = {
   id: string;

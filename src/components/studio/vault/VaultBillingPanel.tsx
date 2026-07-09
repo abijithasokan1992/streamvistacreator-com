@@ -341,15 +341,31 @@ export default function VaultBillingPanel() {
         </div>
         <div className="flex items-center gap-2">
           {portalUrl ? (
-            <button
-              type="button"
-              onClick={openPortal}
-              className="inline-flex items-center gap-2 rounded-md bg-accent text-white px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
-              aria-label="Open Paddle portal"
-            >
-              <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
-              Open Paddle portal
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={openPortal}
+                className="inline-flex items-center gap-2 rounded-md bg-accent text-white px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
+                aria-label="Open Paddle portal"
+              >
+                <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+                Open Paddle portal
+              </button>
+              <button
+                type="button"
+                onClick={copyPortalUrl}
+                disabled={portalCopied}
+                aria-label={portalCopied ? "Portal link copied" : "Copy Paddle portal link"}
+                className="inline-flex items-center gap-2 rounded-md border border-border/60 px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] hover:bg-accent/10 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
+              >
+                {portalCopied ? (
+                  <Check className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5" aria-hidden="true" />
+                )}
+                {portalCopied ? "Copied" : "Copy link"}
+              </button>
+            </>
           ) : null}
           <button
             type="button"

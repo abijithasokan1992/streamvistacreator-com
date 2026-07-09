@@ -115,8 +115,7 @@ export default function VaultBillingPanel() {
     try {
       const res = await openPaddlePortal(controller.signal);
       if (res.ok && res.url) {
-        toast.dismiss(loadingToastRef.current);
-        loadingToastRef.current = null;
+        dismissLoadingToast();
         toast.success("Billing portal ready", {
           description: "Refreshing your subscription management page…",
         });

@@ -119,6 +119,29 @@ function PortalErrorToast({
     </div>
   );
 }
+function InlinePortalRetryButton({ onRetry }: { onRetry: () => void }) {
+  const busy = useSyncExternalStore(
+    portalBusyStore.subscribe,
+    portalBusyStore.getSnapshot
+  );
+  return (
+    <button
+      type="button"
+      onClick={onRetry}
+      disabled={busy}
+      aria-busy={busy}
+      aria-label={busy ? "Retrying portal link" : "Retry portal link"}
+      className="inline-flex items-center gap-1.5 rounded-md bg-accent text-white px-2.5 py-1.5 text-xs font-semibold hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+    >
+      {busy ? (
+        <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+      ) : (
+        <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+      )}
+      {busy ? "Retrying…" : "Retry"}
+    </button>
+  );
+}
 
 
 

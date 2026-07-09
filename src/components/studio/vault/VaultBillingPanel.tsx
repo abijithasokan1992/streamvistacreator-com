@@ -97,10 +97,22 @@ export default function VaultBillingPanel() {
 
   return (
     <div className="rounded-2xl border border-border/50 bg-secondary/10 p-6 space-y-6">
-      <div className="flex items-center gap-2">
-        <Receipt className="w-5 h-5 text-accent" />
-        <h2 className="font-display text-xl">Vault Billing</h2>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <Receipt className="w-5 h-5 text-accent" />
+          <h2 className="font-display text-xl">Vault Billing</h2>
+        </div>
+        <button
+          type="button"
+          onClick={handleManage}
+          disabled={portalLoading}
+          className="inline-flex items-center gap-2 rounded-md border border-border/60 px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] hover:bg-accent/10 disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {portalLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ExternalLink className="w-3.5 h-3.5" />}
+          Manage subscription
+        </button>
       </div>
+
 
       <div>
         <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Recent purchases</div>

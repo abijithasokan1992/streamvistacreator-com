@@ -485,6 +485,7 @@ function buildDepartments(args: {
         { id: "storage", label: "Storage", hint: "OCI monitor", content: <OracleStorageMonitor /> },
         { id: "failed-uploads", label: "Failed Uploads", hint: "Structural diagnostics", content: <FailedUploadsInspector /> },
         { id: "advanced", label: "OCI Advanced", hint: "Credentials & buckets", content: <OracleOciStorageCard /> },
+        { id: "partner-network", label: "Partner Network", hint: "Directory · Profiles · Templates · Connectors · Credentials · Contacts · History", content: <PartnerNetworkHub /> },
       ],
     },
     {

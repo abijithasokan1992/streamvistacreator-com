@@ -172,6 +172,7 @@ export default function VaultBillingPanel() {
   const [loading, setLoading] = useState(true);
   const [showIncomplete, setShowIncomplete] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [portalUrl, setPortalUrl] = useState<string | null>(null);
   const [portalError, setPortalError] = useState<{ title: string; description: string } | null>(null);
   const portalPendingRef = useRef(false);
   const portalAbortRef = useRef<AbortController | null>(null);
@@ -190,6 +191,7 @@ export default function VaultBillingPanel() {
     portalPendingRef.current = true;
     setPortalLoading(true);
     setPortalError(null);
+    setPortalUrl(null);
     portalBusyStore.set(true);
     portalAbortRef.current?.abort();
     dismissLoadingToast();
@@ -203,11 +205,11 @@ export default function VaultBillingPanel() {
         return;
       }
       if (res.ok && res.url) {
+        setPortalUrl(res.url);
         toast.success("Billing portal ready", {
           id: loadingToastRef.current,
-          description: "Refreshing your subscription management page…",
+          description: "Use the Open Paddle portal button below to manage your subscription.",
         });
-        window.location.href = res.url;
         return;
       }
       if (!res.ok) {
@@ -256,6 +258,12 @@ export default function VaultBillingPanel() {
         portalBusyStore.set(false);
         portalAbortRef.current = null;
       }
+    }
+  };
+
+  const openPortal = () => {
+    if (portalUrl) {
+      window.open(portalUrl, "_blank", "noopener,noreferrer");
     }
   };
 

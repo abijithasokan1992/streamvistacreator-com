@@ -144,6 +144,10 @@ export function RequestCard({ row }: { row: Row }) {
           <RequestTimeline requestId={row.id} />
         </DetailBlock>
       </div>
+      <div className="mt-3 grid gap-3">
+        <OfferNegotiationThread commercialRequestId={row.id} party="buyer" />
+        {row.title_id && <RightsMatrixTable titleId={row.title_id} />}
+      </div>
     </details>
   );
 }

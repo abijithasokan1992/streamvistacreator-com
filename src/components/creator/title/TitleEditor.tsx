@@ -505,6 +505,13 @@ export function TitleEditor({
                     readOnly={readOnly}
                   />
                 )}
+                {tab === "distribution" && (
+                  <TitleDistributionPanel
+                    titleId={title.id}
+                    workspaceId={(title as any).workspace_id ?? null}
+                    readOnly={readOnly}
+                  />
+                )}
                 {tab === "submission" && (
                   <SubmissionTab title={title} readiness={readiness} local={localChecklist!} assets={assets} meta={meta} onJumpTab={setTab} isFree={isFree} />
                 )}

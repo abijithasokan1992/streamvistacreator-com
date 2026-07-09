@@ -63,6 +63,8 @@ import MarketingCMS from "@/components/admin/MarketingCMS";
 import FounderVault from "@/components/admin/FounderVault";
 import AiMcpControlCenter from "@/components/admin/AiMcpControlCenter";
 import McpHealthCenter from "@/components/admin/McpHealthCenter";
+import PartnerNetworkHub from "@/components/admin/PartnerNetworkHub";
+import BusinessIntelligenceHub from "@/components/admin/BusinessIntelligenceHub";
 
 import OrganizationsConsole from "@/components/admin/ecosystem/OrganizationsConsole";
 import InvitationsConsole from "@/components/admin/ecosystem/InvitationsConsole";

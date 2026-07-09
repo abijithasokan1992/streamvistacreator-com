@@ -276,6 +276,7 @@ export default function VaultBillingPanel() {
     try {
       await navigator.clipboard.writeText(portalUrl);
       setPortalCopied(true);
+      setShowUrlFallback(false);
       toast.success("Portal link copied");
       window.setTimeout(() => setPortalCopied(false), 2000);
     } catch (err) {
@@ -283,15 +284,15 @@ export default function VaultBillingPanel() {
         err instanceof DOMException &&
         (err.name === "NotAllowedError" || err.name === "PermissionDeniedError");
       toast.error(
-        isPermissionError
-          ? "Clipboard access denied"
-          : "Could not copy link",
+        isPermissionError ? "Clipboard access denied" : "Could not copy link",
         {
           description: isPermissionError
-            ? "Your browser or page permissions blocked clipboard access. Allow clipboard access and try again, or copy the URL manually."
+            ? "Your browser blocked clipboard access. Select the URL below and copy it manually."
             : "Something went wrong while copying the portal link.",
         }
       );
+      setShowUrlFallback(true);
+      window.setTimeout(() => fallbackInputRef.current?.select(), 50);
     }
   };
 

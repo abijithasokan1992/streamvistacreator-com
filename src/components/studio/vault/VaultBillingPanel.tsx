@@ -95,7 +95,14 @@ export default function VaultBillingPanel() {
   const [portalLoading, setPortalLoading] = useState(false);
   const portalPendingRef = useRef(false);
   const portalAbortRef = useRef<AbortController | null>(null);
-  const loadingToastRef = useRef<string | number | null>(null);
+  const loadingToastRef = useRef<string | number | undefined>(undefined);
+
+  const dismissLoadingToast = () => {
+    if (loadingToastRef.current) {
+      toast.dismiss(loadingToastRef.current);
+      loadingToastRef.current = undefined;
+    }
+  };
 
   const handleManage = async () => {
     if (portalLoading || portalPendingRef.current) return;

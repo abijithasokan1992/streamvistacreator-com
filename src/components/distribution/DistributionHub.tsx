@@ -216,11 +216,22 @@ export function DistributionHub({ titleId }: { titleId: string }) {
                     <span className="text-sm font-medium">{p.name}</span>
                     <Badge variant="outline" className="text-[10px]">{PROTO_ICON[p.protocol]}</Badge>
                     {!p.is_active && <Badge className="text-[10px] bg-secondary text-muted-foreground border-border/60">inactive</Badge>}
+                    <button
+                      onClick={() => setMappingsOpen(mappingsOpen === p.id ? null : p.id)}
+                      className="ml-auto text-[10px] text-accent hover:underline"
+                    >
+                      {mappingsOpen === p.id ? "Hide mappings" : "Metadata mappings"}
+                    </button>
                   </div>
                   {p.description && <p className="text-xs text-muted-foreground mt-1">{p.description}</p>}
                   <p className="text-[10px] text-muted-foreground mt-2">
                     Default: {p.default_package_type} · Supports: {p.supported_package_types.join(", ")}
                   </p>
+                  {mappingsOpen === p.id && (
+                    <div className="mt-3 pt-3 border-t border-border/30">
+                      <PartnerMetadataMappingEditor partnerId={p.id} />
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>

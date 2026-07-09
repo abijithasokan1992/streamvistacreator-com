@@ -12,6 +12,7 @@ import { StatusBadge } from "@/components/creator/title/StatusBadge";
 import { TitleEditor } from "@/components/creator/title/TitleEditor";
 import { AgreementGate } from "@/components/legal/AgreementGate";
 import { supabase } from "@/integrations/supabase/client";
+import { CollectionsFranchisesManager } from "@/components/creator/CollectionsFranchisesManager";
 
 import { cn } from "@/lib/utils";
 
@@ -119,6 +120,9 @@ export default function MyTitlesSection() {
 
       {/* Upgrade CTA lives on the Billing section — the inline free-plan banner above
           already surfaces the limit here and links straight to Billing. */}
+
+      {user && <CollectionsFranchisesManager userId={user.id} titles={titles} />}
+
 
       <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <p className="text-xs text-muted-foreground">

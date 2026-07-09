@@ -19,14 +19,16 @@ import { FreeSubmissionTermsModal } from "./FreeSubmissionTermsModal";
 import RequestEditButton from "@/components/creator/RequestEditButton";
 import { useTitleLock } from "@/hooks/useTitleLock";
 import { SmartMetadataImportButton } from "./SmartMetadataImport";
+import { MediaCmsPanel } from "./MediaCmsPanel";
 
-type TabId = "overview" | "metadata" | "assets" | "legal" | "submission";
+type TabId = "overview" | "metadata" | "assets" | "legal" | "cms" | "submission";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "overview",   label: "Overview" },
   { id: "metadata",   label: "Details" },
   { id: "assets",     label: "Files" },
   { id: "legal",      label: "Business" },
+  { id: "cms",        label: "Media CMS" },
   { id: "submission", label: "Submit" },
 ];
 
@@ -491,6 +493,15 @@ export function TitleEditor({
                       locked={assetsLockedFor("censor_certificate")} onUploaded={reload} accept="application/pdf,image/*" />
                     <RightsAvailabilityPanel meta={meta} setMeta={setMeta} readOnly={metadataLocked} isFree={isFree} />
                   </div>
+                )}
+                {tab === "cms" && (
+                  <MediaCmsPanel
+                    titleId={title.id}
+                    ownerUserId={title.owner_user_id}
+                    workspaceId={(title as any).workspace_id ?? null}
+                    titleKind={((title as any).kind as any) ?? "film"}
+                    readOnly={readOnly}
+                  />
                 )}
                 {tab === "submission" && (
                   <SubmissionTab title={title} readiness={readiness} local={localChecklist!} assets={assets} meta={meta} onJumpTab={setTab} isFree={isFree} />

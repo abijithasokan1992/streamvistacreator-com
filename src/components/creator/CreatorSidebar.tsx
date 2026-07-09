@@ -12,7 +12,7 @@ import {
 
 export type SectionId =
   | "home" | "titles"
-  | "delivery_vault"
+  | "delivery_vault" | "distribution"
   | "business" | "messages" | "activity" | "storage"
   | "billing" | "help"
   | "profile"

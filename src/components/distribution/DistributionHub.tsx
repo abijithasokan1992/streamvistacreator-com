@@ -11,6 +11,7 @@ import {
   type DistributionQueueItem, type DistributionDelivery, type DistributionDeliveryLog,
 } from "@/lib/distribution/distributionApi";
 import { cn } from "@/lib/utils";
+import { PartnerMetadataMappingEditor } from "./PartnerMetadataMappingEditor";
 
 const STATUS_TONE: Record<string, string> = {
   queued: "bg-sky-500/15 text-sky-300 border-sky-500/30",

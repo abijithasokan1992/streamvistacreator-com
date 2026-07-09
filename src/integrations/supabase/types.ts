@@ -10448,6 +10448,20 @@ export type Database = {
         Args: { _user_id: string; _workspace_id: string }
         Returns: boolean
       }
+      list_active_distribution_partners: {
+        Args: never
+        Returns: {
+          default_package_type: string
+          description: string
+          id: string
+          is_active: boolean
+          logo_url: string
+          name: string
+          protocol: Database["public"]["Enums"]["distribution_protocol"]
+          slug: string
+          supported_package_types: string[]
+        }[]
+      }
       list_review_candidates: {
         Args: never
         Returns: {

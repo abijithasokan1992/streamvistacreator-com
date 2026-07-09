@@ -292,7 +292,14 @@ export default function VaultBillingPanel() {
         }
       );
       setShowUrlFallback(true);
-      window.setTimeout(() => fallbackInputRef.current?.select(), 50);
+      // Defer focus/select until the input is rendered and React has flushed state.
+      window.setTimeout(() => {
+        const input = fallbackInputRef.current;
+        if (input) {
+          input.focus();
+          input.select();
+        }
+      }, 50);
     }
   };
 

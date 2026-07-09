@@ -10462,6 +10462,14 @@ export type Database = {
           supported_package_types: string[]
         }[]
       }
+      list_public_recent_productions: {
+        Args: { _limit?: number }
+        Returns: {
+          id: string
+          name: string
+          tracking_code: string
+        }[]
+      }
       list_review_candidates: {
         Args: never
         Returns: {

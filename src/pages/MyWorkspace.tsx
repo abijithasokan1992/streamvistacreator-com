@@ -6,6 +6,9 @@ import { useAuth, dashboardForRole, type AppRole } from "@/hooks/useAuth";
 import { useWorkspaces } from "@/hooks/useWorkspaces";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Button } from "@/components/ui/button";
+import WorkspacePlanCard from "@/components/workspace/PlanCard";
+import WorkspaceStorageCard from "@/components/workspace/StorageCard";
+import WorkspaceInsightsCard from "@/components/workspace/InsightsCard";
 
 /**
  * "My Workspace" — a read-only, minimal overview shown:

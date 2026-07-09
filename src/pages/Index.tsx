@@ -9,6 +9,53 @@ import { FinalCta } from "@/components/streamvista/FinalCta";
 import { Footer } from "@/components/streamvista/Footer";
 import { Seo } from "@/components/Seo";
 import { dashboardForRole, useAuth } from "@/hooks/useAuth";
+import { Clapperboard } from "lucide-react";
+
+const RECENT_PRODUCTIONS = [
+  {
+    name: "Sesham Chinthyam Subham",
+    trackingCode: "PRD-20260115-A7K2",
+  },
+  {
+    name: "Jananam 1947 Pranayam Thudarunnu",
+    trackingCode: "PRD-20260114-M9P4",
+  },
+];
+
+function RecentProductionsTable() {
+  return (
+    <section className="py-16 md:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+      <div className="flex items-center gap-2 mb-6">
+        <Clapperboard className="w-5 h-5 text-accent" aria-hidden="true" />
+        <h2 className="text-2xl font-display">Recent Productions</h2>
+      </div>
+      <div className="overflow-hidden rounded-xl border border-border/50 bg-secondary/5">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="border-b border-border/40">
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Production Name
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Tracking Code
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border/30">
+            {RECENT_PRODUCTIONS.map((production) => (
+              <tr key={production.trackingCode}>
+                <td className="px-4 py-3.5 text-sm font-medium">{production.name}</td>
+                <td className="px-4 py-3.5 text-sm font-mono text-muted-foreground tabular-nums">
+                  {production.trackingCode}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
 
 const Index = () => {
   const { user, role, loading } = useAuth();
@@ -35,7 +82,7 @@ const Index = () => {
       <Hero />
       <PlatformOverview />
       <Workflow />
-      
+      <RecentProductionsTable />
       <Partners />
       <FinalCta />
       <Footer />
@@ -44,3 +91,4 @@ const Index = () => {
 };
 
 export default Index;
+

@@ -241,8 +241,23 @@ async function revokeEntitlement(opts: {
 
 /* ---------------- event handlers ---------------- */
 
+async function upsertCustomer(data: any, env: PaddleEnv) {
+  const { id, email, customData } = data;
+  if (!id || !email) return;
+  await getSupabase().from("paddle_customers").upsert(
+    {
+      customer_id: id,
+      email,
+      user_id: customData?.userId ?? null,
+      environment: env,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "customer_id" },
+  );
+}
+
 async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
-  const { id, customerId, items, status, currentBillingPeriod, customData } = data;
+  const { id, customerId, items, status, currentBillingPeriod, scheduledChange, customData } = data;
   const userId = customData?.userId;
   if (!userId) { console.error("No userId in customData; skipping"); return; }
   const item = items?.[0];
@@ -270,6 +285,9 @@ async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
       storage_quantity_tb: productId === "sv_storage_block_1tb" ? quantity : null,
       current_period_start: currentBillingPeriod?.startsAt,
       current_period_end: currentBillingPeriod?.endsAt,
+      scheduled_change_action: scheduledChange?.action ?? null,
+      scheduled_change_at: scheduledChange?.effectiveAt ?? null,
+      cancel_at_period_end: scheduledChange?.action === "cancel",
       environment: env,
       updated_at: new Date().toISOString(),
     },
@@ -290,16 +308,21 @@ async function handleSubscriptionUpdated(data: any, env: PaddleEnv) {
       status,
       current_period_start: currentBillingPeriod?.startsAt,
       current_period_end: currentBillingPeriod?.endsAt,
+      scheduled_change_action: scheduledChange?.action ?? null,
+      scheduled_change_at: scheduledChange?.effectiveAt ?? null,
       cancel_at_period_end: scheduledChange?.action === "cancel",
       updated_at: new Date().toISOString(),
     })
     .eq("paddle_subscription_id", id)
     .eq("environment", env);
 
-  // If subscription is now past_due/paused/canceled and period has ended, revoke.
+  // Only revoke when the status STRING physically flips to a terminal value
+  // AND the paid period is over. A pending scheduled_change alone never
+  // revokes access — the user keeps it until Paddle flips status itself.
+  const terminal = status === "canceled" || status === "paused" || status === "past_due";
   const periodEnd = currentBillingPeriod?.endsAt ? new Date(currentBillingPeriod.endsAt).getTime() : 0;
   const expired = periodEnd && periodEnd < Date.now();
-  if ((status === "canceled" || status === "paused") && expired) {
+  if (terminal && expired) {
     const sub = await getSupabase()
       .from("subscriptions").select("user_id,product_id").eq("paddle_subscription_id", id).maybeSingle();
     const userId = (sub.data as any)?.user_id;
@@ -373,8 +396,7 @@ async function handleTransactionCompleted(data: any, env: PaddleEnv) {
   void env;
 }
 
-async function handleWebhook(req: Request, env: PaddleEnv) {
-  const event = await verifyWebhook(req, env);
+async function handleWebhook(event: any, env: PaddleEnv) {
   switch (event.eventType) {
     case EventName.SubscriptionCreated:
       await handleSubscriptionCreated(event.data, env); break;
@@ -384,6 +406,9 @@ async function handleWebhook(req: Request, env: PaddleEnv) {
       await handleSubscriptionCanceled(event.data, env); break;
     case EventName.TransactionCompleted:
       await handleTransactionCompleted(event.data, env); break;
+    case EventName.CustomerCreated:
+    case EventName.CustomerUpdated:
+      await upsertCustomer(event.data, env); break;
     default:
       console.log("Unhandled event:", event.eventType);
   }
@@ -393,13 +418,24 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
   const url = new URL(req.url);
   const env = (url.searchParams.get("env") || "sandbox") as PaddleEnv;
+
+  // Signature verification is a security boundary — failures return 401 so
+  // Paddle retries per its webhook contract.
+  let event: any;
   try {
-    await handleWebhook(req, env);
-    return new Response(JSON.stringify({ received: true }), {
+    event = await verifyWebhook(req, env);
+  } catch (e) {
+    console.error("Webhook signature verification failed:", e);
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  try {
+    await handleWebhook(event, env);
+    return new Response(JSON.stringify({ received: true, eventId: event?.eventId }), {
       status: 200, headers: { "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error("Webhook error:", e);
-    return new Response("Webhook error", { status: 400 });
+    console.error("Webhook handler error:", e);
+    return new Response("Webhook error", { status: 500 });
   }
 });

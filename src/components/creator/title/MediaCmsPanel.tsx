@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Trash2, Loader2, Layers, Film, Languages, Send, Link2 } from "lucide-react";
+import { Plus, Trash2, Loader2, Layers, Film, Languages, Send, Link2, FolderTree, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   listChildren, createChildTitle, updateTitleHierarchy,
@@ -8,19 +8,24 @@ import {
   listMediaVersions, upsertMediaVersion, deleteMediaVersion,
   listLocalizations, upsertLocalization, deleteLocalization,
   getPublishing, upsertPublishing,
+  listCollections, createCollection,
+  listCollectionsContainingTitle, addTitleToCollection, removeTitleFromCollection,
+  listDeliveriesForTitle,
   MEDIA_VERSION_LABELS, LOCALIZATION_LABELS,
   type TitleKind, type MediaVersion, type MediaVersionType,
   type Localization, type LocalizationKind,
-  type PublishingRecord, type Franchise,
+  type PublishingRecord, type Franchise, type Collection, type DeliveryRow,
 } from "@/lib/creator/mediaCmsApi";
 
-type Sub = "hierarchy" | "versions" | "localization" | "publishing";
+type Sub = "hierarchy" | "collections" | "versions" | "localization" | "publishing" | "delivery";
 
 const SUBS: { id: Sub; label: string; icon: any }[] = [
-  { id: "hierarchy",    label: "Structure",     icon: Layers   },
-  { id: "versions",     label: "Media Versions", icon: Film    },
-  { id: "localization", label: "Localization",  icon: Languages },
-  { id: "publishing",   label: "Publishing",    icon: Send     },
+  { id: "hierarchy",    label: "Structure",      icon: Layers     },
+  { id: "collections",  label: "Collections",    icon: FolderTree },
+  { id: "versions",     label: "Media Versions", icon: Film       },
+  { id: "localization", label: "Localization",   icon: Languages  },
+  { id: "publishing",   label: "Publishing",     icon: Send       },
+  { id: "delivery",     label: "Delivery",       icon: Truck      },
 ];
 
 const VERSION_TYPES: MediaVersionType[] = ["master","broadcast","ott","hdr","sdr","proxy","trailer","screener","clip"];

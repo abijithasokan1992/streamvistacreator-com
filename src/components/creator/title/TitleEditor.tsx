@@ -19,6 +19,7 @@ import { FreeSubmissionTermsModal } from "./FreeSubmissionTermsModal";
 import RequestEditButton from "@/components/creator/RequestEditButton";
 import { useTitleLock } from "@/hooks/useTitleLock";
 import { SmartMetadataImportButton } from "./SmartMetadataImport";
+import { MediaCmsPanel } from "./MediaCmsPanel";
 
 type TabId = "overview" | "metadata" | "assets" | "legal" | "cms" | "submission";
 

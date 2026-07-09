@@ -92,6 +92,7 @@ export default function AdminFinanceConsole() {
         )}
       </div>
 
+      <FinanceExtensionHub />
       <BillingOperations />
       <ManualInvoiceConsole />
       <AdminInvoices />

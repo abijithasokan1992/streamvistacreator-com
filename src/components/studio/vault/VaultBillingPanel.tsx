@@ -166,6 +166,7 @@ export default function VaultBillingPanel() {
     if (portalLoading || portalPendingRef.current) return;
     portalPendingRef.current = true;
     setPortalLoading(true);
+    setPortalError(null);
     portalBusyStore.set(true);
     portalAbortRef.current?.abort();
     dismissLoadingToast();
@@ -174,8 +175,6 @@ export default function VaultBillingPanel() {
     loadingToastRef.current = toast.loading("Generating your billing portal…");
     try {
       const res = await openPaddlePortal(controller.signal);
-      // If the component unmounted or this request was superseded/cancelled,
-      // suppress all UI updates (no success/error toast, no navigation).
       if (!isMountedRef.current || controller.signal.aborted || res.error === "abort") {
         dismissLoadingToast();
         return;
@@ -190,6 +189,7 @@ export default function VaultBillingPanel() {
       }
       if (!res.ok) {
         const { title, description } = friendlyPortalError(res);
+        setPortalError({ title, description });
         toast.custom(
           (t) => (
             <PortalErrorToast
@@ -212,6 +212,7 @@ export default function VaultBillingPanel() {
       const { title, description } = friendlyPortalError({
         error: err instanceof Error ? err.message : "Unable to reach the billing portal.",
       });
+      setPortalError({ title, description });
       toast.custom(
         (t) => (
           <PortalErrorToast

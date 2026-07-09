@@ -4449,6 +4449,122 @@ export type Database = {
         }
         Relationships: []
       }
+      license_contracts: {
+        Row: {
+          buyer_signed_at: string | null
+          buyer_signer_name: string | null
+          countersigned_at: string | null
+          countersigned_by: string | null
+          created_at: string
+          created_by: string | null
+          deal_memo_id: string
+          document_sha256: string | null
+          document_url: string | null
+          id: string
+          legal_text: string | null
+          owner_signed_at: string | null
+          owner_signer_name: string | null
+          status: string
+          title_id: string | null
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          buyer_signed_at?: string | null
+          buyer_signer_name?: string | null
+          countersigned_at?: string | null
+          countersigned_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          deal_memo_id: string
+          document_sha256?: string | null
+          document_url?: string | null
+          id?: string
+          legal_text?: string | null
+          owner_signed_at?: string | null
+          owner_signer_name?: string | null
+          status?: string
+          title_id?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          buyer_signed_at?: string | null
+          buyer_signer_name?: string | null
+          countersigned_at?: string | null
+          countersigned_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          deal_memo_id?: string
+          document_sha256?: string | null
+          document_url?: string | null
+          id?: string
+          legal_text?: string | null
+          owner_signed_at?: string | null
+          owner_signer_name?: string | null
+          status?: string
+          title_id?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "license_contracts_deal_memo_id_fkey"
+            columns: ["deal_memo_id"]
+            isOneToOne: false
+            referencedRelation: "deal_memos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "license_contracts_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      license_events: {
+        Row: {
+          actor_user_id: string | null
+          created_at: string
+          deal_memo_id: string
+          event_at: string
+          event_type: string
+          id: string
+          notes: string | null
+          payload: Json
+        }
+        Insert: {
+          actor_user_id?: string | null
+          created_at?: string
+          deal_memo_id: string
+          event_at?: string
+          event_type: string
+          id?: string
+          notes?: string | null
+          payload?: Json
+        }
+        Update: {
+          actor_user_id?: string | null
+          created_at?: string
+          deal_memo_id?: string
+          event_at?: string
+          event_type?: string
+          id?: string
+          notes?: string | null
+          payload?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "license_events_deal_memo_id_fkey"
+            columns: ["deal_memo_id"]
+            isOneToOne: false
+            referencedRelation: "deal_memos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       manual_invoices: {
         Row: {
           billed_to_email: string | null
@@ -4852,6 +4968,56 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      offer_rounds: {
+        Row: {
+          actor_user_id: string | null
+          amount_paise: number | null
+          commercial_request_id: string
+          created_at: string
+          currency: string | null
+          id: string
+          message: string | null
+          party: string
+          round_no: number
+          status: string
+          terms: Json
+        }
+        Insert: {
+          actor_user_id?: string | null
+          amount_paise?: number | null
+          commercial_request_id: string
+          created_at?: string
+          currency?: string | null
+          id?: string
+          message?: string | null
+          party: string
+          round_no?: number
+          status?: string
+          terms?: Json
+        }
+        Update: {
+          actor_user_id?: string | null
+          amount_paise?: number | null
+          commercial_request_id?: string
+          created_at?: string
+          currency?: string | null
+          id?: string
+          message?: string | null
+          party?: string
+          round_no?: number
+          status?: string
+          terms?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offer_rounds_commercial_request_id_fkey"
+            columns: ["commercial_request_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_requests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       onboarding_audit_log: {
         Row: {

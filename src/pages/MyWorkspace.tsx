@@ -192,6 +192,8 @@ export default function MyWorkspace() {
   if (!user) return <Navigate to="/auth" replace />;
 
   const title = workspaceTitle(role);
+  const bucket = bucketFor(role);
+  const showModules = bucket === "creator" || bucket === "studio" || bucket === "buyer";
 
   const goNext = () => {
     try {

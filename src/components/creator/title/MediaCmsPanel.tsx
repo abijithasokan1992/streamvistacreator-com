@@ -386,6 +386,7 @@ function VersionsTab({ titleId, readOnly }: { titleId: string; readOnly: boolean
             <Input label="Loudness LUFS"  value={draft.loudness_lufs?.toString() ?? ""} onChange={(v) => setDraft({ ...draft, loudness_lufs: v ? Number(v) : null })} placeholder="-23.0" />
             <JsonInput label="HDR Metadata" value={draft.hdr_metadata ?? {}} onChange={(v) => setDraft({ ...draft, hdr_metadata: v })} />
             <JsonInput label="IMF Metadata" value={draft.imf_metadata ?? {}} onChange={(v) => setDraft({ ...draft, imf_metadata: v })} />
+            <JsonInput label="Technical Metadata" value={draft.tech_metadata ?? {}} onChange={(v) => setDraft({ ...draft, tech_metadata: v })} />
           </div>
           <div className="flex gap-2 mt-3">
             <button onClick={save} className="text-xs px-3 py-1.5 rounded-md bg-accent text-accent-foreground">Save</button>

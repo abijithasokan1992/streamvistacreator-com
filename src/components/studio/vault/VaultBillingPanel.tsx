@@ -226,6 +226,7 @@ export default function VaultBillingPanel() {
     return () => {
       portalAbortRef.current?.abort();
       dismissLoadingToast();
+      portalBusyStore.set(false);
     };
   }, []);
 

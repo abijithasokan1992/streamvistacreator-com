@@ -164,10 +164,7 @@ export default function VaultBillingPanel() {
   useEffect(() => {
     return () => {
       portalAbortRef.current?.abort();
-      if (loadingToastRef.current) {
-        toast.dismiss(loadingToastRef.current);
-        loadingToastRef.current = null;
-      }
+      dismissLoadingToast();
     };
   }, []);
 

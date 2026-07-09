@@ -2168,6 +2168,334 @@ export type Database = {
           },
         ]
       }
+      distribution_deliveries: {
+        Row: {
+          ack_reference: string | null
+          attempt_no: number
+          bytes_transferred: number
+          correlation_id: string | null
+          created_at: string
+          delivered_at: string | null
+          dispatched_at: string | null
+          duration_ms: number | null
+          error_code: string | null
+          error_message: string | null
+          failed_at: string | null
+          id: string
+          package_id: string
+          partner_id: string
+          protocol: Database["public"]["Enums"]["distribution_protocol"]
+          queue_id: string
+          status: string
+          title_id: string
+          transport_response: Json
+          updated_at: string
+        }
+        Insert: {
+          ack_reference?: string | null
+          attempt_no?: number
+          bytes_transferred?: number
+          correlation_id?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          dispatched_at?: string | null
+          duration_ms?: number | null
+          error_code?: string | null
+          error_message?: string | null
+          failed_at?: string | null
+          id?: string
+          package_id: string
+          partner_id: string
+          protocol: Database["public"]["Enums"]["distribution_protocol"]
+          queue_id: string
+          status?: string
+          title_id: string
+          transport_response?: Json
+          updated_at?: string
+        }
+        Update: {
+          ack_reference?: string | null
+          attempt_no?: number
+          bytes_transferred?: number
+          correlation_id?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          dispatched_at?: string | null
+          duration_ms?: number | null
+          error_code?: string | null
+          error_message?: string | null
+          failed_at?: string | null
+          id?: string
+          package_id?: string
+          partner_id?: string
+          protocol?: Database["public"]["Enums"]["distribution_protocol"]
+          queue_id?: string
+          status?: string
+          title_id?: string
+          transport_response?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "distribution_deliveries_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "distribution_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "distribution_deliveries_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "distribution_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "distribution_deliveries_queue_id_fkey"
+            columns: ["queue_id"]
+            isOneToOne: false
+            referencedRelation: "distribution_queue"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "distribution_deliveries_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      distribution_delivery_logs: {
+        Row: {
+          correlation_id: string | null
+          created_at: string
+          delivery_id: string | null
+          id: string
+          level: string
+          message: string
+          payload: Json
+          queue_id: string | null
+          stage: string
+          title_id: string | null
+        }
+        Insert: {
+          correlation_id?: string | null
+          created_at?: string
+          delivery_id?: string | null
+          id?: string
+          level?: string
+          message: string
+          payload?: Json
+          queue_id?: string | null
+          stage: string
+          title_id?: string | null
+        }
+        Update: {
+          correlation_id?: string | null
+          created_at?: string
+          delivery_id?: string | null
+          id?: string
+          level?: string
+          message?: string
+          payload?: Json
+          queue_id?: string | null
+          stage?: string
+          title_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "distribution_delivery_logs_delivery_id_fkey"
+            columns: ["delivery_id"]
+            isOneToOne: false
+            referencedRelation: "distribution_deliveries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "distribution_delivery_logs_queue_id_fkey"
+            columns: ["queue_id"]
+            isOneToOne: false
+            referencedRelation: "distribution_queue"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "distribution_delivery_logs_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      distribution_metadata_mappings: {
+        Row: {
+          created_at: string
+          default_value: string | null
+          id: string
+          is_required: boolean
+          notes: string | null
+          partner_id: string
+          source_field: string
+          target_field: string
+          transform: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_value?: string | null
+          id?: string
+          is_required?: boolean
+          notes?: string | null
+          partner_id: string
+          source_field: string
+          target_field: string
+          transform?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_value?: string | null
+          id?: string
+          is_required?: boolean
+          notes?: string | null
+          partner_id?: string
+          source_field?: string
+          target_field?: string
+          transform?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "distribution_metadata_mappings_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "distribution_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      distribution_packages: {
+        Row: {
+          build_error: string | null
+          built_at: string | null
+          checksum: string | null
+          created_at: string
+          id: string
+          included_asset_ids: string[]
+          included_localization_ids: string[]
+          included_media_version_ids: string[]
+          manifest: Json
+          owner_user_id: string
+          package_type: string
+          size_bytes: number
+          status: Database["public"]["Enums"]["distribution_package_status"]
+          title_id: string
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          build_error?: string | null
+          built_at?: string | null
+          checksum?: string | null
+          created_at?: string
+          id?: string
+          included_asset_ids?: string[]
+          included_localization_ids?: string[]
+          included_media_version_ids?: string[]
+          manifest?: Json
+          owner_user_id?: string
+          package_type?: string
+          size_bytes?: number
+          status?: Database["public"]["Enums"]["distribution_package_status"]
+          title_id: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          build_error?: string | null
+          built_at?: string | null
+          checksum?: string | null
+          created_at?: string
+          id?: string
+          included_asset_ids?: string[]
+          included_localization_ids?: string[]
+          included_media_version_ids?: string[]
+          manifest?: Json
+          owner_user_id?: string
+          package_type?: string
+          size_bytes?: number
+          status?: Database["public"]["Enums"]["distribution_package_status"]
+          title_id?: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "distribution_packages_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      distribution_partners: {
+        Row: {
+          config: Json
+          contact_email: string | null
+          created_at: string
+          default_package_type: string
+          delivery_window: Json | null
+          description: string | null
+          id: string
+          is_active: boolean
+          logo_url: string | null
+          name: string
+          protocol: Database["public"]["Enums"]["distribution_protocol"]
+          requires_aspera: boolean
+          requires_signiant: boolean
+          slug: string
+          supported_package_types: string[]
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          contact_email?: string | null
+          created_at?: string
+          default_package_type?: string
+          delivery_window?: Json | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name: string
+          protocol: Database["public"]["Enums"]["distribution_protocol"]
+          requires_aspera?: boolean
+          requires_signiant?: boolean
+          slug: string
+          supported_package_types?: string[]
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          contact_email?: string | null
+          created_at?: string
+          default_package_type?: string
+          delivery_window?: Json | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name?: string
+          protocol?: Database["public"]["Enums"]["distribution_protocol"]
+          requires_aspera?: boolean
+          requires_signiant?: boolean
+          slug?: string
+          supported_package_types?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       distribution_program_offers: {
         Row: {
           accepted_at: string | null
@@ -2259,6 +2587,91 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "distribution_program_offers_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      distribution_queue: {
+        Row: {
+          attempts: number
+          correlation_id: string | null
+          created_at: string
+          delivered_at: string | null
+          dispatched_at: string | null
+          id: string
+          last_error: string | null
+          last_error_code: string | null
+          max_attempts: number
+          metadata: Json
+          next_retry_at: string | null
+          package_id: string
+          partner_id: string
+          priority: number
+          requested_by: string | null
+          status: Database["public"]["Enums"]["distribution_queue_status"]
+          title_id: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          correlation_id?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          dispatched_at?: string | null
+          id?: string
+          last_error?: string | null
+          last_error_code?: string | null
+          max_attempts?: number
+          metadata?: Json
+          next_retry_at?: string | null
+          package_id: string
+          partner_id: string
+          priority?: number
+          requested_by?: string | null
+          status?: Database["public"]["Enums"]["distribution_queue_status"]
+          title_id: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          correlation_id?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          dispatched_at?: string | null
+          id?: string
+          last_error?: string | null
+          last_error_code?: string | null
+          max_attempts?: number
+          metadata?: Json
+          next_retry_at?: string | null
+          package_id?: string
+          partner_id?: string
+          priority?: number
+          requested_by?: string | null
+          status?: Database["public"]["Enums"]["distribution_queue_status"]
+          title_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "distribution_queue_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "distribution_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "distribution_queue_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "distribution_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "distribution_queue_title_id_fkey"
             columns: ["title_id"]
             isOneToOne: false
             referencedRelation: "content_titles"
@@ -9411,6 +9824,10 @@ export type Database = {
         Args: { _issue_id: string; _resolution_note?: string }
         Returns: Json
       }
+      retry_failed_distribution_deliveries: {
+        Args: { _title_id?: string }
+        Returns: number
+      }
       revoke_creator_role: { Args: { _user_id: string }; Returns: undefined }
       screening_log_event: {
         Args: { _kind: string; _progress_pct?: number; _token: string }
@@ -9621,6 +10038,27 @@ export type Database = {
         | "rejected"
         | "expired"
         | "cancelled"
+      distribution_package_status:
+        | "draft"
+        | "building"
+        | "ready"
+        | "archived"
+        | "failed"
+      distribution_protocol:
+        | "api"
+        | "ftp"
+        | "sftp"
+        | "aspera"
+        | "signiant"
+        | "s3"
+        | "http_webhook"
+      distribution_queue_status:
+        | "queued"
+        | "dispatching"
+        | "delivered"
+        | "failed"
+        | "cancelled"
+        | "retrying"
       distribution_readiness: "not_ready" | "in_prep" | "ready" | "blocked"
       internal_department:
         | "finance"
@@ -9987,6 +10425,30 @@ export const Constants = {
         "rejected",
         "expired",
         "cancelled",
+      ],
+      distribution_package_status: [
+        "draft",
+        "building",
+        "ready",
+        "archived",
+        "failed",
+      ],
+      distribution_protocol: [
+        "api",
+        "ftp",
+        "sftp",
+        "aspera",
+        "signiant",
+        "s3",
+        "http_webhook",
+      ],
+      distribution_queue_status: [
+        "queued",
+        "dispatching",
+        "delivered",
+        "failed",
+        "cancelled",
+        "retrying",
       ],
       distribution_readiness: ["not_ready", "in_prep", "ready", "blocked"],
       internal_department: [

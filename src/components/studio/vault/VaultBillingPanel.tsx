@@ -115,8 +115,8 @@ export default function VaultBillingPanel() {
     try {
       const res = await openPaddlePortal(controller.signal);
       if (res.ok && res.url) {
-        dismissLoadingToast();
         toast.success("Billing portal ready", {
+          id: loadingToastRef.current,
           description: "Refreshing your subscription management page…",
         });
         window.location.href = res.url;
@@ -124,9 +124,9 @@ export default function VaultBillingPanel() {
       }
       if (res.error === "abort") return;
       if (!res.ok) {
-        dismissLoadingToast();
         const { title, description } = friendlyPortalError(res);
         toast.error(title, {
+          id: loadingToastRef.current,
           description,
           action: {
             label: "Retry",

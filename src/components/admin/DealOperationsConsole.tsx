@@ -301,11 +301,30 @@ function DealDetailDialog({
           <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="approval"><ShieldCheck className="w-3.5 h-3.5 mr-1" /> Approval</TabsTrigger>
             <TabsTrigger value="invoice"><FileText className="w-3.5 h-3.5 mr-1" /> Invoice & Payment</TabsTrigger>
+            <TabsTrigger value="negotiation"><Handshake className="w-3.5 h-3.5 mr-1" /> Negotiation</TabsTrigger>
+            <TabsTrigger value="contract"><FileSignature className="w-3.5 h-3.5 mr-1" /> Contract</TabsTrigger>
             <TabsTrigger value="delivery"><Truck className="w-3.5 h-3.5 mr-1" /> Delivery</TabsTrigger>
+            <TabsTrigger value="lifecycle"><Activity className="w-3.5 h-3.5 mr-1" /> Lifecycle</TabsTrigger>
             <TabsTrigger value="payout"><Wallet className="w-3.5 h-3.5 mr-1" /> Payout</TabsTrigger>
             <TabsTrigger value="close"><Flag className="w-3.5 h-3.5 mr-1" /> Close</TabsTrigger>
             <TabsTrigger value="timeline"><History className="w-3.5 h-3.5 mr-1" /> Timeline</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="negotiation">
+            {deal.commercial_request_id ? (
+              <OfferNegotiationThread commercialRequestId={deal.commercial_request_id} party="admin" />
+            ) : (
+              <p className="text-xs text-muted-foreground">This deal is not linked to a buyer request.</p>
+            )}
+          </TabsContent>
+
+          <TabsContent value="contract">
+            <LicenseContractsPanel dealMemoId={deal.id} titleId={deal.title_id} canManage />
+          </TabsContent>
+
+          <TabsContent value="lifecycle">
+            <LicenseLifecyclePanel dealMemoId={deal.id} canManage />
+          </TabsContent>
 
           {/* APPROVAL */}
           <TabsContent value="approval" className="space-y-3">

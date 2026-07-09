@@ -103,7 +103,7 @@ describe("onboarding API request validator", () => {
       const { clientName: _drop, ...rest } = validPayload;
       const result = validateOnboardingPayload(rest);
       expect(result.ok).toBe(false);
-      if (!result.ok) {
+      if (result.ok === false) {
         expect(result.status).toBe(400);
         expect(result.errors.clientName).toMatch(/name/i);
       }
@@ -112,13 +112,13 @@ describe("onboarding API request validator", () => {
     it("rejects an empty / whitespace-only name", () => {
       const result = validateOnboardingPayload({ ...validPayload, clientName: "   " });
       expect(result.ok).toBe(false);
-      if (!result.ok) expect(result.errors.clientName).toMatch(/at least 2/i);
+      if (result.ok === false) expect(result.errors.clientName).toMatch(/at least 2/i);
     });
 
     it("rejects a non-string name", () => {
       const result = validateOnboardingPayload({ ...validPayload, clientName: 42 });
       expect(result.ok).toBe(false);
-      if (!result.ok) expect(result.errors.clientName).toBeDefined();
+      if (result.ok === false) expect(result.errors.clientName).toBeDefined();
     });
 
     it("rejects an overlong name (>200 chars)", () => {
@@ -127,7 +127,7 @@ describe("onboarding API request validator", () => {
         clientName: "a".repeat(201),
       });
       expect(result.ok).toBe(false);
-      if (!result.ok) expect(result.errors.clientName).toMatch(/at most 200/i);
+      if (result.ok === false) expect(result.errors.clientName).toMatch(/at most 200/i);
     });
   });
 
@@ -136,7 +136,7 @@ describe("onboarding API request validator", () => {
       const { professionalRole: _drop, ...rest } = validPayload;
       const result = validateOnboardingPayload(rest);
       expect(result.ok).toBe(false);
-      if (!result.ok) expect(result.errors.professionalRole).toBeDefined();
+      if (result.ok === false) expect(result.errors.professionalRole).toBeDefined();
     });
 
     it("rejects a role not in the allow-list", () => {
@@ -145,13 +145,13 @@ describe("onboarding API request validator", () => {
         professionalRole: "Astronaut",
       });
       expect(result.ok).toBe(false);
-      if (!result.ok) expect(result.errors.professionalRole).toBeDefined();
+      if (result.ok === false) expect(result.errors.professionalRole).toBeDefined();
     });
 
     it("rejects an empty-string role", () => {
       const result = validateOnboardingPayload({ ...validPayload, professionalRole: "" });
       expect(result.ok).toBe(false);
-      if (!result.ok) expect(result.errors.professionalRole).toBeDefined();
+      if (result.ok === false) expect(result.errors.professionalRole).toBeDefined();
     });
   });
 
@@ -160,7 +160,7 @@ describe("onboarding API request validator", () => {
       const { whatsappContact: _drop, ...rest } = validPayload;
       const result = validateOnboardingPayload(rest);
       expect(result.ok).toBe(false);
-      if (!result.ok) expect(result.errors.whatsappContact).toMatch(/whatsapp/i);
+      if (result.ok === false) expect(result.errors.whatsappContact).toMatch(/whatsapp/i);
     });
 
     it("rejects a WhatsApp contact with letters", () => {
@@ -169,7 +169,7 @@ describe("onboarding API request validator", () => {
         whatsappContact: "+91-call-me",
       });
       expect(result.ok).toBe(false);
-      if (!result.ok) expect(result.errors.whatsappContact).toMatch(/digits/i);
+      if (result.ok === false) expect(result.errors.whatsappContact).toMatch(/digits/i);
     });
 
     it("rejects a WhatsApp contact that is too short", () => {
@@ -178,7 +178,7 @@ describe("onboarding API request validator", () => {
         whatsappContact: "12345",
       });
       expect(result.ok).toBe(false);
-      if (!result.ok) expect(result.errors.whatsappContact).toBeDefined();
+      if (result.ok === false) expect(result.errors.whatsappContact).toBeDefined();
     });
 
     it("rejects a WhatsApp contact that is too long", () => {
@@ -187,7 +187,7 @@ describe("onboarding API request validator", () => {
         whatsappContact: "+1234567890123456", // 16 digits
       });
       expect(result.ok).toBe(false);
-      if (!result.ok) expect(result.errors.whatsappContact).toBeDefined();
+      if (result.ok === false) expect(result.errors.whatsappContact).toBeDefined();
     });
 
     it("accepts a bare digits-only WhatsApp contact", () => {
@@ -204,7 +204,7 @@ describe("onboarding API request validator", () => {
       const { accessAuthorizationCode: _drop, ...rest } = validPayload;
       const result = validateOnboardingPayload(rest);
       expect(result.ok).toBe(false);
-      if (!result.ok)
+      if (result.ok === false)
         expect(result.errors.accessAuthorizationCode).toMatch(/access authorization/i);
     });
 
@@ -214,7 +214,7 @@ describe("onboarding API request validator", () => {
         accessAuthorizationCode: "industry-2026",
       });
       expect(result.ok).toBe(false);
-      if (!result.ok) expect(result.errors.accessAuthorizationCode).toBeDefined();
+      if (result.ok === false) expect(result.errors.accessAuthorizationCode).toBeDefined();
     });
 
     it("rejects an access authorization code with disallowed symbols", () => {
@@ -223,7 +223,7 @@ describe("onboarding API request validator", () => {
         accessAuthorizationCode: "INDUSTRY 2026!",
       });
       expect(result.ok).toBe(false);
-      if (!result.ok) expect(result.errors.accessAuthorizationCode).toBeDefined();
+      if (result.ok === false) expect(result.errors.accessAuthorizationCode).toBeDefined();
     });
 
     it("rejects an access authorization code that is too short (<6 chars)", () => {
@@ -232,7 +232,7 @@ describe("onboarding API request validator", () => {
         accessAuthorizationCode: "AB1",
       });
       expect(result.ok).toBe(false);
-      if (!result.ok) expect(result.errors.accessAuthorizationCode).toBeDefined();
+      if (result.ok === false) expect(result.errors.accessAuthorizationCode).toBeDefined();
     });
 
     it("rejects an access authorization code that is too long (>32 chars)", () => {
@@ -241,7 +241,7 @@ describe("onboarding API request validator", () => {
         accessAuthorizationCode: "A".repeat(33),
       });
       expect(result.ok).toBe(false);
-      if (!result.ok) expect(result.errors.accessAuthorizationCode).toBeDefined();
+      if (result.ok === false) expect(result.errors.accessAuthorizationCode).toBeDefined();
     });
   });
 
@@ -252,14 +252,14 @@ describe("onboarding API request validator", () => {
         businessEmail: "not-an-email",
       });
       expect(result.ok).toBe(false);
-      if (!result.ok) expect(result.errors.businessEmail).toMatch(/invalid/i);
+      if (result.ok === false) expect(result.errors.businessEmail).toMatch(/invalid/i);
     });
   });
 
   it("returns all four field errors when every required field is missing", () => {
     const result = validateOnboardingPayload({});
     expect(result.ok).toBe(false);
-    if (!result.ok) {
+    if (result.ok === false) {
       expect(result.status).toBe(400);
       expect(result.errors.clientName).toBeDefined();
       expect(result.errors.professionalRole).toBeDefined();

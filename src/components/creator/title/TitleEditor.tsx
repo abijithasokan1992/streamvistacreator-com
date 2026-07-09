@@ -494,6 +494,15 @@ export function TitleEditor({
                     <RightsAvailabilityPanel meta={meta} setMeta={setMeta} readOnly={metadataLocked} isFree={isFree} />
                   </div>
                 )}
+                {tab === "cms" && (
+                  <MediaCmsPanel
+                    titleId={title.id}
+                    ownerUserId={title.owner_user_id}
+                    workspaceId={(title as any).workspace_id ?? null}
+                    titleKind={((title as any).kind as any) ?? "film"}
+                    readOnly={readOnly}
+                  />
+                )}
                 {tab === "submission" && (
                   <SubmissionTab title={title} readiness={readiness} local={localChecklist!} assets={assets} meta={meta} onJumpTab={setTab} isFree={isFree} />
                 )}

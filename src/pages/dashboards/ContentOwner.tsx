@@ -129,6 +129,7 @@ export default function ContentOwnerDashboard() {
           {(effectiveSection === "statements" || effectiveSection === "billing") && <StatementsSection />}
           {effectiveSection === "storage" && <StorageSection />}
           {effectiveSection === "delivery_vault" && <DeliveryVaultSection />}
+          {effectiveSection === "distribution" && <DistributionSection />}
           {effectiveSection === "help" && <HelpSection />}
           {effectiveSection === "profile" && <MyCreatorProfile embedded />}
         </section>

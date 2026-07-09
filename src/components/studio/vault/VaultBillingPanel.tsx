@@ -439,6 +439,7 @@ export default function VaultBillingPanel() {
             readOnly
             value={portalUrl}
             onFocus={(e) => e.currentTarget.select()}
+            onKeyDown={handleFallbackKeyDown}
             className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
             aria-label="Paddle portal URL"
           />

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useSyncExternalStore } from "react";
 import { Receipt, Loader2, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -65,6 +65,60 @@ function friendlyPortalError(res: { error?: string; status?: number }): {
   };
 }
 
+const createPortalBusyStore = () => {
+  let busy = false;
+  const listeners = new Set<() => void>();
+  return {
+    set: (v: boolean) => {
+      if (busy !== v) {
+        busy = v;
+        listeners.forEach((l) => l());
+      }
+    },
+    subscribe: (l: () => void) => {
+      listeners.add(l);
+      return () => listeners.delete(l);
+    },
+    getSnapshot: () => busy,
+  };
+};
+
+const portalBusyStore = createPortalBusyStore();
+
+function PortalErrorToast({
+  title,
+  description,
+  onRetry,
+}: {
+  title: string;
+  description: string;
+  onRetry: () => void;
+}) {
+  const busy = useSyncExternalStore(
+    portalBusyStore.subscribe,
+    portalBusyStore.getSnapshot
+  );
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="font-semibold text-sm">{title}</div>
+      <div className="text-xs opacity-90">{description}</div>
+      <button
+        type="button"
+        onClick={onRetry}
+        disabled={busy}
+        aria-busy={busy}
+        className="self-end mt-1 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {busy ? (
+          <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
+        ) : null}
+        {busy ? "Retrying…" : "Retry"}
+      </button>
+    </div>
+  );
+}
+
+
 
 type Invoice = {
   id: string;
@@ -108,6 +162,7 @@ export default function VaultBillingPanel() {
     if (portalLoading || portalPendingRef.current) return;
     portalPendingRef.current = true;
     setPortalLoading(true);
+    portalBusyStore.set(true);
     portalAbortRef.current?.abort();
     dismissLoadingToast();
     const controller = new AbortController();
@@ -126,37 +181,42 @@ export default function VaultBillingPanel() {
       if (res.error === "abort") return;
       if (!res.ok) {
         const { title, description } = friendlyPortalError(res);
-        toast.error(title, {
-          id: loadingToastRef.current,
-          description,
-          action: {
-            label: "Retry",
-            onClick: () => {
-              toast.dismiss();
-              handleManage();
-            },
-          },
-        });
+        toast.custom(
+          (t) => (
+            <PortalErrorToast
+              title={title}
+              description={description}
+              onRetry={() => {
+                toast.dismiss(t);
+                handleManage();
+              }}
+            />
+          ),
+          { id: loadingToastRef.current, duration: Infinity }
+        );
       }
     } catch (err) {
       const { title, description } = friendlyPortalError({
         error: err instanceof Error ? err.message : "Unable to reach the billing portal.",
       });
-      toast.error(title, {
-        id: loadingToastRef.current,
-        description,
-        action: {
-          label: "Retry",
-          onClick: () => {
-            toast.dismiss();
-            handleManage();
-          },
-        },
-      });
+      toast.custom(
+        (t) => (
+          <PortalErrorToast
+            title={title}
+            description={description}
+            onRetry={() => {
+              toast.dismiss(t);
+              handleManage();
+            }}
+          />
+        ),
+        { id: loadingToastRef.current, duration: Infinity }
+      );
     } finally {
       if (portalAbortRef.current === controller) {
         portalPendingRef.current = false;
         setPortalLoading(false);
+        portalBusyStore.set(false);
         portalAbortRef.current = null;
       }
     }
@@ -166,6 +226,7 @@ export default function VaultBillingPanel() {
     return () => {
       portalAbortRef.current?.abort();
       dismissLoadingToast();
+      portalBusyStore.set(false);
     };
   }, []);
 

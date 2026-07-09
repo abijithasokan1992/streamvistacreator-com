@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { fmtINRDecimal } from "@/lib/studioVault";
 import { Link } from "react-router-dom";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 async function openPaddlePortal(): Promise<{ ok: boolean; error?: string }> {
   const { data: sess } = await supabase.auth.getSession();
@@ -52,13 +52,22 @@ export default function VaultBillingPanel() {
   const [portalLoading, setPortalLoading] = useState(false);
 
   const handleManage = async () => {
+    if (portalLoading) return;
     setPortalLoading(true);
-    const res = await openPaddlePortal();
-    if (!res.ok) {
-      toast({ title: "Couldn't open billing portal", description: res.error, variant: "destructive" });
+    try {
+      const res = await openPaddlePortal();
+      if (!res.ok) {
+        toast.error(res.error || "Couldn't open billing portal", {
+          description: "Please try again or contact support if the issue persists.",
+        });
+      }
+    } catch (err) {
+      toast.error("Network error", {
+        description: err instanceof Error ? err.message : "Unable to reach the billing portal.",
+      });
+    } finally {
       setPortalLoading(false);
     }
-    // On success we redirect, no need to reset state.
   };
 
 

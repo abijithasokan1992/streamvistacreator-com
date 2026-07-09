@@ -6,7 +6,7 @@ import { fmtINRDecimal } from "@/lib/studioVault";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
-async function openPaddlePortal(): Promise<{ ok: boolean; error?: string; status?: number }> {
+async function openPaddlePortal(): Promise<{ ok: boolean; url?: string; error?: string; status?: number }> {
   const { data: sess } = await supabase.auth.getSession();
   const token = sess.session?.access_token;
   if (!token) return { ok: false, error: "Please sign in again.", status: 401 };
@@ -19,8 +19,7 @@ async function openPaddlePortal(): Promise<{ ok: boolean; error?: string; status
     }
     const { url: portalUrl } = await res.json();
     if (!portalUrl) return { ok: false, error: "Portal URL missing." };
-    window.location.href = portalUrl;
-    return { ok: true };
+    return { ok: true, url: portalUrl };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Network error" };
   }

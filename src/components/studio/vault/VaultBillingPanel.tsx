@@ -397,6 +397,24 @@ export default function VaultBillingPanel() {
         </div>
       </div>
 
+      {showUrlFallback && portalUrl && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
+          <label htmlFor="portal-url-fallback" className="text-xs font-medium text-amber-200 mb-1.5 block">
+            Clipboard access blocked. Copy the portal URL manually:
+          </label>
+          <input
+            ref={fallbackInputRef}
+            id="portal-url-fallback"
+            type="text"
+            readOnly
+            value={portalUrl}
+            onFocus={(e) => e.currentTarget.select()}
+            className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+            aria-label="Paddle portal URL"
+          />
+        </div>
+      )}
+
       {portalError && (
         <div
           role="alert"

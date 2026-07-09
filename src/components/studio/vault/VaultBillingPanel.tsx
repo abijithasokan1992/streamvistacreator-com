@@ -152,6 +152,7 @@ export default function VaultBillingPanel() {
   const portalPendingRef = useRef(false);
   const portalAbortRef = useRef<AbortController | null>(null);
   const loadingToastRef = useRef<string | number | undefined>(undefined);
+  const isMountedRef = useRef(true);
 
   const dismissLoadingToast = () => {
     if (loadingToastRef.current) {
@@ -172,6 +173,12 @@ export default function VaultBillingPanel() {
     loadingToastRef.current = toast.loading("Generating your billing portal…");
     try {
       const res = await openPaddlePortal(controller.signal);
+      // If the component unmounted or this request was superseded/cancelled,
+      // suppress all UI updates (no success/error toast, no navigation).
+      if (!isMountedRef.current || controller.signal.aborted || res.error === "abort") {
+        dismissLoadingToast();
+        return;
+      }
       if (res.ok && res.url) {
         toast.success("Billing portal ready", {
           id: loadingToastRef.current,
@@ -180,7 +187,6 @@ export default function VaultBillingPanel() {
         window.location.href = res.url;
         return;
       }
-      if (res.error === "abort") return;
       if (!res.ok) {
         const { title, description } = friendlyPortalError(res);
         toast.custom(
@@ -198,6 +204,10 @@ export default function VaultBillingPanel() {
         );
       }
     } catch (err) {
+      if (!isMountedRef.current || controller.signal.aborted) {
+        dismissLoadingToast();
+        return;
+      }
       const { title, description } = friendlyPortalError({
         error: err instanceof Error ? err.message : "Unable to reach the billing portal.",
       });
@@ -217,7 +227,7 @@ export default function VaultBillingPanel() {
     } finally {
       if (portalAbortRef.current === controller) {
         portalPendingRef.current = false;
-        setPortalLoading(false);
+        if (isMountedRef.current) setPortalLoading(false);
         portalBusyStore.set(false);
         portalAbortRef.current = null;
       }
@@ -225,8 +235,12 @@ export default function VaultBillingPanel() {
   };
 
   useEffect(() => {
+    isMountedRef.current = true;
     return () => {
+      isMountedRef.current = false;
       portalAbortRef.current?.abort();
+      portalAbortRef.current = null;
+      portalPendingRef.current = false;
       dismissLoadingToast();
       portalBusyStore.set(false);
     };

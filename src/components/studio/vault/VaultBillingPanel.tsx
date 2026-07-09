@@ -106,10 +106,12 @@ export default function VaultBillingPanel() {
           type="button"
           onClick={handleManage}
           disabled={portalLoading}
+          aria-busy={portalLoading}
+          aria-label={portalLoading ? "Opening billing portal…" : "Manage subscription"}
           className="inline-flex items-center gap-2 rounded-md border border-border/60 px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] hover:bg-accent/10 disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {portalLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ExternalLink className="w-3.5 h-3.5" />}
-          Manage subscription
+          {portalLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" /> : <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />}
+          {portalLoading ? "Opening portal…" : "Manage subscription"}
         </button>
       </div>
 

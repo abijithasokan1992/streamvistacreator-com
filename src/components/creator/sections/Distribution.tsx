@@ -43,10 +43,10 @@ export default function DistributionSection() {
     const partnerIds = Array.from(new Set((data ?? []).map((r: any) => r.partner_id)));
     const titleIds = Array.from(new Set((data ?? []).map((r: any) => r.title_id)));
     const [{ data: partners }, { data: titles }] = await Promise.all([
-      (supabase as any).from("distribution_partners").select("id,name,protocol").in("id", partnerIds.length ? partnerIds : ["00000000-0000-0000-0000-000000000000"]),
+      (supabase as any).rpc("list_active_distribution_partners"),
       (supabase as any).from("content_titles").select("id,title").in("id", titleIds.length ? titleIds : ["00000000-0000-0000-0000-000000000000"]),
     ]);
-    const pmap = new Map((partners ?? []).map((p: any) => [p.id, p]));
+    const pmap = new Map(((partners as any[]) ?? []).filter((p: any) => partnerIds.includes(p.id)).map((p: any) => [p.id, p]));
     const tmap = new Map((titles ?? []).map((t: any) => [t.id, t]));
     setRows((data ?? []).map((r: any) => ({
       ...r,

@@ -94,24 +94,32 @@ export default function VaultBillingPanel() {
   const [showIncomplete, setShowIncomplete] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
   const portalPendingRef = useRef(false);
+  const portalAbortRef = useRef<AbortController | null>(null);
+  const loadingToastRef = useRef<string | number | null>(null);
 
   const handleManage = async () => {
     if (portalLoading || portalPendingRef.current) return;
     portalPendingRef.current = true;
     setPortalLoading(true);
-    const loadingId = toast.loading("Generating your billing portal…");
+    portalAbortRef.current?.abort();
+    const controller = new AbortController();
+    portalAbortRef.current = controller;
+    loadingToastRef.current = toast.loading("Generating your billing portal…");
     try {
-      const res = await openPaddlePortal();
+      const res = await openPaddlePortal(controller.signal);
       if (res.ok && res.url) {
-        toast.dismiss(loadingId);
+        toast.dismiss(loadingToastRef.current);
+        loadingToastRef.current = null;
         toast.success("Billing portal ready", {
           description: "Refreshing your subscription management page…",
         });
         window.location.href = res.url;
         return;
       }
+      if (res.error === "abort") return;
       if (!res.ok) {
-        toast.dismiss(loadingId);
+        toast.dismiss(loadingToastRef.current);
+        loadingToastRef.current = null;
         const { title, description } = friendlyPortalError(res);
         toast.error(title, {
           description,
@@ -125,7 +133,8 @@ export default function VaultBillingPanel() {
         });
       }
     } catch (err) {
-      toast.dismiss(loadingId);
+      toast.dismiss(loadingToastRef.current);
+      loadingToastRef.current = null;
       const { title, description } = friendlyPortalError({
         error: err instanceof Error ? err.message : "Unable to reach the billing portal.",
       });
@@ -142,8 +151,21 @@ export default function VaultBillingPanel() {
     } finally {
       portalPendingRef.current = false;
       setPortalLoading(false);
+      if (portalAbortRef.current === controller) {
+        portalAbortRef.current = null;
+      }
     }
   };
+
+  useEffect(() => {
+    return () => {
+      portalAbortRef.current?.abort();
+      if (loadingToastRef.current) {
+        toast.dismiss(loadingToastRef.current);
+        loadingToastRef.current = null;
+      }
+    };
+  }, []);
 
 
   useEffect(() => {

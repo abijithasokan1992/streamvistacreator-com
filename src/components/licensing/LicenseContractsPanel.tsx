@@ -84,7 +84,7 @@ export function LicenseContractsPanel({
             <li key={c.id} className="rounded-lg border border-border/40 bg-secondary/10 p-3 text-xs">
               <div className="flex items-center justify-between">
                 <span className="font-semibold">v{c.version}</span>
-                <Badge variant="outline" className="text-[10px] capitalize">{c.status.replaceAll("_", " ")}</Badge>
+                <Badge variant="outline" className="text-[10px] capitalize">{c.status.replace(/_/g, " ")}</Badge>
               </div>
               {c.document_url && (
                 <a

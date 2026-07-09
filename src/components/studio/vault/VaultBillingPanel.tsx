@@ -205,7 +205,7 @@ export default function VaultBillingPanel() {
             title={title}
             description={description}
             onRetry={() => {
-              toast.dismiss(t.id);
+              toast.dismiss(t);
               handleManage();
             }}
           />

@@ -126,24 +126,6 @@ export default function MyWorkspace() {
         status: profileComplete ? "ready" : "setup",
       });
 
-      if (bucket === "creator" || bucket === "studio" || bucket === "buyer") {
-        items.push({
-          title: "Plan",
-          description: isFree
-            ? "You're on the Free tier. Upgrade for higher storage limits and premium tools."
-            : `${planName} is active on this account.`,
-          status: isFree ? "upgrade" : "included",
-        });
-
-        items.push({
-          title: "Storage",
-          description: allocatedGb > 0
-            ? `${allocatedGb.toFixed(0)} GB allocated to your workspace.`
-            : "No storage allocated yet — a Free allowance is applied on first upload.",
-          status: allocatedGb > 0 ? "included" : "setup",
-        });
-      }
-
       if (bucket === "creator") {
         items.push({
           title: "Your Titles",
@@ -192,11 +174,6 @@ export default function MyWorkspace() {
         title: "Security & Sign-in",
         description: "Password, magic links and OAuth are active on your account.",
         status: "ready",
-      });
-      items.push({
-        title: "Insights & Analytics",
-        description: "Deeper usage reports and creator insights.",
-        status: "soon",
       });
 
       setSections(items);

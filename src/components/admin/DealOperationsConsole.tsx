@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, RefreshCw, ShieldCheck, FileText, CreditCard, Truck, Wallet, Flag, AlertTriangle, History, ExternalLink } from "lucide-react";
+import { Loader2, RefreshCw, ShieldCheck, FileText, CreditCard, Truck, Wallet, Flag, AlertTriangle, History, ExternalLink, FileSignature, Activity, Handshake } from "lucide-react";
+import { OfferNegotiationThread } from "@/components/licensing/OfferNegotiationThread";
+import { LicenseContractsPanel } from "@/components/licensing/LicenseContractsPanel";
+import { LicenseLifecyclePanel } from "@/components/licensing/LicenseLifecyclePanel";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

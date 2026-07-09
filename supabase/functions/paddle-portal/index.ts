@@ -34,23 +34,82 @@ Deno.serve(async (req) => {
     const env: PaddleEnv = url.searchParams.get("env") === "live" ? "live" : "sandbox";
     const mode = url.searchParams.get("mode"); // "redirect" (default) or "json"
 
-    // 2) Look up the customer + latest active subscription from the mirror.
+    // 2) Look up the customer + pick the CURRENT active subscription from the mirror.
+    //    A user may have multiple mirrored subscriptions (historical cancels, upgrades,
+    //    multiple products). We must pick the one that actually reflects live access,
+    //    not simply the most-recently-updated row (which could be a canceled record
+    //    that Paddle just touched).
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
-    const { data: sub } = await admin
+    const { data: subs } = await admin
       .from("subscriptions")
-      .select("paddle_customer_id,paddle_subscription_id,status,environment")
+      .select(
+        "paddle_customer_id,paddle_subscription_id,status,environment,current_period_end,updated_at,created_at",
+      )
       .eq("user_id", userId)
       .eq("environment", env)
       .not("paddle_customer_id", "is", null)
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .order("updated_at", { ascending: false });
 
-    const customerId = (sub as any)?.paddle_customer_id as string | undefined;
+    const rows = (subs ?? []) as Array<{
+      paddle_customer_id: string | null;
+      paddle_subscription_id: string | null;
+      status: string | null;
+      current_period_end: string | null;
+      updated_at: string | null;
+      created_at: string | null;
+    }>;
+
+    if (rows.length === 0) return json({ error: "No Paddle customer on file" }, 404);
+
+    // Priority: active > trialing > past_due > paused > canceled > anything else.
+    // Within the same status, prefer the row with the latest current_period_end,
+    // then latest updated_at. This ensures we surface the live subscription even
+    // when a stale canceled row was touched more recently.
+    const STATUS_RANK: Record<string, number> = {
+      active: 0,
+      trialing: 1,
+      past_due: 2,
+      paused: 3,
+      canceled: 4,
+    };
+    const rank = (s: string | null) =>
+      s && s in STATUS_RANK ? STATUS_RANK[s] : 99;
+    const ts = (v: string | null) => (v ? Date.parse(v) || 0 : 0);
+
+    const sorted = [...rows].sort((a, b) => {
+      const r = rank(a.status) - rank(b.status);
+      if (r !== 0) return r;
+      const pe = ts(b.current_period_end) - ts(a.current_period_end);
+      if (pe !== 0) return pe;
+      return ts(b.updated_at) - ts(a.updated_at);
+    });
+
+    // Prefer a row that shares the customer_id of the top-ranked subscription.
+    const best = sorted[0];
+    const customerId = best.paddle_customer_id as string | undefined;
     if (!customerId) return json({ error: "No Paddle customer on file" }, 404);
 
+    // Collect the current active/trialing subscription id(s) for this customer so
+    // the portal deep-links to the right subscription. Fall back to the top-ranked
+    // row if none are strictly active.
+    const activeForCustomer = sorted.filter(
+      (r) =>
+        r.paddle_customer_id === customerId &&
+        (r.status === "active" || r.status === "trialing") &&
+        !!r.paddle_subscription_id,
+    );
+    const chosenSubId =
+      activeForCustomer[0]?.paddle_subscription_id ??
+      best.paddle_subscription_id ??
+      null;
+
+    // Cross-check with the shared access helper (respects grace periods).
     const access = await checkUserPaidAccess(customerId, admin);
-    const subscriptionIds = access.subscriptionId ? [access.subscriptionId] : [];
+    const subscriptionIds = chosenSubId
+      ? [chosenSubId]
+      : access.subscriptionId
+        ? [access.subscriptionId]
+        : [];
 
     // 3) Ask Paddle for an ephemeral portal session.
     const paddle = getPaddleClient(env);

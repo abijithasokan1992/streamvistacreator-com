@@ -428,21 +428,55 @@ export default function VaultBillingPanel() {
       </div>
 
       {showUrlFallback && portalUrl && (
-        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
-          <label htmlFor="portal-url-fallback" className="text-xs font-medium text-amber-200 mb-1.5 block">
-            Clipboard access blocked. Copy the portal URL manually:
-          </label>
-          <input
-            ref={fallbackInputRef}
-            id="portal-url-fallback"
-            type="text"
-            readOnly
-            value={portalUrl}
-            onFocus={(e) => e.currentTarget.select()}
-            onKeyDown={handleFallbackKeyDown}
-            className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
-            aria-label="Paddle portal URL"
-          />
+        <div
+          role="region"
+          aria-label="Manual portal URL fallback"
+          className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3"
+        >
+          <div className="flex items-center justify-between gap-2 mb-1.5">
+            <label htmlFor="portal-url-fallback" className="text-xs font-medium text-foreground">
+              Clipboard access blocked. Copy the portal URL manually:
+            </label>
+            <button
+              type="button"
+              onClick={() => setShowUrlFallback(false)}
+              aria-label="Close manual portal URL fallback"
+              className="inline-flex items-center justify-center rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-background/50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
+            >
+              <X className="w-3.5 h-3.5" aria-hidden="true" />
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              ref={fallbackInputRef}
+              id="portal-url-fallback"
+              type="text"
+              readOnly
+              value={portalUrl}
+              onFocus={(e) => e.currentTarget.select()}
+              onKeyDown={handleFallbackKeyDown}
+              className="min-w-0 flex-1 rounded-md border border-border/60 bg-background px-3 py-2 text-xs font-mono text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              aria-label="Paddle portal URL"
+              aria-describedby="portal-url-hint"
+            />
+            <button
+              type="button"
+              onClick={copyPortalUrl}
+              disabled={portalCopied}
+              aria-label={portalCopied ? "Portal URL copied" : "Copy portal URL"}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-background px-2.5 py-2 text-xs font-semibold hover:bg-accent/10 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              {portalCopied ? (
+                <Check className="w-3.5 h-3.5 text-emerald-500" aria-hidden="true" />
+              ) : (
+                <Copy className="w-3.5 h-3.5" aria-hidden="true" />
+              )}
+              <span className="sr-only">{portalCopied ? "Copied" : "Copy"}</span>
+            </button>
+          </div>
+          <p id="portal-url-hint" className="mt-1.5 text-[11px] text-muted-foreground">
+            The URL is already selected. Press Ctrl+C (or Cmd+C) to copy it.
+          </p>
         </div>
       )}
 

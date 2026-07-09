@@ -5406,6 +5406,77 @@ export type Database = {
           },
         ]
       }
+      partner_statements: {
+        Row: {
+          beneficiary_user_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          fees_paise: number
+          gross_paise: number
+          id: string
+          issued_at: string | null
+          line_snapshot: Json
+          net_paise: number
+          partner_id: string | null
+          pdf_url: string | null
+          period_end: string
+          period_start: string
+          settled_at: string | null
+          statement_number: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          beneficiary_user_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          fees_paise?: number
+          gross_paise?: number
+          id?: string
+          issued_at?: string | null
+          line_snapshot?: Json
+          net_paise?: number
+          partner_id?: string | null
+          pdf_url?: string | null
+          period_end: string
+          period_start: string
+          settled_at?: string | null
+          statement_number?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          beneficiary_user_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          fees_paise?: number
+          gross_paise?: number
+          id?: string
+          issued_at?: string | null
+          line_snapshot?: Json
+          net_paise?: number
+          partner_id?: string | null
+          pdf_url?: string | null
+          period_end?: string
+          period_start?: string
+          settled_at?: string | null
+          statement_number?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_statements_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_title_matches: {
         Row: {
           ai_rationale: string | null
@@ -6394,6 +6465,161 @@ export type Database = {
           },
         ]
       }
+      revenue_imports: {
+        Row: {
+          created_at: string
+          currency: string
+          gross_amount_paise: number
+          id: string
+          imported_by: string | null
+          line_count: number
+          notes: string | null
+          partner_id: string | null
+          period_end: string | null
+          period_start: string | null
+          raw_file_url: string | null
+          source_label: string | null
+          source_type: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          gross_amount_paise?: number
+          id?: string
+          imported_by?: string | null
+          line_count?: number
+          notes?: string | null
+          partner_id?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          raw_file_url?: string | null
+          source_label?: string | null
+          source_type: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          gross_amount_paise?: number
+          id?: string
+          imported_by?: string | null
+          line_count?: number
+          notes?: string | null
+          partner_id?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          raw_file_url?: string | null
+          source_label?: string | null
+          source_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revenue_imports_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      revenue_lines: {
+        Row: {
+          channel: string | null
+          created_at: string
+          currency: string
+          deal_memo_id: string | null
+          distribution_delivery_id: string | null
+          gross_amount_paise: number
+          id: string
+          import_id: string | null
+          metadata: Json
+          net_amount_paise: number
+          occurred_on: string | null
+          partner_id: string | null
+          platform_fee_paise: number
+          territory: string | null
+          title_id: string | null
+          units: number | null
+        }
+        Insert: {
+          channel?: string | null
+          created_at?: string
+          currency?: string
+          deal_memo_id?: string | null
+          distribution_delivery_id?: string | null
+          gross_amount_paise?: number
+          id?: string
+          import_id?: string | null
+          metadata?: Json
+          net_amount_paise?: number
+          occurred_on?: string | null
+          partner_id?: string | null
+          platform_fee_paise?: number
+          territory?: string | null
+          title_id?: string | null
+          units?: number | null
+        }
+        Update: {
+          channel?: string | null
+          created_at?: string
+          currency?: string
+          deal_memo_id?: string | null
+          distribution_delivery_id?: string | null
+          gross_amount_paise?: number
+          id?: string
+          import_id?: string | null
+          metadata?: Json
+          net_amount_paise?: number
+          occurred_on?: string | null
+          partner_id?: string | null
+          platform_fee_paise?: number
+          territory?: string | null
+          title_id?: string | null
+          units?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revenue_lines_deal_memo_id_fkey"
+            columns: ["deal_memo_id"]
+            isOneToOne: false
+            referencedRelation: "deal_memos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenue_lines_distribution_delivery_id_fkey"
+            columns: ["distribution_delivery_id"]
+            isOneToOne: false
+            referencedRelation: "distribution_deliveries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenue_lines_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "revenue_imports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenue_lines_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenue_lines_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       revenue_transactions: {
         Row: {
           amount: number | null
@@ -6638,6 +6864,239 @@ export type Database = {
         }
         Relationships: []
       }
+      royalty_allocations: {
+        Row: {
+          allocated_paise: number
+          beneficiary_label: string | null
+          beneficiary_type: string
+          beneficiary_user_id: string | null
+          created_at: string
+          currency: string
+          deal_memo_id: string | null
+          deal_payout_id: string | null
+          gross_paise: number
+          id: string
+          revenue_line_id: string | null
+          rule_id: string | null
+          run_id: string
+          share_pct: number | null
+          status: string
+          title_id: string | null
+        }
+        Insert: {
+          allocated_paise?: number
+          beneficiary_label?: string | null
+          beneficiary_type: string
+          beneficiary_user_id?: string | null
+          created_at?: string
+          currency?: string
+          deal_memo_id?: string | null
+          deal_payout_id?: string | null
+          gross_paise?: number
+          id?: string
+          revenue_line_id?: string | null
+          rule_id?: string | null
+          run_id: string
+          share_pct?: number | null
+          status?: string
+          title_id?: string | null
+        }
+        Update: {
+          allocated_paise?: number
+          beneficiary_label?: string | null
+          beneficiary_type?: string
+          beneficiary_user_id?: string | null
+          created_at?: string
+          currency?: string
+          deal_memo_id?: string | null
+          deal_payout_id?: string | null
+          gross_paise?: number
+          id?: string
+          revenue_line_id?: string | null
+          rule_id?: string | null
+          run_id?: string
+          share_pct?: number | null
+          status?: string
+          title_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "royalty_allocations_deal_memo_id_fkey"
+            columns: ["deal_memo_id"]
+            isOneToOne: false
+            referencedRelation: "deal_memos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "royalty_allocations_deal_payout_id_fkey"
+            columns: ["deal_payout_id"]
+            isOneToOne: false
+            referencedRelation: "deal_payouts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "royalty_allocations_revenue_line_id_fkey"
+            columns: ["revenue_line_id"]
+            isOneToOne: false
+            referencedRelation: "revenue_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "royalty_allocations_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "royalty_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "royalty_allocations_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "royalty_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "royalty_allocations_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      royalty_rules: {
+        Row: {
+          active: boolean
+          beneficiary_label: string | null
+          beneficiary_type: string
+          beneficiary_user_id: string | null
+          created_at: string
+          created_by: string | null
+          deal_memo_id: string | null
+          id: string
+          minimum_guarantee_paise: number | null
+          notes: string | null
+          partner_id: string | null
+          priority: number
+          recoup_before_share: boolean
+          scope: string
+          share_pct: number
+          title_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          beneficiary_label?: string | null
+          beneficiary_type: string
+          beneficiary_user_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deal_memo_id?: string | null
+          id?: string
+          minimum_guarantee_paise?: number | null
+          notes?: string | null
+          partner_id?: string | null
+          priority?: number
+          recoup_before_share?: boolean
+          scope: string
+          share_pct: number
+          title_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          beneficiary_label?: string | null
+          beneficiary_type?: string
+          beneficiary_user_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deal_memo_id?: string | null
+          id?: string
+          minimum_guarantee_paise?: number | null
+          notes?: string | null
+          partner_id?: string | null
+          priority?: number
+          recoup_before_share?: boolean
+          scope?: string
+          share_pct?: number
+          title_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "royalty_rules_deal_memo_id_fkey"
+            columns: ["deal_memo_id"]
+            isOneToOne: false
+            referencedRelation: "deal_memos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "royalty_rules_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "royalty_rules_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      royalty_runs: {
+        Row: {
+          allocated_paise: number
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string | null
+          gross_paise: number
+          id: string
+          line_count: number
+          notes: string | null
+          period_end: string
+          period_start: string
+          run_label: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          allocated_paise?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          gross_paise?: number
+          id?: string
+          line_count?: number
+          notes?: string | null
+          period_end: string
+          period_start: string
+          run_label: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          allocated_paise?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          gross_paise?: number
+          id?: string
+          line_count?: number
+          notes?: string | null
+          period_end?: string
+          period_start?: string
+          run_label?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       scholarships: {
         Row: {
           amount: number | null
@@ -6844,6 +7303,90 @@ export type Database = {
             columns: ["title_id"]
             isOneToOne: false
             referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      settlements: {
+        Row: {
+          allocation_ids: string[]
+          amount_paise: number
+          beneficiary_label: string | null
+          beneficiary_type: string
+          beneficiary_user_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          deal_payout_ids: string[]
+          id: string
+          method: string | null
+          notes: string | null
+          paid_at: string | null
+          partner_id: string | null
+          reference: string | null
+          scheduled_for: string | null
+          settlement_number: string | null
+          statement_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          allocation_ids?: string[]
+          amount_paise?: number
+          beneficiary_label?: string | null
+          beneficiary_type: string
+          beneficiary_user_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          deal_payout_ids?: string[]
+          id?: string
+          method?: string | null
+          notes?: string | null
+          paid_at?: string | null
+          partner_id?: string | null
+          reference?: string | null
+          scheduled_for?: string | null
+          settlement_number?: string | null
+          statement_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          allocation_ids?: string[]
+          amount_paise?: number
+          beneficiary_label?: string | null
+          beneficiary_type?: string
+          beneficiary_user_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          deal_payout_ids?: string[]
+          id?: string
+          method?: string | null
+          notes?: string | null
+          paid_at?: string | null
+          partner_id?: string | null
+          reference?: string | null
+          scheduled_for?: string | null
+          settlement_number?: string | null
+          statement_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "settlements_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "settlements_statement_id_fkey"
+            columns: ["statement_id"]
+            isOneToOne: false
+            referencedRelation: "partner_statements"
             referencedColumns: ["id"]
           },
         ]
@@ -9061,6 +9604,18 @@ export type Database = {
       }
     }
     Views: {
+      finance_revenue_summary: {
+        Row: {
+          channel: string | null
+          currency: string | null
+          fees_paise: number | null
+          gross_paise: number | null
+          line_count: number | null
+          month: string | null
+          net_paise: number | null
+        }
+        Relationships: []
+      }
       payment_security_events: {
         Row: {
           action_type: string | null
@@ -9709,6 +10264,7 @@ export type Database = {
           workspace_id: string
         }[]
       }
+      compute_royalty_run: { Args: { _run_id: string }; Returns: Json }
       create_manual_vault_order: {
         Args: {
           _billing_interval_months: number

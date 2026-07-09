@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import {
   Home, Film, Inbox, Bell, Wallet, LifeBuoy, Lock, Database, UserCircle,
-  Briefcase, Activity as ActivityIcon, HardDrive,
+  Briefcase, Activity as ActivityIcon, HardDrive, Radio,
 } from "lucide-react";
 import {
   Tooltip,

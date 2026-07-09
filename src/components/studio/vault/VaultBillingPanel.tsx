@@ -149,9 +149,9 @@ export default function VaultBillingPanel() {
         },
       });
     } finally {
-      portalPendingRef.current = false;
-      setPortalLoading(false);
       if (portalAbortRef.current === controller) {
+        portalPendingRef.current = false;
+        setPortalLoading(false);
         portalAbortRef.current = null;
       }
     }

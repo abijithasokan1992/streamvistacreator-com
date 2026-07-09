@@ -11,6 +11,7 @@ import {
   type DistributionQueueItem, type DistributionDelivery, type DistributionDeliveryLog,
 } from "@/lib/distribution/distributionApi";
 import { cn } from "@/lib/utils";
+import { PartnerMetadataMappingEditor } from "./PartnerMetadataMappingEditor";
 
 const STATUS_TONE: Record<string, string> = {
   queued: "bg-sky-500/15 text-sky-300 border-sky-500/30",
@@ -37,6 +38,7 @@ export function DistributionHub({ titleId }: { titleId: string }) {
   const [deliveries, setDeliveries] = useState<DistributionDelivery[]>([]);
   const [logs, setLogs] = useState<Record<string, DistributionDeliveryLog[]>>({});
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [mappingsOpen, setMappingsOpen] = useState<string | null>(null);
 
   const reload = async () => {
     setLoading(true);
@@ -214,11 +216,22 @@ export function DistributionHub({ titleId }: { titleId: string }) {
                     <span className="text-sm font-medium">{p.name}</span>
                     <Badge variant="outline" className="text-[10px]">{PROTO_ICON[p.protocol]}</Badge>
                     {!p.is_active && <Badge className="text-[10px] bg-secondary text-muted-foreground border-border/60">inactive</Badge>}
+                    <button
+                      onClick={() => setMappingsOpen(mappingsOpen === p.id ? null : p.id)}
+                      className="ml-auto text-[10px] text-accent hover:underline"
+                    >
+                      {mappingsOpen === p.id ? "Hide mappings" : "Metadata mappings"}
+                    </button>
                   </div>
                   {p.description && <p className="text-xs text-muted-foreground mt-1">{p.description}</p>}
                   <p className="text-[10px] text-muted-foreground mt-2">
                     Default: {p.default_package_type} · Supports: {p.supported_package_types.join(", ")}
                   </p>
+                  {mappingsOpen === p.id && (
+                    <div className="mt-3 pt-3 border-t border-border/30">
+                      <PartnerMetadataMappingEditor partnerId={p.id} />
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>

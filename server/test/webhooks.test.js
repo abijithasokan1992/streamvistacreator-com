@@ -274,16 +274,6 @@ const subscriptionCanceled = {
   },
 };
 
-const subscriptionCanceled = {
-  ...subscriptionCreated,
-  event_id: 'evt_sub_canceled_1',
-  event_type: 'subscription.canceled',
-  data: {
-    ...subscriptionCreated.data,
-    status: 'canceled',
-    scheduled_change: { action: 'cancel', effective_at: '2026-08-01T00:00:00.000Z' },
-  },
-};
 
 const transactionCompleted = {
   event_id: 'evt_txn_completed_1',

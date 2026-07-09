@@ -6,13 +6,13 @@ import { fmtINRDecimal } from "@/lib/studioVault";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
-async function openPaddlePortal(): Promise<{ ok: boolean; url?: string; error?: string; status?: number }> {
+async function openPaddlePortal(signal?: AbortSignal): Promise<{ ok: boolean; url?: string; error?: string; status?: number }> {
   const { data: sess } = await supabase.auth.getSession();
   const token = sess.session?.access_token;
   if (!token) return { ok: false, error: "Please sign in again.", status: 401 };
   const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/paddle-portal?mode=json`;
   try {
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` }, signal });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       return { ok: false, error: body?.error || `Portal error (${res.status})`, status: res.status };
@@ -21,6 +21,9 @@ async function openPaddlePortal(): Promise<{ ok: boolean; url?: string; error?: 
     if (!portalUrl) return { ok: false, error: "Portal URL missing." };
     return { ok: true, url: portalUrl };
   } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      return { ok: false, error: "abort" };
+    }
     return { ok: false, error: err instanceof Error ? err.message : "Network error" };
   }
 }

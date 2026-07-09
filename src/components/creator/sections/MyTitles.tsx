@@ -12,6 +12,7 @@ import { StatusBadge } from "@/components/creator/title/StatusBadge";
 import { TitleEditor } from "@/components/creator/title/TitleEditor";
 import { AgreementGate } from "@/components/legal/AgreementGate";
 import { supabase } from "@/integrations/supabase/client";
+import { CollectionsFranchisesManager } from "@/components/creator/CollectionsFranchisesManager";
 
 import { cn } from "@/lib/utils";
 

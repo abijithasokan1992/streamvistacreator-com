@@ -20,16 +20,18 @@ import RequestEditButton from "@/components/creator/RequestEditButton";
 import { useTitleLock } from "@/hooks/useTitleLock";
 import { SmartMetadataImportButton } from "./SmartMetadataImport";
 import { MediaCmsPanel } from "./MediaCmsPanel";
+import { TitleDistributionPanel } from "@/components/distribution/TitleDistributionPanel";
 
-type TabId = "overview" | "metadata" | "assets" | "legal" | "cms" | "submission";
+type TabId = "overview" | "metadata" | "assets" | "legal" | "cms" | "distribution" | "submission";
 
 const TABS: { id: TabId; label: string }[] = [
-  { id: "overview",   label: "Overview" },
-  { id: "metadata",   label: "Details" },
-  { id: "assets",     label: "Files" },
-  { id: "legal",      label: "Business" },
-  { id: "cms",        label: "Media CMS" },
-  { id: "submission", label: "Submit" },
+  { id: "overview",     label: "Overview" },
+  { id: "metadata",     label: "Details" },
+  { id: "assets",       label: "Files" },
+  { id: "legal",        label: "Business" },
+  { id: "cms",          label: "Media CMS" },
+  { id: "distribution", label: "Distribution" },
+  { id: "submission",   label: "Submit" },
 ];
 
 export function TitleEditor({
@@ -500,6 +502,13 @@ export function TitleEditor({
                     ownerUserId={title.owner_user_id}
                     workspaceId={(title as any).workspace_id ?? null}
                     titleKind={((title as any).kind as any) ?? "film"}
+                    readOnly={readOnly}
+                  />
+                )}
+                {tab === "distribution" && (
+                  <TitleDistributionPanel
+                    titleId={title.id}
+                    workspaceId={(title as any).workspace_id ?? null}
                     readOnly={readOnly}
                   />
                 )}

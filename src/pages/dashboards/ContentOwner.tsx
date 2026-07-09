@@ -9,6 +9,7 @@ import SubmissionsSection from "@/components/creator/sections/Submissions";
 import UpdatesSection from "@/components/creator/sections/Updates";
 import StatementsSection from "@/components/creator/sections/Statements";
 import DeliveryVaultSection from "@/components/creator/sections/DeliveryVault";
+import DistributionSection from "@/components/creator/sections/Distribution";
 import StorageSection from "@/components/creator/sections/Storage";
 import HelpSection from "@/components/creator/sections/Help";
 import MyCreatorProfile from "@/pages/profile/MyCreatorProfile";
@@ -128,6 +129,7 @@ export default function ContentOwnerDashboard() {
           {(effectiveSection === "statements" || effectiveSection === "billing") && <StatementsSection />}
           {effectiveSection === "storage" && <StorageSection />}
           {effectiveSection === "delivery_vault" && <DeliveryVaultSection />}
+          {effectiveSection === "distribution" && <DistributionSection />}
           {effectiveSection === "help" && <HelpSection />}
           {effectiveSection === "profile" && <MyCreatorProfile embedded />}
         </section>

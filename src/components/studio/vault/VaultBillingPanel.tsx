@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Receipt, Loader2, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -50,9 +50,11 @@ export default function VaultBillingPanel() {
   const [loading, setLoading] = useState(true);
   const [showIncomplete, setShowIncomplete] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
+  const portalPendingRef = useRef(false);
 
   const handleManage = async () => {
-    if (portalLoading) return;
+    if (portalLoading || portalPendingRef.current) return;
+    portalPendingRef.current = true;
     setPortalLoading(true);
     try {
       const res = await openPaddlePortal();
@@ -66,6 +68,7 @@ export default function VaultBillingPanel() {
         description: err instanceof Error ? err.message : "Unable to reach the billing portal.",
       });
     } finally {
+      portalPendingRef.current = false;
       setPortalLoading(false);
     }
   };

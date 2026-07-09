@@ -240,11 +240,17 @@ export default function VaultBillingPanel() {
     isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
+      const wasPending = portalPendingRef.current && portalAbortRef.current !== null;
       portalAbortRef.current?.abort();
       portalAbortRef.current = null;
       portalPendingRef.current = false;
       dismissLoadingToast();
       portalBusyStore.set(false);
+      if (wasPending) {
+        toast.info("Regeneration cancelled", {
+          description: "The billing portal link was not generated because you navigated away.",
+        });
+      }
     };
   }, []);
 

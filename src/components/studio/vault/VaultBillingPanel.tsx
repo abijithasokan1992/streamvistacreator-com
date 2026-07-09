@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useSyncExternalStore } from "react";
-import { Receipt, Loader2, ExternalLink, AlertTriangle, X } from "lucide-react";
+import { Receipt, Loader2, ExternalLink, AlertTriangle, X, Copy, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { fmtINRDecimal } from "@/lib/studioVault";
@@ -174,6 +174,7 @@ export default function VaultBillingPanel() {
   const [portalLoading, setPortalLoading] = useState(false);
   const [portalUrl, setPortalUrl] = useState<string | null>(null);
   const [portalError, setPortalError] = useState<{ title: string; description: string } | null>(null);
+  const [portalCopied, setPortalCopied] = useState(false);
   const portalPendingRef = useRef(false);
   const portalAbortRef = useRef<AbortController | null>(null);
   const loadingToastRef = useRef<string | number | undefined>(undefined);
@@ -267,6 +268,18 @@ export default function VaultBillingPanel() {
     }
   };
 
+  const copyPortalUrl = async () => {
+    if (!portalUrl) return;
+    try {
+      await navigator.clipboard.writeText(portalUrl);
+      setPortalCopied(true);
+      toast.success("Portal link copied");
+      window.setTimeout(() => setPortalCopied(false), 2000);
+    } catch {
+      toast.error("Could not copy link");
+    }
+  };
+
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
@@ -328,15 +341,31 @@ export default function VaultBillingPanel() {
         </div>
         <div className="flex items-center gap-2">
           {portalUrl ? (
-            <button
-              type="button"
-              onClick={openPortal}
-              className="inline-flex items-center gap-2 rounded-md bg-accent text-white px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
-              aria-label="Open Paddle portal"
-            >
-              <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
-              Open Paddle portal
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={openPortal}
+                className="inline-flex items-center gap-2 rounded-md bg-accent text-white px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
+                aria-label="Open Paddle portal"
+              >
+                <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+                Open Paddle portal
+              </button>
+              <button
+                type="button"
+                onClick={copyPortalUrl}
+                disabled={portalCopied}
+                aria-label={portalCopied ? "Portal link copied" : "Copy Paddle portal link"}
+                className="inline-flex items-center gap-2 rounded-md border border-border/60 px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] hover:bg-accent/10 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
+              >
+                {portalCopied ? (
+                  <Check className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5" aria-hidden="true" />
+                )}
+                {portalCopied ? "Copied" : "Copy link"}
+              </button>
+            </>
           ) : null}
           <button
             type="button"

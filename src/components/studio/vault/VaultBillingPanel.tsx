@@ -101,13 +101,19 @@ export default function VaultBillingPanel() {
       const res = await openPaddlePortal();
       if (!res.ok) {
         const { title, description } = friendlyPortalError(res);
-        toast.error(title, { description });
+        toast.error(title, {
+          description,
+          action: { label: "Retry", onClick: handleManage },
+        });
       }
     } catch (err) {
       const { title, description } = friendlyPortalError({
         error: err instanceof Error ? err.message : "Unable to reach the billing portal.",
       });
-      toast.error(title, { description });
+      toast.error(title, {
+        description,
+        action: { label: "Retry", onClick: handleManage },
+      });
     } finally {
       portalPendingRef.current = false;
       setPortalLoading(false);

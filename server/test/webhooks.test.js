@@ -187,6 +187,32 @@ const customerUpdated = {
   data: { ...customerCreated.data, email: 'alice+new@example.com' },
 };
 
+function subItem(priceId, productId) {
+  return {
+    status: 'active',
+    quantity: 1,
+    recurring: true,
+    created_at: '2026-07-09T10:01:00.000Z',
+    updated_at: '2026-07-09T10:01:00.000Z',
+    previously_billed_at: null,
+    next_billed_at: null,
+    trial_dates: null,
+    price: {
+      id: priceId,
+      product_id: productId,
+      description: 'Test price',
+      billing_cycle: { interval: 'month', frequency: 1 },
+      trial_period: null,
+      tax_mode: 'account_setting',
+      unit_price: { amount: '1000', currency_code: 'USD' },
+      unit_price_overrides: [],
+      quantity: null,
+      status: 'active',
+    },
+    product: null,
+  };
+}
+
 const subscriptionCreated = {
   event_id: 'evt_sub_created_1',
   event_type: 'subscription.created',
@@ -194,10 +220,30 @@ const subscriptionCreated = {
   notification_id: 'ntf_2',
   data: {
     id: 'sub_01xyz',
-    customer_id: 'ctm_01abc',
     status: 'active',
-    items: [{ price: { id: 'pri_01', product_id: 'pro_01' } }],
+    customer_id: 'ctm_01abc',
+    address_id: 'add_01',
+    business_id: null,
+    currency_code: 'USD',
+    created_at: '2026-07-09T10:01:00.000Z',
+    updated_at: '2026-07-09T10:01:00.000Z',
+    started_at: '2026-07-09T10:01:00.000Z',
+    first_billed_at: '2026-07-09T10:01:00.000Z',
+    next_billed_at: '2026-08-09T10:01:00.000Z',
+    paused_at: null,
+    canceled_at: null,
+    discount: null,
+    collection_mode: 'automatic',
+    billing_details: null,
+    current_billing_period: {
+      starts_at: '2026-07-09T10:01:00.000Z',
+      ends_at: '2026-08-09T10:01:00.000Z',
+    },
+    billing_cycle: { interval: 'month', frequency: 1 },
     scheduled_change: null,
+    items: [subItem('pri_01', 'pro_01')],
+    custom_data: null,
+    import_meta: null,
   },
 };
 
@@ -208,7 +254,23 @@ const subscriptionUpdated = {
   data: {
     ...subscriptionCreated.data,
     status: 'past_due',
-    items: [{ price: { id: 'pri_02', product_id: 'pro_01' } }],
+    items: [subItem('pri_02', 'pro_01')],
+  },
+};
+
+const subscriptionCanceled = {
+  ...subscriptionCreated,
+  event_id: 'evt_sub_canceled_1',
+  event_type: 'subscription.canceled',
+  data: {
+    ...subscriptionCreated.data,
+    status: 'canceled',
+    canceled_at: '2026-07-09T11:00:00.000Z',
+    scheduled_change: {
+      action: 'cancel',
+      effective_at: '2026-08-01T00:00:00.000Z',
+      resume_at: null,
+    },
   },
 };
 

@@ -6,6 +6,7 @@ import BillingOperations from "@/components/admin/BillingOperations";
 import ManualInvoiceConsole from "@/components/admin/ManualInvoiceConsole";
 import AdminInvoices from "@/components/admin/AdminInvoices";
 import PaymentTrace from "@/components/admin/PaymentTrace";
+import FinanceExtensionHub from "@/components/admin/FinanceExtensionHub";
 
 /**
  * Internal finance dashboard for StreamVista staff (admin / super_admin

@@ -138,11 +138,11 @@ export default function VaultBillingPanel() {
         });
       }
     } catch (err) {
-      dismissLoadingToast();
       const { title, description } = friendlyPortalError({
         error: err instanceof Error ? err.message : "Unable to reach the billing portal.",
       });
       toast.error(title, {
+        id: loadingToastRef.current,
         description,
         action: {
           label: "Retry",

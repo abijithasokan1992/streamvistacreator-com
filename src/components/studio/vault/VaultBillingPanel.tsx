@@ -6,20 +6,61 @@ import { fmtINRDecimal } from "@/lib/studioVault";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
-async function openPaddlePortal(): Promise<{ ok: boolean; error?: string }> {
+async function openPaddlePortal(): Promise<{ ok: boolean; error?: string; status?: number }> {
   const { data: sess } = await supabase.auth.getSession();
   const token = sess.session?.access_token;
-  if (!token) return { ok: false, error: "Please sign in again." };
+  if (!token) return { ok: false, error: "Please sign in again.", status: 401 };
   const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/paddle-portal?mode=json`;
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    return { ok: false, error: body?.error || `Portal error (${res.status})` };
+  try {
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      return { ok: false, error: body?.error || `Portal error (${res.status})`, status: res.status };
+    }
+    const { url: portalUrl } = await res.json();
+    if (!portalUrl) return { ok: false, error: "Portal URL missing." };
+    window.location.href = portalUrl;
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Network error" };
   }
-  const { url: portalUrl } = await res.json();
-  if (!portalUrl) return { ok: false, error: "Portal URL missing." };
-  window.location.href = portalUrl;
-  return { ok: true };
+}
+
+function friendlyPortalError(res: { error?: string; status?: number }): {
+  title: string;
+  description: string;
+} {
+  const status = res.status ?? 0;
+  const error = res.error?.toLowerCase() ?? "";
+
+  if (status === 401 || error.includes("sign in")) {
+    return {
+      title: "Session expired",
+      description: "Please sign in again, then tap Manage subscription to retry.",
+    };
+  }
+  if (status === 404 || error.includes("not found") || error.includes("no subscription")) {
+    return {
+      title: "No subscription found",
+      description: "Make sure you have an active plan, then try again. Contact support if this looks wrong.",
+    };
+  }
+  if (status >= 500 || error.includes("paddle") || error.includes("portal")) {
+    return {
+      title: "Billing portal temporarily unavailable",
+      description: "The billing provider is having a moment. Wait a few seconds and tap Manage subscription again.",
+    };
+  }
+  if (!status || error.includes("network") || error.includes("fetch")) {
+    return {
+      title: "Connection issue",
+      description: "Check your internet connection and tap Manage subscription to retry.",
+    };
+  }
+  return {
+    title: res.error || "Couldn't open billing portal",
+    description: "Tap Manage subscription again, or reach out to support if the problem continues.",
+  };
 }
 
 
@@ -59,14 +100,14 @@ export default function VaultBillingPanel() {
     try {
       const res = await openPaddlePortal();
       if (!res.ok) {
-        toast.error(res.error || "Couldn't open billing portal", {
-          description: "Please try again or contact support if the issue persists.",
-        });
+        const { title, description } = friendlyPortalError(res);
+        toast.error(title, { description });
       }
     } catch (err) {
-      toast.error("Network error", {
-        description: err instanceof Error ? err.message : "Unable to reach the billing portal.",
+      const { title, description } = friendlyPortalError({
+        error: err instanceof Error ? err.message : "Unable to reach the billing portal.",
       });
+      toast.error(title, { description });
     } finally {
       portalPendingRef.current = false;
       setPortalLoading(false);

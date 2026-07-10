@@ -40,6 +40,7 @@ import AdminStudioVaultPurchases from "@/components/admin/AdminStudioVaultPurcha
 import OracleOciStorageCard from "@/components/admin/OracleOciStorageCard";
 import FailedUploadsInspector from "@/components/admin/FailedUploadsInspector";
 import InfrastructureHealth from "@/components/admin/InfrastructureHealth";
+import EmailRetryAuditPanel from "@/components/admin/EmailRetryAuditPanel";
 import AdminRunbook from "@/components/admin/AdminRunbook";
 import ProductionReadinessReport from "@/components/admin/ProductionReadinessReport";
 import MetricsDashboard from "@/components/admin/MetricsDashboard";

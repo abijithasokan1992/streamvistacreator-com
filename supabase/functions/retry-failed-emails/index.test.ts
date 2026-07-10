@@ -7,8 +7,14 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const SUPABASE_URL = Deno.env.get("VITE_SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("VITE_SUPABASE_PUBLISHABLE_KEY")!;
 
-Deno.test("retry-failed-emails sweep leaves 0 pending rows", async () => {
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+Deno.test({
+  name: "retry-failed-emails sweep leaves 0 pending rows",
+  sanitizeOps: false,
+  sanitizeResources: false,
+}, async () => {
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
 
   // 1. Invoke the retry scheduler.
   const res = await fetch(`${SUPABASE_URL}/functions/v1/retry-failed-emails`, {

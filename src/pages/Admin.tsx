@@ -40,6 +40,7 @@ import AdminStudioVaultPurchases from "@/components/admin/AdminStudioVaultPurcha
 import OracleOciStorageCard from "@/components/admin/OracleOciStorageCard";
 import FailedUploadsInspector from "@/components/admin/FailedUploadsInspector";
 import InfrastructureHealth from "@/components/admin/InfrastructureHealth";
+import EmailRetryAuditPanel from "@/components/admin/EmailRetryAuditPanel";
 import AdminRunbook from "@/components/admin/AdminRunbook";
 import ProductionReadinessReport from "@/components/admin/ProductionReadinessReport";
 import MetricsDashboard from "@/components/admin/MetricsDashboard";
@@ -500,6 +501,7 @@ function buildDepartments(args: {
         { id: "runbook", label: "Runbook", hint: "In-app operations playbooks", content: <AdminRunbook /> },
         ...systemSections,
         { id: "email", label: "Email Log", hint: "Raw email delivery log", content: <EmailLogMonitor /> },
+        { id: "email-retry-audit", label: "Email Retry Audit", hint: "Sweeper run history · pending-remaining invariant", content: <EmailRetryAuditPanel /> },
       ],
     },
   ];

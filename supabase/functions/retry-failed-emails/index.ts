@@ -193,6 +193,21 @@ Deno.serve(async (req) => {
     console.error("[retry-failed-emails] audit error", e);
   }
 
+  // Persist the audit result so admins can review historical runs.
+  try {
+    await supabase.from("admin_audit_log").insert({
+      action: "email_retry_audit",
+      details: {
+        audit,
+        summary,
+        reconciled,
+        ran_at: new Date().toISOString(),
+      },
+    });
+  } catch (e) {
+    console.error("[retry-failed-emails] failed to persist audit log", e);
+  }
+
   return new Response(JSON.stringify({ ...summary, reconciled, audit }), {
     status: audit.passed ? 200 : 500,
     headers: { ...corsHeaders, "Content-Type": "application/json" },

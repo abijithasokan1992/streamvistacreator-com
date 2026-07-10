@@ -81,13 +81,12 @@ export const Footer = () => {
           )}
         </div>
         <div className="mt-10 pt-6 border-t border-border/40">
-          <CrayonsNetwork />
-          <p className="mt-6 text-center text-[11px] font-mono-tech uppercase tracking-[0.22em] text-muted-foreground opacity-50">
-            StreamVista Syndicates — Powered by The Crayons Network
-            <span className="mx-2">·</span>
-            Crayons Pictures <span className="mx-1.5">•</span>
-            Crayons Bridge <span className="mx-1.5">•</span>
-            Crayons Loop
+          <CrayonsNetwork eyebrow="Powered by The Crayons Network" />
+          <p className="mt-4 text-center text-[11px] leading-relaxed text-muted-foreground/70 max-w-md mx-auto">
+            The founding media companies behind the StreamVista ecosystem —
+            <span className="text-foreground/70"> Crayons Pictures</span>,
+            <span className="text-foreground/70"> Crayons Bridge</span> and
+            <span className="text-foreground/70"> Crayons Loop</span>.
           </p>
         </div>
       </div>

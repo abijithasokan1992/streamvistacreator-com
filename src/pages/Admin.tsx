@@ -501,6 +501,7 @@ function buildDepartments(args: {
         { id: "runbook", label: "Runbook", hint: "In-app operations playbooks", content: <AdminRunbook /> },
         ...systemSections,
         { id: "email", label: "Email Log", hint: "Raw email delivery log", content: <EmailLogMonitor /> },
+        { id: "email-retry-audit", label: "Email Retry Audit", hint: "Sweeper run history · pending-remaining invariant", content: <EmailRetryAuditPanel /> },
       ],
     },
   ];

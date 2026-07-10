@@ -107,7 +107,65 @@ Deno.serve(async (req) => {
     summary[queue] = s;
   }
 
-  return new Response(JSON.stringify(summary), {
+  // -----------------------------------------------------------------------
+  // Reconciliation pass: sweep `email_send_log` rows whose LATEST status is
+  // still `pending` after the queue TTL window. These are logs where the
+  // queue worker crashed, the run was purged, or a pre-queue write never got
+  // a terminal event. We stamp a terminal `dlq` row so dashboards, admin
+  // metrics, and dedup queries stop counting them as in-flight.
+  // -----------------------------------------------------------------------
+  const RECONCILE_STALE_MINUTES = 60; // matches transactional TTL upper bound
+  const reconciled: { scanned: number; closed: number; error?: string } = { scanned: 0, closed: 0 };
+  try {
+    const cutoff = new Date(Date.now() - RECONCILE_STALE_MINUTES * 60_000).toISOString();
+    // Pull recent pending rows; dedup by message_id in-memory (avoids a
+    // heavy DISTINCT ON query at scale).
+    const { data: pendingRows, error: pendErr } = await supabase
+      .from("email_send_log")
+      .select("message_id, template_name, recipient_email, created_at")
+      .eq("status", "pending")
+      .lt("created_at", cutoff)
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (pendErr) throw pendErr;
+    reconciled.scanned = pendingRows?.length ?? 0;
+
+    const seen = new Set<string>();
+    const closures: Array<Record<string, unknown>> = [];
+    for (const r of pendingRows ?? []) {
+      const mid = String(r.message_id ?? "");
+      if (!mid || seen.has(mid)) continue;
+      seen.add(mid);
+      // Confirm no later terminal row exists for this message_id.
+      const { data: terminal } = await supabase
+        .from("email_send_log")
+        .select("status")
+        .eq("message_id", mid)
+        .in("status", ["sent", "dlq", "bounced", "suppressed", "failed"])
+        .gt("created_at", r.created_at)
+        .limit(1);
+      if (terminal && terminal.length > 0) continue;
+      closures.push({
+        message_id: mid,
+        template_name: r.template_name ?? "unknown",
+        recipient_email: r.recipient_email ?? "unknown",
+        status: "dlq",
+        error_message: `reconciled: pending > ${RECONCILE_STALE_MINUTES}m with no terminal event`,
+        metadata: { reconciled: true, source: "retry-failed-emails" },
+      });
+    }
+    if (closures.length > 0) {
+      const { error: insErr } = await supabase.from("email_send_log").insert(closures);
+      if (insErr) throw insErr;
+      reconciled.closed = closures.length;
+      console.log(`[retry-failed-emails] reconciled ${closures.length} stuck pending rows`);
+    }
+  } catch (e) {
+    reconciled.error = e instanceof Error ? e.message : String(e);
+    console.error("[retry-failed-emails] reconciliation error", e);
+  }
+
+  return new Response(JSON.stringify({ ...summary, reconciled }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 });

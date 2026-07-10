@@ -9778,6 +9778,11 @@ export type Database = {
       }
     }
     Functions: {
+      _mediacms_container_from_mime: { Args: { m: string }; Returns: string }
+      _mediacms_version_type_from_category: {
+        Args: { cat: string }
+        Returns: Database["public"]["Enums"]["media_version_type"]
+      }
       _mi_compute_totals: {
         Args: {
           _gst_percent: number
@@ -10655,6 +10660,7 @@ export type Database = {
       }
       sweep_manual_invoices_overdue: { Args: never; Returns: number }
       sweep_screening_invites_expired: { Args: never; Returns: number }
+      sync_upload_to_media_cms: { Args: { p_upload_id: string }; Returns: Json }
       title_delete_eligibility: { Args: { _title_id: string }; Returns: Json }
       title_review_summary: { Args: { _title_id: string }; Returns: Json }
       title_submission_readiness: { Args: { _title_id: string }; Returns: Json }

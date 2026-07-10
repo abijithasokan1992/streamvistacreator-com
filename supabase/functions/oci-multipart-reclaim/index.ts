@@ -137,7 +137,7 @@ async function reclaimOne(
     : `reclaim: oci abort failed (${abortResp.status})`;
 
   await admin.from("recent_uploads")
-    .update({ status: ok ? "failed" : "failed", error_message: reason })
+    .update({ status: ok ? "superseded" : "failed", error_message: reason })
     .eq("id", row.id);
   await admin.from("upload_sessions")
     .update({ status: "aborted", error_message: reason })

@@ -457,7 +457,7 @@ Deno.serve(async (req) => {
           // so the fresh insert below does not violate the unique constraint.
           await admin.from("recent_uploads")
             .update({
-              status: "failed",
+              status: "superseded",
               client_pending_id: null,
               error_message: `superseded by retry`,
             })

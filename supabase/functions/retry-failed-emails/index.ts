@@ -165,7 +165,36 @@ Deno.serve(async (req) => {
     console.error("[retry-failed-emails] reconciliation error", e);
   }
 
-  return new Response(JSON.stringify({ ...summary, reconciled }), {
+  // -----------------------------------------------------------------------
+  // Post-run audit: assert that no `pending` rows remain in `email_send_log`
+  // after the sweep + reconciliation pass. This is a hard invariant surfaced
+  // in the response so cron/monitoring can alert on regressions.
+  // -----------------------------------------------------------------------
+  const audit: { pending_remaining: number; passed: boolean; error?: string } = {
+    pending_remaining: 0,
+    passed: true,
+  };
+  try {
+    const { count, error: auditErr } = await supabase
+      .from("email_send_log")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending");
+    if (auditErr) throw auditErr;
+    audit.pending_remaining = count ?? 0;
+    audit.passed = (count ?? 0) === 0;
+    if (!audit.passed) {
+      console.error(`[retry-failed-emails] AUDIT FAILED: ${count} pending rows remain`);
+    } else {
+      console.log("[retry-failed-emails] AUDIT PASSED: 0 pending rows remain");
+    }
+  } catch (e) {
+    audit.passed = false;
+    audit.error = e instanceof Error ? e.message : String(e);
+    console.error("[retry-failed-emails] audit error", e);
+  }
+
+  return new Response(JSON.stringify({ ...summary, reconciled, audit }), {
+    status: audit.passed ? 200 : 500,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 });

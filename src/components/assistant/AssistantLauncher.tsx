@@ -124,16 +124,25 @@ export function AssistantLauncher() {
         },
       });
       if (error) {
+        // Try to surface the structured error the function returned
+        // (provider_not_configured, exhausted_credits, rate_limited, etc.).
+        let friendly = error.message ?? "Assistant is unavailable right now.";
+        try {
+          const ctx: any = (error as any).context;
+          const body = typeof ctx?.text === "function" ? await ctx.text() : ctx?.body;
+          if (body) {
+            const parsed = typeof body === "string" ? JSON.parse(body) : body;
+            if (parsed?.error?.message) friendly = parsed.error.message;
+          }
+        } catch { /* leave the default */ }
         setTurns([
           ...next,
-          {
-            role: "assistant",
-            content: `⚠️ ${error.message ?? "Assistant is unavailable right now."}`,
-          },
+          { role: "assistant", content: `⚠️ ${friendly}` },
         ]);
       } else {
         setTurns([...next, { role: "assistant", content: data?.content ?? "(no response)" }]);
       }
+
     } catch (e: any) {
       setTurns([...next, { role: "assistant", content: `⚠️ ${e?.message ?? "Request failed"}` }]);
     } finally {

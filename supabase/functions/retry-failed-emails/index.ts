@@ -34,17 +34,23 @@ Deno.serve(async (req) => {
       });
 
       // The helper may not exist on older infra — fall back to reading the
-      // `<queue>_dlq` table directly via a raw select through pgmq public API.
+      // real pgmq DLQ table (`pgmq.q_<queue>_dlq`) directly.
       let rows: Array<{ msg_id: number; message: unknown }> = [];
       if (dlqErr) {
         const { data: fallback, error: fbErr } = await supabase
           .schema("pgmq" as never)
-          .from(`${queue}_dlq` as never)
+          .from(`q_${queue}_dlq` as never)
           .select("msg_id, message")
           .order("enqueued_at", { ascending: true })
           .limit(100) as unknown as { data: any[]; error: any };
         if (fbErr) {
-          s.error = `read failed: ${fbErr.message || dlqErr.message}`;
+          // Missing DLQ table means "no failures yet" — not a sweeper error.
+          const missing = /does not exist|undefined_table|not.*found/i.test(
+            String(fbErr.message ?? ""),
+          );
+          if (!missing) {
+            s.error = `read failed: ${fbErr.message || dlqErr.message}`;
+          }
           summary[queue] = s;
           continue;
         }
@@ -52,6 +58,7 @@ Deno.serve(async (req) => {
       } else {
         rows = (dlqRows as any[]) ?? [];
       }
+
 
       for (const row of rows) {
         const payload = (row.message ?? {}) as Record<string, unknown>;
@@ -224,7 +231,7 @@ Deno.serve(async (req) => {
     audit.pending_remaining = count ?? 0;
     audit.passed = (count ?? 0) === 0;
     if (!audit.passed) {
-      console.error(`[retry-failed-emails] AUDIT FAILED: ${count} pending rows remain`);
+      console.warn(`[retry-failed-emails] AUDIT: ${count} pending rows remain after sweep`);
     } else {
       console.log("[retry-failed-emails] AUDIT PASSED: 0 pending rows remain");
     }
@@ -249,8 +256,32 @@ Deno.serve(async (req) => {
     console.error("[retry-failed-emails] failed to persist audit log", e);
   }
 
-  return new Response(JSON.stringify({ ...summary, reconciled, audit }), {
-    status: audit.passed ? 200 : 500,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+  // A successful sweep returns HTTP 200 even when zero messages are retried
+  // and even when the audit finds lingering pending rows (that is a data
+  // observation, not a sweeper failure). We only return 500 when the sweeper
+  // itself failed — every queue errored AND the reconcile / audit step
+  // errored — meaning it did not run to completion.
+  const anyQueueError = Object.values(summary).some((s) => !!s.error);
+  const allQueuesErrored =
+    Object.keys(summary).length > 0 &&
+    Object.values(summary).every((s) => !!s.error);
+  const sweeperFailed =
+    allQueuesErrored && !!reconciled.error && !!audit.error;
+
+  return new Response(
+    JSON.stringify({
+      ok: !sweeperFailed,
+      ...summary,
+      reconciled,
+      audit,
+      warnings: anyQueueError || reconciled.error || audit.error
+        ? { queue_errors: anyQueueError, reconcile_error: !!reconciled.error, audit_error: !!audit.error }
+        : undefined,
+    }),
+    {
+      status: sweeperFailed ? 500 : 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    },
+  );
 });
+

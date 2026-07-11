@@ -1,6 +1,12 @@
 // StreamVista AI Assistant — orchestrates existing modules only.
-// Streams via Lovable AI Gateway. Every tool query runs with the caller's
-// bearer token so existing RLS enforces read scope. No admin bypass.
+// Read-only. Every tool query runs with the caller's bearer token so existing
+// RLS enforces read scope.
+//
+// Provider selection (mirrors agent-chat):
+//   1) Independent OpenAI-compatible provider (AI_API_KEY + AI_BASE_URL + AI_MODEL),
+//      with AI_CHIEF_MODEL as an optional override reserved for founder-tier use.
+//   2) Lovable AI Gateway (LOVABLE_API_KEY) as an optional fallback.
+// Structured error codes are returned so the UI can display targeted messages.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { generateText, tool, stepCountIs } from "npm:ai@5";
 import { createOpenAICompatible } from "npm:@ai-sdk/openai-compatible@1";
@@ -20,6 +26,85 @@ Rules:
 - Respect the user's active production context supplied by the client when filtering.
 - Never expose internal error text, model names, or provider details to the user.`;
 
+type ErrorCode =
+  | "provider_not_configured"
+  | "expired_authentication"
+  | "exhausted_credits"
+  | "rate_limited"
+  | "provider_timeout"
+  | "provider_auth_failure"
+  | "provider_failure"
+  | "invalid_request";
+
+function makeError(
+  code: ErrorCode,
+  message: string,
+  status: number,
+  cors: HeadersInit,
+  extra?: Record<string, unknown>,
+) {
+  return new Response(JSON.stringify({ error: { code, message, ...(extra ?? {}) } }), {
+    status,
+    headers: { ...cors, "Content-Type": "application/json" },
+  });
+}
+
+type ProviderChoice =
+  | { kind: "independent"; apiKey: string; baseUrl: string; model: string }
+  | { kind: "lovable"; apiKey: string; model: string };
+
+function pickProvider(useChief: boolean): ProviderChoice | null {
+  const indKey = (Deno.env.get("AI_API_KEY") ?? "").trim();
+  const indBase = (Deno.env.get("AI_BASE_URL") ?? "").trim();
+  const indModel = useChief
+    ? ((Deno.env.get("AI_CHIEF_MODEL") ?? "").trim() ||
+       (Deno.env.get("AI_MODEL") ?? "").trim())
+    : (Deno.env.get("AI_MODEL") ?? "").trim();
+
+  if (indKey && indBase && indModel) {
+    return {
+      kind: "independent",
+      apiKey: indKey,
+      baseUrl: indBase.replace(/\/$/, ""),
+      model: indModel,
+    };
+  }
+
+  const lovKey = (Deno.env.get("LOVABLE_API_KEY") ?? "").trim();
+  if (lovKey) {
+    return { kind: "lovable", apiKey: lovKey, model: "google/gemini-2.5-flash" };
+  }
+  return null;
+}
+
+/**
+ * Classify a thrown provider error into our structured error taxonomy.
+ * The AI SDK surfaces HTTP status codes on APICallError; we also fall back
+ * to inspecting the message so a Lovable 402 is never returned as a generic 500.
+ */
+function classifyProviderError(
+  err: unknown,
+): { code: ErrorCode; status: number; message: string } {
+  const anyErr = err as any;
+  const statusCode: number | undefined =
+    anyErr?.statusCode ?? anyErr?.status ?? anyErr?.response?.status;
+  const raw = String(anyErr?.message ?? err ?? "").slice(0, 400);
+
+  if (anyErr?.name === "AbortError" || /aborted|timeout/i.test(raw)) {
+    return { code: "provider_timeout", status: 504, message: "The AI provider took too long to respond." };
+  }
+  if (statusCode === 429 || /rate.?limit|too many requests/i.test(raw)) {
+    return { code: "rate_limited", status: 429, message: "The AI provider is rate-limiting requests. Please try again shortly." };
+  }
+  if (statusCode === 402 || /payment required|credits?.*exhaust|insufficient.*credit|402/i.test(raw)) {
+    return { code: "exhausted_credits", status: 402, message: "AI credits are exhausted. Please top up or configure an independent AI provider." };
+  }
+  if (statusCode === 401 || statusCode === 403) {
+    return { code: "provider_auth_failure", status: 502, message: "The AI provider rejected our credentials." };
+  }
+  return { code: "provider_failure", status: 502, message: `AI provider error${statusCode ? ` (${statusCode})` : ""}.` };
+}
+
 Deno.serve(async (req) => {
   const cors = buildCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
@@ -27,15 +112,16 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return json({ error: "Unauthorized" }, 401, cors);
+      return makeError("expired_authentication", "Please sign in to continue.", 401, cors);
     }
-    const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-    if (!lovableKey) return json({ error: "assistant_not_configured" }, 500, cors);
 
     const body = await req.json().catch(() => ({}));
     const messages: Array<{ role: "user" | "assistant" | "system"; content: string }> =
       Array.isArray(body?.messages) ? body.messages : [];
     const ctx = body?.context ?? {};
+    if (messages.length === 0) {
+      return makeError("invalid_request", "messages required", 400, cors);
+    }
 
     const supa = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -44,25 +130,49 @@ Deno.serve(async (req) => {
     );
     const { data: userRes } = await supa.auth.getUser();
     const userId = userRes?.user?.id;
-    if (!userId) return json({ error: "Unauthorized" }, 401, cors);
+    if (!userId) {
+      return makeError("expired_authentication", "Your session has expired. Please sign in again.", 401, cors);
+    }
 
     const firecrawlKey = (Deno.env.get("FIRECRAWL_API_KEY") ?? "").trim();
     const firecrawlConnected = !!firecrawlKey;
 
-    // AI SDK provider — Lovable AI Gateway (OpenAI-compatible).
-    const gateway = createOpenAICompatible({
-      name: "lovable",
-      baseURL: "https://ai.gateway.lovable.dev/v1",
-      headers: {
-        "Lovable-API-Key": lovableKey,
-        "X-Lovable-AIG-SDK": "vercel-ai-sdk",
-      },
-    });
+    // Chief-tier model is reserved for founder / super-admin roles. Assistant
+    // preserves existing permissions and defaults to standard tier.
+    let useChief = false;
+    try {
+      for (const role of ["founder", "platform_owner", "super_admin"] as const) {
+        const { data: has } = await supa.rpc("has_role", { _user_id: userId, _role: role });
+        if (has === true) { useChief = true; break; }
+      }
+    } catch { /* unknown role in enum — ignore */ }
 
-    // Default chat model on Lovable AI Gateway. Free-tier friendly, fast,
-    // supports tools + long context. Avoids 402 credit-exhaustion on GPT-5.5.
-    const modelId = "google/gemini-3-flash-preview";
-    const model = gateway(modelId);
+    const chosen = pickProvider(useChief);
+    if (!chosen) {
+      return makeError(
+        "provider_not_configured",
+        "No AI provider is configured. Set AI_API_KEY/AI_BASE_URL/AI_MODEL, or LOVABLE_API_KEY.",
+        503,
+        cors,
+      );
+    }
+
+    const provider = chosen.kind === "independent"
+      ? createOpenAICompatible({
+          name: "independent",
+          baseURL: chosen.baseUrl,
+          headers: { Authorization: `Bearer ${chosen.apiKey}` },
+        })
+      : createOpenAICompatible({
+          name: "lovable",
+          baseURL: "https://ai.gateway.lovable.dev/v1",
+          headers: {
+            "Lovable-API-Key": chosen.apiKey,
+            "X-Lovable-AIG-SDK": "vercel-ai-sdk",
+          },
+        });
+
+    const model = provider(chosen.model);
 
     const tools = {
       find_productions: tool({
@@ -191,7 +301,6 @@ Deno.serve(async (req) => {
         },
       }),
 
-
       research_web: tool({
         description:
           "Research a company, buyer, OTT platform, festival, or broadcaster via Firecrawl web search. Only available when Firecrawl is connected.",
@@ -240,28 +349,31 @@ Deno.serve(async (req) => {
       ? ""
       : "\n\nFirecrawl is not connected — the research_web tool is unavailable this session.";
 
-    const result = await generateText({
-      model,
-      system: SYSTEM_PROMPT + activeLine + firecrawlLine,
-      messages: messages.map((m) => ({ role: m.role, content: m.content })),
-      tools,
-      stopWhen: stepCountIs(20),
-    });
+    try {
+      const result = await generateText({
+        model,
+        system: SYSTEM_PROMPT + activeLine + firecrawlLine,
+        messages: messages.map((m) => ({ role: m.role, content: m.content })),
+        tools,
+        stopWhen: stepCountIs(20),
+        abortSignal: AbortSignal.timeout(60_000),
+      });
 
-    const toolCalls = (result.steps ?? [])
-      .flatMap((s: any) => s.toolCalls ?? [])
-      .map((c: any) => ({ tool: c.toolName, input: c.args ?? c.input }));
+      const toolCalls = (result.steps ?? [])
+        .flatMap((s: any) => s.toolCalls ?? [])
+        .map((c: any) => ({ tool: c.toolName, input: c.args ?? c.input }));
 
-    return json({ content: result.text, tool_calls: toolCalls }, 200, cors);
+      return new Response(
+        JSON.stringify({ content: result.text, tool_calls: toolCalls, provider: chosen.kind }),
+        { status: 200, headers: { ...cors, "Content-Type": "application/json" } },
+      );
+    } catch (providerErr) {
+      console.error("assistant-chat provider error", providerErr);
+      const c = classifyProviderError(providerErr);
+      return makeError(c.code, c.message, c.status, cors, { provider: chosen.kind });
+    }
   } catch (e) {
     console.error("assistant-chat error", e);
-    return json({ error: "internal_error", message: (e as Error).message }, 500, cors);
+    return makeError("provider_failure", (e as Error).message || String(e), 500, cors);
   }
 });
-
-function json(body: unknown, status: number, cors: HeadersInit) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...cors, "Content-Type": "application/json" },
-  });
-}

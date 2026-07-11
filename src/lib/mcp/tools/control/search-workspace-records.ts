@@ -42,7 +42,7 @@ export default defineTool({
       q = q[f.op](f.column, f.value);
     }
     if (input.text && spec.textCol) q = q.ilike(spec.textCol, `%${input.text}%`);
-    const { data, error } = await withTimeout(q, `search:${input.table}`);
+    const { data, error } = (await withTimeout(q, `search:${input.table}`)) as { data: any; error: any };
     if (error) return err("db_error", error.message);
     const rows = redactDeep(data ?? []);
     return ok({ table: input.table, rows, count: rows.length }, `Returned ${rows.length} rows from ${input.table}`);

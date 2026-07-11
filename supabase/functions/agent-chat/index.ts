@@ -204,8 +204,10 @@ Deno.serve(async (req) => {
     if (surface === "chief") {
       let allowed = false;
       for (const role of CHIEF_ROLES) {
-        const { data: has } = await userClient.rpc("has_role", { _user_id: userId, _role: role });
-        if (has === true) { allowed = true; break; }
+        try {
+          const { data: has, error: rpcErr } = await userClient.rpc("has_role", { _user_id: userId, _role: role });
+          if (!rpcErr && has === true) { allowed = true; break; }
+        } catch { /* unknown role in enum — skip */ }
       }
       if (!allowed) {
         return makeError("insufficient_role", "Chief agent is restricted to Founder, Platform Owner, or Super Admin accounts.", 403, cors);

@@ -89,34 +89,44 @@ export function AgentChat({ surface, className }: { surface: AgentSurface; class
         body: { surface, messages: next.map((m) => ({ role: m.role, content: m.content })) },
       });
       if (error) {
-        // Surface the real edge-function error body instead of supabase-js's generic wrapper.
+        // Parse the structured backend error { error: { code, message } } from the edge function.
         let detail = error?.message ?? "Request failed";
+        let code: string | undefined;
         try {
           const ctx: any = (error as any).context;
-          if (ctx?.body) {
-            // body can be a ReadableStream or string
-            const raw =
-              typeof ctx.body === "string"
-                ? ctx.body
-                : typeof ctx.text === "function"
-                ? await ctx.text()
-                : await new Response(ctx.body).text();
-            if (raw) {
-              try {
-                const parsed = JSON.parse(raw);
-                detail = parsed?.error || parsed?.message || raw;
-              } catch {
+          const resp: Response | undefined = ctx instanceof Response ? ctx : undefined;
+          let raw = "";
+          if (resp) {
+            raw = await resp.clone().text();
+          } else if (ctx?.body) {
+            raw = typeof ctx.body === "string"
+              ? ctx.body
+              : await new Response(ctx.body).text();
+          } else if (typeof ctx?.text === "function") {
+            raw = await ctx.text();
+          }
+          if (raw) {
+            try {
+              const parsed = JSON.parse(raw);
+              const err = parsed?.error;
+              if (err && typeof err === "object") {
+                code = err.code;
+                detail = err.message ?? detail;
+              } else if (typeof err === "string") {
+                detail = err;
+              } else if (parsed?.message) {
+                detail = parsed.message;
+              } else {
                 detail = raw;
               }
+            } catch {
+              detail = raw;
             }
-          } else if (typeof (error as any).context?.text === "function") {
-            detail = await (error as any).context.text();
           }
         } catch {
           /* keep generic detail */
         }
-        const status = (error as any)?.context?.status;
-        if (status === 401 || status === 403) {
+        if (code === "expired_authentication") {
           detail = `Please sign in again to use ${g.name}.`;
         }
         setMessages([...next, { role: "assistant", content: `⚠️ ${detail}` }]);

@@ -106,7 +106,7 @@ export default function TitleCommercialOpsConsole() {
     setLoading(true);
     const [tRes, pRes, dRes, rRes] = await Promise.all([
       supabase.from("content_titles").select("id,title,owner_user_id,status,language").order("created_at", { ascending: false }).limit(200),
-      (supabase as any).from("title_commercial_profiles").select("*"),
+      (supabase as any).rpc("admin_list_title_commercial_profiles"),
       (supabase as any).from("deal_memos").select("id,title_id,status"),
       supabase.from("commercial_requests").select("id,title_id"),
     ]);

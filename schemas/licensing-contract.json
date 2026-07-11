@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://streamvista.com/schema/licensing-contract.json",
+  "title": "StreamVista Licensing Contract",
+  "description": "Rights agreement between a licensor (owner) and a licensee (buyer).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "licensorId", "licenseeId", "assetIds", "status", "startDate", "createdAt"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "contractNumber": { "type": "string" },
+    "licensorId": { "type": "string", "format": "uuid", "description": "Organization granting rights." },
+    "licenseeId": { "type": "string", "format": "uuid", "description": "Buyer / organization receiving rights." },
+    "assetIds": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "format": "uuid" }
+    },
+    "rightsType": {
+      "type": "string",
+      "enum": ["Exclusive", "Non-Exclusive", "Sole", "Sub-Licensable"]
+    },
+    "rightsGranted": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["SVOD", "AVOD", "TVOD", "FAST", "Theatrical", "Broadcast", "Airline", "Educational", "Home Video"]
+      }
+    },
+    "territories": { "type": "array", "items": { "type": "string" } },
+    "languages": { "type": "array", "items": { "type": "string" } },
+    "startDate": { "type": "string", "format": "date" },
+    "endDate": { "type": "string", "format": "date" },
+    "financials": {
+      "type": "object",
+      "properties": {
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "minimumGuarantee": { "type": "number" },
+        "revenueShareBps": { "type": "integer", "minimum": 0, "maximum": 10000 },
+        "advance": { "type": "number" }
+      }
+    },
+    "signedByLicensorAt": { "type": "string", "format": "date-time" },
+    "signedByLicenseeAt": { "type": "string", "format": "date-time" },
+    "documentUrl": { "type": "string", "format": "uri" },
+    "status": {
+      "type": "string",
+      "enum": ["Draft", "Negotiating", "Pending Signature", "Active", "Expired", "Terminated"]
+    },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  }
+}

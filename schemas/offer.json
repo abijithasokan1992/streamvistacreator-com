@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://streamvista.com/schema/offer.json",
+  "title": "StreamVista Offer",
+  "description": "A single offer round in a licensing negotiation between buyer and licensor.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "assetId", "buyerId", "licensorId", "direction", "status", "createdAt"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "negotiationId": { "type": "string", "format": "uuid" },
+    "roundNumber": { "type": "integer", "minimum": 1 },
+    "assetId": { "type": "string", "format": "uuid" },
+    "buyerId": { "type": "string", "format": "uuid" },
+    "licensorId": { "type": "string", "format": "uuid" },
+    "direction": {
+      "type": "string",
+      "enum": ["buyer_to_licensor", "licensor_to_buyer"]
+    },
+    "terms": {
+      "type": "object",
+      "properties": {
+        "rightsType": { "type": "string" },
+        "rightsGranted": { "type": "array", "items": { "type": "string" } },
+        "territories": { "type": "array", "items": { "type": "string" } },
+        "languages": { "type": "array", "items": { "type": "string" } },
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" },
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "minimumGuarantee": { "type": "number" },
+        "revenueShareBps": { "type": "integer", "minimum": 0, "maximum": 10000 },
+        "advance": { "type": "number" }
+      }
+    },
+    "message": { "type": "string" },
+    "attachments": {
+      "type": "array",
+      "items": { "type": "string", "format": "uri" }
+    },
+    "expiresAt": { "type": "string", "format": "date-time" },
+    "status": {
+      "type": "string",
+      "enum": ["Draft", "Sent", "Countered", "Accepted", "Rejected", "Withdrawn", "Expired"]
+    },
+    "resultingContractId": { "type": "string", "format": "uuid" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  }
+}

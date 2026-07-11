@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://streamvista.com/schema/ingest-job.json",
+  "title": "StreamVista Ingest Job",
+  "description": "A single upload / processing pipeline execution for a media asset.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "assetId", "source", "status", "createdAt"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "assetId": { "type": "string", "format": "uuid" },
+    "projectId": { "type": "string", "format": "uuid" },
+    "organizationId": { "type": "string", "format": "uuid" },
+    "source": {
+      "type": "string",
+      "enum": ["Web Upload", "Hard Disk", "S3 Pull", "Aspera", "Signiant", "FTP", "API", "Other"]
+    },
+    "sourcePath": { "type": "string" },
+    "sizeBytes": { "type": "integer", "minimum": 0 },
+    "checksum": {
+      "type": "object",
+      "properties": {
+        "algorithm": { "type": "string", "enum": ["MD5", "SHA1", "SHA256"] },
+        "value": { "type": "string" }
+      }
+    },
+    "chunks": {
+      "type": "object",
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "completed": { "type": "integer", "minimum": 0 },
+        "failed": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "retries": { "type": "integer", "minimum": 0 },
+    "correlationId": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["Queued", "Uploading", "Transcoding", "Validating", "Completed", "Failed", "Superseded", "Cancelled"]
+    },
+    "error": {
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "message": { "type": "string" },
+        "category": { "type": "string" }
+      }
+    },
+    "startedAt": { "type": "string", "format": "date-time" },
+    "completedAt": { "type": "string", "format": "date-time" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  }
+}

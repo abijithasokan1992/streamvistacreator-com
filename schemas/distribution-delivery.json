@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://streamvista.com/schema/distribution-delivery.json",
+  "title": "StreamVista Distribution Delivery",
+  "description": "A single package delivery of an asset to an OTT platform, broadcaster, or partner.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "assetId", "partnerId", "status", "createdAt"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "assetId": { "type": "string", "format": "uuid" },
+    "contractId": { "type": "string", "format": "uuid" },
+    "partnerId": { "type": "string", "format": "uuid" },
+    "partnerName": { "type": "string" },
+    "packageSpec": {
+      "type": "string",
+      "enum": ["IMF", "DPP", "AS-11", "Apple Spec", "Netflix Spec", "Amazon Spec", "Custom"]
+    },
+    "packageManifestUrl": { "type": "string", "format": "uri" },
+    "protocol": {
+      "type": "string",
+      "enum": ["Aspera", "Signiant", "S3", "SFTP", "HTTP", "MediaConnect", "Physical"]
+    },
+    "destination": { "type": "string" },
+    "scheduledAt": { "type": "string", "format": "date-time" },
+    "startedAt": { "type": "string", "format": "date-time" },
+    "completedAt": { "type": "string", "format": "date-time" },
+    "attempts": { "type": "integer", "minimum": 0 },
+    "correlationId": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["Queued", "Packaging", "Delivering", "Delivered", "Acknowledged", "Rejected", "Failed", "Cancelled"]
+    },
+    "acknowledgement": {
+      "type": "object",
+      "properties": {
+        "receivedAt": { "type": "string", "format": "date-time" },
+        "reference": { "type": "string" },
+        "notes": { "type": "string" }
+      }
+    },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  }
+}

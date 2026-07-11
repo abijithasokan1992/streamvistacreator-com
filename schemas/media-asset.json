@@ -1,0 +1,90 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://streamvista.com/schema/media-asset.json",
+  "title": "StreamVista Media Asset",
+  "description": "Metadata schema for media assets managed within StreamVista.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "title", "contentType", "owner", "status", "createdAt"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 250 },
+    "originalTitle": { "type": "string" },
+    "description": { "type": "string" },
+    "contentType": {
+      "type": "string",
+      "enum": [
+        "Feature Film", "Short Film", "Documentary", "Series", "Episode",
+        "Trailer", "Music Video", "Commercial", "Advertisement",
+        "Corporate", "Animation", "Other"
+      ]
+    },
+    "genre": { "type": "array", "items": { "type": "string" } },
+    "language": { "type": "string" },
+    "subtitleLanguages": { "type": "array", "items": { "type": "string" } },
+    "releaseYear": { "type": "integer", "minimum": 1900 },
+    "durationMinutes": { "type": "integer", "minimum": 1 },
+    "owner": {
+      "type": "object",
+      "required": ["organizationId", "organizationName"],
+      "properties": {
+        "organizationId": { "type": "string", "format": "uuid" },
+        "organizationName": { "type": "string" },
+        "contactEmail": { "type": "string", "format": "email" }
+      }
+    },
+    "projectId": { "type": "string", "format": "uuid" },
+    "rights": {
+      "type": "object",
+      "properties": {
+        "copyrightOwner": { "type": "string" },
+        "exclusive": { "type": "boolean" },
+        "territories": { "type": "array", "items": { "type": "string" } },
+        "licenseStart": { "type": "string", "format": "date" },
+        "licenseEnd": { "type": "string", "format": "date" }
+      }
+    },
+    "technical": {
+      "type": "object",
+      "properties": {
+        "videoCodec": { "type": "string" },
+        "audioCodec": { "type": "string" },
+        "resolution": { "type": "string" },
+        "aspectRatio": { "type": "string" },
+        "frameRate": { "type": "number" },
+        "container": { "type": "string" },
+        "fileSizeBytes": { "type": "integer" },
+        "checksum": { "type": "string" }
+      }
+    },
+    "storage": { "$ref": "storage-object.json" },
+    "qc": {
+      "type": "object",
+      "properties": {
+        "status": { "type": "string", "enum": ["Pending", "Passed", "Failed"] },
+        "score": { "type": "number", "minimum": 0, "maximum": 100 },
+        "reportUrl": { "type": "string", "format": "uri" }
+      }
+    },
+    "distribution": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["Draft", "Ready", "Submitted", "Approved", "Distributed", "Archived"]
+        },
+        "platforms": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "posterUrl": { "type": "string", "format": "uri" },
+    "trailerUrl": { "type": "string", "format": "uri" },
+    "thumbnailUrl": { "type": "string", "format": "uri" },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "status": {
+      "type": "string",
+      "enum": ["Draft", "Uploading", "Processing", "QC", "Published", "Archived"]
+    },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  }
+}

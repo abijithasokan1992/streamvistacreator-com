@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://streamvista.com/schema/qc-report.json",
+  "title": "StreamVista QC Report",
+  "description": "Automated and manual quality-control results for a media asset.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "assetId", "status", "createdAt"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "assetId": { "type": "string", "format": "uuid" },
+    "ingestJobId": { "type": "string", "format": "uuid" },
+    "mode": { "type": "string", "enum": ["Automated", "Manual", "Hybrid"] },
+    "engine": { "type": "string", "description": "QC engine identifier, e.g. 'baton', 'aurora', 'internal'." },
+    "profile": { "type": "string", "description": "Named QC template applied." },
+    "status": { "type": "string", "enum": ["Pending", "Running", "Passed", "Failed", "Waived"] },
+    "score": { "type": "number", "minimum": 0, "maximum": 100 },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["severity", "code", "message"],
+        "properties": {
+          "severity": { "type": "string", "enum": ["info", "warning", "error", "critical"] },
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "timecode": { "type": "string" },
+          "category": { "type": "string", "enum": ["video", "audio", "subtitle", "metadata", "container", "other"] }
+        }
+      }
+    },
+    "reviewerUserId": { "type": "string", "format": "uuid" },
+    "reportUrl": { "type": "string", "format": "uri" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  }
+}

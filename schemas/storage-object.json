@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://streamvista.com/schema/storage-object.json",
+  "title": "StreamVista Storage Object",
+  "description": "Reference to a single object stored in a cloud or local storage provider.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["provider", "bucket", "objectKey"],
+  "properties": {
+    "provider": {
+      "type": "string",
+      "enum": ["AWS S3", "Azure", "Google Cloud", "Oracle OCI", "Backblaze B2", "Local"]
+    },
+    "bucket": { "type": "string" },
+    "objectKey": { "type": "string" },
+    "region": { "type": "string" },
+    "storageClass": { "type": "string", "description": "Provider-specific storage class / tier." },
+    "sizeBytes": { "type": "integer", "minimum": 0 },
+    "etag": { "type": "string" },
+    "checksum": {
+      "type": "object",
+      "properties": {
+        "algorithm": { "type": "string", "enum": ["MD5", "SHA1", "SHA256", "CRC32"] },
+        "value": { "type": "string" }
+      }
+    },
+    "encryption": {
+      "type": "object",
+      "properties": {
+        "algorithm": { "type": "string" },
+        "kmsKeyId": { "type": "string" }
+      }
+    },
+    "url": { "type": "string", "format": "uri" },
+    "expiresAt": { "type": "string", "format": "date-time" }
+  }
+}

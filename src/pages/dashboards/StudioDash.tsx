@@ -1244,6 +1244,9 @@ export default function StudioDashboard() {
         />
       )}
 
+      {section === "dit" && <DitIngestProtocol />}
+
+
       {section === "storage" && (
         <StoragePanel rows={rows} loading={loading} onGoBuy={() => setTab("storage")} onPurchased={refreshAfterPurchase} />
       )}

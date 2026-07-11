@@ -40,6 +40,7 @@ import ProductionsManager from "@/components/studio/ProductionsManager";
 import ProductionWorkspace from "@/components/studio/ProductionWorkspace";
 import StudioDashboardHome from "@/components/studio/StudioDashboardHome";
 import StudioShell, { type StudioSectionId } from "@/components/studio/StudioShell";
+import DitIngestProtocol from "@/components/studio/dit/DitIngestProtocol";
 import StudioMvpHome from "@/components/studio/dashboard/StudioMvpHome";
 import type { VaultProduct } from "@/lib/studioVault";
 import { useCreatorPaygPrice } from "@/hooks/usePublicPlans";

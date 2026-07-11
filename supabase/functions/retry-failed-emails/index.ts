@@ -34,17 +34,23 @@ Deno.serve(async (req) => {
       });
 
       // The helper may not exist on older infra — fall back to reading the
-      // `<queue>_dlq` table directly via a raw select through pgmq public API.
+      // real pgmq DLQ table (`pgmq.q_<queue>_dlq`) directly.
       let rows: Array<{ msg_id: number; message: unknown }> = [];
       if (dlqErr) {
         const { data: fallback, error: fbErr } = await supabase
           .schema("pgmq" as never)
-          .from(`${queue}_dlq` as never)
+          .from(`q_${queue}_dlq` as never)
           .select("msg_id, message")
           .order("enqueued_at", { ascending: true })
           .limit(100) as unknown as { data: any[]; error: any };
         if (fbErr) {
-          s.error = `read failed: ${fbErr.message || dlqErr.message}`;
+          // Missing DLQ table means "no failures yet" — not a sweeper error.
+          const missing = /does not exist|undefined_table|not.*found/i.test(
+            String(fbErr.message ?? ""),
+          );
+          if (!missing) {
+            s.error = `read failed: ${fbErr.message || dlqErr.message}`;
+          }
           summary[queue] = s;
           continue;
         }
@@ -52,6 +58,7 @@ Deno.serve(async (req) => {
       } else {
         rows = (dlqRows as any[]) ?? [];
       }
+
 
       for (const row of rows) {
         const payload = (row.message ?? {}) as Record<string, unknown>;

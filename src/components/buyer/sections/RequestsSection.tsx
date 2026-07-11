@@ -62,7 +62,7 @@ export default function RequestsSection({
       const q = query.trim().toLowerCase();
       if (!q) return true;
       const hay = [
-        r.title_query, r.admin_notes, r.message,
+        r.title_query, r.message,
         STATE_LABEL[r.state],
         r.terms?.territory, r.terms?.rights_category, r.terms?.exclusivity,
       ].filter(Boolean).join(" ").toLowerCase();

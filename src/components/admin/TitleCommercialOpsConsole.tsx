@@ -239,8 +239,8 @@ function TitleCommercialDialog({
     setLoading(true);
     const [rRes, dRes, reqRes] = await Promise.all([
       (supabase as any).from("title_rights_availability").select("*").eq("title_id", title.id).order("right_category"),
-      (supabase as any).from("deal_memos").select("*").eq("title_id", title.id).order("created_at", { ascending: false }),
-      supabase.from("commercial_requests").select("*").eq("title_id", title.id).order("created_at", { ascending: false }),
+      (supabase as any).rpc("admin_list_deal_memos", { _title_id: title.id }),
+      (supabase as any).rpc("admin_list_commercial_requests", { _state: null }),
     ]);
     setLoading(false);
     setRights((rRes.data as Rights[]) ?? []);

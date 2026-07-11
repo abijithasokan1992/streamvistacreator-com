@@ -42,10 +42,10 @@ export function userClient(ctx: ToolContext): SupabaseClient {
   });
 }
 
-/** Bounded fetch wrapper with a hard timeout. */
-export async function withTimeout<T>(p: Promise<T>, label = "op"): Promise<T> {
+/** Bounded fetch wrapper with a hard timeout. Accepts thenables (PostgREST builders). */
+export async function withTimeout<T>(p: PromiseLike<T>, label = "op"): Promise<T> {
   return await Promise.race([
-    p,
+    Promise.resolve(p),
     new Promise<T>((_, reject) =>
       setTimeout(() => reject(new Error(`timeout:${label}`)), TIMEOUT_MS),
     ),

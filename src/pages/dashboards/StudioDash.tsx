@@ -1151,6 +1151,7 @@ export default function StudioDashboard() {
     tab === "settings" ? "settings" :
     tab === "storage" ? "storage" :
     tab === "productions" ? "productions" :
+    tab === "dit" ? "dit" :
     "dashboard";
 
   const setSection = (s: StudioSectionId) => {

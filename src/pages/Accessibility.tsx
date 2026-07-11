@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Navbar } from "@/components/streamvista/Navbar";
 import { Footer } from "@/components/streamvista/Footer";
+import { Seo } from "@/components/Seo";
 import { Accessibility as A11yIcon, Keyboard, Eye, Ear, Users, Mail } from "lucide-react";
 
 /**
@@ -11,6 +12,11 @@ import { Accessibility as A11yIcon, Keyboard, Eye, Ear, Users, Mail } from "luci
 export default function AccessibilityPage() {
   return (
     <div className="min-h-dvh bg-background text-foreground">
+      <Seo
+        title="Accessibility at StreamVista — WCAG 2.2 AA Commitment"
+        description="StreamVista's accessibility statement: WCAG 2.2 AA target, full keyboard support, assistive-tech compatibility, and a contact channel for reporting barriers."
+        path="/accessibility"
+      />
       <a href="#main-content" className="skip-to-content">Skip to main content</a>
       <Navbar />
       <main id="main-content" className="container pt-28 pb-16 max-w-3xl">

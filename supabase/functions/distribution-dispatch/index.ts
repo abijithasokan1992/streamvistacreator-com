@@ -181,6 +181,31 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Queue item not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // Ownership gate — mirror RLS on distribution_queue. Caller must be the
+    // requester, the owning creator of the title, or an admin/super_admin/founder.
+    const callerId = userRes.user.id;
+    let authorized = q.requested_by === callerId;
+    if (!authorized) {
+      const { data: title } = await admin
+        .from("content_titles")
+        .select("owner_user_id")
+        .eq("id", q.title_id)
+        .maybeSingle();
+      if (title && (title as any).owner_user_id === callerId) authorized = true;
+    }
+    if (!authorized) {
+      for (const role of ["admin", "super_admin", "founder"] as const) {
+        const { data: has } = await admin.rpc("has_role", { _user_id: callerId, _role: role });
+        if (has === true) { authorized = true; break; }
+      }
+    }
+    if (!authorized) {
+      return new Response(JSON.stringify({ error: "forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const [{ data: partner }, { data: pkg }] = await Promise.all([
       admin.from("distribution_partners").select("*").eq("id", q.partner_id).maybeSingle(),
       admin.from("distribution_packages").select("*").eq("id", q.package_id).maybeSingle(),

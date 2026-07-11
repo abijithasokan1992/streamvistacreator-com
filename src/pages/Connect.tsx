@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Copy, Check, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Seo } from "@/components/Seo";
 
 const projectRef = import.meta.env.VITE_SUPABASE_PROJECT_ID ?? "";
 const MCP_URL = `https://${projectRef}.supabase.co/functions/v1/mcp`;
@@ -17,6 +18,11 @@ export default function Connect() {
 
   return (
     <main className="min-h-dvh bg-background">
+      <Seo
+        title="Connect StreamVista to ChatGPT & Claude — MCP Integration"
+        description="Link StreamVista to your AI assistant via MCP. Let ChatGPT or Claude securely read your titles, projects, and ingest jobs on your behalf — no new account needed."
+        path="/connect"
+      />
       <div className="max-w-3xl mx-auto px-6 py-12 space-y-8">
         <header className="space-y-3">
           <div className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">

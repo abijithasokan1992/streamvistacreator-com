@@ -250,6 +250,11 @@ export default function CollegeERP() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+      <Seo
+        title="Autonomous College ERP — Admissions, Fees, Library & Hostel"
+        description="A full-stack college ERP demo built on StreamVista: admissions, students, attendance, fees, library, hostel, transport and reporting — all in one autonomous workspace."
+        path="/college-erp"
+      />
       {/* Upper Brand Bar */}
       <header className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-3">

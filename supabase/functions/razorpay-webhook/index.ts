@@ -270,8 +270,19 @@ Deno.serve(async (req) => {
   }
 
   const supabase = createClient(supabaseUrl, serviceKey);
+  // Load webhook secret independently of key_id/key_secret. Signature
+  // verification only needs RAZORPAY_WEBHOOK_SECRET — a missing API key pair
+  // must NOT block webhook processing (previously caused a 500 config error).
   const creds = await loadRazorpayCreds(supabase);
-  const secret = creds?.webhookSecret;
+  const secret = (Deno.env.get("RAZORPAY_WEBHOOK_SECRET") ?? "").trim() || creds?.webhookSecret || "";
+  let mode: "test" | "live" = creds?.mode ?? "test";
+  if (!creds) {
+    try {
+      const { data } = await supabase
+        .from("razorpay_config").select("mode").eq("id", true).maybeSingle();
+      if (data?.mode === "live") mode = "live";
+    } catch { /* ignore */ }
+  }
   if (!secret) {
     await logPayment(supabase, {
       severity: "ERROR", source: "webhook",
@@ -281,7 +292,7 @@ Deno.serve(async (req) => {
     return ok(
       {
         error: "webhook_secret_missing",
-        message: "RAZORPAY_WEBHOOK_SECRET is not configured. Set it in Edge Function secrets or the razorpay_config table before enabling this endpoint in the Razorpay dashboard.",
+        message: "RAZORPAY_WEBHOOK_SECRET is not configured. Set it in Edge Function secrets before enabling this endpoint in the Razorpay dashboard.",
       },
       500,
     );
@@ -331,7 +342,7 @@ Deno.serve(async (req) => {
     payment_id: paymentId,
     duration_ms: sigTimer(),
     error_message: signatureValid ? null : "Signature mismatch",
-    extra: { event_type: eventType, mode: creds.mode },
+    extra: { event_type: eventType, mode },
   });
 
   // Legacy audit log (kept for existing admin UI).
@@ -444,7 +455,7 @@ Deno.serve(async (req) => {
   // ── Apply event side-effects with try/catch so failures are recorded. ─
   const procTimer = timer();
   try {
-    await processEvent(supabase, event, creds);
+    await processEvent(supabase, event, creds ?? { mode });
     if (ledgerRowId) {
       await supabase
         .from("razorpay_webhook_ledger")

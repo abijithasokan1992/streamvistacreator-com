@@ -182,7 +182,7 @@ Deno.serve(async (req) => {
         .from("email_send_log")
         .select("status")
         .eq("message_id", mid)
-        .in("status", ["sent", "dlq", "bounced", "suppressed", "failed"])
+        .in("status", ["sent", "dlq", "bounced", "suppressed", "failed", "failed_permanent"])
         .gt("created_at", r.created_at)
         .limit(1);
       if (terminal && terminal.length > 0) continue;
@@ -190,9 +190,9 @@ Deno.serve(async (req) => {
         message_id: mid,
         template_name: r.template_name ?? "unknown",
         recipient_email: r.recipient_email ?? "unknown",
-        status: "dlq",
+        status: "failed_permanent",
         error_message: `reconciled: pending > ${RECONCILE_STALE_MINUTES}m with no terminal event`,
-        metadata: { reconciled: true, source: "retry-failed-emails" },
+        metadata: { reconciled: true, source: "retry-failed-emails", reason: "stale_pending" },
       });
     }
     if (closures.length > 0) {

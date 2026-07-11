@@ -10928,6 +10928,7 @@ export type Database = {
         | "legal_reviewer"
         | "founder"
         | "channel_partner"
+        | "platform_owner"
       availability_status:
         | "draft"
         | "scheduled"
@@ -11303,6 +11304,7 @@ export const Constants = {
         "legal_reviewer",
         "founder",
         "channel_partner",
+        "platform_owner",
       ],
       availability_status: [
         "draft",

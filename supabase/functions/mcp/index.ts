@@ -949,6 +949,577 @@ var creator_search_my_titles_default = defineTool25({
   }
 });
 
+// src/lib/mcp/tools/control/whoami-control.ts
+import { defineTool as defineTool26 } from "npm:@lovable.dev/mcp-js@0.20.0";
+
+// src/lib/mcp/lib/control.ts
+import { createClient as createClient5 } from "npm:@supabase/supabase-js@^2.105.4";
+var TIMEOUT_MS = Number(process.env.MCP_TOOL_TIMEOUT_MS ?? 2e4);
+var MAX_LIMIT = 100;
+var MAX_LOG_ROWS = 200;
+var clampLimit = (n, max = MAX_LIMIT) => Math.max(1, Math.min(Math.floor(n ?? 25), max));
+function userClient5(ctx) {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY;
+  if (!url || !key) throw new Error("supabase_env_missing");
+  return createClient5(url, key, {
+    global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
+}
+async function withTimeout(p, label = "op") {
+  return await Promise.race([
+    Promise.resolve(p),
+    new Promise(
+      (_, reject) => setTimeout(() => reject(new Error(`timeout:${label}`)), TIMEOUT_MS)
+    )
+  ]);
+}
+var err = (code, msg) => ({
+  content: [{ type: "text", text: msg ? `${code}: ${msg}` : code }],
+  isError: true
+});
+var ok2 = (structured, summary) => ({
+  content: [{ type: "text", text: summary }],
+  structuredContent: structured
+});
+var SECRET_PATTERNS = [
+  [/eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}/g, "[REDACTED_JWT]"],
+  [/sbp_[A-Za-z0-9]{20,}/g, "[REDACTED_SUPABASE_PAT]"],
+  [/sk_(?:live|test)_[A-Za-z0-9]{20,}/g, "[REDACTED_STRIPE_KEY]"],
+  [/rzp_(?:live|test)_[A-Za-z0-9]{10,}/g, "[REDACTED_RAZORPAY_KEY]"],
+  [/ghp_[A-Za-z0-9]{30,}/g, "[REDACTED_GITHUB_PAT]"],
+  [/AIza[0-9A-Za-z_-]{30,}/g, "[REDACTED_GOOGLE_KEY]"],
+  [/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g, "[email]"],
+  [/\b\d{4}[ -]?\d{4}[ -]?\d{4}[ -]?\d{4}\b/g, "[REDACTED_PAN]"]
+];
+function redact(s) {
+  let out = s;
+  for (const [re, rep] of SECRET_PATTERNS) out = out.replace(re, rep);
+  return out;
+}
+function redactDeep(v) {
+  if (v == null) return v;
+  if (typeof v === "string") return redact(v);
+  if (Array.isArray(v)) return v.map(redactDeep);
+  if (typeof v === "object") {
+    const out = {};
+    for (const [k, vv] of Object.entries(v)) out[k] = redactDeep(vv);
+    return out;
+  }
+  return v;
+}
+async function authorize(ctx, tool, params = {}, opts = {}) {
+  if (!ctx.isAuthenticated?.() || !ctx.getUserId()) {
+    return err("unauthenticated", "Sign in to StreamVista as a founder / platform_owner / super_admin.");
+  }
+  const sb = userClient5(ctx);
+  const safeParams = redactDeep(params);
+  const { data, error } = await withTimeout(
+    sb.rpc("mcp_authorize_and_log", {
+      _tool: tool,
+      _params: safeParams,
+      _writes: opts.writes ?? false
+    }),
+    `authorize:${tool}`
+  );
+  if (error) return err("authorize_failed", redact(error.message));
+  const decision = String(data ?? "");
+  if (decision === "ok") return null;
+  if (decision === "forbidden")
+    return err("forbidden", "This tool is restricted to founder, platform_owner, and super_admin.");
+  if (decision === "kill_switch")
+    return err("writes_disabled", "The production write kill switch is on.");
+  if (decision === "rate_limited")
+    return err("rate_limited", "Rate limit exceeded \u2014 retry in a minute.");
+  return err("authorize_unknown", decision);
+}
+
+// src/lib/mcp/tools/control/whoami-control.ts
+var whoami_control_default = defineTool26({
+  name: "ctrl_whoami",
+  title: "Whoami (Control)",
+  description: "Return the signed-in caller's user id, control-role status, and current kill-switch state. Founder / platform_owner / super_admin only.",
+  inputSchema: {},
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async (_input, ctx) => {
+    const denied = await authorize(ctx, "ctrl_whoami", {});
+    if (denied) return denied;
+    const sb = userClient5(ctx);
+    const [{ data: roles }, { data: ks }] = await Promise.all([
+      withTimeout(sb.from("user_roles").select("role").eq("user_id", ctx.getUserId()), "roles"),
+      withTimeout(sb.from("mcp_control_flags").select("value").eq("key", "kill_switch").maybeSingle(), "ks")
+    ]);
+    const roleList = (roles ?? []).map((r) => r.role);
+    const structured = {
+      user_id: ctx.getUserId(),
+      email: ctx.getUserEmail?.() ?? null,
+      client_id: ctx.getClientId?.() ?? null,
+      roles: roleList,
+      is_founder: roleList.includes("founder"),
+      is_platform_owner: roleList.includes("platform_owner"),
+      is_super_admin: roleList.includes("super_admin"),
+      kill_switch_on: Boolean(ks?.value ?? true),
+      env: process.env.MCP_ENV ?? "staging"
+    };
+    return ok2(structured, `Signed in as ${structured.email ?? structured.user_id} \u2014 roles: ${roleList.join(", ") || "(none)"}`);
+  }
+});
+
+// src/lib/mcp/tools/control/get-workspace-status.ts
+import { defineTool as defineTool27 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z20 } from "npm:zod@^3.25.76";
+var get_workspace_status_default = defineTool27({
+  name: "get_workspace_status",
+  title: "Workspace status",
+  description: "High-level counts across the workspace: creators, active titles, running ingest jobs, failed emails.",
+  inputSchema: { workspace_id: z20.string().uuid().optional() },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async (input, ctx) => {
+    const denied = await authorize(ctx, "get_workspace_status", input);
+    if (denied) return denied;
+    const sb = userClient5(ctx);
+    const q = (t, filter) => {
+      let b = sb.from(t).select("*", { count: "exact", head: true });
+      if (input.workspace_id && filter) b = filter(b);
+      return withTimeout(b, `count:${t}`);
+    };
+    const [creators, titles, ingest, failedEmails, failedUploads] = await Promise.all([
+      q("entity_profiles"),
+      q("content_titles"),
+      q("ingest_jobs"),
+      q("email_send_log", (b) => b.eq("status", "failed")),
+      q("ingest_job_items", (b) => b.eq("status", "failed"))
+    ]);
+    const structured = {
+      workspace_id: input.workspace_id ?? null,
+      counts: {
+        entity_profiles: creators.count ?? 0,
+        content_titles: titles.count ?? 0,
+        ingest_jobs: ingest.count ?? 0,
+        failed_emails: failedEmails.count ?? 0,
+        failed_uploads: failedUploads.count ?? 0
+      }
+    };
+    return ok2(structured, `Workspace status \u2014 ${JSON.stringify(structured.counts)}`);
+  }
+});
+
+// src/lib/mcp/tools/control/get-today-activity.ts
+import { defineTool as defineTool28 } from "npm:@lovable.dev/mcp-js@0.20.0";
+var get_today_activity_default = defineTool28({
+  name: "get_today_activity",
+  title: "Today's activity",
+  description: "Counts of uploads, signups, payments, and errors in the last 24 hours.",
+  inputSchema: {},
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async (_input, ctx) => {
+    const denied = await authorize(ctx, "get_today_activity", {});
+    if (denied) return denied;
+    const sb = userClient5(ctx);
+    const since = new Date(Date.now() - 24 * 3600 * 1e3).toISOString();
+    const q = (t, col = "created_at", filter) => {
+      let b = sb.from(t).select("*", { count: "exact", head: true }).gte(col, since);
+      if (filter) b = filter(b);
+      return withTimeout(b, `today:${t}`);
+    };
+    const [uploads, ingestFail, emailFail, payments, users] = await Promise.all([
+      q("ingest_job_items"),
+      q("ingest_job_items", "created_at", (b) => b.eq("status", "failed")),
+      q("email_send_log", "created_at", (b) => b.eq("status", "failed")),
+      q("billing_orders"),
+      q("user_profiles")
+    ]);
+    const structured = {
+      since,
+      uploads_24h: uploads.count ?? 0,
+      failed_uploads_24h: ingestFail.count ?? 0,
+      failed_emails_24h: emailFail.count ?? 0,
+      payments_24h: payments.count ?? 0,
+      new_users_24h: users.count ?? 0
+    };
+    return ok2(structured, `Last 24h \u2014 ${JSON.stringify(structured)}`);
+  }
+});
+
+// src/lib/mcp/tools/control/list-creators.ts
+import { defineTool as defineTool29 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z21 } from "npm:zod@^3.25.76";
+var list_creators_default = defineTool29({
+  name: "list_creators",
+  title: "List creators",
+  description: "List creator entity profiles (public directory fields only \u2014 no contact PII).",
+  inputSchema: {
+    limit: z21.number().int().min(1).max(100).optional(),
+    search: z21.string().max(120).optional()
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async (input, ctx) => {
+    const denied = await authorize(ctx, "list_creators", input);
+    if (denied) return denied;
+    const sb = userClient5(ctx);
+    let q = sb.from("entity_profiles").select("id, slug, display_name, kind, status, created_at").in("kind", ["creator", "content_owner"]).order("created_at", { ascending: false }).limit(clampLimit(input.limit));
+    if (input.search) q = q.ilike("display_name", `%${input.search}%`);
+    const { data, error } = await withTimeout(q, "list_creators");
+    if (error) return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    const rows = redactDeep(data ?? []);
+    return ok2({ creators: rows, count: rows.length }, `Returned ${rows.length} creators`);
+  }
+});
+
+// src/lib/mcp/tools/control/ctrl-list-titles.ts
+import { defineTool as defineTool30 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z22 } from "npm:zod@^3.25.76";
+var ctrl_list_titles_default = defineTool30({
+  name: "ctrl_list_titles",
+  title: "List titles (Control)",
+  description: "List content titles across the platform for founder audit. Optional status filter.",
+  inputSchema: {
+    status: z22.string().max(40).optional(),
+    limit: z22.number().int().min(1).max(100).optional()
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async (input, ctx) => {
+    const denied = await authorize(ctx, "ctrl_list_titles", input);
+    if (denied) return denied;
+    const sb = userClient5(ctx);
+    let q = sb.from("content_titles").select("id, title, status, owner_user_id, created_at, updated_at").order("updated_at", { ascending: false }).limit(clampLimit(input.limit));
+    if (input.status) q = q.eq("status", input.status);
+    const { data, error } = await withTimeout(q, "ctrl_list_titles");
+    if (error) return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    return ok2({ titles: data ?? [], count: (data ?? []).length }, `Returned ${(data ?? []).length} titles`);
+  }
+});
+
+// src/lib/mcp/tools/control/list-uploads.ts
+import { defineTool as defineTool31 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z23 } from "npm:zod@^3.25.76";
+var list_uploads_default = defineTool31({
+  name: "list_uploads",
+  title: "List uploads",
+  description: "Recent ingest job items with optional status filter.",
+  inputSchema: {
+    status: z23.enum(["queued", "processing", "succeeded", "failed"]).optional(),
+    since: z23.string().datetime().optional(),
+    limit: z23.number().int().min(1).max(100).optional()
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async (input, ctx) => {
+    const denied = await authorize(ctx, "list_uploads", input);
+    if (denied) return denied;
+    const sb = userClient5(ctx);
+    let q = sb.from("ingest_job_items").select("id, job_id, status, filename, mime_type, size_bytes, created_at, updated_at").order("created_at", { ascending: false }).limit(clampLimit(input.limit));
+    if (input.status) q = q.eq("status", input.status);
+    if (input.since) q = q.gte("created_at", input.since);
+    const { data, error } = await withTimeout(q, "list_uploads");
+    if (error) return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    return ok2({ uploads: data ?? [], count: (data ?? []).length }, `Returned ${(data ?? []).length} uploads`);
+  }
+});
+
+// src/lib/mcp/tools/control/list-failed-uploads.ts
+import { defineTool as defineTool32 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z24 } from "npm:zod@^3.25.76";
+var list_failed_uploads_default = defineTool32({
+  name: "list_failed_uploads",
+  title: "List failed uploads",
+  description: "Failed ingest job items with error reasons (redacted).",
+  inputSchema: { limit: z24.number().int().min(1).max(100).optional() },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async (input, ctx) => {
+    const denied = await authorize(ctx, "list_failed_uploads", input);
+    if (denied) return denied;
+    const sb = userClient5(ctx);
+    const { data, error } = await withTimeout(
+      sb.from("ingest_job_items").select("id, job_id, filename, mime_type, size_bytes, error_message, retry_count, created_at, updated_at").eq("status", "failed").order("updated_at", { ascending: false }).limit(clampLimit(input.limit)),
+      "list_failed_uploads"
+    );
+    if (error) return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    const rows = redactDeep(data ?? []);
+    return ok2({ failed_uploads: rows, count: rows.length }, `Returned ${rows.length} failed uploads`);
+  }
+});
+
+// src/lib/mcp/tools/control/list-failed-emails.ts
+import { defineTool as defineTool33 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z25 } from "npm:zod@^3.25.76";
+var list_failed_emails_default = defineTool33({
+  name: "list_failed_emails",
+  title: "List failed emails",
+  description: "Failed rows from email_send_log with redacted error reasons.",
+  inputSchema: { limit: z25.number().int().min(1).max(100).optional() },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async (input, ctx) => {
+    const denied = await authorize(ctx, "list_failed_emails", input);
+    if (denied) return denied;
+    const sb = userClient5(ctx);
+    const { data, error } = await withTimeout(
+      sb.from("email_send_log").select("id, message_id, template, status, error, created_at, updated_at").in("status", ["failed", "failed_permanent"]).order("updated_at", { ascending: false }).limit(clampLimit(input.limit)),
+      "list_failed_emails"
+    );
+    if (error) return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    const rows = redactDeep(data ?? []);
+    return ok2({ failed_emails: rows, count: rows.length }, `Returned ${rows.length} failed emails`);
+  }
+});
+
+// src/lib/mcp/tools/control/list-payments.ts
+import { defineTool as defineTool34 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z26 } from "npm:zod@^3.25.76";
+var list_payments_default = defineTool34({
+  name: "list_payments",
+  title: "List payments",
+  description: "Billing orders / payments summary (no PAN, no card data, no UPI IDs).",
+  inputSchema: {
+    since: z26.string().datetime().optional(),
+    status: z26.string().max(40).optional(),
+    limit: z26.number().int().min(1).max(100).optional()
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async (input, ctx) => {
+    const denied = await authorize(ctx, "list_payments", input);
+    if (denied) return denied;
+    const sb = userClient5(ctx);
+    let q = sb.from("billing_orders").select("id, status, amount, currency, product_code, created_at, updated_at").order("created_at", { ascending: false }).limit(clampLimit(input.limit));
+    if (input.since) q = q.gte("created_at", input.since);
+    if (input.status) q = q.eq("status", input.status);
+    const { data, error } = await withTimeout(q, "list_payments");
+    if (error) return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    return ok2({ payments: data ?? [], count: (data ?? []).length }, `Returned ${(data ?? []).length} payments`);
+  }
+});
+
+// src/lib/mcp/tools/control/list-invoices.ts
+import { defineTool as defineTool35 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z27 } from "npm:zod@^3.25.76";
+var list_invoices_default = defineTool35({
+  name: "list_invoices",
+  title: "List invoices",
+  description: "Invoice summary rows for founder audit.",
+  inputSchema: {
+    since: z27.string().datetime().optional(),
+    limit: z27.number().int().min(1).max(100).optional()
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async (input, ctx) => {
+    const denied = await authorize(ctx, "list_invoices", input);
+    if (denied) return denied;
+    const sb = userClient5(ctx);
+    let q = sb.from("invoices").select("id, invoice_number, status, total_amount, currency, issue_date, due_date, created_at").order("created_at", { ascending: false }).limit(clampLimit(input.limit));
+    if (input.since) q = q.gte("created_at", input.since);
+    const { data, error } = await withTimeout(q, "list_invoices");
+    if (error) return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    return ok2({ invoices: data ?? [], count: (data ?? []).length }, `Returned ${(data ?? []).length} invoices`);
+  }
+});
+
+// src/lib/mcp/tools/control/list-buyers.ts
+import { defineTool as defineTool36 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z28 } from "npm:zod@^3.25.76";
+var list_buyers_default = defineTool36({
+  name: "list_buyers",
+  title: "List buyers",
+  description: "Buyer entity profiles (public directory columns only \u2014 contact PII redacted).",
+  inputSchema: {
+    limit: z28.number().int().min(1).max(100).optional(),
+    search: z28.string().max(120).optional()
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async (input, ctx) => {
+    const denied = await authorize(ctx, "list_buyers", input);
+    if (denied) return denied;
+    const sb = userClient5(ctx);
+    let q = sb.from("entity_profiles").select("id, slug, display_name, kind, status, created_at").eq("kind", "buyer").order("created_at", { ascending: false }).limit(clampLimit(input.limit));
+    if (input.search) q = q.ilike("display_name", `%${input.search}%`);
+    const { data, error } = await withTimeout(q, "list_buyers");
+    if (error) return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    const rows = redactDeep(data ?? []);
+    return ok2({ buyers: rows, count: rows.length }, `Returned ${rows.length} buyers`);
+  }
+});
+
+// src/lib/mcp/tools/control/get-storage-usage.ts
+import { defineTool as defineTool37 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z29 } from "npm:zod@^3.25.76";
+var get_storage_usage_default = defineTool37({
+  name: "get_storage_usage",
+  title: "Storage usage",
+  description: "Workspace storage allocation vs usage.",
+  inputSchema: {
+    workspace_id: z29.string().uuid().optional(),
+    limit: z29.number().int().min(1).max(100).optional()
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async (input, ctx) => {
+    const denied = await authorize(ctx, "get_storage_usage", input);
+    if (denied) return denied;
+    const sb = userClient5(ctx);
+    const [ent, use] = await Promise.all([
+      withTimeout(
+        input.workspace_id ? sb.from("workspace_storage_entitlements").select("*").eq("workspace_id", input.workspace_id) : sb.from("workspace_storage_entitlements").select("*").limit(clampLimit(input.limit)),
+        "entitlements"
+      ),
+      withTimeout(
+        input.workspace_id ? sb.from("workspace_storage_usage").select("*").eq("workspace_id", input.workspace_id) : sb.from("workspace_storage_usage").select("*").limit(clampLimit(input.limit)),
+        "usage"
+      )
+    ]);
+    return ok2(
+      { entitlements: ent.data ?? [], usage: use.data ?? [] },
+      `Storage entitlements: ${(ent.data ?? []).length}, usage rows: ${(use.data ?? []).length}`
+    );
+  }
+});
+
+// src/lib/mcp/tools/control/get-database-schema.ts
+import { defineTool as defineTool38 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z30 } from "npm:zod@^3.25.76";
+var get_database_schema_default = defineTool38({
+  name: "get_database_schema",
+  title: "Database schema (public)",
+  description: "Allowlisted read-only view of tables/columns in the public schema. Founder / platform_owner / super_admin only.",
+  inputSchema: { table: z30.string().max(80).optional() },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async (input, ctx) => {
+    const denied = await authorize(ctx, "get_database_schema", input);
+    if (denied) return denied;
+    const sb = userClient5(ctx);
+    const { data, error } = await withTimeout(sb.rpc("mcp_get_public_schema"), "schema");
+    if (error) return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    const rows = data ?? [];
+    const filtered = input.table ? rows.filter((r) => r.table_name === input.table) : rows;
+    const byTable = {};
+    for (const r of filtered) (byTable[r.table_name] ??= []).push({
+      column: r.column_name,
+      type: r.data_type,
+      nullable: r.is_nullable === "YES"
+    });
+    return ok2(
+      { tables: Object.keys(byTable).length, schema: byTable },
+      `${Object.keys(byTable).length} tables, ${filtered.length} columns${input.table ? ` (filtered by ${input.table})` : ""}`
+    );
+  }
+});
+
+// src/lib/mcp/tools/control/get-security-advisors.ts
+import { defineTool as defineTool39 } from "npm:@lovable.dev/mcp-js@0.20.0";
+var get_security_advisors_default = defineTool39({
+  name: "get_security_advisors",
+  title: "Security advisors (DB snapshot)",
+  description: "DB-side security snapshot: which public tables have RLS enabled. Founder / platform_owner / super_admin only.",
+  inputSchema: {},
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async (_input, ctx) => {
+    const denied = await authorize(ctx, "get_security_advisors", {});
+    if (denied) return denied;
+    const sb = userClient5(ctx);
+    const { data, error } = await withTimeout(sb.rpc("mcp_get_security_advisors"), "advisors");
+    if (error) return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    return ok2({ advisors: data ?? {} }, "Security advisors \u2014 DB snapshot");
+  }
+});
+
+// src/lib/mcp/tools/control/get-edge-function-logs.ts
+import { defineTool as defineTool40 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z31 } from "npm:zod@^3.25.76";
+var get_edge_function_logs_default = defineTool40({
+  name: "get_edge_function_logs",
+  title: "Edge Function logs",
+  description: "Recent log lines for a Lovable Cloud edge function via the Supabase Management API (read-only PAT, bounded window).",
+  inputSchema: {
+    function_name: z31.string().min(1).max(80),
+    since: z31.string().datetime().optional(),
+    level: z31.enum(["info", "warn", "error"]).optional(),
+    limit: z31.number().int().min(1).max(200).optional()
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async (input, ctx) => {
+    const denied = await authorize(ctx, "get_edge_function_logs", input);
+    if (denied) return denied;
+    const token = process.env.SUPABASE_MANAGEMENT_ACCESS_TOKEN;
+    const ref = process.env.SUPABASE_PROJECT_REF ?? process.env.VITE_SUPABASE_PROJECT_ID;
+    if (!token || !ref) {
+      return err(
+        "not_configured",
+        "SUPABASE_MANAGEMENT_ACCESS_TOKEN and SUPABASE_PROJECT_REF must be set (read-scoped PAT, server-side only)."
+      );
+    }
+    const windowDays = Number(process.env.MCP_LOGS_WINDOW_DAYS ?? 7);
+    const minSince = new Date(Date.now() - windowDays * 24 * 3600 * 1e3);
+    const since = input.since ? new Date(input.since) : minSince;
+    const effectiveSince = since < minSince ? minSince : since;
+    const limit = Math.min(input.limit ?? 100, MAX_LOG_ROWS);
+    const sql = `select id, timestamp, event_message, metadata
+                 from function_logs
+                 where function_id = '${input.function_name.replace(/'/g, "''")}'
+                   and timestamp >= '${effectiveSince.toISOString()}'
+                 order by timestamp desc
+                 limit ${limit}`;
+    const url = `https://api.supabase.com/v1/projects/${ref}/analytics/endpoints/logs.all?sql=${encodeURIComponent(sql)}`;
+    try {
+      const res = await withTimeout(
+        fetch(url, { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } }),
+        "mgmt_api"
+      );
+      if (!res.ok) {
+        const body = await res.text();
+        return err("mgmt_api_error", `HTTP ${res.status}: ${redact(body).slice(0, 500)}`);
+      }
+      const json = await res.json();
+      const rows = Array.isArray(json) ? json : json.result ?? [];
+      let out = redactDeep(rows);
+      if (input.level) out = out.filter((r) => JSON.stringify(r).toLowerCase().includes(`"level":"${input.level}"`));
+      return ok2(
+        { function: input.function_name, since: effectiveSince.toISOString(), count: out.length, logs: out },
+        `Returned ${out.length} log rows for ${input.function_name}`
+      );
+    } catch (e) {
+      return err("mgmt_api_failed", redact(String(e?.message ?? e)));
+    }
+  }
+});
+
+// src/lib/mcp/tools/control/search-workspace-records.ts
+import { defineTool as defineTool41 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z32 } from "npm:zod@^3.25.76";
+var TABLE_ALLOWLIST = {
+  content_titles: { columns: ["id", "title", "status", "created_at", "updated_at"], textCol: "title" },
+  entity_profiles: { columns: ["id", "slug", "display_name", "kind", "status", "created_at"], textCol: "display_name" },
+  ingest_jobs: { columns: ["id", "status", "source", "created_at", "updated_at"] },
+  billing_orders: { columns: ["id", "status", "amount", "currency", "product_code", "created_at"] },
+  invoices: { columns: ["id", "invoice_number", "status", "total_amount", "currency", "issue_date", "created_at"] }
+};
+var OP = z32.enum(["eq", "neq", "gt", "gte", "lt", "lte", "ilike"]);
+var search_workspace_records_default = defineTool41({
+  name: "search_workspace_records",
+  title: "Search workspace records",
+  description: "Typed, parameterized search across an allowlisted set of tables. Never runs raw SQL.",
+  inputSchema: {
+    table: z32.string(),
+    filters: z32.array(z32.object({ column: z32.string(), op: OP, value: z32.union([z32.string(), z32.number(), z32.boolean(), z32.null()]) })).max(6).optional(),
+    text: z32.string().max(200).optional(),
+    limit: z32.number().int().min(1).max(50).optional()
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async (input, ctx) => {
+    const denied = await authorize(ctx, "search_workspace_records", input);
+    if (denied) return denied;
+    const spec = TABLE_ALLOWLIST[input.table];
+    if (!spec) return err("table_not_allowlisted", `Allowed: ${Object.keys(TABLE_ALLOWLIST).join(", ")}`);
+    const sb = userClient5(ctx);
+    let q = sb.from(input.table).select(spec.columns.join(",")).limit(clampLimit(input.limit, 50));
+    for (const f of input.filters ?? []) {
+      if (!spec.columns.includes(f.column)) return err("column_not_allowlisted", f.column);
+      q = q[f.op](f.column, f.value);
+    }
+    if (input.text && spec.textCol) q = q.ilike(spec.textCol, `%${input.text}%`);
+    const { data, error } = await withTimeout(q, `search:${input.table}`);
+    if (error) return err("db_error", error.message);
+    const rows = redactDeep(data ?? []);
+    return ok2({ table: input.table, rows, count: rows.length }, `Returned ${rows.length} rows from ${input.table}`);
+  }
+});
+
 // src/lib/mcp/index.ts
 var projectRef = "hllgmkfqgeuqlmpcirvn";
 var mcp_default = defineMcp({
@@ -988,7 +1559,24 @@ var mcp_default = defineMcp({
     // Legacy read tools
     list_titles_default,
     get_title_default,
-    list_ingest_jobs_default
+    list_ingest_jobs_default,
+    // Phase 1 Control Server — founder / platform_owner / super_admin only.
+    whoami_control_default,
+    get_workspace_status_default,
+    get_today_activity_default,
+    list_creators_default,
+    ctrl_list_titles_default,
+    list_uploads_default,
+    list_failed_uploads_default,
+    list_failed_emails_default,
+    list_payments_default,
+    list_invoices_default,
+    list_buyers_default,
+    get_storage_usage_default,
+    get_database_schema_default,
+    get_security_advisors_default,
+    get_edge_function_logs_default,
+    search_workspace_records_default
   ]
 });
 

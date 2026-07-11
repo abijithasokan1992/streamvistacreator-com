@@ -4738,6 +4738,48 @@ export type Database = {
         }
         Relationships: []
       }
+      mcp_control_flags: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
+      mcp_rate_buckets: {
+        Row: {
+          count: number
+          tool: string
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          count?: number
+          tool: string
+          user_id: string
+          window_start: string
+        }
+        Update: {
+          count?: number
+          tool?: string
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       media_assets: {
         Row: {
           category: string | null
@@ -10631,6 +10673,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_mcp_control_role: { Args: { _user_id: string }; Returns: boolean }
       has_premium_storage_entitlement: {
         Args: { _user_id: string }
         Returns: boolean
@@ -10725,6 +10768,25 @@ export type Database = {
         Args: { _ids: string[] }
         Returns: undefined
       }
+      mcp_authorize_and_log: {
+        Args: { _params?: Json; _tool: string; _writes?: boolean }
+        Returns: string
+      }
+      mcp_check_rate_limit: {
+        Args: { _tool: string; _user_id: string }
+        Returns: boolean
+      }
+      mcp_get_public_schema: {
+        Args: never
+        Returns: {
+          column_name: string
+          data_type: string
+          is_nullable: string
+          table_name: string
+        }[]
+      }
+      mcp_get_security_advisors: { Args: never; Returns: Json }
+      mcp_kill_switch_on: { Args: never; Returns: boolean }
       mfi_seats_taken: { Args: never; Returns: number }
       move_to_dlq: {
         Args: {
@@ -10928,6 +10990,7 @@ export type Database = {
         | "legal_reviewer"
         | "founder"
         | "channel_partner"
+        | "platform_owner"
       availability_status:
         | "draft"
         | "scheduled"
@@ -11303,6 +11366,7 @@ export const Constants = {
         "legal_reviewer",
         "founder",
         "channel_partner",
+        "platform_owner",
       ],
       availability_status: [
         "draft",

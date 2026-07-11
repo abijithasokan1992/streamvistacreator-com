@@ -1,276 +1,107 @@
-import { useEffect, useRef, useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { useState } from "react";
+import { ArrowRight, Play, X } from "lucide-react";
 import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-
-type HeroBanner = {
-  id: string;
-  headline: string;
-  subheadline: string | null;
-  image_url: string | null;
-  cta_label: string | null;
-  cta_url: string | null;
-  cta2_label: string | null;
-  cta2_url: string | null;
-};
-
-type HeroSettings = {
-  mode: "single" | "slider";
-  autoplay: boolean;
-  interval_ms: number;
-  pause_on_hover: boolean;
-};
-
-const DEFAULT_SETTINGS: HeroSettings = {
-  mode: "single",
-  autoplay: true,
-  interval_ms: 5000,
-  pause_on_hover: true,
-};
-
-const nonEmpty = (v: string | null | undefined) => (v && v.trim() ? v : null);
 
 /**
- * Public hero — premium, admin-driven.
- * Reads `homepage_hero_settings` to decide between Single (lowest sort_order)
- * and Slider (fade through all published + active rows in sort order).
+ * Public Hero — Sprint 001 rebuild.
+ * Single cinematic hero. One primary CTA + one secondary (overview video).
  */
 export const Hero = () => {
-  const [banners, setBanners] = useState<HeroBanner[]>([]);
-  const [settings, setSettings] = useState<HeroSettings>(DEFAULT_SETTINGS);
-  const [index, setIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      const [{ data: rows }, { data: cfg }] = await Promise.all([
-        (supabase as any)
-          .from("hero_banners")
-          .select("id,headline,subheadline,image_url,cta_label,cta_url,cta2_label,cta2_url")
-          .eq("is_active", true)
-          .eq("status", "published")
-          .order("sort_order")
-          .order("created_at", { ascending: false }),
-        (supabase as any)
-          .from("homepage_hero_settings")
-          .select("mode,autoplay,interval_ms,pause_on_hover")
-          .eq("id", true)
-          .maybeSingle(),
-      ]);
-      if (!active) return;
-      if (rows) setBanners(rows as HeroBanner[]);
-      if (cfg) setSettings({ ...DEFAULT_SETTINGS, ...cfg });
-    })();
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  // Effective slide set: in single mode, only the first banner.
-  const slides = settings.mode === "slider" ? banners : banners.slice(0, 1);
-
-  // Autoplay
-  const intervalRef = useRef<number | null>(null);
-  useEffect(() => {
-    if (intervalRef.current) {
-      window.clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    if (
-      settings.mode !== "slider" ||
-      !settings.autoplay ||
-      slides.length < 2 ||
-      (paused && settings.pause_on_hover)
-    ) {
-      return;
-    }
-    intervalRef.current = window.setInterval(() => {
-      setIndex((i) => (i + 1) % slides.length);
-    }, settings.interval_ms);
-    return () => {
-      if (intervalRef.current) window.clearInterval(intervalRef.current);
-    };
-  }, [settings, slides.length, paused]);
-
-  const current = slides[index] ?? null;
-
-  const subtitle =
-    nonEmpty(current?.subheadline) ??
-    "Manage, protect, distribute, license and monetize professional media through one connected platform.";
-  const ctaLabel = nonEmpty(current?.cta_label) ?? "Get Started";
-  const ctaHref = nonEmpty(current?.cta_url) ?? "/auth?intent=signup";
-  const cta2Label = nonEmpty(current?.cta2_label) ?? "Book a Demo";
-  const cta2Href = nonEmpty(current?.cta2_url) ?? "/contact?intent=demo";
-  const isSlider = false;
-  
+  const [videoOpen, setVideoOpen] = useState(false);
 
   return (
-    <section
-      className="relative pt-28 pb-20 md:pb-28 overflow-hidden border-b border-border/40"
-      onMouseEnter={() => isSlider && settings.pause_on_hover && setPaused(true)}
-      onMouseLeave={() => isSlider && settings.pause_on_hover && setPaused(false)}
-    >
-      {/* Crossfade background layer per slide */}
-      {slides.map((s, i) => {
-        const img = nonEmpty(s.image_url);
-        if (!img) return null;
-        return (
-          <div
-            key={s.id}
-            className="absolute inset-0 transition-opacity duration-[1200ms] ease-in-out"
-            style={{ opacity: i === index ? 1 : 0 }}
-            aria-hidden={i !== index}
-          >
-            <img
-              src={img}
-              alt={s.headline ?? "StreamVista hero"}
-              className="absolute inset-0 w-full h-full object-cover object-center opacity-90"
-              width={1920}
-              height={1080}
-              loading={i === 0 ? "eager" : "lazy"}
-              fetchPriority={i === 0 ? "high" : "low"}
-              decoding="async"
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/10 to-background md:from-background/10 md:via-background/5" />
-          </div>
-        );
-      })}
-      <div className="absolute inset-0 grid-bg opacity-60" />
-      <div className="absolute top-0 -left-32 w-[40rem] h-[40rem] rounded-full bg-primary/15 blur-[120px]" />
-      <div className="absolute bottom-0 -right-32 w-[36rem] h-[36rem] rounded-full bg-primary-glow/10 blur-[140px]" />
+    <section className="relative pt-32 pb-24 md:pt-40 md:pb-32 overflow-hidden border-b border-border/40">
+      {/* Ambient cinematic backdrop */}
+      <div className="absolute inset-0 grid-bg opacity-40" aria-hidden />
+      <div
+        aria-hidden
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(1200px 600px at 20% 10%, hsl(var(--primary) / 0.18), transparent 60%), radial-gradient(900px 500px at 85% 90%, hsl(var(--accent) / 0.14), transparent 60%)",
+        }}
+      />
+      <div className="absolute top-0 -left-32 w-[40rem] h-[40rem] rounded-full bg-primary/10 blur-[140px]" aria-hidden />
+      <div className="absolute bottom-0 -right-32 w-[36rem] h-[36rem] rounded-full bg-primary-glow/10 blur-[160px]" aria-hidden />
 
       <div className="container relative">
-
-
-
-        {/* Crossfade copy layer per slide */}
-        <div className="relative">
-          {slides.length === 0 && <FallbackCopy />}
-          {slides.map((s, i) => {
-            const isCurrent = i === index;
-            return (
-              <div
-                key={s.id}
-                className={`grid lg:grid-cols-[1.4fr_1fr] gap-12 lg:gap-20 items-end transition-opacity duration-[1000ms] ease-in-out ${
-                  isCurrent ? "relative opacity-100" : "absolute inset-0 opacity-0 pointer-events-none"
-                }`}
-                aria-hidden={!isCurrent}
-              >
-                {s.headline ? (
-                  isCurrent ? (
-                    <h1 className="font-display font-black uppercase leading-[0.88] tracking-tight text-[clamp(2.4rem,8.4vw,7rem)]">
-                      {s.headline}
-                    </h1>
-                  ) : (
-                    <h2 className="font-display font-black uppercase leading-[0.88] tracking-tight text-[clamp(2.4rem,8.4vw,7rem)]">
-                      {s.headline}
-                    </h2>
-                  )
-                ) : (
-                  <DefaultHeadline />
-                )}
-
-                <div className="space-y-7 max-w-md">
-                  <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-                    {nonEmpty(s.subheadline) ?? subtitle}
-                  </p>
-
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <Link
-                      to={nonEmpty(s.cta_url) ?? ctaHref}
-                      className="cta-guide group relative h-14 inline-flex items-center justify-center gap-3 px-6 bg-gradient-primary text-primary-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md flex-1"
-                    >
-                      <span>{nonEmpty(s.cta_label) ?? ctaLabel}</span>
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                    </Link>
-                    <Link
-                      to={nonEmpty(s.cta2_url) ?? cta2Href}
-                      className="group relative h-14 inline-flex items-center justify-center gap-3 px-6 border border-border/60 hover:border-accent/60 hover:bg-accent/5 text-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md flex-1 transition-colors"
-                    >
-                      <span>{nonEmpty(s.cta2_label) ?? cta2Label}</span>
-                    </Link>
-                  </div>
-                  <TrustStrip />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {isSlider && (
-          <div className="mt-10 flex items-center gap-2">
-            {slides.map((s, i) => (
-              <button
-                key={s.id}
-                onClick={() => setIndex(i)}
-                aria-label={`Show hero ${i + 1}`}
-                className={`h-1.5 rounded-full transition-all ${
-                  i === index ? "w-8 bg-accent" : "w-4 bg-border hover:bg-muted-foreground/50"
-                }`}
-              />
-            ))}
+        <div className="max-w-4xl">
+          <div className="flex items-center gap-3 mb-8 animate-fade-in">
+            <div className="w-8 h-px bg-accent" />
+            <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">
+              StreamVista Cloud X
+            </span>
           </div>
-        )}
+
+          <h1 className="font-display font-black uppercase leading-[0.9] tracking-tight text-[clamp(2.6rem,8vw,6.5rem)] animate-fade-in">
+            Own a Film, Series
+            <br />
+            or <span className="gradient-text">Documentary?</span>
+          </h1>
+
+          <div className="mt-8 max-w-2xl text-base md:text-xl text-muted-foreground leading-relaxed space-y-1.5 animate-fade-in">
+            <p>Upload your content.</p>
+            <p>Protect your rights.</p>
+            <p>Connect with verified buyers.</p>
+            <p>License globally through one secure platform.</p>
+          </div>
+
+          <div className="mt-12 flex flex-col sm:flex-row gap-3 animate-fade-in">
+            <Link
+              to="/auth?intent=signup"
+              className="cta-guide group h-14 inline-flex items-center justify-center gap-3 px-8 bg-gradient-primary text-primary-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md"
+            >
+              <span>Get Started</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </Link>
+            <button
+              type="button"
+              onClick={() => setVideoOpen(true)}
+              className="group h-14 inline-flex items-center justify-center gap-3 px-8 border border-border/60 hover:border-accent/60 hover:bg-accent/5 text-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md transition-colors"
+            >
+              <Play className="w-4 h-4" />
+              <span>Watch 60-Second Overview</span>
+            </button>
+          </div>
+        </div>
       </div>
+
+      {videoOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="StreamVista 60-second overview"
+          className="fixed inset-0 z-50 bg-background/90 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setVideoOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-4xl aspect-video rounded-xl overflow-hidden border border-border/60 bg-card"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setVideoOpen(false)}
+              aria-label="Close overview video"
+              className="absolute top-3 right-3 z-10 w-10 h-10 rounded-full bg-background/70 hover:bg-background border border-border/60 grid place-items-center"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="w-full h-full grid place-items-center text-center px-8">
+              <div>
+                <div className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent mb-3">
+                  Overview
+                </div>
+                <p className="font-display text-2xl md:text-3xl font-bold uppercase tracking-tight">
+                  60-second overview video coming soon
+                </p>
+                <p className="mt-3 text-sm text-muted-foreground max-w-md mx-auto">
+                  We're finalising the platform reel. In the meantime, create a free workspace to explore StreamVista end-to-end.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };
-
-const TRUST_LABELS = [
-  "Asset Management",
-  "Rights Management",
-  "Distribution",
-  "Marketplace",
-  "Revenue Intelligence",
-];
-
-const TrustStrip = () => (
-  <div className="mt-10 flex flex-wrap gap-2">
-    {TRUST_LABELS.map((label) => (
-      <span
-        key={label}
-        className="inline-flex items-center px-3 py-1.5 rounded-full border border-border/60 bg-background/40 backdrop-blur-sm font-mono-tech text-[10px] uppercase tracking-[0.2em] text-muted-foreground"
-      >
-        {label}
-      </span>
-    ))}
-  </div>
-);
-
-const DefaultHeadline = () => (
-  <div>
-    <h1 className="font-display font-black uppercase leading-[0.88] tracking-tight text-[clamp(2.4rem,7.6vw,6rem)]">
-      The Digital Media
-      <br />
-      <span className="gradient-text">Business Platform</span>
-    </h1>
-  </div>
-);
-
-const FallbackCopy = () => (
-  <div className="grid lg:grid-cols-[1.4fr_1fr] gap-12 lg:gap-20 items-end animate-fade-in">
-    <DefaultHeadline />
-    <div className="space-y-7 max-w-md">
-      <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-        Manage, protect, distribute, license and monetize professional media through one connected platform.
-      </p>
-      <div className="flex flex-col sm:flex-row gap-3">
-        <Link
-          to="/auth?intent=signup"
-          className="cta-guide group relative h-14 inline-flex items-center justify-center gap-3 px-6 bg-gradient-primary text-primary-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md flex-1"
-        >
-          <span>Get Started</span>
-          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-        </Link>
-        <Link
-          to="/contact?intent=demo"
-          className="group relative h-14 inline-flex items-center justify-center gap-3 px-6 border border-border/60 hover:border-accent/60 hover:bg-accent/5 text-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md flex-1 transition-colors"
-        >
-          <span>Book a Demo</span>
-        </Link>
-      </div>
-      <TrustStrip />
-    </div>
-  </div>
-);

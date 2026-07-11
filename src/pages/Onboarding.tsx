@@ -5,6 +5,7 @@ import { Loader2, ArrowRight, Sparkles, SkipForward, KeyRound } from "lucide-rea
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, dashboardForRole } from "@/hooks/useAuth";
 import CinematicOnboarding from "@/components/CinematicOnboarding";
+import { Seo } from "@/components/Seo";
 
 const ROLES = [
   "Creator", "Editor", "Director", "Cinematographer",

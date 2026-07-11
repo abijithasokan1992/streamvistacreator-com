@@ -223,6 +223,43 @@ Deno.serve(async (req) => {
 
   const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
   const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!
+
+  // -----------------------------------------------------------------
+  // AuthN/AuthZ gate — this function must never be callable anonymously.
+  //   • Cron / internal callers: must present the service-role JWT.
+  //   • UI ("Test alert now"): must be a signed-in user who is an admin
+  //     of the target rule's workspace.
+  // -----------------------------------------------------------------
+  const authHeader = req.headers.get('Authorization') ?? ''
+  const bearer = authHeader.toLowerCase().startsWith('bearer ')
+    ? authHeader.slice(7).trim()
+    : ''
+  if (!bearer) {
+    return new Response(JSON.stringify({ error: 'unauthorized' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
+
+  const isServiceRole = bearer === SERVICE_KEY
+  let callerUserId: string | null = null
+
+  if (!isServiceRole) {
+    // End-user JWT — validate it and require admin/super_admin on the rule's workspace.
+    const userClient = createClient(SUPABASE_URL, ANON_KEY, {
+      global: { headers: { Authorization: `Bearer ${bearer}` } },
+    })
+    const { data: userData, error: userErr } = await userClient.auth.getUser()
+    if (userErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: 'unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    callerUserId = userData.user.id
+  }
+
   const admin = createClient(SUPABASE_URL, SERVICE_KEY)
 
   // Optional single-rule trigger from UI ("Test alert now")
@@ -235,6 +272,43 @@ Deno.serve(async (req) => {
       forceFire = body?.test === true
     } catch { /* cron call, no body */ }
   }
+
+  // For end-user callers, they may only trigger a specific rule and must be
+  // an admin/super_admin of that rule's workspace. Broad, non-scoped runs
+  // are reserved for the service-role cron.
+  if (!isServiceRole) {
+    if (!singleRuleId) {
+      return new Response(JSON.stringify({ error: 'forbidden: ruleId required for user-triggered evaluation' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    const { data: ruleRow, error: ruleErr } = await admin
+      .from('ingest_alert_rules')
+      .select('id, workspace_id')
+      .eq('id', singleRuleId)
+      .maybeSingle()
+    if (ruleErr || !ruleRow) {
+      return new Response(JSON.stringify({ error: 'not_found' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    const { data: adminRow } = await admin
+      .from('workspace_members')
+      .select('role')
+      .eq('workspace_id', (ruleRow as any).workspace_id)
+      .eq('user_id', callerUserId!)
+      .maybeSingle()
+    const wsRole = (adminRow as any)?.role ?? ''
+    if (!['owner', 'admin', 'super_admin'].includes(wsRole)) {
+      return new Response(JSON.stringify({ error: 'forbidden' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+  }
+
 
   const rulesQ = admin
     .from('ingest_alert_rules')

@@ -455,7 +455,7 @@ Deno.serve(async (req) => {
   // ── Apply event side-effects with try/catch so failures are recorded. ─
   const procTimer = timer();
   try {
-    await processEvent(supabase, event, creds);
+    await processEvent(supabase, event, creds ?? { mode });
     if (ledgerRowId) {
       await supabase
         .from("razorpay_webhook_ledger")

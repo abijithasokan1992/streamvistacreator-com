@@ -93,7 +93,7 @@ export type Row = {
   state: string;
   title_query: string | null;
   message: string | null;
-  admin_notes: string | null;
+  
   terms: RowTerms | null;
   title_id: string | null;
   created_at: string;

@@ -342,7 +342,7 @@ Deno.serve(async (req) => {
     payment_id: paymentId,
     duration_ms: sigTimer(),
     error_message: signatureValid ? null : "Signature mismatch",
-    extra: { event_type: eventType, mode: creds.mode },
+    extra: { event_type: eventType, mode },
   });
 
   // Legacy audit log (kept for existing admin UI).

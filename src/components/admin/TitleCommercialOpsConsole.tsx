@@ -245,7 +245,7 @@ function TitleCommercialDialog({
     setLoading(false);
     setRights((rRes.data as Rights[]) ?? []);
     setDeals((dRes.data as Deal[]) ?? []);
-    setRequests((reqRes.data as unknown as Request[]) ?? []);
+    setRequests(((reqRes.data as unknown as Request[]) ?? []).filter(r => r.title_id === title.id));
   };
   useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 

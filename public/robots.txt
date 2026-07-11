@@ -2,5 +2,6 @@ User-agent: *
 Disallow: /admin/
 Disallow: /connectors
 Disallow: /.lovable/
+Disallow: /api/
 
 Sitemap: https://streamvistacreator.com/sitemap.xml

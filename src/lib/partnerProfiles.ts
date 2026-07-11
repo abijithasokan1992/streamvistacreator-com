@@ -30,21 +30,20 @@ export interface PartnerProfile {
 }
 
 export async function fetchPartnerProfiles(): Promise<PartnerProfile[]> {
+  // Use the public-safe view (excludes contact_email — admin-only field).
   const { data, error } = await (supabase as any)
-    .from("partner_profiles")
+    .from("partner_profiles_public")
     .select("*")
-    .eq("is_active", true)
     .order("sort_order", { ascending: true });
   if (error) return [];
-  return (data ?? []) as PartnerProfile[];
+  return ((data ?? []) as any[]).map((r) => ({ ...r, contact_email: null })) as PartnerProfile[];
 }
 
 export async function fetchPartnerProfile(slug: string): Promise<PartnerProfile | null> {
   const { data } = await (supabase as any)
-    .from("partner_profiles")
+    .from("partner_profiles_public")
     .select("*")
     .eq("slug", slug)
-    .eq("is_active", true)
     .maybeSingle();
-  return (data as PartnerProfile) ?? null;
+  return data ? ({ ...(data as any), contact_email: null } as PartnerProfile) : null;
 }

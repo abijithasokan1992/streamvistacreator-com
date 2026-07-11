@@ -5505,6 +5505,13 @@ export type Database = {
             referencedRelation: "partner_profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "partner_statements_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       partner_title_matches: {
@@ -5556,6 +5563,13 @@ export type Database = {
             columns: ["partner_profile_id"]
             isOneToOne: false
             referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_title_matches_partner_profile_id_fkey"
+            columns: ["partner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles_public"
             referencedColumns: ["id"]
           },
           {
@@ -6555,6 +6569,13 @@ export type Database = {
             referencedRelation: "partner_profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "revenue_imports_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       revenue_lines: {
@@ -6639,6 +6660,13 @@ export type Database = {
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenue_lines_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles_public"
             referencedColumns: ["id"]
           },
           {
@@ -7068,6 +7096,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "royalty_rules_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "royalty_rules_title_id_fkey"
             columns: ["title_id"]
             isOneToOne: false
@@ -7410,6 +7445,13 @@ export type Database = {
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "settlements_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles_public"
             referencedColumns: ["id"]
           },
           {
@@ -9651,6 +9693,107 @@ export type Database = {
           net_paise: number | null
         }
         Relationships: []
+      }
+      partner_profiles_public: {
+        Row: {
+          audio_requirements: string | null
+          categories: string[] | null
+          content_preferences: string[] | null
+          created_at: string | null
+          deal_timeline_days: number | null
+          description: string | null
+          exclusivity: string | null
+          hero_image_url: string | null
+          id: string | null
+          is_active: boolean | null
+          is_featured: boolean | null
+          languages: string[] | null
+          licensing_models: string[] | null
+          logo_url: string | null
+          min_resolution: string | null
+          name: string | null
+          organization_id: string | null
+          revenue_share_notes: string | null
+          runtime_max_minutes: number | null
+          runtime_min_minutes: number | null
+          slug: string | null
+          sort_order: number | null
+          submission_requirements: string | null
+          subtitle_requirements: string | null
+          tagline: string | null
+          territories: string[] | null
+          updated_at: string | null
+          website_url: string | null
+        }
+        Insert: {
+          audio_requirements?: string | null
+          categories?: string[] | null
+          content_preferences?: string[] | null
+          created_at?: string | null
+          deal_timeline_days?: number | null
+          description?: string | null
+          exclusivity?: string | null
+          hero_image_url?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          languages?: string[] | null
+          licensing_models?: string[] | null
+          logo_url?: string | null
+          min_resolution?: string | null
+          name?: string | null
+          organization_id?: string | null
+          revenue_share_notes?: string | null
+          runtime_max_minutes?: number | null
+          runtime_min_minutes?: number | null
+          slug?: string | null
+          sort_order?: number | null
+          submission_requirements?: string | null
+          subtitle_requirements?: string | null
+          tagline?: string | null
+          territories?: string[] | null
+          updated_at?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          audio_requirements?: string | null
+          categories?: string[] | null
+          content_preferences?: string[] | null
+          created_at?: string | null
+          deal_timeline_days?: number | null
+          description?: string | null
+          exclusivity?: string | null
+          hero_image_url?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          languages?: string[] | null
+          licensing_models?: string[] | null
+          logo_url?: string | null
+          min_resolution?: string | null
+          name?: string | null
+          organization_id?: string | null
+          revenue_share_notes?: string | null
+          runtime_max_minutes?: number | null
+          runtime_min_minutes?: number | null
+          slug?: string | null
+          sort_order?: number | null
+          submission_requirements?: string | null
+          subtitle_requirements?: string | null
+          tagline?: string | null
+          territories?: string[] | null
+          updated_at?: string | null
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_profiles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payment_security_events: {
         Row: {

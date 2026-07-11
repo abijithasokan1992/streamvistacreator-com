@@ -40,6 +40,7 @@ import ProductionsManager from "@/components/studio/ProductionsManager";
 import ProductionWorkspace from "@/components/studio/ProductionWorkspace";
 import StudioDashboardHome from "@/components/studio/StudioDashboardHome";
 import StudioShell, { type StudioSectionId } from "@/components/studio/StudioShell";
+import DitIngestProtocol from "@/components/studio/dit/DitIngestProtocol";
 import StudioMvpHome from "@/components/studio/dashboard/StudioMvpHome";
 import type { VaultProduct } from "@/lib/studioVault";
 import { useCreatorPaygPrice } from "@/hooks/usePublicPlans";
@@ -1151,6 +1152,7 @@ export default function StudioDashboard() {
     tab === "settings" ? "settings" :
     tab === "storage" ? "storage" :
     tab === "productions" ? "productions" :
+    tab === "dit" ? "dit" :
     "dashboard";
 
   const setSection = (s: StudioSectionId) => {
@@ -1242,6 +1244,9 @@ export default function StudioDashboard() {
           activeProjectDefaults={ingestDefaults}
         />
       )}
+
+      {section === "dit" && <DitIngestProtocol />}
+
 
       {section === "storage" && (
         <StoragePanel rows={rows} loading={loading} onGoBuy={() => setTab("storage")} onPurchased={refreshAfterPurchase} />

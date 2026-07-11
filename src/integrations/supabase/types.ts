@@ -2679,6 +2679,62 @@ export type Database = {
           },
         ]
       }
+      dit_ingest_logs: {
+        Row: {
+          camera_mapping: Json
+          checklist_status: Json
+          created_at: string
+          id: string
+          notes: string | null
+          production_name: string
+          replication_regions: number | null
+          screenshot_url: string | null
+          selected_mode: string
+          shoot_date: string
+          updated_at: string
+          user_id: string
+          workspace_id: string | null
+        }
+        Insert: {
+          camera_mapping?: Json
+          checklist_status?: Json
+          created_at?: string
+          id?: string
+          notes?: string | null
+          production_name: string
+          replication_regions?: number | null
+          screenshot_url?: string | null
+          selected_mode: string
+          shoot_date: string
+          updated_at?: string
+          user_id: string
+          workspace_id?: string | null
+        }
+        Update: {
+          camera_mapping?: Json
+          checklist_status?: Json
+          created_at?: string
+          id?: string
+          notes?: string | null
+          production_name?: string
+          replication_regions?: number | null
+          screenshot_url?: string | null
+          selected_mode?: string
+          shoot_date?: string
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dit_ingest_logs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dmca_requests: {
         Row: {
           accuracy_statement: boolean

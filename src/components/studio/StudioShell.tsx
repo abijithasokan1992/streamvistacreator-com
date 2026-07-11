@@ -8,7 +8,7 @@ import { ReactNode } from "react";
 import { Link, Navigate } from "react-router-dom";
 import {
   LayoutDashboard, Clapperboard, UploadCloud, Database, Settings,
-  LogOut, Menu, ShoppingCart, Crown, ShieldCheck, Loader2,
+  LogOut, Menu, ShoppingCart, Crown, ShieldCheck, Loader2, ClipboardCheck,
 } from "lucide-react";
 import { useAuth, dashboardForRole } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
@@ -16,12 +16,13 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 
 export type StudioSectionId =
-  | "dashboard" | "productions" | "upload" | "storage" | "settings";
+  | "dashboard" | "productions" | "upload" | "dit" | "storage" | "settings";
 
 const NAV: Array<{ id: StudioSectionId; label: string; icon: any }> = [
   { id: "dashboard",   label: "Dashboard",   icon: LayoutDashboard },
   { id: "productions", label: "Productions", icon: Clapperboard },
   { id: "upload",      label: "Upload",      icon: UploadCloud },
+  { id: "dit",         label: "DIT Protocol", icon: ClipboardCheck },
   { id: "storage",     label: "Storage",     icon: Database },
   { id: "settings",    label: "Settings",    icon: Settings },
 ];

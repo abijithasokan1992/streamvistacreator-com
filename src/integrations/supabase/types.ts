@@ -5131,6 +5131,7 @@ export type Database = {
           razorpay_order_id: string | null
           razorpay_payment_id: string | null
           selected_cycle: string
+          submission_token: string | null
           submitter_user_id: string | null
         }
         Insert: {
@@ -5158,6 +5159,7 @@ export type Database = {
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
           selected_cycle: string
+          submission_token?: string | null
           submitter_user_id?: string | null
         }
         Update: {
@@ -5185,6 +5187,7 @@ export type Database = {
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
           selected_cycle?: string
+          submission_token?: string | null
           submitter_user_id?: string | null
         }
         Relationships: [
@@ -10407,6 +10410,43 @@ export type Database = {
           used_gb: number
         }[]
       }
+      get_onboarding_request_by_token: {
+        Args: { _token: string }
+        Returns: {
+          access_code: string | null
+          amount_paid_paise: number | null
+          base_price: number
+          business_email: string | null
+          client_name: string
+          contact_phone: string | null
+          created_at: string
+          final_price: number
+          id: string
+          link_metadata: Json
+          link_source: string | null
+          link_status: string
+          linked_at: string | null
+          linked_file_id: string | null
+          linked_share_token: string | null
+          mfi_proof_path: string | null
+          onboarding_status: string
+          payment_status: string
+          plan_type: string
+          professional_role: string
+          promo_code: string | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          selected_cycle: string
+          submission_token: string | null
+          submitter_user_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "onboarding_requests"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_payment_method_configs_for_my_order: {
         Args: { _order_id: string }
         Returns: {
@@ -10470,6 +10510,10 @@ export type Database = {
       }
       is_free_tier_user: { Args: { _user_id: string }; Returns: boolean }
       is_legal_reviewer: { Args: { _user_id: string }; Returns: boolean }
+      is_org_member: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_producer_of: {
         Args: { _creator: string; _ep: string }
         Returns: boolean

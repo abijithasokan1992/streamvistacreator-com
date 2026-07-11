@@ -5,6 +5,7 @@ import { Loader2, ArrowRight, Sparkles, SkipForward, KeyRound } from "lucide-rea
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, dashboardForRole } from "@/hooks/useAuth";
 import CinematicOnboarding from "@/components/CinematicOnboarding";
+import { Seo } from "@/components/Seo";
 
 const ROLES = [
   "Creator", "Editor", "Director", "Cinematographer",
@@ -146,6 +147,11 @@ export default function Onboarding() {
 
   return (
     <main className="relative min-h-dvh overflow-hidden bg-background text-foreground grid place-items-center px-4 py-12">
+      <Seo
+        title="Get Started with StreamVista — 30-Second Onboarding"
+        description="Create your StreamVista account in under a minute. Tell us your name and role to unlock your creator or studio workspace for films, series and shows."
+        path="/onboarding"
+      />
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-40 -left-32 w-[520px] h-[520px] rounded-full bg-primary/20 blur-[140px]" />
         <div className="absolute -bottom-40 -right-32 w-[520px] h-[520px] rounded-full bg-accent/20 blur-[140px]" />

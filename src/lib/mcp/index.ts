@@ -24,6 +24,25 @@ import creatorDistributionStatus from "./tools/creator-distribution-status";
 import creatorStorageUsage from "./tools/creator-storage-usage";
 import creatorNotifications from "./tools/creator-notifications";
 import creatorSearchMyTitles from "./tools/creator-search-my-titles";
+// Phase 1 MCP Control Server — founder / platform_owner / super_admin only.
+// Every tool below authorizes + audits via `mcp_authorize_and_log` RPC and
+// respects the production write kill switch (Phase 1 has zero writes).
+import ctrlWhoami from "./tools/control/whoami-control";
+import ctrlGetWorkspaceStatus from "./tools/control/get-workspace-status";
+import ctrlGetTodayActivity from "./tools/control/get-today-activity";
+import ctrlListCreators from "./tools/control/list-creators";
+import ctrlListTitles from "./tools/control/ctrl-list-titles";
+import ctrlListUploads from "./tools/control/list-uploads";
+import ctrlListFailedUploads from "./tools/control/list-failed-uploads";
+import ctrlListFailedEmails from "./tools/control/list-failed-emails";
+import ctrlListPayments from "./tools/control/list-payments";
+import ctrlListInvoices from "./tools/control/list-invoices";
+import ctrlListBuyers from "./tools/control/list-buyers";
+import ctrlGetStorageUsage from "./tools/control/get-storage-usage";
+import ctrlGetDatabaseSchema from "./tools/control/get-database-schema";
+import ctrlGetSecurityAdvisors from "./tools/control/get-security-advisors";
+import ctrlGetEdgeFunctionLogs from "./tools/control/get-edge-function-logs";
+import ctrlSearchWorkspaceRecords from "./tools/control/search-workspace-records";
 
 // Build the OAuth issuer from the Supabase project ref only (never SUPABASE_URL,
 // which is the .lovable.cloud proxy on Cloud apps). Vite inlines this literal.

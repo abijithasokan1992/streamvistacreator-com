@@ -262,8 +262,11 @@ Deno.serve(async (req) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!supabaseUrl || !serviceKey) {
-    console.error("razorpay-webhook: missing env");
-    return ok({ error: "unavailable" }, 503);
+    console.error("razorpay-webhook: missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+    return ok(
+      { error: "webhook_not_configured", message: "Backend credentials are unavailable in this environment." },
+      500,
+    );
   }
 
   const supabase = createClient(supabaseUrl, serviceKey);
@@ -275,8 +278,15 @@ Deno.serve(async (req) => {
       action_type: "webhook.config_missing",
       error_message: "RAZORPAY_WEBHOOK_SECRET not configured",
     });
-    return ok({ error: "unavailable" }, 503);
+    return ok(
+      {
+        error: "webhook_secret_missing",
+        message: "RAZORPAY_WEBHOOK_SECRET is not configured. Set it in Edge Function secrets or the razorpay_config table before enabling this endpoint in the Razorpay dashboard.",
+      },
+      500,
+    );
   }
+
 
   const raw = await req.text();
   const sig = req.headers.get("x-razorpay-signature") ?? "";

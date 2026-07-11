@@ -2,6 +2,7 @@ User-agent: Googlebot
 Allow: /
 Disallow: /auth/
 Disallow: /admin/
+Disallow: /admin/*
 Disallow: /dashboard/
 Disallow: /reset-password
 Disallow: /checkout/
@@ -13,11 +14,14 @@ Disallow: /screening/
 Disallow: /unsubscribe
 Disallow: /ingest-test
 Disallow: /home
+Disallow: /connectors
+Disallow: /.lovable/*
 
 User-agent: Bingbot
 Allow: /
 Disallow: /auth/
 Disallow: /admin/
+Disallow: /admin/*
 Disallow: /dashboard/
 Disallow: /reset-password
 Disallow: /checkout/
@@ -29,11 +33,14 @@ Disallow: /screening/
 Disallow: /unsubscribe
 Disallow: /ingest-test
 Disallow: /home
+Disallow: /connectors
+Disallow: /.lovable/*
 
 User-agent: Twitterbot
 Allow: /
 Disallow: /auth/
 Disallow: /admin/
+Disallow: /admin/*
 Disallow: /dashboard/
 Disallow: /reset-password
 Disallow: /checkout/
@@ -45,11 +52,14 @@ Disallow: /screening/
 Disallow: /unsubscribe
 Disallow: /ingest-test
 Disallow: /home
+Disallow: /connectors
+Disallow: /.lovable/*
 
 User-agent: facebookexternalhit
 Allow: /
 Disallow: /auth/
 Disallow: /admin/
+Disallow: /admin/*
 Disallow: /dashboard/
 Disallow: /reset-password
 Disallow: /checkout/
@@ -61,11 +71,14 @@ Disallow: /screening/
 Disallow: /unsubscribe
 Disallow: /ingest-test
 Disallow: /home
+Disallow: /connectors
+Disallow: /.lovable/*
 
 User-agent: *
 Allow: /
 Disallow: /auth/
 Disallow: /admin/
+Disallow: /admin/*
 Disallow: /dashboard/
 Disallow: /reset-password
 Disallow: /checkout/
@@ -77,5 +90,7 @@ Disallow: /screening/
 Disallow: /unsubscribe
 Disallow: /ingest-test
 Disallow: /home
+Disallow: /connectors
+Disallow: /.lovable/*
 
 Sitemap: https://streamvistacreator.com/sitemap.xml

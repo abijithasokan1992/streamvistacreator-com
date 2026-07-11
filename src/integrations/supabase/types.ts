@@ -10693,6 +10693,21 @@ export type Database = {
         Args: { _key_secret: string; _webhook_secret: string }
         Returns: Json
       }
+      verify_premium_invitation: {
+        Args: { _token: string }
+        Returns: {
+          account_type: string
+          discount_percent: number
+          expires_at: string
+          id: string
+          invitee_email: string
+          invitee_name: string
+          is_free: boolean
+          status: string
+          storage_tb: number
+          validity_days: number
+        }[]
+      }
     }
     Enums: {
       acquisition_status:

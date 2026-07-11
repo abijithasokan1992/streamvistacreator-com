@@ -10315,6 +10315,35 @@ export type Database = {
         Args: { _invoice_id: string }
         Returns: undefined
       }
+      admin_list_commercial_requests: {
+        Args: { _state?: string }
+        Returns: {
+          accepted_agreement_id: string | null
+          admin_notes: string | null
+          assigned_admin_id: string | null
+          buyer_user_id: string
+          created_at: string
+          id: string
+          interest_summary: string | null
+          message: string | null
+          owner_user_id: string | null
+          request_type: Database["public"]["Enums"]["commercial_request_type"]
+          state: Database["public"]["Enums"]["commercial_request_state"]
+          state_changed_at: string
+          state_changed_by: string | null
+          terms: Json
+          title_id: string | null
+          title_query: string | null
+          updated_at: string
+          workspace_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "commercial_requests"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       admin_list_creator_storage_risk: {
         Args: never
         Returns: {
@@ -10333,6 +10362,104 @@ export type Database = {
           used_gb: number
           user_id: string
         }[]
+      }
+      admin_list_deal_memos: {
+        Args: { _title_id?: string }
+        Returns: {
+          amount_paise: number | null
+          approval_notes: string | null
+          approval_status: string
+          approved_at: string | null
+          approved_by: string | null
+          buyer_contact_email: string | null
+          buyer_facing_memo: string | null
+          buyer_org_name: string | null
+          buyer_user_id: string | null
+          close_outcome: string | null
+          close_reason: string | null
+          closed_at: string | null
+          closed_by: string | null
+          commercial_request_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          deal_type: Database["public"]["Enums"]["deal_type"]
+          delivered_at: string | null
+          delivery_notes: string | null
+          delivery_status: string
+          exclusivity: Database["public"]["Enums"]["right_exclusivity"] | null
+          id: string
+          internal_notes: string | null
+          language: string | null
+          memo_number: string
+          ops_stage: string
+          owner_admin_id: string | null
+          owner_share_paise: number | null
+          owner_share_pct: number | null
+          paid_amount_paise: number
+          paid_at: string | null
+          payment_mode: string | null
+          payment_notes: string | null
+          payment_reference: string | null
+          payment_status: string
+          payment_terms: string | null
+          platform_share_paise: number | null
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_reason: string | null
+          right_category: Database["public"]["Enums"]["right_category"] | null
+          status: Database["public"]["Enums"]["deal_status"]
+          term_end: string | null
+          term_start: string | null
+          territory: string | null
+          title_id: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "deal_memos"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      admin_list_title_commercial_profiles: {
+        Args: never
+        Returns: {
+          acquisition_open: boolean
+          admin_approval_required: boolean
+          admin_internal_notes: string | null
+          available_for_acquisition: boolean
+          available_for_distribution_partnership: boolean
+          available_for_exclusive_license: boolean
+          available_for_nonexclusive_license: boolean
+          available_for_screeners: boolean
+          buyer_facing_summary: string | null
+          chain_of_title_notes: string | null
+          commercial_status: Database["public"]["Enums"]["title_commercial_status"]
+          created_at: string
+          creator_final_approval_required: boolean
+          creator_tier: string
+          deal_mode: Database["public"]["Enums"]["deal_mode"]
+          delivery_readiness_summary: string | null
+          distribution_open: boolean
+          id: string
+          legal_clearance_summary: string | null
+          licensing_open: boolean
+          notes: string | null
+          owner_user_id: string
+          protection_tier: Database["public"]["Enums"]["protection_tier"]
+          published_to_buyers: boolean
+          rights_status_summary: string | null
+          screening_allowed: boolean
+          title_id: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "title_commercial_profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       admin_mark_invoice_paid: {
         Args: {

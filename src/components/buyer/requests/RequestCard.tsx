@@ -114,12 +114,6 @@ export function RequestCard({ row }: { row: Row }) {
             {t.term_bucket && <MiniChip>{t.term_bucket}</MiniChip>}
             {t.languages?.map(l => <MiniChip key={l}>{l}</MiniChip>)}
           </div>
-          {row.admin_notes && (
-            <p className="text-xs text-foreground mt-2 border-l-2 border-accent/40 pl-2">
-              <span className="text-[10px] uppercase tracking-wider text-accent">Admin · </span>
-              {row.admin_notes}
-            </p>
-          )}
         </div>
         <div className="text-[10px] text-muted-foreground flex items-center gap-1.5">
           <Clock className="w-3 h-3" />

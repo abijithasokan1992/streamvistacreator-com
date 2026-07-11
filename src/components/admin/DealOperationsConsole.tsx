@@ -91,7 +91,7 @@ export default function DealOperationsConsole() {
   async function load() {
     setLoading(true);
     const [d, t, i] = await Promise.all([
-      sb.from("deal_memos").select("*").order("updated_at", { ascending: false }).limit(500),
+      sb.rpc("admin_list_deal_memos", { _title_id: null }),
       sb.from("content_titles").select("id,title,owner_user_id").limit(1000),
       sb.from("manual_invoices").select("id,invoice_number,deal_memo_id,total_paise,status,currency,issued_at,paid_at").not("deal_memo_id", "is", null).limit(500),
     ]);

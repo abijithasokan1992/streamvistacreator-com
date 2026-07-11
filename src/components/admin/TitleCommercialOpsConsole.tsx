@@ -106,7 +106,7 @@ export default function TitleCommercialOpsConsole() {
     setLoading(true);
     const [tRes, pRes, dRes, rRes] = await Promise.all([
       supabase.from("content_titles").select("id,title,owner_user_id,status,language").order("created_at", { ascending: false }).limit(200),
-      (supabase as any).from("title_commercial_profiles").select("*"),
+      (supabase as any).rpc("admin_list_title_commercial_profiles"),
       (supabase as any).from("deal_memos").select("id,title_id,status"),
       supabase.from("commercial_requests").select("id,title_id"),
     ]);
@@ -239,13 +239,13 @@ function TitleCommercialDialog({
     setLoading(true);
     const [rRes, dRes, reqRes] = await Promise.all([
       (supabase as any).from("title_rights_availability").select("*").eq("title_id", title.id).order("right_category"),
-      (supabase as any).from("deal_memos").select("*").eq("title_id", title.id).order("created_at", { ascending: false }),
-      supabase.from("commercial_requests").select("*").eq("title_id", title.id).order("created_at", { ascending: false }),
+      (supabase as any).rpc("admin_list_deal_memos", { _title_id: title.id }),
+      (supabase as any).rpc("admin_list_commercial_requests", { _state: null }),
     ]);
     setLoading(false);
     setRights((rRes.data as Rights[]) ?? []);
     setDeals((dRes.data as Deal[]) ?? []);
-    setRequests((reqRes.data as unknown as Request[]) ?? []);
+    setRequests(((reqRes.data as unknown as Request[]) ?? []).filter(r => r.title_id === title.id));
   };
   useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 

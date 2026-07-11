@@ -593,16 +593,12 @@ function CommercialQueue() {
 
   const load = async () => {
     setLoading(true);
-    let q = supabase
-      .from("commercial_requests")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(100);
-    if (stateFilter !== "all") q = q.eq("state", stateFilter as never);
-    const { data, error } = await q;
+    const { data, error } = await (supabase as any).rpc("admin_list_commercial_requests", {
+      _state: stateFilter === "all" ? null : stateFilter,
+    });
     setLoading(false);
     if (error) { toast.error(error.message); return; }
-    setRows((data as unknown as CommercialRow[]) ?? []);
+    setRows(((data as unknown as CommercialRow[]) ?? []).slice(0, 100));
   };
 
   useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [stateFilter]);

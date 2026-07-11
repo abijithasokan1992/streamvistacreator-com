@@ -19,7 +19,7 @@ export function useBuyerRequests() {
     const [{ data, error }, screeners] = await Promise.all([
       supabase
         .from("commercial_requests")
-        .select("id,request_type,state,title_query,message,admin_notes,terms,title_id,created_at,updated_at")
+        .select("id,request_type,state,title_query,message,terms,title_id,created_at,updated_at")
         .eq("buyer_user_id", user.id)
         .order("created_at", { ascending: false }),
       supabase

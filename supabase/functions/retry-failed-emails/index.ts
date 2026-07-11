@@ -57,19 +57,60 @@ Deno.serve(async (req) => {
         const payload = (row.message ?? {}) as Record<string, unknown>;
         const attempts = Number(payload.auto_retry_count ?? 0);
         const messageId = String(payload.message_id ?? payload.messageId ?? "");
+        const recipient = String(payload.recipient_email ?? payload.recipientEmail ?? payload.to ?? "unknown");
+        const templateName = String(payload.template_name ?? payload.templateName ?? payload.label ?? "unknown");
+
+        // Detect permanent bounce / invalid recipient in the DLQ payload —
+        // never retry these; mark terminal and suppress the address.
+        const bounceSeverity = String(
+          (payload.bounce_severity as string) ??
+            ((payload.last_error as Record<string, unknown> | undefined)?.severity as string) ??
+            "",
+        ).toLowerCase();
+        const lastErrorMsg = String(
+          (payload.last_error_message as string) ??
+            ((payload.last_error as Record<string, unknown> | undefined)?.message as string) ??
+            "",
+        ).toLowerCase();
+        const isPermanentBounce =
+          bounceSeverity === "permanent" ||
+          /bounce|invalid recipient|mailbox.*(not\s*found|unavailable)|no such user|550/.test(lastErrorMsg);
+
+        if (isPermanentBounce) {
+          s.skipped += 1;
+          if (recipient && recipient !== "unknown") {
+            await supabase.from("suppressed_emails").upsert(
+              { email: recipient, reason: "permanent_bounce", metadata: { queue, source: "retry-failed-emails" } },
+              { onConflict: "email" },
+            );
+          }
+          if (messageId) {
+            await supabase.from("email_send_log").insert({
+              message_id: messageId,
+              template_name: templateName,
+              recipient_email: recipient,
+              status: "failed_permanent",
+              error_message: "Permanent bounce — recipient rejected; not retrying",
+              metadata: { auto_retry_terminal: true, reason: "permanent_bounce", queue },
+            });
+          }
+          await supabase.rpc("pgmq_delete_dlq", { queue_name: queue, msg_id: row.msg_id }).catch(() => {});
+          continue;
+        }
 
         if (attempts >= MAX_AUTO_RETRIES) {
           s.skipped += 1;
           if (messageId) {
             await supabase.from("email_send_log").insert({
               message_id: messageId,
-              template_name: (payload.template_name ?? payload.templateName ?? "unknown") as string,
-              recipient_email: (payload.recipient_email ?? payload.recipientEmail ?? "unknown") as string,
-              status: "dlq",
-              error_message: `Auto-retry exhausted after ${attempts} attempts`,
-              metadata: { auto_retry_terminal: true, queue },
+              template_name: templateName,
+              recipient_email: recipient,
+              status: "failed_permanent",
+              error_message: `Auto-retry exhausted after ${attempts} attempts (max ${MAX_AUTO_RETRIES})`,
+              metadata: { auto_retry_terminal: true, reason: "retry_cap_exhausted", attempts, queue },
             });
           }
+          await supabase.rpc("pgmq_delete_dlq", { queue_name: queue, msg_id: row.msg_id }).catch(() => {});
           continue;
         }
 

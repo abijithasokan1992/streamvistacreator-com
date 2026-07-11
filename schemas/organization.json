@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://streamvista.com/schema/organization.json",
+  "title": "StreamVista Organization",
+  "description": "Tenant entity representing a studio, production house, or broadcaster.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "type", "status", "createdAt"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 250 },
+    "legalName": { "type": "string" },
+    "type": {
+      "type": "string",
+      "enum": ["Studio", "Production House", "Broadcaster", "Distributor", "Agency", "Other"]
+    },
+    "country": { "type": "string" },
+    "website": { "type": "string", "format": "uri" },
+    "logoUrl": { "type": "string", "format": "uri" },
+    "primaryContact": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" }
+      }
+    },
+    "billing": {
+      "type": "object",
+      "properties": {
+        "taxId": { "type": "string" },
+        "address": { "type": "string" },
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" }
+      }
+    },
+    "status": { "type": "string", "enum": ["Active", "Suspended", "Archived"] },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  }
+}

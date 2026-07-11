@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://streamvista.com/schema/user.json",
+  "title": "StreamVista User",
+  "description": "Authenticated platform user with organization and role bindings.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "email", "status", "createdAt"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "email": { "type": "string", "format": "email" },
+    "emailVerified": { "type": "boolean" },
+    "fullName": { "type": "string" },
+    "displayName": { "type": "string" },
+    "avatarUrl": { "type": "string", "format": "uri" },
+    "phone": { "type": "string" },
+    "locale": { "type": "string" },
+    "organizationId": { "type": "string", "format": "uuid" },
+    "roles": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Role names granted to this user (see role.json)."
+    },
+    "mfaEnabled": { "type": "boolean" },
+    "lastLoginAt": { "type": "string", "format": "date-time" },
+    "status": { "type": "string", "enum": ["Active", "Invited", "Suspended", "Deleted"] },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://streamvista.com/schema/buyer.json",
+  "title": "StreamVista Buyer",
+  "description": "A content-acquisition company that licenses assets from studios.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "status", "createdAt"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "organizationId": { "type": "string", "format": "uuid" },
+    "name": { "type": "string" },
+    "type": {
+      "type": "string",
+      "enum": ["OTT", "Broadcaster", "Distributor", "Airline", "Educational", "FAST Channel", "Other"]
+    },
+    "country": { "type": "string" },
+    "website": { "type": "string", "format": "uri" },
+    "primaryContact": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" }
+      }
+    },
+    "acquisitionFocus": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Content categories / genres of interest."
+    },
+    "verified": { "type": "boolean" },
+    "watchlistAssetIds": {
+      "type": "array",
+      "items": { "type": "string", "format": "uuid" }
+    },
+    "status": { "type": "string", "enum": ["Prospect", "Active", "Suspended", "Archived"] },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  }
+}

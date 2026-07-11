@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://streamvista.com/schema/role.json",
+  "title": "StreamVista Role",
+  "description": "Named RBAC role and the permissions it grants.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "scope", "permissions", "createdAt"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "name": {
+      "type": "string",
+      "examples": ["super_admin", "studio_owner", "dit", "editor", "producer", "buyer", "viewer"]
+    },
+    "displayName": { "type": "string" },
+    "description": { "type": "string" },
+    "scope": {
+      "type": "string",
+      "enum": ["platform", "organization", "project"],
+      "description": "Level at which this role is granted."
+    },
+    "permissions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "Permission slug, e.g. 'media_asset.read', 'ingest_job.write', 'billing.manage'."
+      }
+    },
+    "system": {
+      "type": "boolean",
+      "description": "True for built-in roles that cannot be edited or deleted."
+    },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  }
+}

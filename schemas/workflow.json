@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://streamvista.com/schema/workflow.json",
+  "title": "StreamVista Workflow",
+  "description": "Definition of an approval / publishing state machine applied to a resource type.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "appliesTo", "states", "initialState", "createdAt"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "name": { "type": "string" },
+    "description": { "type": "string" },
+    "organizationId": { "type": "string", "format": "uuid" },
+    "appliesTo": {
+      "type": "string",
+      "enum": ["media_asset", "ingest_job", "qc_report", "licensing_contract", "distribution_delivery", "offer", "project"]
+    },
+    "initialState": { "type": "string" },
+    "states": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "terminal": { "type": "boolean" },
+          "slaHours": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "transitions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["from", "to", "action"],
+        "properties": {
+          "from": { "type": "string" },
+          "to": { "type": "string" },
+          "action": { "type": "string" },
+          "requiredRoles": { "type": "array", "items": { "type": "string" } },
+          "conditions": { "type": "array", "items": { "type": "string" } },
+          "notifications": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "active": { "type": "boolean" },
+    "version": { "type": "integer", "minimum": 1 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  }
+}

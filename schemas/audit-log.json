@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://streamvista.com/schema/audit-log.json",
+  "title": "StreamVista Audit Log",
+  "description": "Immutable security and compliance event record.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "action", "occurredAt"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "actor": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["user", "service", "system", "anonymous"] },
+        "id": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "organizationId": { "type": "string", "format": "uuid" }
+      }
+    },
+    "action": {
+      "type": "string",
+      "description": "Dotted action verb, e.g. 'media_asset.publish', 'user.role.grant'."
+    },
+    "targetType": { "type": "string" },
+    "targetId": { "type": "string" },
+    "outcome": { "type": "string", "enum": ["success", "failure", "denied"] },
+    "reason": { "type": "string" },
+    "correlationId": { "type": "string" },
+    "ipAddress": { "type": "string" },
+    "userAgent": { "type": "string" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Structured payload capturing before/after values or context."
+    },
+    "occurredAt": { "type": "string", "format": "date-time" }
+  }
+}

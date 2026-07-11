@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://streamvista.com/schema/api-key.json",
+  "title": "StreamVista API Key",
+  "description": "Metadata for an external-integration API key. The secret value is never stored in plaintext.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "organizationId", "name", "prefix", "scopes", "status", "createdAt"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "organizationId": { "type": "string", "format": "uuid" },
+    "createdByUserId": { "type": "string", "format": "uuid" },
+    "name": { "type": "string" },
+    "description": { "type": "string" },
+    "prefix": { "type": "string", "description": "Non-secret key prefix used for identification, e.g. 'sv_live_abc1'." },
+    "hashedSecret": { "type": "string", "description": "Server-side hash of the secret; never returned to clients." },
+    "scopes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Permission slugs this key can invoke."
+    },
+    "ipAllowlist": { "type": "array", "items": { "type": "string" } },
+    "lastUsedAt": { "type": "string", "format": "date-time" },
+    "expiresAt": { "type": "string", "format": "date-time" },
+    "revokedAt": { "type": "string", "format": "date-time" },
+    "status": { "type": "string", "enum": ["active", "expired", "revoked"] },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  }
+}

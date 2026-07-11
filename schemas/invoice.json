@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://streamvista.com/schema/invoice.json",
+  "title": "StreamVista Invoice",
+  "description": "Billing document for subscription fees, licensing fees, or services.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "invoiceNumber", "organizationId", "currency", "totalAmount", "status", "issuedAt", "createdAt"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "invoiceNumber": { "type": "string" },
+    "organizationId": { "type": "string", "format": "uuid" },
+    "customer": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "address": { "type": "string" },
+        "taxId": { "type": "string" }
+      }
+    },
+    "contractId": { "type": "string", "format": "uuid" },
+    "subscriptionId": { "type": "string", "format": "uuid" },
+    "lineItems": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["description", "quantity", "unitPrice", "amount"],
+        "properties": {
+          "description": { "type": "string" },
+          "quantity": { "type": "number", "minimum": 0 },
+          "unitPrice": { "type": "number" },
+          "amount": { "type": "number" },
+          "taxRateBps": { "type": "integer", "minimum": 0, "maximum": 10000 }
+        }
+      }
+    },
+    "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+    "subtotal": { "type": "number" },
+    "taxAmount": { "type": "number" },
+    "totalAmount": { "type": "number" },
+    "amountPaid": { "type": "number" },
+    "amountDue": { "type": "number" },
+    "issuedAt": { "type": "string", "format": "date-time" },
+    "dueAt": { "type": "string", "format": "date-time" },
+    "paidAt": { "type": "string", "format": "date-time" },
+    "pdfUrl": { "type": "string", "format": "uri" },
+    "status": {
+      "type": "string",
+      "enum": ["Draft", "Issued", "Sent", "Partially Paid", "Paid", "Overdue", "Void", "Refunded"]
+    },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  }
+}

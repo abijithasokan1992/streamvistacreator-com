@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://streamvista.com/schema/subscription.json",
+  "title": "StreamVista Subscription",
+  "description": "SaaS plan assignment and renewal state for an organization.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "organizationId", "planCode", "status", "currentPeriodStart", "currentPeriodEnd", "createdAt"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "organizationId": { "type": "string", "format": "uuid" },
+    "planCode": { "type": "string" },
+    "planName": { "type": "string" },
+    "tier": {
+      "type": "string",
+      "enum": ["free", "starter", "pro", "studio", "enterprise", "custom"]
+    },
+    "billingInterval": {
+      "type": "string",
+      "enum": ["monthly", "quarterly", "annual", "custom"]
+    },
+    "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+    "unitAmount": { "type": "number" },
+    "quantity": { "type": "integer", "minimum": 1 },
+    "entitlements": {
+      "type": "object",
+      "properties": {
+        "storageBytes": { "type": "integer", "minimum": 0 },
+        "seats": { "type": "integer", "minimum": 0 },
+        "distributionsPerMonth": { "type": "integer", "minimum": 0 },
+        "aiCreditsPerMonth": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "currentPeriodStart": { "type": "string", "format": "date-time" },
+    "currentPeriodEnd": { "type": "string", "format": "date-time" },
+    "trialEndsAt": { "type": "string", "format": "date-time" },
+    "cancelAtPeriodEnd": { "type": "boolean" },
+    "cancelledAt": { "type": "string", "format": "date-time" },
+    "provider": {
+      "type": "string",
+      "enum": ["stripe", "razorpay", "paddle", "manual"]
+    },
+    "providerSubscriptionId": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["trialing", "active", "past_due", "paused", "cancelled", "expired"]
+    },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://streamvista.com/schema/project.json",
+  "title": "StreamVista Project",
+  "description": "A production or campaign that groups media assets, ingest jobs, and collaborators.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "organizationId", "status", "createdAt"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 250 },
+    "code": { "type": "string", "description": "Short human-friendly project code." },
+    "description": { "type": "string" },
+    "organizationId": { "type": "string", "format": "uuid" },
+    "ownerUserId": { "type": "string", "format": "uuid" },
+    "type": {
+      "type": "string",
+      "enum": ["Feature", "Series", "Documentary", "Commercial", "Music Video", "Corporate", "Other"]
+    },
+    "startDate": { "type": "string", "format": "date" },
+    "endDate": { "type": "string", "format": "date" },
+    "members": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["userId", "role"],
+        "properties": {
+          "userId": { "type": "string", "format": "uuid" },
+          "role": { "type": "string" }
+        }
+      }
+    },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "status": {
+      "type": "string",
+      "enum": ["Planning", "In Production", "Post Production", "Delivered", "Archived", "Cancelled"]
+    },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  }
+}

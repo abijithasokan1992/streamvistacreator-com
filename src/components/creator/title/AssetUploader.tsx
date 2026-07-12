@@ -435,30 +435,30 @@ export function AssetUploader({
             </div>
           )}
           {stagedPreflight.ok && !wouldExceedQuota(stagedFile.size) && dup.kind === "checking" && (
-            <p className="text-muted-foreground inline-flex items-center gap-1.5"><Loader2 className="w-3 h-3 animate-spin" /> Verifying file identity (SHA-256)…</p>
+            <p className="text-muted-foreground inline-flex items-center gap-1.5"><Loader2 className="w-3 h-3 animate-spin" /> Running preflight fingerprint (name + size)…</p>
           )}
           {dup.kind === "preliminary" && (
             <div className="rounded-md border border-amber-500/30 bg-amber-500/5 px-2.5 py-2 text-amber-200/90 space-y-1">
-              <p className="font-medium inline-flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Preliminary match — verifying hash</p>
-              <p>A file with the same name and size exists in your workspace. Confirming with SHA-256…</p>
+              <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-3.5 h-3.5" /> Preflight match</p>
+              <p>A file with the same name and size exists in your workspace. Server will reconcile the exact checksum after upload and collapse duplicates.</p>
             </div>
           )}
           {dup.kind === "hash-skipped" && (
             <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-2 text-amber-200 space-y-1">
-              <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-3.5 h-3.5" /> Possible duplicate (large file)</p>
-              <p>This file is too large to hash in-browser. A file with the same name and size exists elsewhere in your workspace — upload anyway if this is a new revision.</p>
+              <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-3.5 h-3.5" /> Possible duplicate</p>
+              <p>A file with the same name and size exists elsewhere in your workspace. Upload anyway if this is a new revision — exact-checksum reconciliation happens server-side.</p>
             </div>
           )}
           {dup.kind === "block-same-title" && (
             <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2.5 py-2 text-rose-200 space-y-1">
               <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-3.5 h-3.5" /> Duplicate on this title</p>
-              <p>An identical file (verified by SHA-256) is already uploaded to this title. Replace the existing version or choose a different file.</p>
+              <p>A file with the same name and size is already uploaded to this title. Replace the existing version or choose a different file. Server-side checksum will confirm identity.</p>
             </div>
           )}
           {dup.kind === "warn-same-workspace" && (
             <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-2 text-amber-200 space-y-1">
-              <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-3.5 h-3.5" /> This file already exists in your workspace</p>
-              <p>SHA-256 matches an existing upload in your workspace. You can reuse the existing asset or upload this copy as a new version on this title.</p>
+              <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-3.5 h-3.5" /> Possible duplicate in your workspace</p>
+              <p>A matching file exists in your workspace. You can reuse the existing asset or upload this copy as a new version on this title — server will reconcile exact checksum after upload.</p>
             </div>
           )}
           {singleSlot && stagedPreflight.ok && existingActiveCount > 0 && (

@@ -34,6 +34,11 @@ const Index = () => {
       />
       <Navbar />
       <Hero />
+      <section className="border-b border-border/40 bg-background/60">
+        <div className="container py-6">
+          <TrustBadges compact className="justify-center" />
+        </div>
+      </section>
       <Workflow />
       <PlatformOverview />
       <SupportedContent />

@@ -196,6 +196,7 @@ export default function Contact() {
           </form>
         )}
       </section>
+      <Footer />
     </main>
   );
 }

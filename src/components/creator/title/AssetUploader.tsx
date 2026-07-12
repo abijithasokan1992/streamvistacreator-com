@@ -179,17 +179,14 @@ export function AssetUploader({
     [quotaTotalBytes, quotaUsedBytes],
   );
 
-  // Cap browser-side hashing at 1.5GB to avoid OOM. Larger files fall back to
-  // name+size heuristic + server-side dedup after upload.
-  const SHA_MAX_BYTES = 1.5 * GB;
-  const sha256Hex = useCallback(async (file: File): Promise<string | null> => {
-    if (file.size > SHA_MAX_BYTES) return null;
-    try {
-      const buf = await file.arrayBuffer();
-      const digest = await crypto.subtle.digest("SHA-256", buf);
-      return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
-    } catch { return null; }
-  }, [SHA_MAX_BYTES]);
+  // Per founder policy: never hash the entire file in the browser. Preflight
+  // is a lightweight name+size heuristic only. Authoritative SHA-256
+  // reconciliation happens server-side (OCI pipeline persists file_sha256 on
+  // upload_sessions), and duplicate objects are collapsed post-finalize.
+  const sha256Hex = useCallback(async (_file: File): Promise<string | null> => null, []);
+  const devLog = useCallback((...args: unknown[]) => {
+    if (import.meta.env.DEV) console.debug("[uploader]", ...args);
+  }, []);
 
   // Preliminary check (name+size) — returns a warning only, hashing overrides.
   const preliminaryMatch = useCallback(async (file: File): Promise<boolean> => {

@@ -114,19 +114,8 @@ export default function Contact() {
         path="/contact"
       />
 
-      <header className="border-b border-border/40">
-        <div className="container h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
-            <Wordmark />
-          </Link>
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" /> Home
-          </Link>
-        </div>
-      </header>
+      <Navbar />
+
 
       <section className="container py-16 md:py-24 max-w-2xl">
         <p className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent mb-3">

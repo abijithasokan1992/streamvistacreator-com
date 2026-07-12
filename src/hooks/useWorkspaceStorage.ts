@@ -153,12 +153,24 @@ export function useWorkspaceStorage(): WorkspaceStorage {
     void load();
 
     // Realtime: refresh on any entitlement/usage row change for this workspace.
+    // Use a unique channel name per mount so StrictMode's double-invoke or a
+    // rapid remount never re-uses an already-subscribed channel instance
+    // (which would throw "cannot add postgres_changes callbacks after subscribe()").
     const filter = activeId ? `workspace_id=eq.${activeId}` : `user_id=eq.${user.id}`;
-    const ch = supabase
-      .channel(`ws-storage:${cacheKey}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "workspace_storage_entitlements", filter }, () => load({ skipCache: true }))
-      .on("postgres_changes", { event: "*", schema: "public", table: "workspace_storage_usage",         filter }, () => load({ skipCache: true }))
-      .subscribe();
+    const uniqueId = `${cacheKey}:${Math.random().toString(36).slice(2, 10)}`;
+    const ch = supabase.channel(`ws-storage:${uniqueId}`);
+    // Register ALL postgres_changes handlers BEFORE subscribe().
+    ch.on(
+      "postgres_changes" as any,
+      { event: "*", schema: "public", table: "workspace_storage_entitlements", filter },
+      () => load({ skipCache: true }),
+    );
+    ch.on(
+      "postgres_changes" as any,
+      { event: "*", schema: "public", table: "workspace_storage_usage", filter },
+      () => load({ skipCache: true }),
+    );
+    ch.subscribe();
 
     return () => { void supabase.removeChannel(ch); };
   }, [user?.id, activeId, cacheKey, load]);

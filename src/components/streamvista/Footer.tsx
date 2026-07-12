@@ -1,3 +1,4 @@
+import type React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Lock, Cloud, ShieldCheck, type LucideIcon } from "lucide-react";
 import { CrayonsNetwork } from "./CrayonsNetwork";

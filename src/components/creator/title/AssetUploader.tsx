@@ -306,7 +306,7 @@ export function AssetUploader({
     if (d.kind === "warn-same-workspace") return; // require explicit user action
     if (d.kind === "hash-skipped") return;         // require user confirm
     void runUpload(f);
-  }, [category, locked, runUpload, wouldExceedQuota, preliminaryMatch, runShaDedup, sha256Hex]);
+  }, [category, locked, runUpload, wouldExceedQuota, preliminaryMatch, runShaDedup, sha256Hex, devLog, quotaRemainingBytes]);
 
   const startUpload = useCallback(() => {
     if (!stagedFile) return;

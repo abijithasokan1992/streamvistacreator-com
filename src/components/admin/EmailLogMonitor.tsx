@@ -29,6 +29,8 @@ const STATUS_META: Record<string, { label: string; cls: string; icon: any }> = {
 export default function EmailLogMonitor() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+  const [retrying, setRetrying] = useState(false);
+  const [banner, setBanner] = useState<string | null>(null);
   const [range, setRange] = useState<Range>("7d");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [templateFilter, setTemplateFilter] = useState<string>("all");
@@ -45,6 +47,26 @@ export default function EmailLogMonitor() {
       .limit(500);
     setRows((data as Row[]) ?? []);
     setLoading(false);
+  };
+
+  const retryFailed = async () => {
+    setRetrying(true);
+    setBanner(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("retry-failed-emails", { body: {} });
+      if (error) throw error;
+      const audit = (data as any)?.audit;
+      setBanner(
+        audit?.passed
+          ? `Retry sweep OK — 0 stuck message_ids remaining.`
+          : `Retry sweep ran — ${audit?.pending_remaining ?? "?"} message_id(s) still stuck.`,
+      );
+      await load();
+    } catch (e) {
+      setBanner(`Retry failed: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setRetrying(false);
+    }
   };
 
   useEffect(() => { load(); }, [range]);
@@ -97,6 +119,14 @@ export default function EmailLogMonitor() {
           </div>
         </div>
         <button
+          onClick={retryFailed}
+          disabled={retrying || loading}
+          className="h-9 px-3 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-200 text-xs font-medium hover:bg-rose-500/20 flex items-center gap-1.5 disabled:opacity-50"
+          title="Requeue DLQ messages and reconcile stuck pending rows"
+        >
+          <RefreshCw className={cn("w-3.5 h-3.5", retrying && "animate-spin")} /> Retry failed
+        </button>
+        <button
           onClick={load}
           disabled={loading}
           className="h-9 px-3 rounded-xl border border-border/60 text-xs font-medium hover:bg-secondary/40 flex items-center gap-1.5 disabled:opacity-50"
@@ -104,6 +134,11 @@ export default function EmailLogMonitor() {
           <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} /> Refresh
         </button>
       </div>
+      {banner && (
+        <div className="mb-4 rounded-xl border border-border/60 bg-input/20 px-3 py-2 text-xs text-muted-foreground">
+          {banner}
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
@@ -152,9 +187,13 @@ export default function EmailLogMonitor() {
             return (
               <div key={r.id} className="grid grid-cols-[1fr_1.4fr_120px_140px] gap-2 px-4 py-3 text-xs hover:bg-input/20 transition-colors">
                 <div className="font-mono text-foreground/90 truncate">{r.template_name ?? "—"}</div>
-                <div className="truncate text-muted-foreground" title={r.error_message ?? undefined}>
-                  {r.recipient_email ?? "—"}
-                  {r.error_message && <div className="text-[10px] text-rose-300/80 truncate">{r.error_message}</div>}
+                <div className="min-w-0 text-muted-foreground">
+                  <div className="truncate" title={r.recipient_email ?? undefined}>{r.recipient_email ?? "—"}</div>
+                  {r.error_message && (
+                    <div className="mt-0.5 text-[10px] text-rose-300/90 whitespace-pre-wrap break-words" title={r.error_message}>
+                      {r.error_message}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-medium", meta.cls)}>

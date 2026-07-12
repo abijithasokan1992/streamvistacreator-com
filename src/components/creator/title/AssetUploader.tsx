@@ -438,18 +438,30 @@ export function AssetUploader({
             </div>
           )}
           {stagedPreflight.ok && !wouldExceedQuota(stagedFile.size) && dup.kind === "checking" && (
-            <p className="text-muted-foreground inline-flex items-center gap-1.5"><Loader2 className="w-3 h-3 animate-spin" /> Checking for duplicates…</p>
+            <p className="text-muted-foreground inline-flex items-center gap-1.5"><Loader2 className="w-3 h-3 animate-spin" /> Verifying file identity (SHA-256)…</p>
+          )}
+          {dup.kind === "preliminary" && (
+            <div className="rounded-md border border-amber-500/30 bg-amber-500/5 px-2.5 py-2 text-amber-200/90 space-y-1">
+              <p className="font-medium inline-flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Preliminary match — verifying hash</p>
+              <p>A file with the same name and size exists in your workspace. Confirming with SHA-256…</p>
+            </div>
+          )}
+          {dup.kind === "hash-skipped" && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-2 text-amber-200 space-y-1">
+              <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-3.5 h-3.5" /> Possible duplicate (large file)</p>
+              <p>This file is too large to hash in-browser. A file with the same name and size exists elsewhere in your workspace — upload anyway if this is a new revision.</p>
+            </div>
           )}
           {dup.kind === "block-same-title" && (
             <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2.5 py-2 text-rose-200 space-y-1">
               <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-3.5 h-3.5" /> Duplicate on this title</p>
-              <p>An identical file ({dup.name}) is already uploaded here. Choose a different file, or delete the existing one first.</p>
+              <p>An identical file (verified by SHA-256) is already uploaded to this title. Replace the existing version or choose a different file.</p>
             </div>
           )}
           {dup.kind === "warn-same-workspace" && (
             <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-2 text-amber-200 space-y-1">
-              <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-3.5 h-3.5" /> Similar file already in your workspace</p>
-              <p>This file matches one already uploaded to {dup.where}. Uploading again is allowed, but you may want to reuse the existing asset.</p>
+              <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-3.5 h-3.5" /> This file already exists in your workspace</p>
+              <p>SHA-256 matches an existing upload in your workspace. You can reuse the existing asset or upload this copy as a new version on this title.</p>
             </div>
           )}
           {singleSlot && stagedPreflight.ok && existingActiveCount > 0 && (
@@ -459,10 +471,10 @@ export function AssetUploader({
             <button
               type="button"
               onClick={startUpload}
-              disabled={!stagedPreflight.ok || locked || wouldExceedQuota(stagedFile.size) || dup.kind === "block-same-title" || dup.kind === "checking"}
+              disabled={!stagedPreflight.ok || locked || wouldExceedQuota(stagedFile.size) || dup.kind === "block-same-title" || dup.kind === "checking" || dup.kind === "preliminary"}
               className="inline-flex items-center gap-1.5 rounded-md bg-accent text-accent-foreground px-3 py-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <Upload className="w-3.5 h-3.5" /> {dup.kind === "warn-same-workspace" ? "Upload anyway" : "Start upload"}
+              <Upload className="w-3.5 h-3.5" /> {dup.kind === "warn-same-workspace" || dup.kind === "hash-skipped" ? "Upload as new version" : "Start upload"}
             </button>
             <button
               type="button"

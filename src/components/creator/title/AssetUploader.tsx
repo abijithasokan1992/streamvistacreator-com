@@ -82,6 +82,7 @@ const STAGE_LABEL: Record<UploadTelemetry["stage"], string> = {
 
 export function AssetUploader({
   titleId, category, locked, onUploaded, accept, label,
+  singleSlot = false, existingActiveCount = 0,
 }: {
   titleId: string;
   category: AssetCategory;
@@ -89,14 +90,41 @@ export function AssetUploader({
   onUploaded?: () => void;
   accept?: string;
   label?: string;
+  /**
+   * Enforce a single active version for slotted categories (Primary Poster,
+   * Trailer, Main Master). Uploading a new file creates a version and demotes
+   * the current active one. Non-slotted categories allow multiple actives.
+   */
+  singleSlot?: boolean;
+  /** Count of currently-active (is_primary) assets for this category on this title. */
+  existingActiveCount?: number;
 }) {
   const { active } = useWorkspaces();
+  const storage = useWorkspaceStorage();
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [pct, setPct] = useState(0);
   const [telemetry, setTelemetry] = useState<UploadTelemetry | null>(null);
   const [stagedFile, setStagedFile] = useState<File | null>(null);
   const [success, setSuccess] = useState<{ name: string; size: number; format: string } | null>(null);
+
+  /**
+   * Duplicate detection state.
+   *   - "clean"                  → no known duplicate
+   *   - "block-same-title"       → same file (name+size) already exists on this title → block
+   *   - "warn-same-workspace"    → same file (name+size) exists elsewhere in the workspace → warn + offer reuse
+   *   - "checking"               → dedup query in flight
+   *
+   * Identity heuristic: (workspace_id, file_name, file_size). This matches the
+   * founder-defined duplicate policy without requiring a cross-object SHA-256
+   * ledger. An exact-hash column can be added later without changing this UI.
+   */
+  type DupState =
+    | { kind: "clean" }
+    | { kind: "checking" }
+    | { kind: "block-same-title"; name: string }
+    | { kind: "warn-same-workspace"; name: string; where: string };
+  const [dup, setDup] = useState<DupState>({ kind: "clean" });
 
   const stagedPreflight = useMemo(
     () => (stagedFile ? preflight(stagedFile, category) : null),

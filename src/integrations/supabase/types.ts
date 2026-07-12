@@ -7740,6 +7740,42 @@ export type Database = {
         }
         Relationships: []
       }
+      storage_recalc_queue: {
+        Row: {
+          attempts: number
+          created_at: string
+          id: string
+          last_error: string | null
+          processed_at: string | null
+          reason: string
+          status: string
+          user_id: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          processed_at?: string | null
+          reason: string
+          status?: string
+          user_id?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          processed_at?: string | null
+          reason?: string
+          status?: string
+          user_id?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
       storage_topups: {
         Row: {
           amount_inr: number
@@ -8758,6 +8794,154 @@ export type Database = {
             foreignKeyName: "title_publishing_title_id_fkey"
             columns: ["title_id"]
             isOneToOne: true
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      title_removal_events: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          from_status: string | null
+          id: string
+          metadata: Json
+          request_id: string
+          to_status: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          metadata?: Json
+          request_id: string
+          to_status?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          metadata?: Json
+          request_id?: string
+          to_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "title_removal_events_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "title_removal_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      title_removal_policy: {
+        Row: {
+          allow_permanent_removal: boolean
+          grace_days: number
+          id: number
+          require_admin_approval: boolean
+          retention_days: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          allow_permanent_removal?: boolean
+          grace_days?: number
+          id?: number
+          require_admin_approval?: boolean
+          retention_days?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          allow_permanent_removal?: boolean
+          grace_days?: number
+          id?: number
+          require_admin_approval?: boolean
+          retention_days?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      title_removal_requests: {
+        Row: {
+          attempts: number
+          blockers: Json
+          buckets: Json
+          completed_at: string | null
+          created_at: string
+          failed_paths: Json
+          file_count: number
+          id: string
+          last_error: string | null
+          mode: string
+          purge_after: string | null
+          reason: string | null
+          requested_by: string
+          review_note: string | null
+          reviewed_by: string | null
+          status: string
+          title_id: string
+          total_bytes: number
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          attempts?: number
+          blockers?: Json
+          buckets?: Json
+          completed_at?: string | null
+          created_at?: string
+          failed_paths?: Json
+          file_count?: number
+          id?: string
+          last_error?: string | null
+          mode: string
+          purge_after?: string | null
+          reason?: string | null
+          requested_by: string
+          review_note?: string | null
+          reviewed_by?: string | null
+          status?: string
+          title_id: string
+          total_bytes?: number
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          attempts?: number
+          blockers?: Json
+          buckets?: Json
+          completed_at?: string | null
+          created_at?: string
+          failed_paths?: Json
+          file_count?: number
+          id?: string
+          last_error?: string | null
+          mode?: string
+          purge_after?: string | null
+          reason?: string | null
+          requested_by?: string
+          review_note?: string | null
+          reviewed_by?: string | null
+          status?: string
+          title_id?: string
+          total_bytes?: number
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "title_removal_requests_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
             referencedRelation: "content_titles"
             referencedColumns: ["id"]
           },
@@ -10521,6 +10705,18 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_removal_approve: {
+        Args: { _note?: string; _request_id: string }
+        Returns: Json
+      }
+      admin_removal_cancel: {
+        Args: { _note?: string; _request_id: string }
+        Returns: undefined
+      }
+      admin_removal_reject: {
+        Args: { _note: string; _request_id: string }
+        Returns: undefined
+      }
       admin_review_manual_payment: {
         Args: {
           _action: string
@@ -11057,6 +11253,10 @@ export type Database = {
           user_id: string
         }[]
       }
+      storage_recalc_enqueue: {
+        Args: { _reason: string; _user_id: string; _workspace_id: string }
+        Returns: string
+      }
       studio_vault_calculate_price: {
         Args: { _months?: number; _product_id: string; _tb: number }
         Returns: Json
@@ -11094,6 +11294,19 @@ export type Database = {
       sweep_screening_invites_expired: { Args: never; Returns: number }
       sync_upload_to_media_cms: { Args: { p_upload_id: string }; Returns: Json }
       title_delete_eligibility: { Args: { _title_id: string }; Returns: Json }
+      title_removal_finalize_admin: {
+        Args: { _request_id: string }
+        Returns: undefined
+      }
+      title_removal_preflight: { Args: { _title_id: string }; Returns: Json }
+      title_request_archive: {
+        Args: { _reason?: string; _title_id: string }
+        Returns: string
+      }
+      title_request_permanent_removal: {
+        Args: { _reason?: string; _title_id: string }
+        Returns: string
+      }
       title_review_summary: { Args: { _title_id: string }; Returns: Json }
       title_submission_readiness: { Args: { _title_id: string }; Returns: Json }
       title_write_allowed: { Args: { _title_id: string }; Returns: boolean }

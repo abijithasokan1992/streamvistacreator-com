@@ -11087,6 +11087,10 @@ export type Database = {
       is_super_admin:
         | { Args: never; Returns: boolean }
         | { Args: { _user_id: string }; Returns: boolean }
+      is_title_editable_by_creator: {
+        Args: { _title_id: string; _user: string }
+        Returns: boolean
+      }
       is_workspace_admin: {
         Args: { _user_id: string; _workspace_id: string }
         Returns: boolean

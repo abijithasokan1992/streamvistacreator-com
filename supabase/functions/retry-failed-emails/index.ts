@@ -214,26 +214,49 @@ Deno.serve(async (req) => {
   }
 
   // -----------------------------------------------------------------------
-  // Post-run audit: assert that no `pending` rows remain in `email_send_log`
-  // after the sweep + reconciliation pass. This is a hard invariant surfaced
-  // in the response so cron/monitoring can alert on regressions.
+  // Post-run audit: `email_send_log` is append-only — one `pending` row on
+  // enqueue, a separate terminal row on delivery. A raw
+  // `WHERE status='pending'` count therefore includes every historical row
+  // for successfully sent emails and always false-fails.
+  //
+  // The correct invariant: no `message_id` should have `pending` as its
+  // LATEST status. We pull recent pending rows, then filter out any whose
+  // message_id has a later terminal row.
   // -----------------------------------------------------------------------
   const audit: { pending_remaining: number; passed: boolean; error?: string } = {
     pending_remaining: 0,
     passed: true,
   };
   try {
-    const { count, error: auditErr } = await supabase
+    const { data: pending, error: auditErr } = await supabase
       .from("email_send_log")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "pending");
+      .select("message_id, created_at")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false })
+      .limit(1000);
     if (auditErr) throw auditErr;
-    audit.pending_remaining = count ?? 0;
-    audit.passed = (count ?? 0) === 0;
+    const TERMINAL = ["sent", "dlq", "bounced", "suppressed", "failed", "failed_permanent", "complained"];
+    let stuck = 0;
+    const seen = new Set<string>();
+    for (const p of pending ?? []) {
+      const mid = p.message_id;
+      if (!mid || seen.has(mid)) continue;
+      seen.add(mid);
+      const { data: terminal } = await supabase
+        .from("email_send_log")
+        .select("status")
+        .eq("message_id", mid)
+        .in("status", TERMINAL)
+        .gt("created_at", p.created_at)
+        .limit(1);
+      if (!terminal || terminal.length === 0) stuck += 1;
+    }
+    audit.pending_remaining = stuck;
+    audit.passed = stuck === 0;
     if (!audit.passed) {
-      console.warn(`[retry-failed-emails] AUDIT: ${count} pending rows remain after sweep`);
+      console.warn(`[retry-failed-emails] AUDIT: ${stuck} message_ids still pending after sweep`);
     } else {
-      console.log("[retry-failed-emails] AUDIT PASSED: 0 pending rows remain");
+      console.log("[retry-failed-emails] AUDIT PASSED: 0 message_ids remain pending");
     }
   } catch (e) {
     audit.passed = false;

@@ -180,10 +180,73 @@ export const Pricing = () => {
             <>Storage block pricing is server-priced and shown in your dashboard before checkout.</>
           )}
         </p>
+
+        <PricingFaq />
       </div>
     </section>
   );
 };
+
+function PricingFaq() {
+  const faqs: { q: string; a: string }[] = [
+    {
+      q: "Why is Creator plan pricing founder-assisted instead of a checkout page?",
+      a: "Creator Pro and Studio plans depend on how many active titles you carry, review turnaround, and workflow support. We confirm the fit by email so you never get a surprise charge. Creator Basic is free and self-serve.",
+    },
+    {
+      q: "What does the 5 GB free workspace include?",
+      a: "Creator Basic gives you 5 GB of workspace, one active title, and standard review — no credit card required. It runs on the same secure infrastructure as paid plans.",
+    },
+    {
+      q: "How does storage billing work?",
+      a: "Storage is sold as recurring 1 TB blocks via Razorpay. Each block bills monthly, cancels independently at cycle end, and files are never auto-deleted. Uploads stop cleanly at the quota — no overage bills.",
+    },
+    {
+      q: "Do buyers pay to reach out about a title?",
+      a: "No. Buyers can browse and open a licensing conversation without any charge. Commercial terms are agreed between the rights holder and the buyer.",
+    },
+    {
+      q: "Is GST included in the price shown?",
+      a: "Yes. Every storage price on this page is displayed with GST already added, matching what appears in your dashboard checkout.",
+    },
+    {
+      q: "Can I buy from outside India?",
+      a: "Self-serve checkout is India / INR only right now. International Creator and Studio customers are onboarded directly by our team while we finish the global billing rail.",
+    },
+  ];
+
+  return (
+    <div className="mt-20 pt-12 border-t border-border/40">
+      <div className="max-w-3xl mx-auto">
+        <div className="flex items-center gap-3 mb-5 justify-center">
+          <div className="w-8 h-px bg-accent" />
+          <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">
+            Frequently asked
+          </span>
+          <div className="w-8 h-px bg-accent" />
+        </div>
+        <h2 className="font-display font-black uppercase text-3xl md:text-4xl tracking-tight text-center mb-10">
+          Pricing <span className="gradient-text">questions</span>
+        </h2>
+        <dl className="space-y-3">
+          {faqs.map((f) => (
+            <details
+              key={f.q}
+              className="group rounded-xl border border-border/60 bg-card/40 px-5 py-4 hover:border-accent/40 transition-colors"
+            >
+              <summary className="cursor-pointer list-none flex items-center justify-between gap-4 text-sm md:text-base font-semibold text-foreground">
+                <span>{f.q}</span>
+                <span className="text-accent text-lg leading-none group-open:rotate-45 transition-transform">+</span>
+              </summary>
+              <p className="mt-3 text-sm text-muted-foreground leading-relaxed">{f.a}</p>
+            </details>
+          ))}
+        </dl>
+      </div>
+    </div>
+  );
+}
+
 
 function shortCycle(cycle: string) {
   switch (cycle) {

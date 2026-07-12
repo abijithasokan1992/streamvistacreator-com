@@ -424,7 +424,7 @@ export default function SettingsIntegrationsAI() {
               <span className="rounded-full border border-border/50 text-muted-foreground px-2 py-0.5">
                 Streamable HTTP
               </span>
-            </ul>
+            </div>
           </div>
         </details>
 

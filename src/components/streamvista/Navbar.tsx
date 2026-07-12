@@ -1,9 +1,18 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import { Menu } from "lucide-react";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
-const Wordmark = () => (
-  <div className="font-display font-black tracking-tight text-sm md:text-base uppercase leading-none">
-    STREAMVISTA <span className="gradient-text">CLOUD X</span>
+/**
+ * Brand hierarchy: STREAMVISTA is heavy/primary; "Cloud X" is muted secondary.
+ */
+const Wordmark = ({ size = "sm" }: { size?: "sm" | "md" }) => (
+  <div className={`font-display font-black tracking-tight uppercase leading-none ${size === "md" ? "text-lg" : "text-sm md:text-base"}`}>
+    <span className="text-foreground">STREAMVISTA</span>
+    <span className="ml-1.5 text-muted-foreground/70 font-semibold text-[0.72em] tracking-[0.2em] align-middle">
+      CLOUD X
+    </span>
   </div>
 );
 
@@ -18,15 +27,15 @@ const NAV_LINKS = [
 ];
 
 export const Navbar = () => {
+  const [open, setOpen] = useState(false);
+
   return (
     <header className="fixed top-0 inset-x-0 z-50 backdrop-blur-xl bg-background/60 border-b border-border/50">
       <div className="container flex items-center justify-between h-16 gap-2 sm:gap-4">
-        {/* Brand */}
-        <Link to="/" className="flex items-center gap-3 shrink-0" aria-label="StreamVista — One Secure Cloud for Films, Series & Shows, home">
+        <Link to="/" className="flex items-center gap-3 shrink-0" aria-label="StreamVista home">
           <Wordmark />
         </Link>
 
-        {/* Center nav */}
         <nav className="hidden md:flex items-center gap-6" aria-label="Primary">
           {NAV_LINKS.map((l) => (
             <Link
@@ -39,12 +48,11 @@ export const Navbar = () => {
           ))}
         </nav>
 
-        {/* Right Actions */}
         <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
           <ThemeToggle className="hidden sm:inline-flex" />
           <Link
             to="/auth"
-            className="text-xs md:text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="hidden sm:inline text-xs md:text-sm text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Log in to StreamVista"
           >
             Login
@@ -56,9 +64,44 @@ export const Navbar = () => {
           >
             Get Started
           </Link>
+
+          {/* Mobile menu trigger */}
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger
+              className="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-md border border-border/60 text-muted-foreground hover:text-foreground hover:border-accent/50 transition-colors"
+              aria-label="Open menu"
+            >
+              <Menu className="w-4 h-4" />
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[85vw] max-w-sm">
+              <SheetHeader>
+                <SheetTitle className="text-left">
+                  <Wordmark size="md" />
+                </SheetTitle>
+              </SheetHeader>
+              <nav className="mt-8 flex flex-col gap-1" aria-label="Mobile primary">
+                {NAV_LINKS.map((l) => (
+                  <Link
+                    key={l.to}
+                    to={l.to}
+                    onClick={() => setOpen(false)}
+                    className="py-3 px-2 text-base border-b border-border/40 text-foreground hover:text-accent transition-colors"
+                  >
+                    {l.label}
+                  </Link>
+                ))}
+                <Link
+                  to="/auth"
+                  onClick={() => setOpen(false)}
+                  className="mt-4 py-3 px-2 text-sm uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground"
+                >
+                  Login
+                </Link>
+              </nav>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </header>
   );
 };
-

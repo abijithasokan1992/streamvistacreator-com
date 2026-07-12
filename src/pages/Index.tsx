@@ -7,6 +7,7 @@ import { SupportedContent } from "@/components/streamvista/SupportedContent";
 import { RightsDistribution } from "@/components/streamvista/RightsDistribution";
 import { FinalCta } from "@/components/streamvista/FinalCta";
 import { Footer } from "@/components/streamvista/Footer";
+import { TrustBadges } from "@/components/streamvista/TrustBadges";
 import { Seo } from "@/components/Seo";
 import { dashboardForRole, useAuth } from "@/hooks/useAuth";
 
@@ -33,6 +34,11 @@ const Index = () => {
       />
       <Navbar />
       <Hero />
+      <section className="border-b border-border/40 bg-background/60">
+        <div className="container py-6">
+          <TrustBadges compact className="justify-center" />
+        </div>
+      </section>
       <Workflow />
       <PlatformOverview />
       <SupportedContent />

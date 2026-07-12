@@ -1,17 +1,14 @@
-import { useState } from "react";
-import { ArrowRight, Play, X } from "lucide-react";
+import { ArrowRight, Briefcase } from "lucide-react";
 import { Link } from "react-router-dom";
 
 /**
- * Public Hero — Sprint 001 rebuild.
- * Single cinematic hero. One primary CTA + one secondary (overview video).
+ * Public Hero — cinematic single hero.
+ * P0: broken "60-second overview" removed.
+ * P1: role-aware secondary CTA for buyers; brand hierarchy on eyebrow.
  */
 export const Hero = () => {
-  const [videoOpen, setVideoOpen] = useState(false);
-
   return (
     <section className="relative pt-32 pb-24 md:pt-40 md:pb-32 overflow-hidden border-b border-border/40">
-      {/* Ambient cinematic backdrop */}
       <div className="absolute inset-0 grid-bg opacity-40" aria-hidden />
       <div
         aria-hidden
@@ -28,8 +25,9 @@ export const Hero = () => {
         <div className="max-w-4xl">
           <div className="flex items-center gap-3 mb-8 animate-fade-in">
             <div className="w-8 h-px bg-accent" />
-            <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">
-              StreamVista Cloud X
+            <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em]">
+              <span className="text-foreground font-bold">StreamVista</span>
+              <span className="text-accent/80"> · Cloud X</span>
             </span>
           </div>
 
@@ -51,57 +49,23 @@ export const Hero = () => {
               to="/auth?intent=signup"
               className="cta-guide group h-14 inline-flex items-center justify-center gap-3 px-8 bg-gradient-primary text-primary-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md"
             >
-              <span>Get Started</span>
+              <span>Get Started · I'm a Creator</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
-            <button
-              type="button"
-              onClick={() => setVideoOpen(true)}
+            <Link
+              to="/contact?topic=buyer-access"
               className="group h-14 inline-flex items-center justify-center gap-3 px-8 border border-border/60 hover:border-accent/60 hover:bg-accent/5 text-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md transition-colors"
             >
-              <Play className="w-4 h-4" />
-              <span>Watch 60-Second Overview</span>
-            </button>
+              <Briefcase className="w-4 h-4" />
+              <span>I'm a Buyer · Request Access</span>
+            </Link>
           </div>
+
+          <p className="mt-5 text-[11px] font-mono-tech uppercase tracking-[0.2em] text-muted-foreground/70 animate-fade-in">
+            Free forever · 5 GB workspace · No credit card
+          </p>
         </div>
       </div>
-
-      {videoOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="StreamVista 60-second overview"
-          className="fixed inset-0 z-50 bg-background/90 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
-          onClick={() => setVideoOpen(false)}
-        >
-          <div
-            className="relative w-full max-w-4xl aspect-video rounded-xl overflow-hidden border border-border/60 bg-card"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={() => setVideoOpen(false)}
-              aria-label="Close overview video"
-              className="absolute top-3 right-3 z-10 w-10 h-10 rounded-full bg-background/70 hover:bg-background border border-border/60 grid place-items-center"
-            >
-              <X className="w-4 h-4" />
-            </button>
-            <div className="w-full h-full grid place-items-center text-center px-8">
-              <div>
-                <div className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent mb-3">
-                  Overview
-                </div>
-                <p className="font-display text-2xl md:text-3xl font-bold uppercase tracking-tight">
-                  60-second overview video coming soon
-                </p>
-                <p className="mt-3 text-sm text-muted-foreground max-w-md mx-auto">
-                  We're finalising the platform reel. In the meantime, create a free workspace to explore StreamVista end-to-end.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </section>
   );
 };

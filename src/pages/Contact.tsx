@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Loader2, Send } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { Loader2, Send } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Seo } from "@/components/Seo";
+import { Navbar } from "@/components/streamvista/Navbar";
+import { Footer } from "@/components/streamvista/Footer";
 import { useToast } from "@/hooks/use-toast";
 
 const schema = z.object({
@@ -14,11 +16,6 @@ const schema = z.object({
   message: z.string().trim().min(10, "Message must be at least 10 characters").max(4000),
 });
 
-const Wordmark = () => (
-  <div className="font-display font-black tracking-tight text-base md:text-lg uppercase">
-    STREAMVISTA <span className="gradient-text">CLOUD X</span>
-  </div>
-);
 
 export default function Contact() {
   const { toast } = useToast();
@@ -117,21 +114,10 @@ export default function Contact() {
         path="/contact"
       />
 
-      <header className="border-b border-border/40">
-        <div className="container h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
-            <Wordmark />
-          </Link>
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" /> Home
-          </Link>
-        </div>
-      </header>
+      <Navbar />
 
-      <section className="container py-16 md:py-24 max-w-2xl">
+      <section className="container pt-32 pb-16 md:pt-40 md:pb-24 max-w-2xl">
+
         <p className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent mb-3">
           Get in touch
         </p>
@@ -210,6 +196,7 @@ export default function Contact() {
           </form>
         )}
       </section>
+      <Footer />
     </main>
   );
 }

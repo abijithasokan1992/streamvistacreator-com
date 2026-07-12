@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
-  Upload, Loader2, FileCheck2, AlertTriangle, CheckCircle2, ShieldCheck, FileWarning,
+  Upload, Loader2, FileCheck2, AlertTriangle, CheckCircle2, ShieldCheck, FileWarning, HardDrive, Copy, RefreshCw,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { uploadTitleAsset, UploadValidationError } from "@/lib/creator/titleApi";
 import type { AssetCategory } from "@/lib/creator/titleSchema";
 import { mapUploadError, type UploadTelemetry } from "@/lib/ociMultipartUpload";
 import { useWorkspaces } from "@/hooks/useWorkspaces";
+import { useWorkspaceStorage } from "@/hooks/useWorkspaceStorage";
+import { supabase } from "@/integrations/supabase/client";
 import { AssetPreviewModal, canPreview } from "./AssetPreview";
 
 // ---------- Allowed-format & size matrix (client-side preflight) ----------
@@ -79,6 +82,7 @@ const STAGE_LABEL: Record<UploadTelemetry["stage"], string> = {
 
 export function AssetUploader({
   titleId, category, locked, onUploaded, accept, label,
+  singleSlot = false, existingActiveCount = 0,
 }: {
   titleId: string;
   category: AssetCategory;
@@ -86,14 +90,41 @@ export function AssetUploader({
   onUploaded?: () => void;
   accept?: string;
   label?: string;
+  /**
+   * Enforce a single active version for slotted categories (Primary Poster,
+   * Trailer, Main Master). Uploading a new file creates a version and demotes
+   * the current active one. Non-slotted categories allow multiple actives.
+   */
+  singleSlot?: boolean;
+  /** Count of currently-active (is_primary) assets for this category on this title. */
+  existingActiveCount?: number;
 }) {
   const { active } = useWorkspaces();
+  const storage = useWorkspaceStorage();
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [pct, setPct] = useState(0);
   const [telemetry, setTelemetry] = useState<UploadTelemetry | null>(null);
   const [stagedFile, setStagedFile] = useState<File | null>(null);
   const [success, setSuccess] = useState<{ name: string; size: number; format: string } | null>(null);
+
+  /**
+   * Duplicate detection state.
+   *   - "clean"                  → no known duplicate
+   *   - "block-same-title"       → same file (name+size) already exists on this title → block
+   *   - "warn-same-workspace"    → same file (name+size) exists elsewhere in the workspace → warn + offer reuse
+   *   - "checking"               → dedup query in flight
+   *
+   * Identity heuristic: (workspace_id, file_name, file_size). This matches the
+   * founder-defined duplicate policy without requiring a cross-object SHA-256
+   * ledger. An exact-hash column can be added later without changing this UI.
+   */
+  type DupState =
+    | { kind: "clean" }
+    | { kind: "checking" }
+    | { kind: "block-same-title"; name: string }
+    | { kind: "warn-same-workspace"; name: string; where: string };
+  const [dup, setDup] = useState<DupState>({ kind: "clean" });
 
   const stagedPreflight = useMemo(
     () => (stagedFile ? preflight(stagedFile, category) : null),
@@ -137,11 +168,43 @@ export function AssetUploader({
     }
   }, [active, category, titleId, onUploaded]);
 
-  const handlePicked = useCallback((f: File) => {
+  // Quota preflight — computed synchronously from the shared storage hook.
+  const quotaTotalBytes = Math.max(0, Math.round((storage.totalGb ?? 0) * GB));
+  const quotaUsedBytes = Math.max(0, Math.round(storage.usedBytes ?? 0));
+  const quotaRemainingBytes = Math.max(0, quotaTotalBytes - quotaUsedBytes);
+  const wouldExceedQuota = useCallback(
+    (size: number) => quotaTotalBytes > 0 && (quotaUsedBytes + size) > quotaTotalBytes,
+    [quotaTotalBytes, quotaUsedBytes],
+  );
+
+  // Duplicate lookup — heuristic on (workspace_id, file_name, file_size).
+  // Cheap, indexable, and matches the founder-defined block/warn policy.
+  const runDedupCheck = useCallback(async (file: File): Promise<DupState> => {
+    if (!active) return { kind: "clean" };
+    try {
+      const { data, error } = await (supabase as any)
+        .from("recent_uploads")
+        .select("id, title_id, file_name, file_size, status")
+        .eq("workspace_id", active.id)
+        .eq("file_name", file.name)
+        .eq("file_size", file.size)
+        .in("status", ["success", "completed", "ready"])
+        .limit(20);
+      if (error || !data || data.length === 0) return { kind: "clean" };
+      const sameTitle = data.find((r: any) => r.title_id === titleId);
+      if (sameTitle) return { kind: "block-same-title", name: file.name };
+      const other = data[0];
+      return { kind: "warn-same-workspace", name: file.name, where: other?.title_id ? "another title in this workspace" : "this workspace" };
+    } catch {
+      return { kind: "clean" };
+    }
+  }, [active, titleId]);
+
+  const handlePicked = useCallback(async (f: File) => {
     setSuccess(null);
+    setDup({ kind: "clean" });
     const pre = preflight(f, category);
     if (!pre.ok) {
-      // Stage the file so the user sees the precise reason; don't auto-start a bad upload.
       setStagedFile(f);
       toast.error((pre as { ok: false; reason: string }).reason);
       return;
@@ -150,14 +213,35 @@ export function AssetUploader({
       toast.error("This title is locked — uploads are disabled.");
       return;
     }
-    // Valid file picked or dropped → start the upload immediately (no extra click).
+    // Quota preflight — block before any bytes leave the browser.
+    if (wouldExceedQuota(f.size)) {
+      setStagedFile(f);
+      toast.error("Not enough storage on your current plan.");
+      return;
+    }
     setStagedFile(f);
+    setDup({ kind: "checking" });
+    const d = await runDedupCheck(f);
+    setDup(d);
+    if (d.kind === "block-same-title") {
+      toast.error("This exact file is already on this title.");
+      return;
+    }
+    // Warn state → require explicit user click before starting.
+    if (d.kind === "warn-same-workspace") return;
+    // All clean → auto-start.
     void runUpload(f);
-  }, [category, locked, runUpload]);
+  }, [category, locked, runUpload, wouldExceedQuota, runDedupCheck]);
 
   const startUpload = useCallback(() => {
-    if (stagedFile) void runUpload(stagedFile);
-  }, [stagedFile, runUpload]);
+    if (!stagedFile) return;
+    if (dup.kind === "block-same-title") return;
+    if (wouldExceedQuota(stagedFile.size)) {
+      toast.error("Not enough storage on your current plan.");
+      return;
+    }
+    void runUpload(stagedFile);
+  }, [stagedFile, runUpload, dup, wouldExceedQuota]);
 
   // Drag-and-drop (works on desktop; touch devices fall back to the Choose-file button).
   const [drag, setDrag] = useState(false);
@@ -209,6 +293,18 @@ export function AssetUploader({
                 ? `Allowed: ${cfg.exts.join(", ").toUpperCase()} · Max ${humanBytes(cfg.maxBytes)}`
                 : "Files go to Oracle Object Storage and are recorded in Oracle Database."}
           </p>
+          {singleSlot && existingActiveCount > 0 && !locked && (
+            <p className="text-[11px] text-amber-300 mt-1 inline-flex items-center gap-1">
+              <RefreshCw className="w-3 h-3" />
+              This slot only holds one active version — uploading will supersede the current file.
+            </p>
+          )}
+          {!locked && quotaTotalBytes > 0 && (
+            <p className="text-[11px] text-muted-foreground mt-1 inline-flex items-center gap-1">
+              <HardDrive className="w-3 h-3" />
+              Storage: {humanBytes(quotaUsedBytes)} used · {humanBytes(quotaRemainingBytes)} free of {humanBytes(quotaTotalBytes)}
+            </p>
+          )}
         </div>
         <input
           ref={inputRef}
@@ -255,14 +351,41 @@ export function AssetUploader({
           {!stagedPreflight.ok && (
             <p className="text-rose-400">{(stagedPreflight as { ok: false; reason: string }).reason}</p>
           )}
+          {stagedPreflight.ok && wouldExceedQuota(stagedFile.size) && (
+            <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2.5 py-2 text-rose-200 space-y-1">
+              <p className="font-medium inline-flex items-center gap-1.5"><HardDrive className="w-3.5 h-3.5" /> Not enough storage on your current plan</p>
+              <p>
+                This file needs {humanBytes(stagedFile.size)} but only {humanBytes(quotaRemainingBytes)} of {humanBytes(quotaTotalBytes)} is free.
+              </p>
+              <Link to="/dashboard?tab=storage" className="underline text-rose-100 hover:text-white">Upgrade or add storage →</Link>
+            </div>
+          )}
+          {stagedPreflight.ok && !wouldExceedQuota(stagedFile.size) && dup.kind === "checking" && (
+            <p className="text-muted-foreground inline-flex items-center gap-1.5"><Loader2 className="w-3 h-3 animate-spin" /> Checking for duplicates…</p>
+          )}
+          {dup.kind === "block-same-title" && (
+            <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2.5 py-2 text-rose-200 space-y-1">
+              <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-3.5 h-3.5" /> Duplicate on this title</p>
+              <p>An identical file ({dup.name}) is already uploaded here. Choose a different file, or delete the existing one first.</p>
+            </div>
+          )}
+          {dup.kind === "warn-same-workspace" && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-2 text-amber-200 space-y-1">
+              <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-3.5 h-3.5" /> Similar file already in your workspace</p>
+              <p>This file matches one already uploaded to {dup.where}. Uploading again is allowed, but you may want to reuse the existing asset.</p>
+            </div>
+          )}
+          {singleSlot && stagedPreflight.ok && existingActiveCount > 0 && (
+            <p className="text-amber-300 inline-flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5" /> The current active version will be superseded when this upload completes.</p>
+          )}
           <div className="flex gap-2 pt-1">
             <button
               type="button"
               onClick={startUpload}
-              disabled={!stagedPreflight.ok || locked}
+              disabled={!stagedPreflight.ok || locked || wouldExceedQuota(stagedFile.size) || dup.kind === "block-same-title" || dup.kind === "checking"}
               className="inline-flex items-center gap-1.5 rounded-md bg-accent text-accent-foreground px-3 py-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <Upload className="w-3.5 h-3.5" /> Start upload
+              <Upload className="w-3.5 h-3.5" /> {dup.kind === "warn-same-workspace" ? "Upload anyway" : "Start upload"}
             </button>
             <button
               type="button"

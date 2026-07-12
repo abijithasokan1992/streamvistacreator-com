@@ -29,6 +29,8 @@ const STATUS_META: Record<string, { label: string; cls: string; icon: any }> = {
 export default function EmailLogMonitor() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+  const [retrying, setRetrying] = useState(false);
+  const [banner, setBanner] = useState<string | null>(null);
   const [range, setRange] = useState<Range>("7d");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [templateFilter, setTemplateFilter] = useState<string>("all");
@@ -45,6 +47,26 @@ export default function EmailLogMonitor() {
       .limit(500);
     setRows((data as Row[]) ?? []);
     setLoading(false);
+  };
+
+  const retryFailed = async () => {
+    setRetrying(true);
+    setBanner(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("retry-failed-emails", { body: {} });
+      if (error) throw error;
+      const audit = (data as any)?.audit;
+      setBanner(
+        audit?.passed
+          ? `Retry sweep OK — 0 stuck message_ids remaining.`
+          : `Retry sweep ran — ${audit?.pending_remaining ?? "?"} message_id(s) still stuck.`,
+      );
+      await load();
+    } catch (e) {
+      setBanner(`Retry failed: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setRetrying(false);
+    }
   };
 
   useEffect(() => { load(); }, [range]);

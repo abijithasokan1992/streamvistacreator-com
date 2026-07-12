@@ -1,9 +1,10 @@
 /**
- * Distribution section on the Creator sidebar.
+ * Distribution section on the Creator sidebar — READ-ONLY status view.
  *
- * Lists distribution activity across ALL of the signed-in creator's titles.
- * Everything else lives inside the Title Workspace's Distribution tab, so we
- * don't duplicate packaging UI here.
+ * After RC1 cleanup, Distribution is an Operations-owned workflow. Creators
+ * see delivery status across their titles, but cannot trigger retries,
+ * dispatch, or package builds from here. Operational actions live in the
+ * Admin surfaces and edge functions gated by role.
  */
 import { useEffect, useState } from "react";
 import { Loader2, Radio } from "lucide-react";
@@ -12,9 +13,6 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
-import { retryFailedDeliveries } from "@/lib/distribution/distributionApi";
-import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
 
 const STATUS_TONE: Record<string, string> = {
   queued: "bg-sky-500/15 text-sky-300 border-sky-500/30",
@@ -39,7 +37,6 @@ export default function DistributionSection() {
       .select("id,status,attempts,max_attempts,partner_id,title_id,last_error,last_error_code,next_retry_at,updated_at")
       .order("updated_at", { ascending: false })
       .limit(100);
-    // Enrich partner names + title names in parallel
     const partnerIds = Array.from(new Set((data ?? []).map((r: any) => r.partner_id)));
     const titleIds = Array.from(new Set((data ?? []).map((r: any) => r.title_id)));
     const [{ data: partners }, { data: titles }] = await Promise.all([
@@ -58,33 +55,22 @@ export default function DistributionSection() {
 
   useEffect(() => { void reload(); }, [user?.id]);
 
-  const onRetryAll = async () => {
-    try {
-      const n = await retryFailedDeliveries();
-      toast({ title: `Requeued ${n} failed deliveries` });
-      void reload();
-    } catch (e) {
-      toast({ title: "Retry failed", description: String((e as Error)?.message ?? e), variant: "destructive" });
-    }
-  };
-
   return (
     <section className="space-y-5">
       <header className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h2 className="font-display text-lg flex items-center gap-2"><Radio className="w-4 h-4 text-accent" /> Distribution</h2>
+          <h2 className="font-display text-lg flex items-center gap-2"><Radio className="w-4 h-4 text-accent" /> Distribution status</h2>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            Track partner deliveries across all your titles. Build packages and dispatch new deliveries from a title's Distribution tab.
+            Track partner deliveries across your titles. StreamVista Operations manages packaging, dispatch, and retries — you'll see status updates here as they progress.
           </p>
         </div>
-        <Button size="sm" variant="secondary" onClick={onRetryAll}>Retry failed</Button>
       </header>
 
       {loading ? (
         <div className="py-12 grid place-items-center"><Loader2 className="w-5 h-5 animate-spin text-accent" /></div>
       ) : rows.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border/50 bg-secondary/10 p-8 text-center text-sm text-muted-foreground">
-          No distribution activity yet. Open a title and use its Distribution tab to build a package and send it to a partner.
+          No distribution activity yet. Once your title is approved and Operations dispatches to partners, deliveries appear here.
         </div>
       ) : (
         <ul className="space-y-2 list-none">

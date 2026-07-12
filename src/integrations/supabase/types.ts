@@ -11087,6 +11087,10 @@ export type Database = {
       is_super_admin:
         | { Args: never; Returns: boolean }
         | { Args: { _user_id: string }; Returns: boolean }
+      is_title_editable_by_creator: {
+        Args: { _title_id: string; _user: string }
+        Returns: boolean
+      }
       is_workspace_admin: {
         Args: { _user_id: string; _workspace_id: string }
         Returns: boolean
@@ -11581,7 +11585,15 @@ export type Database = {
         | "distribution_representation"
         | "acquisition"
       right_exclusivity: "exclusive" | "non_exclusive" | "hold" | "unavailable"
-      right_status: "available" | "hold" | "sold" | "blocked"
+      right_status:
+        | "available"
+        | "hold"
+        | "sold"
+        | "blocked"
+        | "none"
+        | "discuss"
+        | "premium_required"
+        | "not_available"
       storage_adjustment_type: "grant" | "reduce" | "set"
       studio_slug:
         | "crayons_pictures"
@@ -11981,7 +11993,16 @@ export const Constants = {
         "acquisition",
       ],
       right_exclusivity: ["exclusive", "non_exclusive", "hold", "unavailable"],
-      right_status: ["available", "hold", "sold", "blocked"],
+      right_status: [
+        "available",
+        "hold",
+        "sold",
+        "blocked",
+        "none",
+        "discuss",
+        "premium_required",
+        "not_available",
+      ],
       storage_adjustment_type: ["grant", "reduce", "set"],
       studio_slug: [
         "crayons_pictures",

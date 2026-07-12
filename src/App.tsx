@@ -107,7 +107,7 @@ const AdminRoutes = () => (
     <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
 
     <Route path="/reset-password" element={<ResetPassword />} />
-    <Route path="/connectors" element={<Connectors />} />
+    <Route path="/connectors" element={<Navigate to="/connect" replace />} />
     <Route path="/admin" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/home" element={<AdminHome />} />
     <Route path="/admin/super" element={<Navigate to="/admin" replace />} />

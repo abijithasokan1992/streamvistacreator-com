@@ -351,14 +351,41 @@ export function AssetUploader({
           {!stagedPreflight.ok && (
             <p className="text-rose-400">{(stagedPreflight as { ok: false; reason: string }).reason}</p>
           )}
+          {stagedPreflight.ok && wouldExceedQuota(stagedFile.size) && (
+            <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2.5 py-2 text-rose-200 space-y-1">
+              <p className="font-medium inline-flex items-center gap-1.5"><HardDrive className="w-3.5 h-3.5" /> Not enough storage on your current plan</p>
+              <p>
+                This file needs {humanBytes(stagedFile.size)} but only {humanBytes(quotaRemainingBytes)} of {humanBytes(quotaTotalBytes)} is free.
+              </p>
+              <Link to="/dashboard?tab=storage" className="underline text-rose-100 hover:text-white">Upgrade or add storage →</Link>
+            </div>
+          )}
+          {stagedPreflight.ok && !wouldExceedQuota(stagedFile.size) && dup.kind === "checking" && (
+            <p className="text-muted-foreground inline-flex items-center gap-1.5"><Loader2 className="w-3 h-3 animate-spin" /> Checking for duplicates…</p>
+          )}
+          {dup.kind === "block-same-title" && (
+            <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2.5 py-2 text-rose-200 space-y-1">
+              <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-3.5 h-3.5" /> Duplicate on this title</p>
+              <p>An identical file ({dup.name}) is already uploaded here. Choose a different file, or delete the existing one first.</p>
+            </div>
+          )}
+          {dup.kind === "warn-same-workspace" && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-2 text-amber-200 space-y-1">
+              <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-3.5 h-3.5" /> Similar file already in your workspace</p>
+              <p>This file matches one already uploaded to {dup.where}. Uploading again is allowed, but you may want to reuse the existing asset.</p>
+            </div>
+          )}
+          {singleSlot && stagedPreflight.ok && existingActiveCount > 0 && (
+            <p className="text-amber-300 inline-flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5" /> The current active version will be superseded when this upload completes.</p>
+          )}
           <div className="flex gap-2 pt-1">
             <button
               type="button"
               onClick={startUpload}
-              disabled={!stagedPreflight.ok || locked}
+              disabled={!stagedPreflight.ok || locked || wouldExceedQuota(stagedFile.size) || dup.kind === "block-same-title" || dup.kind === "checking"}
               className="inline-flex items-center gap-1.5 rounded-md bg-accent text-accent-foreground px-3 py-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <Upload className="w-3.5 h-3.5" /> Start upload
+              <Upload className="w-3.5 h-3.5" /> {dup.kind === "warn-same-workspace" ? "Upload anyway" : "Start upload"}
             </button>
             <button
               type="button"

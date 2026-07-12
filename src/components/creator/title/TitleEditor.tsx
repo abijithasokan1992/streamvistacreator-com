@@ -798,12 +798,25 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
+/** Visual grouping wrapper for the six-category Media & Assets layout. */
+function AssetGroup({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-lg border border-border/40 bg-card/20 p-4">
+      <header className="mb-3">
+        <h3 className="text-sm font-semibold">{title}</h3>
+        {hint && <p className="text-xs text-muted-foreground mt-1">{hint}</p>}
+      </header>
+      <div className="space-y-6">{children}</div>
+    </section>
+  );
+}
+
 function AssetTab({
-  cat, label, description, assets, titleId, locked, onUploaded, accept,
+  cat, label, description, assets, titleId, locked, onUploaded, accept, singleSlot,
 }: {
   cat: AssetCategory; label: string; description?: string;
   assets: TitleAsset[]; titleId: string; locked: boolean;
-  onUploaded: () => void; accept?: string;
+  onUploaded: () => void; accept?: string; singleSlot?: boolean;
 }) {
   return (
     <section>

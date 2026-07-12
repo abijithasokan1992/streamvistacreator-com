@@ -119,6 +119,14 @@ export default function EmailLogMonitor() {
           </div>
         </div>
         <button
+          onClick={retryFailed}
+          disabled={retrying || loading}
+          className="h-9 px-3 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-200 text-xs font-medium hover:bg-rose-500/20 flex items-center gap-1.5 disabled:opacity-50"
+          title="Requeue DLQ messages and reconcile stuck pending rows"
+        >
+          <RefreshCw className={cn("w-3.5 h-3.5", retrying && "animate-spin")} /> Retry failed
+        </button>
+        <button
           onClick={load}
           disabled={loading}
           className="h-9 px-3 rounded-xl border border-border/60 text-xs font-medium hover:bg-secondary/40 flex items-center gap-1.5 disabled:opacity-50"
@@ -126,6 +134,11 @@ export default function EmailLogMonitor() {
           <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} /> Refresh
         </button>
       </div>
+      {banner && (
+        <div className="mb-4 rounded-xl border border-border/60 bg-input/20 px-3 py-2 text-xs text-muted-foreground">
+          {banner}
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">

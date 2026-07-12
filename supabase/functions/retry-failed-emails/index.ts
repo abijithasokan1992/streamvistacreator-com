@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
           s.skipped += 1;
           if (recipient && recipient !== "unknown") {
             await supabase.from("suppressed_emails").upsert(
-              { email: recipient, reason: "permanent_bounce", metadata: { queue, source: "retry-failed-emails" } },
+              { email: recipient, reason: "bounce", metadata: { queue, source: "retry-failed-emails", severity: "permanent" } },
               { onConflict: "email" },
             );
           }

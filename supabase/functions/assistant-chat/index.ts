@@ -72,7 +72,7 @@ function pickProvider(useChief: boolean): ProviderChoice | null {
 
   const lovKey = (Deno.env.get("LOVABLE_API_KEY") ?? "").trim();
   if (lovKey) {
-    return { kind: "lovable", apiKey: lovKey, model: "google/gemini-2.5-flash" };
+    return { kind: "lovable", apiKey: lovKey, model: "google/gemini-3-flash-preview" };
   }
   return null;
 }

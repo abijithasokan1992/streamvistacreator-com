@@ -11581,7 +11581,15 @@ export type Database = {
         | "distribution_representation"
         | "acquisition"
       right_exclusivity: "exclusive" | "non_exclusive" | "hold" | "unavailable"
-      right_status: "available" | "hold" | "sold" | "blocked"
+      right_status:
+        | "available"
+        | "hold"
+        | "sold"
+        | "blocked"
+        | "none"
+        | "discuss"
+        | "premium_required"
+        | "not_available"
       storage_adjustment_type: "grant" | "reduce" | "set"
       studio_slug:
         | "crayons_pictures"
@@ -11981,7 +11989,16 @@ export const Constants = {
         "acquisition",
       ],
       right_exclusivity: ["exclusive", "non_exclusive", "hold", "unavailable"],
-      right_status: ["available", "hold", "sold", "blocked"],
+      right_status: [
+        "available",
+        "hold",
+        "sold",
+        "blocked",
+        "none",
+        "discuss",
+        "premium_required",
+        "not_available",
+      ],
       storage_adjustment_type: ["grant", "reduce", "set"],
       studio_slug: [
         "crayons_pictures",

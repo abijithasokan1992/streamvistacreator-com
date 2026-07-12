@@ -60,6 +60,30 @@ export type PublishingRecord = {
 
 const sb = supabase as any; // types.ts is regenerated after migration; keep loose until then.
 
+/**
+ * Silent-deny guard for Creator writes against lock-gated resources.
+ *
+ * PostgREST returns HTTP 200 with an empty result set when RLS filters every
+ * row out of an UPDATE/DELETE — it does NOT surface a 403. Callers that only
+ * check `error` will treat that response as success and show a green toast
+ * while the row is unchanged on the server.
+ *
+ * Every Creator UPDATE/DELETE against a lock-gated table MUST route through
+ * this helper: the caller pairs `.update(...)` / `.delete(...)` with
+ * `.select("id")` and passes the returned rows here. Zero affected rows
+ * raises a NOT_EDITABLE error that the UI must surface as an error toast.
+ */
+function assertMutationAffectedRows(rows: unknown, entity: string): void {
+  if (!Array.isArray(rows) || rows.length === 0) {
+    const err = new Error(
+      `This ${entity} is locked or you do not have permission to modify it. ` +
+      `Refresh the page — an admin may have locked or reassigned this record.`,
+    );
+    (err as any).code = "NOT_EDITABLE";
+    throw err;
+  }
+}
+
 /* ---------- Hierarchy (series → season → episode) ---------- */
 export async function listChildren(parentId: string) {
   const { data, error } = await sb

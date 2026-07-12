@@ -194,8 +194,9 @@ export async function upsertMediaVersion(row: Partial<MediaVersion> & { title_id
   return data as MediaVersion;
 }
 export async function deleteMediaVersion(id: string) {
-  const { error } = await sb.from("title_media_versions").delete().eq("id", id);
+  const { data, error } = await sb.from("title_media_versions").delete().eq("id", id).select("id");
   if (error) throw error;
+  assertMutationAffectedRows(data, "media version");
 }
 
 /* ---------- Localizations ---------- */
@@ -211,8 +212,9 @@ export async function upsertLocalization(row: Partial<Localization> & { title_id
   return data as Localization;
 }
 export async function deleteLocalization(id: string) {
-  const { error } = await sb.from("title_localizations").delete().eq("id", id);
+  const { data, error } = await sb.from("title_localizations").delete().eq("id", id).select("id");
   if (error) throw error;
+  assertMutationAffectedRows(data, "localization");
 }
 
 /* ---------- Publishing ---------- */

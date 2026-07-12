@@ -609,14 +609,15 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
     </section>
   );
 }
-function Input({ label, value, onChange, placeholder, type }: {
-  label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string;
+function Input({ label, value, onChange, placeholder, type, disabled }: {
+  label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string; disabled?: boolean;
 }) {
   return (
     <label className="block">
       <span className="text-[11px] text-muted-foreground">{label}</span>
       <input type={type ?? "text"} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
-        className="mt-1 w-full rounded-md bg-background/60 border border-border/50 text-xs px-2 py-1.5" />
+        disabled={disabled} readOnly={disabled}
+        className="mt-1 w-full rounded-md bg-background/60 border border-border/50 text-xs px-2 py-1.5 disabled:opacity-70" />
     </label>
   );
 }

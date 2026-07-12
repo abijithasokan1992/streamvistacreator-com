@@ -616,13 +616,13 @@ function SubmissionTab({
     { key: "runtime", label: "Set the runtime",                ok: (meta?.runtime_minutes ?? 0) > 0,              goto: "metadata" },
     { key: "rights_owner", label: "Confirm rights owner",      ok: !!meta?.rights_owner?.trim(),                  goto: "metadata" },
     { key: "poster", label: "Upload poster artwork",           ok: !!(has.poster ?? local.hasPoster),             goto: "assets" },
-    { key: "censor_certificate", label: "Upload censor certificate", ok: !!(has.censor_certificate ?? local.hasCensor), goto: "legal" },
+    { key: "censor_certificate", label: "Upload censor certificate", ok: !!(has.censor_certificate ?? local.hasCensor), goto: "assets" },
     { key: "ownership_documents", label: "Upload existing contracts", ok: !!(has.ownership_documents ?? local.hasOwnership), goto: "assets" },
   ];
   const premiumItems: { key: string; label: string; ok: boolean; goto: TabId }[] = [
-    { key: "engagement_mode", label: "Choose a commercial path (Free / Premium)", ok: engagementSet, goto: "legal" },
-    { key: "rights_available", label: "Mark at least one right as available",     ok: rightsAvailableCount > 0,  goto: "legal" },
-    { key: "territory_available", label: "Mark at least one territory as available", ok: territoriesAvailableCount > 0, goto: "legal" },
+    { key: "engagement_mode", label: "Choose a commercial path (Free / Premium)", ok: engagementSet, goto: "rights" },
+    { key: "rights_available", label: "Mark at least one right as available",     ok: rightsAvailableCount > 0,  goto: "rights" },
+    { key: "territory_available", label: "Mark at least one territory as available", ok: territoriesAvailableCount > 0, goto: "rights" },
   ];
   const items = isFree ? baseItems : [...baseItems, ...premiumItems];
   const done = items.filter((i) => i.ok).length;

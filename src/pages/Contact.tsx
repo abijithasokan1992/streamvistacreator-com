@@ -116,8 +116,8 @@ export default function Contact() {
 
       <Navbar />
 
+      <section className="container pt-32 pb-16 md:pt-40 md:pb-24 max-w-2xl">
 
-      <section className="container py-16 md:py-24 max-w-2xl">
         <p className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent mb-3">
           Get in touch
         </p>

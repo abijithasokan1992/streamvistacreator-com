@@ -48,6 +48,19 @@ Deno.serve(async (req) => {
     if (claimsErr || !claims?.claims?.sub) return respond({ error: "unauthorized" }, 401);
     const userId = claims.claims.sub as string;
 
+    // 1b) Server-side role gate — Admin/Ops only. Client-provided role data is ignored.
+    // We check DB-of-record via service role, never trusting the caller's JWT metadata.
+    const roleCheck = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
+    const { data: rolesRow, error: rolesErr } = await roleCheck
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
+    if (rolesErr) return respond({ error: "role_lookup_failed" }, 500);
+    const roles = new Set((rolesRow ?? []).map((r: any) => String(r.role)));
+    const ALLOWED = new Set(["admin", "super_admin", "moderator"]);
+    const isPrivileged = [...roles].some((r) => ALLOWED.has(r));
+    if (!isPrivileged) return respond({ error: "forbidden_admin_only" }, 403);
+
     const body = await req.json().catch(() => ({}));
     const jobId = String(body?.ingest_job_id ?? "").trim();
     if (!jobId) return respond({ error: "ingest_job_id_required" }, 400);

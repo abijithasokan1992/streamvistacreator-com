@@ -139,8 +139,9 @@ export async function createFranchise(userId: string, name: string, description?
   return data as Franchise;
 }
 export async function deleteFranchise(id: string) {
-  const { error } = await sb.from("title_franchises").delete().eq("id", id);
+  const { data, error } = await sb.from("title_franchises").delete().eq("id", id).select("id");
   if (error) throw error;
+  assertMutationAffectedRows(data, "franchise");
 }
 
 /* ---------- Collections ---------- */
@@ -158,8 +159,9 @@ export async function createCollection(userId: string, name: string, description
   return data as Collection;
 }
 export async function deleteCollection(id: string) {
-  const { error } = await sb.from("title_collections").delete().eq("id", id);
+  const { data, error } = await sb.from("title_collections").delete().eq("id", id).select("id");
   if (error) throw error;
+  assertMutationAffectedRows(data, "collection");
 }
 export async function listCollectionItems(collectionId: string) {
   const { data, error } = await sb.from("title_collection_items")
@@ -174,8 +176,9 @@ export async function addTitleToCollection(collectionId: string, titleId: string
   if (error) throw error;
 }
 export async function removeTitleFromCollection(itemId: string) {
-  const { error } = await sb.from("title_collection_items").delete().eq("id", itemId);
+  const { data, error } = await sb.from("title_collection_items").delete().eq("id", itemId).select("id");
   if (error) throw error;
+  assertMutationAffectedRows(data, "collection entry");
 }
 
 /* ---------- Media Versions ---------- */

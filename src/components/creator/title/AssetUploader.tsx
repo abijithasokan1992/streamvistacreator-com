@@ -109,21 +109,23 @@ export function AssetUploader({
   const [success, setSuccess] = useState<{ name: string; size: number; format: string } | null>(null);
 
   /**
-   * Duplicate detection state.
-   *   - "clean"                  → no known duplicate
-   *   - "block-same-title"       → same file (name+size) already exists on this title → block
-   *   - "warn-same-workspace"    → same file (name+size) exists elsewhere in the workspace → warn + offer reuse
-   *   - "checking"               → dedup query in flight
+   * Duplicate detection state — SHA-256 is the authoritative identity.
+   *   - "clean"                  → hash confirmed unique in workspace
+   *   - "preliminary"            → name+size matches something in workspace; hashing in progress (warning only)
+   *   - "checking"               → hash computing / query in flight
+   *   - "block-same-title"       → SHA-256 match on this title → BLOCK
+   *   - "warn-same-workspace"    → SHA-256 match elsewhere in this workspace → offer "Use Existing" / replace
+   *   - "hash-skipped"           → file too large to hash in-browser (>1.5GB); fall back to name+size heuristic
    *
-   * Identity heuristic: (workspace_id, file_name, file_size). This matches the
-   * founder-defined duplicate policy without requiring a cross-object SHA-256
-   * ledger. An exact-hash column can be added later without changing this UI.
+   * Cross-workspace duplicates are NEVER surfaced to creators.
    */
   type DupState =
     | { kind: "clean" }
     | { kind: "checking" }
+    | { kind: "preliminary" }
+    | { kind: "hash-skipped" }
     | { kind: "block-same-title"; name: string }
-    | { kind: "warn-same-workspace"; name: string; where: string };
+    | { kind: "warn-same-workspace"; name: string; existingUploadId?: string };
   const [dup, setDup] = useState<DupState>({ kind: "clean" });
 
   const stagedPreflight = useMemo(
@@ -177,27 +179,95 @@ export function AssetUploader({
     [quotaTotalBytes, quotaUsedBytes],
   );
 
-  // Duplicate lookup — heuristic on (workspace_id, file_name, file_size).
-  // Cheap, indexable, and matches the founder-defined block/warn policy.
-  const runDedupCheck = useCallback(async (file: File): Promise<DupState> => {
-    if (!active) return { kind: "clean" };
+  // Cap browser-side hashing at 1.5GB to avoid OOM. Larger files fall back to
+  // name+size heuristic + server-side dedup after upload.
+  const SHA_MAX_BYTES = 1.5 * GB;
+  const sha256Hex = useCallback(async (file: File): Promise<string | null> => {
+    if (file.size > SHA_MAX_BYTES) return null;
     try {
-      const { data, error } = await (supabase as any)
+      const buf = await file.arrayBuffer();
+      const digest = await crypto.subtle.digest("SHA-256", buf);
+      return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+    } catch { return null; }
+  }, [SHA_MAX_BYTES]);
+
+  // Preliminary check (name+size) — returns a warning only, hashing overrides.
+  const preliminaryMatch = useCallback(async (file: File): Promise<boolean> => {
+    if (!active) return false;
+    try {
+      const { data } = await (supabase as any)
         .from("recent_uploads")
-        .select("id, title_id, file_name, file_size, status")
+        .select("id")
         .eq("workspace_id", active.id)
         .eq("file_name", file.name)
         .eq("file_size", file.size)
         .in("status", ["success", "completed", "ready"])
-        .limit(20);
-      if (error || !data || data.length === 0) return { kind: "clean" };
-      const sameTitle = data.find((r: any) => r.title_id === titleId);
-      if (sameTitle) return { kind: "block-same-title", name: file.name };
-      const other = data[0];
-      return { kind: "warn-same-workspace", name: file.name, where: other?.title_id ? "another title in this workspace" : "this workspace" };
-    } catch {
-      return { kind: "clean" };
+        .limit(1);
+      return !!(data && data.length);
+    } catch { return false; }
+  }, [active]);
+
+  // Authoritative SHA-256 dedup. Queries upload_sessions by workspace+hash,
+  // resolves matching recent_uploads rows via oci_upload_id, then determines
+  // same-title vs same-workspace by inspecting title_assets. Cross-workspace
+  // duplicates are never returned by the query (workspace_id is scoped).
+  const runShaDedup = useCallback(async (file: File, shaHex: string | null): Promise<DupState> => {
+    if (!active) return { kind: "clean" };
+    if (!shaHex) {
+      // Fallback for >1.5GB — name+size heuristic scoped to this title only.
+      try {
+        const { data } = await (supabase as any)
+          .from("recent_uploads")
+          .select("id, oci_upload_id")
+          .eq("workspace_id", active.id)
+          .eq("file_name", file.name)
+          .eq("file_size", file.size)
+          .in("status", ["success", "completed", "ready"])
+          .limit(20);
+        const ids = (data ?? []).map((r: any) => r.id);
+        if (ids.length === 0) return { kind: "hash-skipped" };
+        const { data: ta } = await (supabase as any)
+          .from("title_assets")
+          .select("upload_id, title_id")
+          .in("upload_id", ids)
+          .eq("title_id", titleId)
+          .limit(1);
+        if (ta && ta.length) return { kind: "block-same-title", name: file.name };
+        return { kind: "warn-same-workspace", name: file.name };
+      } catch { return { kind: "hash-skipped" }; }
     }
+    try {
+      const { data: sessions } = await (supabase as any)
+        .from("upload_sessions")
+        .select("id, oci_upload_id")
+        .eq("workspace_id", active.id)
+        .eq("file_sha256", shaHex)
+        .in("status", ["completed", "success"])
+        .limit(50);
+      const ociIds = (sessions ?? []).map((s: any) => s.oci_upload_id).filter(Boolean);
+      if (ociIds.length === 0) return { kind: "clean" };
+      const { data: uploads } = await (supabase as any)
+        .from("recent_uploads")
+        .select("id")
+        .eq("workspace_id", active.id)
+        .in("oci_upload_id", ociIds)
+        .limit(50);
+      const uploadIds = (uploads ?? []).map((u: any) => u.id);
+      if (uploadIds.length === 0) return { kind: "clean" };
+      const { data: ta } = await (supabase as any)
+        .from("title_assets")
+        .select("upload_id, title_id")
+        .in("upload_id", uploadIds)
+        .limit(50);
+      const onThisTitle = (ta ?? []).find((r: any) => r.title_id === titleId);
+      if (onThisTitle) return { kind: "block-same-title", name: file.name };
+      const otherInWorkspace = (ta ?? []).find((r: any) => r.title_id && r.title_id !== titleId);
+      if (otherInWorkspace) {
+        return { kind: "warn-same-workspace", name: file.name, existingUploadId: otherInWorkspace.upload_id };
+      }
+      // Match exists in workspace but not attached to any title — treat as workspace-level warn.
+      return { kind: "warn-same-workspace", name: file.name };
+    } catch { return { kind: "clean" }; }
   }, [active, titleId]);
 
   const handlePicked = useCallback(async (f: File) => {
@@ -213,7 +283,6 @@ export function AssetUploader({
       toast.error("This title is locked — uploads are disabled.");
       return;
     }
-    // Quota preflight — block before any bytes leave the browser.
     if (wouldExceedQuota(f.size)) {
       setStagedFile(f);
       toast.error("Not enough storage on your current plan.");
@@ -221,17 +290,25 @@ export function AssetUploader({
     }
     setStagedFile(f);
     setDup({ kind: "checking" });
-    const d = await runDedupCheck(f);
+
+    // Kick off preliminary check + hash in parallel. Hash is authoritative
+    // and always overwrites the preliminary result once it lands.
+    const prelimP = preliminaryMatch(f);
+    const shaP = sha256Hex(f);
+    prelimP.then((hit) => {
+      setDup((cur) => (cur.kind === "checking" && hit ? { kind: "preliminary" } : cur));
+    });
+    const shaHex = await shaP;
+    const d = await runShaDedup(f, shaHex);
     setDup(d);
     if (d.kind === "block-same-title") {
       toast.error("This exact file is already on this title.");
       return;
     }
-    // Warn state → require explicit user click before starting.
-    if (d.kind === "warn-same-workspace") return;
-    // All clean → auto-start.
+    if (d.kind === "warn-same-workspace") return; // require explicit user action
+    if (d.kind === "hash-skipped") return;         // require user confirm for >1.5GB
     void runUpload(f);
-  }, [category, locked, runUpload, wouldExceedQuota, runDedupCheck]);
+  }, [category, locked, runUpload, wouldExceedQuota, preliminaryMatch, runShaDedup, sha256Hex]);
 
   const startUpload = useCallback(() => {
     if (!stagedFile) return;
@@ -361,18 +438,30 @@ export function AssetUploader({
             </div>
           )}
           {stagedPreflight.ok && !wouldExceedQuota(stagedFile.size) && dup.kind === "checking" && (
-            <p className="text-muted-foreground inline-flex items-center gap-1.5"><Loader2 className="w-3 h-3 animate-spin" /> Checking for duplicates…</p>
+            <p className="text-muted-foreground inline-flex items-center gap-1.5"><Loader2 className="w-3 h-3 animate-spin" /> Verifying file identity (SHA-256)…</p>
+          )}
+          {dup.kind === "preliminary" && (
+            <div className="rounded-md border border-amber-500/30 bg-amber-500/5 px-2.5 py-2 text-amber-200/90 space-y-1">
+              <p className="font-medium inline-flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Preliminary match — verifying hash</p>
+              <p>A file with the same name and size exists in your workspace. Confirming with SHA-256…</p>
+            </div>
+          )}
+          {dup.kind === "hash-skipped" && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-2 text-amber-200 space-y-1">
+              <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-3.5 h-3.5" /> Possible duplicate (large file)</p>
+              <p>This file is too large to hash in-browser. A file with the same name and size exists elsewhere in your workspace — upload anyway if this is a new revision.</p>
+            </div>
           )}
           {dup.kind === "block-same-title" && (
             <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2.5 py-2 text-rose-200 space-y-1">
               <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-3.5 h-3.5" /> Duplicate on this title</p>
-              <p>An identical file ({dup.name}) is already uploaded here. Choose a different file, or delete the existing one first.</p>
+              <p>An identical file (verified by SHA-256) is already uploaded to this title. Replace the existing version or choose a different file.</p>
             </div>
           )}
           {dup.kind === "warn-same-workspace" && (
             <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-2 text-amber-200 space-y-1">
-              <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-3.5 h-3.5" /> Similar file already in your workspace</p>
-              <p>This file matches one already uploaded to {dup.where}. Uploading again is allowed, but you may want to reuse the existing asset.</p>
+              <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-3.5 h-3.5" /> This file already exists in your workspace</p>
+              <p>SHA-256 matches an existing upload in your workspace. You can reuse the existing asset or upload this copy as a new version on this title.</p>
             </div>
           )}
           {singleSlot && stagedPreflight.ok && existingActiveCount > 0 && (
@@ -382,10 +471,10 @@ export function AssetUploader({
             <button
               type="button"
               onClick={startUpload}
-              disabled={!stagedPreflight.ok || locked || wouldExceedQuota(stagedFile.size) || dup.kind === "block-same-title" || dup.kind === "checking"}
+              disabled={!stagedPreflight.ok || locked || wouldExceedQuota(stagedFile.size) || dup.kind === "block-same-title" || dup.kind === "checking" || dup.kind === "preliminary"}
               className="inline-flex items-center gap-1.5 rounded-md bg-accent text-accent-foreground px-3 py-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <Upload className="w-3.5 h-3.5" /> {dup.kind === "warn-same-workspace" ? "Upload anyway" : "Start upload"}
+              <Upload className="w-3.5 h-3.5" /> {dup.kind === "warn-same-workspace" || dup.kind === "hash-skipped" ? "Upload as new version" : "Start upload"}
             </button>
             <button
               type="button"

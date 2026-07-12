@@ -179,17 +179,14 @@ export function AssetUploader({
     [quotaTotalBytes, quotaUsedBytes],
   );
 
-  // Cap browser-side hashing at 1.5GB to avoid OOM. Larger files fall back to
-  // name+size heuristic + server-side dedup after upload.
-  const SHA_MAX_BYTES = 1.5 * GB;
-  const sha256Hex = useCallback(async (file: File): Promise<string | null> => {
-    if (file.size > SHA_MAX_BYTES) return null;
-    try {
-      const buf = await file.arrayBuffer();
-      const digest = await crypto.subtle.digest("SHA-256", buf);
-      return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
-    } catch { return null; }
-  }, [SHA_MAX_BYTES]);
+  // Per founder policy: never hash the entire file in the browser. Preflight
+  // is a lightweight name+size heuristic only. Authoritative SHA-256
+  // reconciliation happens server-side (OCI pipeline persists file_sha256 on
+  // upload_sessions), and duplicate objects are collapsed post-finalize.
+  const sha256Hex = useCallback(async (_file: File): Promise<string | null> => null, []);
+  const devLog = useCallback((...args: unknown[]) => {
+    if (import.meta.env.DEV) console.debug("[uploader]", ...args);
+  }, []);
 
   // Preliminary check (name+size) — returns a warning only, hashing overrides.
   const preliminaryMatch = useCallback(async (file: File): Promise<boolean> => {
@@ -273,9 +270,11 @@ export function AssetUploader({
   const handlePicked = useCallback(async (f: File) => {
     setSuccess(null);
     setDup({ kind: "clean" });
+    devLog("picked", { name: f.name, size: f.size, category });
     const pre = preflight(f, category);
     if (!pre.ok) {
       setStagedFile(f);
+      devLog("preflight-fail", pre);
       toast.error((pre as { ok: false; reason: string }).reason);
       return;
     }
@@ -285,30 +284,29 @@ export function AssetUploader({
     }
     if (wouldExceedQuota(f.size)) {
       setStagedFile(f);
+      devLog("quota-block", { size: f.size, remaining: quotaRemainingBytes });
       toast.error("Not enough storage on your current plan.");
       return;
     }
     setStagedFile(f);
     setDup({ kind: "checking" });
 
-    // Kick off preliminary check + hash in parallel. Hash is authoritative
-    // and always overwrites the preliminary result once it lands.
+    // Lightweight preflight only (name+size). Authoritative checksum
+    // reconciliation happens server-side after upload finalizes.
     const prelimP = preliminaryMatch(f);
-    const shaP = sha256Hex(f);
+    const shaP = sha256Hex(f); // always resolves null under founder policy
     prelimP.then((hit) => {
       setDup((cur) => (cur.kind === "checking" && hit ? { kind: "preliminary" } : cur));
     });
     const shaHex = await shaP;
     const d = await runShaDedup(f, shaHex);
+    devLog("dedup", d.kind);
     setDup(d);
-    if (d.kind === "block-same-title") {
-      toast.error("This exact file is already on this title.");
-      return;
-    }
+    if (d.kind === "block-same-title") return; // require replace/version action
     if (d.kind === "warn-same-workspace") return; // require explicit user action
-    if (d.kind === "hash-skipped") return;         // require user confirm for >1.5GB
+    if (d.kind === "hash-skipped") return;         // require user confirm
     void runUpload(f);
-  }, [category, locked, runUpload, wouldExceedQuota, preliminaryMatch, runShaDedup, sha256Hex]);
+  }, [category, locked, runUpload, wouldExceedQuota, preliminaryMatch, runShaDedup, sha256Hex, devLog, quotaRemainingBytes]);
 
   const startUpload = useCallback(() => {
     if (!stagedFile) return;
@@ -438,30 +436,30 @@ export function AssetUploader({
             </div>
           )}
           {stagedPreflight.ok && !wouldExceedQuota(stagedFile.size) && dup.kind === "checking" && (
-            <p className="text-muted-foreground inline-flex items-center gap-1.5"><Loader2 className="w-3 h-3 animate-spin" /> Verifying file identity (SHA-256)…</p>
+            <p className="text-muted-foreground inline-flex items-center gap-1.5"><Loader2 className="w-3 h-3 animate-spin" /> Running preflight fingerprint (name + size)…</p>
           )}
           {dup.kind === "preliminary" && (
             <div className="rounded-md border border-amber-500/30 bg-amber-500/5 px-2.5 py-2 text-amber-200/90 space-y-1">
-              <p className="font-medium inline-flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Preliminary match — verifying hash</p>
-              <p>A file with the same name and size exists in your workspace. Confirming with SHA-256…</p>
+              <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-3.5 h-3.5" /> Preflight match</p>
+              <p>A file with the same name and size exists in your workspace. Server will reconcile the exact checksum after upload and collapse duplicates.</p>
             </div>
           )}
           {dup.kind === "hash-skipped" && (
             <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-2 text-amber-200 space-y-1">
-              <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-3.5 h-3.5" /> Possible duplicate (large file)</p>
-              <p>This file is too large to hash in-browser. A file with the same name and size exists elsewhere in your workspace — upload anyway if this is a new revision.</p>
+              <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-3.5 h-3.5" /> Possible duplicate</p>
+              <p>A file with the same name and size exists elsewhere in your workspace. Upload anyway if this is a new revision — exact-checksum reconciliation happens server-side.</p>
             </div>
           )}
           {dup.kind === "block-same-title" && (
             <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2.5 py-2 text-rose-200 space-y-1">
               <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-3.5 h-3.5" /> Duplicate on this title</p>
-              <p>An identical file (verified by SHA-256) is already uploaded to this title. Replace the existing version or choose a different file.</p>
+              <p>A file with the same name and size is already uploaded to this title. Replace the existing version or choose a different file. Server-side checksum will confirm identity.</p>
             </div>
           )}
           {dup.kind === "warn-same-workspace" && (
             <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-2 text-amber-200 space-y-1">
-              <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-3.5 h-3.5" /> This file already exists in your workspace</p>
-              <p>SHA-256 matches an existing upload in your workspace. You can reuse the existing asset or upload this copy as a new version on this title.</p>
+              <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-3.5 h-3.5" /> Possible duplicate in your workspace</p>
+              <p>A matching file exists in your workspace. You can reuse the existing asset or upload this copy as a new version on this title — server will reconcile exact checksum after upload.</p>
             </div>
           )}
           {singleSlot && stagedPreflight.ok && existingActiveCount > 0 && (

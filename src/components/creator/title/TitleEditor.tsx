@@ -20,18 +20,19 @@ import RequestEditButton from "@/components/creator/RequestEditButton";
 import { useTitleLock } from "@/hooks/useTitleLock";
 import { SmartMetadataImportButton } from "./SmartMetadataImport";
 import { MediaCmsPanel } from "./MediaCmsPanel";
-import { TitleDistributionPanel } from "@/components/distribution/TitleDistributionPanel";
+import { CreatorDistributionStatus } from "./CreatorDistributionStatus";
 
-type TabId = "overview" | "metadata" | "assets" | "legal" | "cms" | "distribution" | "submission";
+// Creator workspace — five tabs only.
+// Media CMS, package building, partner dispatch and delivery controls
+// are Admin-only surfaces and are intentionally NOT rendered here.
+type TabId = "overview" | "metadata" | "assets" | "rights" | "submission";
 
 const TABS: { id: TabId; label: string }[] = [
-  { id: "overview",     label: "Overview" },
-  { id: "metadata",     label: "Details" },
-  { id: "assets",       label: "Files" },
-  { id: "legal",        label: "Business" },
-  { id: "cms",          label: "Media CMS" },
-  { id: "distribution", label: "Distribution" },
-  { id: "submission",   label: "Submit" },
+  { id: "overview",   label: "Overview" },
+  { id: "metadata",   label: "Details" },
+  { id: "assets",     label: "Media & Assets" },
+  { id: "rights",     label: "Rights & Business" },
+  { id: "submission", label: "Submit" },
 ];
 
 export function TitleEditor({

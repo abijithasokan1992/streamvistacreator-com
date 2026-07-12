@@ -53,7 +53,7 @@ import AdminResearch from "./pages/AdminResearch.tsx";
 import AdminLegacyRecovery from "./pages/admin/LegacyRecovery.tsx";
 import CollegeERP from "./pages/CollegeERP.tsx";
 import Connect from "./pages/Connect.tsx";
-import Connectors from "./pages/Connectors.tsx";
+import SettingsIntegrationsAI from "./pages/SettingsIntegrationsAI.tsx";
 import AccessibilityPage from "./pages/Accessibility.tsx";
 
 // Smart Uploads is not MVP-ready — hidden until the checksum + bucket work is production-safe.

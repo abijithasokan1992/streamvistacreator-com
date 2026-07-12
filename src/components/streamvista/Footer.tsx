@@ -2,22 +2,46 @@ import { Link, useLocation } from "react-router-dom";
 import { Lock, Cloud, ShieldCheck, type LucideIcon } from "lucide-react";
 import { CrayonsNetwork } from "./CrayonsNetwork";
 
-const LEGAL_LINKS = [
+const PRODUCT_LINKS = [
+  { to: "/#platform", label: "Solutions" },
   { to: "/pricing", label: "Pricing" },
+  { to: "/creator-preview", label: "Creator Preview" },
+  { to: "/partners", label: "Partners" },
   { to: "/connect", label: "Agent integrations" },
+];
+
+const COMPANY_LINKS = [
+  { to: "/about", label: "About" },
+  { to: "/contact", label: "Contact" },
+];
+
+const LEGAL_LINKS = [
   { to: "/terms", label: "Terms" },
   { to: "/privacy", label: "Privacy" },
   { to: "/ip-copyright", label: "IP & DMCA" },
   { to: "/accessibility", label: "Accessibility" },
-  { to: "/contact", label: "Contact" },
 ];
 
+const TRUST_LINKS = [
+  { to: "/dmca#submit-notice", label: "Report IP infringement" },
+  { to: "/dmca#grievance", label: "Grievance officer" },
+  { to: "/ip-copyright", label: "IP policy" },
+];
 
 const TRUST: { icon: LucideIcon; label: string }[] = [
   { icon: Lock, label: "256-bit SSL" },
   { icon: Cloud, label: "StreamVista Cloud X" },
   { icon: ShieldCheck, label: "DMCA Protected" },
 ];
+
+const Wordmark = () => (
+  <div className="font-display font-black tracking-tight text-base uppercase leading-none">
+    <span className="text-foreground">STREAMVISTA</span>
+    <span className="ml-1.5 text-muted-foreground/70 font-semibold text-[0.72em] tracking-[0.2em] align-middle">
+      CLOUD X
+    </span>
+  </div>
+);
 
 export const Footer = () => {
   const location = useLocation();
@@ -27,60 +51,51 @@ export const Footer = () => {
     <footer className="relative mt-24 border-t border-border/40">
       <div className="pointer-events-none absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
 
-      <div className="container py-10">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          <div>
-            <Link to="/" className="font-display font-black tracking-tight text-base uppercase" aria-label="StreamVista home">
-              STREAMVISTA <span className="gradient-text">CLOUD X</span>
+      <div className="container py-12">
+        {/* 4-column grid: Brand · Product · Company · Legal / Trust */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-10">
+          <div className="col-span-2 md:col-span-1">
+            <Link to="/" aria-label="StreamVista home">
+              <Wordmark />
             </Link>
-            <p className="mt-1 text-[11px] text-muted-foreground">
+            <p className="mt-3 text-[11px] text-muted-foreground leading-relaxed max-w-[240px]">
               One Secure Cloud for Films, Series &amp; Shows
             </p>
+            {isHome && (
+              <ul className="mt-5 flex flex-wrap items-center gap-1.5">
+                {TRUST.map(({ icon: Icon, label }) => (
+                  <li
+                    key={label}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border/50 px-2 py-1 text-[10px] font-mono-tech uppercase tracking-[0.16em] text-muted-foreground"
+                  >
+                    <Icon className="w-3 h-3 opacity-70" strokeWidth={1.75} />
+                    <span>{label}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
-          <nav className="flex flex-wrap items-center gap-x-5 gap-y-2" aria-label="Footer">
-            {LEGAL_LINKS.map((l) => (
-              <Link
-                key={l.to}
-                to={l.to}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {l.label}
-              </Link>
-            ))}
-          </nav>
+          <FooterColumn title="Product" links={PRODUCT_LINKS} />
+          <FooterColumn title="Company" links={COMPANY_LINKS} />
+          <div>
+            <FooterColumn title="Legal" links={LEGAL_LINKS} />
+            <div className="mt-6">
+              <FooterColumn title="Trust & Safety" links={TRUST_LINKS} />
+            </div>
+          </div>
         </div>
 
-
-        <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
-          <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground/60">Trust &amp; Safety</span>
-          <Link to="/dmca#submit-notice" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Report IP infringement</Link>
-          <Link to="/dmca#grievance" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Grievance officer</Link>
-          <Link to="/ip-copyright" className="text-xs text-muted-foreground hover:text-foreground transition-colors">IP policy</Link>
-        </div>
-
-        <div className="mt-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="mt-10 pt-6 border-t border-border/40 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <p className="text-[11px] leading-relaxed text-muted-foreground">
             © {new Date().getFullYear()}{" "}
             <strong className="text-foreground/80">StreamVista OPC Pvt Ltd</strong>
             <span className="opacity-60"> · Ernakulam, Kerala, India.</span>
           </p>
-
-          {isHome && (
-            <ul className="flex flex-wrap items-center gap-2">
-              {TRUST.map(({ icon: Icon, label }) => (
-                <li
-                  key={label}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border/50 px-2.5 py-1 text-[10px] font-mono-tech uppercase tracking-[0.16em] text-muted-foreground"
-                >
-                  <Icon className="w-3 h-3 opacity-70" strokeWidth={1.75} />
-                  <span>{label}</span>
-                </li>
-              ))}
-            </ul>
-          )}
         </div>
-        <div className="mt-10 pt-6 border-t border-border/40">
+
+        {/* Crayons Network lineage promoted */}
+        <div className="mt-10 pt-8 border-t border-border/40">
           <CrayonsNetwork eyebrow="Powered by The Crayons Network" />
           <p className="mt-4 text-center text-[11px] leading-relaxed text-muted-foreground/70 max-w-md mx-auto">
             The founding media companies behind the StreamVista ecosystem —
@@ -93,3 +108,31 @@ export const Footer = () => {
     </footer>
   );
 };
+
+function FooterColumn({
+  title,
+  links,
+}: {
+  title: string;
+  links: { to: string; label: string }[];
+}) {
+  return (
+    <div>
+      <h3 className="font-mono-tech text-[10px] uppercase tracking-[0.24em] text-foreground/90 mb-4">
+        {title}
+      </h3>
+      <ul className="space-y-2.5">
+        {links.map((l) => (
+          <li key={l.to}>
+            <Link
+              to={l.to}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {l.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}

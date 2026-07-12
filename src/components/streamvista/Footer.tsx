@@ -28,17 +28,24 @@ const TRUST_LINKS = [
   { to: "/ip-copyright", label: "IP policy" },
 ];
 
-const TRUST: { icon: LucideIcon; label: string }[] = [
+const BrandChipLabel = () => (
+  <span className="inline-flex items-baseline gap-1">
+    <span className="text-foreground/90 font-semibold tracking-[0.18em]">STREAMVISTA</span>
+    <span className="text-muted-foreground/70 tracking-[0.22em] text-[0.85em]">CLOUD&nbsp;X</span>
+  </span>
+);
+
+const TRUST: { icon: LucideIcon; label: string; content?: React.ReactNode }[] = [
   { icon: Lock, label: "256-bit SSL" },
-  { icon: Cloud, label: "StreamVista Cloud X" },
+  { icon: Cloud, label: "StreamVista Cloud X", content: <BrandChipLabel /> },
   { icon: ShieldCheck, label: "DMCA Protected" },
 ];
 
 const Wordmark = () => (
-  <div className="font-display font-black tracking-tight text-base uppercase leading-none">
+  <div className="font-display font-black tracking-tight text-base uppercase leading-none inline-flex items-baseline gap-2">
     <span className="text-foreground">STREAMVISTA</span>
-    <span className="ml-1.5 text-muted-foreground/70 font-semibold text-[0.72em] tracking-[0.2em] align-middle">
-      CLOUD X
+    <span className="text-muted-foreground/70 font-semibold text-[0.72em] tracking-[0.2em]">
+      CLOUD&nbsp;X
     </span>
   </div>
 );

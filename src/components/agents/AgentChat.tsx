@@ -61,25 +61,53 @@ export function AgentChat({ surface, className }: { surface: AgentSurface; class
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, loading]);
 
+  const redirectToAuth = (reason: string) => {
+    const next = window.location.pathname + window.location.search;
+    setMessages((prev) => {
+      const last = prev[prev.length - 1];
+      const msg = `⚠️ ${reason}`;
+      if (last?.role === "assistant" && last.content === msg) return prev;
+      return [...prev, { role: "assistant", content: msg }];
+    });
+    // Small delay so the user sees the message before we navigate.
+    window.setTimeout(() => {
+      window.location.href = `/auth?next=${encodeURIComponent(next)}`;
+    }, 400);
+  };
+
   const send = async () => {
     const text = input.trim();
     if (!text || loading) return;
     const next = [...messages, { role: "user" as const, content: text }];
     setMessages(next);
+    const priorInput = text;
     setInput("");
     setLoading(true);
     try {
-      // Session preflight — protected surfaces require an authenticated user.
+      // Session preflight for protected surfaces — attempt refresh first so a
+      // still-refreshable token is renewed rather than sent expired. If refresh
+      // fails or no session exists, do NOT invoke the Edge Function.
       if (surface !== "home") {
-        const { data: sessionData } = await supabase.auth.getSession();
-        if (!sessionData?.session) {
-          setMessages([
-            ...next,
-            {
-              role: "assistant",
-              content: `⚠️ Please sign in again to use **${g.name}**. Your session has expired.`,
-            },
-          ]);
+        let hasValidSession = false;
+        try {
+          const { data: refreshed, error: refreshErr } =
+            await supabase.auth.refreshSession();
+          if (!refreshErr && refreshed?.session) {
+            hasValidSession = true;
+          }
+        } catch {
+          /* fall through to getSession fallback */
+        }
+        if (!hasValidSession) {
+          // Fallback: a valid (non-expired) session may exist that simply
+          // couldn't be refreshed (e.g. offline). Accept it if present.
+          const { data: sessionData } = await supabase.auth.getSession();
+          if (sessionData?.session) hasValidSession = true;
+        }
+        if (!hasValidSession) {
+          setInput(priorInput); // preserve the user's typed message
+          setMessages(messages); // roll back the pending user bubble
+          redirectToAuth("Your session expired. Please sign in again to continue.");
           setLoading(false);
           return;
         }
@@ -92,9 +120,11 @@ export function AgentChat({ surface, className }: { surface: AgentSurface; class
         // Parse the structured backend error { error: { code, message } } from the edge function.
         let detail = error?.message ?? "Request failed";
         let code: string | undefined;
+        let status: number | undefined;
         try {
           const ctx: any = (error as any).context;
           const resp: Response | undefined = ctx instanceof Response ? ctx : undefined;
+          if (resp) status = resp.status;
           let raw = "";
           if (resp) {
             raw = await resp.clone().text();
@@ -126,15 +156,28 @@ export function AgentChat({ surface, className }: { surface: AgentSurface; class
         } catch {
           /* keep generic detail */
         }
-        if (code === "expired_authentication") {
-          detail = `Please sign in again to use ${g.name}.`;
+        if (code === "expired_authentication" || status === 401) {
+          setInput(priorInput);
+          setMessages(messages);
+          redirectToAuth("Your session expired. Please sign in again to continue.");
+          return;
         }
-        setMessages([...next, { role: "assistant", content: `⚠️ ${detail}` }]);
+        setMessages((prev) => {
+          const last = prev[prev.length - 1];
+          const msg = `⚠️ ${detail}`;
+          if (last?.role === "assistant" && last.content === msg) return prev;
+          return [...next, { role: "assistant", content: msg }];
+        });
         return;
       }
       setMessages([...next, { role: "assistant", content: data?.content ?? "(no response)" }]);
     } catch (e: any) {
-      setMessages([...next, { role: "assistant", content: `⚠️ ${e?.message ?? "Request failed"}` }]);
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        const msg = `⚠️ ${e?.message ?? "Request failed"}`;
+        if (last?.role === "assistant" && last.content === msg) return prev;
+        return [...next, { role: "assistant", content: msg }];
+      });
     } finally {
       setLoading(false);
     }

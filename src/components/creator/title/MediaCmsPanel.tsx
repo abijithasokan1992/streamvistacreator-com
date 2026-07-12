@@ -58,8 +58,9 @@ export function MediaCmsPanel({
       {sub === "hierarchy"    && <HierarchyTab titleId={titleId} ownerUserId={ownerUserId} workspaceId={workspaceId} titleKind={titleKind} readOnly={readOnly} />}
       {sub === "collections"  && <CollectionsTab titleId={titleId} ownerUserId={ownerUserId} readOnly={readOnly} />}
       {sub === "versions"     && <VersionsTab titleId={titleId} readOnly={readOnly} />}
-      {sub === "localization" && <LocalizationTab titleId={titleId} readOnly={readOnly} />}
-      {sub === "publishing"   && <PublishingTab titleId={titleId} readOnly={readOnly} />}
+      {/* Localization + Publishing are Admin-owned surfaces. Creator gets read-only view. */}
+      {sub === "localization" && <LocalizationTab titleId={titleId} readOnly={true} />}
+      {sub === "publishing"   && <PublishingTab titleId={titleId} readOnly={true} />}
       {sub === "delivery"     && <DeliveryTab titleId={titleId} />}
     </div>
   );

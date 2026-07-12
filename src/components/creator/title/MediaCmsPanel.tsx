@@ -58,8 +58,9 @@ export function MediaCmsPanel({
       {sub === "hierarchy"    && <HierarchyTab titleId={titleId} ownerUserId={ownerUserId} workspaceId={workspaceId} titleKind={titleKind} readOnly={readOnly} />}
       {sub === "collections"  && <CollectionsTab titleId={titleId} ownerUserId={ownerUserId} readOnly={readOnly} />}
       {sub === "versions"     && <VersionsTab titleId={titleId} readOnly={readOnly} />}
-      {sub === "localization" && <LocalizationTab titleId={titleId} readOnly={readOnly} />}
-      {sub === "publishing"   && <PublishingTab titleId={titleId} readOnly={readOnly} />}
+      {/* Localization + Publishing are Admin-owned surfaces. Creator gets read-only view. */}
+      {sub === "localization" && <LocalizationTab titleId={titleId} readOnly={true} />}
+      {sub === "publishing"   && <PublishingTab titleId={titleId} readOnly={true} />}
       {sub === "delivery"     && <DeliveryTab titleId={titleId} />}
     </div>
   );
@@ -464,6 +465,11 @@ function LocalizationTab({ titleId, readOnly }: { titleId: string; readOnly: boo
 
   return (
     <div className="space-y-4">
+      {readOnly && (
+        <p className="text-[11px] text-muted-foreground rounded-md border border-border/40 bg-secondary/20 px-2.5 py-1.5">
+          Localization is managed by the StreamVista team after submission. Contact support to request a change.
+        </p>
+      )}
       {!readOnly && (
         <div className="flex flex-wrap gap-1.5">
           {LOCALIZATION_KINDS.map((k) => (
@@ -554,7 +560,13 @@ function PublishingTab({ titleId, readOnly }: { titleId: string; readOnly: boole
 
   return (
     <div className="space-y-4">
+      {readOnly && (
+        <p className="text-[11px] text-muted-foreground rounded-md border border-border/40 bg-secondary/20 px-2.5 py-1.5">
+          Publishing schedule and approval are managed by the StreamVista team after submission. Contact support to request a change.
+        </p>
+      )}
       <Card title="Status">
+
         <div className="grid sm:grid-cols-2 gap-3 text-xs">
           <Select label="Availability" disabled={readOnly} value={rec?.availability ?? "draft"}
             options={["draft","scheduled","available","expired","withdrawn"]}
@@ -568,13 +580,13 @@ function PublishingTab({ titleId, readOnly }: { titleId: string; readOnly: boole
           <Select label="Delivery" disabled={readOnly} value={rec?.delivery ?? "not_started"}
             options={["not_started","queued","in_progress","delivered","failed"]}
             onChange={(v) => patch({ delivery: v as any })} />
-          <Input label="Available From" type="datetime-local" value={toLocalDT(rec?.available_from)} onChange={(v) => patch({ available_from: fromLocalDT(v) })} />
-          <Input label="Available Until" type="datetime-local" value={toLocalDT(rec?.available_until)} onChange={(v) => patch({ available_until: fromLocalDT(v) })} />
+          <Input label="Available From" type="datetime-local" disabled={readOnly} value={toLocalDT(rec?.available_from)} onChange={(v) => patch({ available_from: fromLocalDT(v) })} />
+          <Input label="Available Until" type="datetime-local" disabled={readOnly} value={toLocalDT(rec?.available_until)} onChange={(v) => patch({ available_until: fromLocalDT(v) })} />
         </div>
         <div className="mt-3">
           <label className="text-[11px] text-muted-foreground">Notes</label>
-          <textarea disabled={readOnly} value={rec?.notes ?? ""} onChange={(e) => patch({ notes: e.target.value })}
-            rows={3} className="w-full mt-1 rounded-md bg-background/60 border border-border/50 text-xs px-2 py-1.5" />
+          <textarea disabled={readOnly} readOnly={readOnly} value={rec?.notes ?? ""} onChange={(e) => patch({ notes: e.target.value })}
+            rows={3} className="w-full mt-1 rounded-md bg-background/60 border border-border/50 text-xs px-2 py-1.5 disabled:opacity-70" />
         </div>
         {!readOnly && (
           <div className="mt-3">
@@ -597,14 +609,15 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
     </section>
   );
 }
-function Input({ label, value, onChange, placeholder, type }: {
-  label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string;
+function Input({ label, value, onChange, placeholder, type, disabled }: {
+  label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string; disabled?: boolean;
 }) {
   return (
     <label className="block">
       <span className="text-[11px] text-muted-foreground">{label}</span>
       <input type={type ?? "text"} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
-        className="mt-1 w-full rounded-md bg-background/60 border border-border/50 text-xs px-2 py-1.5" />
+        disabled={disabled} readOnly={disabled}
+        className="mt-1 w-full rounded-md bg-background/60 border border-border/50 text-xs px-2 py-1.5 disabled:opacity-70" />
     </label>
   );
 }

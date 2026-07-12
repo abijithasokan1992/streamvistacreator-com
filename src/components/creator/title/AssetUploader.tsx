@@ -270,9 +270,11 @@ export function AssetUploader({
   const handlePicked = useCallback(async (f: File) => {
     setSuccess(null);
     setDup({ kind: "clean" });
+    devLog("picked", { name: f.name, size: f.size, category });
     const pre = preflight(f, category);
     if (!pre.ok) {
       setStagedFile(f);
+      devLog("preflight-fail", pre);
       toast.error((pre as { ok: false; reason: string }).reason);
       return;
     }
@@ -282,28 +284,27 @@ export function AssetUploader({
     }
     if (wouldExceedQuota(f.size)) {
       setStagedFile(f);
+      devLog("quota-block", { size: f.size, remaining: quotaRemainingBytes });
       toast.error("Not enough storage on your current plan.");
       return;
     }
     setStagedFile(f);
     setDup({ kind: "checking" });
 
-    // Kick off preliminary check + hash in parallel. Hash is authoritative
-    // and always overwrites the preliminary result once it lands.
+    // Lightweight preflight only (name+size). Authoritative checksum
+    // reconciliation happens server-side after upload finalizes.
     const prelimP = preliminaryMatch(f);
-    const shaP = sha256Hex(f);
+    const shaP = sha256Hex(f); // always resolves null under founder policy
     prelimP.then((hit) => {
       setDup((cur) => (cur.kind === "checking" && hit ? { kind: "preliminary" } : cur));
     });
     const shaHex = await shaP;
     const d = await runShaDedup(f, shaHex);
+    devLog("dedup", d.kind);
     setDup(d);
-    if (d.kind === "block-same-title") {
-      toast.error("This exact file is already on this title.");
-      return;
-    }
+    if (d.kind === "block-same-title") return; // require replace/version action
     if (d.kind === "warn-same-workspace") return; // require explicit user action
-    if (d.kind === "hash-skipped") return;         // require user confirm for >1.5GB
+    if (d.kind === "hash-skipped") return;         // require user confirm
     void runUpload(f);
   }, [category, locked, runUpload, wouldExceedQuota, preliminaryMatch, runShaDedup, sha256Hex]);
 

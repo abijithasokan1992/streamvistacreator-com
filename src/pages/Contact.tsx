@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Loader2, Send } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { Loader2, Send } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Seo } from "@/components/Seo";
+import { Navbar } from "@/components/streamvista/Navbar";
+import { Footer } from "@/components/streamvista/Footer";
 import { useToast } from "@/hooks/use-toast";
 
 const schema = z.object({

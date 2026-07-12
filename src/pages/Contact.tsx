@@ -16,11 +16,6 @@ const schema = z.object({
   message: z.string().trim().min(10, "Message must be at least 10 characters").max(4000),
 });
 
-const Wordmark = () => (
-  <div className="font-display font-black tracking-tight text-base md:text-lg uppercase">
-    STREAMVISTA <span className="gradient-text">CLOUD X</span>
-  </div>
-);
 
 export default function Contact() {
   const { toast } = useToast();

@@ -187,9 +187,13 @@ export default function EmailLogMonitor() {
             return (
               <div key={r.id} className="grid grid-cols-[1fr_1.4fr_120px_140px] gap-2 px-4 py-3 text-xs hover:bg-input/20 transition-colors">
                 <div className="font-mono text-foreground/90 truncate">{r.template_name ?? "—"}</div>
-                <div className="truncate text-muted-foreground" title={r.error_message ?? undefined}>
-                  {r.recipient_email ?? "—"}
-                  {r.error_message && <div className="text-[10px] text-rose-300/80 truncate">{r.error_message}</div>}
+                <div className="min-w-0 text-muted-foreground">
+                  <div className="truncate" title={r.recipient_email ?? undefined}>{r.recipient_email ?? "—"}</div>
+                  {r.error_message && (
+                    <div className="mt-0.5 text-[10px] text-rose-300/90 whitespace-pre-wrap break-words" title={r.error_message}>
+                      {r.error_message}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-medium", meta.cls)}>

@@ -464,54 +464,68 @@ export function TitleEditor({
                   />
                 )}
                 {tab === "assets" && (
-                  <div className="space-y-8">
-                    {/* 1. Trailer */}
-                    <AssetTab cat="trailer" label="Trailer"
-                      assets={byCat(["trailer"])} titleId={title.id}
-                      locked={assetsLockedFor("trailer")} onUploaded={reload} accept="video/*" />
-                    {/* 2. Poster — 4-slot artwork grid (slot 1 live, slots 2-4 reserved). */}
-                    <PosterGrid
-                      titleId={title.id}
-                      assets={byCat(["poster"])}
-                      locked={assetsLockedFor("poster")}
-                      onUploaded={reload}
-                    />
-                    {/* 3. Main Film */}
-                    <AssetTab cat="feature_film" label="Main Film"
-                      description="Optional full-length master file for review."
-                      assets={byCat(["feature_film"])} titleId={title.id}
-                      locked={assetsLockedFor("feature_film")} onUploaded={reload} accept="video/*" />
-                    {/* 4. Existing Contracts (renamed from Ownership Documents) */}
-                    <AssetTab cat="ownership_documents" label="Existing Contracts"
-                      description="Contracts, agreements, chain-of-title and existing rights paperwork."
-                      assets={byCat(["ownership_documents", "ownership"])} titleId={title.id}
-                      locked={assetsLockedFor("ownership_documents")} onUploaded={reload}
-                      accept="application/pdf,image/*" />
+                  <div className="space-y-10">
+                    {/* Group 1 · Artwork (posters + additional key art) */}
+                    <AssetGroup title="Artwork" hint="Poster and key art — one active primary poster, additional variants create versions.">
+                      <PosterGrid
+                        titleId={title.id}
+                        assets={byCat(["poster", "artwork"])}
+                        locked={assetsLockedFor("poster")}
+                        onUploaded={reload}
+                      />
+                    </AssetGroup>
+
+                    {/* Group 2 · Video (trailer + main master) */}
+                    <AssetGroup title="Video" hint="Trailer and Main Master. Uploading a new file creates a new version of the current slot.">
+                      <AssetTab cat="trailer" label="Trailer" singleSlot
+                        assets={byCat(["trailer"])} titleId={title.id}
+                        locked={assetsLockedFor("trailer")} onUploaded={reload} accept="video/*" />
+                      <AssetTab cat="feature_film" label="Main Master" singleSlot
+                        description="Full-length master file for review. One active version at a time."
+                        assets={byCat(["feature_film"])} titleId={title.id}
+                        locked={assetsLockedFor("feature_film")} onUploaded={reload} accept="video/*" />
+                    </AssetGroup>
+
+                    {/* Group 3 · Audio */}
+                    <AssetGroup title="Audio" hint="Alternative audio tracks and dubs. Multiple files allowed.">
+                      <AssetTab cat="audio_tracks" label="Audio tracks"
+                        assets={byCat(["audio_tracks", "audio"])} titleId={title.id}
+                        locked={mode === "view"} onUploaded={reload} accept="audio/*" />
+                    </AssetGroup>
+
+                    {/* Group 4 · Subtitles & Accessibility */}
+                    <AssetGroup title="Subtitles & Accessibility" hint="Caption / subtitle files (SRT, VTT). Multiple languages allowed.">
+                      <AssetTab cat="captions" label="Captions & subtitles"
+                        assets={byCat(["captions", "subtitle"])} titleId={title.id}
+                        locked={mode === "view"} onUploaded={reload}
+                        accept=".srt,.vtt,text/vtt,application/x-subrip" />
+                    </AssetGroup>
+
+                    {/* Group 5 · Documents — Censor, Chain of Title, Contracts, Script, Press Kit, Legal */}
+                    <AssetGroup title="Documents" hint="Censor certificate, chain of title, existing contracts, scripts, press kits and other legal PDFs.">
+                      <AssetTab cat="censor_certificate" label="Censor Certificate"
+                        assets={byCat(["censor_certificate", "censor_cert"])} titleId={title.id}
+                        locked={assetsLockedFor("censor_certificate")} onUploaded={reload} accept="application/pdf,image/*" />
+                      <AssetTab cat="ownership_documents" label="Chain of Title / Existing Contracts"
+                        description="Chain of title, ownership assignments, distribution or platform agreements."
+                        assets={byCat(["ownership_documents", "ownership", "legal", "sales"])} titleId={title.id}
+                        locked={assetsLockedFor("ownership_documents")} onUploaded={reload}
+                        accept="application/pdf,image/*" />
+                    </AssetGroup>
+
+                    {/* Group 6 · Delivery Assets — reserved surface */}
+                    <AssetGroup title="Delivery Assets" hint="Distribution-ready delivery packages appear here after approval. Package building and dispatch are handled by StreamVista Operations.">
+                      <div className="rounded-lg border border-dashed border-border/50 bg-background/30 p-6 text-center text-xs text-muted-foreground">
+                        No delivery packages yet — this surface activates after your title is approved.
+                      </div>
+                    </AssetGroup>
                   </div>
                 )}
-                {tab === "legal" && (
+                {tab === "rights" && (
                   <div className="space-y-8">
-                    <AssetTab cat="censor_certificate" label="Censor Certificate"
-                      assets={byCat(["censor_certificate", "censor_cert"])} titleId={title.id}
-                      locked={assetsLockedFor("censor_certificate")} onUploaded={reload} accept="application/pdf,image/*" />
                     <RightsAvailabilityPanel meta={meta} setMeta={setMeta} readOnly={metadataLocked} isFree={isFree} />
+                    <CreatorDistributionStatus titleId={title.id} titleStatus={title.status} />
                   </div>
-                )}
-                {tab === "cms" && (
-                  <MediaCmsPanel
-                    titleId={title.id}
-                    ownerUserId={title.owner_user_id}
-                    workspaceId={(title as any).workspace_id ?? null}
-                    titleKind={((title as any).kind as any) ?? "film"}
-                    readOnly={readOnly}
-                  />
-                )}
-                {tab === "distribution" && (
-                  <TitleDistributionPanel
-                    titleId={title.id}
-                    workspaceId={(title as any).workspace_id ?? null}
-                    readOnly={readOnly}
-                  />
                 )}
                 {tab === "submission" && (
                   <SubmissionTab title={title} readiness={readiness} local={localChecklist!} assets={assets} meta={meta} onJumpTab={setTab} isFree={isFree} />

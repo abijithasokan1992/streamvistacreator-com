@@ -465,6 +465,11 @@ function LocalizationTab({ titleId, readOnly }: { titleId: string; readOnly: boo
 
   return (
     <div className="space-y-4">
+      {readOnly && (
+        <p className="text-[11px] text-muted-foreground rounded-md border border-border/40 bg-secondary/20 px-2.5 py-1.5">
+          Localization is managed by the StreamVista team after submission. Contact support to request a change.
+        </p>
+      )}
       {!readOnly && (
         <div className="flex flex-wrap gap-1.5">
           {LOCALIZATION_KINDS.map((k) => (

@@ -70,13 +70,13 @@ export const Footer = () => {
             </p>
             {isHome && (
               <ul className="mt-5 flex flex-wrap items-center gap-1.5">
-                {TRUST.map(({ icon: Icon, label }) => (
+                {TRUST.map(({ icon: Icon, label, content }) => (
                   <li
                     key={label}
                     className="inline-flex items-center gap-1.5 rounded-full border border-border/50 px-2 py-1 text-[10px] font-mono-tech uppercase tracking-[0.16em] text-muted-foreground"
                   >
                     <Icon className="w-3 h-3 opacity-70" strokeWidth={1.75} />
-                    <span>{label}</span>
+                    <span>{content ?? label}</span>
                   </li>
                 ))}
               </ul>

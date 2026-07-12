@@ -168,11 +168,43 @@ export function AssetUploader({
     }
   }, [active, category, titleId, onUploaded]);
 
-  const handlePicked = useCallback((f: File) => {
+  // Quota preflight — computed synchronously from the shared storage hook.
+  const quotaTotalBytes = Math.max(0, Math.round((storage.totalGb ?? 0) * GB));
+  const quotaUsedBytes = Math.max(0, Math.round(storage.usedBytes ?? 0));
+  const quotaRemainingBytes = Math.max(0, quotaTotalBytes - quotaUsedBytes);
+  const wouldExceedQuota = useCallback(
+    (size: number) => quotaTotalBytes > 0 && (quotaUsedBytes + size) > quotaTotalBytes,
+    [quotaTotalBytes, quotaUsedBytes],
+  );
+
+  // Duplicate lookup — heuristic on (workspace_id, file_name, file_size).
+  // Cheap, indexable, and matches the founder-defined block/warn policy.
+  const runDedupCheck = useCallback(async (file: File): Promise<DupState> => {
+    if (!active) return { kind: "clean" };
+    try {
+      const { data, error } = await (supabase as any)
+        .from("recent_uploads")
+        .select("id, title_id, file_name, file_size, status")
+        .eq("workspace_id", active.id)
+        .eq("file_name", file.name)
+        .eq("file_size", file.size)
+        .in("status", ["success", "completed", "ready"])
+        .limit(20);
+      if (error || !data || data.length === 0) return { kind: "clean" };
+      const sameTitle = data.find((r: any) => r.title_id === titleId);
+      if (sameTitle) return { kind: "block-same-title", name: file.name };
+      const other = data[0];
+      return { kind: "warn-same-workspace", name: file.name, where: other?.title_id ? "another title in this workspace" : "this workspace" };
+    } catch {
+      return { kind: "clean" };
+    }
+  }, [active, titleId]);
+
+  const handlePicked = useCallback(async (f: File) => {
     setSuccess(null);
+    setDup({ kind: "clean" });
     const pre = preflight(f, category);
     if (!pre.ok) {
-      // Stage the file so the user sees the precise reason; don't auto-start a bad upload.
       setStagedFile(f);
       toast.error((pre as { ok: false; reason: string }).reason);
       return;
@@ -181,14 +213,35 @@ export function AssetUploader({
       toast.error("This title is locked — uploads are disabled.");
       return;
     }
-    // Valid file picked or dropped → start the upload immediately (no extra click).
+    // Quota preflight — block before any bytes leave the browser.
+    if (wouldExceedQuota(f.size)) {
+      setStagedFile(f);
+      toast.error("Not enough storage on your current plan.");
+      return;
+    }
     setStagedFile(f);
+    setDup({ kind: "checking" });
+    const d = await runDedupCheck(f);
+    setDup(d);
+    if (d.kind === "block-same-title") {
+      toast.error("This exact file is already on this title.");
+      return;
+    }
+    // Warn state → require explicit user click before starting.
+    if (d.kind === "warn-same-workspace") return;
+    // All clean → auto-start.
     void runUpload(f);
-  }, [category, locked, runUpload]);
+  }, [category, locked, runUpload, wouldExceedQuota, runDedupCheck]);
 
   const startUpload = useCallback(() => {
-    if (stagedFile) void runUpload(stagedFile);
-  }, [stagedFile, runUpload]);
+    if (!stagedFile) return;
+    if (dup.kind === "block-same-title") return;
+    if (wouldExceedQuota(stagedFile.size)) {
+      toast.error("Not enough storage on your current plan.");
+      return;
+    }
+    void runUpload(stagedFile);
+  }, [stagedFile, runUpload, dup, wouldExceedQuota]);
 
   // Drag-and-drop (works on desktop; touch devices fall back to the Choose-file button).
   const [drag, setDrag] = useState(false);

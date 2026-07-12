@@ -119,8 +119,9 @@ export async function updateTitleHierarchy(id: string, patch: {
   season_number?: number | null; episode_number?: number | null;
   franchise_id?: string | null;
 }) {
-  const { error } = await sb.from("content_titles").update(patch).eq("id", id);
+  const { data, error } = await sb.from("content_titles").update(patch).eq("id", id).select("id");
   if (error) throw error;
+  assertMutationAffectedRows(data, "title");
 }
 
 /* ---------- Franchises ---------- */

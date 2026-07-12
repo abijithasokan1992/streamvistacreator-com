@@ -293,6 +293,18 @@ export function AssetUploader({
                 ? `Allowed: ${cfg.exts.join(", ").toUpperCase()} · Max ${humanBytes(cfg.maxBytes)}`
                 : "Files go to Oracle Object Storage and are recorded in Oracle Database."}
           </p>
+          {singleSlot && existingActiveCount > 0 && !locked && (
+            <p className="text-[11px] text-amber-300 mt-1 inline-flex items-center gap-1">
+              <RefreshCw className="w-3 h-3" />
+              This slot only holds one active version — uploading will supersede the current file.
+            </p>
+          )}
+          {!locked && quotaTotalBytes > 0 && (
+            <p className="text-[11px] text-muted-foreground mt-1 inline-flex items-center gap-1">
+              <HardDrive className="w-3 h-3" />
+              Storage: {humanBytes(quotaUsedBytes)} used · {humanBytes(quotaRemainingBytes)} free of {humanBytes(quotaTotalBytes)}
+            </p>
+          )}
         </div>
         <input
           ref={inputRef}

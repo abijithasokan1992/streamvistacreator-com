@@ -580,13 +580,13 @@ function PublishingTab({ titleId, readOnly }: { titleId: string; readOnly: boole
           <Select label="Delivery" disabled={readOnly} value={rec?.delivery ?? "not_started"}
             options={["not_started","queued","in_progress","delivered","failed"]}
             onChange={(v) => patch({ delivery: v as any })} />
-          <Input label="Available From" type="datetime-local" value={toLocalDT(rec?.available_from)} onChange={(v) => patch({ available_from: fromLocalDT(v) })} />
-          <Input label="Available Until" type="datetime-local" value={toLocalDT(rec?.available_until)} onChange={(v) => patch({ available_until: fromLocalDT(v) })} />
+          <Input label="Available From" type="datetime-local" disabled={readOnly} value={toLocalDT(rec?.available_from)} onChange={(v) => patch({ available_from: fromLocalDT(v) })} />
+          <Input label="Available Until" type="datetime-local" disabled={readOnly} value={toLocalDT(rec?.available_until)} onChange={(v) => patch({ available_until: fromLocalDT(v) })} />
         </div>
         <div className="mt-3">
           <label className="text-[11px] text-muted-foreground">Notes</label>
-          <textarea disabled={readOnly} value={rec?.notes ?? ""} onChange={(e) => patch({ notes: e.target.value })}
-            rows={3} className="w-full mt-1 rounded-md bg-background/60 border border-border/50 text-xs px-2 py-1.5" />
+          <textarea disabled={readOnly} readOnly={readOnly} value={rec?.notes ?? ""} onChange={(e) => patch({ notes: e.target.value })}
+            rows={3} className="w-full mt-1 rounded-md bg-background/60 border border-border/50 text-xs px-2 py-1.5 disabled:opacity-70" />
         </div>
         {!readOnly && (
           <div className="mt-3">

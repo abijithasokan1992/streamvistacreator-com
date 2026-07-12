@@ -144,7 +144,8 @@ const PublicRoutes = () => (
     <Route path="/auth/callback" element={<AuthCallback />} />
     <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
     <Route path="/reset-password" element={<ResetPassword />} />
-    <Route path="/connectors" element={<Connectors />} />
+    <Route path="/connectors" element={<Navigate to="/connect" replace />} />
+    <Route path="/settings/integrations/ai-assistants" element={<SettingsIntegrationsAI />} />
 
     {/* Linear onboarding wizard — kept for legacy accounts only. */}
     <Route path="/onboarding" element={<Onboarding />} />

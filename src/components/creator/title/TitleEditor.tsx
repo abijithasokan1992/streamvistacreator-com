@@ -832,6 +832,8 @@ function AssetTab({
           accept={accept}
           label={`Upload ${label.toLowerCase()}`}
           onUploaded={onUploaded}
+          singleSlot={singleSlot}
+          existingActiveCount={assets.filter((a) => a.is_primary).length}
         />
         <AssetList assets={assets} />
       </div>

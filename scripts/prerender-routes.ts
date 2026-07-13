@@ -65,6 +65,13 @@ export const ROUTES: RouteMeta[] = [
     ogType: "website",
   },
   {
+    path: "/solutions/ai-content-licensing",
+    title: "AI Training Content Licensing — StreamVista",
+    description:
+      "License rights-verified, professionally produced audio-video content for approved AI and machine-learning use cases. Rights verification, technical QC, and written authorization required.",
+    ogImage: `${SITE_ORIGIN}/og/home.jpg`,
+    ogType: "website",
+  {
     path: "/auth",
     title: "Sign in to StreamVista Cloud X",
     description:

@@ -57,7 +57,7 @@ export default function StorageLive({ compact }: { compact?: boolean }) {
           </div>
           <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider">
             <Cloud className="w-3 h-3 text-success" />
-            <span className="text-success">{s.billingStatus ?? "provisioned"}</span>
+            <span className="text-success">{s.billingStatus ?? t("creator.storage.provisioned")}</span>
             {s.planCode && <span className="text-muted-foreground">· {s.planCode}</span>}
           </div>
         </header>

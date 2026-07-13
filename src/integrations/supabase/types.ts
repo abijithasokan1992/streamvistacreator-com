@@ -10212,6 +10212,22 @@ export type Database = {
       }
     }
     Functions: {
+      __verify_content_title_pub_guard: {
+        Args: {
+          p_admin: string
+          p_creator_a: string
+          p_creator_b: string
+          p_title_a: string
+          p_title_b: string
+          p_workspace_a: string
+          p_workspace_b: string
+        }
+        Returns: {
+          detail: string
+          outcome: string
+          test: string
+        }[]
+      }
       _mediacms_container_from_mime: { Args: { m: string }; Returns: string }
       _mediacms_version_type_from_category: {
         Args: { cat: string }

@@ -31,8 +31,8 @@ export default function StorageLive({ compact }: { compact?: boolean }) {
     return (
       <EmptyCard
         icon={<HardDrive className="w-4 h-4" />}
-        title="Storage"
-        message="No storage data found yet. Your capacity and usage will appear once your workspace is provisioned."
+        title={t("creator.storage.title")}
+        message={t("creator.storage.empty")}
       />
     );
   }

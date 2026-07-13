@@ -549,3 +549,17 @@
 .home-serif > section:first-of-type {
   padding-top: clamp(5rem, 8vw, 8.5rem);
 }
+
+/* Malayalam Unicode rendering — ensure a full Malayalam-capable font stack
+   is used whenever the interface language is set to Malayalam (`<html lang="ml">`)
+   or on any element explicitly marked `lang="ml"`. Keeps existing Latin
+   typography for English while giving Malayalam glyphs proper shaping. */
+html[lang="ml"] body,
+html[lang="ml"] input,
+html[lang="ml"] textarea,
+html[lang="ml"] select,
+html[lang="ml"] button,
+[lang="ml"] {
+  font-family: 'Noto Sans Malayalam', 'Inter', system-ui, -apple-system,
+    BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}

@@ -251,12 +251,22 @@ function TitleCommercialDialog({
 
   const saveProfile = async () => {
     setSavingProfile(true);
-    const payload = { ...profile };
-    const { error } = await (supabase as any)
+    // Admin-only internal notes are stored in a separate admin table; split them off here.
+    const { admin_internal_notes, ...profilePayload } = profile as Profile & { admin_internal_notes?: string | null };
+    const { data: upserted, error } = await (supabase as any)
       .from("title_commercial_profiles")
-      .upsert(payload, { onConflict: "title_id" });
+      .upsert(profilePayload, { onConflict: "title_id" })
+      .select("id")
+      .maybeSingle();
+    if (error) { setSavingProfile(false); return toast.error(error.message); }
+    if (upserted?.id) {
+      const { error: nerr } = await (supabase as any).rpc("admin_tcp_set_internal_notes", {
+        _profile_id: upserted.id,
+        _notes: admin_internal_notes ?? null,
+      });
+      if (nerr) { setSavingProfile(false); return toast.error(nerr.message); }
+    }
     setSavingProfile(false);
-    if (error) return toast.error(error.message);
     toast.success("Commercial profile saved");
     onSaved();
   };

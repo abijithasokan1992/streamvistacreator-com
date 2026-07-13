@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useWorkspaces } from "@/hooks/useWorkspaces";
 import {
   createTitle, listTitles, fetchFreeTierStatus, findFirstActiveDraft,
+  extractTitleErrorCode, TITLE_ERROR_COPY,
   type TitleRow, type FreeTierStatus,
 } from "@/lib/creator/titleApi";
 import { CONTENT_TYPE_OPTIONS, CONTENT_TYPE_LABEL, type TitleMetadata } from "@/lib/creator/titleSchema";

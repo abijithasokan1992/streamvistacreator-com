@@ -372,7 +372,7 @@ Deno.serve(async (req) => {
     try {
       const result = await generateText({
         model,
-        system: SYSTEM_PROMPT + activeLine + firecrawlLine,
+        system: SYSTEM_PROMPT + localeLine + pageLine + activeLine + firecrawlLine,
         messages: messages.map((m) => ({ role: m.role, content: m.content })),
         tools,
         stopWhen: stepCountIs(20),

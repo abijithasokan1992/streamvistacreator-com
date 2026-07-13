@@ -56,8 +56,7 @@ export default function StatementsSection() {
   return (
     <div className="space-y-6">
       <div className="rounded-lg border border-border/40 bg-secondary/5 px-4 py-3 text-[11px] text-muted-foreground">
-        Free Creator plan includes <span className="text-foreground font-medium">5 GB</span> of storage and <span className="text-foreground font-medium">1 title / 1 draft</span>.
-        Paid and managed-service plans unlock additional title submissions, 5 TB storage, premium review handling, dedicated inbox support, and advanced licensing controls.
+        {t("creator.billing.planIncludes")} {t("creator.billing.planIncludesFull")}
       </div>
       <CreatorInauguralActivationCard />
       <UpgradeCreatorPlanCard />
@@ -68,35 +67,35 @@ export default function StatementsSection() {
         <div className="flex items-center justify-between mb-2 gap-3 flex-wrap">
           <div className="flex items-center gap-2">
             <HardDrive className="w-5 h-5 text-accent" />
-            <h3 className="font-display text-lg font-bold">Storage Allocation History</h3>
+            <h3 className="font-display text-lg font-bold">{t("creator.billing.allocationHistory")}</h3>
             <span className="text-xs text-muted-foreground">
-              {topups.length} record{topups.length === 1 ? "" : "s"}
+              {t("creator.billing.recordsCount", { count: topups.length })}
             </span>
           </div>
           <Link
             to="/dashboard/content?section=upgrade"
             className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border/50 text-xs font-semibold hover:bg-secondary/30"
           >
-            <LifeBuoy className="w-3.5 h-3.5" /> Request more storage
+            <LifeBuoy className="w-3.5 h-3.5" /> {t("creator.billing.requestMoreStorage")}
           </Link>
         </div>
         <p className="text-xs text-muted-foreground mb-4">
-          Read-only record of storage allocations applied to your account (admin grants and founder-assisted top-ups). Creator storage changes are not self-serve today — use the Upgrade tab to request more.
+          {t("creator.billing.allocationHint")}
         </p>
         {loading ? (
-          <div className="py-8 text-center text-sm text-muted-foreground">Loading…</div>
+          <div className="py-8 text-center text-sm text-muted-foreground">{t("common.loading")}</div>
         ) : topups.length === 0 ? (
-          <div className="py-6 text-center text-sm text-muted-foreground">No storage allocations recorded yet.</div>
+          <div className="py-6 text-center text-sm text-muted-foreground">{t("creator.billing.noAllocations")}</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="text-[11px] uppercase tracking-wider text-muted-foreground">
                 <tr>
-                  <th className="text-left py-2 pr-4">Date</th>
-                  <th className="text-left py-2 pr-4">Storage</th>
-                  <th className="text-right py-2 pr-4">Amount</th>
-                  <th className="text-left py-2 pr-4">Status</th>
-                  <th className="text-left py-2 pr-4">Order</th>
+                  <th className="text-left py-2 pr-4">{t("creator.billing.colDate")}</th>
+                  <th className="text-left py-2 pr-4">{t("creator.billing.colStorage")}</th>
+                  <th className="text-right py-2 pr-4">{t("creator.billing.colAmount")}</th>
+                  <th className="text-left py-2 pr-4">{t("creator.billing.colStatus")}</th>
+                  <th className="text-left py-2 pr-4">{t("creator.billing.colOrder")}</th>
                 </tr>
               </thead>
               <tbody>

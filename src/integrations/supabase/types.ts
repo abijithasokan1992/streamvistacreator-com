@@ -1667,6 +1667,7 @@ export type Database = {
           parent_title_id: string | null
           previous_status: Database["public"]["Enums"]["content_status"] | null
           published_at: string | null
+          published_by: string | null
           requested_from_stage: string | null
           season_number: number | null
           sort_order: number
@@ -1696,6 +1697,7 @@ export type Database = {
           parent_title_id?: string | null
           previous_status?: Database["public"]["Enums"]["content_status"] | null
           published_at?: string | null
+          published_by?: string | null
           requested_from_stage?: string | null
           season_number?: number | null
           sort_order?: number
@@ -1725,6 +1727,7 @@ export type Database = {
           parent_title_id?: string | null
           previous_status?: Database["public"]["Enums"]["content_status"] | null
           published_at?: string | null
+          published_by?: string | null
           requested_from_stage?: string | null
           season_number?: number | null
           sort_order?: number

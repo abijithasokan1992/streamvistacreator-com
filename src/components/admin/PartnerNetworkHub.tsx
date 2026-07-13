@@ -31,7 +31,7 @@ type MetadataMapping = {
   target_field: string;
   source_field: string | null;
   transform: string | null;
-  required: boolean;
+  is_required: boolean;
   default_value: string | null;
 };
 
@@ -70,7 +70,7 @@ export default function PartnerNetworkHub() {
       listPartners(),
       (supabase as any)
         .from("distribution_metadata_mappings")
-        .select("id,partner_id,target_field,source_field,transform,required,default_value")
+        .select("id,partner_id,target_field,source_field,transform,is_required,default_value")
         .order("target_field", { ascending: true }),
       (supabase as any)
         .from("partner_profiles")
@@ -210,7 +210,7 @@ export default function PartnerNetworkHub() {
                     <div className="text-[10px] uppercase text-muted-foreground">Transform</div>
                     <div className="font-mono truncate">{m.transform ?? "identity"}</div>
                   </div>
-                  {m.required && <Badge variant="destructive">required</Badge>}
+                  {m.is_required && <Badge variant="destructive">required</Badge>}
                 </div>
               ))}
             </div>

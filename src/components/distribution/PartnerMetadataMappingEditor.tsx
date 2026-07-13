@@ -22,7 +22,7 @@ type Mapping = {
   target_field: string;
   source_field: string | null;
   transform: string | null;
-  required: boolean;
+  is_required: boolean;
   default_value: string | null;
 };
 
@@ -46,7 +46,7 @@ export function PartnerMetadataMappingEditor({ partnerId }: { partnerId: string 
 
   const addRow = () => setRows(prev => [
     ...prev,
-    { partner_id: partnerId, target_field: "", source_field: "", transform: null, required: false, default_value: null },
+    { partner_id: partnerId, target_field: "", source_field: "", transform: null, is_required: false, default_value: null },
   ]);
 
   const save = async (i: number) => {
@@ -125,7 +125,7 @@ export function PartnerMetadataMappingEditor({ partnerId }: { partnerId: string 
                 className="sm:col-span-2 rounded border border-border/50 bg-background/50 px-2 py-1 text-xs"
               />
               <label className="sm:col-span-1 text-[11px] flex items-center gap-1 justify-center">
-                <input type="checkbox" checked={r.required} onChange={e => patch(i, { required: e.target.checked })} />
+                <input type="checkbox" checked={r.is_required} onChange={e => patch(i, { is_required: e.target.checked })} />
                 req
               </label>
               <div className="sm:col-span-1 flex justify-end gap-1">

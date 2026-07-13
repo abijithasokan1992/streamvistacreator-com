@@ -34,6 +34,26 @@ const CANDIDATE_BUCKETS = [
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
+  const cronSecret = Deno.env.get("CRON_SECRET");
+  const bearer = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
+  let authorized = false;
+  if (cronSecret && bearer && bearer === cronSecret) {
+    authorized = true;
+  } else if (bearer && bearer.split(".").length === 3) {
+    const authClient = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
+    const { data: u } = await authClient.auth.getUser(bearer);
+    if (u?.user?.id) {
+      const { data: ok } = await authClient.rpc("has_role", { _user_id: u.user.id, _role: "admin" });
+      if (ok) authorized = true;
+    }
+  }
+  if (!authorized) {
+    return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
+      status: 403,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   const admin = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
 
   const { data: due, error: dueErr } = await admin

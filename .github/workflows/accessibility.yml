@@ -107,6 +107,93 @@ jobs:
           name: axe-reports
           path: reports/axe/*.json
 
+      - name: Emit annotations
+        if: always()
+        run: |
+          node <<'EOF'
+          const fs = require('fs');
+          const path = require('path');
+          const dir = 'reports/axe';
+          if (!fs.existsSync(dir)) process.exit(0);
+          for (const file of fs.readdirSync(dir)) {
+            if (!file.endsWith('.json')) continue;
+            const route = file.replace(/\.json$/, '');
+            const raw = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8'));
+            const reports = Array.isArray(raw) ? raw : [raw];
+            for (const r of reports) {
+              for (const v of (r.violations || [])) {
+                const impact = (v.impact || 'unknown').toUpperCase();
+                const targets = (v.nodes || [])
+                  .flatMap(n => n.target || [])
+                  .slice(0, 3)
+                  .join(' | ') || '(no selector)';
+                const msg = `[axe:${route}] ${impact} ${v.id} — ${v.help} — ${targets} — ${v.helpUrl}`;
+                // GitHub workflow annotation → appears inline in Checks tab
+                console.log(`::error title=axe/${v.id} on ${route}::${msg.replace(/\n/g, ' ')}`);
+              }
+            }
+          }
+          EOF
+
+      - name: Build PR comment body
+        if: always() && github.event_name == 'pull_request'
+        id: comment_body
+        run: |
+          node <<'EOF' > pr-comment.md
+          const fs = require('fs');
+          const path = require('path');
+          const dir = 'reports/axe';
+          const lines = ['<!-- axe-a11y-report -->', '## ♿ Accessibility (axe-core) report', ''];
+          let total = 0;
+          const perRoute = [];
+          if (fs.existsSync(dir)) {
+            for (const file of fs.readdirSync(dir).sort()) {
+              if (!file.endsWith('.json')) continue;
+              const route = file.replace(/\.json$/, '');
+              const raw = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8'));
+              const reports = Array.isArray(raw) ? raw : [raw];
+              const violations = reports.flatMap(r => r.violations || []);
+              total += violations.length;
+              perRoute.push({ route, violations });
+            }
+          }
+          lines.push(`**Total violations: ${total}** across ${perRoute.length} route(s).`, '');
+          for (const { route, violations } of perRoute) {
+            lines.push(`### \`${route}\` — ${violations.length} violation(s)`);
+            if (!violations.length) { lines.push('_No violations._', ''); continue; }
+            lines.push('', '| Impact | Rule | Help | Nodes |', '|---|---|---|---|');
+            for (const v of violations) {
+              const targets = (v.nodes || [])
+                .map(n => '`' + (n.target || []).join(' ') + '`')
+                .slice(0, 3)
+                .join('<br>') || '_n/a_';
+              lines.push(`| ${v.impact || '—'} | [\`${v.id}\`](${v.helpUrl}) | ${v.help} | ${targets} |`);
+            }
+            lines.push('');
+          }
+          lines.push('_Full JSON reports available as the `axe-reports` workflow artifact._');
+          process.stdout.write(lines.join('\n'));
+          EOF
+          echo "generated pr-comment.md ($(wc -c < pr-comment.md) bytes)"
+
+      - name: Upsert PR comment
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('pr-comment.md', 'utf8');
+            const marker = '<!-- axe-a11y-report -->';
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+            const { data: comments } = await github.rest.issues.listComments({ owner, repo, issue_number, per_page: 100 });
+            const existing = comments.find(c => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
       - name: Summary
         if: always()
         run: |
@@ -118,3 +205,4 @@ jobs:
             count=$(node -e "const r=require('./$f');console.log((Array.isArray(r)?r:[r]).reduce((n,x)=>n+(x.violations||[]).length,0))")
             echo "- ${route}: ${count} violation(s)" >> $GITHUB_STEP_SUMMARY
           done
+

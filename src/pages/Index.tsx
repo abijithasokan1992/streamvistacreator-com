@@ -5,6 +5,7 @@ import { Workflow } from "@/components/streamvista/Workflow";
 import { PlatformOverview } from "@/components/streamvista/PlatformOverview";
 import { SupportedContent } from "@/components/streamvista/SupportedContent";
 import { RightsDistribution } from "@/components/streamvista/RightsDistribution";
+import { AIContentLicensingSection } from "@/components/home/AIContentLicensingSection";
 import { FinalCta } from "@/components/streamvista/FinalCta";
 import { Footer } from "@/components/streamvista/Footer";
 import { TrustBadges } from "@/components/streamvista/TrustBadges";
@@ -43,6 +44,7 @@ const Index = () => {
       <PlatformOverview />
       <SupportedContent />
       <RightsDistribution />
+      <AIContentLicensingSection />
       <FinalCta />
       <Footer />
     </main>

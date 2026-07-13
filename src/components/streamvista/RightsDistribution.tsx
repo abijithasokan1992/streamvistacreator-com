@@ -1,7 +1,15 @@
 /**
  * Rights & Distribution — six simple category chips.
  */
-const CATEGORIES = ["OTT", "Broadcasters", "FAST", "Airlines", "Hospitality", "Educational"];
+const CATEGORIES = [
+  "OTT",
+  "Broadcasters",
+  "FAST",
+  "Airlines",
+  "Hospitality",
+  "Educational",
+  "AI Training & Machine Learning",
+];
 
 export const RightsDistribution = () => (
   <section id="rights" className="py-24 border-b border-border/40 relative">

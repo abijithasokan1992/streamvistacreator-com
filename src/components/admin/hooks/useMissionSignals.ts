@@ -61,7 +61,7 @@ export function useMissionSignals(pollMs = 60_000) {
       safeCount("content_titles", (q) => q.eq("status", "legal_review")),
       safeCount("support_requests", (q) => q.eq("status", "open")),
       failureCountsPromise,
-      safeCount("billing_payment_attempts", (q) => q.in("status", ["failed", "error"])),
+      safeCount("billing_payment_attempts", (q) => q.eq("status", "failed")),
       safeCount("storage_topups", (q) => q.eq("status", "failed")),
       safeCount("onboarding_requests", (q) => q.eq("onboarding_status", "pending")),
       safeCount("title_edit_requests", (q) => q.eq("status", "pending")),

@@ -93,16 +93,16 @@ export default function StorageLive({ compact }: { compact?: boolean }) {
           </div>
           <div>
             <p className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground/80 font-semibold">
-              StreamVista Cloud X · Storage
+              {t("creator.storage.titleFull")}
             </p>
             <p className="text-sm font-semibold mt-0.5">
-              {formatGb(usedGb)} of {formatGb(totalGb)} used
+              {t("creator.storage.usedOf", { used: formatGb(usedGb), total: formatGb(totalGb) })}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider">
           <Cloud className="w-3 h-3 text-emerald-400" />
-          <span className="text-emerald-400">{s.billingStatus ?? "provisioned"}</span>
+          <span className="text-emerald-400">{s.billingStatus ?? t("creator.storage.provisioned")}</span>
           {s.planCode && <span className="text-muted-foreground">· {s.planCode}</span>}
         </div>
       </header>
@@ -111,21 +111,21 @@ export default function StorageLive({ compact }: { compact?: boolean }) {
           <div className={`h-full transition-[width] duration-500 ${barTone}`} style={{ width: `${pct}%` }} />
         </div>
         <div className="flex items-center justify-between text-[11px] text-muted-foreground mt-2 tabular-nums">
-          <span>{pct.toFixed(1)}% used</span>
-          <span>{formatGb(remainingGb)} remaining</span>
+          <span>{t("creator.storage.percentUsed", { pct: pct.toFixed(1) })}</span>
+          <span>{t("creator.storage.remaining", { amount: formatGb(remainingGb) })}</span>
         </div>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <Tile label="Included"   value={fmtGbNullable(s.includedGb)} />
-        <Tile label="Paid add-on" value={fmtGbNullable(s.paidGb)} />
-        <Tile label="Bonus"       value={fmtGbNullable(s.bonusGb)} />
-        <Tile label="Archived"    value={formatGb(s.archivedBytes / GB)} />
+        <Tile label={t("creator.storage.included")}  value={fmtGbNullable(s.includedGb)} />
+        <Tile label={t("creator.storage.paidAddon")} value={fmtGbNullable(s.paidGb)} />
+        <Tile label={t("creator.storage.bonus")}     value={fmtGbNullable(s.bonusGb)} />
+        <Tile label={t("creator.storage.archived")}  value={formatGb(s.archivedBytes / GB)} />
       </div>
       {pct >= 90 && (
         <div className="rounded-md border border-red-500/40 bg-red-500/5 p-2.5 text-[11px] flex items-start gap-2">
           <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
           <span className="text-red-300">
-            Storage is nearly full. Add capacity from Storage &amp; Billing to keep uploads running.
+            {t("creator.storage.nearlyFull")}
           </span>
         </div>
       )}

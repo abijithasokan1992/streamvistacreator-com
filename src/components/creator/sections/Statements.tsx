@@ -124,21 +124,21 @@ export default function StatementsSection() {
           onClick={() => setShowEvents((v) => !v)}
           className="w-full flex items-center justify-between text-sm font-semibold"
         >
-          <span>Show payment events</span>
+          <span>{t("creator.billing.showPaymentEvents")}</span>
           {showEvents ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>
         {showEvents && (
           events.length === 0 ? (
-            <p className="text-sm text-muted-foreground mt-4">No additional payment events recorded.</p>
+            <p className="text-sm text-muted-foreground mt-4">{t("creator.billing.noPaymentEvents")}</p>
           ) : (
             <div className="rounded-xl border border-border/40 overflow-hidden mt-4">
               <table className="w-full text-sm">
                 <thead className="bg-secondary/20 text-[11px] uppercase tracking-wider text-muted-foreground">
                   <tr>
-                    <th className="text-left px-3 py-2">Date</th>
-                    <th className="text-left px-3 py-2">Type</th>
-                    <th className="text-left px-3 py-2">Description</th>
-                    <th className="text-right px-3 py-2">Amount</th>
+                    <th className="text-left px-3 py-2">{t("creator.billing.colDate")}</th>
+                    <th className="text-left px-3 py-2">{t("creator.billing.colType")}</th>
+                    <th className="text-left px-3 py-2">{t("creator.billing.colDescription")}</th>
+                    <th className="text-right px-3 py-2">{t("creator.billing.colAmount")}</th>
                   </tr>
                 </thead>
                 <tbody>

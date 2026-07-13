@@ -360,6 +360,11 @@ Deno.serve(async (req) => {
     const activeLine = ctx?.activeProductionId
       ? `\n\nActive production context: ${ctx.activeProductionId}${ctx?.activeProductionName ? ` (${ctx.activeProductionName})` : ""}. Prefer filtering by this production unless the user asks otherwise.`
       : "";
+    const locale = ctx?.locale === "ml" ? "ml" : ctx?.locale === "en" ? "en" : "en";
+    const localeLine = `\n\nUser UI locale: ${locale === "ml" ? "Malayalam (ml). Default to replying in Malayalam." : "English (en). Default to replying in English."}`;
+    const pageLine = ctx?.path
+      ? `\n\nCurrent Creator Dashboard page: ${ctx.path}${ctx?.section ? ` (section: ${ctx.section})` : ""}. If the user asks "what is this page" or "what should I do", explain that section briefly and its typical next action.`
+      : "";
     const firecrawlLine = firecrawlConnected
       ? ""
       : "\n\nFirecrawl is not connected — the research_web tool is unavailable this session.";

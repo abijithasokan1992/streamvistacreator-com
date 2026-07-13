@@ -1,4 +1,5 @@
 import { HardDrive, Cloud, AlertTriangle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useWorkspaceStorage } from "@/hooks/useWorkspaceStorage";
 
 /**

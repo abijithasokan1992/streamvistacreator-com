@@ -48,10 +48,10 @@ export default function StorageLive({ compact }: { compact?: boolean }) {
             </div>
             <div>
               <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
-                Cloud Storage
+                {t("creator.storage.title")}
               </p>
               <p className="text-sm font-semibold mt-0.5">
-                {formatGb(usedGb)} of {formatGb(totalGb)} used
+                {t("creator.storage.usedOf", { used: formatGb(usedGb), total: formatGb(totalGb) })}
               </p>
             </div>
           </div>

@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useWorkspaces } from "@/hooks/useWorkspaces";
 import {
   createTitle, listTitles, fetchFreeTierStatus, findFirstActiveDraft,
+  extractTitleErrorCode, TITLE_ERROR_COPY,
   type TitleRow, type FreeTierStatus,
 } from "@/lib/creator/titleApi";
 import { CONTENT_TYPE_OPTIONS, CONTENT_TYPE_LABEL, type TitleMetadata } from "@/lib/creator/titleSchema";
@@ -41,6 +42,7 @@ export default function MyTitlesSection() {
   const [filter, setFilter] = useState<"all" | "drafts" | "in_review" | "approved">("all");
   const [sort, setSort] = useState<"newest" | "oldest" | "updated">("updated");
   const [deleteTarget, setDeleteTarget] = useState<TitleRow | null>(null);
+  const [limitModal, setLimitModal] = useState<null | { code: string; message: string }>(null);
 
   const reload = useCallback(async () => {
     if (!user) return;
@@ -65,13 +67,13 @@ export default function MyTitlesSection() {
         setEditorMode("edit");
         return;
       }
-      toast.error("Free plan limit reached. Upgrade from Storage & Billing to add more titles.");
+      setLimitModal({ code: "title_quota_reached", message: TITLE_ERROR_COPY.title_quota_reached });
       return;
     }
     setGating(true);
   };
 
-  const freeLimitHit = !!tier?.is_free && tier.lifecycle_count >= 1 && !tier.can_create_draft;
+  const freeLimitHit = !!tier?.is_free && !tier.can_create_draft;
 
   const FILTERS = useMemo(() => ({
     all: (_: TitleRow) => true,
@@ -104,16 +106,23 @@ export default function MyTitlesSection() {
         <div className="mb-4 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 flex items-start gap-3 text-xs sm:text-sm">
           <Crown className="w-4 h-4 text-amber-300 mt-0.5 shrink-0" />
           <div className="min-w-0 flex-1">
-            <div className="font-medium">Free plan — 1 title only</div>
-            <div className="text-muted-foreground mt-0.5">
-              {tier.draft_count}/1 draft · {tier.lifecycle_count}/1 submission used. Upgrade for additional submissions and 5 TB storage.
+            <div className="font-medium">Creator Free</div>
+            <div className="text-muted-foreground mt-0.5 flex flex-wrap gap-x-4 gap-y-0.5">
+              <span>Active titles: <span className="text-foreground">{tier.active_count} of {tier.max_active ?? 1}</span></span>
+              <span>Drafts: <span className="text-foreground">{tier.draft_count} of {tier.max_drafts ?? 1}</span></span>
+              <span>Total: <span className="text-foreground">{tier.total_count} of {tier.max_total ?? 2}</span></span>
             </div>
+            {tier.over_limit && (
+              <div className="mt-1 text-amber-300">
+                Over free-plan limit — upgrade to add or submit more titles.
+              </div>
+            )}
           </div>
           <a
             href="?section=billing"
             className="text-[11px] rounded-md border border-amber-500/40 px-2.5 py-1 hover:bg-amber-500/10 whitespace-nowrap"
           >
-            Open Billing
+            View Plans
           </a>
         </div>
       )}
@@ -203,6 +212,7 @@ export default function MyTitlesSection() {
             setEditorId(id);
             setEditorMode("edit");
           }}
+          onQuotaError={(err) => { setCreating(false); setLimitModal(err); reload(); }}
           workspaceId={active?.id ?? null}
           userId={user.id}
         />
@@ -338,6 +348,49 @@ export default function MyTitlesSection() {
           onDeleted={async () => { setDeleteTarget(null); await reload(); }}
         />
       )}
+
+      {limitModal && (
+        <FreePlanLimitModal
+          message={limitModal.message}
+          onClose={() => setLimitModal(null)}
+          onManage={() => { setLimitModal(null); setFilter("all"); }}
+          onViewPlans={() => { setLimitModal(null); window.location.href = "?section=billing"; }}
+        />
+      )}
+    </div>
+  );
+}
+
+function FreePlanLimitModal({
+  message, onClose, onManage, onViewPlans,
+}: { message: string; onClose: () => void; onManage: () => void; onViewPlans: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm grid place-items-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="free-plan-limit-title"
+    >
+      <div className="bg-background border border-border/50 rounded-2xl w-[calc(100vw-2rem)] sm:w-full max-w-md text-center">
+        <div className="px-6 pt-6 pb-2">
+          <div className="mx-auto w-10 h-10 rounded-full bg-amber-500/10 grid place-items-center mb-3">
+            <Crown className="w-5 h-5 text-amber-300" />
+          </div>
+          <h2 id="free-plan-limit-title" className="font-display font-semibold text-lg">Free plan limit reached</h2>
+          <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{message}</p>
+        </div>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2 px-5 py-4 border-t border-border/40">
+          <button onClick={onClose} className="text-xs px-3 py-2 rounded-md border border-border/50 hover:bg-secondary/30">
+            OK
+          </button>
+          <button onClick={onManage} className="text-xs px-3 py-2 rounded-md border border-border/50 hover:bg-secondary/30">
+            Manage Titles
+          </button>
+          <button onClick={onViewPlans} className="text-xs px-3 py-2 rounded-md bg-accent text-accent-foreground hover:bg-accent/90">
+            View Plans
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -395,11 +448,13 @@ function DeleteTitleDialog({
   const fee = elig?.early_termination_fee_inr ?? 0;
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm grid place-items-center p-4" role="dialog" aria-modal="true" aria-label="Delete title">
+    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm grid place-items-center p-4" role="dialog" aria-modal="true" aria-label="Remove this draft">
       <div className="bg-background border border-border/50 rounded-2xl w-[calc(100vw-2rem)] sm:w-full max-w-lg">
         <div className="flex items-center justify-between px-5 py-3 border-b border-border/40">
           <div>
-            <h2 className="font-semibold">Delete title</h2>
+            <h2 className="font-semibold">
+              {elig?.allow ? "Remove this draft?" : "This title can't be removed"}
+            </h2>
             <p className="text-xs text-muted-foreground mt-0.5 truncate max-w-[22rem]">{title.title}</p>
           </div>
           <button onClick={onClose} className="p-1.5 rounded hover:bg-secondary/30" aria-label="Close">
@@ -414,7 +469,9 @@ function DeleteTitleDialog({
             </div>
           ) : elig?.allow ? (
             <>
-              <p>Removing this title cannot be undone. Metadata, uploaded assets and draft history will be permanently deleted.</p>
+              <p>
+                This draft will be removed from your workspace. Protected business and audit records will remain preserved.
+              </p>
               <label className="flex items-start gap-2 text-xs text-muted-foreground">
                 <input type="checkbox" className="mt-0.5" checked={ack} onChange={(e) => setAck(e.target.checked)} />
                 <span>I understand this action is permanent.</span>
@@ -436,7 +493,7 @@ function DeleteTitleDialog({
                 </div>
               )}
               <p className="text-xs text-muted-foreground">
-                Next steps: close any open buyer conversations, complete or cancel pending deliveries, and once nothing commercial remains, try again.
+                For submitted, reviewed, approved, published or licensed titles, choose Archive or Contact Support instead of deletion.
               </p>
             </>
           )}
@@ -453,7 +510,7 @@ function DeleteTitleDialog({
               className="inline-flex items-center gap-1.5 rounded-md bg-destructive text-destructive-foreground text-xs px-3 py-1.5 disabled:opacity-50 hover:bg-destructive/90"
             >
               {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-              Delete permanently
+              Remove Draft
             </button>
           )}
         </div>
@@ -463,10 +520,11 @@ function DeleteTitleDialog({
 }
 
 function CreateTitleModal({
-  onClose, onCreated, userId, workspaceId,
+  onClose, onCreated, onQuotaError, userId, workspaceId,
 }: {
   onClose: () => void;
   onCreated: (id: string) => void;
+  onQuotaError: (err: { code: string; message: string }) => void;
   userId: string;
   workspaceId: string | null;
 }) {
@@ -481,9 +539,12 @@ function CreateTitleModal({
       const t = await createTitle(userId, workspaceId, name, format);
       onCreated(t.id);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Could not create title.";
-      // Surface DB free-tier guard text cleanly.
-      toast.error(msg.replace(/^.*Free plan/, "Free plan"));
+      const parsed = extractTitleErrorCode(e);
+      if (parsed.code === "draft_limit_reached" || parsed.code === "title_quota_reached" || parsed.code === "active_title_limit_reached") {
+        onQuotaError(parsed);
+      } else {
+        toast.error(parsed.message);
+      }
     } finally { setBusy(false); }
   };
 

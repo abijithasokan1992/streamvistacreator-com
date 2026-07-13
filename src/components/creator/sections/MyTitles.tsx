@@ -212,6 +212,7 @@ export default function MyTitlesSection() {
             setEditorId(id);
             setEditorMode("edit");
           }}
+          onQuotaError={(err) => { setCreating(false); setLimitModal(err); reload(); }}
           workspaceId={active?.id ?? null}
           userId={user.id}
         />

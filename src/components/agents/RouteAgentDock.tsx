@@ -25,6 +25,9 @@ export function RouteAgentDock() {
   }, [user?.id]);
 
   if (pathname.startsWith("/admin") || pathname.startsWith("/auth")) return null;
+  // Creator surfaces are served by Ask StreamVista (AssistantLauncher) — avoid
+  // a competing dock on those pages.
+  if (pathname.startsWith("/dashboard/content") || pathname.startsWith("/vault") || pathname.startsWith("/projects") || pathname.startsWith("/my-workspace")) return null;
   if (loading) return null;
   if (!session) return null;
 

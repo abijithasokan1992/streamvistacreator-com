@@ -52,9 +52,10 @@ export function urlForHost(mode: HostMode, path = "/"): string {
   // On preview / localhost we cannot actually switch hostnames — stay on
   // the same origin and use the ?host= override instead.
   const isRealDomain =
-    current.endsWith("streamvista.in") &&
+    (current.endsWith("streamvista.in") || current.endsWith("streamvistacreator.com")) &&
     !current.includes("lovable.app") &&
     !current.includes("localhost");
+
 
   if (!isRealDomain) {
     const sep = path.includes("?") ? "&" : "?";

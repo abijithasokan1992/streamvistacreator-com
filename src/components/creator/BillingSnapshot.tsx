@@ -26,6 +26,7 @@ type PlanInfo = { name: string | null; status: string | null };
 
 export default function BillingSnapshot() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [plan, setPlan] = useState<PlanInfo | null>(null);
   const [loading, setLoading] = useState(true);

@@ -2,7 +2,13 @@ import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { Loader2, LogOut, Menu } from "lucide-react";
 import { useAuth, dashboardForRole } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
-import { CreatorSidebar, SECTIONS, type SectionId } from "@/components/creator/CreatorSidebar";
+import { useTranslation } from "react-i18next";
+import {
+  CreatorSidebar,
+  SECTIONS,
+  useSectionLabels,
+  type SectionId,
+} from "@/components/creator/CreatorSidebar";
 import HomeSection from "@/components/creator/sections/Home";
 import MyTitlesSection from "@/components/creator/sections/MyTitles";
 import SubmissionsSection from "@/components/creator/sections/Submissions";
@@ -19,6 +25,9 @@ import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { fetchFreeTierStatus } from "@/lib/creator/titleApi";
 import CreatorTour, { hasSeenCreatorTour } from "@/components/creator/CreatorTour";
 import { markOnboardingStep } from "@/components/creator/OnboardingChecklist";
+import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
+import LanguagePicker from "@/components/i18n/LanguagePicker";
+import { useLocale } from "@/hooks/useLocale";
 
 export default function ContentOwnerDashboard() {
   const { user, role, dashboardRole, loading, signOut } = useAuth();

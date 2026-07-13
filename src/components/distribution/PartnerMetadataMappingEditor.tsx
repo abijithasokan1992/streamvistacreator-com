@@ -125,7 +125,7 @@ export function PartnerMetadataMappingEditor({ partnerId }: { partnerId: string 
                 className="sm:col-span-2 rounded border border-border/50 bg-background/50 px-2 py-1 text-xs"
               />
               <label className="sm:col-span-1 text-[11px] flex items-center gap-1 justify-center">
-                <input type="checkbox" checked={r.required} onChange={e => patch(i, { required: e.target.checked })} />
+                <input type="checkbox" checked={r.is_required} onChange={e => patch(i, { is_required: e.target.checked })} />
                 req
               </label>
               <div className="sm:col-span-1 flex justify-end gap-1">

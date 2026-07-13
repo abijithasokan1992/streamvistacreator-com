@@ -70,7 +70,7 @@ export default function PartnerNetworkHub() {
       listPartners(),
       (supabase as any)
         .from("distribution_metadata_mappings")
-        .select("id,partner_id,target_field,source_field,transform,required,default_value")
+        .select("id,partner_id,target_field,source_field,transform,is_required,default_value")
         .order("target_field", { ascending: true }),
       (supabase as any)
         .from("partner_profiles")

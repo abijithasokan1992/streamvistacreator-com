@@ -8,6 +8,7 @@ type Update = { id: string; kind: string; title: string; body: string; at: strin
 
 export default function UpdatesSection() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [items, setItems] = useState<Update[]>([]);
   const [loading, setLoading] = useState(true);
 

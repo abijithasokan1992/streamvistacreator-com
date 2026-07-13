@@ -59,7 +59,7 @@ async function fetchWithRetry(userId: string, workspaceId: string | null): Promi
     try {
       const { data, error } = await (supabase as any).rpc(
         "get_workspace_storage_entitlement",
-        workspaceId ? { _user_id: userId, _workspace_id: workspaceId } : { _user_id: userId },
+        { _user_id: userId },
       );
       if (error) throw error;
       return data;

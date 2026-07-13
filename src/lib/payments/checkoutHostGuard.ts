@@ -12,14 +12,9 @@
  */
 
 const APPROVED_LIVE_HOSTS = new Set<string>([
-  // New canonical root domain.
   "streamvista.in",
   "www.streamvista.in",
   "app.streamvista.in",
-  // Legacy Razorpay-approved domain — retained during the migration window
-  // as a fallback so live checkout does not break while DNS/SSL cut over.
-  "streamvistacreator.com",
-  "www.streamvistacreator.com",
 ]);
 
 

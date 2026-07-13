@@ -10624,29 +10624,25 @@ export type Database = {
       admin_list_commercial_requests: {
         Args: { _state?: string }
         Returns: {
-          accepted_agreement_id: string | null
+          accepted_agreement_id: string
+          admin_notes: string
+          assigned_admin_id: string
           buyer_user_id: string
           created_at: string
           id: string
-          interest_summary: string | null
-          message: string | null
-          owner_user_id: string | null
-          request_type: Database["public"]["Enums"]["commercial_request_type"]
+          interest_summary: string
+          message: string
+          owner_user_id: string
+          request_type: string
           state: Database["public"]["Enums"]["commercial_request_state"]
           state_changed_at: string
-          state_changed_by: string | null
+          state_changed_by: string
           terms: Json
-          title_id: string | null
-          title_query: string | null
+          title_id: string
+          title_query: string
           updated_at: string
-          workspace_id: string | null
+          workspace_id: string
         }[]
-        SetofOptions: {
-          from: "*"
-          to: "commercial_requests"
-          isOneToOne: false
-          isSetofReturn: true
-        }
       }
       admin_list_creator_storage_risk: {
         Args: never

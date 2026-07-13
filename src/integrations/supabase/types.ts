@@ -1441,8 +1441,6 @@ export type Database = {
       commercial_requests: {
         Row: {
           accepted_agreement_id: string | null
-          admin_notes: string | null
-          assigned_admin_id: string | null
           buyer_user_id: string
           created_at: string
           id: string
@@ -1461,8 +1459,6 @@ export type Database = {
         }
         Insert: {
           accepted_agreement_id?: string | null
-          admin_notes?: string | null
-          assigned_admin_id?: string | null
           buyer_user_id: string
           created_at?: string
           id?: string
@@ -1481,8 +1477,6 @@ export type Database = {
         }
         Update: {
           accepted_agreement_id?: string | null
-          admin_notes?: string | null
-          assigned_admin_id?: string | null
           buyer_user_id?: string
           created_at?: string
           id?: string
@@ -1512,6 +1506,38 @@ export type Database = {
             columns: ["title_id"]
             isOneToOne: false
             referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commercial_requests_admin: {
+        Row: {
+          admin_notes: string | null
+          assigned_admin_id: string | null
+          request_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          assigned_admin_id?: string | null
+          request_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          assigned_admin_id?: string | null
+          request_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commercial_requests_admin_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "commercial_requests"
             referencedColumns: ["id"]
           },
         ]
@@ -1836,10 +1862,8 @@ export type Database = {
       deal_memos: {
         Row: {
           amount_paise: number | null
-          approval_notes: string | null
           approval_status: string
           approved_at: string | null
-          approved_by: string | null
           buyer_contact_email: string | null
           buyer_facing_memo: string | null
           buyer_org_name: string | null
@@ -1858,7 +1882,6 @@ export type Database = {
           delivery_status: string
           exclusivity: Database["public"]["Enums"]["right_exclusivity"] | null
           id: string
-          internal_notes: string | null
           language: string | null
           memo_number: string
           ops_stage: string
@@ -1868,14 +1891,10 @@ export type Database = {
           paid_amount_paise: number
           paid_at: string | null
           payment_mode: string | null
-          payment_notes: string | null
           payment_reference: string | null
           payment_status: string
           payment_terms: string | null
           platform_share_paise: number | null
-          rejected_at: string | null
-          rejected_by: string | null
-          rejection_reason: string | null
           right_category: Database["public"]["Enums"]["right_category"] | null
           status: Database["public"]["Enums"]["deal_status"]
           term_end: string | null
@@ -1886,10 +1905,8 @@ export type Database = {
         }
         Insert: {
           amount_paise?: number | null
-          approval_notes?: string | null
           approval_status?: string
           approved_at?: string | null
-          approved_by?: string | null
           buyer_contact_email?: string | null
           buyer_facing_memo?: string | null
           buyer_org_name?: string | null
@@ -1908,7 +1925,6 @@ export type Database = {
           delivery_status?: string
           exclusivity?: Database["public"]["Enums"]["right_exclusivity"] | null
           id?: string
-          internal_notes?: string | null
           language?: string | null
           memo_number?: string
           ops_stage?: string
@@ -1918,14 +1934,10 @@ export type Database = {
           paid_amount_paise?: number
           paid_at?: string | null
           payment_mode?: string | null
-          payment_notes?: string | null
           payment_reference?: string | null
           payment_status?: string
           payment_terms?: string | null
           platform_share_paise?: number | null
-          rejected_at?: string | null
-          rejected_by?: string | null
-          rejection_reason?: string | null
           right_category?: Database["public"]["Enums"]["right_category"] | null
           status?: Database["public"]["Enums"]["deal_status"]
           term_end?: string | null
@@ -1936,10 +1948,8 @@ export type Database = {
         }
         Update: {
           amount_paise?: number | null
-          approval_notes?: string | null
           approval_status?: string
           approved_at?: string | null
-          approved_by?: string | null
           buyer_contact_email?: string | null
           buyer_facing_memo?: string | null
           buyer_org_name?: string | null
@@ -1958,7 +1968,6 @@ export type Database = {
           delivery_status?: string
           exclusivity?: Database["public"]["Enums"]["right_exclusivity"] | null
           id?: string
-          internal_notes?: string | null
           language?: string | null
           memo_number?: string
           ops_stage?: string
@@ -1968,14 +1977,10 @@ export type Database = {
           paid_amount_paise?: number
           paid_at?: string | null
           payment_mode?: string | null
-          payment_notes?: string | null
           payment_reference?: string | null
           payment_status?: string
           payment_terms?: string | null
           platform_share_paise?: number | null
-          rejected_at?: string | null
-          rejected_by?: string | null
-          rejection_reason?: string | null
           right_category?: Database["public"]["Enums"]["right_category"] | null
           status?: Database["public"]["Enums"]["deal_status"]
           term_end?: string | null
@@ -1997,6 +2002,50 @@ export type Database = {
             columns: ["title_id"]
             isOneToOne: false
             referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_memos_admin: {
+        Row: {
+          approval_notes: string | null
+          approved_by: string | null
+          deal_id: string
+          internal_notes: string | null
+          payment_notes: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_reason: string | null
+          updated_at: string
+        }
+        Insert: {
+          approval_notes?: string | null
+          approved_by?: string | null
+          deal_id: string
+          internal_notes?: string | null
+          payment_notes?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          updated_at?: string
+        }
+        Update: {
+          approval_notes?: string | null
+          approved_by?: string | null
+          deal_id?: string
+          internal_notes?: string | null
+          payment_notes?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_memos_admin_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: true
+            referencedRelation: "deal_memos"
             referencedColumns: ["id"]
           },
         ]
@@ -8407,7 +8456,6 @@ export type Database = {
         Row: {
           acquisition_open: boolean
           admin_approval_required: boolean
-          admin_internal_notes: string | null
           available_for_acquisition: boolean
           available_for_distribution_partnership: boolean
           available_for_exclusive_license: boolean
@@ -8437,7 +8485,6 @@ export type Database = {
         Insert: {
           acquisition_open?: boolean
           admin_approval_required?: boolean
-          admin_internal_notes?: string | null
           available_for_acquisition?: boolean
           available_for_distribution_partnership?: boolean
           available_for_exclusive_license?: boolean
@@ -8467,7 +8514,6 @@ export type Database = {
         Update: {
           acquisition_open?: boolean
           admin_approval_required?: boolean
-          admin_internal_notes?: string | null
           available_for_acquisition?: boolean
           available_for_distribution_partnership?: boolean
           available_for_exclusive_license?: boolean
@@ -8500,6 +8546,35 @@ export type Database = {
             columns: ["title_id"]
             isOneToOne: true
             referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      title_commercial_profiles_admin: {
+        Row: {
+          admin_internal_notes: string | null
+          profile_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          admin_internal_notes?: string | null
+          profile_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          admin_internal_notes?: string | null
+          profile_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "title_commercial_profiles_admin_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "title_commercial_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -10328,10 +10403,8 @@ export type Database = {
         }
         Returns: {
           amount_paise: number | null
-          approval_notes: string | null
           approval_status: string
           approved_at: string | null
-          approved_by: string | null
           buyer_contact_email: string | null
           buyer_facing_memo: string | null
           buyer_org_name: string | null
@@ -10350,7 +10423,6 @@ export type Database = {
           delivery_status: string
           exclusivity: Database["public"]["Enums"]["right_exclusivity"] | null
           id: string
-          internal_notes: string | null
           language: string | null
           memo_number: string
           ops_stage: string
@@ -10360,14 +10432,10 @@ export type Database = {
           paid_amount_paise: number
           paid_at: string | null
           payment_mode: string | null
-          payment_notes: string | null
           payment_reference: string | null
           payment_status: string
           payment_terms: string | null
           platform_share_paise: number | null
-          rejected_at: string | null
-          rejected_by: string | null
-          rejection_reason: string | null
           right_category: Database["public"]["Enums"]["right_category"] | null
           status: Database["public"]["Enums"]["deal_status"]
           term_end: string | null
@@ -10382,6 +10450,14 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      admin_commercial_request_get_note: {
+        Args: { _request_id: string }
+        Returns: string
+      }
+      admin_commercial_request_set_note: {
+        Args: { _note: string; _request_id: string }
+        Returns: undefined
       }
       admin_create_manual_invoice: {
         Args: {
@@ -10427,6 +10503,26 @@ export type Database = {
         Args: { _deal_id: string; _outcome: string; _reason?: string }
         Returns: undefined
       }
+      admin_deal_get_admin_fields: {
+        Args: { _deal_id: string }
+        Returns: {
+          approval_notes: string | null
+          approved_by: string | null
+          deal_id: string
+          internal_notes: string | null
+          payment_notes: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_reason: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "deal_memos_admin"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_deal_link_invoice: {
         Args: { _deal_id: string; _invoice_id: string }
         Returns: undefined
@@ -10445,6 +10541,10 @@ export type Database = {
       }
       admin_deal_set_approval: {
         Args: { _deal_id: string; _decision: string; _notes?: string }
+        Returns: undefined
+      }
+      admin_deal_set_internal_notes: {
+        Args: { _deal_id: string; _notes: string }
         Returns: undefined
       }
       admin_deal_upsert_delivery: {
@@ -10524,31 +10624,25 @@ export type Database = {
       admin_list_commercial_requests: {
         Args: { _state?: string }
         Returns: {
-          accepted_agreement_id: string | null
-          admin_notes: string | null
-          assigned_admin_id: string | null
+          accepted_agreement_id: string
+          admin_notes: string
+          assigned_admin_id: string
           buyer_user_id: string
           created_at: string
           id: string
-          interest_summary: string | null
-          message: string | null
-          owner_user_id: string | null
-          request_type: Database["public"]["Enums"]["commercial_request_type"]
+          interest_summary: string
+          message: string
+          owner_user_id: string
+          request_type: string
           state: Database["public"]["Enums"]["commercial_request_state"]
           state_changed_at: string
-          state_changed_by: string | null
+          state_changed_by: string
           terms: Json
-          title_id: string | null
-          title_query: string | null
+          title_id: string
+          title_query: string
           updated_at: string
-          workspace_id: string | null
+          workspace_id: string
         }[]
-        SetofOptions: {
-          from: "*"
-          to: "commercial_requests"
-          isOneToOne: false
-          isSetofReturn: true
-        }
       }
       admin_list_creator_storage_risk: {
         Args: never
@@ -10573,10 +10667,8 @@ export type Database = {
         Args: { _title_id?: string }
         Returns: {
           amount_paise: number | null
-          approval_notes: string | null
           approval_status: string
           approved_at: string | null
-          approved_by: string | null
           buyer_contact_email: string | null
           buyer_facing_memo: string | null
           buyer_org_name: string | null
@@ -10595,7 +10687,6 @@ export type Database = {
           delivery_status: string
           exclusivity: Database["public"]["Enums"]["right_exclusivity"] | null
           id: string
-          internal_notes: string | null
           language: string | null
           memo_number: string
           ops_stage: string
@@ -10605,14 +10696,10 @@ export type Database = {
           paid_amount_paise: number
           paid_at: string | null
           payment_mode: string | null
-          payment_notes: string | null
           payment_reference: string | null
           payment_status: string
           payment_terms: string | null
           platform_share_paise: number | null
-          rejected_at: string | null
-          rejected_by: string | null
-          rejection_reason: string | null
           right_category: Database["public"]["Enums"]["right_category"] | null
           status: Database["public"]["Enums"]["deal_status"]
           term_end: string | null
@@ -10633,7 +10720,6 @@ export type Database = {
         Returns: {
           acquisition_open: boolean
           admin_approval_required: boolean
-          admin_internal_notes: string | null
           available_for_acquisition: boolean
           available_for_distribution_partnership: boolean
           available_for_exclusive_license: boolean
@@ -10790,6 +10876,14 @@ export type Database = {
           updated_at: string
           user_id: string
         }[]
+      }
+      admin_tcp_get_internal_notes: {
+        Args: { _profile_id: string }
+        Returns: string
+      }
+      admin_tcp_set_internal_notes: {
+        Args: { _notes: string; _profile_id: string }
+        Returns: undefined
       }
       admin_title_history: {
         Args: { _title_id: string }

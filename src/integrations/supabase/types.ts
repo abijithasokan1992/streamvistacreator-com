@@ -9497,6 +9497,7 @@ export type Database = {
           job_title: string | null
           last_active_at: string
           last_name: string | null
+          locale: string | null
           onboarding_step: string
           organization_name: string | null
           personal_logo_url: string | null
@@ -9528,6 +9529,7 @@ export type Database = {
           job_title?: string | null
           last_active_at?: string
           last_name?: string | null
+          locale?: string | null
           onboarding_step?: string
           organization_name?: string | null
           personal_logo_url?: string | null
@@ -9559,6 +9561,7 @@ export type Database = {
           job_title?: string | null
           last_active_at?: string
           last_name?: string | null
+          locale?: string | null
           onboarding_step?: string
           organization_name?: string | null
           personal_logo_url?: string | null

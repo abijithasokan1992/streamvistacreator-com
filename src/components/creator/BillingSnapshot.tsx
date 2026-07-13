@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Receipt, ArrowRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -25,6 +26,7 @@ type PlanInfo = { name: string | null; status: string | null };
 
 export default function BillingSnapshot() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [plan, setPlan] = useState<PlanInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,9 +73,9 @@ export default function BillingSnapshot() {
             <Receipt className="w-4 h-4 text-emerald-400" />
           </div>
           <div>
-            <p className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground/80 font-semibold">Billing</p>
+            <p className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground/80 font-semibold">{t("creator.billing.planLabel")}</p>
             <p className="text-sm font-semibold mt-0.5">
-              {plan?.name ? `${plan.name} · ${plan.status}` : "No active plan"}
+              {plan?.name ? `${plan.name} · ${plan.status}` : t("creator.billing.noActivePlan")}
             </p>
           </div>
         </div>
@@ -81,17 +83,17 @@ export default function BillingSnapshot() {
           to="/dashboard/content?section=billing"
           className="text-[11px] text-accent hover:underline inline-flex items-center gap-1"
         >
-          Manage <ArrowRight className="w-3 h-3" />
+          {t("creator.billing.manage")} <ArrowRight className="w-3 h-3" />
         </Link>
       </header>
 
       {!hasAny ? (
         <div className="rounded-md border border-zinc-800/60 bg-zinc-950/60 p-3 text-xs text-muted-foreground">
-          No Data Found. Billing history will appear here once you upgrade or add capacity.
+          {t("creator.billing.noBillingHistory")}
         </div>
       ) : invoices.length === 0 ? (
         <div className="rounded-md border border-zinc-800/60 bg-zinc-950/60 p-3 text-xs text-muted-foreground">
-          No invoices yet. You're on {plan?.name ?? "the current plan"}.
+          {t("creator.billing.noInvoicesYet", { plan: plan?.name ?? t("creator.billing.currentPlan") })}
         </div>
       ) : (
         <ul className="divide-y divide-zinc-800/60">

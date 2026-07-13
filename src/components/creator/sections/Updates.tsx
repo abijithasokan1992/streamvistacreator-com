@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -7,6 +8,7 @@ type Update = { id: string; kind: string; title: string; body: string; at: strin
 
 export default function UpdatesSection() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [items, setItems] = useState<Update[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -58,14 +60,14 @@ export default function UpdatesSection() {
     })();
   }, [user]);
 
-  if (loading) return <p className="text-xs text-muted-foreground">Loading…</p>;
+  if (loading) return <p className="text-xs text-muted-foreground">{t("common.loading")}</p>;
   if (!items.length) {
     return (
       <div className="rounded-2xl border border-dashed border-border/50 bg-secondary/5 p-10 text-center">
         <Bell className="w-6 h-6 text-muted-foreground mx-auto mb-3" />
-        <p className="text-sm font-medium">Your inbox is empty</p>
+        <p className="text-sm font-medium">{t("creator.updates.emptyTitle")}</p>
         <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-          Review notes and messages from our team will show up here.
+          {t("creator.updates.emptyMessage")}
         </p>
       </div>
     );

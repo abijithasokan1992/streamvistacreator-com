@@ -345,8 +345,52 @@ export default function MyTitlesSection() {
           title={deleteTarget}
           onClose={() => setDeleteTarget(null)}
           onDeleted={async () => { setDeleteTarget(null); await reload(); }}
+          onLimitError={(err) => { setDeleteTarget(null); setLimitModal(err); }}
         />
       )}
+
+      {limitModal && (
+        <FreePlanLimitModal
+          message={limitModal.message}
+          onClose={() => setLimitModal(null)}
+          onManage={() => { setLimitModal(null); setFilter("all"); }}
+          onViewPlans={() => { setLimitModal(null); window.location.href = "?section=billing"; }}
+        />
+      )}
+    </div>
+  );
+}
+
+function FreePlanLimitModal({
+  message, onClose, onManage, onViewPlans,
+}: { message: string; onClose: () => void; onManage: () => void; onViewPlans: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm grid place-items-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="free-plan-limit-title"
+    >
+      <div className="bg-background border border-border/50 rounded-2xl w-[calc(100vw-2rem)] sm:w-full max-w-md text-center">
+        <div className="px-6 pt-6 pb-2">
+          <div className="mx-auto w-10 h-10 rounded-full bg-amber-500/10 grid place-items-center mb-3">
+            <Crown className="w-5 h-5 text-amber-300" />
+          </div>
+          <h2 id="free-plan-limit-title" className="font-display font-semibold text-lg">Free plan limit reached</h2>
+          <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{message}</p>
+        </div>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2 px-5 py-4 border-t border-border/40">
+          <button onClick={onClose} className="text-xs px-3 py-2 rounded-md border border-border/50 hover:bg-secondary/30">
+            OK
+          </button>
+          <button onClick={onManage} className="text-xs px-3 py-2 rounded-md border border-border/50 hover:bg-secondary/30">
+            Manage Titles
+          </button>
+          <button onClick={onViewPlans} className="text-xs px-3 py-2 rounded-md bg-accent text-accent-foreground hover:bg-accent/90">
+            View Plans
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -395,6 +395,240 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_buyer_requirements: {
+        Row: {
+          audio_specs: string | null
+          authorized_contact_email: string
+          authorized_contact_name: string
+          commercial_or_research: Database["public"]["Enums"]["ai_commercial_mode"]
+          content_types: string | null
+          created_at: string
+          data_retention: string | null
+          deletion_requirements: string | null
+          derived_output_requirements: string | null
+          id: string
+          intended_ai_use_case: string
+          languages: string | null
+          licence_term: string | null
+          model_training_purpose: string | null
+          organization: string
+          prohibited_content: string | null
+          required_hours: string | null
+          resolution: string | null
+          security_requirements: string | null
+          source_ip: unknown
+          status: string
+          submitted_by: string | null
+          target_budget: string | null
+          territories: string | null
+          updated_at: string
+        }
+        Insert: {
+          audio_specs?: string | null
+          authorized_contact_email: string
+          authorized_contact_name: string
+          commercial_or_research?: Database["public"]["Enums"]["ai_commercial_mode"]
+          content_types?: string | null
+          created_at?: string
+          data_retention?: string | null
+          deletion_requirements?: string | null
+          derived_output_requirements?: string | null
+          id?: string
+          intended_ai_use_case: string
+          languages?: string | null
+          licence_term?: string | null
+          model_training_purpose?: string | null
+          organization: string
+          prohibited_content?: string | null
+          required_hours?: string | null
+          resolution?: string | null
+          security_requirements?: string | null
+          source_ip?: unknown
+          status?: string
+          submitted_by?: string | null
+          target_budget?: string | null
+          territories?: string | null
+          updated_at?: string
+        }
+        Update: {
+          audio_specs?: string | null
+          authorized_contact_email?: string
+          authorized_contact_name?: string
+          commercial_or_research?: Database["public"]["Enums"]["ai_commercial_mode"]
+          content_types?: string | null
+          created_at?: string
+          data_retention?: string | null
+          deletion_requirements?: string | null
+          derived_output_requirements?: string | null
+          id?: string
+          intended_ai_use_case?: string
+          languages?: string | null
+          licence_term?: string | null
+          model_training_purpose?: string | null
+          organization?: string
+          prohibited_content?: string | null
+          required_hours?: string | null
+          resolution?: string | null
+          security_requirements?: string | null
+          source_ip?: unknown
+          status?: string
+          submitted_by?: string | null
+          target_budget?: string | null
+          territories?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ai_licensing_audit_log: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          metadata: Json
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          metadata?: Json
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          metadata?: Json
+        }
+        Relationships: []
+      }
+      ai_licensing_matches: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          opportunity_id: string
+          status: string
+          title_id: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          opportunity_id: string
+          status?: string
+          title_id: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          opportunity_id?: string
+          status?: string
+          title_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_licensing_matches_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "ai_licensing_opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_licensing_matches_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_licensing_opportunities: {
+        Row: {
+          ai_rights_scope: string
+          approx_hours_required: string | null
+          buyer_name: string
+          commercial_terms: string
+          created_at: string
+          delivery_specifications: string
+          exclusivity: string
+          id: string
+          internal_notes: string | null
+          licence_term: string
+          min_resolution: string | null
+          preferred_languages: string[]
+          preferred_resolution: string | null
+          primary_content: string[]
+          reference_code: string
+          secondary_content: string[]
+          status: string
+          talent_consent_requirements: string
+          technical_notes: string | null
+          territory: string
+          updated_at: string
+        }
+        Insert: {
+          ai_rights_scope?: string
+          approx_hours_required?: string | null
+          buyer_name: string
+          commercial_terms?: string
+          created_at?: string
+          delivery_specifications?: string
+          exclusivity?: string
+          id?: string
+          internal_notes?: string | null
+          licence_term?: string
+          min_resolution?: string | null
+          preferred_languages?: string[]
+          preferred_resolution?: string | null
+          primary_content?: string[]
+          reference_code: string
+          secondary_content?: string[]
+          status?: string
+          talent_consent_requirements?: string
+          technical_notes?: string | null
+          territory?: string
+          updated_at?: string
+        }
+        Update: {
+          ai_rights_scope?: string
+          approx_hours_required?: string | null
+          buyer_name?: string
+          commercial_terms?: string
+          created_at?: string
+          delivery_specifications?: string
+          exclusivity?: string
+          id?: string
+          internal_notes?: string | null
+          licence_term?: string
+          min_resolution?: string | null
+          preferred_languages?: string[]
+          preferred_resolution?: string | null
+          primary_content?: string[]
+          reference_code?: string
+          secondary_content?: string[]
+          status?: string
+          talent_consent_requirements?: string
+          technical_notes?: string | null
+          territory?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       alumni: {
         Row: {
           converted_at: string | null
@@ -8332,6 +8566,206 @@ export type Database = {
         }
         Relationships: []
       }
+      title_ai_licensing: {
+        Row: {
+          approved_use_cases: string[]
+          audio_languages: string[]
+          available_for_review: Database["public"]["Enums"]["ai_tri_state"]
+          commercial_model: string | null
+          created_at: string
+          exclusivity: Database["public"]["Enums"]["ai_exclusivity"]
+          frame_rate: string | null
+          id: string
+          licence_term: string | null
+          lip_sync_qc_status: string | null
+          music_rights_status: string | null
+          owner_user_id: string
+          performer_consent_status: string | null
+          prohibited_use_cases: string[]
+          resolution: string | null
+          review_status: Database["public"]["Enums"]["ai_review_status"]
+          rights_holder_authorized: Database["public"]["Enums"]["ai_rights_authorization"]
+          source_master_available: boolean
+          submitted_at: string | null
+          subtitle_languages: string[]
+          territory: string | null
+          title_id: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          approved_use_cases?: string[]
+          audio_languages?: string[]
+          available_for_review?: Database["public"]["Enums"]["ai_tri_state"]
+          commercial_model?: string | null
+          created_at?: string
+          exclusivity?: Database["public"]["Enums"]["ai_exclusivity"]
+          frame_rate?: string | null
+          id?: string
+          licence_term?: string | null
+          lip_sync_qc_status?: string | null
+          music_rights_status?: string | null
+          owner_user_id: string
+          performer_consent_status?: string | null
+          prohibited_use_cases?: string[]
+          resolution?: string | null
+          review_status?: Database["public"]["Enums"]["ai_review_status"]
+          rights_holder_authorized?: Database["public"]["Enums"]["ai_rights_authorization"]
+          source_master_available?: boolean
+          submitted_at?: string | null
+          subtitle_languages?: string[]
+          territory?: string | null
+          title_id: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          approved_use_cases?: string[]
+          audio_languages?: string[]
+          available_for_review?: Database["public"]["Enums"]["ai_tri_state"]
+          commercial_model?: string | null
+          created_at?: string
+          exclusivity?: Database["public"]["Enums"]["ai_exclusivity"]
+          frame_rate?: string | null
+          id?: string
+          licence_term?: string | null
+          lip_sync_qc_status?: string | null
+          music_rights_status?: string | null
+          owner_user_id?: string
+          performer_consent_status?: string | null
+          prohibited_use_cases?: string[]
+          resolution?: string | null
+          review_status?: Database["public"]["Enums"]["ai_review_status"]
+          rights_holder_authorized?: Database["public"]["Enums"]["ai_rights_authorization"]
+          source_master_available?: boolean
+          submitted_at?: string | null
+          subtitle_languages?: string[]
+          territory?: string | null
+          title_id?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "title_ai_licensing_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: true
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "title_ai_licensing_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      title_ai_licensing_admin: {
+        Row: {
+          admin_notes: string | null
+          commercial_proposal: string | null
+          contract_status: string | null
+          delivery_status: string | null
+          match_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          title_id: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          commercial_proposal?: string | null
+          contract_status?: string | null
+          delivery_status?: string | null
+          match_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          title_id: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          commercial_proposal?: string | null
+          contract_status?: string | null
+          delivery_status?: string | null
+          match_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          title_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "title_ai_licensing_admin_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: true
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      title_ai_licensing_documents: {
+        Row: {
+          content_type: string | null
+          created_at: string
+          document_kind: string
+          file_name: string | null
+          id: string
+          notes: string | null
+          owner_user_id: string
+          size_bytes: number | null
+          storage_bucket: string
+          storage_path: string
+          title_id: string
+          workspace_id: string
+        }
+        Insert: {
+          content_type?: string | null
+          created_at?: string
+          document_kind: string
+          file_name?: string | null
+          id?: string
+          notes?: string | null
+          owner_user_id: string
+          size_bytes?: number | null
+          storage_bucket?: string
+          storage_path: string
+          title_id: string
+          workspace_id: string
+        }
+        Update: {
+          content_type?: string | null
+          created_at?: string
+          document_kind?: string
+          file_name?: string | null
+          id?: string
+          notes?: string | null
+          owner_user_id?: string
+          size_bytes?: number | null
+          storage_bucket?: string
+          storage_path?: string
+          title_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "title_ai_licensing_documents_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "title_ai_licensing_documents_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       title_assets: {
         Row: {
           category: string
@@ -11484,6 +11918,19 @@ export type Database = {
       admin_division: "ops" | "finance" | "dev" | "marketing"
       agent_severity: "info" | "warn" | "critical"
       agent_surface: "home" | "creator" | "studio" | "buyer" | "chief"
+      ai_commercial_mode: "commercial" | "research" | "both" | "unspecified"
+      ai_exclusivity: "exclusive" | "non_exclusive" | "unspecified"
+      ai_review_status:
+        | "not_submitted"
+        | "rights_review_required"
+        | "technical_review_required"
+        | "clarification_requested"
+        | "eligible_for_matching"
+        | "not_eligible"
+        | "licensed"
+        | "suspended"
+      ai_rights_authorization: "yes" | "no" | "pending"
+      ai_tri_state: "yes" | "no" | "undecided"
       app_role:
         | "admin"
         | "moderator"
@@ -11868,6 +12315,20 @@ export const Constants = {
       admin_division: ["ops", "finance", "dev", "marketing"],
       agent_severity: ["info", "warn", "critical"],
       agent_surface: ["home", "creator", "studio", "buyer", "chief"],
+      ai_commercial_mode: ["commercial", "research", "both", "unspecified"],
+      ai_exclusivity: ["exclusive", "non_exclusive", "unspecified"],
+      ai_review_status: [
+        "not_submitted",
+        "rights_review_required",
+        "technical_review_required",
+        "clarification_requested",
+        "eligible_for_matching",
+        "not_eligible",
+        "licensed",
+        "suspended",
+      ],
+      ai_rights_authorization: ["yes", "no", "pending"],
+      ai_tri_state: ["yes", "no", "undecided"],
       app_role: [
         "admin",
         "moderator",

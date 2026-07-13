@@ -55,6 +55,7 @@ import CollegeERP from "./pages/CollegeERP.tsx";
 import Connect from "./pages/Connect.tsx";
 import SettingsIntegrationsAI from "./pages/SettingsIntegrationsAI.tsx";
 import AccessibilityPage from "./pages/Accessibility.tsx";
+import SolutionsAIContentLicensing from "./pages/SolutionsAIContentLicensing.tsx";
 
 // Smart Uploads is not MVP-ready — hidden until the checksum + bucket work is production-safe.
 // import SmartUploads from "./pages/SmartUploads.tsx";
@@ -146,6 +147,7 @@ const PublicRoutes = () => (
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/connectors" element={<Navigate to="/connect" replace />} />
     <Route path="/settings/integrations/ai-assistants" element={<SettingsIntegrationsAI />} />
+    <Route path="/solutions/ai-content-licensing" element={<SolutionsAIContentLicensing />} />
 
     {/* Linear onboarding wizard — kept for legacy accounts only. */}
     <Route path="/onboarding" element={<Onboarding />} />

@@ -37,9 +37,9 @@ const BrandChipLabel = () => (
 );
 
 const TRUST: { icon: LucideIcon; label: string; content?: React.ReactNode }[] = [
-  { icon: Lock, label: "256-bit SSL" },
+  { icon: Lock, label: "HTTPS Encrypted" },
   { icon: Cloud, label: "StreamVista Cloud X", content: <BrandChipLabel /> },
-  { icon: ShieldCheck, label: "DMCA Protected" },
+  { icon: ShieldCheck, label: "IP & Copyright Compliance" },
 ];
 
 const Wordmark = () => (
@@ -97,7 +97,7 @@ export const Footer = () => {
         <div className="mt-10 pt-6 border-t border-border/40 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <p className="text-[11px] leading-relaxed text-muted-foreground">
             © {new Date().getFullYear()}{" "}
-            <strong className="text-foreground/80">StreamVista OPC Pvt Ltd</strong>
+            <strong className="text-foreground/80">STREAMVISTA (OPC) PRIVATE LIMITED</strong>
             <span className="opacity-60"> · Ernakulam, Kerala, India.</span>
           </p>
         </div>

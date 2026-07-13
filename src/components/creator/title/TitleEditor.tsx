@@ -21,6 +21,7 @@ import { useTitleLock } from "@/hooks/useTitleLock";
 import { SmartMetadataImportButton } from "./SmartMetadataImport";
 
 import { CreatorDistributionStatus } from "./CreatorDistributionStatus";
+import { AILicensingPanel } from "./AILicensingPanel";
 
 // Creator workspace — five tabs only.
 // Media CMS, package building, partner dispatch and delivery controls
@@ -525,6 +526,14 @@ export function TitleEditor({
                   <div className="space-y-8">
                     <RightsAvailabilityPanel meta={meta} setMeta={setMeta} readOnly={metadataLocked} isFree={isFree} />
                     <CreatorDistributionStatus titleId={title.id} titleStatus={title.status} />
+                    {title.workspace_id && (
+                      <AILicensingPanel
+                        titleId={title.id}
+                        workspaceId={title.workspace_id}
+                        ownerUserId={title.owner_user_id}
+                        readOnly={metadataLocked}
+                      />
+                    )}
                   </div>
                 )}
                 {tab === "submission" && (

@@ -1,102 +1,81 @@
+## AI Training Content Licensing — Implementation Plan
 
-## Goal
+Scope is large; I'll ship in 4 sequential batches, each independently verifiable. No existing UI, titles, assets, or rights records are altered destructively. All new AI-rights fields default to "not reviewed" / disabled.
 
-Replace the scattered Channel Partner / Onboarding / Invitations surfaces with one **Admin → Ecosystem** department that manages every external organization (Creator, Studio, Buyer, Channel Partner) through a single data model, invitation flow, and audit trail. The public `/partners` page becomes a read-only projection of published Channel Partner records.
+---
 
-## Reused existing pieces (no rebuild)
+### Batch 1 — Public marketing surface + legal corrections (frontend only)
 
-- Admin shell: `src/pages/Admin.tsx` + `AdminCommandBar` + `DeptSubNav` (add one new dept, not a new page).
-- Auth / RBAC: `useAuth`, `RoleGate`, `has_role`, existing `user_roles` table.
-- Audit: `admin_audit_log` (existing helper patterns).
-- Onboarding data: `onboarding_requests`, `onboarding_notifications`, `onboarding_audit_log` — kept as source, wrapped in new views instead of forked tables.
-- Invitations: existing `role_invitations`, `premium_invitations`, `intro_invites` — unified behind one admin surface, not replaced.
-- Workspaces: existing `workspaces`, `workspace_members`, `organizations` auto-provisioner (already used by onboarding approval flow).
-- Partner data: existing `partner_profiles` becomes the Channel Partner projection layer; existing `partner_logos` stays for marketing thumbnails only.
+**Files touched**
+- `src/components/Hero.tsx` or nearest Rights & Distribution block → add "AI Training & Machine Learning" chip alongside OTT/Broadcasters/FAST/Airlines/Hospitality/Educational.
+- `src/components/home/AIContentLicensingSection.tsx` (new) → "License Content for Responsible AI" band with two CTAs (`I Own Content` → `/onboarding`, `Request an AI Dataset` → `/solutions/ai-content-licensing#request`). Slotted into `Index.tsx` under existing rights section — does NOT replace hero.
+- `src/pages/SolutionsAIContentLicensing.tsx` (new) → 7 sections exactly as specced (Overview → CTAs). Added to `App.tsx` route `/solutions/ai-content-licensing` + `scripts/prerender-routes.ts` for route-specific meta.
+- `src/components/Footer.tsx` → correct legal name to `© 2026 STREAMVISTA (OPC) PRIVATE LIMITED · Ernakulam, Kerala, India.`
+- Audit trust-claim strings across `Footer.tsx`, `Pricing.tsx`, `Hero.tsx`, `Contact.tsx`:
+  - "100% Secure Payments" → "Secure Payment Processing" (Razorpay is wired ⇒ allowed)
+  - "99.9% Uptime SLA" → remove (no contractual SLA)
+  - "DMCA Protected" → "IP & Copyright Compliance"
+  - "Free forever" → "Free plan available"
+  - "256-bit SSL" → remove unless we can confirm HTTPS everywhere (keep only if literally rendered nowhere sensitive; safer to remove)
 
-## Data model (additive, no duplication)
+**Verify:** hero unchanged, new section renders, `/solutions/ai-content-licensing` loads, footer legal name correct, no unsupported claims remain (rg sweep).
 
-One new organization-type discriminator table + one linking column. Everything else references existing tables.
+---
 
-```text
-organizations (existing)
-  + org_kind enum: 'creator' | 'studio' | 'buyer' | 'channel_partner'    NEW COLUMN
-  + status enum:  'draft' | 'invited' | 'onboarding' | 'active' | 'suspended'  NEW COLUMN
-  + published boolean default false   NEW COLUMN   (only channel_partner uses)
-  + partner_profile_id uuid FK partner_profiles(id) nullable  NEW COLUMN
+### Batch 2 — Database schema (single migration)
 
-partner_profiles (existing) — becomes the extended profile for org_kind='channel_partner'
-  + organization_id uuid FK organizations(id)  NEW COLUMN (1:1)
-  + Reserved future columns already present (licensing, territories, submission_requirements)
+New tables (all RLS-on, workspace-scoped, service_role full, authenticated scoped by workspace membership or admin role):
 
-onboarding_requests (existing) — unchanged; gains implicit link via organization_id already present.
+1. `title_ai_licensing` (1:1 with `content_titles`)
+   - `title_id` FK, `workspace_id`, `available_for_review` (`yes|no|undecided`, default `undecided`), `rights_holder_authorized` (`yes|no|pending`, default `pending`), `approved_use_cases text[]`, `prohibited_use_cases text[]`, `licence_term`, `territory`, `exclusivity` (`exclusive|non_exclusive|unspecified`), `commercial_model`, `performer_consent_status`, `music_rights_status`, `source_master_available bool`, `resolution`, `frame_rate`, `lip_sync_qc_status`, `audio_languages text[]`, `subtitle_languages text[]`
+   - Review workflow: `review_status` enum (`not_submitted|rights_review_required|technical_review_required|clarification_requested|eligible_for_matching|not_eligible|licensed|suspended`, default `not_submitted`)
+   - `reviewed_by`, `reviewed_at`, `admin_notes` — kept in sibling `title_ai_licensing_admin` table (admin-only RLS) to prevent creator leak (matches pattern used for `commercial_requests_admin`).
 
-role_invitations (existing) — reused; a new admin view groups all invitation types.
-```
+2. `title_ai_licensing_documents` — private references to storage objects (chain-of-title, consent, music rights). Not publicly listable.
 
-RLS: admin full access; `anon` can `SELECT` on `partner_profiles` only where the linked org is `org_kind='channel_partner' AND published=true AND status='active'`. Authenticated users get the same public view; a future migration will add a creator-scoped policy exposing the extended licensing/submission columns (already reserved).
+3. `ai_buyer_requirements` — the buyer intake form (all 19 fields). RLS: insertable by authenticated (public form → allow anon INSERT via edge function), readable admin-only.
 
-Grants included in the migration for every touched table.
+4. `ai_licensing_opportunities` — internal buyer opportunity records (SHAIP-style). Admin-only RLS.
 
-## Admin → Ecosystem UI
+5. `ai_licensing_matches` — join between `title_ai_licensing` and `ai_licensing_opportunities`. Admin-only.
 
-New dept in `Admin.tsx`, key `ecosystem`, four sub-sections in `DeptSubNav`:
+6. `ai_licensing_audit_log` — document access + status changes.
 
-1. **Organizations** — table of all orgs across the four kinds; filters by kind/status; row detail drawer shows workspace, members, linked onboarding request, audit trail. Reuses existing `AdminTeamManager` row components.
-2. **Invitations** — unified list over `role_invitations` (all roles including `channel_partner`). Create-invite dialog picks `org_kind`; on acceptance the existing onboarding flow runs with role-aware steps.
-3. **Channel Partners** — filtered view of Organizations where `org_kind='channel_partner'`, plus the partner_profile editor (tagline, description, logo, licensing, territories, submission requirements) and a **Publish** toggle that flips `organizations.published`. This replaces the standalone Channel Partners module and the current `PartnerLogos` admin card links here.
-4. **Onboarding Queue** — the existing `OnboardingApprovals` component moved under Ecosystem (removed from Operations dept nav; route redirect kept). Approving still calls the same provisioning code path.
+**Trigger `enforce_ai_licensing_review_transitions`:** creators can only set `available_for_review` / edit their-own metadata; only admins may change `review_status`, `rights_holder_authorized` to `yes`, or move to `eligible_for_matching` (requires non-null admin doc references).
 
-Legacy routes `/admin/approvals`, `/admin/users` continue to work — `pathToDept` gets an `ecosystem` branch and legacy tab keys `approvals`, `partners`, `invitations` map into it.
+**Seed:** insert SHAIP #700 opportunity record with all fields "Pending clarification" as specified. Private (admin RLS).
 
-## Onboarding + provisioning
+**Grandfathering:** no data mutation of existing `content_titles`. `title_ai_licensing` rows are lazily created on first save — absence = "AI rights not reviewed".
 
-One shared server-side function `provision_organization(org_kind, submitter_user_id, payload)` (Postgres function, `security definer`) that:
+---
 
-- inserts/updates the `organizations` row with the right `org_kind`,
-- creates the workspace + `workspace_members` owner row,
-- links the `onboarding_request`,
-- for `channel_partner` also inserts the `partner_profiles` row (unpublished),
-- writes an `admin_audit_log` entry.
+### Batch 3 — Creator dashboard AI Licensing panel
 
-Both admin approval and invitation acceptance call this same function — no forked logic.
+- `src/components/creator/sections/TitleAILicensingPanel.tsx` (new) → collapsible section within existing title editor. Read-only display of admin fields; editable creator fields; upload widget writes to private storage bucket `title-ai-rights-docs` (created via migration).
+- `src/lib/creator/aiLicensingApi.ts` (new) → typed wrappers.
+- Copy: "Submitting content for AI review does not grant AI training rights. StreamVista reviews rights and only qualifies content after written authorization."
+- Never shows a "self-approve" toggle.
 
-## Public `/partners`
+**Verify:** existing titles show "AI rights status: Not reviewed"; save persists; unauthorized status transitions rejected by trigger.
 
-`src/pages/Partners.tsx` and `src/lib/partnerProfiles.ts` are updated to query:
+---
 
-```sql
-select pp.*
-from partner_profiles pp
-join organizations o on o.id = pp.organization_id
-where o.org_kind = 'channel_partner'
-  and o.published = true
-  and o.status = 'active'
-```
+### Batch 4 — Admin review console + public buyer form
 
-No admin action = no listing. Draft partners never appear.
+- `src/pages/AdminAILicensing.tsx` (new, route `/admin/ai-licensing`, gated by `has_role('admin')`) → queue by `review_status`, per-title review drawer with all admin controls, match to opportunity, record proposal / contract / delivery.
+- `src/pages/SolutionsAIContentLicensing.tsx#request` → embeds `AIBuyerRequirementForm.tsx` (new). Public submit posts to edge function `submit-ai-buyer-requirement` that validates + writes `ai_buyer_requirements` with rate limiting.
+- `supabase/functions/submit-ai-buyer-requirement/index.ts` (new).
 
-## Creator workspace future hook (not built now, but reserved)
+**Security guarantees enforced end-to-end:**
+- Private rights docs stored in a bucket with no public list, signed-URL only, admin-only download in Phase 1.
+- Buyers never receive master URLs; matching = internal note only.
+- SHAIP #700 details never rendered on public pages.
 
-The migration adds columns `licensing_models jsonb`, `submission_requirements jsonb`, `territories text[]` on `partner_profiles` (if not already present) plus an RLS policy stub commented out for `authenticated` role. A follow-up story enables it — no schema churn required later.
+---
 
-## Files to touch
+### Deliverables on completion
+- Route/component inventory, migration diff, RLS matrix, list of corrected legal claims, before/after screenshots of home + footer + new AI page (desktop + mobile), and explicit confirmation that no existing title was opted into AI licensing.
 
-- New migration: `organizations` columns + enum, `partner_profiles.organization_id`, RLS/grants, `provision_organization` function, backfill of existing partner rows.
-- New: `src/components/admin/ecosystem/EcosystemDashboard.tsx`, `OrganizationsTable.tsx`, `InvitationsConsole.tsx`, `ChannelPartnersConsole.tsx`, `PartnerProfileEditor.tsx`.
-- Edit: `src/pages/Admin.tsx` (register `ecosystem` dept + sub-sections; move `OnboardingApprovals` there; keep legacy tab redirects).
-- Edit: `src/components/admin/AdminCommandBar.tsx` + `DeptSubNav.tsx` to surface the new dept and its sections.
-- Edit: `src/pages/Partners.tsx`, `src/lib/partnerProfiles.ts` to filter on `published=true`.
-- Delete/redirect: any standalone `ChannelPartners*` page or route (there is none currently; only `PartnerLogos` admin card, which becomes a link into Ecosystem → Channel Partners).
+---
 
-## Rollout order
-
-1. Migration (schema + function + backfill + RLS).
-2. Ecosystem admin UI wired to existing components.
-3. Partners public page filter switch.
-4. Redirect legacy admin routes.
-
-## Out of scope
-
-- Creator-authenticated partner extension UI (reserved data only).
-- AI compatibility scoring changes (existing `partner_title_matches` untouched).
-- Any changes to Studio/Buyer dashboards.
+If this plan looks right I'll start with Batch 1 (public page + legal). Reply "go" or edit any batch.

@@ -62,7 +62,7 @@ export const Hero = () => {
           </div>
 
           <p className="mt-5 text-[11px] font-mono-tech uppercase tracking-[0.2em] text-muted-foreground/70 animate-fade-in">
-            Free forever · 5 GB workspace · No credit card
+            Free plan available · 5 GB workspace · No credit card
           </p>
         </div>
       </div>

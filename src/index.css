@@ -126,7 +126,7 @@
     --secondary-foreground: 220 20% 98%;
 
     --muted: 225 22% 11%;
-    --muted-foreground: 220 14% 68%;
+    --muted-foreground: 220 16% 78%;
 
     --accent: 42 100% 62%;
     --accent-foreground: 225 40% 4%;
@@ -147,8 +147,8 @@
     --input: 225 22% 13%;
     --ring: 218 100% 64%;
 
-    --text-secondary: 220 14% 82%;
-    --text-tertiary: 220 12% 62%;
+    --text-secondary: 220 16% 88%;
+    --text-tertiary: 220 14% 74%;
 
     --row-hover: 225 28% 11%;
     --row-selected: 218 60% 16%;

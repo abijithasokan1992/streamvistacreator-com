@@ -4,6 +4,7 @@ import { Sparkles, Send, Loader2, ArrowRight, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocale } from "@/hooks/useLocale";
+import { useWorkspaces } from "@/hooks/useWorkspaces";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 

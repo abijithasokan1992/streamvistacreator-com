@@ -16,6 +16,7 @@ const GB = 1024 ** 3;
 
 export default function StorageLive({ compact }: { compact?: boolean }) {
   const s = useWorkspaceStorage();
+  const { t } = useTranslation();
 
   if (s.loading) {
     return <div className="rounded-xl border border-border/40 bg-background/40 h-[148px] animate-pulse" />;

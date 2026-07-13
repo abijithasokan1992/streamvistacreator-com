@@ -9,9 +9,20 @@
 //   app/payment/auth callbacks anymore — historically `app.crayonspictures.com`
 //   was used and is now deprecated.)
 export const APP_ORIGIN = "https://streamvista.in";
-export const APP_ORIGIN_WWW = "https://streamvista.in";
+export const APP_ORIGIN_WWW = "https://www.streamvista.in";
 export const PREVIEW_ORIGIN = "https://streamvista-creator.lovable.app";
 export const CORPORATE_SITE = "https://www.crayonspictures.com";
+
+/**
+ * Legacy production origins retained during the streamvistacreator.com →
+ * streamvista.in migration. Kept in the CORS/redirect allow-list as a
+ * fallback until SSL, auth, and OAuth on the new domain are verified.
+ * Do NOT use for new outbound links.
+ */
+export const LEGACY_APP_ORIGINS = [
+  "https://streamvistacreator.com",
+  "https://www.streamvistacreator.com",
+];
 
 /** Domains explicitly retired from active app/payment/auth use. */
 export const DEPRECATED_APP_ORIGINS = [
@@ -19,6 +30,7 @@ export const DEPRECATED_APP_ORIGINS = [
   "https://www.app.crayonspictures.com",
   "https://https-app-crayonspictures-com.lovable.app",
 ];
+
 
 /**
  * Returns the origin to use for outbound links (email redirects, OAuth

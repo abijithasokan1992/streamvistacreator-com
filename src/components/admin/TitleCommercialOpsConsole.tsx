@@ -587,12 +587,19 @@ function DealMemoDialog({
       term_end: form.term_end || null,
       amount_paise: form.amount_inr ? Math.round(Number(form.amount_inr) * 100) : null,
       payment_terms: form.payment_terms || null,
-      internal_notes: form.internal_notes || null,
       buyer_facing_memo: form.buyer_facing_memo || null,
     };
-    const { error } = await (supabase as any).from("deal_memos").insert(payload);
+    const { data: inserted, error } = await (supabase as any).from("deal_memos").insert(payload).select("id").maybeSingle();
+    if (error) { setBusy(false); return toast.error(error.message); }
+    // Persist admin-only internal notes into the sibling admin table
+    if (inserted?.id && form.internal_notes) {
+      const { error: nerr } = await (supabase as any).rpc("admin_deal_set_internal_notes", {
+        _deal_id: inserted.id,
+        _notes: form.internal_notes,
+      });
+      if (nerr) { setBusy(false); return toast.error(nerr.message); }
+    }
     setBusy(false);
-    if (error) return toast.error(error.message);
     toast.success("Deal memo created");
     onSaved();
   };

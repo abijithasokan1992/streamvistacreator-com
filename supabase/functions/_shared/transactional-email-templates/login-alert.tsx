@@ -20,7 +20,7 @@ const Email = ({
   loginMethod = 'email',
   ipAddress,
   userAgent,
-  resetUrl = 'https://streamvistacreator.com/auth',
+  resetUrl = 'https://streamvista.in/auth',
 }: Props) => {
   const when = loggedInAt
     ? new Date(loggedInAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
@@ -73,7 +73,7 @@ export const template = {
     loginMethod: 'Google',
     ipAddress: '203.0.113.42',
     userAgent: 'Chrome on macOS',
-    resetUrl: 'https://streamvistacreator.com/auth',
+    resetUrl: 'https://streamvista.in/auth',
   },
 } satisfies TemplateEntry
 

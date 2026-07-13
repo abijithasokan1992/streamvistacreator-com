@@ -6,7 +6,7 @@ const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 import { sendGmail } from "../_shared/gmail.ts";
 const MAIL_FROM = Deno.env.get("MAIL_FROM") || "StreamVista Cloud X <abijithasokan@crayonspictures.com>";
 // Always use the live primary domain for invite links, regardless of where the admin sends from.
-const PRIMARY_DOMAIN = "https://streamvistacreator.com";
+const PRIMARY_DOMAIN = "https://streamvista.in";
 const CC_EMAILS = ["abijithasokan@crayonspictures.com"];
 
 function jsonWith(req: Request) {
@@ -83,7 +83,7 @@ function renderHtml(p: {
         </td></tr>
         <tr><td style="padding:0 32px 24px;">
           <div style="height:1px;background:rgba(255,255,255,0.08);"></div>
-          <p style="margin:14px 0 0;font-size:11px;color:#5b5b6b;text-align:center;">This invite is personal and expires in ${p.validityDays} days.<br/>© StreamVista Cloud X · <a href="${PRIMARY_DOMAIN}" style="color:#7c7c8c;text-decoration:none;">streamvistacreator.com</a></p>
+          <p style="margin:14px 0 0;font-size:11px;color:#5b5b6b;text-align:center;">This invite is personal and expires in ${p.validityDays} days.<br/>© StreamVista Cloud X · <a href="${PRIMARY_DOMAIN}" style="color:#7c7c8c;text-decoration:none;">streamvista.in</a></p>
         </td></tr>
       </table>
     </td></tr>
@@ -142,7 +142,7 @@ Deno.serve(async (req) => {
       cc: CC_EMAILS,
       subject: `Your StreamVista Cloud X invite · ${inv.storage_tb} TB FREE`,
       html,
-      replyTo: "hello@streamvistacreator.com",
+      replyTo: "hello@streamvista.in",
     });
 
     if (!out.ok) {

@@ -3,4 +3,4 @@ Disallow: /admin/
 Disallow: /connectors
 Disallow: /.lovable/
 
-Sitemap: https://streamvistacreator.com/sitemap.xml
+Sitemap: https://streamvista.in/sitemap.xml

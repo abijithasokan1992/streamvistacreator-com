@@ -119,7 +119,7 @@ export default function InvoiceReceipt() {
               Status: <span className="text-emerald-600">{inv.status.toUpperCase()}</span>
             </div>
             This invoice is a tax invoice issued by StreamVista. Keep it for your records.
-            For questions about this receipt, contact support@streamvistacreator.com.
+            For questions about this receipt, contact support@streamvista.in.
           </div>
         </div>
       </div>

@@ -9,7 +9,7 @@ interface SeoProps {
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
 }
 
-const SITE = "https://streamvistacreator.com";
+const SITE = "https://streamvista.in";
 
 export function Seo({ title, description, path, type = "website", image, jsonLd }: SeoProps) {
   const url = `${SITE}${path}`;

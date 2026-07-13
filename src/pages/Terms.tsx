@@ -80,8 +80,8 @@ export default function Terms() {
           paddle.net
         </a>
         ; for product-related support please contact us at{" "}
-        <a className="text-accent hover:underline" href="mailto:support@streamvistacreator.com">
-          support@streamvistacreator.com
+        <a className="text-accent hover:underline" href="mailto:support@streamvista.in">
+          support@streamvista.in
         </a>
         . Certain INR domestic flows may continue to be processed by Razorpay, in which case the
         Razorpay payment terms apply to that transaction.
@@ -103,8 +103,8 @@ export default function Terms() {
 
       <LegalSection title="8. Contact">
         Questions regarding these Terms may be sent to{" "}
-        <a className="text-accent hover:underline" href="mailto:support@streamvistacreator.com">
-          support@streamvistacreator.com
+        <a className="text-accent hover:underline" href="mailto:support@streamvista.in">
+          support@streamvista.in
         </a>
         .
       </LegalSection>

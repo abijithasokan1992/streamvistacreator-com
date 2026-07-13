@@ -37,9 +37,9 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 
 // Configuration
 const SITE_NAME = "streamvista-creator-launch"
-const SENDER_DOMAIN = "notify.streamvistacreator.com"
-const ROOT_DOMAIN = "streamvistacreator.com"
-const FROM_DOMAIN = "streamvistacreator.com" // Domain shown in From address (may be root or sender subdomain)
+const SENDER_DOMAIN = "notify.streamvista.in"
+const ROOT_DOMAIN = "streamvista.in"
+const FROM_DOMAIN = "streamvista.in" // Domain shown in From address (may be root or sender subdomain)
 
 // Sample data for preview mode ONLY (not used in actual email sending).
 // URLs are baked in at scaffold time from the project's real data.

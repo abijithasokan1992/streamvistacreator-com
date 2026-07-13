@@ -13,7 +13,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-export const SITE_ORIGIN = "https://streamvistacreator.com";
+export const SITE_ORIGIN = "https://streamvista.in";
 
 export type RouteMeta = {
   path: string;          // e.g. "/dmca" or "/" for homepage

@@ -36,7 +36,7 @@ const Email = ({
   fromStatus,
   note,
   occurredAt,
-  dashboardUrl = 'https://streamvistacreator.com/dashboard/content-owner?section=titles',
+  dashboardUrl = 'https://streamvista.in/dashboard/content-owner?section=titles',
 }: Props) => {
   const stamp = occurredAt
     ? new Date(occurredAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })

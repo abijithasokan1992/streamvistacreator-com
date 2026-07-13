@@ -28,7 +28,7 @@ const Index = () => {
             "@context": "https://schema.org",
             "@type": "Organization",
             name: "StreamVista",
-            url: "https://streamvistacreator.com/",
+            url: "https://streamvista.in/",
           },
         ]}
       />

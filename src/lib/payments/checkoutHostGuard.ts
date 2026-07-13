@@ -3,7 +3,7 @@
  *
  * Per the merchant account configuration with Razorpay (Merchant ID S5atjWLWSQYfDj),
  * live customer payments are approved only on the production domain
- * https://streamvistacreator.com (the bare domain is canonical; the www
+ * https://streamvista.in (the bare domain is canonical; the www
  * variant is accepted for compatibility). Preview / staging / *.lovable.app
  * hosts must not initiate user-facing Razorpay checkout sessions.
  *
@@ -12,8 +12,8 @@
  */
 
 const APPROVED_LIVE_HOSTS = new Set<string>([
-  "streamvistacreator.com",
-  "www.streamvistacreator.com",
+  "streamvista.in",
+  "streamvista.in",
 ]);
 
 export function isApprovedLiveCheckoutHost(): boolean {
@@ -29,7 +29,7 @@ export function isApprovedLiveCheckoutHost(): boolean {
 export function assertLiveCheckoutHost(): void {
   if (isApprovedLiveCheckoutHost()) return;
   throw new Error(
-    "Live payments are available only on https://streamvistacreator.com. " +
+    "Live payments are available only on https://streamvista.in. " +
       "This preview environment cannot accept customer payments.",
   );
 }

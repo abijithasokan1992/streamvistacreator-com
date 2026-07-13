@@ -97,7 +97,7 @@ export default function AccessibilityPage() {
           <h2 id="scope" className="text-xl font-semibold">Scope</h2>
           <p className="text-sm leading-relaxed text-muted-foreground">
             The accessibility commitments on this page apply to the StreamVista
-            web application at <code>streamvistacreator.com</code>, including the
+            web application at <code>streamvista.in</code>, including the
             Creator Hub, Studio Workspace, Buyer marketplace, checkout, and
             admin console. Third-party embeds (for example payment providers)
             follow their own accessibility policies.
@@ -121,10 +121,10 @@ export default function AccessibilityPage() {
               Contact StreamVista Support
             </Link>
             <a
-              href="mailto:accessibility@streamvistacreator.com"
+              href="mailto:accessibility@streamvista.in"
               className="inline-flex items-center gap-2 rounded-full border border-border/70 text-sm px-4 py-2 hover:bg-secondary/60 transition"
             >
-              accessibility@streamvistacreator.com
+              accessibility@streamvista.in
             </a>
           </div>
         </section>

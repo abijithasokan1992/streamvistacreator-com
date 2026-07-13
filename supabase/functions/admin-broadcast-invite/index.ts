@@ -13,7 +13,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 import { sendGmail } from "../_shared/gmail.ts";
 const MAIL_FROM = Deno.env.get("MAIL_FROM") || "StreamVista <abijithasokan@crayonspictures.com>";
-const PRIMARY_DOMAIN = "https://streamvistacreator.com";
+const PRIMARY_DOMAIN = "https://streamvista.in";
 
 function json(o: unknown, s = 200, cors: HeadersInit = {}) {
   return new Response(JSON.stringify(o), { status: s, headers: { ...cors, "Content-Type": "application/json" } });
@@ -58,7 +58,7 @@ ${msg ? `<div style="margin-top:18px;padding:16px 18px;background:rgba(255,255,2
 </td></tr>
 <tr><td style="padding:0 32px 24px;">
 <div style="height:1px;background:rgba(255,255,255,0.08);"></div>
-<p style="margin:14px 0 0;font-size:11px;color:#5b5b6b;text-align:center;">This invite is personal and expires in 30 days.<br/>© StreamVista · <a href="${PRIMARY_DOMAIN}" style="color:#7c7c8c;text-decoration:none;">streamvistacreator.com</a></p>
+<p style="margin:14px 0 0;font-size:11px;color:#5b5b6b;text-align:center;">This invite is personal and expires in 30 days.<br/>© StreamVista · <a href="${PRIMARY_DOMAIN}" style="color:#7c7c8c;text-decoration:none;">streamvista.in</a></p>
 </td></tr>
 </table>
 </td></tr></table>
@@ -168,7 +168,7 @@ Deno.serve(async (req) => {
           to: r.email,
           subject,
           html,
-          replyTo: "hello@streamvistacreator.com",
+          replyTo: "hello@streamvista.in",
         });
         if (!out.ok) {
           failed++;

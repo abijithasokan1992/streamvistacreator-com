@@ -185,7 +185,7 @@ export default function UniversalBroadcast() {
               <DialogHeader><DialogTitle>Email preview</DialogTitle></DialogHeader>
               <div className="rounded-lg overflow-hidden border border-border/40 bg-[#06060b]">
                 <iframe title="preview" className="w-full h-[560px] bg-[#06060b]"
-                  srcDoc={previewHtml({ name: "Friend", inviteUrl: "https://streamvistacreator.com/auth?invite=PREVIEW", message, ctaLabel })} />
+                  srcDoc={previewHtml({ name: "Friend", inviteUrl: "https://streamvista.in/auth?invite=PREVIEW", message, ctaLabel })} />
               </div>
             </DialogContent>
           </Dialog>
@@ -213,6 +213,6 @@ function previewHtml(p: { name: string; inviteUrl: string; message: string; ctaL
 ${msg ? `<div style="margin-top:18px;padding:16px 18px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;font-size:14px;color:#d4d4dc;">${msg}</div>` : ""}
 </div>
 <div style="padding:28px 32px;text-align:center;"><a href="${esc(p.inviteUrl)}" style="display:inline-block;padding:16px 36px;background:linear-gradient(90deg,#a855f7,#ec4899);color:#fff;font-weight:700;text-decoration:none;border-radius:999px;">${esc(p.ctaLabel)} →</a></div>
-<div style="padding:0 32px 28px;font-size:11px;color:#5b5b6b;text-align:center;">© StreamVista · streamvistacreator.com</div>
+<div style="padding:0 32px 28px;font-size:11px;color:#5b5b6b;text-align:center;">© StreamVista · streamvista.in</div>
 </div></div></body></html>`;
 }

@@ -15,8 +15,8 @@ export default function About() {
             "@context": "https://schema.org",
             "@type": "LocalBusiness",
             name: "StreamVista OPC Pvt Ltd",
-            url: "https://streamvistacreator.com/about",
-            email: "support@streamvistacreator.com",
+            url: "https://streamvista.in/about",
+            email: "support@streamvista.in",
             address: {
               "@type": "PostalAddress",
               addressLocality: "Ernakulam",
@@ -27,7 +27,7 @@ export default function About() {
             parentOrganization: {
               "@type": "Organization",
               name: "StreamVista",
-              url: "https://streamvistacreator.com/",
+              url: "https://streamvista.in/",
             },
           },
         ]}
@@ -48,8 +48,8 @@ export default function About() {
           <div className="space-y-1">
             <div>
               <span>Email:</span>{" "}
-              <a className="text-accent hover:underline" href="mailto:support@streamvistacreator.com">
-                support@streamvistacreator.com
+              <a className="text-accent hover:underline" href="mailto:support@streamvista.in">
+                support@streamvista.in
               </a>
             </div>
             <div><span>Hours:</span> Monday – Saturday · 10:00 – 19:00 IST</div>

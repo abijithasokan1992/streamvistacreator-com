@@ -2,7 +2,7 @@
  * useHostMode
  * ───────────
  * Determines whether the current browser is on the **admin** subdomain
- * (`admin.streamvistacreator.com`) or the **public** main domain.
+ * (`admin.streamvista.in`) or the **public** main domain.
  *
  * Both hosts serve the same Lovable build — this hook lets the app
  * render completely different route trees per host so the admin console
@@ -52,7 +52,7 @@ export function urlForHost(mode: HostMode, path = "/"): string {
   // On preview / localhost we cannot actually switch hostnames — stay on
   // the same origin and use the ?host= override instead.
   const isRealDomain =
-    current.endsWith("streamvistacreator.com") &&
+    current.endsWith("streamvista.in") &&
     !current.includes("lovable.app") &&
     !current.includes("localhost");
 
@@ -61,7 +61,7 @@ export function urlForHost(mode: HostMode, path = "/"): string {
     return `${path}${sep}host=${mode}`;
   }
 
-  const rootDomain = "streamvistacreator.com";
+  const rootDomain = "streamvista.in";
   const targetHost = mode === "admin" ? `admin.${rootDomain}` : rootDomain;
   return `https://${targetHost}${path}`;
 }

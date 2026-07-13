@@ -86,7 +86,7 @@ export default function ScreeningRoom() {
           <ShieldAlert className="w-12 h-12 mx-auto text-red-400" />
           <h1 className="text-2xl font-semibold">{copy.title}</h1>
           <p className="text-sm text-white/70">{copy.body}</p>
-          <p className="text-xs text-white/70">Need help? support@streamvistacreator.com</p>
+          <p className="text-xs text-white/70">Need help? support@streamvista.in</p>
         </div>
       </div>
     );

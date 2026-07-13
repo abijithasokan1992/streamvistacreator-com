@@ -5,7 +5,7 @@ import { Hr, Img, Section, Text } from 'npm:@react-email/components@0.0.22'
 
 // Absolute URLs are required in email clients. Hosted via the project's
 // published asset CDN so the logos render in Gmail / Outlook / Apple Mail.
-const BASE = 'https://streamvistacreator.com'
+const BASE = 'https://streamvista.in'
 
 const LOGOS = [
   { name: 'Crayons Pictures', src: `${BASE}/__l5e/assets-v1/5555a121-bd40-4126-be14-47370e1c5210/crayons-pictures.png` },

@@ -84,8 +84,8 @@ export default function Privacy() {
         Subject to applicable law, you may request access, correction, export, restriction, or
         deletion of your personal data, object to processing, or withdraw consent at any time by
         writing to{" "}
-        <a className="text-accent hover:underline" href="mailto:support@streamvistacreator.com">
-          support@streamvistacreator.com
+        <a className="text-accent hover:underline" href="mailto:support@streamvista.in">
+          support@streamvista.in
         </a>
         . We respond within 30 days. For payment-specific data held by Paddle as MoR, you may also
         contact Paddle directly via{" "}

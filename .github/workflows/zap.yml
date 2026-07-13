@@ -20,7 +20,7 @@ jobs:
       - name: ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.12.0
         with:
-          target: "https://streamvistacreator.com"
+          target: "https://streamvista.in"
           rules_file_name: ".github/zap-rules.tsv"
           cmd_options: "-a"
           fail_action: false # report issues without failing the build

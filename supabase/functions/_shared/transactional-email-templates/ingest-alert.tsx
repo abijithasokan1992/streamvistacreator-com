@@ -28,7 +28,7 @@ const Email = ({
   summary = 'An ingest condition crossed your alert threshold.',
   metrics = [],
   firedAt,
-  dashboardUrl = 'https://streamvistacreator.com/dashboard/studio',
+  dashboardUrl = 'https://streamvista.in/dashboard/studio',
 }: Props) => {
   const when = firedAt
     ? new Date(firedAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
@@ -88,7 +88,7 @@ export const template = {
       { label: 'Failure rate', value: '32%' },
     ],
     firedAt: new Date().toISOString(),
-    dashboardUrl: 'https://streamvistacreator.com/dashboard/studio',
+    dashboardUrl: 'https://streamvista.in/dashboard/studio',
   },
 } satisfies TemplateEntry
 

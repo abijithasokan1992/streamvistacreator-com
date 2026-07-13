@@ -16,8 +16,8 @@ export default function WrongPortal({
   const target = urlForHost(expected, expected === "admin" ? "/auth" : "/");
   const label =
     expected === "admin"
-      ? "Go to admin.streamvistacreator.com"
-      : "Go to streamvistacreator.com";
+      ? "Go to admin.streamvista.in"
+      : "Go to streamvista.in";
 
   return (
     <main className="relative min-h-dvh grid place-items-center bg-background text-foreground px-4">

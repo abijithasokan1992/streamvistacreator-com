@@ -18,7 +18,7 @@ interface Props {
 const Email = ({
   studioName = 'Your studio',
   filename = 'Your review',
-  shareUrl = 'https://streamvistacreator.com',
+  shareUrl = 'https://streamvista.in',
   recipientName,
   expiresAt,
   hasPassword,
@@ -101,7 +101,7 @@ export const template = {
   previewData: {
     studioName: 'Acme Studio',
     filename: 'Episode 04 — Final Cut v3.mp4',
-    shareUrl: 'https://streamvistacreator.com/s/abc123',
+    shareUrl: 'https://streamvista.in/s/abc123',
     recipientName: 'Jane',
     expiresAt: new Date(Date.now() + 7 * 86400_000).toISOString(),
     hasPassword: true,

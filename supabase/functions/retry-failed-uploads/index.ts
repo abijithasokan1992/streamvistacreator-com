@@ -19,6 +19,15 @@ const STALE_MINUTES = 5;
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
+  const cronSecret = Deno.env.get("CRON_SECRET");
+  const bearer = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
+  if (!cronSecret || !bearer || bearer !== cronSecret) {
+    return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
+      status: 403,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,

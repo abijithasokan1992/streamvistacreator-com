@@ -21,6 +21,7 @@ import { useTitleLock } from "@/hooks/useTitleLock";
 import { SmartMetadataImportButton } from "./SmartMetadataImport";
 
 import { CreatorDistributionStatus } from "./CreatorDistributionStatus";
+import { AILicensingPanel } from "./AILicensingPanel";
 
 // Creator workspace — five tabs only.
 // Media CMS, package building, partner dispatch and delivery controls

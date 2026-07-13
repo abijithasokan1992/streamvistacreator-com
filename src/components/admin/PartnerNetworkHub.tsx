@@ -210,7 +210,7 @@ export default function PartnerNetworkHub() {
                     <div className="text-[10px] uppercase text-muted-foreground">Transform</div>
                     <div className="font-mono truncate">{m.transform ?? "identity"}</div>
                   </div>
-                  {m.required && <Badge variant="destructive">required</Badge>}
+                  {m.is_required && <Badge variant="destructive">required</Badge>}
                 </div>
               ))}
             </div>

@@ -232,11 +232,16 @@ export async function fetchFreeTierStatus(): Promise<FreeTierStatus | null> {
     return {
       is_free: false,
       draft_count: 0,
+      active_count: 0,
+      total_count: 0,
       lifecycle_count: 0,
       max_drafts: null,
+      max_active: null,
+      max_total: null,
       max_submissions: null,
       can_create_draft: true,
       can_submit: true,
+      over_limit: false,
     };
   }
   const { data, error } = await (supabase as any).rpc("creator_free_tier_status");

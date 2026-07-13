@@ -37,8 +37,8 @@ export default function Privacy() {
         All User Content is stored on <strong className="text-foreground">C CLOUD Infrastructure</strong>{" "}
         object storage with server-side AES-256 encryption at rest and TLS 1.2+ in transit. Access
         is mediated by short-lived pre-authenticated requests; raw bucket credentials are never
-        exposed to the browser. Backups and lifecycle policies follow C CLOUD's enterprise SLA of
-        99.9% uptime.
+        exposed to the browser. Backups and lifecycle policies follow the underlying cloud
+        provider's operational commitments.
       </LegalSection>
 
       <LegalSection title="5. How We Use Data & Legal Basis">

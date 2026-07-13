@@ -345,7 +345,6 @@ export default function MyTitlesSection() {
           title={deleteTarget}
           onClose={() => setDeleteTarget(null)}
           onDeleted={async () => { setDeleteTarget(null); await reload(); }}
-          onLimitError={(err) => { setDeleteTarget(null); setLimitModal(err); }}
         />
       )}
 

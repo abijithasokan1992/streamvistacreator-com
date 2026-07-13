@@ -106,16 +106,23 @@ export default function MyTitlesSection() {
         <div className="mb-4 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 flex items-start gap-3 text-xs sm:text-sm">
           <Crown className="w-4 h-4 text-amber-300 mt-0.5 shrink-0" />
           <div className="min-w-0 flex-1">
-            <div className="font-medium">Free plan — 1 title only</div>
-            <div className="text-muted-foreground mt-0.5">
-              {tier.draft_count}/1 draft · {tier.lifecycle_count}/1 submission used. Upgrade for additional submissions and 5 TB storage.
+            <div className="font-medium">Creator Free</div>
+            <div className="text-muted-foreground mt-0.5 flex flex-wrap gap-x-4 gap-y-0.5">
+              <span>Active titles: <span className="text-foreground">{tier.active_count} of {tier.max_active ?? 1}</span></span>
+              <span>Drafts: <span className="text-foreground">{tier.draft_count} of {tier.max_drafts ?? 1}</span></span>
+              <span>Total: <span className="text-foreground">{tier.total_count} of {tier.max_total ?? 2}</span></span>
             </div>
+            {tier.over_limit && (
+              <div className="mt-1 text-amber-300">
+                Over free-plan limit — upgrade to add or submit more titles.
+              </div>
+            )}
           </div>
           <a
             href="?section=billing"
             className="text-[11px] rounded-md border border-amber-500/40 px-2.5 py-1 hover:bg-amber-500/10 whitespace-nowrap"
           >
-            Open Billing
+            View Plans
           </a>
         </div>
       )}

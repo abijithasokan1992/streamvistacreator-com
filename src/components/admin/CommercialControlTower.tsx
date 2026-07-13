@@ -613,7 +613,7 @@ function CommercialQueue() {
   const saveNote = async (id: string) => {
     const note = (noteDraft[id] ?? "").trim();
     if (!note) return;
-    const { error } = await supabase.from("commercial_requests").update({ admin_notes: note } as never).eq("id", id);
+    const { error } = await (supabase as any).rpc("admin_commercial_request_set_note", { _request_id: id, _note: note });
     if (error) { toast.error(error.message); return; }
     toast.success("Note saved");
     setRows(r => r.map(x => x.id === id ? { ...x, admin_notes: note } : x));

@@ -447,11 +447,13 @@ function DeleteTitleDialog({
   const fee = elig?.early_termination_fee_inr ?? 0;
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm grid place-items-center p-4" role="dialog" aria-modal="true" aria-label="Delete title">
+    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm grid place-items-center p-4" role="dialog" aria-modal="true" aria-label="Remove this draft">
       <div className="bg-background border border-border/50 rounded-2xl w-[calc(100vw-2rem)] sm:w-full max-w-lg">
         <div className="flex items-center justify-between px-5 py-3 border-b border-border/40">
           <div>
-            <h2 className="font-semibold">Delete title</h2>
+            <h2 className="font-semibold">
+              {elig?.allow ? "Remove this draft?" : "This title can't be removed"}
+            </h2>
             <p className="text-xs text-muted-foreground mt-0.5 truncate max-w-[22rem]">{title.title}</p>
           </div>
           <button onClick={onClose} className="p-1.5 rounded hover:bg-secondary/30" aria-label="Close">
@@ -466,7 +468,9 @@ function DeleteTitleDialog({
             </div>
           ) : elig?.allow ? (
             <>
-              <p>Removing this title cannot be undone. Metadata, uploaded assets and draft history will be permanently deleted.</p>
+              <p>
+                This draft will be removed from your workspace. Protected business and audit records will remain preserved.
+              </p>
               <label className="flex items-start gap-2 text-xs text-muted-foreground">
                 <input type="checkbox" className="mt-0.5" checked={ack} onChange={(e) => setAck(e.target.checked)} />
                 <span>I understand this action is permanent.</span>
@@ -488,7 +492,7 @@ function DeleteTitleDialog({
                 </div>
               )}
               <p className="text-xs text-muted-foreground">
-                Next steps: close any open buyer conversations, complete or cancel pending deliveries, and once nothing commercial remains, try again.
+                For submitted, reviewed, approved, published or licensed titles, choose Archive or Contact Support instead of deletion.
               </p>
             </>
           )}
@@ -505,7 +509,7 @@ function DeleteTitleDialog({
               className="inline-flex items-center gap-1.5 rounded-md bg-destructive text-destructive-foreground text-xs px-3 py-1.5 disabled:opacity-50 hover:bg-destructive/90"
             >
               {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-              Delete permanently
+              Remove Draft
             </button>
           )}
         </div>

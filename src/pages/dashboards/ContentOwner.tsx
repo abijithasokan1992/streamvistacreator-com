@@ -31,6 +31,8 @@ import { useLocale } from "@/hooks/useLocale";
 
 export default function ContentOwnerDashboard() {
   const { user, role, dashboardRole, loading, signOut } = useAuth();
+  const { t } = useTranslation();
+  const { chosen: hasChosenLanguage } = useLocale();
   const [params, setParams] = useSearchParams();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isFree, setIsFree] = useState<boolean>(true);
@@ -85,17 +87,23 @@ export default function ContentOwnerDashboard() {
   // Free-tier: pro-only sections redirect to Storage & Billing rather than rendering empty.
   const def = SECTIONS.find((s) => s.id === section) ?? SECTIONS[0];
   const effectiveSection: SectionId = isFree && (def as any).proOnly ? "billing" : def.id;
-  const current = SECTIONS.find((s) => s.id === effectiveSection)!;
+  const { label: currentLabel, heading: currentHeading, subhead: currentSubhead } =
+    useSectionLabels(effectiveSection);
 
   return (
     <main className="min-h-dvh bg-background text-foreground">
+      {/* First-visit language picker — never coerces a choice, blocks the UI
+          until the user selects Malayalam or English so the dashboard renders
+          in their chosen language. */}
+      {!hasChosenLanguage && <LanguagePicker />}
+
       <header className="border-b border-border/40 sticky top-0 z-30 bg-background/80 backdrop-blur">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-3.5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <button
               className="md:hidden p-1.5 rounded hover:bg-secondary/30"
               onClick={() => setMobileOpen((v) => !v)}
-              aria-label="Toggle menu"
+              aria-label={t("common.toggleMenu")}
             >
               <Menu className="w-4 h-4" />
             </button>
@@ -104,18 +112,19 @@ export default function ContentOwnerDashboard() {
           <div className="flex items-center gap-3">
             <EntitlementChip />
             <CreatorGuide />
+            <LanguageSwitcher />
             <ThemeToggle />
             <Link
               to="/my-workspace"
               className="text-xs text-muted-foreground hover:text-foreground"
             >
-              My Workspace
+              {t("creator.header.workspace")}
             </Link>
             <button
               onClick={signOut}
               className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5"
             >
-              <LogOut className="w-3.5 h-3.5" /> Sign out
+              <LogOut className="w-3.5 h-3.5" /> {t("common.signOut")}
             </button>
           </div>
         </div>
@@ -126,9 +135,9 @@ export default function ContentOwnerDashboard() {
         <section className="min-w-0">
           {effectiveSection !== "home" && (
             <div className="mb-6">
-              <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground/70">{current.label}</p>
-              <h1 className="font-display text-2xl md:text-3xl mt-1">{current.heading}</h1>
-              {current.subhead && <p className="text-sm text-muted-foreground mt-1.5 max-w-2xl">{current.subhead}</p>}
+              <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground/70">{currentLabel}</p>
+              <h1 className="font-display text-2xl md:text-3xl mt-1">{currentHeading}</h1>
+              {currentSubhead && <p className="text-sm text-muted-foreground mt-1.5 max-w-2xl">{currentSubhead}</p>}
             </div>
           )}
           {effectiveSection === "home" && <HomeSection onNavigate={setSection} isFree={isFree} />}

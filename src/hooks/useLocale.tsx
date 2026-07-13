@@ -29,11 +29,18 @@ export function useLocale() {
   );
   const [chosen, setChosen] = useState<boolean>(hasChosenLocale());
 
-  // Keep local state in sync with i18n's language changes triggered elsewhere.
+  // Keep local state in sync with i18n's language changes triggered elsewhere,
+  // and reflect the active locale on `<html lang>` so CSS + assistive tech
+  // pick the right typography and pronunciation.
   useEffect(() => {
     const handler = (lng: string) => {
-      setLocaleState(lng === "ml" ? "ml" : "en");
+      const next: Locale = lng === "ml" ? "ml" : "en";
+      setLocaleState(next);
+      if (typeof document !== "undefined") {
+        document.documentElement.setAttribute("lang", next);
+      }
     };
+    handler(i18n.language);
     i18n.on("languageChanged", handler);
     return () => {
       i18n.off("languageChanged", handler);

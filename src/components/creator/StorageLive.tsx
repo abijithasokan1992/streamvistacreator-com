@@ -66,15 +66,15 @@ export default function StorageLive({ compact }: { compact?: boolean }) {
             <div className={`h-full transition-[width] duration-500 ${barTone}`} style={{ width: `${pct}%` }} />
           </div>
           <div className="flex items-center justify-between text-[11px] text-muted-foreground mt-2 tabular-nums">
-            <span>{pct.toFixed(1)}% used</span>
-            <span>{formatGb(remainingGb)} remaining</span>
+            <span>{t("creator.storage.percentUsed", { pct: pct.toFixed(1) })}</span>
+            <span>{t("creator.storage.remaining", { amount: formatGb(remainingGb) })}</span>
           </div>
         </div>
         {pct >= 90 && (
           <div className="rounded-md border border-destructive/40 bg-destructive/5 p-2.5 text-[11px] flex items-start gap-2">
             <AlertTriangle className="w-3.5 h-3.5 text-destructive shrink-0 mt-0.5" />
             <span className="text-destructive">
-              Storage is nearly full. Add capacity from Storage &amp; Billing to keep uploads running.
+              {t("creator.storage.nearlyFull")}
             </span>
           </div>
         )}

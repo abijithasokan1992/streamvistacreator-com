@@ -12,10 +12,9 @@ on:
     branches: [main, staging]
   workflow_dispatch: {}
 
+# Default to least-privilege. Individual jobs/steps opt in to more.
 permissions:
   contents: read
-  pull-requests: write
-  checks: write
 
 concurrency:
   group: a11y-${{ github.ref }}
@@ -25,6 +24,14 @@ jobs:
   axe:
     name: axe-core contrast + WCAG smoke
     runs-on: ubuntu-latest
+    # No elevated permissions here — this job only reads code and
+    # uploads artifacts. The PR-comment job below opts into
+    # `pull-requests: write` for itself.
+    permissions:
+      contents: read
+    outputs:
+      scan_status: ${{ steps.finalize.outputs.scan_status }}
+      failure_stage: ${{ steps.finalize.outputs.failure_stage }}
     steps:
       - uses: actions/checkout@v4
 
@@ -34,17 +41,25 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Mark stage – install
+        run: echo "install" > .a11y-stage
+
       - name: Install dependencies
         run: npm ci
 
+      - name: Mark stage – build
+        run: echo "build" > .a11y-stage
+
       - name: Build production bundle
         run: npm run build
+
+      - name: Mark stage – preview
+        run: echo "preview" > .a11y-stage
 
       - name: Start preview server
         run: |
           nohup npx vite preview --host 127.0.0.1 --port 4173 > preview.log 2>&1 &
           echo $! > preview.pid
-          # Wait for the server to accept connections (max ~30s)
           for i in $(seq 1 30); do
             if curl -fsS http://127.0.0.1:4173/ > /dev/null; then
               echo "preview ready after ${i}s"
@@ -59,13 +74,13 @@ jobs:
       - name: Prepare report dir
         run: mkdir -p reports/axe
 
+      - name: Mark stage – axe
+        run: echo "axe" > .a11y-stage
+
       - name: Run axe-core against public routes
         id: axe
         run: |
           set -e
-          # Rules we treat as blocking. Contrast is the primary target
-          # (matches the Lighthouse "low-contrast text" finding); the
-          # rest cover cheap regressions that shadcn defaults satisfy.
           TAGS="wcag2a,wcag2aa,wcag21a,wcag21aa"
           ROUTES=(
             "/"
@@ -91,6 +106,10 @@ jobs:
             fi
             echo "::endgroup::"
           done
+          # Signal that the axe step at least ran to completion so the
+          # PR-comment job can distinguish "violations found" from
+          # "scan never completed".
+          echo "completed" > .a11y-stage
           exit $fail
 
       - name: Stop preview server
@@ -100,25 +119,54 @@ jobs:
             kill "$(cat preview.pid)" || true
           fi
 
+      - name: Finalize scan status
+        id: finalize
+        if: always()
+        run: |
+          stage=$(cat .a11y-stage 2>/dev/null || echo "unknown")
+          if [ "${{ steps.axe.outcome }}" = "success" ]; then
+            echo "scan_status=success" >> "$GITHUB_OUTPUT"
+            echo "failure_stage=" >> "$GITHUB_OUTPUT"
+          elif [ "${{ steps.axe.outcome }}" = "failure" ] && [ "$stage" = "completed" ]; then
+            # axe ran end-to-end but found violations
+            echo "scan_status=violations" >> "$GITHUB_OUTPUT"
+            echo "failure_stage=" >> "$GITHUB_OUTPUT"
+          else
+            # Something earlier (install/build/preview) or axe itself
+            # crashed before completing — reports may be missing/partial.
+            echo "scan_status=incomplete" >> "$GITHUB_OUTPUT"
+            echo "failure_stage=$stage" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Upload axe reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: axe-reports
           path: reports/axe/*.json
+          if-no-files-found: ignore
 
       - name: Emit annotations
-        if: always()
+        if: always() && steps.finalize.outputs.scan_status == 'violations'
         run: |
           node <<'EOF'
           const fs = require('fs');
           const path = require('path');
           const dir = 'reports/axe';
           if (!fs.existsSync(dir)) process.exit(0);
+          // Sanitize for workflow commands: strip CR/LF and escape the
+          // '::' delimiter, plus '%' which is the escape char.
+          const sanitizeCmd = (s) => String(s ?? '')
+            .replace(/%/g, '%25')
+            .replace(/\r/g, '%0D')
+            .replace(/\n/g, '%0A')
+            .replace(/::/g, '%3A%3A');
           for (const file of fs.readdirSync(dir)) {
             if (!file.endsWith('.json')) continue;
             const route = file.replace(/\.json$/, '');
-            const raw = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8'));
+            let raw;
+            try { raw = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8')); }
+            catch { continue; }
             const reports = Array.isArray(raw) ? raw : [raw];
             for (const r of reports) {
               for (const v of (r.violations || [])) {
@@ -127,57 +175,121 @@ jobs:
                   .flatMap(n => n.target || [])
                   .slice(0, 3)
                   .join(' | ') || '(no selector)';
-                const msg = `[axe:${route}] ${impact} ${v.id} — ${v.help} — ${targets} — ${v.helpUrl}`;
-                // GitHub workflow annotation → appears inline in Checks tab
-                console.log(`::error title=axe/${v.id} on ${route}::${msg.replace(/\n/g, ' ')}`);
+                const msg = sanitizeCmd(`[axe:${route}] ${impact} ${v.id} — ${v.help} — ${targets} — ${v.helpUrl}`);
+                const title = sanitizeCmd(`axe/${v.id} on ${route}`);
+                console.log(`::error title=${title}::${msg}`);
               }
             }
           }
           EOF
 
+  comment:
+    name: Publish PR comment
+    needs: axe
+    # Skip on fork PRs: GITHUB_TOKEN there is read-only, so any write
+    # would 403. Only run when the PR head is from the same repo.
+    if: >
+      always() &&
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Download axe reports
+        uses: actions/download-artifact@v4
+        with:
+          name: axe-reports
+          path: reports/axe
+        continue-on-error: true
+
       - name: Build PR comment body
-        if: always() && github.event_name == 'pull_request'
-        id: comment_body
+        env:
+          SCAN_STATUS: ${{ needs.axe.outputs.scan_status }}
+          FAILURE_STAGE: ${{ needs.axe.outputs.failure_stage }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           node <<'EOF' > pr-comment.md
           const fs = require('fs');
           const path = require('path');
+          const status = process.env.SCAN_STATUS || 'incomplete';
+          const stage = process.env.FAILURE_STAGE || '';
+          const runUrl = process.env.RUN_URL || '';
           const dir = 'reports/axe';
-          const lines = ['<!-- axe-a11y-report -->', '## ♿ Accessibility (axe-core) report', ''];
+          const lines = ['<!-- axe-a11y-report -->'];
+
+          // Escape user/report-derived strings for GitHub-flavored Markdown
+          // table cells: pipes break the row, backticks/backslashes need
+          // care, and angle brackets can render as raw HTML.
+          const esc = (s) => String(s ?? '')
+            .replace(/\\/g, '\\\\')
+            .replace(/\|/g, '\\|')
+            .replace(/`/g, '\\`')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\r?\n/g, ' ');
+
+          if (status === 'incomplete') {
+            lines.push('## ⚠️ Accessibility scan incomplete / failed');
+            lines.push('');
+            lines.push(`The axe-core workflow did not complete${stage ? ` (failed at stage: \`${esc(stage)}\`)` : ''}. **No pass/fail signal can be trusted from this run.**`);
+            lines.push('');
+            lines.push(`See the [workflow run](${runUrl}) for logs. Re-run once the underlying failure is fixed.`);
+            process.stdout.write(lines.join('\n'));
+            process.exit(0);
+          }
+
+          lines.push('## ♿ Accessibility (axe-core) report');
+          lines.push('');
           let total = 0;
           const perRoute = [];
           if (fs.existsSync(dir)) {
             for (const file of fs.readdirSync(dir).sort()) {
               if (!file.endsWith('.json')) continue;
               const route = file.replace(/\.json$/, '');
-              const raw = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8'));
+              let raw;
+              try { raw = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8')); }
+              catch { continue; }
               const reports = Array.isArray(raw) ? raw : [raw];
               const violations = reports.flatMap(r => r.violations || []);
               total += violations.length;
               perRoute.push({ route, violations });
             }
           }
-          lines.push(`**Total violations: ${total}** across ${perRoute.length} route(s).`, '');
+
+          if (!perRoute.length) {
+            // axe reported success but produced no readable reports —
+            // don't claim "0 violations", say the evidence is missing.
+            lines.push('## ⚠️ Accessibility scan incomplete / failed');
+            lines.push('');
+            lines.push('axe reported success but no report files were found. Treat this run as **inconclusive** and check the [workflow logs](' + runUrl + ').');
+            process.stdout.write(lines.join('\n'));
+            process.exit(0);
+          }
+
+          lines.push(`**Status:** ${status === 'success' ? '✅ passed' : '❌ violations found'}`);
+          lines.push(`**Total violations: ${total}** across ${perRoute.length} route(s).`);
+          lines.push('');
           for (const { route, violations } of perRoute) {
-            lines.push(`### \`${route}\` — ${violations.length} violation(s)`);
+            lines.push(`### \`${esc(route)}\` — ${violations.length} violation(s)`);
             if (!violations.length) { lines.push('_No violations._', ''); continue; }
             lines.push('', '| Impact | Rule | Help | Nodes |', '|---|---|---|---|');
             for (const v of violations) {
               const targets = (v.nodes || [])
-                .map(n => '`' + (n.target || []).join(' ') + '`')
+                .map(n => '`' + esc((n.target || []).join(' ')) + '`')
                 .slice(0, 3)
                 .join('<br>') || '_n/a_';
-              lines.push(`| ${v.impact || '—'} | [\`${v.id}\`](${v.helpUrl}) | ${v.help} | ${targets} |`);
+              lines.push(`| ${esc(v.impact || '—')} | [\`${esc(v.id)}\`](${esc(v.helpUrl)}) | ${esc(v.help)} | ${targets} |`);
             }
             lines.push('');
           }
-          lines.push('_Full JSON reports available as the `axe-reports` workflow artifact._');
+          lines.push(`_Full JSON reports available as the \`axe-reports\` workflow artifact. [Run log](${runUrl})._`);
           process.stdout.write(lines.join('\n'));
           EOF
           echo "generated pr-comment.md ($(wc -c < pr-comment.md) bytes)"
 
       - name: Upsert PR comment
-        if: always() && github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
@@ -194,15 +306,40 @@ jobs:
               await github.rest.issues.createComment({ owner, repo, issue_number, body });
             }
 
-      - name: Summary
-        if: always()
+  summary:
+    name: Job summary
+    needs: axe
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Download axe reports
+        uses: actions/download-artifact@v4
+        with:
+          name: axe-reports
+          path: reports/axe
+        continue-on-error: true
+
+      - name: Write summary
+        env:
+          SCAN_STATUS: ${{ needs.axe.outputs.scan_status }}
+          FAILURE_STAGE: ${{ needs.axe.outputs.failure_stage }}
         run: |
           echo "## Accessibility (axe-core) report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "$SCAN_STATUS" != "success" ] && [ "$SCAN_STATUS" != "violations" ]; then
+            echo "⚠️ **Scan incomplete/failed** at stage: \`${FAILURE_STAGE:-unknown}\`. Results below (if any) are partial." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+          shopt -s nullglob
+          any=0
           for f in reports/axe/*.json; do
-            [ -f "$f" ] || continue
+            any=1
             route=$(basename "$f" .json)
-            count=$(node -e "const r=require('./$f');console.log((Array.isArray(r)?r:[r]).reduce((n,x)=>n+(x.violations||[]).length,0))")
+            count=$(node -e "try{const r=require('./$f');console.log((Array.isArray(r)?r:[r]).reduce((n,x)=>n+(x.violations||[]).length,0))}catch(e){console.log('?')}")
             echo "- ${route}: ${count} violation(s)" >> $GITHUB_STEP_SUMMARY
           done
-
+          if [ $any -eq 0 ]; then
+            echo "_No report files found._" >> $GITHUB_STEP_SUMMARY
+          fi

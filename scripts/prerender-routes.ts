@@ -58,9 +58,9 @@ export const ROUTES: RouteMeta[] = [
   },
   {
     path: "/onboarding",
-    title: "Get Started with StreamVista — Creator & Studio Onboarding",
+    title: "Get Started with StreamVista — Onboarding for Filmmakers & Studios",
     description:
-      "Onboard to StreamVista Cloud X in under a minute. Creators, studios and buyers set up a secure workspace for camera-to-cloud ingest, rights and licensing.",
+      "Onboard to StreamVista Cloud X — the secure film industry platform for independent filmmakers, production studios and OTT/rights buyers. Store film masters, manage licensing rights and deliver titles studio-to-buyer.",
     ogImage: `${SITE_ORIGIN}/og/onboarding.jpg`,
     ogType: "website",
   },

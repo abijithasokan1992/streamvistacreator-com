@@ -2,10 +2,10 @@ import { Lock, CreditCard, Cloud, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const BADGES = [
-  { icon: Lock, label: "256-bit SSL Secure", emoji: "🔒" },
-  { icon: CreditCard, label: "100% Secure Payments", emoji: "💳" },
-  { icon: Cloud, label: "C CLOUD · 99.9% UPTIME SLA", emoji: "☁️" },
-  { icon: ShieldCheck, label: "DMCA Protected", emoji: "🛡️" },
+  { icon: Lock, label: "HTTPS Encrypted", emoji: "🔒" },
+  { icon: CreditCard, label: "Secure Payment Processing", emoji: "💳" },
+  { icon: Cloud, label: "StreamVista Cloud X", emoji: "☁️" },
+  { icon: ShieldCheck, label: "IP & Copyright Compliance", emoji: "🛡️" },
 ];
 
 export const TrustBadges = ({

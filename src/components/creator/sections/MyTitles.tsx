@@ -520,10 +520,11 @@ function DeleteTitleDialog({
 }
 
 function CreateTitleModal({
-  onClose, onCreated, userId, workspaceId,
+  onClose, onCreated, onQuotaError, userId, workspaceId,
 }: {
   onClose: () => void;
   onCreated: (id: string) => void;
+  onQuotaError: (err: { code: string; message: string }) => void;
   userId: string;
   workspaceId: string | null;
 }) {
@@ -538,9 +539,12 @@ function CreateTitleModal({
       const t = await createTitle(userId, workspaceId, name, format);
       onCreated(t.id);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Could not create title.";
-      // Surface DB free-tier guard text cleanly.
-      toast.error(msg.replace(/^.*Free plan/, "Free plan"));
+      const parsed = extractTitleErrorCode(e);
+      if (parsed.code === "draft_limit_reached" || parsed.code === "title_quota_reached" || parsed.code === "active_title_limit_reached") {
+        onQuotaError(parsed);
+      } else {
+        toast.error(parsed.message);
+      }
     } finally { setBusy(false); }
   };
 

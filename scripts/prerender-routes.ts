@@ -73,14 +73,6 @@ export const ROUTES: RouteMeta[] = [
     ogType: "website",
   },
   {
-    path: "/pricing",
-    title: "Pricing — StreamVista Cloud X Plans for Creators & Studios",
-    description:
-      "Transparent storage and licensing plans for filmmakers, creators and studios. Pay only for what you stream, store and license on StreamVista.",
-    ogImage: `${SITE_ORIGIN}/og/pricing.jpg`,
-    ogType: "website",
-  },
-  {
     path: "/ip-copyright",
     title: "IP & Copyright Policy — StreamVista Cloud X",
     description:

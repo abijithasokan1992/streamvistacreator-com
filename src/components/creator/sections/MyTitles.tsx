@@ -42,6 +42,7 @@ export default function MyTitlesSection() {
   const [filter, setFilter] = useState<"all" | "drafts" | "in_review" | "approved">("all");
   const [sort, setSort] = useState<"newest" | "oldest" | "updated">("updated");
   const [deleteTarget, setDeleteTarget] = useState<TitleRow | null>(null);
+  const [limitModal, setLimitModal] = useState<null | { code: string; message: string }>(null);
 
   const reload = useCallback(async () => {
     if (!user) return;
@@ -66,13 +67,13 @@ export default function MyTitlesSection() {
         setEditorMode("edit");
         return;
       }
-      toast.error("Free plan limit reached. Upgrade from Storage & Billing to add more titles.");
+      setLimitModal({ code: "title_quota_reached", message: TITLE_ERROR_COPY.title_quota_reached });
       return;
     }
     setGating(true);
   };
 
-  const freeLimitHit = !!tier?.is_free && tier.lifecycle_count >= 1 && !tier.can_create_draft;
+  const freeLimitHit = !!tier?.is_free && !tier.can_create_draft;
 
   const FILTERS = useMemo(() => ({
     all: (_: TitleRow) => true,

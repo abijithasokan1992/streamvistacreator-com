@@ -243,7 +243,7 @@ Deno.serve(async (req) => {
 
     // Apply partner metadata mappings — reshape the manifest into partner-specific fields.
     const { data: mappings } = await admin.from("distribution_metadata_mappings")
-      .select("target_field,source_field,transform,required,default_value")
+      .select("target_field,source_field,transform,is_required,default_value")
       .eq("partner_id", partner.id);
     const baseManifest = pkg.manifest ?? {};
     let mappedMeta: Record<string, unknown> = {};

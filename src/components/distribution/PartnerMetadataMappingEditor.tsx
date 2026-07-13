@@ -46,7 +46,7 @@ export function PartnerMetadataMappingEditor({ partnerId }: { partnerId: string 
 
   const addRow = () => setRows(prev => [
     ...prev,
-    { partner_id: partnerId, target_field: "", source_field: "", transform: null, required: false, default_value: null },
+    { partner_id: partnerId, target_field: "", source_field: "", transform: null, is_required: false, default_value: null },
   ]);
 
   const save = async (i: number) => {

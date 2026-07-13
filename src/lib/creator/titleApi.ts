@@ -172,12 +172,49 @@ export async function createTitle(
 export type FreeTierStatus = {
   is_free: boolean;
   draft_count: number;
+  /** Titles currently in an active lifecycle slot (submitted → archived). */
+  active_count: number;
+  /** Total non-deleted titles owned by the user. */
+  total_count: number;
+  /** Deprecated alias for active_count (server keeps sending both). */
   lifecycle_count: number;
   max_drafts: number | null;
+  max_active: number | null;
+  max_total: number | null;
   max_submissions: number | null;
   can_create_draft: boolean;
   can_submit: boolean;
+  /** True when a legacy account already exceeds the current free-plan caps. */
+  over_limit: boolean;
 };
+
+/** Structured error codes returned from server RPCs, mapped to plain copy. */
+export const TITLE_ERROR_COPY: Record<string, string> = {
+  unauthenticated: "Please sign in to manage your titles.",
+  forbidden: "You don't have permission to do that.",
+  draft_limit_reached: "Your Free plan includes 1 draft. Complete, submit, or delete your existing draft to add another.",
+  active_title_limit_reached: "Your Free plan includes 1 active title. Upgrade your plan to submit more titles.",
+  title_quota_reached: "Your Free plan includes 1 active title and 1 draft. Upgrade your plan to add more titles.",
+  storage_quota_reached: "Storage quota reached. Free up space or upgrade to continue.",
+  validation_failed: "Please review the highlighted fields before continuing.",
+  protected_title: "This title has protected records and can't be removed here.",
+  dependency_exists: "This title has protected records attached and cannot be removed. Contact support to archive it.",
+  rate_limited: "Too many attempts. Please wait a moment and try again.",
+  network_error: "Network error. Please check your connection and try again.",
+  internal_error: "Something went wrong on our side. Please try again.",
+};
+
+/** Extract a stable error code from a Postgres/PostgREST error or Error message. */
+export function extractTitleErrorCode(err: unknown): { code: string; message: string } {
+  const msg = err instanceof Error ? err.message : String(err ?? "");
+  for (const code of Object.keys(TITLE_ERROR_COPY)) {
+    if (msg.includes(code)) return { code, message: TITLE_ERROR_COPY[code] };
+  }
+  if (/network|fetch|Failed to fetch/i.test(msg)) {
+    return { code: "network_error", message: TITLE_ERROR_COPY.network_error };
+  }
+  return { code: "internal_error", message: TITLE_ERROR_COPY.internal_error };
+}
 
 // Founder-direct inaugural premium override. Aruna Sankar's account is
 // granted premium-equivalent Creator access independent of the ₹750

@@ -22,7 +22,7 @@ type Mapping = {
   target_field: string;
   source_field: string | null;
   transform: string | null;
-  required: boolean;
+  is_required: boolean;
   default_value: string | null;
 };
 

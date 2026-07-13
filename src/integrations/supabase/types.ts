@@ -10209,15 +10209,25 @@ export type Database = {
       }
     }
     Functions: {
-      __verify_content_title_rls: {
-        Args: never
-        Returns: {
-          actor: string
-          detail: string
-          outcome: string
-          scenario: string
-        }[]
-      }
+      __verify_content_title_rls:
+        | {
+            Args: never
+            Returns: {
+              actor: string
+              detail: string
+              outcome: string
+              scenario: string
+            }[]
+          }
+        | {
+            Args: { p_admin: string; p_creator: string }
+            Returns: {
+              actor: string
+              detail: string
+              outcome: string
+              scenario: string
+            }[]
+          }
       _mediacms_container_from_mime: { Args: { m: string }; Returns: string }
       _mediacms_version_type_from_category: {
         Args: { cat: string }

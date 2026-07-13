@@ -57,6 +57,30 @@ export const ROUTES: RouteMeta[] = [
     ogType: "website",
   },
   {
+    path: "/onboarding",
+    title: "Get Started with StreamVista — Creator & Studio Onboarding",
+    description:
+      "Onboard to StreamVista Cloud X in under a minute. Creators, studios and buyers set up a secure workspace for camera-to-cloud ingest, rights and licensing.",
+    ogImage: `${SITE_ORIGIN}/og/onboarding.jpg`,
+    ogType: "website",
+  },
+  {
+    path: "/auth",
+    title: "Sign in to StreamVista Cloud X",
+    description:
+      "Sign in or create your StreamVista Cloud X account to access your secure creator, studio or buyer workspace.",
+    ogImage: `${SITE_ORIGIN}/og/home.jpg`,
+    ogType: "website",
+  },
+  {
+    path: "/pricing",
+    title: "Pricing — StreamVista Cloud X Plans for Creators & Studios",
+    description:
+      "Transparent storage and licensing plans for filmmakers, creators and studios. Pay only for what you stream, store and license on StreamVista.",
+    ogImage: `${SITE_ORIGIN}/og/pricing.jpg`,
+    ogType: "website",
+  },
+  {
     path: "/ip-copyright",
     title: "IP & Copyright Policy — StreamVista Cloud X",
     description:

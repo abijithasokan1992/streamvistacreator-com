@@ -32,9 +32,9 @@ export default function StreamVistaVsFrameIO() {
             publisher: {
               "@type": "Organization",
               name: "StreamVista",
-              url: "https://streamvistacreator.com/",
+              url: "https://streamvista.in/",
             },
-            mainEntityOfPage: `https://streamvistacreator.com${URL_PATH}`,
+            mainEntityOfPage: `https://streamvista.in${URL_PATH}`,
             description:
               "A head-to-head comparison of StreamVista and Frame.io for Camera to Cloud workflows, pricing, rights management, and data residency for Indian film productions.",
           },
@@ -42,13 +42,13 @@ export default function StreamVistaVsFrameIO() {
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             itemListElement: [
-              { "@type": "ListItem", position: 1, name: "Home", item: "https://streamvistacreator.com/" },
-              { "@type": "ListItem", position: 2, name: "Blog", item: "https://streamvistacreator.com/blog" },
+              { "@type": "ListItem", position: 1, name: "Home", item: "https://streamvista.in/" },
+              { "@type": "ListItem", position: 2, name: "Blog", item: "https://streamvista.in/blog" },
               {
                 "@type": "ListItem",
                 position: 3,
                 name: "StreamVista vs Frame.io",
-                item: `https://streamvistacreator.com${URL_PATH}`,
+                item: `https://streamvista.in${URL_PATH}`,
               },
             ],
           },

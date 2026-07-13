@@ -27,9 +27,9 @@ export default function CameraToCloudGuide() {
             publisher: {
               "@type": "Organization",
               name: "StreamVista",
-              url: "https://streamvistacreator.com/",
+              url: "https://streamvista.in/",
             },
-            mainEntityOfPage: `https://streamvistacreator.com${URL_PATH}`,
+            mainEntityOfPage: `https://streamvista.in${URL_PATH}`,
             description:
               "Step-by-step camera to cloud (C2C) workflow guide for independent film productions, covering encoders, networking, ingest, and cost-effective tooling.",
           },
@@ -37,13 +37,13 @@ export default function CameraToCloudGuide() {
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             itemListElement: [
-              { "@type": "ListItem", position: 1, name: "Home", item: "https://streamvistacreator.com/" },
-              { "@type": "ListItem", position: 2, name: "Guides", item: "https://streamvistacreator.com/blog" },
+              { "@type": "ListItem", position: 1, name: "Home", item: "https://streamvista.in/" },
+              { "@type": "ListItem", position: 2, name: "Guides", item: "https://streamvista.in/blog" },
               {
                 "@type": "ListItem",
                 position: 3,
                 name: "Camera to Cloud Workflow",
-                item: `https://streamvistacreator.com${URL_PATH}`,
+                item: `https://streamvista.in${URL_PATH}`,
               },
             ],
           },

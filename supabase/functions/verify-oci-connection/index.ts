@@ -6,8 +6,8 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const ALLOWED_ORIGINS = [
-  "https://www.streamvistacreator.com",
-  "https://streamvistacreator.com",
+  "https://streamvista.in",
+  "https://streamvista.in",
   "https://streamvista-creator.lovable.app",
 ];
 

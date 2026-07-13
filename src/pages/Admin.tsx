@@ -696,8 +696,8 @@ function DeptHeader({ icon, title, desc }: { icon: React.ReactNode; title: strin
 }
 
 function DomainHostingPanel() {
-  const DEFAULT_PRIMARY = "https://streamvistacreator.com";
-  const DEFAULT_EXTRA = "https://www.streamvistacreator.com, https://streamvista-creator.lovable.app";
+  const DEFAULT_PRIMARY = "https://streamvista.in";
+  const DEFAULT_EXTRA = "https://streamvista.in, https://streamvista-creator.lovable.app";
   const DEPRECATED = [
     "https://app.crayonspictures.com",
     "https://www.app.crayonspictures.com",
@@ -708,7 +708,7 @@ function DomainHostingPanel() {
     currentOrigin.includes(".lovable.app") ||
     currentOrigin.includes(".lovableproject.com") ||
     currentOrigin.includes("localhost");
-  const isProduction = currentOrigin.includes("streamvistacreator.com");
+  const isProduction = currentOrigin.includes("streamvista.in");
   const isDeprecated = DEPRECATED.some(d => currentOrigin.startsWith(d));
   const envBadge = isDeprecated
     ? { label: "DEPRECATED DOMAIN", cls: "bg-red-500/15 text-red-300 border-red-500/30" }
@@ -751,7 +751,7 @@ function DomainHostingPanel() {
     const extra_origins = extra.split(",").map(normalize).filter(Boolean);
     if (DEPRECATED.includes(primary_domain) || extra_origins.some(o => DEPRECATED.includes(o))) {
       setSaving(false);
-      toast.error("This domain is deprecated. Use https://streamvistacreator.com instead.");
+      toast.error("This domain is deprecated. Use https://streamvista.in instead.");
       return;
     }
     const { error } = await supabase
@@ -780,11 +780,11 @@ function DomainHostingPanel() {
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs uppercase tracking-wider text-muted-foreground">Primary domain</label>
-              <input value={primary} onChange={e => setPrimary(e.target.value)} placeholder="https://streamvistacreator.com" className="w-full h-11 px-3 rounded-xl bg-secondary/40 border border-border/60 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" />
+              <input value={primary} onChange={e => setPrimary(e.target.value)} placeholder="https://streamvista.in" className="w-full h-11 px-3 rounded-xl bg-secondary/40 border border-border/60 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs uppercase tracking-wider text-muted-foreground">Additional origins (comma-separated)</label>
-              <input value={extra} onChange={e => setExtra(e.target.value)} placeholder="https://www.streamvistacreator.com, https://streamvista-creator.lovable.app" className="w-full h-11 px-3 rounded-xl bg-secondary/40 border border-border/60 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" />
+              <input value={extra} onChange={e => setExtra(e.target.value)} placeholder="https://streamvista.in, https://streamvista-creator.lovable.app" className="w-full h-11 px-3 rounded-xl bg-secondary/40 border border-border/60 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" />
             </div>
           </div>
           <button

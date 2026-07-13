@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
         const url = Deno.env.get("SUPABASE_URL")!;
         const res = await fetch(`${url}/functions/v1/retry-failed-uploads`, {
           method: "OPTIONS",
-          headers: { Origin: "https://streamvistacreator.com" },
+          headers: { Origin: "https://streamvista.in" },
         });
         return res.status < 500
           ? { outcome: "pass", detail: `retry-failed-uploads responded ${res.status}.` }

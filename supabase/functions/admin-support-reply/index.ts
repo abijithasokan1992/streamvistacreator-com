@@ -34,7 +34,7 @@ function renderHtml(opts: { name: string; subject: string; reply: string; origin
       <tr><td style="padding:18px 28px 6px;"><div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#a855f7;font-weight:700;">Support reply</div><h1 style="margin:8px 0 4px;font-family:Georgia,serif;font-size:22px;color:#fff;">Re: ${esc(opts.subject)}</h1><p style="margin:6px 0 0;font-size:13px;color:#9999aa;">Hi ${esc(opts.name)}, thanks for reaching out — here's our reply:</p></td></tr>
       <tr><td style="padding:16px 28px;"><div style="background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.25);border-radius:12px;padding:16px 18px;font-size:14px;line-height:1.6;color:#e8e8ee;white-space:pre-wrap;">${esc(opts.reply)}</div></td></tr>
       <tr><td style="padding:6px 28px 18px;"><details style="font-size:12px;color:#9999aa;"><summary style="cursor:pointer;">Your original request</summary><div style="margin-top:8px;padding:12px;background:rgba(255,255,255,0.03);border-radius:8px;white-space:pre-wrap;color:#b8b8c8;">${esc(opts.originalMessage)}</div></details></td></tr>
-      <tr><td style="padding:0 28px 24px;"><div style="height:1px;background:rgba(255,255,255,0.08);"></div><p style="margin:14px 0 0;font-size:11px;color:#5b5b6b;text-align:center;">© StreamVista Cloud X · streamvistacreator.com</p></td></tr>
+      <tr><td style="padding:0 28px 24px;"><div style="height:1px;background:rgba(255,255,255,0.08);"></div><p style="margin:14px 0 0;font-size:11px;color:#5b5b6b;text-align:center;">© StreamVista Cloud X · streamvista.in</p></td></tr>
     </table>
   </td></tr></table></body></html>`;
 }
@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
       to,
       subject: `Re: ${row.subject} · StreamVista Support`,
       html: renderHtml({ name, subject: row.subject, reply, originalMessage: row.message }),
-      replyTo: "hello@streamvistacreator.com",
+      replyTo: "hello@streamvista.in",
     });
     if (!out.ok) {
       console.error("Gmail send error", out.status, out.error);

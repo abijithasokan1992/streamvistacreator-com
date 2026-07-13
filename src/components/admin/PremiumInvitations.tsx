@@ -63,7 +63,7 @@ import { formatInr, computeStoragePrice } from "@/lib/storage-pricing";
 const DEFAULT_STORAGE_TB = 1;
 const DEFAULT_VALIDITY_DAYS = 30;
 const DEFAULT_DISCOUNT = 0;
-const PRIMARY_DOMAIN = "https://streamvistacreator.com";
+const PRIMARY_DOMAIN = "https://streamvista.in";
 const OFFICIAL_SENDER = "StreamVista Cloud X";
 const OFFICIAL_TAG = "Official Invitation";
 

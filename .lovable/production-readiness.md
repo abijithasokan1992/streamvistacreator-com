@@ -1,6 +1,6 @@
 # Production Readiness Checklist
 
-Deployment: https://streamvista-creator.lovable.app · Custom: https://streamvistacreator.com
+Deployment: https://streamvista-creator.lovable.app · Custom: https://streamvista.in
 
 Static verification against the current repo. Live-only rows list the exact click path a reviewer needs on the deployed URL. Nothing here changes runtime behavior — the checklist is the artifact.
 

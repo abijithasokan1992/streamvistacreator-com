@@ -49,8 +49,8 @@ export default function Refund() {
           </a>{" "}
           and look up your order using the email address you checked out with, or contact our
           support team at{" "}
-          <a className="text-accent hover:underline" href="mailto:support@streamvistacreator.com">
-            support@streamvistacreator.com
+          <a className="text-accent hover:underline" href="mailto:support@streamvista.in">
+            support@streamvista.in
           </a>{" "}
           and we will help coordinate the refund through Paddle. For INR domestic Razorpay
           transactions, please email support and we will process the refund directly. Approved

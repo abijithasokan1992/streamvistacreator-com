@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
     groups.set(key, arr)
   }
 
-  const loginUrl = 'https://streamvistacreator.com/auth'
+  const loginUrl = 'https://streamvista.in/auth'
   const results: Array<{ email: string; count: number; ok: boolean; error?: string }> = []
 
   for (const [email, films] of groups) {

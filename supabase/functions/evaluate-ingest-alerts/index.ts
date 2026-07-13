@@ -393,7 +393,7 @@ Deno.serve(async (req) => {
                 summary: decision.summary,
                 metrics: decision.metrics,
                 firedAt: new Date().toISOString(),
-                dashboardUrl: 'https://streamvistacreator.com/dashboard/studio',
+                dashboardUrl: 'https://streamvista.in/dashboard/studio',
               },
             },
           })
@@ -412,7 +412,7 @@ Deno.serve(async (req) => {
       const phones = (rule.recipients?.phones ?? []).filter((p) => typeof p === 'string' && p.length >= 6)
       const sent: string[] = []
       const failed: Array<{ phone: string; error: string }> = []
-      const body = `[Studio Ingest] ${rule.name}\n${decision.summary}\nOpen: https://streamvistacreator.com/dashboard/studio`
+      const body = `[Studio Ingest] ${rule.name}\n${decision.summary}\nOpen: https://streamvista.in/dashboard/studio`
       for (const phone of phones) {
         const r = await sendWhatsApp(phone, body)
         if (r.ok) sent.push(phone)
@@ -444,7 +444,7 @@ Deno.serve(async (req) => {
         summary: decision.summary,
         metrics: decision.metrics,
         details: decision.payload,
-        dashboardUrl: 'https://streamvistacreator.com/dashboard/studio',
+        dashboardUrl: 'https://streamvista.in/dashboard/studio',
       }
       for (const ep of endpoints) {
         const r = await sendWebhook(ep, webhookPayload)

@@ -422,7 +422,7 @@ function StaffEditor(props: {
           </div>
           <div>
             <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Email</Label>
-            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="staff@streamvistacreator.com" className="bg-secondary/40 border-border/60" />
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="staff@streamvista.in" className="bg-secondary/40 border-border/60" />
           </div>
           <div>
             <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Department</Label>

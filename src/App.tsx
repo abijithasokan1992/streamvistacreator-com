@@ -98,7 +98,7 @@ const AdminRoot = () => {
   return user ? <Navigate to="/admin" replace /> : <Auth />;
 };
 
-/** Admin subdomain (admin.streamvistacreator.com): only auth + admin console. */
+/** Admin subdomain (admin.streamvista.in): only auth + admin console. */
 const AdminRoutes = () => (
   <Routes>
     <Route path="/" element={<AdminRoot />} />
@@ -136,7 +136,7 @@ const AdminRoutes = () => (
   </Routes>
 );
 
-/** Public main domain (streamvistacreator.com): everything including /admin. */
+/** Public main domain (streamvista.in): everything including /admin. */
 const PublicRoutes = () => (
   <Routes>
     <Route path="/" element={<Index />} />

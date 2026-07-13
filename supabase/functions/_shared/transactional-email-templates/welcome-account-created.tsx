@@ -14,7 +14,7 @@ interface Props {
 
 const Email = ({
   displayName = 'Creator',
-  dashboardUrl = 'https://streamvistacreator.com/vault',
+  dashboardUrl = 'https://streamvista.in/vault',
   signedUpAt,
   signupMethod = 'email',
 }: Props) => {
@@ -66,7 +66,7 @@ export const template = {
   displayName: 'Welcome — account created',
   previewData: {
     displayName: 'Jane',
-    dashboardUrl: 'https://streamvistacreator.com/vault',
+    dashboardUrl: 'https://streamvista.in/vault',
     signedUpAt: new Date().toISOString(),
     signupMethod: 'Google',
   },

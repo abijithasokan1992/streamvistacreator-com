@@ -302,7 +302,7 @@ export default function RazorpayCredentials() {
           <ul className="space-y-1.5">
             <li className="flex items-start gap-2">
               <span className="mt-0.5 inline-flex w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-              <span>Canonical app + payment website (used by the app): <span className="font-mono text-foreground">https://streamvistacreator.com</span></span>
+              <span>Canonical app + payment website (used by the app): <span className="font-mono text-foreground">https://streamvista.in</span></span>
             </li>
             <li className="flex items-start gap-2">
               <span className="mt-0.5 inline-flex w-1.5 h-1.5 rounded-full bg-foreground/40 shrink-0" />
@@ -336,7 +336,7 @@ export default function RazorpayCredentials() {
           {SITE_ORIGIN && (
             <p className="text-[11px] text-muted-foreground pt-1">
               Current browser origin (for reference): <span className="font-mono text-foreground">{SITE_ORIGIN}</span>
-              {SITE_ORIGIN.includes("streamvistacreator.com")
+              {SITE_ORIGIN.includes("streamvista.in")
                 ? <span className="ml-1 text-emerald-300">· production</span>
                 : (SITE_ORIGIN.includes("lovable.app") || SITE_ORIGIN.includes("localhost"))
                 ? <span className="ml-1 text-amber-300">· preview — not the canonical payment domain</span>

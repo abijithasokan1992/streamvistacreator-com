@@ -15,7 +15,7 @@ import { recordTrace, nowIso } from "../_shared/payment-trace.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const SITE_ORIGIN  = Deno.env.get("SITE_ORIGIN") ?? "https://streamvistacreator.com";
+const SITE_ORIGIN  = Deno.env.get("SITE_ORIGIN") ?? "https://streamvista.in";
 
 function jsonWith(req: Request) {
   const cors = buildCorsHeaders(req);

@@ -14,7 +14,7 @@ interface Props {
 const Email = ({
   displayName = 'Creator',
   filmCount = 1,
-  loginUrl = 'https://streamvistacreator.com/auth',
+  loginUrl = 'https://streamvista.in/auth',
   filmTitles = [],
 }: Props) => {
   const plural = filmCount === 1 ? 'film' : 'films'
@@ -90,7 +90,7 @@ export const template = {
   previewData: {
     displayName: 'Jane',
     filmCount: 3,
-    loginUrl: 'https://streamvistacreator.com/auth',
+    loginUrl: 'https://streamvista.in/auth',
     filmTitles: ['My First Film', 'Second Title', 'Third Story'],
   },
 } satisfies TemplateEntry

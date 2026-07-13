@@ -14,7 +14,7 @@ import { buildCorsHeaders, handleOptions } from '../_shared/cors.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const SITE_ORIGIN = Deno.env.get('SITE_ORIGIN') || 'https://streamvistacreator.com'
+const SITE_ORIGIN = Deno.env.get('SITE_ORIGIN') || 'https://streamvista.in'
 
 const TWILIO_SID = Deno.env.get('TWILIO_ACCOUNT_SID') || ''
 const TWILIO_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN') || ''

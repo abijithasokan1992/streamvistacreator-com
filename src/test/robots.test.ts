@@ -3,8 +3,8 @@ import { readFileSync } from "fs";
 import { resolve } from "path";
 import robotsParser from "robots-parser";
 
-const ROBOTS_URL = "https://streamvistacreator.com/robots.txt";
-const BASE = "https://streamvistacreator.com";
+const ROBOTS_URL = "https://streamvista.in/robots.txt";
+const BASE = "https://streamvista.in";
 
 const robotsTxt = readFileSync(resolve("public/robots.txt"), "utf8");
 const robots = robotsParser(ROBOTS_URL, robotsTxt);

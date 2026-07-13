@@ -75,8 +75,8 @@ export default function IPCopyright() {
           </div>
           <div>
             <span>Email:</span>{" "}
-            <a className="text-accent hover:underline" href="mailto:support@streamvistacreator.com">
-              support@streamvistacreator.com
+            <a className="text-accent hover:underline" href="mailto:support@streamvista.in">
+              support@streamvista.in
             </a>
           </div>
           <div>

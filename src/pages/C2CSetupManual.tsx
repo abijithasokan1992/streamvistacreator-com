@@ -392,8 +392,8 @@ export default function C2CSetupManual() {
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             itemListElement: [
-              { "@type": "ListItem", position: 1, name: "Home", item: "https://streamvistacreator.com/" },
-              { "@type": "ListItem", position: 2, name: "C2C Setup Manual", item: "https://streamvistacreator.com/c2c-setup" },
+              { "@type": "ListItem", position: 1, name: "Home", item: "https://streamvista.in/" },
+              { "@type": "ListItem", position: 2, name: "C2C Setup Manual", item: "https://streamvista.in/c2c-setup" },
             ],
           },
         ]}

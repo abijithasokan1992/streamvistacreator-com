@@ -65,6 +65,7 @@ function renderMarkdown(text: string) {
 export function AssistantLauncher() {
   const { user } = useAuth();
   const { locale } = useLocale();
+  const { activeId: activeWorkspaceId } = useWorkspaces();
   const { pathname } = useLocation();
   const [params] = useSearchParams();
 
@@ -74,6 +75,20 @@ export function AssistantLauncher() {
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Clear conversation state on logout, user change, or workspace change.
+  // Prevents one creator's chat from leaking to another in the same browser.
+  const identityKey = `${user?.id ?? "anon"}::${activeWorkspaceId ?? "none"}`;
+  const prevIdentityRef = useRef<string>(identityKey);
+  useEffect(() => {
+    if (prevIdentityRef.current !== identityKey) {
+      prevIdentityRef.current = identityKey;
+      setTurns([]);
+      setInput("");
+      setLoading(false);
+      setOpen(false);
+    }
+  }, [identityKey]);
 
   const isMl = locale === "ml";
   const askLabel = isMl ? "സ്ട്രീംവിസ്റ്റയോട് ചോദിക്കൂ" : "Ask StreamVista";

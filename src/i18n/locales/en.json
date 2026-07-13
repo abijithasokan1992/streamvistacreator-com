@@ -159,5 +159,53 @@
       "kindApproval": "Approval",
       "kindSystem": "System"
     }
+  },
+  "submission": {
+    "field": { "required": "Required", "optional": "Optional" },
+    "validation": {
+      "required": "This field is required",
+      "minLength": "Please enter at least {{min}} characters",
+      "maxLength": "Please keep this under {{max}} characters",
+      "minValue": "Value must be at least {{min}}"
+    },
+    "progress": { "title": "Submission progress" },
+    "help": { "trigger": "Explain this", "missing": "No help available for this field yet." },
+    "upload": {
+      "idle": "Ready to upload",
+      "uploading": "Uploading…",
+      "verifying": "Verifying file…",
+      "complete": "Upload complete",
+      "failed": "Upload failed"
+    },
+    "nextAction": {
+      "readyForReview": "Ready for review",
+      "finishStep": "Finish this step",
+      "missing": "Missing: {{fields}}",
+      "reviewCta": "Review & submit",
+      "goCta": "Go to step"
+    },
+    "fixMissing": {
+      "title": "A few fields still need your attention",
+      "cta": "Fix"
+    },
+    "reviewSummary": {
+      "title": "Review your submission",
+      "complete": "Complete",
+      "incomplete": "Incomplete"
+    },
+    "chips": {
+      "empty": "Finish the synopsis to see suggestions.",
+      "header": "Suggested tags",
+      "generatedAt": "Generated {{time}}",
+      "regenerate": "Regenerate suggestions"
+    },
+    "steps": {
+      "basics": { "title": "Basics", "description": "Title, language, duration, and type." },
+      "synopsis": { "title": "Synopsis", "description": "A short plot summary — 80 to 4000 characters." },
+      "rights": { "title": "Rights", "description": "Who owns distribution rights, and where." },
+      "cast_crew": { "title": "Cast & crew", "description": "Director and key credits." },
+      "assets": { "title": "Assets", "description": "Upload master and poster art." },
+      "review": { "title": "Review", "description": "Confirm and submit for editorial review." }
+    }
   }
 }

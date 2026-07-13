@@ -1,0 +1,118 @@
+name: Accessibility – axe-core
+
+# Guards against low-contrast text and other WCAG regressions on the
+# public marketing surface. Builds the production bundle, serves it with
+# `vite preview`, and runs @axe-core/cli against a curated set of routes.
+# Fails the job if any violation of the enabled rules is reported.
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main, staging]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: a11y-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  axe:
+    name: axe-core contrast + WCAG smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Start preview server
+        run: |
+          nohup npx vite preview --host 127.0.0.1 --port 4173 > preview.log 2>&1 &
+          echo $! > preview.pid
+          # Wait for the server to accept connections (max ~30s)
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4173/ > /dev/null; then
+              echo "preview ready after ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::preview server did not start"
+          cat preview.log
+          exit 1
+
+      - name: Prepare report dir
+        run: mkdir -p reports/axe
+
+      - name: Run axe-core against public routes
+        id: axe
+        run: |
+          set -e
+          # Rules we treat as blocking. Contrast is the primary target
+          # (matches the Lighthouse "low-contrast text" finding); the
+          # rest cover cheap regressions that shadcn defaults satisfy.
+          TAGS="wcag2a,wcag2aa,wcag21a,wcag21aa"
+          ROUTES=(
+            "/"
+            "/pricing"
+            "/about"
+            "/contact"
+            "/auth"
+            "/onboarding"
+            "/solutions/ai-content-licensing"
+          )
+          fail=0
+          for route in "${ROUTES[@]}"; do
+            slug=$(echo "$route" | sed 's|/|_|g; s|^_||; s|^$|root|')
+            [ -z "$slug" ] && slug=root
+            echo "::group::axe $route"
+            if ! npx --yes @axe-core/cli@4 \
+                "http://127.0.0.1:4173${route}" \
+                --tags "$TAGS" \
+                --exit \
+                --save "reports/axe/${slug}.json"; then
+              echo "::error::axe violations on ${route}"
+              fail=1
+            fi
+            echo "::endgroup::"
+          done
+          exit $fail
+
+      - name: Stop preview server
+        if: always()
+        run: |
+          if [ -f preview.pid ]; then
+            kill "$(cat preview.pid)" || true
+          fi
+
+      - name: Upload axe reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: axe-reports
+          path: reports/axe/*.json
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Accessibility (axe-core) report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          for f in reports/axe/*.json; do
+            [ -f "$f" ] || continue
+            route=$(basename "$f" .json)
+            count=$(node -e "const r=require('./$f');console.log((Array.isArray(r)?r:[r]).reduce((n,x)=>n+(x.violations||[]).length,0))")
+            echo "- ${route}: ${count} violation(s)" >> $GITHUB_STEP_SUMMARY
+          done

@@ -40,6 +40,14 @@ project_id = "hllgmkfqgeuqlmpcirvn"
   [functions.reclaim-idle]
     verify_jwt = false
 
+  # MCP server does its own OAuth 2.1 bearer verification via @lovable.dev/mcp-js.
+  # Platform JWT verification must be off here or every tool call returns 401
+  # before the MCP handler runs (surfaces to clients as JSON-RPC -32603).
+  [functions.mcp]
+    verify_jwt = false
+
+
+
 
   [functions.integrations-status]
     verify_jwt = false

@@ -11958,6 +11958,8 @@ export type Database = {
         | "founder"
         | "channel_partner"
         | "platform_owner"
+        | "managed_ops_operator"
+        | "managed_ops_lead"
       availability_status:
         | "draft"
         | "scheduled"
@@ -12356,6 +12358,8 @@ export const Constants = {
         "founder",
         "channel_partner",
         "platform_owner",
+        "managed_ops_operator",
+        "managed_ops_lead",
       ],
       availability_status: [
         "draft",

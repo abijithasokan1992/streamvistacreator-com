@@ -31,7 +31,7 @@ export const Hero = () => {
             </span>
           </div>
 
-          <h1 className="font-display font-black uppercase leading-[0.9] tracking-tight text-[clamp(2.6rem,8vw,6.5rem)] animate-fade-in">
+          <h1 className="font-display font-black uppercase leading-[0.9] tracking-tight text-[clamp(2.6rem,8vw,6.5rem)]">
             Own a Film, Series
             <br />
             or <span className="gradient-text">Documentary?</span>

@@ -11767,6 +11767,10 @@ export type Database = {
         }[]
       }
       realtime_topic_workspace: { Args: { _topic: string }; Returns: string }
+      recalc_workspace_storage_usage: {
+        Args: { _user_id: string }
+        Returns: undefined
+      }
       record_payment_trace_event: {
         Args: { p_event: string; p_extra?: Json; p_order_id: string }
         Returns: undefined

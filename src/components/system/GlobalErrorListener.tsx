@@ -27,10 +27,11 @@ export default function GlobalErrorListener() {
       lastKeyRef.current = { key, at: now };
 
       const friendly = classify(msg);
+      const detail = sanitizeDetail(msg);
       showMessage({
         severity: "error",
         title: friendly.title,
-        message: friendly.body,
+        message: detail ? `${friendly.body}\n\nDetails: ${detail}` : friendly.body,
         context: `source=${source}; path=${window.location.pathname}; detail=${msg}`,
       });
     };

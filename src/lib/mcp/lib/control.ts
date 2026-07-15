@@ -113,18 +113,28 @@ export async function authorize(
   if (!ctx.isAuthenticated?.() || !ctx.getUserId()) {
     return err("unauthenticated", "Sign in to StreamVista as a founder / platform_owner / super_admin.");
   }
-  const sb = userClient(ctx);
-  // Params are hashed on the DB side inside the audit log details JSON. Redact first.
-  const safeParams = redactDeep(params);
-  const { data, error } = await withTimeout(
-    sb.rpc("mcp_authorize_and_log", {
-      _tool: tool,
-      _params: safeParams as unknown as Record<string, unknown>,
-      _writes: opts.writes ?? false,
-    }),
-    `authorize:${tool}`,
-  );
-  if (error) return err("authorize_failed", redact(error.message));
+  // Keep infrastructure/configuration failures inside the MCP result boundary.
+  // Without this guard, a missing runtime env var or rejected authorization RPC
+  // becomes an opaque JSON-RPC -32603 error and hides the actionable cause.
+  let data: unknown;
+  try {
+    const sb = userClient(ctx);
+    // Params are hashed on the DB side inside the audit log details JSON. Redact first.
+    const safeParams = redactDeep(params);
+    const response = await withTimeout(
+      sb.rpc("mcp_authorize_and_log", {
+        _tool: tool,
+        _params: safeParams as unknown as Record<string, unknown>,
+        _writes: opts.writes ?? false,
+      }),
+      `authorize:${tool}`,
+    );
+    if (response.error) return err("authorize_failed", redact(response.error.message));
+    data = response.data;
+  } catch (cause) {
+    const message = cause instanceof Error ? cause.message : String(cause);
+    return err("authorize_exception", redact(message));
+  }
   const decision = String(data ?? "");
   if (decision === "ok") return null;
   if (decision === "forbidden")

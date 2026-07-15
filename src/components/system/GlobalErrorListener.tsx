@@ -60,6 +60,8 @@ function extractMessage(raw: unknown): string {
   } catch {
     return String(raw);
   }
+}
+
 
 /**
  * Trim raw error text into a single-line, size-bounded excerpt safe to show

@@ -60,7 +60,26 @@ function extractMessage(raw: unknown): string {
   } catch {
     return String(raw);
   }
+
+/**
+ * Trim raw error text into a single-line, size-bounded excerpt safe to show
+ * to end users. Strips URLs, tokens, and stack-trace tails so that internal
+ * hostnames or JWTs never leak into a toast body, while preserving the
+ * substantive backend message (e.g. RLS policy names, HTTP status, RPC error).
+ */
+function sanitizeDetail(raw: string): string {
+  if (!raw) return "";
+  let s = raw
+    .replace(/https?:\/\/\S+/gi, "[url]")
+    .replace(/eyJ[A-Za-z0-9._-]{10,}/g, "[token]")
+    .replace(/Bearer\s+\S+/gi, "Bearer [token]")
+    .replace(/\s+at\s+\S+.*$/s, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (s.length > 220) s = s.slice(0, 217) + "…";
+  return s;
 }
+
 
 /** Filter noisy, non-actionable errors that would otherwise spam the modal. */
 function isIgnorable(msg: string): boolean {

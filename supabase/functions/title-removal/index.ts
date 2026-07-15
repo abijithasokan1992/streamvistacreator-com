@@ -150,8 +150,10 @@ async function preflight(admin: any, titleId: string) {
   const blockers: { type: string; count: number }[] = [];
   const push = (type: string, count: number) => { if (count > 0) blockers.push({ type, count }); };
   const countJson = async (table: string) => {
-    const { data } = await admin.from(table).select("metadata").limit(10000);
-    return (data ?? []).filter((r: any) => r?.metadata?.title_id === titleId).length;
+    const { count } = await admin.from(table)
+      .select("*", { count: "exact", head: true })
+      .contains("metadata", { title_id: titleId });
+    return count ?? 0;
   };
   const countCol = async (table: string) => {
     const { count } = await admin.from(table).select("*", { count: "exact", head: true }).eq("title_id", titleId);

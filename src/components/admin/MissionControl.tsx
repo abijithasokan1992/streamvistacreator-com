@@ -69,7 +69,7 @@ export default function MissionControl({ onJump }: { onJump?: (dept: string, sec
       safeCount("content_titles", (q) => q.eq("status", "legal_review")),
       safeCount("support_requests", (q) => q.eq("status", "open")),
       safeCount("ingest_job_items", (q) => q.eq("status", "failed")),
-      safeCount("email_send_log", (q) => q.in("status", ["failed", "error", "bounced"])),
+      safeCount("email_send_log", (q) => q.in("status", ["failed", "failed_permanent", "bounced", "dlq", "complained"])),
       safeCount("billing_payment_attempts", (q) => q.eq("status", "failed")),
       safeCount("storage_topups", (q) => q.eq("status", "failed")),
       safeCount("onboarding_requests", (q) => q.eq("onboarding_status", "pending")),

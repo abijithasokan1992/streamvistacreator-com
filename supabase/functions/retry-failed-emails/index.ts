@@ -19,17 +19,40 @@ Deno.serve(async (req) => {
 
   const cronSecret = Deno.env.get("CRON_SECRET");
   const bearer = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
-  if (!cronSecret || !bearer || bearer !== cronSecret) {
-    return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
-      status: 403,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
+
+  // Auth: accept CRON_SECRET (pg_cron / scheduled invoker) OR an admin JWT
+  // (Admin dashboard "Retry failed" button). Anonymous / non-admin callers
+  // are rejected.
+  const isCron = !!cronSecret && !!bearer && bearer === cronSecret;
+  let isAdmin = false;
+  if (!isCron && bearer) {
+    try {
+      const { data: userRes } = await supabase.auth.getUser(bearer);
+      const uid = userRes?.user?.id;
+      if (uid) {
+        const { data: roleRow } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", uid)
+          .in("role", ["admin", "super_admin", "platform_owner"])
+          .maybeSingle();
+        isAdmin = !!roleRow;
+      }
+    } catch (_) {
+      isAdmin = false;
+    }
+  }
+  if (!isCron && !isAdmin) {
+    return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
+      status: 403,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   const summary: Record<string, { requeued: number; skipped: number; error?: string }> = {};
 

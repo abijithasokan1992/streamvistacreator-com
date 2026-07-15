@@ -66,9 +66,14 @@ export function RemoveTitleDialog({ open, onOpenChange, titleId, titleName, onCo
     setPre(null); setReason(""); setConfirm(""); setTab("archive");
     setLoading(true);
     (async () => {
-      const { data, error } = await (supabase as any).rpc("title_removal_preflight", { _title_id: titleId });
-      if (error) toast.error(error.message || "Preflight failed");
-      else setPre(data as Preflight);
+      const { data, error } = await supabase.functions.invoke("title-removal", {
+        body: { action: "preflight", title_id: titleId },
+      });
+      if (error || (data as any)?.error) {
+        toast.error((data as any)?.error || error?.message || "Preflight failed");
+      } else {
+        setPre(data as Preflight);
+      }
       setLoading(false);
     })();
   }, [open, titleId]);

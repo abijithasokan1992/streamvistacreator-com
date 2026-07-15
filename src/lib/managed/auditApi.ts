@@ -36,7 +36,7 @@ export async function recordAudit(params: {
     action: params.action,
     content_title_id: params.contentTitleId ?? null,
     target: params.target ?? null,
-    metadata: params.metadata ?? {},
+    metadata: (params.metadata ?? {}) as never,
   });
   if (error) throw error;
 }

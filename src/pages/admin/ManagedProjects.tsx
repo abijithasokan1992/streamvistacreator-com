@@ -16,10 +16,10 @@ export default function ManagedProjectsPage() {
   const [error, setError] = useState<string | null>(null);
   const [emergencyFor, setEmergencyFor] = useState<string | null>(null);
 
-  const canAccess = useMemo(
-    () => role === "admin" || role === "super_admin" || role === "managed_ops_lead" || role === "managed_ops_operator",
-    [role],
-  );
+  const canAccess = useMemo(() => {
+    const r = role as string | null | undefined;
+    return r === "admin" || r === "super_admin" || r === "managed_ops_lead" || r === "managed_ops_operator";
+  }, [role]);
 
   useEffect(() => {
     if (!user || !canAccess) return;
@@ -113,6 +113,7 @@ export default function ManagedProjectsPage() {
                         Emergency access
                       </button>
                     )}
+                    {/* eslint-disable-next-line @typescript-eslint/no-unused-expressions */}
                   </td>
                 </tr>
               ))}

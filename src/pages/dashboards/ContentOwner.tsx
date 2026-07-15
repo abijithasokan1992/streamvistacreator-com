@@ -88,6 +88,18 @@ export default function ContentOwnerDashboard() {
     return <Navigate to={dashboardForRole(role)} replace />;
   }
 
+  // First-visit workspace-mode prompt. Blocks the dashboard until the user picks a mode.
+  if (mode === undefined) {
+    return (
+      <main className="min-h-dvh grid place-items-center bg-background text-foreground">
+        <Loader2 className="w-5 h-5 animate-spin text-accent" />
+      </main>
+    );
+  }
+  if (mode === null) {
+    return <WorkspaceModePrompt onChosen={(m) => setMode(m)} />;
+  }
+
   const setSection = (s: SectionId) => {
     const next = new URLSearchParams(params);
     next.set("section", s);

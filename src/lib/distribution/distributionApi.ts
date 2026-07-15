@@ -109,10 +109,11 @@ export interface DistributionDeliveryLog {
 const T = (t: string) => (supabase as any).from(t);
 
 /* ---------------- Partners ----------------
- * Uses the SECURITY DEFINER RPC `list_active_distribution_partners` so
- * creator users (who cannot SELECT on distribution_partners directly under
- * RLS) still see the active partner list. Admin surfaces that need the
- * full row set fall back to a direct read when the RPC returns nothing.
+ * Authenticated users can now SELECT directly from distribution_partners
+ * thanks to the "Allow authenticated read partners" RLS policy. We still
+ * prefer the SECURITY DEFINER RPC `list_active_distribution_partners` when
+ * it returns data so the UI is resilient to future policy tightening, and
+ * fall back to a direct read only when the RPC returns nothing.
  */
 export async function listPartners(): Promise<DistributionPartner[]> {
   const { data: rpcData, error: rpcErr } = await (supabase as any).rpc(

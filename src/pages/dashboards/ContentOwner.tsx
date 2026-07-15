@@ -164,7 +164,8 @@ export default function ContentOwnerDashboard() {
               {currentSubhead && <p className="text-sm text-muted-foreground mt-1.5 max-w-2xl">{currentSubhead}</p>}
             </div>
           )}
-          {effectiveSection === "home" && <HomeSection onNavigate={setSection} isFree={isFree} />}
+          {effectiveSection === "home" && mode === "managed" && <ManagedDashboard />}
+          {effectiveSection === "home" && mode !== "managed" && <HomeSection onNavigate={setSection} isFree={isFree} />}
           {effectiveSection === "titles" && <MyTitlesSection />}
           {(effectiveSection === "business" || effectiveSection === "submissions") && <SubmissionsSection onNavigate={setSection} />}
           {(effectiveSection === "messages" || effectiveSection === "activity" || effectiveSection === "updates") && <UpdatesSection />}

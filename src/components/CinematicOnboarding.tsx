@@ -178,7 +178,7 @@ export default function CinematicOnboarding({ onComplete }: { onComplete: () => 
 
           <div>
 
-            <span className="text-xs font-bold text-amber-500 font-mono tracking-widest uppercase">Workspace Terms</span>
+            <span className="text-xs font-bold text-amber-500 font-mono tracking-widest uppercase">Vault Provisions</span>
 
             <h2 className="text-2xl font-black tracking-tight text-white mt-1">Accept Production Terms</h2>
 
@@ -238,7 +238,7 @@ export default function CinematicOnboarding({ onComplete }: { onComplete: () => 
 
           >
 
-            ACCEPT &amp; CONTINUE
+            I ACCEPT, INITIALIZE VAULT
 
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
 
@@ -262,11 +262,11 @@ export default function CinematicOnboarding({ onComplete }: { onComplete: () => 
 
           <div className="space-y-2">
 
-            <h2 className="text-3xl font-black text-white tracking-tight">Workspace Ready</h2>
+            <h2 className="text-3xl font-black text-white tracking-tight">Vault Securely Opened</h2>
 
             <p className="text-zinc-400 text-sm max-w-xs mx-auto">
 
-              Terms accepted. Continue to your control panel to set up your workspace.
+              Your production pipeline is live. An access log update has been fired to your communication handle.
 
             </p>
 

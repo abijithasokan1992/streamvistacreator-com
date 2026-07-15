@@ -66,14 +66,9 @@ export function RemoveTitleDialog({ open, onOpenChange, titleId, titleName, onCo
     setPre(null); setReason(""); setConfirm(""); setTab("archive");
     setLoading(true);
     (async () => {
-      const { data, error } = await supabase.functions.invoke("title-removal", {
-        body: { action: "preflight", title_id: titleId },
-      });
-      if (error || (data as any)?.error) {
-        toast.error((data as any)?.error || error?.message || "Preflight failed");
-      } else {
-        setPre(data as Preflight);
-      }
+      const { data, error } = await (supabase as any).rpc("title_removal_preflight", { _title_id: titleId });
+      if (error) toast.error(error.message || "Preflight failed");
+      else setPre(data as Preflight);
       setLoading(false);
     })();
   }, [open, titleId]);
@@ -85,19 +80,19 @@ export function RemoveTitleDialog({ open, onOpenChange, titleId, titleName, onCo
     setSubmitting(true);
     try {
       if (tab === "archive") {
-        const { data, error } = await supabase.functions.invoke("title-removal", {
-          body: { action: "archive", title_id: titleId, reason: reason || null },
+        const { data, error } = await (supabase as any).rpc("title_request_archive", {
+          _title_id: titleId, _reason: reason || null,
         });
-        if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message);
-        toast.success(`Archived · Request ${shortId(data as string)}`);
+        if (error) throw error;
+        toast.success(`Archived · Request ${shortId(data)}`);
         onComplete?.({ requestId: data as string, mode: "archive" });
       } else {
         if (confirm.trim() !== expected) { toast.error("Type REMOVE to confirm"); return; }
-        const { data, error } = await supabase.functions.invoke("title-removal", {
-          body: { action: "permanent", title_id: titleId, reason },
+        const { data, error } = await (supabase as any).rpc("title_request_permanent_removal", {
+          _title_id: titleId, _reason: reason || null,
         });
-        if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message);
-        toast.success(`Removal request submitted · ${shortId(data as string)}`);
+        if (error) throw error;
+        toast.success(`Removal request submitted · ${shortId(data)}`);
         onComplete?.({ requestId: data as string, mode: "permanent" });
       }
       onOpenChange(false);

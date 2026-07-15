@@ -1,179 +1,81 @@
-# StreamVista Hybrid Product Mode — Implementation Plan
+## AI Training Content Licensing — Implementation Plan
 
-## Goal
-Introduce two workspace modes for Creators without touching auth, plans, storage, or RBAC engine:
-1. **Managed by StreamVista** (default) — simplified dashboard, StreamVista ops team runs the project on behalf of the customer.
-2. **Self-Service Creator** — existing full Creator Workspace, unchanged.
-
-Customer always remains project owner. StreamVista work is done through **scoped, audited operator permissions** — never by logging into customer accounts and never by creating hidden StreamVista-owned Creator accounts.
+Scope is large; I'll ship in 4 sequential batches, each independently verifiable. No existing UI, titles, assets, or rights records are altered destructively. All new AI-rights fields default to "not reviewed" / disabled.
 
 ---
 
-## Architecture
+### Batch 1 — Public marketing surface + legal corrections (frontend only)
 
-```text
-                     ┌─────────────────────────┐
-   Sign up ─────────▶│  Onboarding Mode Prompt │  (one question)
-                     └───────────┬─────────────┘
-                                 │
-              ┌──────────────────┴──────────────────┐
-              ▼                                     ▼
-     ┌────────────────┐                    ┌──────────────────┐
-     │ Managed mode   │                    │ Self-Service     │
-     │ (default)      │                    │ (advanced)       │
-     └──────┬─────────┘                    └────────┬─────────┘
-            │                                       │
-            ▼                                       ▼
-  Simplified dashboard                   Existing CreatorWorkspace
-  (status/upload/messages/               (unchanged — every current
-   approvals/billing/timeline/            section available)
-   delivery/reports)
-            │
-            ▼
-  Ops team works via
-  /admin/managed-projects
-  using operator_permissions
-  scoped to (project, actions),
-  logged in managed_ops_audit
-```
+**Files touched**
+- `src/components/Hero.tsx` or nearest Rights & Distribution block → add "AI Training & Machine Learning" chip alongside OTT/Broadcasters/FAST/Airlines/Hospitality/Educational.
+- `src/components/home/AIContentLicensingSection.tsx` (new) → "License Content for Responsible AI" band with two CTAs (`I Own Content` → `/onboarding`, `Request an AI Dataset` → `/solutions/ai-content-licensing#request`). Slotted into `Index.tsx` under existing rights section — does NOT replace hero.
+- `src/pages/SolutionsAIContentLicensing.tsx` (new) → 7 sections exactly as specced (Overview → CTAs). Added to `App.tsx` route `/solutions/ai-content-licensing` + `scripts/prerender-routes.ts` for route-specific meta.
+- `src/components/Footer.tsx` → correct legal name to `© 2026 STREAMVISTA (OPC) PRIVATE LIMITED · Ernakulam, Kerala, India.`
+- Audit trust-claim strings across `Footer.tsx`, `Pricing.tsx`, `Hero.tsx`, `Contact.tsx`:
+  - "100% Secure Payments" → "Secure Payment Processing" (Razorpay is wired ⇒ allowed)
+  - "99.9% Uptime SLA" → remove (no contractual SLA)
+  - "DMCA Protected" → "IP & Copyright Compliance"
+  - "Free forever" → "Free plan available"
+  - "256-bit SSL" → remove unless we can confirm HTTPS everywhere (keep only if literally rendered nowhere sensitive; safer to remove)
+
+**Verify:** hero unchanged, new section renders, `/solutions/ai-content-licensing` loads, footer legal name correct, no unsupported claims remain (rg sweep).
 
 ---
 
-## RBAC Matrix (delta only — no engine changes)
+### Batch 2 — Database schema (single migration)
 
-Layer 1 (Account Type) and Layer 3 (Org Role) are unchanged.
+New tables (all RLS-on, workspace-scoped, service_role full, authenticated scoped by workspace membership or admin role):
 
-New capability layer, **stacked** on top of existing roles:
+1. `title_ai_licensing` (1:1 with `content_titles`)
+   - `title_id` FK, `workspace_id`, `available_for_review` (`yes|no|undecided`, default `undecided`), `rights_holder_authorized` (`yes|no|pending`, default `pending`), `approved_use_cases text[]`, `prohibited_use_cases text[]`, `licence_term`, `territory`, `exclusivity` (`exclusive|non_exclusive|unspecified`), `commercial_model`, `performer_consent_status`, `music_rights_status`, `source_master_available bool`, `resolution`, `frame_rate`, `lip_sync_qc_status`, `audio_languages text[]`, `subtitle_languages text[]`
+   - Review workflow: `review_status` enum (`not_submitted|rights_review_required|technical_review_required|clarification_requested|eligible_for_matching|not_eligible|licensed|suspended`, default `not_submitted`)
+   - `reviewed_by`, `reviewed_at`, `admin_notes` — kept in sibling `title_ai_licensing_admin` table (admin-only RLS) to prevent creator leak (matches pattern used for `commercial_requests_admin`).
 
-| Actor                          | Managed project — read | Upload / edit metadata / package / deliver on behalf of customer | Toggle managed mode | Assign operator | Access audit log |
-| ------------------------------ | ---------------------- | ---------------------------------------------------------------- | ------------------- | --------------- | ---------------- |
-| Project Owner (customer)       | ✓                      | ✓ (always — ownership never changes)                             | ✓                   | ✗               | ✓ (own project)  |
-| Managed Ops Operator (staff)   | ✓ if assigned          | ✓ if assigned AND `managed_service_enabled` AND permission grants the action | ✗       | ✗               | ✓ (assigned)    |
-| Managed Ops Lead (staff)       | ✓ all managed          | ✓ all managed                                                    | ✓                   | ✓               | ✓                |
-| Platform Admin / Super Admin   | ✓                      | via emergency access (time-limited, reason required)             | ✓                   | ✓               | ✓                |
+2. `title_ai_licensing_documents` — private references to storage objects (chain-of-title, consent, music rights). Not publicly listable.
 
-Enforced by a new SECURITY DEFINER function `public.can_operate_on_project(_user, _project, _action)` used in RLS. Existing `has_role()` stays untouched.
+3. `ai_buyer_requirements` — the buyer intake form (all 19 fields). RLS: insertable by authenticated (public form → allow anon INSERT via edge function), readable admin-only.
 
----
+4. `ai_licensing_opportunities` — internal buyer opportunity records (SHAIP-style). Admin-only RLS.
 
-## Database Changes (single migration)
+5. `ai_licensing_matches` — join between `title_ai_licensing` and `ai_licensing_opportunities`. Admin-only.
 
-New enum:
-- `managed_ops_action` — `upload | edit_metadata | create_version | qc | artwork | subtitle | rights | package | deliver | archive | report | approve`
+6. `ai_licensing_audit_log` — document access + status changes.
 
-New tables (all in `public`, all with GRANTs + RLS):
+**Trigger `enforce_ai_licensing_review_transitions`:** creators can only set `available_for_review` / edit their-own metadata; only admins may change `review_status`, `rights_holder_authorized` to `yes`, or move to `eligible_for_matching` (requires non-null admin doc references).
 
-1. `user_workspace_mode(user_id PK → auth.users, mode text CHECK IN ('managed','self_service') default 'managed', decided_at, updated_at)` — remembered onboarding choice.
-2. `managed_projects(project_id PK → projects.id, owner_id, enabled bool, assigned_team text, assigned_operator uuid, priority, due_date, status)`
-3. `managed_project_permissions(id, project_id, operator_id, action managed_ops_action, granted_by, granted_at, revoked_at)` — scoped grants.
-4. `managed_ops_audit(id, project_id, actor_id, actor_role text, action text, target text, metadata jsonb, created_at)` — every operator action.
-5. `emergency_access_grants(id, project_id, admin_id, reason text NOT NULL, granted_at, expires_at, revoked_at)` — time-limited support access; RLS gate reads this.
+**Seed:** insert SHAIP #700 opportunity record with all fields "Pending clarification" as specified. Private (admin RLS).
 
-Helpers:
-- `public.is_managed_ops_lead(uuid)` and `public.can_operate_on_project(uuid, uuid, managed_ops_action)` — SECURITY DEFINER, `search_path = public`.
-- Trigger `trg_managed_ops_audit_after_write` on `content_titles`, `title_media_versions`, `distribution_packages`, `distribution_deliveries` — writes an audit row when actor ≠ owner.
-
-No changes to existing tables' ownership columns. No column rename. RLS on existing tables is **extended**, not replaced, with an added `OR can_operate_on_project(...)` clause where relevant.
-
-Ops staff role is added to `app_role` if not present (`managed_ops_operator`, `managed_ops_lead`) — additive only.
+**Grandfathering:** no data mutation of existing `content_titles`. `title_ai_licensing` rows are lazily created on first save — absence = "AI rights not reviewed".
 
 ---
 
-## API / Edge Functions
+### Batch 3 — Creator dashboard AI Licensing panel
 
-No new edge functions required. New client-side helpers only:
-- `src/lib/managed/modeApi.ts` — get/set user workspace mode.
-- `src/lib/managed/managedProjectsApi.ts` — list/assign/toggle managed project (Ops UI).
-- `src/lib/managed/auditApi.ts` — read audit trail for a project.
+- `src/components/creator/sections/TitleAILicensingPanel.tsx` (new) → collapsible section within existing title editor. Read-only display of admin fields; editable creator fields; upload widget writes to private storage bucket `title-ai-rights-docs` (created via migration).
+- `src/lib/creator/aiLicensingApi.ts` (new) → typed wrappers.
+- Copy: "Submitting content for AI review does not grant AI training rights. StreamVista reviews rights and only qualifies content after written authorization."
+- Never shows a "self-approve" toggle.
 
-All calls go through existing Supabase client + RLS.
-
----
-
-## Files Modified / Added
-
-**Added**
-- `supabase/migrations/<ts>_managed_service.sql` (single migration described above).
-- `src/lib/managed/modeApi.ts`
-- `src/lib/managed/managedProjectsApi.ts`
-- `src/lib/managed/auditApi.ts`
-- `src/components/onboarding/WorkspaceModePrompt.tsx` — the one-question chooser.
-- `src/components/creator/managed/ManagedDashboard.tsx` — simplified 8-tile dashboard (Project Status / Upload / Messages / Approvals / Billing / Timeline / Delivery / Reports).
-- `src/pages/admin/ManagedProjects.tsx` — Ops workspace listing (customer, project, status, operator, progress, priority, due date, Open).
-- `src/components/admin/managed/EmergencyAccessDialog.tsx` — reason + duration form.
-- `src/components/creator/settings/WorkspaceModeCard.tsx` — allow switching mode later.
-
-**Modified (minimal)**
-- `src/pages/Onboarding.tsx` — insert `WorkspaceModePrompt` step; skip if mode already recorded.
-- `src/pages/dashboards/ContentOwner.tsx` — branch: `mode === 'managed'` → `<ManagedDashboard/>`, else existing workspace. Existing self-service path untouched.
-- `src/components/creator/CreatorSidebar.tsx` — no structural change; only guard advanced sections behind `mode === 'self_service'` at render time (kept routable for staff).
-- `src/lib/rbac/labels.ts` — add labels for `managed_ops_operator`, `managed_ops_lead`.
-- Admin router (`AdminHome.tsx`) — add "Managed Projects" nav entry.
-
-Unchanged: auth, plans, subscriptions, storage, billing edge functions, existing RLS on billing/storage/etc.
+**Verify:** existing titles show "AI rights status: Not reviewed"; save persists; unauthorized status transitions rejected by trigger.
 
 ---
 
-## Migration Plan
+### Batch 4 — Admin review console + public buyer form
 
-1. Ship migration (enum + 5 tables + helper functions + additive RLS clauses on 4 tables + audit triggers). No backfill required — existing users get `mode = 'managed'` on first prompt.
-2. Deploy frontend changes behind an implicit flag: users with no `user_workspace_mode` row see the prompt; users who already onboarded stay on their current dashboard until they answer.
-3. Seed a `managed_ops_lead` role for the first internal operator (manual insert via `supabase--insert` when the user provides the account).
-4. Announce Managed Service in the app once the ops team is staffed.
+- `src/pages/AdminAILicensing.tsx` (new, route `/admin/ai-licensing`, gated by `has_role('admin')`) → queue by `review_status`, per-title review drawer with all admin controls, match to opportunity, record proposal / contract / delivery.
+- `src/pages/SolutionsAIContentLicensing.tsx#request` → embeds `AIBuyerRequirementForm.tsx` (new). Public submit posts to edge function `submit-ai-buyer-requirement` that validates + writes `ai_buyer_requirements` with rate limiting.
+- `supabase/functions/submit-ai-buyer-requirement/index.ts` (new).
 
-## Rollback Plan
-
-- Frontend: revert the modified files; the migration is additive so old UI keeps working.
-- DB: `DROP TABLE` for the 5 new tables + `DROP FUNCTION` for the 2 helpers + `DROP TRIGGER` for the 4 audit triggers. Enum `managed_ops_action` dropped last. Existing tables untouched, so rollback is safe.
-
-## Risk Assessment
-
-| Risk                                          | Likelihood | Mitigation                                                                 |
-| --------------------------------------------- | ---------- | -------------------------------------------------------------------------- |
-| RLS regressions on `content_titles` etc.      | Medium     | Extend policies with `OR`, never replace. Add SQL tests in `tests/security`.|
-| Operator acting outside scope                 | Low        | `can_operate_on_project` checks `managed_project_permissions` + not revoked.|
-| Emergency access abused                       | Low        | Requires reason, expires automatically, visible in audit + admin list.     |
-| Managed customer confused by hidden sections  | Low        | Explicit "Switch to Self-Service" card in Settings.                        |
-| Attribution drift in audit                    | Low        | Trigger stamps `actor_id` from `auth.uid()`; owner vs operator resolved server-side.|
+**Security guarantees enforced end-to-end:**
+- Private rights docs stored in a bucket with no public list, signed-URL only, admin-only download in Phase 1.
+- Buyers never receive master URLs; matching = internal note only.
+- SHAIP #700 details never rendered on public pages.
 
 ---
 
-## End-to-End Journeys
-
-**Managed customer**
-1. Sign up → Creator role → sign in.
-2. Onboarding asks the one question → picks Managed.
-3. Lands on `ManagedDashboard` (8 tiles).
-4. Creates a title (basic fields only), uploads media, watches Timeline + Delivery Status update as ops team works, approves milestones in Approvals, downloads Reports, pays via Billing.
-
-**Self-service creator**
-1. Same sign-up, picks Self-Service.
-2. Lands on existing Creator Workspace — every current section available, nothing removed.
-3. Can switch to Managed anytime from Workspace Settings.
-
-**StreamVista operator**
-1. Signs in with staff account holding `managed_ops_operator`.
-2. Opens `/admin/managed-projects`, sees table (Customer, Project, Status, Operator, Progress, Priority, Due).
-3. Clicks a project → opens the customer's managed project view under an operator context banner ("You are acting as StreamVista Operator on <Customer>'s project").
-4. Every write is stamped in `managed_ops_audit` as `actor_role = 'streamvista_operator'`; owner never sees their own name on operator work.
-
-**Emergency support (admin)**
-1. Admin opens project, clicks "Request emergency access", enters reason + duration.
-2. Row written to `emergency_access_grants`; RLS opens a time-limited window.
-3. On expiry the grant is inert; audit trail preserved forever.
+### Deliverables on completion
+- Route/component inventory, migration diff, RLS matrix, list of corrected legal claims, before/after screenshots of home + footer + new AI page (desktop + mobile), and explicit confirmation that no existing title was opted into AI licensing.
 
 ---
 
-## Acceptance mapped to plan
-
-- Managed default ✓ (default value on `user_workspace_mode.mode`).
-- Self-service available ✓ (second option, switchable later).
-- Ownership never changes ✓ (no writes to `projects.owner_id` / `content_titles.owner_id`).
-- Operator permissions ✓ (`managed_project_permissions`).
-- No hidden Creator account ✓ (staff use `managed_ops_operator` role).
-- Full audit ✓ (`managed_ops_audit` + write triggers).
-- Simplified dashboard ✓ (`ManagedDashboard`).
-- Full workspace for self-service ✓ (existing components untouched).
-- Existing subs/auth/storage/RBAC intact ✓ (additive migration only).
-
-Approve to proceed and I will ship the migration first, then the frontend.
+If this plan looks right I'll start with Batch 1 (public page + legal). Reply "go" or edit any batch.

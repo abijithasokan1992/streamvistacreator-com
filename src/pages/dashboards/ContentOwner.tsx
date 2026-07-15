@@ -28,9 +28,6 @@ import { markOnboardingStep } from "@/components/creator/OnboardingChecklist";
 import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
 import LanguagePicker from "@/components/i18n/LanguagePicker";
 import { useLocale } from "@/hooks/useLocale";
-import { getWorkspaceMode, type WorkspaceMode } from "@/lib/managed/modeApi";
-import WorkspaceModePrompt from "@/components/onboarding/WorkspaceModePrompt";
-import ManagedDashboard from "@/components/creator/managed/ManagedDashboard";
 
 export default function ContentOwnerDashboard() {
   const { user, role, dashboardRole, loading, signOut } = useAuth();
@@ -40,7 +37,6 @@ export default function ContentOwnerDashboard() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isFree, setIsFree] = useState<boolean>(true);
   const [tourOpen, setTourOpen] = useState(false);
-  const [mode, setMode] = useState<WorkspaceMode | null | undefined>(undefined); // undefined = still loading
   const raw = (params.get("section") as SectionId) || "home";
   // Backward-compat: legacy `?section=upgrade` deep links resolve to Storage & Billing.
   const section: SectionId = raw === "upgrade" ? "billing" : raw;
@@ -50,14 +46,6 @@ export default function ContentOwnerDashboard() {
     (async () => {
       const t = await fetchFreeTierStatus();
       setIsFree(!!t?.is_free);
-    })();
-  }, [user?.id]);
-
-  useEffect(() => {
-    if (!user) return;
-    (async () => {
-      try { setMode(await getWorkspaceMode(user.id)); }
-      catch { setMode(null); }
     })();
   }, [user?.id]);
 
@@ -76,13 +64,6 @@ export default function ContentOwnerDashboard() {
     if (section === "billing") markOnboardingStep("accessAuthorized");
   }, [section]);
 
-  // Compute effective section BEFORE any early return so hooks below are called
-  // unconditionally on every render (React Rules of Hooks — fixes error #310).
-  const def = SECTIONS.find((s) => s.id === section) ?? SECTIONS[0];
-  const effectiveSection: SectionId = isFree && (def as any).proOnly ? "billing" : def.id;
-  const { label: currentLabel, heading: currentHeading, subhead: currentSubhead } =
-    useSectionLabels(effectiveSection);
-
   if (loading) {
     return (
       <main className="min-h-dvh grid place-items-center bg-background text-foreground">
@@ -95,24 +76,19 @@ export default function ContentOwnerDashboard() {
     return <Navigate to={dashboardForRole(role)} replace />;
   }
 
-  // First-visit workspace-mode prompt. Blocks the dashboard until the user picks a mode.
-  if (mode === undefined) {
-    return (
-      <main className="min-h-dvh grid place-items-center bg-background text-foreground">
-        <Loader2 className="w-5 h-5 animate-spin text-accent" />
-      </main>
-    );
-  }
-  if (mode === null) {
-    return <WorkspaceModePrompt onChosen={(m) => setMode(m)} />;
-  }
-
   const setSection = (s: SectionId) => {
     const next = new URLSearchParams(params);
     next.set("section", s);
     setParams(next, { replace: false });
     setMobileOpen(false);
   };
+
+
+  // Free-tier: pro-only sections redirect to Storage & Billing rather than rendering empty.
+  const def = SECTIONS.find((s) => s.id === section) ?? SECTIONS[0];
+  const effectiveSection: SectionId = isFree && (def as any).proOnly ? "billing" : def.id;
+  const { label: currentLabel, heading: currentHeading, subhead: currentSubhead } =
+    useSectionLabels(effectiveSection);
 
   return (
     <main className="min-h-dvh bg-background text-foreground">
@@ -164,8 +140,7 @@ export default function ContentOwnerDashboard() {
               {currentSubhead && <p className="text-sm text-muted-foreground mt-1.5 max-w-2xl">{currentSubhead}</p>}
             </div>
           )}
-          {effectiveSection === "home" && mode === "managed" && <ManagedDashboard />}
-          {effectiveSection === "home" && mode !== "managed" && <HomeSection onNavigate={setSection} isFree={isFree} />}
+          {effectiveSection === "home" && <HomeSection onNavigate={setSection} isFree={isFree} />}
           {effectiveSection === "titles" && <MyTitlesSection />}
           {(effectiveSection === "business" || effectiveSection === "submissions") && <SubmissionsSection onNavigate={setSection} />}
           {(effectiveSection === "messages" || effectiveSection === "activity" || effectiveSection === "updates") && <UpdatesSection />}

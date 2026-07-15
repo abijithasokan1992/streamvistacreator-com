@@ -3165,44 +3165,6 @@ export type Database = {
         }
         Relationships: []
       }
-      emergency_access_grants: {
-        Row: {
-          admin_id: string
-          content_title_id: string
-          expires_at: string
-          granted_at: string
-          id: string
-          reason: string
-          revoked_at: string | null
-        }
-        Insert: {
-          admin_id: string
-          content_title_id: string
-          expires_at: string
-          granted_at?: string
-          id?: string
-          reason: string
-          revoked_at?: string | null
-        }
-        Update: {
-          admin_id?: string
-          content_title_id?: string
-          expires_at?: string
-          granted_at?: string
-          id?: string
-          reason?: string
-          revoked_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "emergency_access_grants_content_title_id_fkey"
-            columns: ["content_title_id"]
-            isOneToOne: false
-            referencedRelation: "content_titles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       entity_profile_audit_log: {
         Row: {
           action: string
@@ -4941,135 +4903,6 @@ export type Database = {
             columns: ["deal_memo_id"]
             isOneToOne: false
             referencedRelation: "deal_memos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      managed_ops_audit: {
-        Row: {
-          action: string
-          actor_id: string
-          actor_role: string
-          content_title_id: string | null
-          created_at: string
-          id: string
-          metadata: Json
-          target: string | null
-        }
-        Insert: {
-          action: string
-          actor_id: string
-          actor_role: string
-          content_title_id?: string | null
-          created_at?: string
-          id?: string
-          metadata?: Json
-          target?: string | null
-        }
-        Update: {
-          action?: string
-          actor_id?: string
-          actor_role?: string
-          content_title_id?: string | null
-          created_at?: string
-          id?: string
-          metadata?: Json
-          target?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "managed_ops_audit_content_title_id_fkey"
-            columns: ["content_title_id"]
-            isOneToOne: false
-            referencedRelation: "content_titles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      managed_project_permissions: {
-        Row: {
-          action: Database["public"]["Enums"]["managed_ops_action"]
-          content_title_id: string
-          granted_at: string
-          granted_by: string
-          id: string
-          operator_id: string
-          revoked_at: string | null
-        }
-        Insert: {
-          action: Database["public"]["Enums"]["managed_ops_action"]
-          content_title_id: string
-          granted_at?: string
-          granted_by: string
-          id?: string
-          operator_id: string
-          revoked_at?: string | null
-        }
-        Update: {
-          action?: Database["public"]["Enums"]["managed_ops_action"]
-          content_title_id?: string
-          granted_at?: string
-          granted_by?: string
-          id?: string
-          operator_id?: string
-          revoked_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "managed_project_permissions_content_title_id_fkey"
-            columns: ["content_title_id"]
-            isOneToOne: false
-            referencedRelation: "content_titles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      managed_projects: {
-        Row: {
-          assigned_operator: string | null
-          assigned_team: string | null
-          content_title_id: string
-          created_at: string
-          due_date: string | null
-          enabled: boolean
-          owner_id: string
-          priority: string
-          progress_pct: number
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          assigned_operator?: string | null
-          assigned_team?: string | null
-          content_title_id: string
-          created_at?: string
-          due_date?: string | null
-          enabled?: boolean
-          owner_id: string
-          priority?: string
-          progress_pct?: number
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          assigned_operator?: string | null
-          assigned_team?: string | null
-          content_title_id?: string
-          created_at?: string
-          due_date?: string | null
-          enabled?: boolean
-          owner_id?: string
-          priority?: string
-          progress_pct?: number
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "managed_projects_content_title_id_fkey"
-            columns: ["content_title_id"]
-            isOneToOne: true
-            referencedRelation: "content_titles"
             referencedColumns: ["id"]
           },
         ]
@@ -10278,27 +10111,6 @@ export type Database = {
         }
         Relationships: []
       }
-      user_workspace_mode: {
-        Row: {
-          decided_at: string
-          mode: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          decided_at?: string
-          mode?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          decided_at?: string
-          mode?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       voucher_redemptions: {
         Row: {
           amount_off: number | null
@@ -11569,14 +11381,6 @@ export type Database = {
         Args: { _kind: string; _org_id: string }
         Returns: boolean
       }
-      can_operate_on_project: {
-        Args: {
-          _action: Database["public"]["Enums"]["managed_ops_action"]
-          _content_title_id: string
-          _user_id: string
-        }
-        Returns: boolean
-      }
       can_signup_as: { Args: { _role: string }; Returns: boolean }
       can_view_entity_profile: {
         Args: { _kind: string; _org_id: string; _user_id: string }
@@ -11821,7 +11625,6 @@ export type Database = {
       }
       is_free_tier_user: { Args: { _user_id: string }; Returns: boolean }
       is_legal_reviewer: { Args: { _user_id: string }; Returns: boolean }
-      is_managed_ops_lead: { Args: { _user_id: string }; Returns: boolean }
       is_org_member: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
@@ -12155,8 +11958,6 @@ export type Database = {
         | "founder"
         | "channel_partner"
         | "platform_owner"
-        | "managed_ops_operator"
-        | "managed_ops_lead"
       availability_status:
         | "draft"
         | "scheduled"
@@ -12320,19 +12121,6 @@ export type Database = {
         | "closed_caption"
         | "dub"
         | "localized_metadata"
-      managed_ops_action:
-        | "upload"
-        | "edit_metadata"
-        | "create_version"
-        | "qc"
-        | "artwork"
-        | "subtitle"
-        | "rights"
-        | "package"
-        | "deliver"
-        | "archive"
-        | "report"
-        | "approve"
       media_version_type:
         | "master"
         | "broadcast"
@@ -12568,8 +12356,6 @@ export const Constants = {
         "founder",
         "channel_partner",
         "platform_owner",
-        "managed_ops_operator",
-        "managed_ops_lead",
       ],
       availability_status: [
         "draft",
@@ -12753,20 +12539,6 @@ export const Constants = {
         "closed_caption",
         "dub",
         "localized_metadata",
-      ],
-      managed_ops_action: [
-        "upload",
-        "edit_metadata",
-        "create_version",
-        "qc",
-        "artwork",
-        "subtitle",
-        "rights",
-        "package",
-        "deliver",
-        "archive",
-        "report",
-        "approve",
       ],
       media_version_type: [
         "master",

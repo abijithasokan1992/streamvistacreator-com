@@ -11778,6 +11778,14 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: Json
       }
+      get_workspace_storage: {
+        Args: { extra_param?: boolean; workspace_id: string }
+        Returns: {
+          status: string
+          total_bytes: number
+          used_bytes: number
+        }[]
+      }
       get_workspace_storage_entitlement: {
         Args: { _user_id: string }
         Returns: Json

@@ -51,6 +51,7 @@ import AdminHome from "./pages/AdminHome.tsx";
 import AdminIntegrations from "./pages/AdminIntegrations.tsx";
 import AdminResearch from "./pages/AdminResearch.tsx";
 import AdminLegacyRecovery from "./pages/admin/LegacyRecovery.tsx";
+import AdminManagedProjects from "./pages/admin/ManagedProjects.tsx";
 import CollegeERP from "./pages/CollegeERP.tsx";
 import Connect from "./pages/Connect.tsx";
 import SettingsIntegrationsAI from "./pages/SettingsIntegrationsAI.tsx";
@@ -127,6 +128,7 @@ const AdminRoutes = () => (
     <Route path="/admin/qc" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/legal" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/legacy-recovery" element={<AdminErrorBoundary><AdminLegacyRecovery /></AdminErrorBoundary>} />
+    <Route path="/admin/managed" element={<AdminErrorBoundary><AdminManagedProjects /></AdminErrorBoundary>} />
     {/* Legacy admin paths — Admin.tsx pathToTab maps these to the new buckets */}
     <Route path="/admin/content" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/support" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
@@ -201,6 +203,7 @@ const PublicRoutes = () => (
     <Route path="/admin/qc" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/legal" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/legacy-recovery" element={<AdminErrorBoundary><AdminLegacyRecovery /></AdminErrorBoundary>} />
+    <Route path="/admin/managed" element={<AdminErrorBoundary><AdminManagedProjects /></AdminErrorBoundary>} />
     {/* Legacy admin paths — Admin.tsx pathToTab maps these to the new buckets */}
     <Route path="/admin/content" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/support" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />

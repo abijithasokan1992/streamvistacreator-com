@@ -48,13 +48,22 @@ export function useMissionSignals(pollMs = 60_000) {
     const failureCountsPromise = (async () => {
       try {
         const { data, error } = await (supabase as any).rpc("admin_failure_counts", { stale_minutes: 30 });
-        if (error) return { failed_uploads: 0, failed_emails: 0 };
+        if (error) {
+          console.warn("[useMissionSignals] admin_failure_counts RPC error", error);
+          return { failed_uploads: 0, failed_emails: 0 };
+        }
         const row = Array.isArray(data) ? data[0] : data;
+        // RPC returns 0 rows for non-admin callers (guarded by has_role in WHERE).
+        // Treat missing row as "no signal" rather than a zero count.
+        if (!row) return { failed_uploads: 0, failed_emails: 0 };
         return {
           failed_uploads: Number(row?.failed_uploads ?? 0),
           failed_emails: Number(row?.failed_emails ?? 0),
         };
-      } catch { return { failed_uploads: 0, failed_emails: 0 }; }
+      } catch (e) {
+        console.warn("[useMissionSignals] admin_failure_counts threw", e);
+        return { failed_uploads: 0, failed_emails: 0 };
+      }
     })();
     const [qc, legal, tickets, failures, failedPayments, storageAlerts, pendingOnboarding, editRequests, contactUnread] = await Promise.all([
       safeCount("content_titles", (q) => q.eq("status", "in_review")),

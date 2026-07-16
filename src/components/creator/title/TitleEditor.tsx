@@ -15,6 +15,7 @@ import {
 import { AssetUploader, AssetList } from "./AssetUploader";
 import { StatusBadge } from "./StatusBadge";
 import { RightsAvailabilityPanel } from "./RightsAvailabilityPanel";
+import { BusinessIntelligencePanel } from "./BusinessIntelligencePanel";
 import { FreeSubmissionTermsModal } from "./FreeSubmissionTermsModal";
 import RequestEditButton from "@/components/creator/RequestEditButton";
 import { useTitleLock } from "@/hooks/useTitleLock";

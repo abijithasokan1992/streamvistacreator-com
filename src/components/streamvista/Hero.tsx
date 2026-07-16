@@ -1,5 +1,7 @@
-import { ArrowRight, Briefcase } from "lucide-react";
+import { ArrowRight, Briefcase, LayoutDashboard } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useUserRoles } from "@/hooks/useUserRoles";
+import { dashboardForRole, useAuth } from "@/hooks/useAuth";
 
 /**
  * Public Hero — cinematic single hero.
@@ -7,6 +9,13 @@ import { Link } from "react-router-dom";
  * P1: role-aware secondary CTA for buyers; brand hierarchy on eyebrow.
  */
 export const Hero = () => {
+  const { role } = useAuth();
+  const { signedIn, has, routeFor } = useUserRoles();
+  const primaryTo = signedIn ? dashboardForRole(role) : "/auth?intent=signup";
+  const primaryLabel = signedIn ? "Open Your Dashboard" : "Get Started · I'm a Creator";
+  const PrimaryIcon = signedIn ? LayoutDashboard : ArrowRight;
+  const buyerTo = signedIn && has("buyer") ? routeFor("buyer", "/contact?topic=buyer-access") : "/contact?topic=buyer-access";
+  const buyerLabel = signedIn && has("buyer") ? "Open Buyer Dashboard" : "I'm a Buyer · Request Access";
   return (
     <section className="relative pt-32 pb-24 md:pt-40 md:pb-32 overflow-hidden border-b border-border/40">
       <div className="absolute inset-0 grid-bg opacity-40" aria-hidden />
@@ -46,18 +55,18 @@ export const Hero = () => {
 
       <div className="mt-12 flex flex-col sm:flex-row gap-3 animate-fade-in hero-button-container">
         <Link
-          to="/auth?intent=signup"
+          to={primaryTo}
           className="cta-guide group h-14 inline-flex items-center justify-center gap-3 px-8 bg-gradient-primary text-primary-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md"
         >
-          <span>Get Started · I'm a Creator</span>
-          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          <span>{primaryLabel}</span>
+          <PrimaryIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
         </Link>
         <Link
-          to="/contact?topic=buyer-access"
+          to={buyerTo}
           className="group h-14 inline-flex items-center justify-center gap-3 px-8 border border-border/60 hover:border-accent/60 hover:bg-accent/5 text-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md transition-colors"
         >
           <Briefcase className="w-4 h-4" />
-          <span>I'm a Buyer · Request Access</span>
+          <span>{buyerLabel}</span>
         </Link>
       </div>
 

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Menu } from "lucide-react";
+import { Menu, LayoutDashboard } from "lucide-react";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useAuth, dashboardForRole } from "@/hooks/useAuth";
 
 /**
  * Brand hierarchy: STREAMVISTA is heavy/primary; "Cloud X" is muted secondary.
@@ -28,6 +29,9 @@ const NAV_LINKS = [
 
 export const Navbar = () => {
   const [open, setOpen] = useState(false);
+  const { user, role, loading } = useAuth();
+  const signedIn = !loading && !!user;
+  const dashHref = dashboardForRole(role);
 
   return (
     <header className="fixed top-0 inset-x-0 z-50 backdrop-blur-xl bg-background/60 border-b border-border/50">
@@ -50,20 +54,33 @@ export const Navbar = () => {
 
         <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
           <ThemeToggle className="hidden sm:inline-flex" />
-          <Link
-            to="/auth"
-            className="hidden sm:inline text-xs md:text-sm text-muted-foreground hover:text-foreground transition-colors"
-            aria-label="Log in to StreamVista"
-          >
-            Login
-          </Link>
-          <Link
-            to="/auth?intent=signup"
-            className="cta-guide relative text-xs md:text-sm font-semibold px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-full bg-gradient-primary text-primary-foreground hover:scale-105 transition-transform whitespace-nowrap"
-            aria-label="Get started with StreamVista"
-          >
-            Get Started
-          </Link>
+          {signedIn ? (
+            <Link
+              to={dashHref}
+              className="cta-guide relative inline-flex items-center gap-2 text-xs md:text-sm font-semibold px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-full bg-gradient-primary text-primary-foreground hover:scale-105 transition-transform whitespace-nowrap"
+              aria-label="Open your dashboard"
+            >
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              <span>Dashboard</span>
+            </Link>
+          ) : (
+            <>
+              <Link
+                to="/auth"
+                className="hidden sm:inline text-xs md:text-sm text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Log in to StreamVista"
+              >
+                Login
+              </Link>
+              <Link
+                to="/auth?intent=signup"
+                className="cta-guide relative text-xs md:text-sm font-semibold px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-full bg-gradient-primary text-primary-foreground hover:scale-105 transition-transform whitespace-nowrap"
+                aria-label="Get started with StreamVista"
+              >
+                Get Started
+              </Link>
+            </>
+          )}
 
           {/* Mobile menu trigger */}
           <Sheet open={open} onOpenChange={setOpen}>
@@ -91,11 +108,11 @@ export const Navbar = () => {
                   </Link>
                 ))}
                 <Link
-                  to="/auth"
+                  to={signedIn ? dashHref : "/auth"}
                   onClick={() => setOpen(false)}
                   className="mt-4 py-3 px-2 text-sm uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground"
                 >
-                  Login
+                  {signedIn ? "Dashboard" : "Login"}
                 </Link>
               </nav>
             </SheetContent>

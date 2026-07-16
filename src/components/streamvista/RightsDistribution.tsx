@@ -12,7 +12,7 @@ const CATEGORIES = [
 ];
 
 export const RightsDistribution = () => (
-  <section id="rights" className="py-24 border-b border-border/40 relative">
+  <section id="rights" className="py-16 sm:py-24 border-b border-border/40 relative">
     <div className="container">
       <div className="mb-12 max-w-3xl animate-fade-in">
         <div className="flex items-center gap-3 mb-5">

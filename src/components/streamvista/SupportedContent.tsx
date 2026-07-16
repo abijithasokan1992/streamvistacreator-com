@@ -14,7 +14,7 @@ const TYPES = [
 ];
 
 export const SupportedContent = () => (
-  <section id="content" className="py-24 border-b border-border/40 relative">
+  <section id="content" className="py-16 sm:py-24 border-b border-border/40 relative">
     <div className="container">
       <div className="mb-14 text-center max-w-3xl mx-auto animate-fade-in">
         <div className="flex items-center justify-center gap-3 mb-5">

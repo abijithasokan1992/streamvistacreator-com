@@ -159,6 +159,16 @@ export function PremiumStorageTopupModal({
           prefill: { email: user.email ?? undefined },
           theme: { color: "#a855f7" },
           handler: async (resp: any) => {
+            // Refresh token again before verify — Razorpay checkout can take minutes.
+            let verifyToken: string | undefined;
+            try {
+              const { data: r } = await supabase.auth.refreshSession();
+              verifyToken = r?.session?.access_token;
+            } catch {/* ignore */}
+            if (!verifyToken) {
+              const { data: s } = await supabase.auth.getSession();
+              verifyToken = s?.session?.access_token;
+            }
             const v = await supabase.functions.invoke("verify-storage-topup", {
               body: {
                 topupId: (data as any).topupId,
@@ -166,8 +176,16 @@ export function PremiumStorageTopupModal({
                 razorpay_payment_id: resp.razorpay_payment_id,
                 razorpay_signature: resp.razorpay_signature,
               },
+              headers: verifyToken ? { Authorization: `Bearer ${verifyToken}` } : undefined,
             });
             if (v.error || (v.data as any)?.error) {
+              toast.error("Payment verification failed — please contact support.");
+            } else {
+              toast.success(`${tier.label} activated — storage unlocked.`);
+              onOpenChange(false);
+              onSuccess?.();
+            }
+          },
               toast.error("Payment verification failed — please contact support.");
             } else {
               toast.success(`${tier.label} activated — storage unlocked.`);

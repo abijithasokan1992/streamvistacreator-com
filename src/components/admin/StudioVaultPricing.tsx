@@ -16,8 +16,9 @@ export default function StudioVaultPricing() {
 
   const load = async () => {
     setLoading(true);
+    // Read via the public view — the base table is service_role-only.
     const { data } = await supabase
-      .from("studio_vault_products")
+      .from("studio_vault_products_public" as any)
       .select("*")
       .order("sort_order", { ascending: true });
     setRows((data as unknown as VaultProduct[]) ?? []);

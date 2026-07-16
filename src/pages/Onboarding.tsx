@@ -3,9 +3,34 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Loader2, ArrowRight, Sparkles, SkipForward, KeyRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth, dashboardForRole } from "@/hooks/useAuth";
+import { useAuth, dashboardForRole, pickPrimaryRole, type AppRole } from "@/hooks/useAuth";
 import CinematicOnboarding from "@/components/CinematicOnboarding";
 import { Seo } from "@/components/Seo";
+
+/**
+ * Resolve the freshest role for a given user directly from `user_roles`.
+ *
+ * React state (`role` from useAuth) may still be stale immediately after
+ * refreshRole() because state updates are batched — reading the row here
+ * avoids the "content owner briefly routed to /dashboard/buyer" race that
+ * happened when we fell back to the legacy `"client"` role.
+ */
+async function resolveLandingRoute(userId: string): Promise<string> {
+  try {
+    const { data } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
+    const roles = ((data ?? []) as { role: AppRole }[]).map((r) => r.role);
+    const primary = pickPrimaryRole(roles);
+    if (primary) return dashboardForRole(primary);
+  } catch {
+    /* fall through to safe default */
+  }
+  // Safe default: creators are the largest signup cohort. Never fall back to
+  // "client" (which resolves to /dashboard/buyer) for role-less accounts.
+  return "/dashboard/content";
+}
 
 const ROLES = [
   "Creator", "Editor", "Director", "Cinematographer",

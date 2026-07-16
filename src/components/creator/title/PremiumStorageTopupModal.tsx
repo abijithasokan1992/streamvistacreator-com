@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { HardDrive, Sparkles, Loader2, CheckCircle2, AlertTriangle, ArrowUpRight } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useModalSubmissionLifecycle } from "@/hooks/useModalSubmissionLifecycle";
 import {
   Dialog,
   DialogContent,
@@ -101,12 +102,18 @@ export function PremiumStorageTopupModal({
 }) {
   const { user } = useAuth();
   const [pendingId, setPendingId] = useState<Tier["id"] | null>(null);
+  const { phase, isBusy, submit, reset } = useModalSubmissionLifecycle({
+    onClose: () => {
+      onOpenChange(false);
+      onSuccess?.();
+    },
+    successHoldMs: 1000, // 1s success feedback per spec
+  });
 
   useEffect(() => {
     if (open && playAlert) playSubtleAlert();
-  }, [open, playAlert]);
-
-
+    if (!open) reset();
+  }, [open, playAlert, reset]);
 
   const startCheckout = useCallback(
     async (tier: Tier) => {
@@ -114,38 +121,57 @@ export function PremiumStorageTopupModal({
         toast.error("Sign in to purchase additional storage.");
         return;
       }
+      if (isBusy) return;
       setPendingId(tier.id);
       // Delegates to the global helper: session refresh, metadata forwarding
       // and verify handshake all live in a single canonical implementation.
       const { initializeCheckout } = await import("@/lib/payments/initializeCheckout");
       try {
-        await initializeCheckout({
-          purpose: "storage_topup",
-          payload: tier.payload,
-          label: `Storage · ${tier.label}`,
-          description: `${tier.label} — ${tier.headline}`,
-          prefill: { email: user.email ?? undefined },
-          metadata: {
-            user_id: user.id,
-            payment_purpose: "storage_topup",
-            tier: tier.id,
-          },
-          onSuccess: () => {
-            toast.success(`${tier.label} activated — storage unlocked.`);
-            onOpenChange(false);
-            onSuccess?.();
-          },
-        });
+        await submit(
+          () =>
+            new Promise<void>((resolve, reject) => {
+              initializeCheckout({
+                purpose: "storage_topup",
+                payload: tier.payload,
+                label: `Storage · ${tier.label}`,
+                description: `${tier.label} — ${tier.headline}`,
+                prefill: { email: user.email ?? undefined },
+                metadata: {
+                  user_id: user.id,
+                  payment_purpose: "storage_topup",
+                  tier: tier.id,
+                },
+                onSuccess: () => {
+                  toast.success(`${tier.label} activated — storage unlocked.`);
+                  resolve();
+                },
+                onDismiss: () => reject(new Error("dismissed")),
+                onError: (e) => reject(e),
+              }).catch(reject);
+            }),
+        );
+      } catch {
+        /* lifecycle hook has already flipped to error/idle; nothing to do */
       } finally {
         setPendingId(null);
       }
     },
-    [user, onOpenChange, onSuccess],
+    [user, isBusy, submit],
   );
 
 
+  const showSuccess = phase === "success";
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        // Prevent dismiss while a submission is in flight or during the
+        // success hold buffer so the auto-close sequence always runs.
+        if (!v && isBusy) return;
+        onOpenChange(v);
+      }}
+    >
       <DialogContent className="max-w-2xl border-accent/40 bg-gradient-to-br from-background via-background to-primary/10">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg">
@@ -155,6 +181,16 @@ export function PremiumStorageTopupModal({
             Add cinema-grade storage to your workspace. All top-ups activate instantly after payment.
           </DialogDescription>
         </DialogHeader>
+
+        {showSuccess && (
+          <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 flex items-center gap-3 text-sm">
+            <CheckCircle2 className="w-5 h-5 text-emerald-300" />
+            <div className="min-w-0">
+              <div className="font-semibold text-emerald-100">Payment verified · storage activated</div>
+              <p className="text-emerald-100/80 text-xs">Closing top-up sheet…</p>
+            </div>
+          </div>
+        )}
 
         {reason && (
           <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 flex items-start gap-3 text-sm">
@@ -177,7 +213,7 @@ export function PremiumStorageTopupModal({
                 key={t.id}
                 type="button"
                 onClick={() => startCheckout(t)}
-                disabled={pendingId !== null}
+                disabled={pendingId !== null || isBusy}
                 className={cn(
                   "text-left rounded-xl border p-4 space-y-2 transition",
                   "hover:border-accent hover:bg-accent/5",

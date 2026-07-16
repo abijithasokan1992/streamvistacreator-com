@@ -25,6 +25,12 @@ export const FREE_WARN_MB = 4 * MB_PER_GB; // 80% of 5 GB — kept exported for 
 
 type Quota = {
   loading: boolean;
+  /**
+   * True only after the entitlement RPC returned real data. When false
+   * (loading, failed, or missing user), `locked` is forced to false and
+   * `checkOrPaywall()` is permissive — never hard-block on an unknown quota.
+   */
+  known: boolean;
   /** True when the workspace is on the Creator Basic submission plan. */
   isBasic: boolean;
   /** Legacy alias — `isCreator` historically meant "has paid storage". */
@@ -50,6 +56,7 @@ type Quota = {
   openPaywall: () => void;
   refresh: () => Promise<void>;
 };
+
 
 const Ctx = createContext<Quota | null>(null);
 

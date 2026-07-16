@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { HardDrive, Sparkles, Loader2, CheckCircle2, AlertTriangle, ArrowUpRight } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useModalSubmissionLifecycle } from "@/hooks/useModalSubmissionLifecycle";
 import {
   Dialog,
   DialogContent,

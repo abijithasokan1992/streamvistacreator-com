@@ -106,7 +106,23 @@ export function AssetUploader({
   const [pct, setPct] = useState(0);
   const [telemetry, setTelemetry] = useState<UploadTelemetry | null>(null);
   const [stagedFile, setStagedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [success, setSuccess] = useState<{ name: string; size: number; format: string } | null>(null);
+
+  // Real-time media preview — creates an object URL for images/video/audio
+  // as soon as a file is staged (before upload). Revoked on unstage/unmount.
+  useEffect(() => {
+    if (!stagedFile) { setPreviewUrl(null); return; }
+    const mime = stagedFile.type || "";
+    const ext = stagedFile.name.split(".").pop()?.toLowerCase() || "";
+    const canPreviewLocally =
+      mime.startsWith("image/") || mime.startsWith("video/") || mime.startsWith("audio/") ||
+      ["png","jpg","jpeg","webp","gif","mp4","mov","webm","mp3","wav","m4a","ogg"].includes(ext);
+    if (!canPreviewLocally) { setPreviewUrl(null); return; }
+    const url = URL.createObjectURL(stagedFile);
+    setPreviewUrl(url);
+    return () => { URL.revokeObjectURL(url); };
+  }, [stagedFile]);
 
   /**
    * Duplicate detection state — SHA-256 is the authoritative identity.

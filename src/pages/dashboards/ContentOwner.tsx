@@ -64,6 +64,13 @@ export default function ContentOwnerDashboard() {
     if (section === "billing") markOnboardingStep("accessAuthorized");
   }, [section]);
 
+  // IMPORTANT: All hooks must be called before any conditional early returns
+  // to satisfy the Rules of Hooks (loading flips false→true between renders).
+  const def = SECTIONS.find((s) => s.id === section) ?? SECTIONS[0];
+  const effectiveSection: SectionId = isFree && (def as any).proOnly ? "billing" : def.id;
+  const { label: currentLabel, heading: currentHeading, subhead: currentSubhead } =
+    useSectionLabels(effectiveSection);
+
   if (loading) {
     return (
       <main className="min-h-dvh grid place-items-center bg-background text-foreground">
@@ -82,13 +89,6 @@ export default function ContentOwnerDashboard() {
     setParams(next, { replace: false });
     setMobileOpen(false);
   };
-
-
-  // Free-tier: pro-only sections redirect to Storage & Billing rather than rendering empty.
-  const def = SECTIONS.find((s) => s.id === section) ?? SECTIONS[0];
-  const effectiveSection: SectionId = isFree && (def as any).proOnly ? "billing" : def.id;
-  const { label: currentLabel, heading: currentHeading, subhead: currentSubhead } =
-    useSectionLabels(effectiveSection);
 
   return (
     <main className="min-h-dvh bg-background text-foreground">

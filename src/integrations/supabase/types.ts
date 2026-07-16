@@ -128,7 +128,7 @@ export type Database = {
         Row: {
           action: string
           admin_email: string | null
-          admin_user_id: string
+          admin_user_id: string | null
           created_at: string
           details: Json
           id: string
@@ -138,7 +138,7 @@ export type Database = {
         Insert: {
           action: string
           admin_email?: string | null
-          admin_user_id: string
+          admin_user_id?: string | null
           created_at?: string
           details?: Json
           id?: string
@@ -148,7 +148,7 @@ export type Database = {
         Update: {
           action?: string
           admin_email?: string | null
-          admin_user_id?: string
+          admin_user_id?: string | null
           created_at?: string
           details?: Json
           id?: string

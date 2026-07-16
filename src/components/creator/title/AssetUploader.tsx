@@ -3,7 +3,6 @@ import { toast } from "sonner";
 import {
   Upload, Loader2, FileCheck2, AlertTriangle, CheckCircle2, ShieldCheck, FileWarning, HardDrive, Copy, RefreshCw,
 } from "lucide-react";
-import { Link } from "react-router-dom";
 import { uploadTitleAsset, UploadValidationError } from "@/lib/creator/titleApi";
 import type { AssetCategory } from "@/lib/creator/titleSchema";
 import { mapUploadError, type UploadTelemetry } from "@/lib/ociMultipartUpload";
@@ -11,6 +10,7 @@ import { useWorkspaces } from "@/hooks/useWorkspaces";
 import { useWorkspaceStorage } from "@/hooks/useWorkspaceStorage";
 import { supabase } from "@/integrations/supabase/client";
 import { AssetPreviewModal, canPreview } from "./AssetPreview";
+import { PremiumStorageTopupModal } from "./PremiumStorageTopupModal";
 import { cn } from "@/lib/utils";
 
 // ---------- Allowed-format & size matrix (client-side preflight) ----------
@@ -304,11 +304,12 @@ export function AssetUploader({
       toast.error("This title is locked — uploads are disabled.");
       return;
     }
+    // NOTE: We intentionally do NOT hard-block on `wouldExceedQuota` here.
+    // The authoritative quota gate lives server-side (OCI signed-URL policy +
+    // upload_sessions RLS). Client-side we only surface a soft warning so the
+    // "Start upload" affordance stays live for anyone the backend will allow.
     if (wouldExceedQuota(f.size)) {
-      setStagedFile(f);
-      devLog("quota-block", { size: f.size, remaining: quotaRemainingBytes });
-      toast.error("Not enough storage on your current plan.");
-      return;
+      devLog("quota-warning", { size: f.size, remaining: quotaRemainingBytes });
     }
     setStagedFile(f);
     setDup({ kind: "checking" });
@@ -330,15 +331,14 @@ export function AssetUploader({
     void runUpload(f);
   }, [category, locked, runUpload, wouldExceedQuota, preliminaryMatch, runShaDedup, sha256Hex, devLog, quotaRemainingBytes]);
 
+  const [topupOpen, setTopupOpen] = useState(false);
+
   const startUpload = useCallback(() => {
     if (!stagedFile) return;
     if (dup.kind === "block-same-title") return;
-    if (wouldExceedQuota(stagedFile.size)) {
-      toast.error("Not enough storage on your current plan.");
-      return;
-    }
+    // Client-side quota is only advisory — the backend is the source of truth.
     void runUpload(stagedFile);
-  }, [stagedFile, runUpload, dup, wouldExceedQuota]);
+  }, [stagedFile, runUpload, dup]);
 
   // Drag-and-drop (works on desktop; touch devices fall back to the Choose-file button).
   const [drag, setDrag] = useState(false);
@@ -483,10 +483,16 @@ export function AssetUploader({
             <p className="text-rose-400 text-sm">{(stagedPreflight as { ok: false; reason: string }).reason}</p>
           )}
           {stagedPreflight.ok && wouldExceedQuota(stagedFile.size) && (
-            <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-rose-200 space-y-1 text-sm">
-              <p className="font-medium inline-flex items-center gap-1.5"><HardDrive className="w-4 h-4" /> Not enough storage on your current plan</p>
-              <p>This file needs {humanBytes(stagedFile.size)} but only {humanBytes(quotaRemainingBytes)} of {humanBytes(quotaTotalBytes)} is free.</p>
-              <Link to="/dashboard?tab=storage" className="underline text-rose-100 hover:text-white">Upgrade or add storage →</Link>
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-amber-100 space-y-1 text-sm">
+              <p className="font-medium inline-flex items-center gap-1.5"><HardDrive className="w-4 h-4" /> Storage may be tight for this upload</p>
+              <p>This file needs {humanBytes(stagedFile.size)} but only {humanBytes(quotaRemainingBytes)} of {humanBytes(quotaTotalBytes)} is free. The upload will still start — top up now to avoid interruptions.</p>
+              <button
+                type="button"
+                onClick={() => setTopupOpen(true)}
+                className="underline text-amber-50 hover:text-white"
+              >
+                Upgrade or add storage →
+              </button>
             </div>
           )}
           {stagedPreflight.ok && !wouldExceedQuota(stagedFile.size) && dup.kind === "checking" && (
@@ -519,7 +525,7 @@ export function AssetUploader({
             <button
               type="button"
               onClick={startUpload}
-              disabled={!stagedPreflight.ok || locked || wouldExceedQuota(stagedFile.size) || dup.kind === "block-same-title" || dup.kind === "checking" || dup.kind === "preliminary"}
+              disabled={!stagedPreflight.ok || locked || dup.kind === "block-same-title" || dup.kind === "checking" || dup.kind === "preliminary"}
               className="inline-flex items-center gap-2 rounded-md bg-accent text-accent-foreground text-sm font-semibold px-4 py-2 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Upload className="w-4 h-4" /> {dup.kind === "warn-same-workspace" || dup.kind === "hash-skipped" ? "Upload as new version" : "Start upload"}
@@ -599,6 +605,11 @@ export function AssetUploader({
         </div>
       )}
 
+      <PremiumStorageTopupModal
+        open={topupOpen}
+        onOpenChange={setTopupOpen}
+        onSuccess={() => { void (storage as any)?.refresh?.(); }}
+      />
     </div>
   );
 }

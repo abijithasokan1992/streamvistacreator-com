@@ -38,27 +38,39 @@ Deno.serve(async (req) => {
     if (userErr || !uid) return json({ error: "Unauthorized" }, 401);
 
     const body = await req.json().catch(() => ({}));
-    const tb = Math.max(1, Math.min(10, Number(body?.tb ?? 1) || 1));
+    // Two modes:
+    //  • `tb` — legacy 1 TB Production Vault block (integer 1-10). Uses shared
+    //    pricing + canonical cross-check.
+    //  • `gb` — smaller top-up tiers (100 or 500 GB). Price scales linearly
+    //    from the canonical per-TB price; canonical cross-check is skipped
+    //    because it is defined per full TB.
+    const rawGb = Number(body?.gb);
+    const allowedGb = new Set([100, 500]);
+    const useGb = Number.isFinite(rawGb) && allowedGb.has(rawGb);
+    const tb = useGb ? rawGb / 1024 : Math.max(1, Math.min(10, Number(body?.tb ?? 1) || 1));
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
     const creds = await loadRazorpayCreds(admin);
     if (!creds) return json({ error: "Razorpay not configured" }, 503);
 
-    const priced = computeFinalPricePaise("topup", null, tb);
-
-    // Canonical price cross-check: the active plans.creator_payg_1tb row is the
-    // single source of truth. If the shared pricing helper ever drifts, abort
-    // before charging anyone. (Defense in depth for Sprint 1.)
-    const { data: canonical } = await admin.rpc("get_canonical_payg_price");
-    if (canonical && (canonical as any).total_paise) {
-      const expectedPerTb = Number((canonical as any).total_paise);
-      const perTb = Math.round(priced.finalPaise / tb);
-      if (Math.abs(perTb - expectedPerTb) > 1) {
-        console.error("price drift detected", { expectedPerTb, perTb });
-        return json({ error: "Pricing temporarily unavailable, please retry." }, 503);
+    let amountPaise: number;
+    if (useGb) {
+      // Per-TB canonical price is 767 INR incl. GST → 76,700 paise. Scale linearly.
+      const perTbPaise = computeFinalPricePaise("topup", null, 1).finalPaise;
+      amountPaise = Math.round(perTbPaise * (rawGb / 1024));
+    } else {
+      const priced = computeFinalPricePaise("topup", null, tb);
+      const { data: canonical } = await admin.rpc("get_canonical_payg_price");
+      if (canonical && (canonical as any).total_paise) {
+        const expectedPerTb = Number((canonical as any).total_paise);
+        const perTb = Math.round(priced.finalPaise / tb);
+        if (Math.abs(perTb - expectedPerTb) > 1) {
+          console.error("price drift detected", { expectedPerTb, perTb });
+          return json({ error: "Pricing temporarily unavailable, please retry." }, 503);
+        }
       }
+      amountPaise = priced.finalPaise; // 76,700 paise per TB (incl. GST)
     }
-    const amountPaise = priced.finalPaise; // 76,700 paise per TB (incl. GST)
 
     // Insert ledger row (service role)
     const { data: row, error: insErr } = await admin
@@ -83,7 +95,7 @@ Deno.serve(async (req) => {
         currency: "INR",
         receipt: `topup_${row.id.slice(0, 28)}`,
         payment_capture: 1,
-        notes: { topup_id: row.id, user_id: uid, tb: String(tb) },
+        notes: { topup_id: row.id, user_id: uid, tb: String(tb), gb: useGb ? String(rawGb) : "" },
       }),
     });
     const order = await rzpRes.json();

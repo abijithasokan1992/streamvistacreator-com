@@ -3,7 +3,6 @@ import { toast } from "sonner";
 import {
   Upload, Loader2, FileCheck2, AlertTriangle, CheckCircle2, ShieldCheck, FileWarning, HardDrive, Copy, RefreshCw,
 } from "lucide-react";
-import { Link } from "react-router-dom";
 import { uploadTitleAsset, UploadValidationError } from "@/lib/creator/titleApi";
 import type { AssetCategory } from "@/lib/creator/titleSchema";
 import { mapUploadError, type UploadTelemetry } from "@/lib/ociMultipartUpload";
@@ -11,6 +10,7 @@ import { useWorkspaces } from "@/hooks/useWorkspaces";
 import { useWorkspaceStorage } from "@/hooks/useWorkspaceStorage";
 import { supabase } from "@/integrations/supabase/client";
 import { AssetPreviewModal, canPreview } from "./AssetPreview";
+import { PremiumStorageTopupModal } from "./PremiumStorageTopupModal";
 import { cn } from "@/lib/utils";
 
 // ---------- Allowed-format & size matrix (client-side preflight) ----------

@@ -171,13 +171,18 @@ export function AssetUploader({
   }, [active, category, titleId, onUploaded]);
 
   // Quota preflight — computed synchronously from the shared storage hook.
+  // CRITICAL: only enforce when `storage.known` is true (i.e. the entitlement
+  // RPC has resolved). While unknown (loading or transient failure), we must
+  // NEVER hard-block uploads — RLS + OCI signed-URL policy remain the safety net.
+  const quotaKnown = !!storage.known;
   const quotaTotalBytes = Math.max(0, Math.round((storage.totalGb ?? 0) * GB));
   const quotaUsedBytes = Math.max(0, Math.round(storage.usedBytes ?? 0));
   const quotaRemainingBytes = Math.max(0, quotaTotalBytes - quotaUsedBytes);
   const wouldExceedQuota = useCallback(
-    (size: number) => quotaTotalBytes > 0 && (quotaUsedBytes + size) > quotaTotalBytes,
-    [quotaTotalBytes, quotaUsedBytes],
+    (size: number) => quotaKnown && quotaTotalBytes > 0 && (quotaUsedBytes + size) > quotaTotalBytes,
+    [quotaKnown, quotaTotalBytes, quotaUsedBytes],
   );
+
 
   // Per founder policy: never hash the entire file in the browser. Preflight
   // is a lightweight name+size heuristic only. Authoritative SHA-256

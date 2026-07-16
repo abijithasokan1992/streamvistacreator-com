@@ -137,6 +137,7 @@ export function useWorkspaceStorage(): WorkspaceStorage {
       const next: WorkspaceStorage = {
         loading: false,
         error: null,
+        known: true,
         workspaceId: activeId ?? null,
         totalGb, includedGb, paidGb, bonusGb,
         usedBytes,
@@ -153,9 +154,11 @@ export function useWorkspaceStorage(): WorkspaceStorage {
       CACHE.set(cacheKey, { at: Date.now(), value: next });
       if (mounted.current) setState({ ...next, refresh: () => load({ skipCache: true }) });
     } catch (e: any) {
+      // Preserve last-good values; never reset to zero on transient failure.
       if (mounted.current) setState((s) => ({ ...s, loading: false, error: e?.message ?? "load_failed" }));
     }
   }, [user?.id, activeId, cacheKey]);
+
 
   useEffect(() => {
     if (!user) return;

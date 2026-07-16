@@ -40,17 +40,22 @@ export const Hero = () => {
             </span>
           </div>
 
-          <h1 className="font-display font-black uppercase leading-[0.9] tracking-tight text-[clamp(2.6rem,8vw,6.5rem)]">
-            Own a Film, Series
+          <h1 className="font-display font-black uppercase leading-[0.9] tracking-tight text-[clamp(2.4rem,7vw,5.5rem)]">
+            Connect Film Content Owners
             <br />
-            or <span className="gradient-text">Documentary?</span>
+            with <span className="gradient-text">Global Buyers</span>
           </h1>
 
-          <div className="mt-8 max-w-2xl text-base md:text-xl text-muted-foreground leading-relaxed space-y-1.5 animate-fade-in">
-            <p>Upload your content.</p>
-            <p>Protect your rights.</p>
-            <p>Connect with verified buyers.</p>
-            <p>License globally through one secure platform.</p>
+          <div className="mt-8 max-w-2xl text-base md:text-lg text-muted-foreground leading-relaxed space-y-3 animate-fade-in">
+            <p>
+              StreamVista connects creators, filmmakers, producers, studios and rights holders with
+              verified OTT platforms, broadcasters, satellite television, FAST channels,
+              distributors and digital streaming services worldwide.
+            </p>
+            <p>
+              Prepare rights-ready catalogues, present your films, series and documentaries to
+              qualified buyers, and run professional delivery workflows in one place.
+            </p>
           </div>
 
       <div className="mt-10 sm:mt-12 flex flex-col sm:flex-row gap-3 animate-fade-in hero-button-container">
@@ -70,8 +75,13 @@ export const Hero = () => {
         </Link>
       </div>
 
-          <p className="mt-5 text-[11px] font-mono-tech uppercase tracking-[0.2em] text-muted-foreground/70 animate-fade-in">
-            Enterprise B2B Distribution · High-Speed Master Ingest · Secure Multi-Platform Delivery
+          <p className="mt-6 max-w-2xl text-xs text-muted-foreground/80 leading-relaxed animate-fade-in">
+            StreamVista provides professional connectivity and workflow support. Buyer response,
+            licensing, distribution, release and revenue are not guaranteed.
+          </p>
+
+          <p className="mt-4 text-[11px] font-mono-tech uppercase tracking-[0.2em] text-muted-foreground/70 animate-fade-in">
+            Film Sales · OTT & FAST Licensing · Satellite &amp; Digital Distribution Workflow
           </p>
         </div>
       </div>

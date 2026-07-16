@@ -60,6 +60,16 @@ import Connect from "./pages/Connect.tsx";
 import SettingsIntegrationsAI from "./pages/SettingsIntegrationsAI.tsx";
 import AccessibilityPage from "./pages/Accessibility.tsx";
 import SolutionsAIContentLicensing from "./pages/SolutionsAIContentLicensing.tsx";
+import SellYourFilm from "./pages/landing/SellYourFilm.tsx";
+import FilmDistribution from "./pages/landing/FilmDistribution.tsx";
+import OttContentLicensing from "./pages/landing/OttContentLicensing.tsx";
+import ContentOwners from "./pages/landing/ContentOwners.tsx";
+import Buyers from "./pages/landing/Buyers.tsx";
+import FilmRights from "./pages/landing/FilmRights.tsx";
+import RegionalIndianCinema from "./pages/landing/RegionalIndianCinema.tsx";
+import GlobalFilmSales from "./pages/landing/GlobalFilmSales.tsx";
+import HowItWorks from "./pages/landing/HowItWorks.tsx";
+import TrustAndRights from "./pages/landing/TrustAndRights.tsx";
 
 // Smart Uploads is not MVP-ready — hidden until the checksum + bucket work is production-safe.
 // import SmartUploads from "./pages/SmartUploads.tsx";
@@ -241,6 +251,16 @@ const PublicRoutes = () => (
     <Route path="/college-erp" element={<CollegeERP />} />
     <Route path="/connect" element={<Connect />} />
     <Route path="/accessibility" element={<AccessibilityPage />} />
+    <Route path="/sell-your-film" element={<SellYourFilm />} />
+    <Route path="/film-distribution" element={<FilmDistribution />} />
+    <Route path="/ott-content-licensing" element={<OttContentLicensing />} />
+    <Route path="/content-owners" element={<ContentOwners />} />
+    <Route path="/buyers" element={<Buyers />} />
+    <Route path="/film-rights" element={<FilmRights />} />
+    <Route path="/regional-indian-cinema" element={<RegionalIndianCinema />} />
+    <Route path="/global-film-sales" element={<GlobalFilmSales />} />
+    <Route path="/how-it-works" element={<HowItWorks />} />
+    <Route path="/trust-and-rights" element={<TrustAndRights />} />
     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
 
     <Route path="*" element={<NotFound />} />

@@ -26,9 +26,89 @@ export type RouteMeta = {
 export const ROUTES: RouteMeta[] = [
   {
     path: "/",
-    title: "StreamVista Cloud X — Creator Studio Cloud Storage",
+    title: "StreamVista — Film Sales, Content Licensing & OTT Distribution Network",
     description:
-      "StreamVista Cloud X is the secure creator studio cloud platform for media professionals to onboard, store, share and monetise content.",
+      "Connect films, series and screen content with verified OTT platforms, broadcasters, satellite TV, FAST channels, distributors and streaming services worldwide. StreamVista supports rights-ready catalogues, buyer discovery and professional delivery workflows.",
+    ogImage: `${SITE_ORIGIN}/og/home.jpg`,
+    ogType: "website",
+  },
+  {
+    path: "/sell-your-film",
+    title: "Sell Your Film — Connect With OTT, Broadcasters & Buyers | StreamVista",
+    description:
+      "List your feature film, series or documentary on StreamVista and connect with verified OTT platforms, broadcasters, satellite TV, FAST channels and digital streaming buyers worldwide.",
+    ogImage: `${SITE_ORIGIN}/og/home.jpg`,
+    ogType: "website",
+  },
+  {
+    path: "/film-distribution",
+    title: "Film Distribution Platform — OTT, Broadcast, Satellite & FAST | StreamVista",
+    description:
+      "Coordinate film distribution across OTT platforms, broadcasters, satellite television, FAST channels and digital streaming services on StreamVista.",
+    ogImage: `${SITE_ORIGIN}/og/home.jpg`,
+    ogType: "website",
+  },
+  {
+    path: "/ott-content-licensing",
+    title: "OTT Content Licensing — Films, Series & Documentaries | StreamVista",
+    description:
+      "License films, series and documentaries to OTT platforms, digital streaming services and FAST channels. Verified rights holders connect with acquisition teams worldwide.",
+    ogImage: `${SITE_ORIGIN}/og/home.jpg`,
+    ogType: "website",
+  },
+  {
+    path: "/content-owners",
+    title: "For Content Owners — Producers, Studios & Rights Holders | StreamVista",
+    description:
+      "A workflow platform for creators, filmmakers, producers, studios and rights holders to present rights-ready catalogues to OTT, broadcast, satellite and digital buyers.",
+    ogImage: `${SITE_ORIGIN}/og/home.jpg`,
+    ogType: "website",
+  },
+  {
+    path: "/buyers",
+    title: "For Buyers — OTT, Broadcast, Satellite, FAST & Digital | StreamVista",
+    description:
+      "OTT platforms, broadcasters, satellite TV, FAST channels, distributors and digital streaming services can discover rights-ready films, series and documentaries on StreamVista.",
+    ogImage: `${SITE_ORIGIN}/og/home.jpg`,
+    ogType: "website",
+  },
+  {
+    path: "/film-rights",
+    title: "Film Rights — Territory, Window & Platform Licensing | StreamVista",
+    description:
+      "Manage and present film rights across territory, language, exclusivity and window — OTT, satellite TV, FAST, digital and broadcast.",
+    ogImage: `${SITE_ORIGIN}/og/home.jpg`,
+    ogType: "website",
+  },
+  {
+    path: "/regional-indian-cinema",
+    title: "Regional Indian Cinema — Malayalam & South Indian Licensing | StreamVista",
+    description:
+      "License Malayalam, Tamil, Telugu, Kannada and other regional Indian films and series to OTT, satellite TV, FAST and digital streaming buyers worldwide.",
+    ogImage: `${SITE_ORIGIN}/og/home.jpg`,
+    ogType: "website",
+  },
+  {
+    path: "/global-film-sales",
+    title: "Global Film Sales — Multi-Territory Licensing Workflow | StreamVista",
+    description:
+      "Present films, series and documentaries to OTT, broadcast, satellite, FAST and digital buyers across global territories on StreamVista.",
+    ogImage: `${SITE_ORIGIN}/og/home.jpg`,
+    ogType: "website",
+  },
+  {
+    path: "/how-it-works",
+    title: "How StreamVista Works — Connecting Content Owners and Buyers",
+    description:
+      "A step-by-step overview of how creators, producers, studios and rights holders present titles and connect with OTT, broadcast and streaming buyers on StreamVista.",
+    ogImage: `${SITE_ORIGIN}/og/home.jpg`,
+    ogType: "website",
+  },
+  {
+    path: "/trust-and-rights",
+    title: "Trust & Rights — Verified Buyers and IP Protection | StreamVista",
+    description:
+      "How StreamVista verifies buyers, protects content owner IP, handles screener access and enforces rights and copyright policies.",
     ogImage: `${SITE_ORIGIN}/og/home.jpg`,
     ogType: "website",
   },

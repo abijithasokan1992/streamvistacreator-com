@@ -108,11 +108,11 @@ export const Navbar = () => {
                   </Link>
                 ))}
                 <Link
-                  to="/auth"
+                  to={signedIn ? dashHref : "/auth"}
                   onClick={() => setOpen(false)}
                   className="mt-4 py-3 px-2 text-sm uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground"
                 >
-                  Login
+                  {signedIn ? "Dashboard" : "Login"}
                 </Link>
               </nav>
             </SheetContent>

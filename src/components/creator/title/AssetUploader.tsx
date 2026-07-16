@@ -379,12 +379,19 @@ export function AssetUploader({
               This slot only holds one active version — uploading will supersede the current file.
             </p>
           )}
-          {!locked && quotaTotalBytes > 0 && (
+          {!locked && quotaKnown && quotaTotalBytes > 0 && (
             <p className="text-[11px] text-muted-foreground mt-1 inline-flex items-center gap-1">
               <HardDrive className="w-3 h-3" />
               Storage: {humanBytes(quotaUsedBytes)} used · {humanBytes(quotaRemainingBytes)} free of {humanBytes(quotaTotalBytes)}
             </p>
           )}
+          {!locked && !quotaKnown && storage.loading && (
+            <p className="text-[11px] text-muted-foreground/70 mt-1 inline-flex items-center gap-1">
+              <HardDrive className="w-3 h-3" />
+              Checking storage…
+            </p>
+          )}
+
         </div>
         <input
           ref={inputRef}

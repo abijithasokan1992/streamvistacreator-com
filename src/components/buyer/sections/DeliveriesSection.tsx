@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Package, Download, ExternalLink } from "lucide-react";
+import { AlertCircle, Loader2, Package, Download, ExternalLink, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,6 +36,8 @@ export default function DeliveriesSection() {
   const { user } = useAuth();
   const [rows, setRows] = useState<Delivery[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [tick, setTick] = useState(0);
   const [tab, setTab] = useState<"pending" | "completed" | "history">("pending");
 
   useEffect(() => {
@@ -43,17 +45,19 @@ export default function DeliveriesSection() {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const { data } = await supabase
+      setError(null);
+      const { data, error: qErr } = await supabase
         .from("deal_deliveries")
         .select("id,title_id,buyer_org_name,recipient_email,status,method,package_notes,share_url,expires_at,shared_at,delivered_at,created_at,updated_at")
         .eq("buyer_user_id", user.id)
         .order("updated_at", { ascending: false });
       if (cancelled) return;
-      setLoading(false);
+      if (qErr) setError(qErr.message || "Unable to load deliveries.");
       setRows((data as unknown as Delivery[]) ?? []);
+      setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [user]);
+  }, [user, tick]);
 
   const { pending, completed } = useMemo(() => {
     const p: Delivery[] = [], c: Delivery[] = [];
@@ -92,6 +96,19 @@ export default function DeliveriesSection() {
       {loading ? (
         <div className="py-12 grid place-items-center" role="status" aria-label="Loading deliveries">
           <Loader2 className="w-5 h-5 animate-spin text-accent" aria-hidden />
+        </div>
+      ) : error ? (
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/5 p-6 text-center">
+          <AlertCircle className="w-6 h-6 text-red-400 mx-auto mb-2" aria-hidden />
+          <p className="text-sm font-medium">Couldn't load deliveries</p>
+          <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">{error}</p>
+          <button
+            type="button"
+            onClick={() => setTick(v => v + 1)}
+            className="mt-3 inline-flex items-center gap-1.5 text-xs text-accent hover:underline"
+          >
+            <RefreshCw className="w-3 h-3" aria-hidden /> Retry
+          </button>
         </div>
       ) : list.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border/60 bg-secondary/10 p-10 text-center">

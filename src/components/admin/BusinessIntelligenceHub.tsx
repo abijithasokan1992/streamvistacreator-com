@@ -142,11 +142,12 @@ export default function BusinessIntelligenceHub() {
         </div>
       ) : (
         <Tabs defaultValue="uploads" className="w-full">
-          <TabsList className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1.5 h-auto p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full">
+          <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-1.5 h-auto p-1.5 glass rounded-2xl bg-transparent border border-border/50 w-full">
             <TabsTrigger value="uploads"><UploadCloud className="w-3.5 h-3.5 mr-1" />Uploads</TabsTrigger>
             <TabsTrigger value="revenue"><Wallet className="w-3.5 h-3.5 mr-1" />Revenue</TabsTrigger>
             <TabsTrigger value="rights"><Scale className="w-3.5 h-3.5 mr-1" />Rights</TabsTrigger>
             <TabsTrigger value="delivery"><Send className="w-3.5 h-3.5 mr-1" />Delivery</TabsTrigger>
+            <TabsTrigger value="market"><TrendingUp className="w-3.5 h-3.5 mr-1" />Market Potential</TabsTrigger>
             <TabsTrigger value="insights"><Sparkles className="w-3.5 h-3.5 mr-1" />AI Insights</TabsTrigger>
             <TabsTrigger value="automation"><Zap className="w-3.5 h-3.5 mr-1" />Automation</TabsTrigger>
           </TabsList>

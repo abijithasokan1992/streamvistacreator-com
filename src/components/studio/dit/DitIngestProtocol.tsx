@@ -324,7 +324,9 @@ export default function DitIngestProtocol() {
       if (error) throw new Error(error.message);
 
       if (uploadDegraded) {
-        toast.warning("DIT log saved — screenshot upload deferred (bucket unavailable).");
+        toast.warning(
+          "DIT log saved — screenshot Pending local, not uploaded. Re-attach once storage is available.",
+        );
       } else {
         toast.success("DIT ingest log saved.");
       }

@@ -520,9 +520,15 @@ export function TitleEditor({
                   />
                 )}
                 {tab === "assets" && (
-                  <div className="space-y-10">
-                    {/* Group 1 · Artwork (posters + additional key art) */}
-                    <AssetGroup title="Artwork" hint="Poster and key art — one active primary poster, additional variants create versions.">
+                  <div className="space-y-4">
+                    {/* Group 1 · Artwork (posters + additional key art) — open by default */}
+                    <AssetGroup
+                      title="Artwork"
+                      hint="Poster and key art — one active primary poster, additional variants create versions."
+                      defaultOpen
+                      assetCount={byCat(["poster", "artwork"]).length}
+                      locked={assetsLockedFor("poster")}
+                    >
                       <PosterGrid
                         titleId={title.id}
                         assets={byCat(["poster", "artwork"])}
@@ -532,7 +538,11 @@ export function TitleEditor({
                     </AssetGroup>
 
                     {/* Group 2 · Video (trailer + main master) */}
-                    <AssetGroup title="Video" hint="Trailer and Main Master. Uploading a new file creates a new version of the current slot.">
+                    <AssetGroup
+                      title="Video Masters"
+                      hint="Trailer and Main Master. Uploading a new file creates a new version of the current slot."
+                      assetCount={byCat(["trailer", "feature_film"]).length}
+                    >
                       <AssetTab cat="trailer" label="Trailer" singleSlot
                         assets={byCat(["trailer"])} titleId={title.id}
                         locked={assetsLockedFor("trailer")} onUploaded={reload} accept="video/*" />
@@ -543,22 +553,34 @@ export function TitleEditor({
                     </AssetGroup>
 
                     {/* Group 3 · Audio */}
-                    <AssetGroup title="Audio" hint="Alternative audio tracks and dubs. Multiple files allowed.">
+                    <AssetGroup
+                      title="Audio"
+                      hint="Alternative audio tracks and dubs. Multiple files allowed."
+                      assetCount={byCat(["audio_tracks", "audio"]).length}
+                    >
                       <AssetTab cat="audio_tracks" label="Audio tracks"
                         assets={byCat(["audio_tracks", "audio"])} titleId={title.id}
                         locked={mode === "view"} onUploaded={reload} accept="audio/*" />
                     </AssetGroup>
 
                     {/* Group 4 · Subtitles & Accessibility */}
-                    <AssetGroup title="Subtitles & Accessibility" hint="Caption / subtitle files (SRT, VTT). Multiple languages allowed.">
+                    <AssetGroup
+                      title="Subtitles & Accessibility"
+                      hint="Caption / subtitle files (SRT, VTT). Multiple languages allowed."
+                      assetCount={byCat(["captions", "subtitle"]).length}
+                    >
                       <AssetTab cat="captions" label="Captions & subtitles"
                         assets={byCat(["captions", "subtitle"])} titleId={title.id}
                         locked={mode === "view"} onUploaded={reload}
                         accept=".srt,.vtt,text/vtt,application/x-subrip" />
                     </AssetGroup>
 
-                    {/* Group 5 · Documents — Censor, Chain of Title, Contracts, Script, Press Kit, Legal */}
-                    <AssetGroup title="Documents" hint="Censor certificate, chain of title, existing contracts, scripts, press kits and other legal PDFs.">
+                    {/* Group 5 · Documents */}
+                    <AssetGroup
+                      title="Legal & Documents"
+                      hint="Censor certificate, chain of title, existing contracts, scripts, press kits and other legal PDFs."
+                      assetCount={byCat(["censor_certificate", "censor_cert", "ownership_documents", "ownership", "legal", "sales"]).length}
+                    >
                       <AssetTab cat="censor_certificate" label="Censor Certificate"
                         assets={byCat(["censor_certificate", "censor_cert"])} titleId={title.id}
                         locked={assetsLockedFor("censor_certificate")} onUploaded={reload} accept="application/pdf,image/*" />
@@ -570,7 +592,10 @@ export function TitleEditor({
                     </AssetGroup>
 
                     {/* Group 6 · Delivery Assets — reserved surface */}
-                    <AssetGroup title="Delivery Assets" hint="Distribution-ready delivery packages appear here after approval. Package building and dispatch are handled by StreamVista Operations.">
+                    <AssetGroup
+                      title="Delivery Assets"
+                      hint="Distribution-ready delivery packages appear here after approval. Package building and dispatch are handled by StreamVista Operations."
+                    >
                       <div className="rounded-lg border border-dashed border-border/50 bg-background/30 p-6 text-center text-xs text-muted-foreground">
                         No delivery packages yet — this surface activates after your title is approved.
                       </div>

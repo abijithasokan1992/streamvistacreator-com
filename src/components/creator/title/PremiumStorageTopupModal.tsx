@@ -186,13 +186,6 @@ export function PremiumStorageTopupModal({
               onSuccess?.();
             }
           },
-              toast.error("Payment verification failed — please contact support.");
-            } else {
-              toast.success(`${tier.label} activated — storage unlocked.`);
-              onOpenChange(false);
-              onSuccess?.();
-            }
-          },
         });
         toast.dismiss(toastId);
         rzp.open();

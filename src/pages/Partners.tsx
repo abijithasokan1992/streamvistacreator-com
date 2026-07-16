@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import {
   ArrowRight,
   Loader2,
-  ArrowRight,
   Globe,
   Languages,
   Film,

@@ -270,12 +270,21 @@ Deno.serve(async (req) => {
       const expiresAt = String(
         body.expiresAt ?? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       );
-      const payload = JSON.stringify({
+      // Optional: bucketListingAction — "Deny" (default) or "ListObjects".
+      // Denying LIST keeps write-scoped PARs strictly write-only so the
+      // URL-holder can't enumerate the prefix.
+      const bucketListingAction = String(body.bucketListingAction ?? "Deny");
+      const parBody: Record<string, unknown> = {
         name,
         objectName,
         accessType,
         timeExpires: expiresAt,
-      });
+      };
+      // Any*-scope PARs require bucketListingAction per OCI API.
+      if (accessType.startsWith("Any")) {
+        parBody.bucketListingAction = bucketListingAction;
+      }
+      const payload = JSON.stringify(parBody);
       const r = await ociFetch({
         method: "POST",
         host,
@@ -287,9 +296,24 @@ Deno.serve(async (req) => {
       });
       const text = await r.text();
       if (!r.ok) {
-        return new Response(JSON.stringify({ ok: false, status: r.status, error: text }), {
-          status: 200, headers: cors,
-        });
+        // Surface OCI's structured error code (BucketNotFound / NotAuthorized /
+        // …) so the client can render an actionable message.
+        let ociCode: string | undefined;
+        let ociMessage: string | undefined;
+        try {
+          const parsed = JSON.parse(text);
+          ociCode = parsed?.code;
+          ociMessage = parsed?.message;
+        } catch { /* ignore */ }
+        return new Response(JSON.stringify({
+          ok: false,
+          status: r.status,
+          error: ociMessage || text || r.statusText,
+          code: ociCode,
+          bucket,
+          namespace: ns,
+          region,
+        }), { status: 200, headers: cors });
       }
       const data = JSON.parse(text);
       const fullUrl = `https://${host}${data.accessUri ?? ""}`;

@@ -31,6 +31,7 @@ import ManualInvoicesList from "@/components/billing/ManualInvoicesList";
 import HardDiskIntakeDialog from "@/components/studio/HardDiskIntakeDialog";
 import StudioIngest from "@/components/studio/ingest/StudioIngest";
 import StudioQuickActions from "@/components/studio/StudioQuickActions";
+import CameraToCloudLinkCard from "@/components/studio/CameraToCloudLinkCard";
 import StudioPlanStrip from "@/components/studio/StudioPlanStrip";
 import ProductionHero from "@/components/studio/ProductionHero";
 import IngestMediaDialog, { runIngestValidation } from "@/components/studio/IngestMediaDialog";
@@ -249,6 +250,9 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
         onOpenBilling={onGoBilling}
         onOpenLibrary={onGoVault}
       />
+
+      {/* Camera-to-Cloud secure link (multi-tenant, prefix-scoped) */}
+      <CameraToCloudLinkCard />
 
       {/* Status card */}
       <section className="rounded-2xl border border-border/50 bg-secondary/10 p-6">

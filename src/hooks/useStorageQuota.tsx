@@ -114,7 +114,9 @@ export function StorageQuotaProvider({ children }: { children: React.ReactNode }
   const hardPct = Number(ent?.hard_stop_threshold_pct ?? 100);
   const warning = percent >= warnPct && percent < urgentPct;
   const urgent = percent >= urgentPct && percent < hardPct;
-  const locked = percent >= hardPct;
+  const known = !loading && ent !== null;
+  // When quota is unknown (loading or RPC failed), never hard-block uploads.
+  const locked = known && percent >= hardPct;
   const isBasic = planCode === "creator_basic" && paidGb <= 0 && testingOverrideGb <= 0;
   const isCreator = !isBasic;
 
@@ -124,6 +126,7 @@ export function StorageQuotaProvider({ children }: { children: React.ReactNode }
     if (locked) { setOpen(true); return false; }
     return true;
   }, [locked]);
+
 
   const upgrade = useCallback(async () => {
     if (!user) { toast.error("Sign in to upgrade"); return; }

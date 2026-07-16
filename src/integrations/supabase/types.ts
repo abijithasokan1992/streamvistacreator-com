@@ -1919,15 +1919,18 @@ export type Database = {
           id: string
           kind: Database["public"]["Enums"]["title_kind"]
           language: string | null
+          legal_clearance: string
           locked: boolean
           locked_at: string | null
           locked_by: string | null
+          master_rule_enforced: boolean
           metadata: Json
           owner_user_id: string
           parent_title_id: string | null
           previous_status: Database["public"]["Enums"]["content_status"] | null
           published_at: string | null
           published_by: string | null
+          qc_status: string
           requested_from_stage: string | null
           season_number: number | null
           sort_order: number
@@ -1949,15 +1952,18 @@ export type Database = {
           id?: string
           kind?: Database["public"]["Enums"]["title_kind"]
           language?: string | null
+          legal_clearance?: string
           locked?: boolean
           locked_at?: string | null
           locked_by?: string | null
+          master_rule_enforced?: boolean
           metadata?: Json
           owner_user_id: string
           parent_title_id?: string | null
           previous_status?: Database["public"]["Enums"]["content_status"] | null
           published_at?: string | null
           published_by?: string | null
+          qc_status?: string
           requested_from_stage?: string | null
           season_number?: number | null
           sort_order?: number
@@ -1979,15 +1985,18 @@ export type Database = {
           id?: string
           kind?: Database["public"]["Enums"]["title_kind"]
           language?: string | null
+          legal_clearance?: string
           locked?: boolean
           locked_at?: string | null
           locked_by?: string | null
+          master_rule_enforced?: boolean
           metadata?: Json
           owner_user_id?: string
           parent_title_id?: string | null
           previous_status?: Database["public"]["Enums"]["content_status"] | null
           published_at?: string | null
           published_by?: string | null
+          qc_status?: string
           requested_from_stage?: string | null
           season_number?: number | null
           sort_order?: number

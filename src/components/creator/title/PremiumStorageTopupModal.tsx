@@ -1,5 +1,5 @@
-import { useCallback, useState } from "react";
-import { HardDrive, Sparkles, Loader2, CheckCircle2 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { HardDrive, Sparkles, Loader2, CheckCircle2, AlertTriangle, ArrowUpRight } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,6 +12,31 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+
+/** Subtle, non-intrusive two-tone system alert (WebAudio, no asset needed). */
+function playSubtleAlert() {
+  try {
+    const AC: typeof AudioContext =
+      (window as any).AudioContext || (window as any).webkitAudioContext;
+    if (!AC) return;
+    const ctx = new AC();
+    const play = (freq: number, at: number, dur: number) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "sine";
+      o.frequency.setValueAtTime(freq, ctx.currentTime + at);
+      g.gain.setValueAtTime(0.0001, ctx.currentTime + at);
+      g.gain.exponentialRampToValueAtTime(0.12, ctx.currentTime + at + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + at + dur);
+      o.connect(g).connect(ctx.destination);
+      o.start(ctx.currentTime + at);
+      o.stop(ctx.currentTime + at + dur + 0.02);
+    };
+    play(880, 0, 0.18);
+    play(1174, 0.14, 0.22);
+    setTimeout(() => { try { ctx.close(); } catch {} }, 800);
+  } catch {/* silent */}
+}
 
 /**
  * PremiumStorageTopupModal
@@ -65,13 +90,25 @@ export function PremiumStorageTopupModal({
   open,
   onOpenChange,
   onSuccess,
+  reason,
+  playAlert = true,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onSuccess?: () => void;
+  /** Contextual reason (e.g. "This 38.75 GB upload exceeds your remaining 4.2 GB."). */
+  reason?: string;
+  /** Play a subtle alert chime when the modal opens (default true). */
+  playAlert?: boolean;
 }) {
   const { user } = useAuth();
   const [pendingId, setPendingId] = useState<Tier["id"] | null>(null);
+
+  useEffect(() => {
+    if (open && playAlert) playSubtleAlert();
+  }, [open, playAlert]);
+
+
 
   const startCheckout = useCallback(
     async (tier: Tier) => {
@@ -146,6 +183,20 @@ export function PremiumStorageTopupModal({
             Add cinema-grade storage to your workspace. All top-ups activate instantly after payment.
           </DialogDescription>
         </DialogHeader>
+
+        {reason && (
+          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 flex items-start gap-3 text-sm">
+            <AlertTriangle className="w-5 h-5 shrink-0 text-amber-300 mt-0.5" />
+            <div className="min-w-0">
+              <div className="font-semibold text-amber-100">Not enough storage for this upload</div>
+              <p className="text-amber-100/80 mt-0.5">{reason}</p>
+              <p className="text-amber-100/70 mt-1 text-xs">
+                Pick a top-up below — checkout takes seconds and your upload resumes right after.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="grid gap-3 sm:grid-cols-3">
           {TIERS.map((t) => {
             const isPending = pendingId === t.id;
@@ -160,7 +211,7 @@ export function PremiumStorageTopupModal({
                   "hover:border-accent hover:bg-accent/5",
                   "disabled:opacity-60 disabled:cursor-not-allowed",
                   t.highlight
-                    ? "border-accent/60 bg-accent/10"
+                    ? "border-accent/60 bg-accent/10 ring-1 ring-accent/40"
                     : "border-border/60 bg-background/40",
                 )}
               >
@@ -181,8 +232,20 @@ export function PremiumStorageTopupModal({
                   {isPending ? (
                     <Loader2 className="w-4 h-4 animate-spin text-accent" />
                   ) : (
-                    <CheckCircle2 className="w-4 h-4 text-accent/60" />
+                    <ArrowUpRight className="w-4 h-4 text-accent" />
                   )}
+                </div>
+                <div className="pt-2">
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold w-full justify-center",
+                      t.highlight
+                        ? "bg-accent text-accent-foreground"
+                        : "border border-accent/40 text-accent",
+                    )}
+                  >
+                    {isPending ? "Opening Razorpay…" : "Upgrade & Continue Upload via Razorpay"}
+                  </span>
                 </div>
               </button>
             );
@@ -190,7 +253,7 @@ export function PremiumStorageTopupModal({
         </div>
         <p className="text-[11px] text-muted-foreground pt-2">
           Payments are processed by Razorpay. Prices include 18% GST. You will receive a
-          GST invoice by email after activation.
+          GST invoice by email after activation. Your staged upload stays queued during checkout.
         </p>
       </DialogContent>
     </Dialog>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { HardDrive, Sparkles, Loader2, CheckCircle2, AlertTriangle, ArrowUpRight, QrCode, Upload, ChevronDown } from "lucide-react";
+import { Sparkles, Loader2, CheckCircle2, AlertTriangle, ArrowUpRight, QrCode, Upload, ChevronDown, Check } from "lucide-react";
 import paymentQrImage from "@/assets/payment-qr.png";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -38,53 +38,19 @@ function playSubtleAlert() {
   } catch {/* silent */}
 }
 
-/**
- * PremiumStorageTopupModal
- *
- * Creator-facing modal that surfaces the three canonical storage top-up tiers
- * and routes each to the existing Razorpay flow (`create-storage-topup` →
- * Razorpay Checkout → `verify-storage-topup`). Kept intentionally
- * presentation-only — pricing is derived from the canonical per-TB price on
- * the server, so the labels here are indicative only.
- */
-
-type Tier = {
-  id: "gb100" | "gb500" | "tb1";
-  label: string;
-  headline: string;
-  blurb: string;
-  approxInr: string;
-  payload: { gb: 100 } | { gb: 500 } | { tb: 1 };
-  highlight?: boolean;
+const PACKAGE = {
+  id: "master_1tb",
+  name: "1 TB Master Ingest & Distribution License",
+  price: "₹9,999 / $129",
+  priceNote: "One-Time Setup",
+  payload: { tb: 1 },
+  manifest: [
+    "1 TB Dedicated High-Speed Obsidian Cloud Ingest",
+    "Automated Chain-of-Title & QC Verification Flow",
+    "Secure Master Escrow Delivery to Verified Buyers (Sun Nxt, Jio, ZEE5, Amazon Prime)",
+    "Non-Sublicensable Rights Compliance Guardrails",
+  ],
 };
-
-const TIERS: Tier[] = [
-  {
-    id: "gb100",
-    label: "+100 GB",
-    headline: "Rush add-on",
-    blurb: "Best for a single 4K feature or a short slate of trailers.",
-    approxInr: "≈ ₹75",
-    payload: { gb: 100 },
-  },
-  {
-    id: "gb500",
-    label: "+500 GB",
-    headline: "Project pack",
-    blurb: "Comfort headroom for stems, VFX plates and cut variants.",
-    approxInr: "≈ ₹375",
-    payload: { gb: 500 },
-  },
-  {
-    id: "tb1",
-    label: "+1 TB Production Vault",
-    headline: "Studio vault",
-    blurb: "Cinema-grade block for masters, dailies and long-form ingest.",
-    approxInr: "₹767 incl. GST",
-    payload: { tb: 1 },
-    highlight: true,
-  },
-];
 
 export function PremiumStorageTopupModal({
   open,
@@ -102,7 +68,6 @@ export function PremiumStorageTopupModal({
   playAlert?: boolean;
 }) {
   const { user } = useAuth();
-  const [pendingId, setPendingId] = useState<Tier["id"] | null>(null);
   const [qrOpen, setQrOpen] = useState(false);
   const [proofFile, setProofFile] = useState<File | null>(null);
   const proofInputRef = useRef<HTMLInputElement | null>(null);
@@ -142,50 +107,41 @@ export function PremiumStorageTopupModal({
     }
   }, [proofFile, isBusy, submit]);
 
-  const startCheckout = useCallback(
-    async (tier: Tier) => {
-      if (!user) {
-        toast.error("Sign in to purchase additional storage.");
-        return;
-      }
-      if (isBusy) return;
-      setPendingId(tier.id);
-      // Delegates to the global helper: session refresh, metadata forwarding
-      // and verify handshake all live in a single canonical implementation.
-      const { initializeCheckout } = await import("@/lib/payments/initializeCheckout");
-      try {
-        await submit(
-          () =>
-            new Promise<void>((resolve, reject) => {
-              initializeCheckout({
-                purpose: "storage_topup",
-                payload: tier.payload,
-                label: `Storage · ${tier.label}`,
-                description: `${tier.label} — ${tier.headline}`,
-                prefill: { email: user.email ?? undefined },
-                metadata: {
-                  user_id: user.id,
-                  payment_purpose: "storage_topup",
-                  tier: tier.id,
-                },
-                onSuccess: () => {
-                  toast.success(`${tier.label} activated — storage unlocked.`);
-                  resolve();
-                },
-                onDismiss: () => reject(new Error("dismissed")),
-                onError: (e) => reject(e),
-              }).catch(reject);
-            }),
-        );
-      } catch {
-        /* lifecycle hook has already flipped to error/idle; nothing to do */
-      } finally {
-        setPendingId(null);
-      }
-    },
-    [user, isBusy, submit],
-  );
-
+  const startCheckout = useCallback(async () => {
+    if (!user) {
+      toast.error("Sign in to purchase the premium package.");
+      return;
+    }
+    if (isBusy) return;
+    const { initializeCheckout } = await import("@/lib/payments/initializeCheckout");
+    try {
+      await submit(
+        () =>
+          new Promise<void>((resolve, reject) => {
+            initializeCheckout({
+              purpose: "storage_topup",
+              payload: PACKAGE.payload,
+              label: PACKAGE.name,
+              description: PACKAGE.name,
+              prefill: { email: user.email ?? undefined },
+              metadata: {
+                user_id: user.id,
+                payment_purpose: "storage_topup",
+                tier: PACKAGE.id,
+              },
+              onSuccess: () => {
+                toast.success("Premium package activated — storage unlocked.");
+                resolve();
+              },
+              onDismiss: () => reject(new Error("dismissed")),
+              onError: (e) => reject(e),
+            }).catch(reject);
+          }),
+      );
+    } catch {
+      /* lifecycle hook has already flipped to error/idle; nothing to do */
+    }
+  }, [user, isBusy, submit]);
 
   const showSuccess = phase === "success";
 
@@ -202,10 +158,10 @@ export function PremiumStorageTopupModal({
       <DialogContent className="max-w-2xl border-accent/40 bg-gradient-to-br from-background via-background to-primary/10">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg">
-            <Sparkles className="w-5 h-5 text-accent" /> Premium Storage Top-up
+            <Sparkles className="w-5 h-5 text-accent" /> Premium Master Distribution Package
           </DialogTitle>
           <DialogDescription>
-            Add cinema-grade storage to your workspace. All top-ups activate instantly after payment.
+            Unlock the complete 1 TB premium rights-verification workflow with a single payment.
           </DialogDescription>
         </DialogHeader>
 
@@ -213,7 +169,7 @@ export function PremiumStorageTopupModal({
           <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 flex items-center gap-3 text-sm">
             <CheckCircle2 className="w-5 h-5 text-emerald-300" />
             <div className="min-w-0">
-              <div className="font-semibold text-emerald-100">Payment verified · storage activated</div>
+              <div className="font-semibold text-emerald-100">Payment verified · package activated</div>
               <p className="text-emerald-100/80 text-xs">Closing top-up sheet…</p>
             </div>
           </div>
@@ -226,68 +182,62 @@ export function PremiumStorageTopupModal({
               <div className="font-semibold text-amber-100">Not enough storage for this upload</div>
               <p className="text-amber-100/80 mt-0.5">{reason}</p>
               <p className="text-amber-100/70 mt-1 text-xs">
-                Pick a top-up below — checkout takes seconds and your upload resumes right after.
+                Upgrade below — checkout takes seconds and your upload resumes right after.
               </p>
             </div>
           </div>
         )}
 
-        <div className="grid gap-3 sm:grid-cols-3">
-          {TIERS.map((t) => {
-            const isPending = pendingId === t.id;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => startCheckout(t)}
-                disabled={pendingId !== null || isBusy}
-                className={cn(
-                  "text-left rounded-xl border p-4 space-y-2 transition",
-                  "hover:border-accent hover:bg-accent/5",
-                  "disabled:opacity-60 disabled:cursor-not-allowed",
-                  t.highlight
-                    ? "border-accent/60 bg-accent/10 ring-1 ring-accent/40"
-                    : "border-border/60 bg-background/40",
-                )}
+        {/* Single premium package card */}
+        <div className="rounded-xl border border-accent/60 bg-accent/10 ring-1 ring-accent/40 p-5 space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <h3 className="font-semibold text-base">{PACKAGE.name}</h3>
+              <p className="text-sm text-muted-foreground">One license per title — lifetime master distribution enablement.</p>
+            </div>
+            <div className="text-right shrink-0">
+              <div className="text-lg font-bold text-accent">{PACKAGE.price}</div>
+              <div className="text-xs text-muted-foreground">{PACKAGE.priceNote}</div>
+            </div>
+          </div>
+
+          <ul className="space-y-2">
+            {PACKAGE.manifest.map((item, i) => (
+              <li
+                key={i}
+                className="flex items-start gap-2 text-sm"
               >
-                <div className="flex items-center justify-between">
-                  <span className="inline-flex items-center gap-1.5 font-semibold text-sm">
-                    <HardDrive className="w-4 h-4" /> {t.label}
-                  </span>
-                  {t.highlight && (
-                    <span className="text-[10px] uppercase tracking-wide text-accent">
-                      Recommended
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">{t.headline}</p>
-                <p className="text-sm">{t.blurb}</p>
-                <div className="flex items-center justify-between pt-1">
-                  <span className="text-sm font-medium">{t.approxInr}</span>
-                  {isPending ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-accent" />
-                  ) : (
-                    <ArrowUpRight className="w-4 h-4 text-accent" />
-                  )}
-                </div>
-                <div className="pt-2">
-                  <span
-                    className={cn(
-                      "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold w-full justify-center",
-                      t.highlight
-                        ? "bg-accent text-accent-foreground"
-                        : "border border-accent/40 text-accent",
-                    )}
-                  >
-                    {isPending ? "Opening Razorpay…" : "Upgrade & Continue Upload via Razorpay"}
-                  </span>
-                </div>
-              </button>
-            );
-          })}
+                <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+
+          <button
+            type="button"
+            onClick={startCheckout}
+            disabled={isBusy}
+            className={cn(
+              "w-full inline-flex items-center justify-center gap-2 rounded-md px-4 py-3 text-sm font-semibold",
+              "bg-accent text-accent-foreground hover:bg-accent/90",
+              "disabled:opacity-60 disabled:cursor-not-allowed",
+            )}
+          >
+            {phase === "submitting" ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Opening Razorpay…
+              </>
+            ) : (
+              <>
+                Upgrade & Continue via Razorpay
+                <ArrowUpRight className="w-4 h-4" />
+              </>
+            )}
+          </button>
         </div>
 
-        {/* Tactical UPI QR fallback — for users who prefer instant UPI transfer */}
+        {/* UPI QR fallback hub */}
         <div className="rounded-xl border border-border/60 bg-background/40 mt-1">
           <button
             type="button"
@@ -327,7 +277,7 @@ export function PremiumStorageTopupModal({
                   </p>
                   <p className="text-xs text-muted-foreground">
                     After completing the UPI transfer, upload your payment screenshot
-                    below so our ops team can verify and unlock the top-up on your
+                    below so our ops team can verify and unlock the package on your
                     workspace.
                   </p>
                 </div>

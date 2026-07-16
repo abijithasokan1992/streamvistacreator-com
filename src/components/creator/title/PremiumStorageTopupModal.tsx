@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
-import { HardDrive, Sparkles, Loader2, CheckCircle2, AlertTriangle, ArrowUpRight } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { HardDrive, Sparkles, Loader2, CheckCircle2, AlertTriangle, ArrowUpRight, QrCode, Upload, ChevronDown } from "lucide-react";
+import paymentQrImage from "@/assets/payment-qr.png";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useModalSubmissionLifecycle } from "@/hooks/useModalSubmissionLifecycle";

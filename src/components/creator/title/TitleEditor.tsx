@@ -901,16 +901,43 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-/** Visual grouping wrapper for the six-category Media & Assets layout. */
-function AssetGroup({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+/**
+ * Collapsible visual grouping wrapper for the six-category Media & Assets
+ * layout. Progressive disclosure — only the first group (Artwork) is open by
+ * default; the rest collapse into premium expandable headers showing a live
+ * status badge (Empty / Uploaded N).
+ */
+function AssetGroup({
+  title, hint, children, defaultOpen = false, assetCount = 0, locked = false,
+}: {
+  title: string; hint?: string; children: React.ReactNode;
+  defaultOpen?: boolean; assetCount?: number; locked?: boolean;
+}) {
+  const status =
+    assetCount > 0
+      ? { label: `✓ ${assetCount} uploaded`, cls: "bg-emerald-500/10 text-emerald-300 border-emerald-500/30" }
+      : locked
+        ? { label: "Locked", cls: "bg-zinc-500/10 text-zinc-300 border-zinc-500/30" }
+        : { label: "Empty", cls: "bg-secondary/40 text-muted-foreground border-border/50" };
   return (
-    <section className="rounded-lg border border-border/40 bg-card/20 p-4">
-      <header className="mb-3">
-        <h3 className="text-sm font-semibold">{title}</h3>
-        {hint && <p className="text-xs text-muted-foreground mt-1">{hint}</p>}
-      </header>
-      <div className="space-y-6">{children}</div>
-    </section>
+    <details
+      open={defaultOpen}
+      className="group rounded-lg border border-border/40 bg-card/20 [&[open]>summary_svg.chev]:rotate-180"
+    >
+      <summary className="flex items-center gap-3 px-4 py-3 cursor-pointer select-none list-none hover:bg-card/40 transition-colors rounded-lg">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold">{title}</h3>
+            <span className={cn("inline-flex items-center text-[10px] uppercase tracking-wider border rounded-full px-2 py-0.5", status.cls)}>
+              {status.label}
+            </span>
+          </div>
+          {hint && <p className="text-xs text-muted-foreground mt-1 truncate">{hint}</p>}
+        </div>
+        <ChevronDown className="chev w-4 h-4 text-muted-foreground shrink-0 transition-transform" />
+      </summary>
+      <div className="px-4 pb-4 pt-1 space-y-6 border-t border-border/30">{children}</div>
+    </details>
   );
 }
 

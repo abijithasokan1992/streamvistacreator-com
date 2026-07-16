@@ -250,6 +250,9 @@ function StudioHome({ rows, loading, onGoBuy, onGoVault, onGoBilling, onPurchase
         onOpenLibrary={onGoVault}
       />
 
+      {/* Camera-to-Cloud secure link (multi-tenant, prefix-scoped) */}
+      <CameraToCloudLinkCard />
+
       {/* Status card */}
       <section className="rounded-2xl border border-border/50 bg-secondary/10 p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">

@@ -15,6 +15,7 @@ import {
 import { AssetUploader, AssetList } from "./AssetUploader";
 import { StatusBadge } from "./StatusBadge";
 import { RightsAvailabilityPanel } from "./RightsAvailabilityPanel";
+import { BusinessIntelligencePanel } from "./BusinessIntelligencePanel";
 import { FreeSubmissionTermsModal } from "./FreeSubmissionTermsModal";
 import RequestEditButton from "@/components/creator/RequestEditButton";
 import { useTitleLock } from "@/hooks/useTitleLock";
@@ -579,6 +580,7 @@ export function TitleEditor({
                 {tab === "rights" && (
                   <div className="space-y-8">
                     <RightsAvailabilityPanel meta={meta} setMeta={setMeta} readOnly={metadataLocked} isFree={isFree} />
+                    <BusinessIntelligencePanel meta={meta} setMeta={setMeta} readOnly={metadataLocked} />
                     <CreatorDistributionStatus titleId={title.id} titleStatus={title.status} />
                     {title.workspace_id && (
                       <AILicensingPanel

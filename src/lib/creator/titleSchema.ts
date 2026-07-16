@@ -94,6 +94,10 @@ export const TitleMetadataSchema = z.object({
       "none", "available", "sold", "blocked", "discuss",
     ])).default({ worldwide: "available" }),
     notes: z.string().max(2000).default(""),
+    // BI extension — Rights & Business intelligence fields.
+    rights_expiry_date: z.string().trim().max(40).default(""),
+    sublicensable_status: z.enum(["yes", "no", "negotiable", "unspecified"]).default("unspecified"),
+    target_audience: z.string().trim().max(400).default(""),
   }).default({
     engagement_mode: "free_listing",
     exclusivity: "non_exclusive",
@@ -103,10 +107,40 @@ export const TitleMetadataSchema = z.object({
     rights: { digital_ott: "available", satellite: "available", youtube_avod: "available" },
     territories: { worldwide: "available" },
     notes: "",
+    rights_expiry_date: "",
+    sublicensable_status: "unspecified",
+    target_audience: "",
   }),
+  // BI extension — Performance / market-potential signals for the admin BI dashboard.
+  performance: z.object({
+    roi_estimate: z.enum(["low", "medium", "high", "very_high", "unspecified"]).default("unspecified"),
+    platform_affinity_tags: z.array(z.string().trim().max(60)).default([]),
+  }).default({ roi_estimate: "unspecified", platform_affinity_tags: [] }),
   tags: z.array(z.string().trim().max(60)).default([]),
   notes: z.string().max(5000).default(""),
 });
+
+export const ROI_ESTIMATE_OPTIONS = ["unspecified", "low", "medium", "high", "very_high"] as const;
+export type RoiEstimate = (typeof ROI_ESTIMATE_OPTIONS)[number];
+export const ROI_ESTIMATE_LABEL: Record<RoiEstimate, string> = {
+  unspecified: "Not set",
+  low: "Low",
+  medium: "Medium",
+  high: "High",
+  very_high: "Very High",
+};
+export const ROI_ESTIMATE_RANK: Record<RoiEstimate, number> = {
+  unspecified: 0, low: 1, medium: 2, high: 3, very_high: 4,
+};
+
+export const SUBLICENSABLE_OPTIONS = ["unspecified", "yes", "no", "negotiable"] as const;
+export type SublicensableStatus = (typeof SUBLICENSABLE_OPTIONS)[number];
+export const SUBLICENSABLE_LABEL: Record<SublicensableStatus, string> = {
+  unspecified: "Not set",
+  yes: "Sublicensable",
+  no: "Not sublicensable",
+  negotiable: "Negotiable",
+};
 
 export type TitleMetadata = z.infer<typeof TitleMetadataSchema>;
 

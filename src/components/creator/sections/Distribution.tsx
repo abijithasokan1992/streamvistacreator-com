@@ -76,6 +76,19 @@ export default function DistributionSection() {
 
       {loading ? (
         <div className="py-12 grid place-items-center"><Loader2 className="w-5 h-5 animate-spin text-accent" /></div>
+      ) : error ? (
+        <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-6 text-center">
+          <AlertCircle className="w-6 h-6 text-red-400 mx-auto mb-2" aria-hidden />
+          <p className="text-sm font-medium">Couldn't load distribution status</p>
+          <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">{error}</p>
+          <button
+            type="button"
+            onClick={() => void reload()}
+            className="mt-3 inline-flex items-center gap-1.5 text-xs text-accent hover:underline"
+          >
+            <RefreshCw className="w-3 h-3" aria-hidden /> Retry
+          </button>
+        </div>
       ) : rows.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border/50 bg-secondary/10 p-8 text-center text-sm text-muted-foreground">
           No distribution activity yet. Once your title is approved and Operations dispatches to partners, deliveries appear here.

@@ -339,5 +339,13 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     },
   );
+  } catch (e) {
+    console.error("[retry-failed-emails] unhandled error", e);
+    return new Response(
+      JSON.stringify({ ok: false, error: e instanceof Error ? e.message : String(e), handled: true }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
 });
+
 

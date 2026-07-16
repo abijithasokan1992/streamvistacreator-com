@@ -434,6 +434,13 @@ function buildDepartments(args: {
         { id: "approvals", label: "Content Review", hint: "Title QC & legal review", content: (
           <ContentReviewWorkflow initialTab={args.reviewInitialTab} />
         )},
+        { id: "titles-catalog", label: "Titles Catalog", hint: "All titles, assets and metadata", content: <GlobalAssetManager /> },
+        { id: "qc-queue", label: "QC Queue", hint: "Titles awaiting QC review", content: (
+          <ContentReviewWorkflow initialTab="qc_review" />
+        )},
+        { id: "legal-queue", label: "Legal Queue", hint: "Titles awaiting legal review", content: (
+          <ContentReviewWorkflow initialTab="legal_review" />
+        )},
         { id: "pipeline", label: "Pipeline", hint: "Title edits & QC flow", content: <TitleEditRequestsInbox /> },
         { id: "catalog-ops", label: "Catalog & Assets", hint: "Global assets", content: <GlobalAssetManager /> },
       ],

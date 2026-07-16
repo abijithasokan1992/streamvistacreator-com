@@ -1071,17 +1071,33 @@ function PosterGrid({
     { label: "Banner", hint: "Horizontal hero art" },
     { label: "Square", hint: "Tile / thumbnail" },
   ];
+  return <PosterGridInner titleId={titleId} assets={assets} locked={locked} onUploaded={onUploaded} primary={primary} fileName={fileName} fileSizeMb={fileSizeMb} />;
+}
+
+function PosterGridInner({
+  titleId, assets, locked, onUploaded, primary, fileName, fileSizeMb,
+}: {
+  titleId: string; assets: TitleAsset[]; locked: boolean; onUploaded: () => void;
+  primary: TitleAsset | undefined; fileName: string | null; fileSizeMb: string | null;
+}) {
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const advancedVariants = [
+    { label: "Alt poster", hint: "Secondary key art for A/B testing" },
+    { label: "Banner", hint: "16:9 horizontal hero art" },
+    { label: "Tile", hint: "Streaming platform tile" },
+    { label: "Square", hint: "1:1 social / thumbnail" },
+  ];
   return (
     <section>
       <div className="flex items-baseline justify-between">
-        <h3 className="text-sm font-semibold">Poster</h3>
-        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">4 artwork slots</span>
+        <h3 className="text-sm font-semibold">Primary Poster</h3>
+        <span className="text-[10px] uppercase tracking-wider text-accent">Required</span>
       </div>
       <p className="text-xs text-muted-foreground mt-1">
-        Primary poster lives in slot 1. Additional artwork slots are reserved for upcoming variants.
+        One active primary poster is required for submission. Additional artwork variants are optional.
       </p>
-      <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3">
-        {/* Slot 1 — live primary poster */}
+
+      <div className="mt-3 max-w-[220px]">
         <div className="rounded-lg border border-border/60 bg-card/40 p-2 flex flex-col">
           <div className="aspect-[2/3] rounded-md border border-border/40 bg-secondary/10 overflow-hidden grid place-items-center text-[10px] text-muted-foreground">
             {fileName ? (
@@ -1099,21 +1115,8 @@ function PosterGrid({
           </div>
           <div className="mt-2 text-[10px] uppercase tracking-wider text-accent">Primary</div>
         </div>
-        {/* Slots 2-4 — visual placeholders */}
-        {placeholders.map((p) => (
-          <div key={p.label} className="rounded-lg border border-dashed border-border/50 bg-background/30 p-2 flex flex-col opacity-70">
-            <div className="aspect-[2/3] rounded-md border border-border/30 bg-secondary/5 grid place-items-center text-center px-2">
-              <div>
-                <ImageIcon className="w-5 h-5 mx-auto text-muted-foreground/60" />
-                <div className="mt-1 text-[10px] text-muted-foreground">{p.hint}</div>
-              </div>
-            </div>
-            <div className="mt-2 text-[10px] uppercase tracking-wider text-muted-foreground inline-flex items-center gap-1">
-              <Lock className="w-2.5 h-2.5" /> {p.label}
-            </div>
-          </div>
-        ))}
       </div>
+
       <div className="mt-4">
         <AssetUploader
           titleId={titleId}
@@ -1121,9 +1124,54 @@ function PosterGrid({
           locked={locked}
           accept="image/*"
           label="Upload primary poster"
+          singleSlot
+          existingActiveCount={primary ? 1 : 0}
           onUploaded={onUploaded}
         />
         <AssetList assets={assets} />
+      </div>
+
+      {/* Advanced Artwork Assets — collapsed by default to reduce clutter */}
+      <div className="mt-5 rounded-lg border border-border/40 bg-background/30">
+        <button
+          type="button"
+          onClick={() => setAdvancedOpen((v) => !v)}
+          className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-accent/5 transition"
+          aria-expanded={advancedOpen}
+        >
+          <div className="min-w-0">
+            <div className="text-sm font-semibold flex items-center gap-2">
+              Advanced Artwork Assets
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Optional</span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Alt poster, banner, tile and square variants for distribution partners.
+            </p>
+          </div>
+          <ChevronDown className={cn("w-4 h-4 shrink-0 transition-transform", advancedOpen && "rotate-180")} />
+        </button>
+        {advancedOpen && (
+          <div className="px-4 pb-4 pt-1 border-t border-border/40">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+              {advancedVariants.map((p) => (
+                <div key={p.label} className="rounded-lg border border-dashed border-border/50 bg-background/40 p-2 flex flex-col">
+                  <div className="aspect-[2/3] rounded-md border border-border/30 bg-secondary/5 grid place-items-center text-center px-2">
+                    <div>
+                      <ImageIcon className="w-5 h-5 mx-auto text-muted-foreground/60" />
+                      <div className="mt-1 text-[10px] text-muted-foreground">{p.hint}</div>
+                    </div>
+                  </div>
+                  <div className="mt-2 text-[10px] uppercase tracking-wider text-muted-foreground inline-flex items-center gap-1">
+                    <Lock className="w-2.5 h-2.5" /> {p.label}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-3">
+              Additional variant slots activate once your title is accepted for distribution — no action needed today.
+            </p>
+          </div>
+        )}
       </div>
     </section>
   );

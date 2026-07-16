@@ -298,10 +298,11 @@ export function AwardsImportDialog({ open, onOpenChange, onImport }: AwardsImpor
                           </tr>
                         );
                       }
+                      const bad = v as Extract<ValidatedRow, { ok: false }>;
                       return (
-                        <tr key={v.index} className="border-t border-border/40 bg-destructive/5">
-                          <td className="px-2 py-1.5 text-muted-foreground">{v.index + 1}</td>
-                          <td colSpan={5} className="px-2 py-1.5 text-destructive">{v.error}</td>
+                        <tr key={bad.index} className="border-t border-border/40 bg-destructive/5">
+                          <td className="px-2 py-1.5 text-muted-foreground">{bad.index + 1}</td>
+                          <td colSpan={5} className="px-2 py-1.5 text-destructive">{bad.error}</td>
                           <td className="px-2 py-1.5 text-destructive"><X className="w-3 h-3 inline" /></td>
                         </tr>
                       );

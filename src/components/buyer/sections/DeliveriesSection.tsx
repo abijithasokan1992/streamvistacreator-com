@@ -97,6 +97,19 @@ export default function DeliveriesSection() {
         <div className="py-12 grid place-items-center" role="status" aria-label="Loading deliveries">
           <Loader2 className="w-5 h-5 animate-spin text-accent" aria-hidden />
         </div>
+      ) : error ? (
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/5 p-6 text-center">
+          <AlertCircle className="w-6 h-6 text-red-400 mx-auto mb-2" aria-hidden />
+          <p className="text-sm font-medium">Couldn't load deliveries</p>
+          <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">{error}</p>
+          <button
+            type="button"
+            onClick={() => setTick(v => v + 1)}
+            className="mt-3 inline-flex items-center gap-1.5 text-xs text-accent hover:underline"
+          >
+            <RefreshCw className="w-3 h-3" aria-hidden /> Retry
+          </button>
+        </div>
       ) : list.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border/60 bg-secondary/10 p-10 text-center">
           <Package className="w-8 h-8 mx-auto text-muted-foreground mb-2" aria-hidden />

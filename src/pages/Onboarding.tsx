@@ -135,7 +135,8 @@ export default function Onboarding() {
     } catch {}
 
     toast.success("Welcome to StreamVista.", { duration: 4000 });
-    navigate(dashboardForRole(role ?? "client"), { replace: true });
+    const target = await resolveLandingRoute(user.id);
+    navigate(target, { replace: true });
   };
 
   const skipToDashboard = async () => {

@@ -15,6 +15,7 @@ const MAX_AUTO_RETRIES = 3;
 const QUEUES = ["auth_emails", "transactional_emails"] as const;
 
 Deno.serve(async (req) => {
+  try {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   const cronSecret = Deno.env.get("CRON_SECRET");

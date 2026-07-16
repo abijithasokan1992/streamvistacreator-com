@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
         currency: "INR",
         receipt: `topup_${row.id.slice(0, 28)}`,
         payment_capture: 1,
-        notes: { topup_id: row.id, user_id: uid, tb: String(tb) },
+        notes: { topup_id: row.id, user_id: uid, tb: String(tb), gb: useGb ? String(rawGb) : "" },
       }),
     });
     const order = await rzpRes.json();

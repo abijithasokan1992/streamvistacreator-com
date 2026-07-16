@@ -282,7 +282,13 @@ function OnboardingPanel() {
         )}
       </CardContent>
 
-      <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
+      <Dialog
+        open={!!selected}
+        onOpenChange={(o) => {
+          if (!o && isBusy) return; // block dismiss while committing / during success hold
+          if (!o) { setSelected(null); setNotes(""); setLastDecision(null); }
+        }}
+      >
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{selected?.client_name}</DialogTitle>
@@ -302,16 +308,24 @@ function OnboardingPanel() {
               </div>
               <div className="space-y-2">
                 <label className="text-xs uppercase tracking-wide text-muted-foreground">Reviewer notes</label>
-                <Textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional — captured in the audit log." />
+                <Textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional — captured in the audit log." disabled={isBusy} />
               </div>
+              {phase === "success" && (
+                <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 flex items-center gap-2 text-emerald-100 text-xs">
+                  <CheckCircle2 className="w-4 h-4" />
+                  Request {lastDecision} · closing review…
+                </div>
+              )}
             </div>
           )}
           <DialogFooter>
-            <Button variant="destructive" onClick={() => decide("rejected")} disabled={submitting}>
-              <XCircle className="w-4 h-4 mr-1" /> Reject
+            <Button variant="destructive" onClick={() => decide("rejected")} disabled={isBusy}>
+              {isBusy && lastDecision === "rejected" ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <XCircle className="w-4 h-4 mr-1" />}
+              Reject
             </Button>
-            <Button onClick={() => decide("approved")} disabled={submitting}>
-              <CheckCircle2 className="w-4 h-4 mr-1" /> Approve
+            <Button onClick={() => decide("approved")} disabled={isBusy}>
+              {isBusy && lastDecision === "approved" ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <CheckCircle2 className="w-4 h-4 mr-1" />}
+              Approve
             </Button>
           </DialogFooter>
         </DialogContent>

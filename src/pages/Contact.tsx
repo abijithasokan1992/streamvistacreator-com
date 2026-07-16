@@ -121,9 +121,10 @@ export default function Contact() {
         message: parsed.data.message,
         user_id: user?.id ?? null,
         user_agent: navigator.userAgent.slice(0, 500),
-        topic: parsed.data.topic,
-        routing_queue: topicMeta.queue,
-      } as any);
+        // Encode topic + routing queue into `source` until a dedicated column
+        // is added; keeps schema untouched while enabling triage.
+        source: `contact_form:${parsed.data.topic}:${topicMeta.queue}`,
+      });
       if (error) throw error;
 
       // Best-effort admin notification via existing transactional email pipeline.

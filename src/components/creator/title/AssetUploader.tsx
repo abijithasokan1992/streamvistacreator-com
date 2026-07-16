@@ -501,20 +501,8 @@ export function AssetUploader({
           {!stagedPreflight.ok && (
             <p className="text-rose-400 text-sm">{(stagedPreflight as { ok: false; reason: string }).reason}</p>
           )}
-          {stagedPreflight.ok && wouldExceedQuota(stagedFile.size) && (
-            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-amber-100 text-xs flex flex-wrap items-center gap-x-2 gap-y-1">
-              <HardDrive className="w-3.5 h-3.5 shrink-0" />
-              <span className="font-medium">Storage tight:</span>
-              <span>needs {humanBytes(stagedFile.size)} · {humanBytes(quotaRemainingBytes)} free.</span>
-              <button
-                type="button"
-                onClick={() => setTopupOpen(true)}
-                className="underline text-amber-50 hover:text-white ml-auto"
-              >
-                Upgrade storage →
-              </button>
-            </div>
-          )}
+          {/* Oversize uploads now trigger the centralized PremiumStorageTopupModal
+              instead of an inline chip — see the effect above. */}
           {stagedPreflight.ok && !wouldExceedQuota(stagedFile.size) && dup.kind === "checking" && (
             <p className="text-sm text-muted-foreground inline-flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Running preflight fingerprint…</p>
           )}

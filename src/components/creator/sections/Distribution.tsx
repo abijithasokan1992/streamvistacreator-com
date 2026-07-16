@@ -27,30 +27,38 @@ export default function DistributionSection() {
   const { user } = useAuth();
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const reload = async () => {
     if (!user) return;
     setLoading(true);
-    // RLS scopes to the caller's owned titles automatically.
-    const { data } = await (supabase as any)
-      .from("distribution_queue")
-      .select("id,status,attempts,max_attempts,partner_id,title_id,last_error,last_error_code,next_retry_at,updated_at")
-      .order("updated_at", { ascending: false })
-      .limit(100);
-    const partnerIds = Array.from(new Set((data ?? []).map((r: any) => r.partner_id)));
-    const titleIds = Array.from(new Set((data ?? []).map((r: any) => r.title_id)));
-    const [{ data: partners }, { data: titles }] = await Promise.all([
-      (supabase as any).rpc("list_active_distribution_partners"),
-      (supabase as any).from("content_titles").select("id,title").in("id", titleIds.length ? titleIds : ["00000000-0000-0000-0000-000000000000"]),
-    ]);
-    const pmap = new Map(((partners as any[]) ?? []).filter((p: any) => partnerIds.includes(p.id)).map((p: any) => [p.id, p]));
-    const tmap = new Map((titles ?? []).map((t: any) => [t.id, t]));
-    setRows((data ?? []).map((r: any) => ({
-      ...r,
-      partner: pmap.get(r.partner_id),
-      title: tmap.get(r.title_id),
-    })));
-    setLoading(false);
+    setError(null);
+    try {
+      // RLS scopes to the caller's owned titles automatically.
+      const { data, error: qErr } = await (supabase as any)
+        .from("distribution_queue")
+        .select("id,status,attempts,max_attempts,partner_id,title_id,last_error,last_error_code,next_retry_at,updated_at")
+        .order("updated_at", { ascending: false })
+        .limit(100);
+      if (qErr) throw qErr;
+      const partnerIds = Array.from(new Set((data ?? []).map((r: any) => r.partner_id)));
+      const titleIds = Array.from(new Set((data ?? []).map((r: any) => r.title_id)));
+      const [{ data: partners }, { data: titles }] = await Promise.all([
+        (supabase as any).rpc("list_active_distribution_partners"),
+        (supabase as any).from("content_titles").select("id,title").in("id", titleIds.length ? titleIds : ["00000000-0000-0000-0000-000000000000"]),
+      ]);
+      const pmap = new Map(((partners as any[]) ?? []).filter((p: any) => partnerIds.includes(p.id)).map((p: any) => [p.id, p]));
+      const tmap = new Map((titles ?? []).map((t: any) => [t.id, t]));
+      setRows((data ?? []).map((r: any) => ({
+        ...r,
+        partner: pmap.get(r.partner_id),
+        title: tmap.get(r.title_id),
+      })));
+    } catch (e) {
+      setError((e as Error).message || "Unable to load distribution status.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { void reload(); }, [user?.id]);

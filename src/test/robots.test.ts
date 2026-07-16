@@ -27,9 +27,19 @@ const ALLOWED_ROUTES = [
   "/dmca",
   "/ip-copyright",
   "/blog/camera-to-cloud-guide",
+  "/sell-your-film",
+  "/film-distribution",
+  "/ott-content-licensing",
+  "/content-owners",
+  "/buyers",
+  "/film-rights",
+  "/regional-indian-cinema",
+  "/global-film-sales",
+  "/how-it-works",
+  "/trust-and-rights",
 ];
 
-// Transactional / token / auth routes that MUST be blocked.
+// Transactional / token / auth / private routes that MUST be blocked.
 const DISALLOWED_ROUTES = [
   "/checkout/abc123",
   "/billing/invoice-9",
@@ -38,12 +48,15 @@ const DISALLOWED_ROUTES = [
   "/review/r-1",
   "/screening/sc-1",
   "/unsubscribe?token=abc",
-  "/ingest-test",
-  "/home",
+  "/auth",
   "/auth/login",
+  "/admin",
   "/admin/users",
-  "/dashboard/overview",
+  "/dashboard",
+  "/dashboard/content",
   "/reset-password",
+  "/onboarding",
+  "/my-workspace",
 ];
 
 describe("robots.txt policy", () => {

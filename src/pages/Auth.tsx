@@ -58,6 +58,7 @@ export default function Auth() {
   const [search] = useSearchParams();
   const { user, role, loading } = useAuth();
   const blockedBrowser = search.get("in_app_error") === "1";
+  const sessionExpired = search.get("reason") === "session_expired";
 
   const intentParam = search.get("intent");
   const roleParam = search.get("role");

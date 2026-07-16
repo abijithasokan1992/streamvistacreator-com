@@ -42,6 +42,7 @@ export default function RoleUnknown() {
       <Seo
         title="Access role unavailable — StreamVista"
         description="We couldn't determine your dashboard role. Contact support or retry."
+        path="/auth/role-unknown"
       />
       <main className="min-h-screen grid place-items-center bg-background px-4">
         <div className="max-w-md w-full rounded-2xl border border-amber-400/30 bg-amber-500/[0.04] p-6 md:p-8 shadow-xl">

@@ -29,6 +29,9 @@ const NAV_LINKS = [
 
 export const Navbar = () => {
   const [open, setOpen] = useState(false);
+  const { user, role, loading } = useAuth();
+  const signedIn = !loading && !!user;
+  const dashHref = dashboardForRole(role);
 
   return (
     <header className="fixed top-0 inset-x-0 z-50 backdrop-blur-xl bg-background/60 border-b border-border/50">

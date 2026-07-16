@@ -155,6 +155,7 @@ const PublicRoutes = () => (
 
     {/* Linear onboarding wizard — kept for legacy accounts only. */}
     <Route path="/onboarding" element={<Onboarding />} />
+    <Route path="/auth/role-unknown" element={<RoleUnknown />} />
 
     {/* New role-based dashboards (Phase 2 — empty states, no fake cards). */}
     <Route path="/dashboard/content" element={<OnboardingGate><RoleGate allow={["content_owner"]}><ContentOwnerDashboard /></RoleGate></OnboardingGate>} />

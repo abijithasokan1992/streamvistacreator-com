@@ -312,21 +312,21 @@ Deno.serve(async (req) => {
     console.error("[retry-failed-emails] failed to persist audit log", e);
   }
 
-  // A successful sweep returns HTTP 200 even when zero messages are retried
-  // and even when the audit finds lingering pending rows (that is a data
-  // observation, not a sweeper failure). We only return 500 when the sweeper
-  // itself failed — every queue errored AND the reconcile / audit step
-  // errored — meaning it did not run to completion.
+  // The sweep always returns HTTP 200 once the function has run to
+  // completion. Sub-step outcomes (queue errors, audit residue, reconcile
+  // failures) are surfaced in the JSON payload via `ok` + `warnings` so the
+  // client can render an informational banner without triggering a generic
+  // "audit failed" 500 toast.
   const anyQueueError = Object.values(summary).some((s) => !!s.error);
   const allQueuesErrored =
     Object.keys(summary).length > 0 &&
     Object.values(summary).every((s) => !!s.error);
-  const sweeperFailed =
+  const sweeperDegraded =
     allQueuesErrored && !!reconciled.error && !!audit.error;
 
   return new Response(
     JSON.stringify({
-      ok: !sweeperFailed,
+      ok: !sweeperDegraded,
       ...summary,
       reconciled,
       audit,
@@ -335,7 +335,7 @@ Deno.serve(async (req) => {
         : undefined,
     }),
     {
-      status: sweeperFailed ? 500 : 200,
+      status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     },
   );

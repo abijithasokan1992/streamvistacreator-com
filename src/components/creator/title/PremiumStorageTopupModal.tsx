@@ -160,8 +160,18 @@ export function PremiumStorageTopupModal({
   );
 
 
+  const showSuccess = phase === "success";
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        // Prevent dismiss while a submission is in flight or during the
+        // success hold buffer so the auto-close sequence always runs.
+        if (!v && isBusy) return;
+        onOpenChange(v);
+      }}
+    >
       <DialogContent className="max-w-2xl border-accent/40 bg-gradient-to-br from-background via-background to-primary/10">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg">
@@ -171,6 +181,16 @@ export function PremiumStorageTopupModal({
             Add cinema-grade storage to your workspace. All top-ups activate instantly after payment.
           </DialogDescription>
         </DialogHeader>
+
+        {showSuccess && (
+          <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 flex items-center gap-3 text-sm">
+            <CheckCircle2 className="w-5 h-5 text-emerald-300" />
+            <div className="min-w-0">
+              <div className="font-semibold text-emerald-100">Payment verified · storage activated</div>
+              <p className="text-emerald-100/80 text-xs">Closing top-up sheet…</p>
+            </div>
+          </div>
+        )}
 
         {reason && (
           <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 flex items-start gap-3 text-sm">

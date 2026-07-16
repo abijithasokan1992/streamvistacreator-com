@@ -7,7 +7,7 @@
  * Admin surfaces and edge functions gated by role.
  */
 import { useEffect, useState } from "react";
-import { Loader2, Radio } from "lucide-react";
+import { AlertCircle, Loader2, Radio, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";

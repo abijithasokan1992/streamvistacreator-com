@@ -386,8 +386,8 @@ export function AssetUploader({
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); inputRef.current?.click(); }
       }}
       className={cn(
-        "rounded-xl border-2 border-dashed p-6 space-y-4 transition-all",
-        !stagedFile && !busy && !locked && "cursor-pointer hover:border-accent hover:bg-accent/5 min-h-[180px] flex flex-col justify-center",
+        "rounded-xl border-2 border-dashed p-4 space-y-3 transition-all",
+        !stagedFile && !busy && !locked && "cursor-pointer hover:border-accent hover:bg-accent/5 min-h-[140px] flex flex-col justify-center",
         drag ? "border-accent bg-accent/10 scale-[1.01]" : "border-border/60",
         locked && "opacity-60",
       )}

@@ -95,7 +95,24 @@ Deno.serve(async (req) => {
         currency: "INR",
         receipt: `topup_${row.id.slice(0, 28)}`,
         payment_capture: 1,
-        notes: { topup_id: row.id, user_id: uid, tb: String(tb), gb: useGb ? String(rawGb) : "" },
+        notes: {
+          topup_id: row.id,
+          user_id: uid,
+          tb: String(tb),
+          gb: useGb ? String(rawGb) : "",
+          // Forward client-supplied metadata (workspace_id, payment_purpose,
+          // etc.) so the webhook has full context without trusting the
+          // client session again. Values are coerced to strings — Razorpay
+          // `notes` is a flat string→string map.
+          ...(body?.__metadata && typeof body.__metadata === "object"
+            ? Object.fromEntries(
+                Object.entries(body.__metadata as Record<string, unknown>)
+                  .filter(([, v]) => v !== null && v !== undefined && v !== "")
+                  .slice(0, 15)
+                  .map(([k, v]) => [`meta_${k}`.slice(0, 40), String(v).slice(0, 240)]),
+              )
+            : {}),
+        },
       }),
     });
     const order = await rzpRes.json();

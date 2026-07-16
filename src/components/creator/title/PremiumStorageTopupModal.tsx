@@ -90,11 +90,23 @@ export function PremiumStorageTopupModal({
   open,
   onOpenChange,
   onSuccess,
+  reason,
+  playAlert = true,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onSuccess?: () => void;
+  /** Contextual reason (e.g. "This 38.75 GB upload exceeds your remaining 4.2 GB."). */
+  reason?: string;
+  /** Play a subtle alert chime when the modal opens (default true). */
+  playAlert?: boolean;
 }) {
+  const { user } = useAuth();
+  const [pendingId, setPendingId] = useState<Tier["id"] | null>(null);
+
+  useEffect(() => {
+    if (open && playAlert) playSubtleAlert();
+  }, [open, playAlert]);
   const { user } = useAuth();
   const [pendingId, setPendingId] = useState<Tier["id"] | null>(null);
 

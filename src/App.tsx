@@ -53,6 +53,7 @@ import AdminIntegrations from "./pages/AdminIntegrations.tsx";
 import AdminResearch from "./pages/AdminResearch.tsx";
 import AdminLegacyRecovery from "./pages/admin/LegacyRecovery.tsx";
 import SuperAdminWorkspace from "./pages/admin/SuperAdminWorkspace.tsx";
+import { CookieConsent } from "./components/CookieConsent";
 import CollegeERP from "./pages/CollegeERP.tsx";
 import Connect from "./pages/Connect.tsx";
 import SettingsIntegrationsAI from "./pages/SettingsIntegrationsAI.tsx";
@@ -271,6 +272,7 @@ const App = () => (
                       <HostAwareRoutes />
                       <RouteAgentDock />
                       <AssistantLauncher />
+                      <CookieConsent />
                     </ErrorBoundary>
                   </GlobalPaymentProvider>
                 </StorageQuotaProvider>

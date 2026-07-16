@@ -107,8 +107,8 @@ export function PremiumStorageTopupModal({
   useEffect(() => {
     if (open && playAlert) playSubtleAlert();
   }, [open, playAlert]);
-  const { user } = useAuth();
-  const [pendingId, setPendingId] = useState<Tier["id"] | null>(null);
+
+
 
   const startCheckout = useCallback(
     async (tier: Tier) => {

@@ -1,44 +1,72 @@
-import { Film, Layers, Briefcase, ArrowRight } from "lucide-react";
+import { Film, Layers, Briefcase, ShieldCheck, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useUserRoles } from "@/hooks/useUserRoles";
+import type { AppRole } from "@/hooks/useAuth";
 
 /**
- * Three-door routing block — Creator / Studio / Licensing.
- * Label-first, 3 short chips per surface, single CTA.
+ * Multi-tier routing block — Creator / Studio / Licensing (+ Admin for staff).
+ * Smart CTAs: signed-in users with the matching role land directly on that
+ * tier's dashboard; everyone else falls back to the role-scoped signup.
  */
 
 type Surface = {
-  key: "creator" | "studio" | "buyer";
+  key: "creator" | "studio" | "buyer" | "admin";
+  role: AppRole;
   title: string;
   icon: typeof Film;
   pitch: string;
   chips: string[];
-  cta: { label: string; to: string };
+  signedOutTo: string;
+  labelSignedOut: string;
+  labelSignedIn: string;
+  adminOnly?: boolean;
 };
 
 const SURFACES: Surface[] = [
   {
     key: "creator",
+    role: "content_owner",
     title: "Creator",
     icon: Film,
     pitch: "Submit titles. Hold rights. Stay protected.",
     chips: ["Secure Intake", "Master Vault", "Rights Control"],
-    cta: { label: "Enter Creator", to: "/auth?intent=signup&role=content_owner" },
+    signedOutTo: "/auth?intent=signup&role=content_owner",
+    labelSignedOut: "Enter Creator",
+    labelSignedIn: "Open Creator Dashboard",
   },
   {
     key: "studio",
+    role: "studio",
     title: "Studio",
     icon: Layers,
     pitch: "Run post, QC and delivery from one vault.",
     chips: ["Ingest & Mastering", "QC & Delivery", "Role-Based Access"],
-    cta: { label: "Enter Studio", to: "/auth?intent=signup&role=studio" },
+    signedOutTo: "/auth?intent=signup&role=studio",
+    labelSignedOut: "Enter Studio",
+    labelSignedIn: "Open Studio Dashboard",
   },
   {
     key: "buyer",
+    role: "buyer",
     title: "Licensing",
     icon: Briefcase,
     pitch: "Request screeners. Close deals under NDA.",
     chips: ["NDA Gate", "Screeners", "Deal Room"],
-    cta: { label: "Enter Licensing", to: "/auth?intent=signup&role=buyer" },
+    signedOutTo: "/auth?intent=signup&role=buyer",
+    labelSignedOut: "Enter Licensing",
+    labelSignedIn: "Open Buyer Dashboard",
+  },
+  {
+    key: "admin",
+    role: "admin",
+    title: "Admin",
+    icon: ShieldCheck,
+    pitch: "Oversee ops, moderation, and platform health.",
+    chips: ["Ops Console", "Moderation", "Finance"],
+    signedOutTo: "/auth",
+    labelSignedOut: "Staff Sign-In",
+    labelSignedIn: "Open Admin Console",
+    adminOnly: true,
   },
 ];
 

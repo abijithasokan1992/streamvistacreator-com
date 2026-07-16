@@ -237,6 +237,40 @@ export function TitleEditor({
     return Math.round((done / items.length) * 100);
   }, [title, meta, localChecklist, readiness, isFree]);
 
+  // Per-step gating for the guided wizard flow. Each tab represents a stage;
+  // downstream tabs are locked until prerequisite tabs are complete. In `view`
+  // mode or when the title is locked (post-submission), gating is bypassed.
+  const stepStatus = useMemo(() => {
+    const bypass = mode === "view" || titleLocked;
+    const has = readiness?.has ?? {} as any;
+    const hasTitle = !!name?.trim();
+    const hasSynopsis = !!meta?.synopsis?.trim();
+    const hasGenres = (meta?.genres?.length ?? 0) > 0;
+    const hasLang = !!meta?.original_language?.trim();
+    const hasRuntime = (meta?.runtime_minutes ?? 0) > 0;
+    const hasOwner = !!meta?.rights_owner?.trim();
+    const metadataComplete = hasTitle && hasSynopsis && hasGenres && hasLang && hasRuntime && hasOwner;
+    const hasPoster = !!(has.poster ?? localChecklist?.hasPoster);
+    const hasCensor = !!(has.censor_certificate ?? localChecklist?.hasCensor);
+    const hasOwnership = !!(has.ownership_documents ?? localChecklist?.hasOwnership);
+    const assetsComplete = hasPoster && hasCensor && hasOwnership;
+    const rightsComplete = isFree ? true : (meta?.commercial?.engagement_mode ?? "unspecified") !== "unspecified";
+    return {
+      overview:   { complete: true, unlocked: true },
+      metadata:   { complete: metadataComplete, unlocked: true },
+      assets:     { complete: assetsComplete, unlocked: bypass || metadataComplete },
+      rights:     { complete: rightsComplete,  unlocked: bypass || (metadataComplete && assetsComplete) },
+      submission: { complete: !!ready,         unlocked: bypass || (metadataComplete && assetsComplete && rightsComplete) },
+    } as Record<TabId, { complete: boolean; unlocked: boolean }>;
+  }, [name, meta, localChecklist, readiness, isFree, mode, titleLocked, ready]);
+
+  const tabOrder: TabId[] = ["overview", "metadata", "assets", "rights", "submission"];
+  const currentIdx = tabOrder.indexOf(tab);
+  const prevTab = currentIdx > 0 ? tabOrder[currentIdx - 1] : null;
+  const nextTab = currentIdx < tabOrder.length - 1 ? tabOrder[currentIdx + 1] : null;
+  const canAdvance = nextTab ? stepStatus[nextTab].unlocked : false;
+
+
   const doSubmit = async () => {
     if (!title) return;
     setSubmitting(true);

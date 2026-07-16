@@ -15,6 +15,7 @@ const MAX_AUTO_RETRIES = 3;
 const QUEUES = ["auth_emails", "transactional_emails"] as const;
 
 Deno.serve(async (req) => {
+  try {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   const cronSecret = Deno.env.get("CRON_SECRET");
@@ -338,5 +339,13 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     },
   );
+  } catch (e) {
+    console.error("[retry-failed-emails] unhandled error", e);
+    return new Response(
+      JSON.stringify({ ok: false, error: e instanceof Error ? e.message : String(e), handled: true }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
 });
+
 

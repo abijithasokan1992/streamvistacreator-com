@@ -58,6 +58,7 @@ export default function Auth() {
   const [search] = useSearchParams();
   const { user, role, loading } = useAuth();
   const blockedBrowser = search.get("in_app_error") === "1";
+  const sessionExpired = search.get("reason") === "session_expired";
 
   const intentParam = search.get("intent");
   const roleParam = search.get("role");
@@ -205,6 +206,13 @@ export default function Auth() {
                     : "Enter your email and we'll send a magic link."}
                 </p>
               </header>
+
+              {sessionExpired && (
+                <div className="mb-5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-200">
+                  Your session expired. Sign in again to pick up where you left off — we've saved your destination.
+                </div>
+              )}
+
 
               <div className="mb-6 grid grid-cols-2 gap-1 p-1 rounded-xl bg-input/30 border border-border/50">
                 <TabButton active={view === "login"} onClick={() => setView("login")}>Log in</TabButton>

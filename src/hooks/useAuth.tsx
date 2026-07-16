@@ -121,8 +121,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
     setRole(null);
     setLoading(false);
-    if (typeof window !== "undefined" && window.location.pathname !== "/auth") {
-      window.location.replace("/auth");
+    // Do NOT force a redirect here. Public pages (/, /partners, /contact,
+    // /pricing, /auth) should keep rendering; auth-gated routes have their own
+    // guards (OnboardingGate, RoleGate) that will send unauthenticated users
+    // to /auth with a proper `next=` param. Force-redirecting from here was
+    // the source of refresh-token loops on public surfaces.
+    if (typeof window !== "undefined") {
+      const path = window.location.pathname;
+      const isProtectedShell =
+        path.startsWith("/dashboard") ||
+        path.startsWith("/admin") ||
+        path.startsWith("/onboarding") ||
+        path.startsWith("/my-workspace") ||
+        path.startsWith("/studio") ||
+        path.startsWith("/settings");
+      if (isProtectedShell) {
+        const next = encodeURIComponent(path + window.location.search);
+        window.location.replace(`/auth?next=${next}&reason=session_expired`);
+      }
     }
   };
 

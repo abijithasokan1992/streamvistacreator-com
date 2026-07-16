@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, BarChart3, RefreshCw, UploadCloud, Wallet, Scale, Send, Sparkles, Zap } from "lucide-react";
+import { Loader2, BarChart3, RefreshCw, UploadCloud, Wallet, Scale, Send, Sparkles, Zap, TrendingUp, ArrowUpDown } from "lucide-react";
+import { ROI_ESTIMATE_LABEL, ROI_ESTIMATE_RANK, SUBLICENSABLE_LABEL, type RoiEstimate, type SublicensableStatus } from "@/lib/creator/titleSchema";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";

@@ -82,7 +82,8 @@ export default function Onboarding() {
         setProfessionalRole((data as any).professional_role ?? "");
         setAccessCode((data as any).access_authorization_code ?? "");
         if (data.onboarding_step === "done") {
-          navigate(dashboardForRole(role ?? "client"), { replace: true });
+          const target = await resolveLandingRoute(user.id);
+          navigate(target, { replace: true });
           return;
         }
       }

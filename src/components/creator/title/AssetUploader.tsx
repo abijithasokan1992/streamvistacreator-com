@@ -616,6 +616,7 @@ export function AssetUploader({
       <PremiumStorageTopupModal
         open={topupOpen}
         onOpenChange={setTopupOpen}
+        reason={topupReason}
         onSuccess={() => { void (storage as any)?.refresh?.(); }}
       />
     </div>

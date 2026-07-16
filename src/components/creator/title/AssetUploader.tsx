@@ -483,15 +483,16 @@ export function AssetUploader({
             <p className="text-rose-400 text-sm">{(stagedPreflight as { ok: false; reason: string }).reason}</p>
           )}
           {stagedPreflight.ok && wouldExceedQuota(stagedFile.size) && (
-            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-amber-100 space-y-1 text-sm">
-              <p className="font-medium inline-flex items-center gap-1.5"><HardDrive className="w-4 h-4" /> Storage may be tight for this upload</p>
-              <p>This file needs {humanBytes(stagedFile.size)} but only {humanBytes(quotaRemainingBytes)} of {humanBytes(quotaTotalBytes)} is free. The upload will still start — top up now to avoid interruptions.</p>
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-amber-100 text-xs flex flex-wrap items-center gap-x-2 gap-y-1">
+              <HardDrive className="w-3.5 h-3.5 shrink-0" />
+              <span className="font-medium">Storage tight:</span>
+              <span>needs {humanBytes(stagedFile.size)} · {humanBytes(quotaRemainingBytes)} free.</span>
               <button
                 type="button"
                 onClick={() => setTopupOpen(true)}
-                className="underline text-amber-50 hover:text-white"
+                className="underline text-amber-50 hover:text-white ml-auto"
               >
-                Upgrade or add storage →
+                Upgrade storage →
               </button>
             </div>
           )}

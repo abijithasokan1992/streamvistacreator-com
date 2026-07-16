@@ -77,6 +77,13 @@ export type Database = {
             referencedRelation: "content_titles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "acquisition_requests_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       ad_zones: {
@@ -553,6 +560,13 @@ export type Database = {
             columns: ["title_id"]
             isOneToOne: false
             referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_licensing_matches_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
             referencedColumns: ["id"]
           },
         ]
@@ -1742,6 +1756,13 @@ export type Database = {
             referencedRelation: "content_titles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "commercial_requests_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       commercial_requests_admin: {
@@ -1905,6 +1926,13 @@ export type Database = {
             referencedRelation: "content_titles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "content_approvals_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       content_titles: {
@@ -2022,6 +2050,13 @@ export type Database = {
             referencedRelation: "content_titles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "content_titles_parent_title_id_fkey"
+            columns: ["parent_title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       deal_deliveries: {
@@ -2098,6 +2133,13 @@ export type Database = {
             columns: ["title_id"]
             isOneToOne: false
             referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_deliveries_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
             referencedColumns: ["id"]
           },
         ]
@@ -2245,6 +2287,13 @@ export type Database = {
             columns: ["title_id"]
             isOneToOne: false
             referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_memos_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
             referencedColumns: ["id"]
           },
         ]
@@ -2413,6 +2462,13 @@ export type Database = {
             referencedRelation: "content_titles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "deal_payouts_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       deliverables: {
@@ -2559,6 +2615,13 @@ export type Database = {
             referencedRelation: "content_titles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "distribution_deliveries_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       distribution_delivery_logs: {
@@ -2618,6 +2681,13 @@ export type Database = {
             columns: ["title_id"]
             isOneToOne: false
             referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "distribution_delivery_logs_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
             referencedColumns: ["id"]
           },
         ]
@@ -2730,6 +2800,13 @@ export type Database = {
             columns: ["title_id"]
             isOneToOne: false
             referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "distribution_packages_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
             referencedColumns: ["id"]
           },
         ]
@@ -2887,6 +2964,13 @@ export type Database = {
             referencedRelation: "content_titles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "distribution_program_offers_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       distribution_queue: {
@@ -2970,6 +3054,13 @@ export type Database = {
             columns: ["title_id"]
             isOneToOne: false
             referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "distribution_queue_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
             referencedColumns: ["id"]
           },
         ]
@@ -3208,6 +3299,13 @@ export type Database = {
             columns: ["content_title_id"]
             isOneToOne: false
             referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emergency_access_grants_content_title_id_fkey"
+            columns: ["content_title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
             referencedColumns: ["id"]
           },
         ]
@@ -4744,6 +4842,13 @@ export type Database = {
             referencedRelation: "content_titles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "legacy_film_imports_content_title_id_fkey"
+            columns: ["content_title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       legal_acceptances: {
@@ -4911,6 +5016,13 @@ export type Database = {
             referencedRelation: "content_titles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "license_contracts_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       license_events: {
@@ -4993,6 +5105,13 @@ export type Database = {
             referencedRelation: "content_titles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "managed_ops_audit_content_title_id_fkey"
+            columns: ["content_title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       managed_project_permissions: {
@@ -5029,6 +5148,13 @@ export type Database = {
             columns: ["content_title_id"]
             isOneToOne: false
             referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "managed_project_permissions_content_title_id_fkey"
+            columns: ["content_title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
             referencedColumns: ["id"]
           },
         ]
@@ -5079,6 +5205,13 @@ export type Database = {
             columns: ["content_title_id"]
             isOneToOne: true
             referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "managed_projects_content_title_id_fkey"
+            columns: ["content_title_id"]
+            isOneToOne: true
+            referencedRelation: "published_titles"
             referencedColumns: ["id"]
           },
         ]
@@ -6137,6 +6270,13 @@ export type Database = {
             columns: ["title_id"]
             isOneToOne: false
             referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_title_matches_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
             referencedColumns: ["id"]
           },
         ]
@@ -7236,6 +7376,13 @@ export type Database = {
             referencedRelation: "content_titles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "revenue_lines_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       revenue_transactions: {
@@ -7580,6 +7727,13 @@ export type Database = {
             referencedRelation: "content_titles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "royalty_allocations_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       royalty_rules: {
@@ -7667,6 +7821,13 @@ export type Database = {
             columns: ["title_id"]
             isOneToOne: false
             referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "royalty_rules_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
             referencedColumns: ["id"]
           },
         ]
@@ -7928,6 +8089,13 @@ export type Database = {
             columns: ["title_id"]
             isOneToOne: false
             referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "screening_invites_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
             referencedColumns: ["id"]
           },
         ]
@@ -8830,6 +8998,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "title_ai_licensing_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: true
+            referencedRelation: "published_titles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "title_ai_licensing_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
@@ -8878,6 +9053,13 @@ export type Database = {
             columns: ["title_id"]
             isOneToOne: true
             referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "title_ai_licensing_admin_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: true
+            referencedRelation: "published_titles"
             referencedColumns: ["id"]
           },
         ]
@@ -8934,6 +9116,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "title_ai_licensing_documents_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "title_ai_licensing_documents_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
@@ -8973,6 +9162,13 @@ export type Database = {
             columns: ["title_id"]
             isOneToOne: false
             referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "title_assets_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
             referencedColumns: ["id"]
           },
           {
@@ -9022,6 +9218,13 @@ export type Database = {
             columns: ["title_id"]
             isOneToOne: false
             referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "title_collection_items_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
             referencedColumns: ["id"]
           },
         ]
@@ -9158,6 +9361,13 @@ export type Database = {
             referencedRelation: "content_titles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "title_commercial_profiles_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: true
+            referencedRelation: "published_titles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       title_commercial_profiles_admin: {
@@ -9238,6 +9448,13 @@ export type Database = {
             columns: ["title_id"]
             isOneToOne: false
             referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "title_edit_requests_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
             referencedColumns: ["id"]
           },
         ]
@@ -9323,6 +9540,13 @@ export type Database = {
             referencedRelation: "content_titles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "title_localizations_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       title_lock_state: {
@@ -9359,6 +9583,13 @@ export type Database = {
             columns: ["title_id"]
             isOneToOne: true
             referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "title_lock_state_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: true
+            referencedRelation: "published_titles"
             referencedColumns: ["id"]
           },
         ]
@@ -9432,6 +9663,13 @@ export type Database = {
             referencedRelation: "content_titles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "title_media_versions_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       title_publishing: {
@@ -9483,6 +9721,13 @@ export type Database = {
             columns: ["title_id"]
             isOneToOne: true
             referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "title_publishing_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: true
+            referencedRelation: "published_titles"
             referencedColumns: ["id"]
           },
         ]
@@ -9633,6 +9878,13 @@ export type Database = {
             referencedRelation: "content_titles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "title_removal_requests_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       title_review_assignments: {
@@ -9672,6 +9924,13 @@ export type Database = {
             columns: ["title_id"]
             isOneToOne: false
             referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "title_review_assignments_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
             referencedColumns: ["id"]
           },
         ]
@@ -9728,6 +9987,13 @@ export type Database = {
             columns: ["title_id"]
             isOneToOne: false
             referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "title_review_checklist_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
             referencedColumns: ["id"]
           },
         ]
@@ -9798,6 +10064,13 @@ export type Database = {
             referencedRelation: "content_titles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "title_review_issues_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       title_review_notes: {
@@ -9831,6 +10104,13 @@ export type Database = {
             columns: ["title_id"]
             isOneToOne: false
             referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "title_review_notes_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
             referencedColumns: ["id"]
           },
         ]
@@ -9890,6 +10170,13 @@ export type Database = {
             columns: ["title_id"]
             isOneToOne: false
             referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "title_rights_availability_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
             referencedColumns: ["id"]
           },
           {
@@ -9962,6 +10249,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "title_screening_assets_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "title_screening_assets_upload_id_fkey"
             columns: ["upload_id"]
             isOneToOne: false
@@ -10016,6 +10310,13 @@ export type Database = {
             columns: ["title_id"]
             isOneToOne: false
             referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "title_section_unlocks_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
             referencedColumns: ["id"]
           },
         ]
@@ -10834,6 +11135,27 @@ export type Database = {
           severity?: string | null
           source?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      published_titles: {
+        Row: {
+          id: string | null
+          published_at: string | null
+          synopsis: string | null
+          title: string | null
+        }
+        Insert: {
+          id?: string | null
+          published_at?: string | null
+          synopsis?: string | null
+          title?: string | null
+        }
+        Update: {
+          id?: string | null
+          published_at?: string | null
+          synopsis?: string | null
+          title?: string | null
         }
         Relationships: []
       }

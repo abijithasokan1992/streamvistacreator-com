@@ -66,6 +66,10 @@ import AiMcpControlCenter from "@/components/admin/AiMcpControlCenter";
 import McpHealthCenter from "@/components/admin/McpHealthCenter";
 import PartnerNetworkHub from "@/components/admin/PartnerNetworkHub";
 import BusinessIntelligenceHub from "@/components/admin/BusinessIntelligenceHub";
+import StorageGrantPanel from "@/components/admin/StorageGrantPanel";
+import DealOperationsConsole from "@/components/admin/DealOperationsConsole";
+import CommercialControlTower from "@/components/admin/CommercialControlTower";
+import FindContentSection from "@/components/buyer/sections/FindContentSection";
 
 import OrganizationsConsole from "@/components/admin/ecosystem/OrganizationsConsole";
 import InvitationsConsole from "@/components/admin/ecosystem/InvitationsConsole";

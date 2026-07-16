@@ -54,20 +54,33 @@ export const Navbar = () => {
 
         <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
           <ThemeToggle className="hidden sm:inline-flex" />
-          <Link
-            to="/auth"
-            className="hidden sm:inline text-xs md:text-sm text-muted-foreground hover:text-foreground transition-colors"
-            aria-label="Log in to StreamVista"
-          >
-            Login
-          </Link>
-          <Link
-            to="/auth?intent=signup"
-            className="cta-guide relative text-xs md:text-sm font-semibold px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-full bg-gradient-primary text-primary-foreground hover:scale-105 transition-transform whitespace-nowrap"
-            aria-label="Get started with StreamVista"
-          >
-            Get Started
-          </Link>
+          {signedIn ? (
+            <Link
+              to={dashHref}
+              className="cta-guide relative inline-flex items-center gap-2 text-xs md:text-sm font-semibold px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-full bg-gradient-primary text-primary-foreground hover:scale-105 transition-transform whitespace-nowrap"
+              aria-label="Open your dashboard"
+            >
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              <span>Dashboard</span>
+            </Link>
+          ) : (
+            <>
+              <Link
+                to="/auth"
+                className="hidden sm:inline text-xs md:text-sm text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Log in to StreamVista"
+              >
+                Login
+              </Link>
+              <Link
+                to="/auth?intent=signup"
+                className="cta-guide relative text-xs md:text-sm font-semibold px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-full bg-gradient-primary text-primary-foreground hover:scale-105 transition-transform whitespace-nowrap"
+                aria-label="Get started with StreamVista"
+              >
+                Get Started
+              </Link>
+            </>
+          )}
 
           {/* Mobile menu trigger */}
           <Sheet open={open} onOpenChange={setOpen}>

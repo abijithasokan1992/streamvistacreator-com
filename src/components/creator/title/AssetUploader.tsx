@@ -331,15 +331,14 @@ export function AssetUploader({
     void runUpload(f);
   }, [category, locked, runUpload, wouldExceedQuota, preliminaryMatch, runShaDedup, sha256Hex, devLog, quotaRemainingBytes]);
 
+  const [topupOpen, setTopupOpen] = useState(false);
+
   const startUpload = useCallback(() => {
     if (!stagedFile) return;
     if (dup.kind === "block-same-title") return;
-    if (wouldExceedQuota(stagedFile.size)) {
-      toast.error("Not enough storage on your current plan.");
-      return;
-    }
+    // Client-side quota is only advisory — the backend is the source of truth.
     void runUpload(stagedFile);
-  }, [stagedFile, runUpload, dup, wouldExceedQuota]);
+  }, [stagedFile, runUpload, dup]);
 
   // Drag-and-drop (works on desktop; touch devices fall back to the Choose-file button).
   const [drag, setDrag] = useState(false);

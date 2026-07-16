@@ -155,7 +155,19 @@ function OnboardingPanel() {
   const [filter, setFilter] = useState<string>("all");
   const [selected, setSelected] = useState<OnboardingRow | null>(null);
   const [notes, setNotes] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const [lastDecision, setLastDecision] = useState<"approved" | "rejected" | null>(null);
+
+  const closeDialog = () => {
+    setSelected(null);
+    setNotes("");
+    setLastDecision(null);
+    load();
+  };
+
+  const { phase, isBusy, submit } = useModalSubmissionLifecycle({
+    onClose: closeDialog,
+    successHoldMs: 1000,
+  });
 
   const load = async () => {
     setLoading(true);
@@ -179,22 +191,22 @@ function OnboardingPanel() {
   }, [rows, filter]);
 
   const decide = async (decision: "approved" | "rejected") => {
-    if (!selected) return;
-    setSubmitting(true);
-    const { error } = await supabase.rpc("admin_review_onboarding_request", {
-      _request_id: selected.id,
-      _decision: decision,
-      _notes: notes || null,
-    });
-    setSubmitting(false);
-    if (error) {
-      toast({ title: `Failed to ${decision}`, description: error.message, variant: "destructive" });
-      return;
+    if (!selected || isBusy) return;
+    setLastDecision(decision);
+    try {
+      await submit(async () => {
+        const { error } = await supabase.rpc("admin_review_onboarding_request", {
+          _request_id: selected.id,
+          _decision: decision,
+          _notes: notes || null,
+        });
+        if (error) throw error;
+        toast({ title: `Request ${decision}`, description: selected.client_name });
+      });
+    } catch (err: any) {
+      setLastDecision(null);
+      toast({ title: `Failed to ${decision}`, description: err?.message ?? "Unknown error", variant: "destructive" });
     }
-    toast({ title: `Request ${decision}`, description: selected.client_name });
-    setSelected(null);
-    setNotes("");
-    load();
   };
 
   return (

@@ -1208,6 +1208,7 @@ function MetadataTab({
   onSmartImport: (next: { title?: string; metadataPatch: Partial<TitleMetadata> }) => void;
 }) {
   const upd = <K extends keyof TitleMetadata>(k: K, v: TitleMetadata[K]) => setMeta({ ...meta, [k]: v });
+  const [awardsImportOpen, setAwardsImportOpen] = useState(false);
   const synopsisWords = (meta.synopsis || "").trim().split(/\s+/).filter(Boolean).length;
   const overLimit = synopsisWords > SYNOPSIS_WORD_LIMIT;
   const currentYear = new Date().getFullYear();

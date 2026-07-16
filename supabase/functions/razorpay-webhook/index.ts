@@ -112,6 +112,12 @@ async function projectToBillingOrders(
 
 
 async function processEvent(supabase: any, event: any, creds: any): Promise<void> {
+  // Always project first so canonical billing_orders reflects Razorpay before
+  // any downstream side-effects run. Service_role bypasses the paid guard.
+  try { await projectToBillingOrders(supabase, event); } catch (e) {
+    console.error("razorpay-webhook: billing_orders projection failed", e);
+  }
+
   const type = event?.event as string;
   const payment = event?.payload?.payment?.entity;
   const order = event?.payload?.order?.entity;

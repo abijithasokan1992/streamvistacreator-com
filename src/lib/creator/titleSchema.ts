@@ -16,13 +16,24 @@ export const FestivalSchema = z.object({
   url: z.string().trim().max(500).optional().default(""),
 });
 
+/**
+ * Award result enum — canonical values enforced by the smart importer and
+ * the inline editor. Empty string is accepted for backwards compatibility
+ * with legacy rows written before the enum was introduced.
+ */
+export const AWARD_RESULTS = ["Won", "Nominated", "Shortlisted", "Honourable Mention"] as const;
+export type AwardResult = (typeof AWARD_RESULTS)[number];
+export const AwardResultSchema = z.union([z.enum(AWARD_RESULTS), z.literal("")]);
+
 export const AwardSchema = z.object({
-  name: z.string().trim().min(1).max(200),
+  name: z.string().trim().min(1, "award_name is required").max(200),
+  issuing_body: z.string().trim().max(200).optional().default(""),
   year: z.number().int().min(1900).max(2100).optional().nullable(),
   category: z.string().trim().max(200).optional().default(""),
-  result: z.string().trim().max(80).optional().default(""),
+  result: AwardResultSchema.optional().default(""),
   notes: z.string().trim().max(500).optional().default(""),
 });
+export type AwardRow = z.infer<typeof AwardSchema>;
 
 export const TitleMetadataSchema = z.object({
   synopsis: z.string().max(5000).default(""),

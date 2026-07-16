@@ -102,12 +102,18 @@ export function PremiumStorageTopupModal({
 }) {
   const { user } = useAuth();
   const [pendingId, setPendingId] = useState<Tier["id"] | null>(null);
+  const { phase, isBusy, submit, reset } = useModalSubmissionLifecycle({
+    onClose: () => {
+      onOpenChange(false);
+      onSuccess?.();
+    },
+    successHoldMs: 1000, // 1s success feedback per spec
+  });
 
   useEffect(() => {
     if (open && playAlert) playSubtleAlert();
-  }, [open, playAlert]);
-
-
+    if (!open) reset();
+  }, [open, playAlert, reset]);
 
   const startCheckout = useCallback(
     async (tier: Tier) => {
@@ -115,33 +121,42 @@ export function PremiumStorageTopupModal({
         toast.error("Sign in to purchase additional storage.");
         return;
       }
+      if (isBusy) return;
       setPendingId(tier.id);
       // Delegates to the global helper: session refresh, metadata forwarding
       // and verify handshake all live in a single canonical implementation.
       const { initializeCheckout } = await import("@/lib/payments/initializeCheckout");
       try {
-        await initializeCheckout({
-          purpose: "storage_topup",
-          payload: tier.payload,
-          label: `Storage · ${tier.label}`,
-          description: `${tier.label} — ${tier.headline}`,
-          prefill: { email: user.email ?? undefined },
-          metadata: {
-            user_id: user.id,
-            payment_purpose: "storage_topup",
-            tier: tier.id,
-          },
-          onSuccess: () => {
-            toast.success(`${tier.label} activated — storage unlocked.`);
-            onOpenChange(false);
-            onSuccess?.();
-          },
-        });
+        await submit(
+          () =>
+            new Promise<void>((resolve, reject) => {
+              initializeCheckout({
+                purpose: "storage_topup",
+                payload: tier.payload,
+                label: `Storage · ${tier.label}`,
+                description: `${tier.label} — ${tier.headline}`,
+                prefill: { email: user.email ?? undefined },
+                metadata: {
+                  user_id: user.id,
+                  payment_purpose: "storage_topup",
+                  tier: tier.id,
+                },
+                onSuccess: () => {
+                  toast.success(`${tier.label} activated — storage unlocked.`);
+                  resolve();
+                },
+                onDismiss: () => reject(new Error("dismissed")),
+                onError: (e) => reject(e),
+              }).catch(reject);
+            }),
+        );
+      } catch {
+        /* lifecycle hook has already flipped to error/idle; nothing to do */
       } finally {
         setPendingId(null);
       }
     },
-    [user, onOpenChange, onSuccess],
+    [user, isBusy, submit],
   );
 
 

@@ -22,15 +22,36 @@ const Index = () => {
   return (
     <main className="min-h-dvh home-serif">
       <Seo
-        title="StreamVista — License Your Film, Series or Documentary"
-        description="Upload your content, protect your rights and connect with verified buyers. License films, series and documentaries globally through one secure platform."
+        title="StreamVista — Film Sales, Content Licensing & OTT Distribution Network"
+        description="Connect films, series and screen content with verified OTT platforms, broadcasters, satellite TV, FAST channels, distributors and streaming services worldwide. StreamVista supports rights-ready catalogues, buyer discovery and professional delivery workflows."
         path="/"
         jsonLd={[
           {
             "@context": "https://schema.org",
             "@type": "Organization",
             name: "StreamVista",
+            alternateName: "StreamVista Global Film Content Network",
             url: "https://streamvista.in/",
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            name: "StreamVista",
+            alternateName: "StreamVista Global Film Content Network",
+            url: "https://streamvista.in/",
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "Service",
+            name: "Film Sales, Content Licensing & OTT Distribution Connectivity",
+            description:
+              "Connectivity and workflow platform linking creators, filmmakers, producers, studios and rights holders with OTT platforms, broadcasters, satellite TV, FAST channels, distributors and digital streaming services worldwide.",
+            provider: {
+              "@type": "Organization",
+              name: "StreamVista",
+              url: "https://streamvista.in/",
+            },
+            areaServed: "Worldwide",
           },
         ]}
       />

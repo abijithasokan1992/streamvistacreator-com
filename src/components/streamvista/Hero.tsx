@@ -55,18 +55,18 @@ export const Hero = () => {
 
       <div className="mt-12 flex flex-col sm:flex-row gap-3 animate-fade-in hero-button-container">
         <Link
-          to="/auth?intent=signup"
+          to={primaryTo}
           className="cta-guide group h-14 inline-flex items-center justify-center gap-3 px-8 bg-gradient-primary text-primary-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md"
         >
-          <span>Get Started · I'm a Creator</span>
-          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          <span>{primaryLabel}</span>
+          <PrimaryIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
         </Link>
         <Link
-          to="/contact?topic=buyer-access"
+          to={buyerTo}
           className="group h-14 inline-flex items-center justify-center gap-3 px-8 border border-border/60 hover:border-accent/60 hover:bg-accent/5 text-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md transition-colors"
         >
           <Briefcase className="w-4 h-4" />
-          <span>I'm a Buyer · Request Access</span>
+          <span>{buyerLabel}</span>
         </Link>
       </div>
 

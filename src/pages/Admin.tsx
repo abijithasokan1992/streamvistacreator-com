@@ -66,6 +66,10 @@ import AiMcpControlCenter from "@/components/admin/AiMcpControlCenter";
 import McpHealthCenter from "@/components/admin/McpHealthCenter";
 import PartnerNetworkHub from "@/components/admin/PartnerNetworkHub";
 import BusinessIntelligenceHub from "@/components/admin/BusinessIntelligenceHub";
+import StorageTopUpsPanel from "@/components/admin/StorageTopUpsPanel";
+import DealOperationsConsole from "@/components/admin/DealOperationsConsole";
+import CommercialControlTower from "@/components/admin/CommercialControlTower";
+import FindContentSection from "@/components/buyer/sections/FindContentSection";
 
 import OrganizationsConsole from "@/components/admin/ecosystem/OrganizationsConsole";
 import InvitationsConsole from "@/components/admin/ecosystem/InvitationsConsole";
@@ -430,6 +434,13 @@ function buildDepartments(args: {
         { id: "approvals", label: "Content Review", hint: "Title QC & legal review", content: (
           <ContentReviewWorkflow initialTab={args.reviewInitialTab} />
         )},
+        { id: "titles-catalog", label: "Titles Catalog", hint: "All titles, assets and metadata", content: <GlobalAssetManager /> },
+        { id: "qc-queue", label: "QC Queue", hint: "Titles awaiting QC review", content: (
+          <ContentReviewWorkflow initialTab="qc_review" />
+        )},
+        { id: "legal-queue", label: "Legal Queue", hint: "Titles awaiting legal review", content: (
+          <ContentReviewWorkflow initialTab="legal_review" />
+        )},
         { id: "pipeline", label: "Pipeline", hint: "Title edits & QC flow", content: <TitleEditRequestsInbox /> },
         { id: "catalog-ops", label: "Catalog & Assets", hint: "Global assets", content: <GlobalAssetManager /> },
       ],
@@ -440,13 +451,14 @@ function buildDepartments(args: {
       icon: <UsersIcon className="w-4 h-4" />,
       desc: "Creators, studios, buyers, organizations, invitations, support.",
       sections: [
-        { id: "users", label: "Users", hint: "Creators, studios, buyers", content: <UsersAndCredentials /> },
+        { id: "users", label: "User Directory", hint: "Creators, studios, buyers", content: <UsersAndCredentials /> },
+        { id: "roles", label: "Role Management (has_role)", hint: "Assign app_role, backs has_role() checks", content: <RolesManager /> },
+        { id: "storage-topups", label: "Storage Top-ups", hint: "Grant / reduce bonus storage (GB)", content: <StorageTopUpsPanel /> },
         { id: "organizations", label: "Organizations", hint: "Creators · Studios · Buyers · Partners", content: <OrganizationsConsole /> },
         { id: "invitations", label: "Invitations", hint: "Role-aware invites", content: <InvitationsConsole /> },
         { id: "channel-partners", label: "Channel Partners", hint: "Publish to /partners", content: <ChannelPartnersConsole /> },
         { id: "onboarding", label: "Onboarding", hint: "Approvals & activations", content: <OnboardingApprovals /> },
         { id: "team", label: "Internal Team", hint: "Admin staff", content: <AdminTeamManager /> },
-        { id: "roles", label: "Roles & Access", hint: "Role assignments", content: <RolesManager /> },
         { id: "support", label: "Support & Messages", hint: "Tickets, contact, broadcasts", content: (
           <div className="space-y-6"><CommunicationCenter /></div>
         )},
@@ -458,7 +470,19 @@ function buildDepartments(args: {
       icon: <Briefcase className="w-4 h-4" />,
       desc: "Plans, subscriptions, payments, invoices, rights, licensing.",
       sections: [
-        { id: "plans", label: "Plans & Pricing", hint: "Products, vault pricing, free tier", content: (
+        { id: "marketplace", label: "Marketplace Catalog / Buyer Surface", hint: "Live buyer-facing catalog (featured_films)", content: (
+          <div className="space-y-4">
+            <div className="glass rounded-2xl p-4 text-xs text-muted-foreground">
+              Read-only preview of the live buyer marketplace. Requests routed to
+              <code className="mx-1">/dashboard/buyer</code> for full buyer flow.
+            </div>
+            <FindContentSection onRequestForTitle={() => { window.location.href = "/dashboard/buyer"; }} />
+          </div>
+        )},
+        { id: "signed-deals", label: "Signed Deals", hint: "Offers · contracts · licensing lifecycle", content: <DealOperationsConsole /> },
+        { id: "subscription-plans", label: "Subscription Plans", hint: "Products & pricing plans", content: <ProductsAndPlans /> },
+        { id: "pricing-calculator", label: "Business Estimates & Pricing Calculator", hint: "Commercial offer builder", content: <CommercialControlTower /> },
+        { id: "plans", label: "Plans & Pricing (full)", hint: "Products, vault pricing, free tier", content: (
           <div className="space-y-6"><ProductsAndPlans /><StudioVaultPricing /><FreeTierConfig /></div>
         )},
         { id: "billing", label: "Billing & Payments", hint: "Invoices and finance ops", content: (
@@ -495,13 +519,20 @@ function buildDepartments(args: {
       icon: <SettingsIcon className="w-4 h-4" />,
       desc: "System settings, audit, email, AI, security, homepage CMS.",
       sections: [
+        { id: "mission-shortcut", label: "Mission Control", hint: "Live operations dashboard", content: <MissionControl /> },
         { id: "health", label: "Infrastructure Health", hint: "Live probes · no cached state", content: <InfrastructureHealth /> },
         { id: "metrics", label: "Metrics", hint: "Latency percentiles, throughput, failure rates", content: <MetricsDashboard /> },
         { id: "tests", label: "Test Runner", hint: "Live smoke + integration tests", content: <AdminTestRunner /> },
         { id: "runbook", label: "Runbook", hint: "In-app operations playbooks", content: <AdminRunbook /> },
         ...systemSections,
-        { id: "email", label: "Email Log", hint: "Raw email delivery log", content: <EmailLogMonitor /> },
+        { id: "email", label: "Email Logs", hint: "Raw email delivery log", content: <EmailLogMonitor /> },
         { id: "email-retry-audit", label: "Email Retry Audit", hint: "Sweeper run history · pending-remaining invariant", content: <EmailRetryAuditPanel /> },
+        { id: "backup", label: "Backup Management", hint: "Oracle Cloud storage tiers, archives, restores", content: (
+          <div className="space-y-6">
+            <OracleStorageMonitor />
+            <OracleOciStorageCard />
+          </div>
+        )},
       ],
     },
   ];

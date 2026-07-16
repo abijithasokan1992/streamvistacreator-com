@@ -596,6 +596,44 @@ export function TitleEditor({
             )}
           </div>
         </div>
+
+        {/* Sticky wizard footer — Prev / Next / Submit */}
+        {title && meta && (
+          <div className="border-t border-border/40 bg-card/60 backdrop-blur-sm px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3">
+            <button
+              onClick={() => prevTab && setTab(prevTab)}
+              disabled={!prevTab}
+              className="rounded-md border border-border/60 px-4 py-2 text-sm font-medium disabled:opacity-30 hover:bg-secondary/30"
+            >
+              ← Previous
+            </button>
+            <div className="text-xs text-muted-foreground tabular-nums hidden sm:block">
+              Step {currentIdx + 1} of {tabOrder.length} · {progressPct}% ready
+            </div>
+            {tab === "submission" ? (
+              mode === "edit" && !titleLocked ? (
+                <button
+                  onClick={handleSubmit}
+                  disabled={submitting || !ready}
+                  className="inline-flex items-center gap-2 rounded-md bg-accent text-accent-foreground text-sm font-semibold px-5 py-2 disabled:opacity-40"
+                  title={ready ? "Submit for review" : missing.length ? `Still needed: ${missing.slice(0,3).join(", ")}${missing.length>3?"…":""}` : ""}
+                >
+                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  Submit for Review
+                </button>
+              ) : <span />
+            ) : (
+              <button
+                onClick={() => nextTab && setTab(nextTab)}
+                disabled={!nextTab || !canAdvance}
+                className="inline-flex items-center gap-2 rounded-md bg-accent text-accent-foreground text-sm font-semibold px-5 py-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                title={!canAdvance ? "Finish this step to unlock the next" : "Continue"}
+              >
+                Next: {nextTab ? TABS.find(t => t.id === nextTab)?.label : ""} →
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       <FreeSubmissionTermsModal

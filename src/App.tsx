@@ -259,17 +259,19 @@ const App = () => (
             <AuthProvider>
               <SystemMessageProvider>
                 <StorageQuotaProvider>
-                  <GlobalErrorListener />
+                  <GlobalPaymentProvider>
+                    <GlobalErrorListener />
 
-                  <a href="#main-content" className="skip-to-content">
-                    Skip to main content
-                  </a>
-                  <ReferralCapture />
-                  <ErrorBoundary>
-                    <HostAwareRoutes />
-                    <RouteAgentDock />
-                    <AssistantLauncher />
-                  </ErrorBoundary>
+                    <a href="#main-content" className="skip-to-content">
+                      Skip to main content
+                    </a>
+                    <ReferralCapture />
+                    <ErrorBoundary>
+                      <HostAwareRoutes />
+                      <RouteAgentDock />
+                      <AssistantLauncher />
+                    </ErrorBoundary>
+                  </GlobalPaymentProvider>
                 </StorageQuotaProvider>
 
               </SystemMessageProvider>

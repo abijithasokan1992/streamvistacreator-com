@@ -213,7 +213,7 @@ export function PremiumStorageTopupModal({
                 key={t.id}
                 type="button"
                 onClick={() => startCheckout(t)}
-                disabled={pendingId !== null}
+                disabled={pendingId !== null || isBusy}
                 className={cn(
                   "text-left rounded-xl border p-4 space-y-2 transition",
                   "hover:border-accent hover:bg-accent/5",

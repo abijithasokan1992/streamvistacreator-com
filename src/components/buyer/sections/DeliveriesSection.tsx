@@ -36,6 +36,8 @@ export default function DeliveriesSection() {
   const { user } = useAuth();
   const [rows, setRows] = useState<Delivery[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [tick, setTick] = useState(0);
   const [tab, setTab] = useState<"pending" | "completed" | "history">("pending");
 
   useEffect(() => {
@@ -43,17 +45,19 @@ export default function DeliveriesSection() {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const { data } = await supabase
+      setError(null);
+      const { data, error: qErr } = await supabase
         .from("deal_deliveries")
         .select("id,title_id,buyer_org_name,recipient_email,status,method,package_notes,share_url,expires_at,shared_at,delivered_at,created_at,updated_at")
         .eq("buyer_user_id", user.id)
         .order("updated_at", { ascending: false });
       if (cancelled) return;
-      setLoading(false);
+      if (qErr) setError(qErr.message || "Unable to load deliveries.");
       setRows((data as unknown as Delivery[]) ?? []);
+      setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [user]);
+  }, [user, tick]);
 
   const { pending, completed } = useMemo(() => {
     const p: Delivery[] = [], c: Delivery[] = [];

@@ -92,7 +92,6 @@ function autoGuessMapping(headers: string[]): Record<Field, string> {
 type ParsedRow = { data: Record<string, unknown>; index: number };
 type ValidatedRow = { ok: true; row: AwardRow; index: number } | { ok: false; error: string; index: number };
 
-function coerceRow(raw: Record<string, unknown>, mapping: Record<Field, string>): ValidatedRow["index"] extends number ? ValidatedRow : never;
 function coerceRow(raw: Record<string, unknown>, mapping: Record<Field, string>, index: number): ValidatedRow {
   const pick = (f: Field) => (mapping[f] ? raw[mapping[f]] : undefined);
   const rawYear = pick("year");

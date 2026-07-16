@@ -153,7 +153,7 @@ function Tile({ label, value }: { label: string; value: string }) {
   );
 }
 function formatGb(gb: number): string {
-  if (!Number.isFinite(gb) || gb <= 0) return "0 GB";
+  if (!Number.isFinite(gb) || gb <= 0) return "—";
   if (gb >= 1024) return `${(gb / 1024).toFixed(2)} TB`;
   return `${gb.toFixed(gb < 10 ? 2 : 1)} GB`;
 }

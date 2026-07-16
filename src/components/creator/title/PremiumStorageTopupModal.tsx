@@ -3,7 +3,6 @@ import { HardDrive, Sparkles, Loader2, CheckCircle2, AlertTriangle, ArrowUpRight
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
 import {
   Dialog,
   DialogContent,

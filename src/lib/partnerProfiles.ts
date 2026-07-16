@@ -29,21 +29,40 @@ export interface PartnerProfile {
   contact_email: string | null;
 }
 
-export async function fetchPartnerProfiles(): Promise<PartnerProfile[]> {
-  // Use the public-safe view (excludes contact_email — admin-only field).
-  const { data, error } = await (supabase as any)
-    .from("partner_profiles_public")
-    .select("*")
-    .order("sort_order", { ascending: true });
-  if (error) return [];
-  return ((data ?? []) as any[]).map((r) => ({ ...r, contact_email: null })) as PartnerProfile[];
+export type PartnerFetchResult =
+  | { status: "ok"; partners: PartnerProfile[] }
+  | { status: "error"; message: string };
+
+export async function fetchPartnerProfiles(): Promise<PartnerFetchResult> {
+  try {
+    // Use the public-safe view (excludes contact_email — admin-only field).
+    const { data, error } = await (supabase as any)
+      .from("partner_profiles_public")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true });
+    if (error) {
+      return { status: "error", message: error.message || "Could not load partner directory." };
+    }
+    const partners = ((data ?? []) as any[]).map((r) => ({
+      ...r,
+      contact_email: null,
+    })) as PartnerProfile[];
+    return { status: "ok", partners };
+  } catch (e: any) {
+    return { status: "error", message: e?.message ?? "Network error while loading partners." };
+  }
 }
 
 export async function fetchPartnerProfile(slug: string): Promise<PartnerProfile | null> {
-  const { data } = await (supabase as any)
-    .from("partner_profiles_public")
-    .select("*")
-    .eq("slug", slug)
-    .maybeSingle();
-  return data ? ({ ...(data as any), contact_email: null } as PartnerProfile) : null;
+  try {
+    const { data } = await (supabase as any)
+      .from("partner_profiles_public")
+      .select("*")
+      .eq("slug", slug)
+      .maybeSingle();
+    return data ? ({ ...(data as any), contact_email: null } as PartnerProfile) : null;
+  } catch {
+    return null;
+  }
 }

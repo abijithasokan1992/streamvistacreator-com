@@ -527,7 +527,7 @@ export function AssetUploader({
               type="button"
               onClick={startUpload}
               disabled={!stagedPreflight.ok || locked || dup.kind === "block-same-title" || dup.kind === "checking" || dup.kind === "preliminary"}
-              className="inline-flex items-center gap-2 rounded-md bg-accent text-accent-foreground text-sm font-semibold px-4 py-2 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 rounded-md bg-accent text-accent-foreground text-sm font-semibold px-5 py-2.5 shadow-lg shadow-accent/20 ring-1 ring-accent/40 hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none disabled:ring-0 transition"
             >
               <Upload className="w-4 h-4" /> {dup.kind === "warn-same-workspace" || dup.kind === "hash-skipped" ? "Upload as new version" : "Start upload"}
             </button>

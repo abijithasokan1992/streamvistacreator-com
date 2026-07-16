@@ -9,6 +9,13 @@ import { dashboardForRole, useAuth } from "@/hooks/useAuth";
  * P1: role-aware secondary CTA for buyers; brand hierarchy on eyebrow.
  */
 export const Hero = () => {
+  const { role } = useAuth();
+  const { signedIn, has, routeFor } = useUserRoles();
+  const primaryTo = signedIn ? dashboardForRole(role) : "/auth?intent=signup";
+  const primaryLabel = signedIn ? "Open Your Dashboard" : "Get Started · I'm a Creator";
+  const PrimaryIcon = signedIn ? LayoutDashboard : ArrowRight;
+  const buyerTo = signedIn && has("buyer") ? routeFor("buyer", "/contact?topic=buyer-access") : "/contact?topic=buyer-access";
+  const buyerLabel = signedIn && has("buyer") ? "Open Buyer Dashboard" : "I'm a Buyer · Request Access";
   return (
     <section className="relative pt-32 pb-24 md:pt-40 md:pb-32 overflow-hidden border-b border-border/40">
       <div className="absolute inset-0 grid-bg opacity-40" aria-hidden />

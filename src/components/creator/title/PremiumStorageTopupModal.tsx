@@ -1,5 +1,5 @@
-import { useCallback, useState } from "react";
-import { HardDrive, Sparkles, Loader2, CheckCircle2 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { HardDrive, Sparkles, Loader2, CheckCircle2, AlertTriangle, ArrowUpRight } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,6 +12,31 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+
+/** Subtle, non-intrusive two-tone system alert (WebAudio, no asset needed). */
+function playSubtleAlert() {
+  try {
+    const AC: typeof AudioContext =
+      (window as any).AudioContext || (window as any).webkitAudioContext;
+    if (!AC) return;
+    const ctx = new AC();
+    const play = (freq: number, at: number, dur: number) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "sine";
+      o.frequency.setValueAtTime(freq, ctx.currentTime + at);
+      g.gain.setValueAtTime(0.0001, ctx.currentTime + at);
+      g.gain.exponentialRampToValueAtTime(0.12, ctx.currentTime + at + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + at + dur);
+      o.connect(g).connect(ctx.destination);
+      o.start(ctx.currentTime + at);
+      o.stop(ctx.currentTime + at + dur + 0.02);
+    };
+    play(880, 0, 0.18);
+    play(1174, 0.14, 0.22);
+    setTimeout(() => { try { ctx.close(); } catch {} }, 800);
+  } catch {/* silent */}
+}
 
 /**
  * PremiumStorageTopupModal

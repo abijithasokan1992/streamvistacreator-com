@@ -57,10 +57,10 @@ export const AIContentLicensingSection = () => (
             I Own Content
           </Link>
           <Link
-            to="/solutions/ai-content-licensing#request"
+            to="/contact?topic=ai-licensing-admin-review"
             className="inline-flex items-center rounded-full border border-border/70 bg-card/40 px-6 py-3 text-sm font-semibold text-foreground hover:border-primary/50 transition-colors"
           >
-            Request an AI Dataset
+            Enquire for AI Licensing
           </Link>
         </div>
 
@@ -68,7 +68,9 @@ export const AIContentLicensingSection = () => (
           StreamVista is a content aggregation, rights-verification and
           licensing partner. We do not own third-party content and do not claim
           AI-training rights unless the content owner grants those rights in
-          writing.
+          writing. All title sub-licenses are strictly Non-Sublicensable with
+          absolute Chain of Title verification managed via StreamVista
+          Operations.
         </p>
       </div>
     </div>

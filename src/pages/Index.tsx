@@ -1,6 +1,7 @@
 import { Navigate } from "react-router-dom";
 import { Navbar } from "@/components/streamvista/Navbar";
 import { Hero } from "@/components/streamvista/Hero";
+import { TrustedDistributionPartners } from "@/components/streamvista/TrustedDistributionPartners";
 import { Workflow } from "@/components/streamvista/Workflow";
 import { PlatformOverview } from "@/components/streamvista/PlatformOverview";
 import { SupportedContent } from "@/components/streamvista/SupportedContent";
@@ -35,6 +36,7 @@ const Index = () => {
       />
       <Navbar />
       <Hero />
+      <TrustedDistributionPartners />
       <section className="border-b border-border/40 bg-background/60">
         <div className="container py-6">
           <TrustBadges compact className="justify-center" />

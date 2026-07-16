@@ -24,7 +24,100 @@ function ok(body: unknown, status = 200) {
 const ACTIVE_STATUSES = new Set(["active", "authenticated"]);
 const INACTIVE_STATUSES = new Set(["halted", "cancelled", "completed", "expired"]);
 
+/**
+ * Project a Razorpay event onto `billing_orders`.
+ *
+ * Runs strictly under the service_role client — the `trg_billing_orders_paid_guard`
+ * trigger blocks status='paid' writes from any other role, so the frontend can
+ * never intercept or forge this state. Keyed on `(source_type='razorpay_order',
+ * source_ref_id=<order_id>)`; safe to re-run on webhook replays.
+ */
+async function projectToBillingOrders(
+  supabase: any,
+  event: any,
+): Promise<void> {
+  const type = event?.event as string;
+  const payment = event?.payload?.payment?.entity ?? null;
+  const order = event?.payload?.order?.entity ?? null;
+  const orderId: string | null = payment?.order_id ?? order?.id ?? null;
+  if (!orderId) return;
+
+  // Map Razorpay event → canonical billing_orders status.
+  let nextStatus: string | null = null;
+  if (type === "payment.captured" || type === "order.paid") nextStatus = "paid";
+  else if (type === "payment.failed") nextStatus = "failed";
+  else if (type === "refund.processed") nextStatus = "refunded";
+  if (!nextStatus) return;
+
+  const notesBillingOrderId: string | null =
+    payment?.notes?.billing_order_id ?? order?.notes?.billing_order_id ?? null;
+  const customerUserId: string | null =
+    payment?.notes?.userId ?? order?.notes?.userId ?? null;
+  const amountPaise = Number(payment?.amount ?? order?.amount ?? 0) || null;
+  const currency = String(payment?.currency ?? order?.currency ?? "INR");
+
+  // Locate an existing row: prefer explicit id in notes, then source_ref_id.
+  let existing: any = null;
+  if (notesBillingOrderId) {
+    const { data } = await supabase
+      .from("billing_orders").select("id,status")
+      .eq("id", notesBillingOrderId).maybeSingle();
+    existing = data;
+  }
+  if (!existing) {
+    const { data } = await supabase
+      .from("billing_orders").select("id,status")
+      .eq("source_type", "razorpay_order")
+      .eq("source_ref_id", orderId)
+      .maybeSingle();
+    existing = data;
+  }
+
+  const patch: Record<string, unknown> = {
+    status: nextStatus,
+    metadata: {
+      razorpay_event: type,
+      razorpay_payment_id: payment?.id ?? null,
+      razorpay_order_id: orderId,
+      razorpay_status: payment?.status ?? order?.status ?? null,
+      updated_via: "webhook",
+    },
+    updated_at: new Date().toISOString(),
+  };
+
+  if (existing?.id) {
+    // Never regress a paid/refunded row back to failed on a late failure event.
+    if (existing.status === "paid" && nextStatus === "failed") return;
+    if (existing.status === "refunded" && nextStatus !== "refunded") return;
+    await supabase.from("billing_orders")
+      .update(patch)
+      .eq("id", existing.id);
+    return;
+  }
+
+  await supabase.from("billing_orders").insert({
+    app_key: "streamvista",
+    customer_user_id: customerUserId,
+    source_type: "razorpay_order",
+    source_ref_id: orderId,
+    amount_subtotal_paise: amountPaise,
+    amount_tax_paise: 0,
+    amount_total_paise: amountPaise,
+    currency,
+    status: nextStatus,
+    payment_method_mode: "razorpay",
+    metadata: patch.metadata,
+  });
+}
+
+
 async function processEvent(supabase: any, event: any, creds: any): Promise<void> {
+  // Always project first so canonical billing_orders reflects Razorpay before
+  // any downstream side-effects run. Service_role bypasses the paid guard.
+  try { await projectToBillingOrders(supabase, event); } catch (e) {
+    console.error("razorpay-webhook: billing_orders projection failed", e);
+  }
+
   const type = event?.event as string;
   const payment = event?.payload?.payment?.entity;
   const order = event?.payload?.order?.entity;

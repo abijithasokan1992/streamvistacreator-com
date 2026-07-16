@@ -8,6 +8,7 @@ import { AuthProvider, dashboardForRole, useAuth } from "@/hooks/useAuth";
 
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
+import { GlobalPaymentProvider } from "@/components/payments/GlobalPaymentProvider";
 import Onboarding from "./pages/Onboarding.tsx";
 import Index from "./pages/Index.tsx";
 import Auth from "./pages/Auth.tsx";
@@ -258,17 +259,19 @@ const App = () => (
             <AuthProvider>
               <SystemMessageProvider>
                 <StorageQuotaProvider>
-                  <GlobalErrorListener />
+                  <GlobalPaymentProvider>
+                    <GlobalErrorListener />
 
-                  <a href="#main-content" className="skip-to-content">
-                    Skip to main content
-                  </a>
-                  <ReferralCapture />
-                  <ErrorBoundary>
-                    <HostAwareRoutes />
-                    <RouteAgentDock />
-                    <AssistantLauncher />
-                  </ErrorBoundary>
+                    <a href="#main-content" className="skip-to-content">
+                      Skip to main content
+                    </a>
+                    <ReferralCapture />
+                    <ErrorBoundary>
+                      <HostAwareRoutes />
+                      <RouteAgentDock />
+                      <AssistantLauncher />
+                    </ErrorBoundary>
+                  </GlobalPaymentProvider>
                 </StorageQuotaProvider>
 
               </SystemMessageProvider>

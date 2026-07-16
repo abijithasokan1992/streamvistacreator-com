@@ -271,14 +271,38 @@ export default function DitIngestProtocol() {
     if (!user || !canSubmit) return;
     setSubmitting(true);
     try {
-      // 1. Upload screenshot to private storage. Path scoped to user id so RLS
-      //    on storage.objects can enforce ownership.
+      // 1. Attempt to upload screenshot to private storage. If the bucket is
+      //    missing (e.g. not yet provisioned on this environment) or storage
+      //    rejects the write, we degrade gracefully: the compliance log is
+      //    still saved with a local placeholder path so chain-of-custody
+      //    metadata is not lost. The screenshot itself is retained in memory
+      //    and the admin can re-attach once the bucket is provisioned.
       const ext = screenshotFile!.name.split(".").pop() || "png";
       const path = `${user.id}/${new Date().toISOString().replace(/[:.]/g, "-")}-${uid()}.${ext}`;
-      const up = await supabase.storage
-        .from("dit-ingest-screenshots")
-        .upload(path, screenshotFile!, { cacheControl: "3600", upsert: false });
-      if (up.error) throw new Error(`Upload failed: ${up.error.message}`);
+
+      let storedPath = path;
+      let uploadDegraded = false;
+      let uploadErrorMessage: string | null = null;
+      try {
+        const up = await supabase.storage
+          .from("dit-ingest-screenshots")
+          .upload(path, screenshotFile!, { cacheControl: "3600", upsert: false });
+        if (up.error) {
+          uploadDegraded = true;
+          uploadErrorMessage = up.error.message;
+        }
+      } catch (uploadErr: any) {
+        uploadDegraded = true;
+        uploadErrorMessage = uploadErr?.message ?? String(uploadErr);
+      }
+
+      if (uploadDegraded) {
+        storedPath = `pending-local://${path}`;
+        console.warn(
+          "[DIT] screenshot upload unavailable — saving log with local placeholder",
+          uploadErrorMessage,
+        );
+      }
 
       const finalChecklist: ChecklistState = { ...checklist, screenshot_uploaded: true };
 
@@ -292,12 +316,18 @@ export default function DitIngestProtocol() {
         replication_regions: mode === "mode_3_pure_cloud_ingest" ? regions : null,
         camera_mapping: cameras,
         checklist_status: finalChecklist,
-        screenshot_url: path,
-        notes: notes.trim() || null,
+        screenshot_url: storedPath,
+        notes: uploadDegraded
+          ? `${notes.trim()}${notes.trim() ? "\n\n" : ""}[System] Screenshot pending re-upload — storage bucket unavailable at submission (${uploadErrorMessage ?? "unknown"}).`.trim()
+          : notes.trim() || null,
       });
       if (error) throw new Error(error.message);
 
-      toast.success("DIT ingest log saved.");
+      if (uploadDegraded) {
+        toast.warning("DIT log saved — screenshot upload deferred (bucket unavailable).");
+      } else {
+        toast.success("DIT ingest log saved.");
+      }
       resetForm();
       await loadHistory();
       setTab("history");

@@ -25,6 +25,12 @@ export const FREE_WARN_MB = 4 * MB_PER_GB; // 80% of 5 GB — kept exported for 
 
 type Quota = {
   loading: boolean;
+  /**
+   * True only after the entitlement RPC returned real data. When false
+   * (loading, failed, or missing user), `locked` is forced to false and
+   * `checkOrPaywall()` is permissive — never hard-block on an unknown quota.
+   */
+  known: boolean;
   /** True when the workspace is on the Creator Basic submission plan. */
   isBasic: boolean;
   /** Legacy alias — `isCreator` historically meant "has paid storage". */
@@ -51,13 +57,14 @@ type Quota = {
   refresh: () => Promise<void>;
 };
 
+
 const Ctx = createContext<Quota | null>(null);
 
 export function useStorageQuota(): Quota {
   const v = useContext(Ctx);
   if (!v) {
     return {
-      loading: false, isBasic: true, isCreator: false, planCode: "creator_basic",
+      loading: false, known: false, isBasic: true, isCreator: false, planCode: "creator_basic",
       usedMb: 0, limitMb: FREE_LIMIT_MB,
       totalGb: FREE_STORAGE_GB, includedGb: FREE_STORAGE_GB, paidGb: 0, bonusGb: 0,
       testingOverrideGb: 0, testingModeEnabled: false, testingRoleKey: "creator",
@@ -65,6 +72,7 @@ export function useStorageQuota(): Quota {
       percent: 0, warning: false, urgent: false, locked: false,
       checkOrPaywall: () => true, openPaywall: () => {}, refresh: async () => {},
     };
+
   }
   return v;
 }
@@ -106,7 +114,9 @@ export function StorageQuotaProvider({ children }: { children: React.ReactNode }
   const hardPct = Number(ent?.hard_stop_threshold_pct ?? 100);
   const warning = percent >= warnPct && percent < urgentPct;
   const urgent = percent >= urgentPct && percent < hardPct;
-  const locked = percent >= hardPct;
+  const known = !loading && ent !== null;
+  // When quota is unknown (loading or RPC failed), never hard-block uploads.
+  const locked = known && percent >= hardPct;
   const isBasic = planCode === "creator_basic" && paidGb <= 0 && testingOverrideGb <= 0;
   const isCreator = !isBasic;
 
@@ -116,6 +126,7 @@ export function StorageQuotaProvider({ children }: { children: React.ReactNode }
     if (locked) { setOpen(true); return false; }
     return true;
   }, [locked]);
+
 
   const upgrade = useCallback(async () => {
     if (!user) { toast.error("Sign in to upgrade"); return; }
@@ -171,13 +182,14 @@ export function StorageQuotaProvider({ children }: { children: React.ReactNode }
   }, [user, refresh]);
 
   const value = useMemo<Quota>(() => ({
-    loading, isBasic, isCreator, planCode,
+    loading, known, isBasic, isCreator, planCode,
     usedMb, limitMb, totalGb, includedGb, paidGb, bonusGb,
     testingOverrideGb, testingModeEnabled, testingRoleKey,
     addonBlocks,
     percent, warning, urgent, locked,
     checkOrPaywall, openPaywall, refresh,
-  }), [loading, isBasic, isCreator, planCode, usedMb, limitMb, totalGb, includedGb, paidGb, bonusGb, testingOverrideGb, testingModeEnabled, testingRoleKey, addonBlocks, percent, warning, urgent, locked, checkOrPaywall, openPaywall, refresh]);
+  }), [loading, known, isBasic, isCreator, planCode, usedMb, limitMb, totalGb, includedGb, paidGb, bonusGb, testingOverrideGb, testingModeEnabled, testingRoleKey, addonBlocks, percent, warning, urgent, locked, checkOrPaywall, openPaywall, refresh]);
+
 
 
   return (

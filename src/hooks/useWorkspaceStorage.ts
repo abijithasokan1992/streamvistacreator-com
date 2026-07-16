@@ -25,6 +25,12 @@ const GB = 1024 ** 3;
 export type WorkspaceStorage = {
   loading: boolean;
   error: string | null;
+  /**
+   * True only after a successful RPC returned a numeric total_storage_gb.
+   * When false (loading, error, or missing context), callers MUST treat the
+   * quota as unknown and MUST NOT hard-block uploads on it.
+   */
+  known: boolean;
   workspaceId: string | null;
 
   // Capacity (GB)
@@ -48,6 +54,7 @@ export type WorkspaceStorage = {
 
   refresh: () => Promise<void>;
 };
+
 
 type CacheEntry = { at: number; value: WorkspaceStorage };
 const CACHE = new Map<string, CacheEntry>();
@@ -74,6 +81,7 @@ async function fetchWithRetry(userId: string, workspaceId: string | null): Promi
 const EMPTY = (workspaceId: string | null): WorkspaceStorage => ({
   loading: true,
   error: null,
+  known: false,
   workspaceId,
   totalGb: 0,
   includedGb: 0,
@@ -90,6 +98,7 @@ const EMPTY = (workspaceId: string | null): WorkspaceStorage => ({
   lastRecalculatedAt: null,
   refresh: async () => {},
 });
+
 
 export function useWorkspaceStorage(): WorkspaceStorage {
   const { user } = useAuth();
@@ -128,6 +137,7 @@ export function useWorkspaceStorage(): WorkspaceStorage {
       const next: WorkspaceStorage = {
         loading: false,
         error: null,
+        known: true,
         workspaceId: activeId ?? null,
         totalGb, includedGb, paidGb, bonusGb,
         usedBytes,
@@ -144,9 +154,11 @@ export function useWorkspaceStorage(): WorkspaceStorage {
       CACHE.set(cacheKey, { at: Date.now(), value: next });
       if (mounted.current) setState({ ...next, refresh: () => load({ skipCache: true }) });
     } catch (e: any) {
+      // Preserve last-good values; never reset to zero on transient failure.
       if (mounted.current) setState((s) => ({ ...s, loading: false, error: e?.message ?? "load_failed" }));
     }
   }, [user?.id, activeId, cacheKey]);
+
 
   useEffect(() => {
     if (!user) return;

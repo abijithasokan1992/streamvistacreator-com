@@ -84,12 +84,13 @@ Deno.serve(async (req) => {
 
     // Best-effort audit log; failure here shouldn't block the caller.
     try {
-      await admin.from("dit_ingest_logs").insert({
-        user_id: uid,
-        event: "c2c_par_created",
-        payload: {
+      await admin.from("admin_audit_log").insert({
+        actor_id: uid,
+        action: "c2c_par_created",
+        entity_type: "oci_par",
+        entity_id: parName,
+        metadata: {
           prefix,
-          par_name: parName,
           expires_at: expiresAtIso,
           access_type: "AnyObjectWrite",
         },

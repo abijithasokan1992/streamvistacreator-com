@@ -188,6 +188,12 @@ export default function BusinessIntelligenceHub() {
             </div>
           </TabsContent>
 
+          <TabsContent value="market" className="mt-5">
+            <MarketPotentialTable />
+          </TabsContent>
+
+
+
           <TabsContent value="insights" className="mt-5 space-y-2">
             {insights.map((i, k) => (
               <div key={k} className="rounded-2xl border border-border/50 bg-secondary/20 px-4 py-3 text-sm flex items-start gap-2">

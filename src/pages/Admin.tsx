@@ -470,7 +470,19 @@ function buildDepartments(args: {
       icon: <Briefcase className="w-4 h-4" />,
       desc: "Plans, subscriptions, payments, invoices, rights, licensing.",
       sections: [
-        { id: "plans", label: "Plans & Pricing", hint: "Products, vault pricing, free tier", content: (
+        { id: "marketplace", label: "Marketplace Catalog / Buyer Surface", hint: "Live buyer-facing catalog (featured_films)", content: (
+          <div className="space-y-4">
+            <div className="glass rounded-2xl p-4 text-xs text-muted-foreground">
+              Read-only preview of the live buyer marketplace. Requests routed to
+              <code className="mx-1">/dashboard/buyer</code> for full buyer flow.
+            </div>
+            <FindContentSection onRequestForTitle={() => { window.location.href = "/dashboard/buyer"; }} />
+          </div>
+        )},
+        { id: "signed-deals", label: "Signed Deals", hint: "Offers · contracts · licensing lifecycle", content: <DealOperationsConsole /> },
+        { id: "subscription-plans", label: "Subscription Plans", hint: "Products & pricing plans", content: <ProductsAndPlans /> },
+        { id: "pricing-calculator", label: "Business Estimates & Pricing Calculator", hint: "Commercial offer builder", content: <CommercialControlTower /> },
+        { id: "plans", label: "Plans & Pricing (full)", hint: "Products, vault pricing, free tier", content: (
           <div className="space-y-6"><ProductsAndPlans /><StudioVaultPricing /><FreeTierConfig /></div>
         )},
         { id: "billing", label: "Billing & Payments", hint: "Invoices and finance ops", content: (

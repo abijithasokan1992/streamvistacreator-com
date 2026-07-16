@@ -24,7 +24,24 @@ export default function CreatorPreview() {
       />
       <Navbar />
 
+      {/* Persistent illustrative-demo watermark — pins to viewport across scroll. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center overflow-hidden"
+      >
+        <span className="rotate-[-24deg] whitespace-nowrap font-display text-[9vw] font-black uppercase tracking-tighter text-foreground/[0.045] select-none">
+          Illustrative Demo
+        </span>
+      </div>
+      <div
+        role="note"
+        className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none rounded-full border border-accent/40 bg-background/85 backdrop-blur px-4 py-1.5 text-[10px] font-mono-tech uppercase tracking-[0.22em] text-accent shadow-lg"
+      >
+        Illustrative Demo — not real customer records or revenue
+      </div>
+
       <main className="pt-24 pb-24">
+
         <div className="container max-w-6xl">
           {/* Hero */}
           <header className="mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-6">

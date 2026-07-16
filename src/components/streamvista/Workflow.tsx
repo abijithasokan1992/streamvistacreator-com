@@ -14,7 +14,7 @@ const STEPS = [
 ];
 
 export const Workflow = () => (
-  <section id="workflow" className="py-24 border-b border-border/40 relative overflow-hidden">
+  <section id="workflow" className="py-16 sm:py-24 border-b border-border/40 relative overflow-hidden">
     <div
       aria-hidden
       className="pointer-events-none absolute inset-0 opacity-[0.3]"
@@ -36,7 +36,7 @@ export const Workflow = () => (
         </h2>
       </div>
 
-      <ol className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 lg:gap-2 relative">
+      <ol className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 sm:gap-6 lg:gap-2 relative">
         {STEPS.map(({ icon: Icon, step, title, body }, i) => (
           <li key={step} className="relative flex flex-col items-center text-center">
             <div

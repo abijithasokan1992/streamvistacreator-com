@@ -66,11 +66,10 @@ export const AIContentLicensingSection = () => (
 
         <p className="mt-6 text-[11px] text-muted-foreground/70 max-w-xl">
           StreamVista is a content aggregation, rights-verification and
-          licensing partner. We do not own third-party content and do not claim
-          AI-training rights unless the content owner grants those rights in
-          writing. All title sub-licenses are strictly Non-Sublicensable with
-          absolute Chain of Title verification managed via StreamVista
-          Operations.
+          secure master licensing partner. We do not own third-party content
+          and we do not claim AI-training rights unless the content owner
+          grants those rights in writing, with full Chain of Title
+          verification managed by StreamVista Operations.
         </p>
       </div>
     </div>

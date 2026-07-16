@@ -117,86 +117,34 @@ export function PremiumStorageTopupModal({
         return;
       }
       setPendingId(tier.id);
-      const toastId = toast.loading("Opening Razorpay…");
+      // Delegates to the global helper: session refresh, metadata forwarding
+      // and verify handshake all live in a single canonical implementation.
+      const { initializeCheckout } = await import("@/lib/payments/initializeCheckout");
       try {
-        assertLiveCheckoutHost();
-        // Force a clean session refetch — never rely on a cached token.
-        // `refreshSession` returns the freshest access_token; fall back to getSession.
-        let accessToken: string | undefined;
-        try {
-          const { data: refreshed } = await supabase.auth.refreshSession();
-          accessToken = refreshed?.session?.access_token;
-        } catch {/* refresh may fail if token is still valid — fall through */}
-        if (!accessToken) {
-          const { data: sess } = await supabase.auth.getSession();
-          accessToken = sess?.session?.access_token;
-        }
-        if (!accessToken) {
-          throw new Error("Your session expired. Please sign in again.");
-        }
-        const { data, error } = await supabase.functions.invoke("create-storage-topup", {
-          body: tier.payload,
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-        if (error) throw new Error(error.message || "Checkout could not start (edge function returned an error).");
-        if ((data as any)?.error) throw new Error((data as any).error);
-
-        await new Promise<void>((resolve) => {
-          if ((window as any).Razorpay) return resolve();
-          const s = document.createElement("script");
-          s.src = "https://checkout.razorpay.com/v1/checkout.js";
-          s.onload = () => resolve();
-          document.body.appendChild(s);
-        });
-
-        const rzp = new (window as any).Razorpay({
-          key: (data as any).keyId,
-          order_id: (data as any).orderId,
-          amount: (data as any).amount,
-          currency: "INR",
-          name: "StreamVista Storage Top-up",
+        await initializeCheckout({
+          purpose: "storage_topup",
+          payload: tier.payload,
+          label: `Storage · ${tier.label}`,
           description: `${tier.label} — ${tier.headline}`,
           prefill: { email: user.email ?? undefined },
-          theme: { color: "#a855f7" },
-          handler: async (resp: any) => {
-            // Refresh token again before verify — Razorpay checkout can take minutes.
-            let verifyToken: string | undefined;
-            try {
-              const { data: r } = await supabase.auth.refreshSession();
-              verifyToken = r?.session?.access_token;
-            } catch {/* ignore */}
-            if (!verifyToken) {
-              const { data: s } = await supabase.auth.getSession();
-              verifyToken = s?.session?.access_token;
-            }
-            const v = await supabase.functions.invoke("verify-storage-topup", {
-              body: {
-                topupId: (data as any).topupId,
-                razorpay_order_id: resp.razorpay_order_id,
-                razorpay_payment_id: resp.razorpay_payment_id,
-                razorpay_signature: resp.razorpay_signature,
-              },
-              headers: verifyToken ? { Authorization: `Bearer ${verifyToken}` } : undefined,
-            });
-            if (v.error || (v.data as any)?.error) {
-              toast.error("Payment verification failed — please contact support.");
-            } else {
-              toast.success(`${tier.label} activated — storage unlocked.`);
-              onOpenChange(false);
-              onSuccess?.();
-            }
+          metadata: {
+            user_id: user.id,
+            payment_purpose: "storage_topup",
+            tier: tier.id,
+          },
+          onSuccess: () => {
+            toast.success(`${tier.label} activated — storage unlocked.`);
+            onOpenChange(false);
+            onSuccess?.();
           },
         });
-        toast.dismiss(toastId);
-        rzp.open();
-      } catch (e: any) {
-        toast.error(e?.message || "Could not start Razorpay checkout", { id: toastId });
       } finally {
         setPendingId(null);
       }
     },
     [user, onOpenChange, onSuccess],
   );
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

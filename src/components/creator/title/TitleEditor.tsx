@@ -603,17 +603,32 @@ export function TitleEditor({
                   </div>
                 )}
                 {tab === "rights" && (
-                  <div className="space-y-8">
-                    <RightsAvailabilityPanel meta={meta} setMeta={setMeta} readOnly={metadataLocked} isFree={isFree} />
-                    <BusinessIntelligencePanel meta={meta} setMeta={setMeta} readOnly={metadataLocked} />
+                  <div className="space-y-4">
                     <CreatorDistributionStatus titleId={title.id} titleStatus={title.status} />
+                    <SmartExpand
+                      title="Advanced Rights"
+                      hint="Territory, exclusivity, availability windows and holdbacks. Only expand if you're ready to define detailed rights."
+                    >
+                      <RightsAvailabilityPanel meta={meta} setMeta={setMeta} readOnly={metadataLocked} isFree={isFree} />
+                    </SmartExpand>
+                    <SmartExpand
+                      title="Add Business Intelligence"
+                      hint="ROI estimates, platform affinity, target audience — helps buyers evaluate market potential."
+                    >
+                      <BusinessIntelligencePanel meta={meta} setMeta={setMeta} readOnly={metadataLocked} />
+                    </SmartExpand>
                     {title.workspace_id && (
-                      <AILicensingPanel
-                        titleId={title.id}
-                        workspaceId={title.workspace_id}
-                        ownerUserId={title.owner_user_id}
-                        readOnly={metadataLocked}
-                      />
+                      <SmartExpand
+                        title="AI Licensing"
+                        hint="Grant, revoke or preview AI training rights for this title."
+                      >
+                        <AILicensingPanel
+                          titleId={title.id}
+                          workspaceId={title.workspace_id}
+                          ownerUserId={title.owner_user_id}
+                          readOnly={metadataLocked}
+                        />
+                      </SmartExpand>
                     )}
                   </div>
                 )}

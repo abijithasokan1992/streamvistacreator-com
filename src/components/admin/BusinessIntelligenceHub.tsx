@@ -249,3 +249,146 @@ function Stat({ label, value, tone = "muted" }: { label: string; value: string; 
     </div>
   );
 }
+
+/* -----------------------------------------------------------------------
+ * MarketPotentialTable — ranks content_titles by BI signals stored in the
+ * metadata JSON (roi_estimate, rights_expiry_date, sublicensable_status,
+ * target_audience, platform_affinity_tags). Read-only, no new tables.
+ * -------------------------------------------------------------------- */
+
+type MarketRow = {
+  id: string;
+  title: string;
+  status: string;
+  roi: RoiEstimate;
+  roiRank: number;
+  expiry: string; // ISO date or ""
+  expiryTs: number; // for sorting; +Inf when unset
+  sublicensable: SublicensableStatus;
+  audience: string;
+  platforms: string[];
+};
+
+type SortKey = "roi" | "expiry" | "title" | "status";
+
+function MarketPotentialTable() {
+  const [rows, setRows] = useState<MarketRow[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>("roi");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  useEffect(() => {
+    (async () => {
+      setError(null);
+      const { data, error } = await (supabase as any)
+        .from("content_titles")
+        .select("id, title, status, metadata, updated_at")
+        .order("updated_at", { ascending: false })
+        .limit(500);
+      if (error) { setError(error.message); setRows([]); return; }
+      const mapped: MarketRow[] = (data ?? []).map((r: any) => {
+        const m = r.metadata ?? {};
+        const c = m.commercial ?? {};
+        const p = m.performance ?? {};
+        const roi: RoiEstimate = (p.roi_estimate as RoiEstimate) ?? "unspecified";
+        const expiry: string = c.rights_expiry_date ?? "";
+        const expiryTs = expiry ? Date.parse(expiry) : Number.POSITIVE_INFINITY;
+        return {
+          id: r.id,
+          title: r.title ?? "(untitled)",
+          status: r.status ?? "",
+          roi,
+          roiRank: ROI_ESTIMATE_RANK[roi] ?? 0,
+          expiry,
+          expiryTs: Number.isFinite(expiryTs) ? expiryTs : Number.POSITIVE_INFINITY,
+          sublicensable: (c.sublicensable_status as SublicensableStatus) ?? "unspecified",
+          audience: c.target_audience ?? "",
+          platforms: Array.isArray(p.platform_affinity_tags) ? p.platform_affinity_tags : [],
+        };
+      });
+      setRows(mapped);
+    })();
+  }, []);
+
+  const sorted = useMemo(() => {
+    if (!rows) return [];
+    const arr = [...rows];
+    const dir = sortDir === "asc" ? 1 : -1;
+    arr.sort((a, b) => {
+      let cmp = 0;
+      if (sortKey === "roi") cmp = a.roiRank - b.roiRank;
+      else if (sortKey === "expiry") cmp = a.expiryTs - b.expiryTs;
+      else if (sortKey === "title") cmp = a.title.localeCompare(b.title);
+      else if (sortKey === "status") cmp = a.status.localeCompare(b.status);
+      return cmp * dir;
+    });
+    return arr;
+  }, [rows, sortKey, sortDir]);
+
+  const toggleSort = (k: SortKey) => {
+    if (k === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(k); setSortDir(k === "title" || k === "status" ? "asc" : "desc"); }
+  };
+
+  if (rows === null) {
+    return <div className="text-sm text-muted-foreground inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading titles…</div>;
+  }
+  if (error) return <div className="text-sm text-amber-300">Failed to load: {error}</div>;
+  if (rows.length === 0) return <div className="text-sm text-muted-foreground italic">No titles yet.</div>;
+
+  const Th = ({ k, label }: { k: SortKey; label: string }) => (
+    <th className="text-left font-semibold px-3 py-2">
+      <button onClick={() => toggleSort(k)} className="inline-flex items-center gap-1 hover:text-foreground">
+        {label} <ArrowUpDown className={`w-3 h-3 ${sortKey === k ? "opacity-100" : "opacity-30"}`} />
+      </button>
+    </th>
+  );
+
+  return (
+    <div className="rounded-2xl border border-border/50 overflow-hidden">
+      <div className="px-4 py-2 text-[11px] text-muted-foreground bg-secondary/20 border-b border-border/40">
+        Ranking {sorted.length} title{sorted.length === 1 ? "" : "s"} by BI signals captured in the intake form.
+      </div>
+      <div className="overflow-x-auto max-h-[520px]">
+        <table className="w-full text-xs">
+          <thead className="bg-secondary/30 text-muted-foreground sticky top-0">
+            <tr>
+              <Th k="title" label="Title" />
+              <Th k="status" label="Status" />
+              <Th k="roi" label="ROI estimate" />
+              <Th k="expiry" label="Rights expiry" />
+              <th className="text-left font-semibold px-3 py-2">Sublicensable</th>
+              <th className="text-left font-semibold px-3 py-2">Target audience</th>
+              <th className="text-left font-semibold px-3 py-2">Platform affinity</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((r) => (
+              <tr key={r.id} className="border-t border-border/30 hover:bg-secondary/10">
+                <td className="px-3 py-2 font-medium text-foreground truncate max-w-[240px]">{r.title}</td>
+                <td className="px-3 py-2 text-muted-foreground">{r.status || "—"}</td>
+                <td className="px-3 py-2">
+                  <span className={
+                    r.roi === "very_high" ? "text-emerald-300"
+                    : r.roi === "high" ? "text-emerald-200"
+                    : r.roi === "medium" ? "text-amber-200"
+                    : r.roi === "low" ? "text-muted-foreground"
+                    : "text-muted-foreground italic"
+                  }>
+                    {ROI_ESTIMATE_LABEL[r.roi]}
+                  </span>
+                </td>
+                <td className="px-3 py-2 tabular-nums">{r.expiry || <span className="text-muted-foreground">—</span>}</td>
+                <td className="px-3 py-2">{SUBLICENSABLE_LABEL[r.sublicensable]}</td>
+                <td className="px-3 py-2 text-muted-foreground truncate max-w-[220px]" title={r.audience}>{r.audience || "—"}</td>
+                <td className="px-3 py-2 text-muted-foreground truncate max-w-[220px]" title={r.platforms.join(", ")}>
+                  {r.platforms.length ? r.platforms.join(", ") : "—"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}

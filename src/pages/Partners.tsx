@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
+  Loader2,
   Globe,
   Languages,
   Film,
@@ -59,14 +60,26 @@ function bucketFor(partner: PartnerProfile): string {
 export default function Partners() {
   const [items, setItems] = useState<PartnerProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("All");
   const [detailFor, setDetailFor] = useState<PartnerProfile | null>(null);
 
-  useEffect(() => {
-    fetchPartnerProfiles().then((rows) => {
-      setItems(rows);
+  const load = () => {
+    setLoading(true);
+    setLoadError(null);
+    fetchPartnerProfiles().then((result) => {
+      if (result.status === "ok") {
+        setItems(result.partners);
+      } else {
+        setItems([]);
+        setLoadError(result.message);
+      }
       setLoading(false);
     });
+  };
+
+  useEffect(() => {
+    load();
   }, []);
 
   const grouped = useMemo(() => {
@@ -84,12 +97,14 @@ export default function Partners() {
     return items.filter((p) => bucketFor(p) === activeCategory);
   }, [items, activeCategory]);
 
+  const hasVerifiedPartners = items.length > 0;
+
   return (
     <>
       <Seo
         path="/partners"
         title="Partner Ecosystem — StreamVista Cloud X"
-        description="The connected media ecosystem of OTT, broadcasters, FAST, TVOD, AVOD, SVOD, educational, airlines and rights buyers. One workspace. Every buyer."
+        description="Distribution and licensing partners in the StreamVista network — OTT, broadcasters, FAST, TVOD, AVOD, SVOD, educational, airline and rights-buyer categories."
       />
       <Navbar />
       <main className="pt-24">
@@ -98,18 +113,17 @@ export default function Partners() {
           <div className="flex items-center gap-3 mb-5">
             <div className="w-8 h-px bg-accent" />
             <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">
-              Connected media ecosystem
+              Partner ecosystem
             </span>
           </div>
           <h1 className="font-display font-black uppercase leading-[0.9] tracking-tight text-5xl md:text-7xl max-w-4xl">
-            One workspace.
-            <br />
-            <span className="gradient-text">Every buyer.</span>
+            Distribution &{" "}
+            <span className="gradient-text">licensing partners.</span>
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-muted-foreground leading-relaxed">
-            StreamVista is plugged into the streamers, broadcasters and rights buyers your titles
-            need to reach — mass-market SVOD, premium TVOD, regional platforms, FAST channels,
-            educational libraries and airline networks. Ship once, distribute everywhere.
+            StreamVista is building a curated network of streamers, broadcasters, FAST channels,
+            educational libraries, airline networks and rights buyers. Every listed partner is
+            an active relationship — categories with no listings are open for applications.
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
             <Link
@@ -157,10 +171,51 @@ export default function Partners() {
             Partner directory {activeCategory !== "All" ? `— ${activeCategory}` : ""}
           </div>
           {loading ? (
-            <div className="py-20 text-center text-sm text-muted-foreground">Loading partners…</div>
+            <div className="py-20 text-center text-sm text-muted-foreground" role="status" aria-live="polite">
+              <Loader2 className="w-5 h-5 animate-spin inline-block mr-2 align-middle" />
+              Loading partner directory…
+            </div>
+          ) : loadError ? (
+            <div
+              role="alert"
+              className="py-10 px-6 text-center border border-destructive/40 bg-destructive/5 rounded-2xl"
+            >
+              <div className="text-sm font-semibold text-destructive mb-2">
+                Couldn't load the partner directory.
+              </div>
+              <p className="text-xs text-muted-foreground max-w-md mx-auto mb-4">
+                {loadError}
+              </p>
+              <button
+                type="button"
+                onClick={load}
+                className="inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-full border border-border/60 hover:border-primary/60 transition-colors"
+              >
+                Try again
+              </button>
+            </div>
+          ) : !hasVerifiedPartners ? (
+            <div className="py-14 px-6 text-center border border-dashed border-border/60 rounded-2xl">
+              <div className="eyebrow mb-2">No verified partners listed yet</div>
+              <p className="text-sm text-muted-foreground max-w-lg mx-auto mb-5">
+                The StreamVista partner directory only shows relationships we can back with
+                a written agreement. We're actively onboarding — if you operate a platform,
+                broadcaster, FAST channel or licensing desk, we'd love to talk.
+              </p>
+              <Link
+                to="/contact?topic=partner"
+                className="inline-flex items-center gap-2 text-xs font-semibold px-5 py-2.5 rounded-full bg-gradient-primary text-primary-foreground"
+              >
+                Apply as a partner <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
           ) : filtered.length === 0 ? (
             <div className="py-16 text-center text-sm text-muted-foreground border border-dashed border-border/60 rounded-2xl">
-              No partners in this category yet. Check back soon.
+              No partners in this category yet.{" "}
+              <Link to="/contact?topic=partner" className="text-primary hover:underline">
+                Apply to be the first
+              </Link>
+              .
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -175,6 +230,7 @@ export default function Partners() {
             </div>
           )}
         </section>
+
 
         {/* 4. AI Compatibility */}
         <section className="container py-16">

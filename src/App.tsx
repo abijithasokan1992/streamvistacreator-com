@@ -10,6 +10,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { GlobalPaymentProvider } from "@/components/payments/GlobalPaymentProvider";
 import Onboarding from "./pages/Onboarding.tsx";
+import RoleUnknown from "./pages/RoleUnknown.tsx";
 import Index from "./pages/Index.tsx";
 import Auth from "./pages/Auth.tsx";
 import AuthCallback from "./pages/AuthCallback.tsx";

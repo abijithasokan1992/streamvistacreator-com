@@ -386,8 +386,8 @@ export function AssetUploader({
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); inputRef.current?.click(); }
       }}
       className={cn(
-        "rounded-xl border-2 border-dashed p-6 space-y-4 transition-all",
-        !stagedFile && !busy && !locked && "cursor-pointer hover:border-accent hover:bg-accent/5 min-h-[180px] flex flex-col justify-center",
+        "rounded-xl border-2 border-dashed p-4 space-y-3 transition-all",
+        !stagedFile && !busy && !locked && "cursor-pointer hover:border-accent hover:bg-accent/5 min-h-[140px] flex flex-col justify-center",
         drag ? "border-accent bg-accent/10 scale-[1.01]" : "border-border/60",
         locked && "opacity-60",
       )}
@@ -483,15 +483,16 @@ export function AssetUploader({
             <p className="text-rose-400 text-sm">{(stagedPreflight as { ok: false; reason: string }).reason}</p>
           )}
           {stagedPreflight.ok && wouldExceedQuota(stagedFile.size) && (
-            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-amber-100 space-y-1 text-sm">
-              <p className="font-medium inline-flex items-center gap-1.5"><HardDrive className="w-4 h-4" /> Storage may be tight for this upload</p>
-              <p>This file needs {humanBytes(stagedFile.size)} but only {humanBytes(quotaRemainingBytes)} of {humanBytes(quotaTotalBytes)} is free. The upload will still start — top up now to avoid interruptions.</p>
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-amber-100 text-xs flex flex-wrap items-center gap-x-2 gap-y-1">
+              <HardDrive className="w-3.5 h-3.5 shrink-0" />
+              <span className="font-medium">Storage tight:</span>
+              <span>needs {humanBytes(stagedFile.size)} · {humanBytes(quotaRemainingBytes)} free.</span>
               <button
                 type="button"
                 onClick={() => setTopupOpen(true)}
-                className="underline text-amber-50 hover:text-white"
+                className="underline text-amber-50 hover:text-white ml-auto"
               >
-                Upgrade or add storage →
+                Upgrade storage →
               </button>
             </div>
           )}
@@ -526,7 +527,7 @@ export function AssetUploader({
               type="button"
               onClick={startUpload}
               disabled={!stagedPreflight.ok || locked || dup.kind === "block-same-title" || dup.kind === "checking" || dup.kind === "preliminary"}
-              className="inline-flex items-center gap-2 rounded-md bg-accent text-accent-foreground text-sm font-semibold px-4 py-2 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 rounded-md bg-accent text-accent-foreground text-sm font-semibold px-5 py-2.5 shadow-lg shadow-accent/20 ring-1 ring-accent/40 hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none disabled:ring-0 transition"
             >
               <Upload className="w-4 h-4" /> {dup.kind === "warn-same-workspace" || dup.kind === "hash-skipped" ? "Upload as new version" : "Start upload"}
             </button>

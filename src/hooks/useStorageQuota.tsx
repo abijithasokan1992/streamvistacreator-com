@@ -3,7 +3,7 @@ import { Loader2, ShieldAlert, Sparkles, ArrowUpRight, Lock } from "lucide-react
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { FREE_STORAGE_GB } from "@/components/streamvista/plans";

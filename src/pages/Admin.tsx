@@ -519,13 +519,20 @@ function buildDepartments(args: {
       icon: <SettingsIcon className="w-4 h-4" />,
       desc: "System settings, audit, email, AI, security, homepage CMS.",
       sections: [
+        { id: "mission-shortcut", label: "Mission Control", hint: "Live operations dashboard", content: <MissionControl /> },
         { id: "health", label: "Infrastructure Health", hint: "Live probes · no cached state", content: <InfrastructureHealth /> },
         { id: "metrics", label: "Metrics", hint: "Latency percentiles, throughput, failure rates", content: <MetricsDashboard /> },
         { id: "tests", label: "Test Runner", hint: "Live smoke + integration tests", content: <AdminTestRunner /> },
         { id: "runbook", label: "Runbook", hint: "In-app operations playbooks", content: <AdminRunbook /> },
         ...systemSections,
-        { id: "email", label: "Email Log", hint: "Raw email delivery log", content: <EmailLogMonitor /> },
+        { id: "email", label: "Email Logs", hint: "Raw email delivery log", content: <EmailLogMonitor /> },
         { id: "email-retry-audit", label: "Email Retry Audit", hint: "Sweeper run history · pending-remaining invariant", content: <EmailRetryAuditPanel /> },
+        { id: "backup", label: "Backup Management", hint: "Oracle Cloud storage tiers, archives, restores", content: (
+          <div className="space-y-6">
+            <OracleStorageMonitor />
+            <OracleOciStorageCard />
+          </div>
+        )},
       ],
     },
   ];

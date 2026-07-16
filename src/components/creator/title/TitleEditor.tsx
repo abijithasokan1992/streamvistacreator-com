@@ -1349,212 +1349,253 @@ function MetadataTab({
           "Sound Mixer", "VFX Supervisor", "Line Producer", "Casting Director",
         ].map((r) => <option key={r} value={r} />)}
       </datalist>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Field label="Synopsis" hint={`${synopsisWords} / ${SYNOPSIS_WORD_LIMIT} words${overLimit ? " — over limit" : ""}`}>
-          <TextArea
-            rows={5}
-            value={meta.synopsis}
-            disabled={readOnly}
-            onChange={(e) => upd("synopsis", e.target.value)}
-            className={overLimit ? "border-rose-500/60" : undefined as any}
-          />
-        </Field>
-        <Field label="Genres" hint="Choose one or more.">
-          <TagInput
-            value={meta.genres}
-            disabled={readOnly}
-            suggestions={GENRE_OPTIONS}
-            placeholder="Search genres…"
-            onChange={(v) => upd("genres", v)}
-          />
-        </Field>
-        <Field label="Keywords" hint="Press Enter or comma to add a tag.">
-          <TagInput
-            value={meta.keywords}
-            disabled={readOnly}
-            placeholder="Add a keyword…"
-            onChange={(v) => upd("keywords", v)}
-          />
-        </Field>
-        <Field label="Original language">
-          <SelectInput value={meta.original_language} disabled={readOnly}
-            options={LANGUAGE_OPTIONS}
-            placeholder="Select language…"
-            onChange={(v) => upd("original_language", v)} />
-        </Field>
-        <Field label="Production year">
-          <SelectInput value={meta.production_year ? String(meta.production_year) : ""} disabled={readOnly}
-            options={yearOptions}
-            placeholder="Select year…"
-            onChange={(v) => upd("production_year", v ? Number(v) : null)} />
-        </Field>
-        <Field label="Release date">
-          <TextInput type="date" value={releaseDate} disabled={readOnly}
-            onChange={(e) => setMeta({ ...meta, ...(({ release_date: e.target.value }) as any) })} />
-        </Field>
-        <Field label="Country of origin">
-          <SelectInput value={meta.country_of_origin} disabled={readOnly}
-            options={COUNTRY_OPTIONS}
-            placeholder="Select country…"
-            onChange={(v) => upd("country_of_origin", v)} />
-        </Field>
-        <Field label="Runtime">
-          <RuntimeInput value={meta.runtime_minutes} disabled={readOnly}
-            onChange={(total) => upd("runtime_minutes", total)} />
-        </Field>
-        <Field label="Certification" hint="Censor / age rating issued for the title.">
-          {(() => {
-            const stored = (meta as any).certification ?? "";
-            const toLabel: Record<string, string> = {
-              "U": "U", "U/A": "U/A", "A": "A", "S": "S",
-              "unrated": "Unrated / Not certified", "other": "Other",
-            };
-            const fromLabel: Record<string, string> = {
-              "U": "U", "U/A": "U/A", "A": "A", "S": "S",
-              "Unrated / Not certified": "unrated", "Other": "other",
-            };
-            return (
-              <SelectInput
-                value={toLabel[stored] ?? ""}
+      {/* Essentials — always visible */}
+      <section className="rounded-xl border border-border/50 bg-card/30 p-4 space-y-4">
+        <header className="flex items-center gap-2">
+          <span className="text-sm font-semibold">The essentials</span>
+          <span className="text-[11px] text-muted-foreground">Synopsis, genres and language — enough to save a draft.</span>
+        </header>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-2 gap-4">
+          <Field label="Synopsis" hint={`${synopsisWords} / ${SYNOPSIS_WORD_LIMIT} words${overLimit ? " — over limit" : ""}`}>
+            <TextArea
+              rows={5}
+              value={meta.synopsis}
+              disabled={readOnly}
+              onChange={(e) => upd("synopsis", e.target.value)}
+              className={overLimit ? "border-rose-500/60" : undefined as any}
+            />
+          </Field>
+          <div className="space-y-4">
+            <Field label="Genres" hint="Choose one or more.">
+              <TagInput
+                value={meta.genres}
                 disabled={readOnly}
-                options={["U", "U/A", "A", "S", "Unrated / Not certified", "Other"]}
-                placeholder="Select certification…"
-                onChange={(v) => setMeta({ ...meta, ...({ certification: (fromLabel[v] ?? "") } as any) })}
+                suggestions={GENRE_OPTIONS}
+                placeholder="Search genres…"
+                onChange={(v) => upd("genres", v)}
               />
-            );
-          })()}
-        </Field>
-        <Field label="Rights owner" hint="Auto-filled from your profile — editable.">
-          <TextInput value={meta.rights_owner} disabled={readOnly}
-            placeholder="Legal entity that owns rights"
-            onChange={(e) => upd("rights_owner", e.target.value)} />
-        </Field>
-        <Field label="Production company" hint="Auto-filled from your profile — editable.">
-          <TextInput value={meta.production_company} disabled={readOnly}
-            placeholder="Banner / production company"
-            onChange={(e) => upd("production_company", e.target.value)} />
-        </Field>
-        <Field label="IMDb ID or URL">
-          <TextInput value={meta.imdb_id} disabled={readOnly}
-            placeholder="tt1234567 or imdb.com/title/…"
-            onChange={(e) => upd("imdb_id", e.target.value)} />
-        </Field>
-        <Field label="TMDb ID or URL">
-          <TextInput value={meta.tmdb_id} disabled={readOnly}
-            placeholder="12345 or themoviedb.org/movie/…"
-            onChange={(e) => upd("tmdb_id", e.target.value)} />
-        </Field>
-      </div>
-
-      {/* People */}
-      <div className="grid md:grid-cols-2 gap-6">
-        <section>
-          <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Cast</h4>
-          <RepeatList
-            items={meta.cast}
-            disabled={readOnly}
-            onChange={(v) => upd("cast", v as any)}
-            blank={() => ({ name: "", role: "" })}
-            addLabel="Add cast member"
-            render={(c, set) => (
-              <div className="grid sm:grid-cols-2 gap-2">
-                <TextInput placeholder="Name" value={c.name} disabled={readOnly}
-                  onChange={(e) => set({ ...c, name: e.target.value })} />
-                <TextInput placeholder="Character / role" value={c.role} disabled={readOnly}
-                  onChange={(e) => set({ ...c, role: e.target.value })} />
-              </div>
-            )}
-          />
-        </section>
-        <section>
-          <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Crew</h4>
-          <RepeatList
-            items={meta.crew}
-            disabled={readOnly}
-            onChange={(v) => upd("crew", v as any)}
-            blank={() => ({ name: "", role: "" })}
-            addLabel="Add crew member"
-            render={(c, set) => {
-              const needsName = !c.name?.trim() && !!c.role?.trim();
-              return (
-                <div className="space-y-1">
-                  <div className="grid sm:grid-cols-2 gap-2">
-                    <TextInput
-                      placeholder="Name"
-                      value={c.name}
-                      disabled={readOnly}
-                      aria-invalid={needsName || undefined}
-                      className={needsName ? "border-destructive/60 focus-visible:ring-destructive/40" : undefined}
-                      onChange={(e) => set({ ...c, name: e.target.value })}
-                    />
-                    <TextInput
-                      list="crew-role-options"
-                      placeholder="Role"
-                      value={c.role}
-                      disabled={readOnly}
-                      onChange={(e) => set({ ...c, role: e.target.value })}
-                    />
-                  </div>
-                  {needsName && (
-                    <p className="text-[11px] text-destructive">
-                      Please enter a crew member name, or remove this empty row.
-                    </p>
-                  )}
-                </div>
-              );
-            }}
-          />
-          <p className="text-[11px] text-muted-foreground mt-1.5">
-            Empty rows are ignored automatically when you save.
-          </p>
-        </section>
-      </div>
-
-
-
-      {/* Awards */}
-      <div className="grid md:grid-cols-2 gap-6">
-        <section>
-          <div className="flex items-center justify-between mb-2">
-            <h4 className="text-xs uppercase tracking-wider text-muted-foreground">Awards</h4>
-            {!readOnly && (
-              <button
-                type="button"
-                onClick={() => setAwardsImportOpen(true)}
-                className="text-[11px] font-medium rounded-md border border-accent/40 text-accent px-2 py-1 hover:bg-accent/10"
-              >
-                Smart import (CSV / JSON)
-              </button>
-            )}
+            </Field>
+            <Field label="Original language">
+              <SelectInput value={meta.original_language} disabled={readOnly}
+                options={LANGUAGE_OPTIONS}
+                placeholder="Select language…"
+                onChange={(v) => upd("original_language", v)} />
+            </Field>
           </div>
-          <RepeatList
-            items={meta.awards}
-            disabled={readOnly}
-            onChange={(v) => upd("awards", v as any)}
-            blank={() => ({ name: "", issuing_body: "", year: null, category: "", result: "", notes: "" } as any)}
-            addLabel="Add award"
-            render={(a: any, set) => (
-              <div className="grid sm:grid-cols-2 gap-2">
-                <TextInput placeholder="Award name" value={a.name} disabled={readOnly}
-                  onChange={(e) => set({ ...a, name: e.target.value })} />
-                <TextInput placeholder="Issuing body" value={a.issuing_body ?? ""} disabled={readOnly}
-                  onChange={(e) => set({ ...a, issuing_body: e.target.value })} />
-                <TextInput placeholder="Category" value={a.category ?? ""} disabled={readOnly}
-                  onChange={(e) => set({ ...a, category: e.target.value })} />
-                <TextInput type="number" min={1900} max={2100} placeholder="Year"
-                  value={a.year ?? ""} disabled={readOnly}
-                  onChange={(e) => set({ ...a, year: e.target.value ? Number(e.target.value) : null })} />
-                <SelectInput value={a.result ?? ""} disabled={readOnly}
-                  options={["Won", "Nominated", "Shortlisted", "Honourable Mention"]}
-                  placeholder="Result"
-                  onChange={(v) => set({ ...a, result: v })} />
-                <TextInput placeholder="Notes (optional)" value={a.notes ?? ""} disabled={readOnly}
-                  onChange={(e) => set({ ...a, notes: e.target.value })} className="sm:col-span-2" />
-              </div>
-            )}
-          />
-        </section>
-      </div>
+        </div>
+      </section>
+
+      {/* Quick Add — production details (collapsed) */}
+      <SmartExpand
+        title="Quick Add — production details"
+        hint="Year, release date, country, runtime, certification, rights owner, IMDb / TMDb, keywords."
+      >
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+          <Field label="Keywords" hint="Press Enter or comma to add a tag.">
+            <TagInput
+              value={meta.keywords}
+              disabled={readOnly}
+              placeholder="Add a keyword…"
+              onChange={(v) => upd("keywords", v)}
+            />
+          </Field>
+          <Field label="Production year">
+            <SelectInput value={meta.production_year ? String(meta.production_year) : ""} disabled={readOnly}
+              options={yearOptions}
+              placeholder="Select year…"
+              onChange={(v) => upd("production_year", v ? Number(v) : null)} />
+          </Field>
+          <Field label="Release date">
+            <TextInput type="date" value={releaseDate} disabled={readOnly}
+              onChange={(e) => setMeta({ ...meta, ...(({ release_date: e.target.value }) as any) })} />
+          </Field>
+          <Field label="Country of origin">
+            <SelectInput value={meta.country_of_origin} disabled={readOnly}
+              options={COUNTRY_OPTIONS}
+              placeholder="Select country…"
+              onChange={(v) => upd("country_of_origin", v)} />
+          </Field>
+          <Field label="Runtime">
+            <RuntimeInput value={meta.runtime_minutes} disabled={readOnly}
+              onChange={(total) => upd("runtime_minutes", total)} />
+          </Field>
+          <Field label="Certification" hint="Censor / age rating issued for the title.">
+            {(() => {
+              const stored = (meta as any).certification ?? "";
+              const toLabel: Record<string, string> = {
+                "U": "U", "U/A": "U/A", "A": "A", "S": "S",
+                "unrated": "Unrated / Not certified", "other": "Other",
+              };
+              const fromLabel: Record<string, string> = {
+                "U": "U", "U/A": "U/A", "A": "A", "S": "S",
+                "Unrated / Not certified": "unrated", "Other": "other",
+              };
+              return (
+                <SelectInput
+                  value={toLabel[stored] ?? ""}
+                  disabled={readOnly}
+                  options={["U", "U/A", "A", "S", "Unrated / Not certified", "Other"]}
+                  placeholder="Select certification…"
+                  onChange={(v) => setMeta({ ...meta, ...({ certification: (fromLabel[v] ?? "") } as any) })}
+                />
+              );
+            })()}
+          </Field>
+          <Field label="Rights owner" hint="Auto-filled from your profile — editable.">
+            <TextInput value={meta.rights_owner} disabled={readOnly}
+              placeholder="Legal entity that owns rights"
+              onChange={(e) => upd("rights_owner", e.target.value)} />
+          </Field>
+          <Field label="Production company" hint="Auto-filled from your profile — editable.">
+            <TextInput value={meta.production_company} disabled={readOnly}
+              placeholder="Banner / production company"
+              onChange={(e) => upd("production_company", e.target.value)} />
+          </Field>
+          <Field label="IMDb ID or URL">
+            <TextInput value={meta.imdb_id} disabled={readOnly}
+              placeholder="tt1234567 or imdb.com/title/…"
+              onChange={(e) => upd("imdb_id", e.target.value)} />
+          </Field>
+          <Field label="TMDb ID or URL">
+            <TextInput value={meta.tmdb_id} disabled={readOnly}
+              placeholder="12345 or themoviedb.org/movie/…"
+              onChange={(e) => upd("tmdb_id", e.target.value)} />
+          </Field>
+        </div>
+      </SmartExpand>
+
+      {/* People — collapsed */}
+      <SmartExpand
+        title="Add People (Cast & Crew)"
+        hint="Credit cast members, directors, writers and department heads."
+        badge={((meta.cast?.length || 0) + (meta.crew?.length || 0)) > 0 ? `${(meta.cast?.length || 0) + (meta.crew?.length || 0)}` : undefined}
+      >
+        <div className="grid md:grid-cols-2 gap-6 pt-2">
+          <section>
+            <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Cast</h4>
+            <RepeatList
+              items={meta.cast}
+              disabled={readOnly}
+              onChange={(v) => upd("cast", v as any)}
+              blank={() => ({ name: "", role: "" })}
+              addLabel="Add cast member"
+              render={(c, set) => (
+                <div className="grid sm:grid-cols-2 gap-2">
+                  <TextInput placeholder="Name" value={c.name} disabled={readOnly}
+                    onChange={(e) => set({ ...c, name: e.target.value })} />
+                  <TextInput placeholder="Character / role" value={c.role} disabled={readOnly}
+                    onChange={(e) => set({ ...c, role: e.target.value })} />
+                </div>
+              )}
+            />
+          </section>
+          <section>
+            <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Crew</h4>
+            <RepeatList
+              items={meta.crew}
+              disabled={readOnly}
+              onChange={(v) => upd("crew", v as any)}
+              blank={() => ({ name: "", role: "" })}
+              addLabel="Add crew member"
+              render={(c, set) => {
+                const needsName = !c.name?.trim() && !!c.role?.trim();
+                return (
+                  <div className="space-y-1">
+                    <div className="grid sm:grid-cols-2 gap-2">
+                      <TextInput
+                        placeholder="Name"
+                        value={c.name}
+                        disabled={readOnly}
+                        aria-invalid={needsName || undefined}
+                        className={needsName ? "border-destructive/60 focus-visible:ring-destructive/40" : undefined}
+                        onChange={(e) => set({ ...c, name: e.target.value })}
+                      />
+                      <TextInput
+                        list="crew-role-options"
+                        placeholder="Role"
+                        value={c.role}
+                        disabled={readOnly}
+                        onChange={(e) => set({ ...c, role: e.target.value })}
+                      />
+                    </div>
+                    {needsName && (
+                      <p className="text-[11px] text-destructive">
+                        Please enter a crew member name, or remove this empty row.
+                      </p>
+                    )}
+                  </div>
+                );
+              }}
+            />
+            <p className="text-[11px] text-muted-foreground mt-1.5">
+              Empty rows are ignored automatically when you save.
+            </p>
+          </section>
+        </div>
+      </SmartExpand>
+
+      {/* Awards — Smart Import is primary; manual entry hidden behind a toggle */}
+      <section className="rounded-xl border border-border/50 bg-card/30 p-4 space-y-3">
+        <header className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-sm font-semibold">Awards & recognition</div>
+            <p className="text-[11px] text-muted-foreground">Bulk import from a spreadsheet is faster and less error-prone than manual entry.</p>
+          </div>
+          {!readOnly && (
+            <button
+              type="button"
+              onClick={() => setAwardsImportOpen(true)}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-md bg-accent text-accent-foreground px-3 py-1.5 shadow-sm hover:brightness-110 shrink-0"
+            >
+              <Sparkles className="w-3.5 h-3.5" /> Smart Metadata Import
+            </button>
+          )}
+        </header>
+        {(meta.awards?.length ?? 0) > 0 && (
+          <p className="text-[11px] text-muted-foreground">
+            {meta.awards!.length} award{meta.awards!.length === 1 ? "" : "s"} on file.
+          </p>
+        )}
+        {!readOnly && !awardsManualOpen && (meta.awards?.length ?? 0) === 0 && (
+          <button
+            type="button"
+            onClick={() => setAwardsManualOpen(true)}
+            className="text-xs font-medium rounded-md border border-border/60 px-3 py-1.5 hover:bg-secondary/30 text-muted-foreground hover:text-foreground"
+          >
+            Add awards manually
+          </button>
+        )}
+        {(awardsManualOpen || (meta.awards?.length ?? 0) > 0) && (
+          <div className="pt-2 border-t border-border/30">
+            <RepeatList
+              items={meta.awards}
+              disabled={readOnly}
+              onChange={(v) => upd("awards", v as any)}
+              blank={() => ({ name: "", issuing_body: "", year: null, category: "", result: "", notes: "" } as any)}
+              addLabel="Add award"
+              render={(a: any, set) => (
+                <div className="grid sm:grid-cols-2 gap-2">
+                  <TextInput placeholder="Award name" value={a.name} disabled={readOnly}
+                    onChange={(e) => set({ ...a, name: e.target.value })} />
+                  <TextInput placeholder="Issuing body" value={a.issuing_body ?? ""} disabled={readOnly}
+                    onChange={(e) => set({ ...a, issuing_body: e.target.value })} />
+                  <TextInput placeholder="Category" value={a.category ?? ""} disabled={readOnly}
+                    onChange={(e) => set({ ...a, category: e.target.value })} />
+                  <TextInput type="number" min={1900} max={2100} placeholder="Year"
+                    value={a.year ?? ""} disabled={readOnly}
+                    onChange={(e) => set({ ...a, year: e.target.value ? Number(e.target.value) : null })} />
+                  <SelectInput value={a.result ?? ""} disabled={readOnly}
+                    options={["Won", "Nominated", "Shortlisted", "Honourable Mention"]}
+                    placeholder="Result"
+                    onChange={(v) => set({ ...a, result: v })} />
+                  <TextInput placeholder="Notes (optional)" value={a.notes ?? ""} disabled={readOnly}
+                    onChange={(e) => set({ ...a, notes: e.target.value })} className="sm:col-span-2" />
+                </div>
+              )}
+            />
+          </div>
+        )}
+      </section>
 
       <AwardsImportDialog
         open={awardsImportOpen}

@@ -182,13 +182,14 @@ export function StorageQuotaProvider({ children }: { children: React.ReactNode }
   }, [user, refresh]);
 
   const value = useMemo<Quota>(() => ({
-    loading, isBasic, isCreator, planCode,
+    loading, known, isBasic, isCreator, planCode,
     usedMb, limitMb, totalGb, includedGb, paidGb, bonusGb,
     testingOverrideGb, testingModeEnabled, testingRoleKey,
     addonBlocks,
     percent, warning, urgent, locked,
     checkOrPaywall, openPaywall, refresh,
-  }), [loading, isBasic, isCreator, planCode, usedMb, limitMb, totalGb, includedGb, paidGb, bonusGb, testingOverrideGb, testingModeEnabled, testingRoleKey, addonBlocks, percent, warning, urgent, locked, checkOrPaywall, openPaywall, refresh]);
+  }), [loading, known, isBasic, isCreator, planCode, usedMb, limitMb, totalGb, includedGb, paidGb, bonusGb, testingOverrideGb, testingModeEnabled, testingRoleKey, addonBlocks, percent, warning, urgent, locked, checkOrPaywall, openPaywall, refresh]);
+
 
 
   return (

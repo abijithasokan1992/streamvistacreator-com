@@ -19,6 +19,7 @@ import { FreeSubmissionTermsModal } from "./FreeSubmissionTermsModal";
 import RequestEditButton from "@/components/creator/RequestEditButton";
 import { useTitleLock } from "@/hooks/useTitleLock";
 import { SmartMetadataImportButton } from "./SmartMetadataImport";
+import { AwardsImportDialog } from "./AwardsImportDialog";
 
 import { CreatorDistributionStatus } from "./CreatorDistributionStatus";
 import { AILicensingPanel } from "./AILicensingPanel";
@@ -1207,6 +1208,7 @@ function MetadataTab({
   onSmartImport: (next: { title?: string; metadataPatch: Partial<TitleMetadata> }) => void;
 }) {
   const upd = <K extends keyof TitleMetadata>(k: K, v: TitleMetadata[K]) => setMeta({ ...meta, [k]: v });
+  const [awardsImportOpen, setAwardsImportOpen] = useState(false);
   const synopsisWords = (meta.synopsis || "").trim().split(/\s+/).filter(Boolean).length;
   const overLimit = synopsisWords > SYNOPSIS_WORD_LIMIT;
   const currentYear = new Date().getFullYear();
@@ -1405,17 +1407,30 @@ function MetadataTab({
       {/* Awards */}
       <div className="grid md:grid-cols-2 gap-6">
         <section>
-          <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Awards</h4>
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-xs uppercase tracking-wider text-muted-foreground">Awards</h4>
+            {!readOnly && (
+              <button
+                type="button"
+                onClick={() => setAwardsImportOpen(true)}
+                className="text-[11px] font-medium rounded-md border border-accent/40 text-accent px-2 py-1 hover:bg-accent/10"
+              >
+                Smart import (CSV / JSON)
+              </button>
+            )}
+          </div>
           <RepeatList
             items={meta.awards}
             disabled={readOnly}
             onChange={(v) => upd("awards", v as any)}
-            blank={() => ({ name: "", year: null, category: "", result: "", notes: "" } as any)}
+            blank={() => ({ name: "", issuing_body: "", year: null, category: "", result: "", notes: "" } as any)}
             addLabel="Add award"
             render={(a: any, set) => (
               <div className="grid sm:grid-cols-2 gap-2">
-                <TextInput placeholder="Award / festival" value={a.name} disabled={readOnly}
+                <TextInput placeholder="Award name" value={a.name} disabled={readOnly}
                   onChange={(e) => set({ ...a, name: e.target.value })} />
+                <TextInput placeholder="Issuing body" value={a.issuing_body ?? ""} disabled={readOnly}
+                  onChange={(e) => set({ ...a, issuing_body: e.target.value })} />
                 <TextInput placeholder="Category" value={a.category ?? ""} disabled={readOnly}
                   onChange={(e) => set({ ...a, category: e.target.value })} />
                 <TextInput type="number" min={1900} max={2100} placeholder="Year"
@@ -1432,6 +1447,15 @@ function MetadataTab({
           />
         </section>
       </div>
+
+      <AwardsImportDialog
+        open={awardsImportOpen}
+        onOpenChange={setAwardsImportOpen}
+        onImport={(rows, mode) => {
+          const next = mode === "replace" ? rows : [...(meta.awards ?? []), ...rows];
+          upd("awards", next as any);
+        }}
+      />
     </div>
   );
 }

@@ -1,5 +1,7 @@
-import { ArrowRight, Briefcase } from "lucide-react";
+import { ArrowRight, Briefcase, LayoutDashboard } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useUserRoles } from "@/hooks/useUserRoles";
+import { dashboardForRole, useAuth } from "@/hooks/useAuth";
 
 /**
  * Public Hero — cinematic single hero.

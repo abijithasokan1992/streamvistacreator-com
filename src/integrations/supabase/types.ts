@@ -11786,6 +11786,43 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_review_onboarding_request: {
+        Args: { _decision: string; _notes?: string; _request_id: string }
+        Returns: {
+          access_code: string | null
+          amount_paid_paise: number | null
+          base_price: number
+          business_email: string | null
+          client_name: string
+          contact_phone: string | null
+          created_at: string
+          final_price: number
+          id: string
+          link_metadata: Json
+          link_source: string | null
+          link_status: string
+          linked_at: string | null
+          linked_file_id: string | null
+          linked_share_token: string | null
+          mfi_proof_path: string | null
+          onboarding_status: string
+          payment_status: string
+          plan_type: string
+          professional_role: string
+          promo_code: string | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          selected_cycle: string
+          submission_token: string | null
+          submitter_user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "onboarding_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_review_queue: {
         Args: { _status?: string }
         Returns: {
@@ -11807,6 +11844,48 @@ export type Database = {
       admin_revoke_screening_invite: {
         Args: { _invite_id: string; _reason?: string }
         Returns: undefined
+      }
+      admin_set_title_status: {
+        Args: { _new_status: string; _title_id: string }
+        Returns: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          duration_minutes: number | null
+          episode_number: number | null
+          franchise_id: string | null
+          genre: string | null
+          id: string
+          kind: Database["public"]["Enums"]["title_kind"]
+          language: string | null
+          legal_clearance: string
+          locked: boolean
+          locked_at: string | null
+          locked_by: string | null
+          master_rule_enforced: boolean
+          metadata: Json
+          owner_user_id: string
+          parent_title_id: string | null
+          previous_status: Database["public"]["Enums"]["content_status"] | null
+          published_at: string | null
+          published_by: string | null
+          qc_status: string
+          requested_from_stage: string | null
+          season_number: number | null
+          sort_order: number
+          status: Database["public"]["Enums"]["content_status"]
+          submitted_at: string | null
+          synopsis: string | null
+          title: string
+          updated_at: string
+          workspace_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "content_titles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       admin_studio_vault_purchases: {
         Args: { _limit?: number }

@@ -207,6 +207,13 @@ export default function Auth() {
                 </p>
               </header>
 
+              {sessionExpired && (
+                <div className="mb-5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-200">
+                  Your session expired. Sign in again to pick up where you left off — we've saved your destination.
+                </div>
+              )}
+
+
               <div className="mb-6 grid grid-cols-2 gap-1 p-1 rounded-xl bg-input/30 border border-border/50">
                 <TabButton active={view === "login"} onClick={() => setView("login")}>Log in</TabButton>
                 <TabButton active={view === "signup"} onClick={() => setView("signup")}>Create account</TabButton>

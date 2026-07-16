@@ -453,7 +453,7 @@ function buildDepartments(args: {
       sections: [
         { id: "users", label: "User Directory", hint: "Creators, studios, buyers", content: <UsersAndCredentials /> },
         { id: "roles", label: "Role Management (has_role)", hint: "Assign app_role, backs has_role() checks", content: <RolesManager /> },
-        { id: "storage-topups", label: "Storage Top-ups", hint: "Grant / reduce bonus storage (GB)", content: <StorageGrantPanel /> },
+        { id: "storage-topups", label: "Storage Top-ups", hint: "Grant / reduce bonus storage (GB)", content: <StorageTopUpsPanel /> },
         { id: "organizations", label: "Organizations", hint: "Creators · Studios · Buyers · Partners", content: <OrganizationsConsole /> },
         { id: "invitations", label: "Invitations", hint: "Role-aware invites", content: <InvitationsConsole /> },
         { id: "channel-partners", label: "Channel Partners", hint: "Publish to /partners", content: <ChannelPartnersConsole /> },

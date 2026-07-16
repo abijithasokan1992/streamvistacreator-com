@@ -131,51 +131,27 @@ export function StorageQuotaProvider({ children }: { children: React.ReactNode }
   const upgrade = useCallback(async () => {
     if (!user) { toast.error("Sign in to upgrade"); return; }
     setPaying(true);
-    const t = toast.loading("Opening Razorpay…");
+    // Delegates to the global checkout helper. Refreshes the session,
+    // forwards workspace/user context to the webhook, and opens Razorpay.
+    const { initializeCheckout } = await import("@/lib/payments/initializeCheckout");
     try {
-      assertLiveCheckoutHost();
-      const { data, error } = await supabase.functions.invoke("create-storage-topup", { body: { tb: 1 } });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
-
-      await new Promise<void>((resolve) => {
-        if ((window as any).Razorpay) return resolve();
-        const s = document.createElement("script");
-        s.src = "https://checkout.razorpay.com/v1/checkout.js";
-        s.onload = () => resolve();
-        document.body.appendChild(s);
-      });
-
-      const rzp = new (window as any).Razorpay({
-        key: data.keyId,
-        order_id: data.orderId,
-        amount: data.amount,
-        currency: "INR",
-        name: "StreamVista Creator Plan",
+      await initializeCheckout({
+        purpose: "storage_topup",
+        payload: { tb: 1 },
+        label: "StreamVista Creator Plan",
         description: "1 TB cinema-grade storage · auto top-up",
-        prefill: { email: user.email },
-        theme: { color: "#a855f7" },
-        handler: async (resp: any) => {
-          const v = await supabase.functions.invoke("verify-storage-topup", {
-            body: {
-              topupId: data.topupId,
-              razorpay_order_id: resp.razorpay_order_id,
-              razorpay_payment_id: resp.razorpay_payment_id,
-              razorpay_signature: resp.razorpay_signature,
-            },
-          });
-          if (v.error || (v.data as any)?.error) toast.error("Payment verification failed");
-          else {
-            toast.success("Creator Plan activated — uploads unlocked 🎉");
-            setOpen(false);
-            refresh();
-          }
+        prefill: { email: user.email ?? undefined },
+        metadata: {
+          user_id: user.id,
+          payment_purpose: "creator_plan_upgrade",
+          tier: "1TB",
+        },
+        onSuccess: () => {
+          toast.success("Creator Plan activated — uploads unlocked 🎉");
+          setOpen(false);
+          refresh();
         },
       });
-      toast.dismiss(t);
-      rzp.open();
-    } catch (e: any) {
-      toast.error(e?.message || "Could not start upgrade", { id: t });
     } finally {
       setPaying(false);
     }

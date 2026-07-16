@@ -23,6 +23,7 @@ import UsersAndCredentials from "@/components/admin/UsersAndCredentials";
 import AdminTeamManager from "@/components/admin/AdminTeamManager";
 import OnboardingApprovals from "@/components/admin/OnboardingApprovals";
 import ContentReviewWorkflow from "@/components/admin/ContentReviewWorkflow";
+import QCLegalValidationSurface from "@/components/admin/QCLegalValidationSurface";
 import TitleEditRequestsInbox from "@/components/admin/TitleEditRequestsInbox";
 import ProductsAndPlans from "@/components/admin/ProductsAndPlans";
 import StudioVaultPricing from "@/components/admin/StudioVaultPricing";

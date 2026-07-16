@@ -52,6 +52,7 @@ import AdminHome from "./pages/AdminHome.tsx";
 import AdminIntegrations from "./pages/AdminIntegrations.tsx";
 import AdminResearch from "./pages/AdminResearch.tsx";
 import AdminLegacyRecovery from "./pages/admin/LegacyRecovery.tsx";
+import SuperAdminWorkspace from "./pages/admin/SuperAdminWorkspace.tsx";
 import CollegeERP from "./pages/CollegeERP.tsx";
 import Connect from "./pages/Connect.tsx";
 import SettingsIntegrationsAI from "./pages/SettingsIntegrationsAI.tsx";
@@ -112,7 +113,7 @@ const AdminRoutes = () => (
     <Route path="/connectors" element={<Navigate to="/connect" replace />} />
     <Route path="/admin" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/home" element={<AdminHome />} />
-    <Route path="/admin/super" element={<Navigate to="/admin" replace />} />
+    <Route path="/admin/super" element={<AdminErrorBoundary><SuperAdminWorkspace /></AdminErrorBoundary>} />
     <Route path="/admin/users" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/approvals" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/ecosystem" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />

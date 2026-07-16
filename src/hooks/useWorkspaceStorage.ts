@@ -81,6 +81,7 @@ async function fetchWithRetry(userId: string, workspaceId: string | null): Promi
 const EMPTY = (workspaceId: string | null): WorkspaceStorage => ({
   loading: true,
   error: null,
+  known: false,
   workspaceId,
   totalGb: 0,
   includedGb: 0,
@@ -97,6 +98,7 @@ const EMPTY = (workspaceId: string | null): WorkspaceStorage => ({
   lastRecalculatedAt: null,
   refresh: async () => {},
 });
+
 
 export function useWorkspaceStorage(): WorkspaceStorage {
   const { user } = useAuth();

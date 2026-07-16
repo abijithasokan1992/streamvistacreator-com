@@ -25,8 +25,8 @@ type Action = {
 
 const ACTIONS: Action[] = [
   { id: "approve-title",   label: "Approve Title",   icon: <CheckCircle2 className="w-3.5 h-3.5" />, dept: "content",  section: "approvals",   tone: "accent" },
-  { id: "qc-queue",        label: "QC Queue",        icon: <Film className="w-3.5 h-3.5" />,         dept: "content",  section: "approvals" },
-  { id: "legal-queue",     label: "Legal Queue",     icon: <Scale className="w-3.5 h-3.5" />,        dept: "content",  section: "approvals" },
+  { id: "qc-queue",        label: "QC Queue",        icon: <Film className="w-3.5 h-3.5" />,         dept: "content",  section: "qc-queue" },
+  { id: "legal-queue",     label: "Legal Queue",     icon: <Scale className="w-3.5 h-3.5" />,        dept: "content",  section: "legal-queue" },
   { id: "publish-title",   label: "Publish Title",   icon: <Send className="w-3.5 h-3.5" />,         dept: "content",  section: "catalog-ops" },
   { id: "reply-ticket",    label: "Reply Ticket",    icon: <Inbox className="w-3.5 h-3.5" />,        dept: "users",    section: "support" },
   { id: "reset-password",  label: "Reset Password",  icon: <KeyRound className="w-3.5 h-3.5" />,     dept: "users",    section: "users" },

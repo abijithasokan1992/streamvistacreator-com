@@ -120,10 +120,25 @@ export function PremiumStorageTopupModal({
       const toastId = toast.loading("Opening Razorpay…");
       try {
         assertLiveCheckoutHost();
+        // Force a clean session refetch — never rely on a cached token.
+        // `refreshSession` returns the freshest access_token; fall back to getSession.
+        let accessToken: string | undefined;
+        try {
+          const { data: refreshed } = await supabase.auth.refreshSession();
+          accessToken = refreshed?.session?.access_token;
+        } catch {/* refresh may fail if token is still valid — fall through */}
+        if (!accessToken) {
+          const { data: sess } = await supabase.auth.getSession();
+          accessToken = sess?.session?.access_token;
+        }
+        if (!accessToken) {
+          throw new Error("Your session expired. Please sign in again.");
+        }
         const { data, error } = await supabase.functions.invoke("create-storage-topup", {
           body: tier.payload,
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
-        if (error) throw error;
+        if (error) throw new Error(error.message || "Checkout could not start (edge function returned an error).");
         if ((data as any)?.error) throw new Error((data as any).error);
 
         await new Promise<void>((resolve) => {

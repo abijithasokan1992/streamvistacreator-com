@@ -579,6 +579,7 @@ export function TitleEditor({
                 {tab === "rights" && (
                   <div className="space-y-8">
                     <RightsAvailabilityPanel meta={meta} setMeta={setMeta} readOnly={metadataLocked} isFree={isFree} />
+                    <BusinessIntelligencePanel meta={meta} setMeta={setMeta} readOnly={metadataLocked} />
                     <CreatorDistributionStatus titleId={title.id} titleStatus={title.status} />
                     {title.workspace_id && (
                       <AILicensingPanel

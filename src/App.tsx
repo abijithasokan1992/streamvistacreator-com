@@ -10,6 +10,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { GlobalPaymentProvider } from "@/components/payments/GlobalPaymentProvider";
 import Onboarding from "./pages/Onboarding.tsx";
+import RoleUnknown from "./pages/RoleUnknown.tsx";
 import Index from "./pages/Index.tsx";
 import Auth from "./pages/Auth.tsx";
 import AuthCallback from "./pages/AuthCallback.tsx";
@@ -154,6 +155,7 @@ const PublicRoutes = () => (
 
     {/* Linear onboarding wizard — kept for legacy accounts only. */}
     <Route path="/onboarding" element={<Onboarding />} />
+    <Route path="/auth/role-unknown" element={<RoleUnknown />} />
 
     {/* New role-based dashboards (Phase 2 — empty states, no fake cards). */}
     <Route path="/dashboard/content" element={<OnboardingGate><RoleGate allow={["content_owner"]}><ContentOwnerDashboard /></RoleGate></OnboardingGate>} />

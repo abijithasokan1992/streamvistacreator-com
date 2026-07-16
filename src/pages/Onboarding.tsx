@@ -15,21 +15,27 @@ import { Seo } from "@/components/Seo";
  * avoids the "content owner briefly routed to /dashboard/buyer" race that
  * happened when we fell back to the legacy `"client"` role.
  */
+/**
+ * Fail-safe: on fetch error or a truly role-less account we route to an
+ * explicit "unknown role" warning surface (`/auth/role-unknown`) rather than
+ * blindly assuming Creator. This keeps privilege boundaries explicit and
+ * gives support a single URL to triage.
+ */
 async function resolveLandingRoute(userId: string): Promise<string> {
   try {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", userId);
+    if (error) return "/auth/role-unknown?reason=lookup_failed";
     const roles = ((data ?? []) as { role: AppRole }[]).map((r) => r.role);
+    if (roles.length === 0) return "/auth/role-unknown?reason=no_role";
     const primary = pickPrimaryRole(roles);
     if (primary) return dashboardForRole(primary);
+    return "/auth/role-unknown?reason=unmapped_role";
   } catch {
-    /* fall through to safe default */
+    return "/auth/role-unknown?reason=lookup_exception";
   }
-  // Safe default: creators are the largest signup cohort. Never fall back to
-  // "client" (which resolves to /dashboard/buyer) for role-less accounts.
-  return "/dashboard/content";
 }
 
 const ROLES = [

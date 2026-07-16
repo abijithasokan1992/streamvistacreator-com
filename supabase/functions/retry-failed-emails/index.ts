@@ -314,23 +314,61 @@ Deno.serve(async (req) => {
 
   // The sweep always returns HTTP 200 once the function has run to
   // completion. Sub-step outcomes (queue errors, audit residue, reconcile
-  // failures) are surfaced in the JSON payload via `ok` + `warnings` so the
-  // client can render an informational banner without triggering a generic
-  // "audit failed" 500 toast.
+  // failures) are surfaced in the JSON payload via `ok` + `warnings` and
+  // ALSO persisted to `admin_audit_log` as a distinct `email_retry_alert`
+  // record so ops dashboards can page on them — HTTP 200 protects the UI
+  // loop but does NOT silently swallow the failure.
   const anyQueueError = Object.values(summary).some((s) => !!s.error);
   const allQueuesErrored =
     Object.keys(summary).length > 0 &&
     Object.values(summary).every((s) => !!s.error);
   const sweeperDegraded =
     allQueuesErrored && !!reconciled.error && !!audit.error;
+  const hasWarnings = anyQueueError || !!reconciled.error || !!audit.error || sweeperDegraded;
+
+  if (hasWarnings) {
+    try {
+      await supabase.from("admin_audit_log").insert({
+        action: "email_retry_alert",
+        details: {
+          severity: sweeperDegraded ? "critical" : "warning",
+          summary,
+          reconciled,
+          audit,
+          flags: {
+            any_queue_error: anyQueueError,
+            reconcile_error: !!reconciled.error,
+            audit_error: !!audit.error,
+            sweeper_degraded: sweeperDegraded,
+          },
+          alerted_at: new Date().toISOString(),
+        },
+      });
+    } catch (e) {
+      console.error("[retry-failed-emails] failed to persist alert row", e);
+    }
+    console.warn("[retry-failed-emails] ALERT emitted", {
+      sweeperDegraded, anyQueueError,
+      reconcile_error: !!reconciled.error, audit_error: !!audit.error,
+    });
+  }
 
   return new Response(
     JSON.stringify({
       ok: !sweeperDegraded,
+      degraded: hasWarnings,
       ...summary,
       reconciled,
       audit,
-      warnings: anyQueueError || reconciled.error || audit.error
+      alert: hasWarnings
+        ? {
+            severity: sweeperDegraded ? "critical" : "warning",
+            queue_errors: anyQueueError,
+            reconcile_error: !!reconciled.error,
+            audit_error: !!audit.error,
+          }
+        : undefined,
+      warnings: hasWarnings
         ? { queue_errors: anyQueueError, reconcile_error: !!reconciled.error, audit_error: !!audit.error }
         : undefined,
     }),

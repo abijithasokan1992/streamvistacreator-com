@@ -324,7 +324,9 @@ export default function DitIngestProtocol() {
       if (error) throw new Error(error.message);
 
       if (uploadDegraded) {
-        toast.warning("DIT log saved — screenshot upload deferred (bucket unavailable).");
+        toast.warning(
+          "DIT log saved — screenshot Pending local, not uploaded. Re-attach once storage is available.",
+        );
       } else {
         toast.success("DIT ingest log saved.");
       }
@@ -701,6 +703,9 @@ function HistoryList({
           const camCount = Array.isArray(r.camera_mapping) ? r.camera_mapping.length : 0;
           const checkVals = r.checklist_status ?? ({} as ChecklistState);
           const checkedCount = Object.values(checkVals).filter(Boolean).length;
+          const screenshotPendingLocal =
+            typeof r.screenshot_url === "string" &&
+            r.screenshot_url.startsWith("pending-local://");
           return (
             <li key={r.id} className="rounded-xl border border-border/50 bg-secondary/5 p-4">
               <div className="flex flex-wrap items-start justify-between gap-2">
@@ -730,8 +735,25 @@ function HistoryList({
                   >
                     Checklist {checkedCount}/5
                   </Badge>
+                  {screenshotPendingLocal && (
+                    <Badge
+                      className="text-[10px] bg-amber-500/20 text-amber-200 hover:bg-amber-500/20 border border-amber-400/40"
+                      title="Screenshot was not uploaded to cloud storage. Re-attach when the bucket is available."
+                    >
+                      <AlertTriangle className="w-3 h-3 mr-1" />
+                      Pending local — not uploaded
+                    </Badge>
+                  )}
                 </div>
               </div>
+              {screenshotPendingLocal && (
+                <p className="text-[11px] text-amber-300/90 mt-2">
+                  Chain-of-custody metadata saved, but the screenshot never reached
+                  cloud storage. This log is <strong>not</strong> a completed
+                  distribution asset — an admin must re-attach the screenshot to
+                  finalise it.
+                </p>
+              )}
               {r.notes && (
                 <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{r.notes}</p>
               )}

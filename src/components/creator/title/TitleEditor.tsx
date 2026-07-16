@@ -942,6 +942,44 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 /**
+ * SmartExpand — premium "smart expand" card used for progressive disclosure.
+ * Collapsed by default; only reveals advanced content on explicit user intent.
+ */
+function SmartExpand({
+  title, hint, children, defaultOpen = false, badge,
+}: {
+  title: string; hint?: string; children: React.ReactNode;
+  defaultOpen?: boolean; badge?: string;
+}) {
+  return (
+    <details
+      open={defaultOpen}
+      className="group rounded-xl border border-border/50 bg-card/30 [&[open]>summary_svg.chev]:rotate-180"
+    >
+      <summary className="flex items-center gap-3 px-4 py-3 cursor-pointer select-none list-none hover:bg-card/50 transition-colors rounded-xl">
+        <div className="w-8 h-8 rounded-lg bg-accent/10 text-accent grid place-items-center shrink-0">
+          <Sparkles className="w-4 h-4" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold">{title}</span>
+            {badge && (
+              <span className="inline-flex items-center text-[10px] uppercase tracking-wider border border-accent/40 text-accent rounded-full px-2 py-0.5">
+                {badge}
+              </span>
+            )}
+          </div>
+          {hint && <p className="text-xs text-muted-foreground mt-0.5 truncate">{hint}</p>}
+        </div>
+        <span className="text-[11px] text-muted-foreground hidden sm:inline">Expand</span>
+        <ChevronDown className="chev w-4 h-4 text-muted-foreground shrink-0 transition-transform" />
+      </summary>
+      <div className="px-4 pb-4 pt-2 border-t border-border/30">{children}</div>
+    </details>
+  );
+}
+
+/**
  * Collapsible visual grouping wrapper for the six-category Media & Assets
  * layout. Progressive disclosure — only the first group (Artwork) is open by
  * default; the rest collapse into premium expandable headers showing a live

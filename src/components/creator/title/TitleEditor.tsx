@@ -1066,11 +1066,6 @@ function PosterGrid({
   const fileSizeMb: string | null = u?.file_size
     ? `${(Number(u.file_size) / (1024 * 1024)).toFixed(1)} MB`
     : null;
-  const placeholders = [
-    { label: "Alt poster", hint: "Secondary key art" },
-    { label: "Banner", hint: "Horizontal hero art" },
-    { label: "Square", hint: "Tile / thumbnail" },
-  ];
   return <PosterGridInner titleId={titleId} assets={assets} locked={locked} onUploaded={onUploaded} primary={primary} fileName={fileName} fileSizeMb={fileSizeMb} />;
 }
 

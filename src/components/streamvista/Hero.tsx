@@ -17,7 +17,7 @@ export const Hero = () => {
   const buyerTo = signedIn && has("buyer") ? routeFor("buyer", "/contact?topic=buyer-access") : "/contact?topic=buyer-access";
   const buyerLabel = signedIn && has("buyer") ? "Open Buyer Dashboard" : "I'm a Buyer · Request Access";
   return (
-    <section className="relative pt-32 pb-24 md:pt-40 md:pb-32 overflow-hidden border-b border-border/40">
+    <section className="relative pt-28 pb-16 sm:pt-32 sm:pb-24 md:pt-40 md:pb-32 overflow-hidden border-b border-border/40">
       <div className="absolute inset-0 grid-bg opacity-40" aria-hidden />
       <div
         aria-hidden
@@ -53,17 +53,17 @@ export const Hero = () => {
             <p>License globally through one secure platform.</p>
           </div>
 
-      <div className="mt-12 flex flex-col sm:flex-row gap-3 animate-fade-in hero-button-container">
+      <div className="mt-10 sm:mt-12 flex flex-col sm:flex-row gap-3 animate-fade-in hero-button-container">
         <Link
           to={primaryTo}
-          className="cta-guide group h-14 inline-flex items-center justify-center gap-3 px-8 bg-gradient-primary text-primary-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md"
+          className="cta-guide group h-14 w-full sm:w-auto inline-flex items-center justify-center gap-3 px-6 sm:px-8 bg-gradient-primary text-primary-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md"
         >
           <span>{primaryLabel}</span>
           <PrimaryIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
         </Link>
         <Link
           to={buyerTo}
-          className="group h-14 inline-flex items-center justify-center gap-3 px-8 border border-border/60 hover:border-accent/60 hover:bg-accent/5 text-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md transition-colors"
+          className="group h-14 w-full sm:w-auto inline-flex items-center justify-center gap-3 px-6 sm:px-8 border border-border/60 hover:border-accent/60 hover:bg-accent/5 text-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md transition-colors"
         >
           <Briefcase className="w-4 h-4" />
           <span>{buyerLabel}</span>

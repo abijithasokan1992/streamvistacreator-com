@@ -26,7 +26,7 @@ const AUDIENCES = [
 ] as const;
 
 export const PlatformOverview = () => (
-  <section id="platform" className="py-24 border-b border-border/40 relative">
+  <section id="platform" className="py-16 sm:py-24 border-b border-border/40 relative">
     <div className="container">
       <div className="mb-14 max-w-3xl animate-fade-in">
         <div className="flex items-center gap-3 mb-5">
@@ -42,7 +42,7 @@ export const PlatformOverview = () => (
 
       <div className="grid md:grid-cols-3 gap-px bg-border/60 border border-border/60 rounded-2xl overflow-hidden">
         {AUDIENCES.map(({ key, icon: Icon, title, body }) => (
-          <article key={key} className="bg-card p-8 md:p-10 flex flex-col">
+          <article key={key} className="bg-card p-6 sm:p-8 md:p-10 flex flex-col">
             <div
               className="w-12 h-12 rounded-xl grid place-items-center text-primary-foreground border border-primary/30 mb-6"
               style={{

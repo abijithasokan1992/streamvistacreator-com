@@ -103,6 +103,9 @@ export function PremiumStorageTopupModal({
 }) {
   const { user } = useAuth();
   const [pendingId, setPendingId] = useState<Tier["id"] | null>(null);
+  const [qrOpen, setQrOpen] = useState(false);
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const proofInputRef = useRef<HTMLInputElement | null>(null);
   const { phase, isBusy, submit, reset } = useModalSubmissionLifecycle({
     onClose: () => {
       onOpenChange(false);

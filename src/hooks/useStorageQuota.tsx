@@ -64,7 +64,7 @@ export function useStorageQuota(): Quota {
   const v = useContext(Ctx);
   if (!v) {
     return {
-      loading: false, isBasic: true, isCreator: false, planCode: "creator_basic",
+      loading: false, known: false, isBasic: true, isCreator: false, planCode: "creator_basic",
       usedMb: 0, limitMb: FREE_LIMIT_MB,
       totalGb: FREE_STORAGE_GB, includedGb: FREE_STORAGE_GB, paidGb: 0, bonusGb: 0,
       testingOverrideGb: 0, testingModeEnabled: false, testingRoleKey: "creator",
@@ -72,6 +72,7 @@ export function useStorageQuota(): Quota {
       percent: 0, warning: false, urgent: false, locked: false,
       checkOrPaywall: () => true, openPaywall: () => {}, refresh: async () => {},
     };
+
   }
   return v;
 }

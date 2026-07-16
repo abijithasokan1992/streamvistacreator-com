@@ -25,6 +25,12 @@ const GB = 1024 ** 3;
 export type WorkspaceStorage = {
   loading: boolean;
   error: string | null;
+  /**
+   * True only after a successful RPC returned a numeric total_storage_gb.
+   * When false (loading, error, or missing context), callers MUST treat the
+   * quota as unknown and MUST NOT hard-block uploads on it.
+   */
+  known: boolean;
   workspaceId: string | null;
 
   // Capacity (GB)
@@ -48,6 +54,7 @@ export type WorkspaceStorage = {
 
   refresh: () => Promise<void>;
 };
+
 
 type CacheEntry = { at: number; value: WorkspaceStorage };
 const CACHE = new Map<string, CacheEntry>();

@@ -304,11 +304,12 @@ export function AssetUploader({
       toast.error("This title is locked — uploads are disabled.");
       return;
     }
+    // NOTE: We intentionally do NOT hard-block on `wouldExceedQuota` here.
+    // The authoritative quota gate lives server-side (OCI signed-URL policy +
+    // upload_sessions RLS). Client-side we only surface a soft warning so the
+    // "Start upload" affordance stays live for anyone the backend will allow.
     if (wouldExceedQuota(f.size)) {
-      setStagedFile(f);
-      devLog("quota-block", { size: f.size, remaining: quotaRemainingBytes });
-      toast.error("Not enough storage on your current plan.");
-      return;
+      devLog("quota-warning", { size: f.size, remaining: quotaRemainingBytes });
     }
     setStagedFile(f);
     setDup({ kind: "checking" });

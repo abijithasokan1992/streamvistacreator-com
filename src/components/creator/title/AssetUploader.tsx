@@ -377,74 +377,101 @@ export function AssetUploader({
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
-      className={`rounded-lg border border-dashed p-4 space-y-3 transition ${drag ? "border-accent bg-accent/5" : "border-border/50"}`}
+      onClick={() => { if (!stagedFile && !busy && !locked) inputRef.current?.click(); }}
+      role={!stagedFile && !busy ? "button" : undefined}
+      tabIndex={!stagedFile && !busy && !locked ? 0 : -1}
+      onKeyDown={(e) => {
+        if (stagedFile || busy || locked) return;
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); inputRef.current?.click(); }
+      }}
+      className={cn(
+        "rounded-xl border-2 border-dashed p-6 space-y-4 transition-all",
+        !stagedFile && !busy && !locked && "cursor-pointer hover:border-accent hover:bg-accent/5 min-h-[180px] flex flex-col justify-center",
+        drag ? "border-accent bg-accent/10 scale-[1.01]" : "border-border/60",
+        locked && "opacity-60",
+      )}
     >
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-sm font-medium">{label ?? "Upload file"}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {locked
-              ? "This title is locked — uploads are disabled."
-              : cfg
-                ? `Allowed: ${cfg.exts.join(", ").toUpperCase()} · Max ${humanBytes(cfg.maxBytes)}`
-                : "Files go to Oracle Object Storage and are recorded in Oracle Database."}
+      {/* Empty state — prominent drop zone */}
+      {!stagedFile && !busy && !success && (
+        <div className="text-center space-y-2">
+          <div className="mx-auto w-14 h-14 rounded-full bg-accent/15 grid place-items-center">
+            <Upload className="w-6 h-6 text-accent" />
+          </div>
+          <p className="text-base font-semibold">
+            {locked ? "Uploads disabled — title is locked" : `Drop ${label ?? "your file"} here`}
           </p>
+          {!locked && (
+            <p className="text-sm text-muted-foreground">
+              or <span className="underline text-foreground">click to browse</span>
+              {cfg && <> · {cfg.exts.join(", ").toUpperCase()} · up to {humanBytes(cfg.maxBytes)}</>}
+            </p>
+          )}
           {singleSlot && existingActiveCount > 0 && !locked && (
-            <p className="text-[11px] text-amber-300 mt-1 inline-flex items-center gap-1">
-              <RefreshCw className="w-3 h-3" />
+            <p className="text-xs text-amber-300 inline-flex items-center gap-1.5">
+              <RefreshCw className="w-3.5 h-3.5" />
               This slot only holds one active version — uploading will supersede the current file.
             </p>
           )}
           {!locked && quotaKnown && quotaTotalBytes > 0 && (
-            <p className="text-[11px] text-muted-foreground mt-1 inline-flex items-center gap-1">
-              <HardDrive className="w-3 h-3" />
-              Storage: {humanBytes(quotaUsedBytes)} used · {humanBytes(quotaRemainingBytes)} free of {humanBytes(quotaTotalBytes)}
+            <p className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
+              <HardDrive className="w-3.5 h-3.5" />
+              {humanBytes(quotaUsedBytes)} used · {humanBytes(quotaRemainingBytes)} free of {humanBytes(quotaTotalBytes)}
             </p>
           )}
           {!locked && !quotaKnown && storage.loading && (
-            <p className="text-[11px] text-muted-foreground/70 mt-1 inline-flex items-center gap-1">
-              <HardDrive className="w-3 h-3" />
-              Checking storage…
+            <p className="text-xs text-muted-foreground/70 inline-flex items-center gap-1.5">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Checking storage…
             </p>
           )}
-
         </div>
-        <input
-          ref={inputRef}
-          type="file"
-          accept={acceptAttr}
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) handlePicked(f);
-          }}
-        />
-        {!busy && !stagedFile && (
-          <button
-            type="button"
-            disabled={locked}
-            onClick={() => inputRef.current?.click()}
-            className="shrink-0 inline-flex items-center gap-1.5 rounded-md bg-accent text-accent-foreground text-xs px-3 py-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <Upload className="w-3.5 h-3.5" /> Choose file
-          </button>
-        )}
-      </div>
+      )}
 
-      {/* Preflight card */}
+      <input
+        ref={inputRef}
+        type="file"
+        accept={acceptAttr}
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) handlePicked(f);
+        }}
+      />
+
+      {/* Preflight card with live preview */}
       {stagedFile && !busy && stagedPreflight && (
-        <div className="rounded-md border border-border/60 bg-card/50 p-3 text-xs space-y-1.5">
+        <div className="rounded-lg border border-border/60 bg-card/60 p-4 space-y-3 text-sm">
+          {/* Media preview — image / video / audio inline */}
+          {previewUrl && (
+            <div className="rounded-md overflow-hidden bg-black/40 border border-border/40 grid place-items-center max-h-64">
+              {(stagedFile.type.startsWith("image/") || /\.(png|jpe?g|webp|gif)$/i.test(stagedFile.name)) && (
+                <img src={previewUrl} alt={stagedFile.name} className="max-h-64 w-auto object-contain" />
+              )}
+              {(stagedFile.type.startsWith("video/") || /\.(mp4|mov|webm)$/i.test(stagedFile.name)) && (
+                <video src={previewUrl} controls className="max-h-64 w-full" preload="metadata" />
+              )}
+              {(stagedFile.type.startsWith("audio/") || /\.(mp3|wav|m4a|ogg)$/i.test(stagedFile.name)) && (
+                <audio src={previewUrl} controls className="w-full py-3" preload="metadata" />
+              )}
+            </div>
+          )}
+          {!previewUrl && (
+            <div className="rounded-md bg-muted/30 border border-border/30 py-6 grid place-items-center text-muted-foreground">
+              <FileCheck2 className="w-8 h-8" />
+              <span className="text-xs mt-1">Preview not available for this format</span>
+            </div>
+          )}
+
           <div className="flex items-center gap-2">
             {stagedPreflight.ok ? (
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <ShieldCheck className="w-5 h-5 text-emerald-400" />
             ) : (
-              <FileWarning className="w-4 h-4 text-rose-400" />
+              <FileWarning className="w-5 h-5 text-rose-400" />
             )}
-            <span className="font-medium">
+            <span className="font-semibold text-base">
               {stagedPreflight.ok ? "Ready to Upload" : "Upload Not Allowed"}
             </span>
           </div>
-          <dl className="grid grid-cols-[110px_1fr] gap-y-0.5 text-muted-foreground">
+          <dl className="grid grid-cols-[120px_1fr] gap-y-1 text-sm text-muted-foreground">
             <dt>Category</dt>     <dd className="text-foreground">{cfg?.label ?? category}</dd>
             <dt>Filename</dt>     <dd className="text-foreground truncate">{stagedFile.name}</dd>
             <dt>Format</dt>       <dd className="text-foreground">{fileExt(stagedFile.name).toUpperCase() || "—"}</dd>
@@ -452,60 +479,54 @@ export function AssetUploader({
             {cfg && <><dt>Maximum</dt><dd className="text-foreground">{humanBytes(cfg.maxBytes)}</dd></>}
           </dl>
           {!stagedPreflight.ok && (
-            <p className="text-rose-400">{(stagedPreflight as { ok: false; reason: string }).reason}</p>
+            <p className="text-rose-400 text-sm">{(stagedPreflight as { ok: false; reason: string }).reason}</p>
           )}
           {stagedPreflight.ok && wouldExceedQuota(stagedFile.size) && (
-            <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2.5 py-2 text-rose-200 space-y-1">
-              <p className="font-medium inline-flex items-center gap-1.5"><HardDrive className="w-3.5 h-3.5" /> Not enough storage on your current plan</p>
-              <p>
-                This file needs {humanBytes(stagedFile.size)} but only {humanBytes(quotaRemainingBytes)} of {humanBytes(quotaTotalBytes)} is free.
-              </p>
+            <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-rose-200 space-y-1 text-sm">
+              <p className="font-medium inline-flex items-center gap-1.5"><HardDrive className="w-4 h-4" /> Not enough storage on your current plan</p>
+              <p>This file needs {humanBytes(stagedFile.size)} but only {humanBytes(quotaRemainingBytes)} of {humanBytes(quotaTotalBytes)} is free.</p>
               <Link to="/dashboard?tab=storage" className="underline text-rose-100 hover:text-white">Upgrade or add storage →</Link>
             </div>
           )}
           {stagedPreflight.ok && !wouldExceedQuota(stagedFile.size) && dup.kind === "checking" && (
-            <p className="text-muted-foreground inline-flex items-center gap-1.5"><Loader2 className="w-3 h-3 animate-spin" /> Running preflight fingerprint (name + size)…</p>
+            <p className="text-sm text-muted-foreground inline-flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Running preflight fingerprint…</p>
           )}
           {dup.kind === "preliminary" && (
-            <div className="rounded-md border border-amber-500/30 bg-amber-500/5 px-2.5 py-2 text-amber-200/90 space-y-1">
-              <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-3.5 h-3.5" /> Preflight match</p>
-              <p>A file with the same name and size exists in your workspace. Server will reconcile the exact checksum after upload and collapse duplicates.</p>
+            <div className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-amber-200/90 text-sm">
+              <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-4 h-4" /> Preflight match — server will reconcile checksum after upload.</p>
             </div>
           )}
           {dup.kind === "hash-skipped" && (
-            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-2 text-amber-200 space-y-1">
-              <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-3.5 h-3.5" /> Possible duplicate</p>
-              <p>A file with the same name and size exists elsewhere in your workspace. Upload anyway if this is a new revision — exact-checksum reconciliation happens server-side.</p>
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-amber-200 text-sm">
+              <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-4 h-4" /> Possible duplicate — upload anyway if this is a new revision.</p>
             </div>
           )}
           {dup.kind === "block-same-title" && (
-            <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2.5 py-2 text-rose-200 space-y-1">
-              <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-3.5 h-3.5" /> Duplicate on this title</p>
-              <p>A file with the same name and size is already uploaded to this title. Replace the existing version or choose a different file. Server-side checksum will confirm identity.</p>
+            <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-rose-200 text-sm">
+              <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-4 h-4" /> Duplicate on this title — replace the version or pick a different file.</p>
             </div>
           )}
           {dup.kind === "warn-same-workspace" && (
-            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-2 text-amber-200 space-y-1">
-              <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-3.5 h-3.5" /> Possible duplicate in your workspace</p>
-              <p>A matching file exists in your workspace. You can reuse the existing asset or upload this copy as a new version on this title — server will reconcile exact checksum after upload.</p>
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-amber-200 text-sm">
+              <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-4 h-4" /> Matching file exists in your workspace — you can upload as a new version.</p>
             </div>
           )}
           {singleSlot && stagedPreflight.ok && existingActiveCount > 0 && (
-            <p className="text-amber-300 inline-flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5" /> The current active version will be superseded when this upload completes.</p>
+            <p className="text-sm text-amber-300 inline-flex items-center gap-1.5"><RefreshCw className="w-4 h-4" /> The current active version will be superseded when this upload completes.</p>
           )}
           <div className="flex gap-2 pt-1">
             <button
               type="button"
               onClick={startUpload}
               disabled={!stagedPreflight.ok || locked || wouldExceedQuota(stagedFile.size) || dup.kind === "block-same-title" || dup.kind === "checking" || dup.kind === "preliminary"}
-              className="inline-flex items-center gap-1.5 rounded-md bg-accent text-accent-foreground px-3 py-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 rounded-md bg-accent text-accent-foreground text-sm font-semibold px-4 py-2 disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <Upload className="w-3.5 h-3.5" /> {dup.kind === "warn-same-workspace" || dup.kind === "hash-skipped" ? "Upload as new version" : "Start upload"}
+              <Upload className="w-4 h-4" /> {dup.kind === "warn-same-workspace" || dup.kind === "hash-skipped" ? "Upload as new version" : "Start upload"}
             </button>
             <button
               type="button"
               onClick={cancelStaged}
-              className="rounded-md border border-border/60 px-3 py-1.5 text-muted-foreground hover:text-foreground"
+              className="rounded-md border border-border/60 px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
             >
               Choose another file
             </button>

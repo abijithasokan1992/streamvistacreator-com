@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { X, Loader2, Send, Lock, ShieldCheck, Clock, Check, Unlock, Plus, Trash2, CheckCircle2, Circle as CircleIcon, Globe2, BadgeCheck, Sparkles, Image as ImageIcon } from "lucide-react";
+import { X, Loader2, Send, Lock, ShieldCheck, Clock, Check, Unlock, Plus, Trash2, CheckCircle2, Circle as CircleIcon, Globe2, BadgeCheck, Sparkles, Image as ImageIcon, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";

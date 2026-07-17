@@ -10,7 +10,7 @@ import { useWorkspaces } from "@/hooks/useWorkspaces";
 import { useWorkspaceStorage } from "@/hooks/useWorkspaceStorage";
 import { supabase } from "@/integrations/supabase/client";
 import { AssetPreviewModal, canPreview } from "./AssetPreview";
-import { PremiumStorageTopupModal } from "./PremiumStorageTopupModal";
+
 import { cn } from "@/lib/utils";
 
 // ---------- Allowed-format & size matrix (client-side preflight) ----------
@@ -331,29 +331,13 @@ export function AssetUploader({
     void runUpload(f);
   }, [category, locked, runUpload, wouldExceedQuota, preliminaryMatch, runShaDedup, sha256Hex, devLog, quotaRemainingBytes]);
 
-  const [topupOpen, setTopupOpen] = useState(false);
-  const [topupReason, setTopupReason] = useState<string | undefined>(undefined);
-
-  // Trigger the centralized checkout overlay when a picked file would exceed quota.
-  // Replaces the previous inline "Storage tight" hint that repeated under every slot.
-  useEffect(() => {
-    if (!stagedFile) return;
-    if (!stagedPreflight?.ok) return;
-    if (!wouldExceedQuota(stagedFile.size)) return;
-    setTopupReason(
-      `This ${humanBytes(stagedFile.size)} upload exceeds your remaining ${humanBytes(quotaRemainingBytes)} of ${humanBytes(quotaTotalBytes)} storage. Add capacity below to continue.`,
-    );
-    setTopupOpen(true);
-  }, [stagedFile, stagedPreflight, wouldExceedQuota, quotaRemainingBytes, quotaTotalBytes]);
-
   const startUpload = useCallback(() => {
     if (!stagedFile) return;
     if (dup.kind === "block-same-title") return;
     if (stagedPreflight?.ok && wouldExceedQuota(stagedFile.size)) {
-      setTopupReason(
-        `This ${humanBytes(stagedFile.size)} upload exceeds your remaining ${humanBytes(quotaRemainingBytes)} of ${humanBytes(quotaTotalBytes)} storage. Add capacity below to continue.`,
+      toast.error(
+        `This ${humanBytes(stagedFile.size)} upload exceeds your remaining ${humanBytes(quotaRemainingBytes)} of ${humanBytes(quotaTotalBytes)} storage. Free up space and try again.`,
       );
-      setTopupOpen(true);
       return;
     }
     void runUpload(stagedFile);
@@ -501,8 +485,11 @@ export function AssetUploader({
           {!stagedPreflight.ok && (
             <p className="text-rose-400 text-sm">{(stagedPreflight as { ok: false; reason: string }).reason}</p>
           )}
-          {/* Oversize uploads now trigger the centralized PremiumStorageTopupModal
-              instead of an inline chip — see the effect above. */}
+          {stagedPreflight.ok && wouldExceedQuota(stagedFile.size) && (
+            <p className="text-rose-400 text-sm">
+              This upload exceeds your remaining storage quota. Free up space and try again.
+            </p>
+          )}
           {stagedPreflight.ok && !wouldExceedQuota(stagedFile.size) && dup.kind === "checking" && (
             <p className="text-sm text-muted-foreground inline-flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Running preflight fingerprint…</p>
           )}
@@ -613,12 +600,6 @@ export function AssetUploader({
         </div>
       )}
 
-      <PremiumStorageTopupModal
-        open={topupOpen}
-        onOpenChange={setTopupOpen}
-        reason={topupReason}
-        onSuccess={() => { void (storage as any)?.refresh?.(); }}
-      />
     </div>
   );
 }

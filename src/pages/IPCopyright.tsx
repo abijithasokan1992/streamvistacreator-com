@@ -10,7 +10,7 @@ export default function IPCopyright() {
     <>
       <Seo
         title={path === "/dmca" ? "DMCA & Copyright Policy — StreamVista" : "IP & Copyright Policy — StreamVista"}
-        description={path === "/dmca" ? "Report copyright infringement on StreamVista Cloud X. Submit a DMCA takedown notice to our designated agent and view our counter-notice and repeat-infringer procedures." : "StreamVista Cloud X IP policy — how we protect creator IP, handle DMCA notices, counter-claims, and repeat infringement on our platform."}
+        description={path === "/dmca" ? "Report copyright infringement on StreamVista Creator. Submit a DMCA takedown notice to our designated agent and view our counter-notice and repeat-infringer procedures." : "StreamVista Creator IP policy — how we protect creator IP, handle DMCA notices, counter-claims, and repeat infringement on our platform."}
         path={path}
         image={path === "/dmca" ? "/og/dmca.jpg" : "/og/ip-copyright.jpg"}
       />
@@ -31,7 +31,7 @@ export default function IPCopyright() {
 
       <LegalSection title="2. Filing a Takedown Notice">
         <p>
-          To report content that you believe infringes your copyright on StreamVista Cloud X, send a
+          To report content that you believe infringes your copyright on StreamVista Creator, send a
           written notice to our Designated Agent containing:
         </p>
         <ul className="list-disc pl-6 space-y-1 mt-2">

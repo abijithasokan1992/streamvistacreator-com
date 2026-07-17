@@ -1,68 +1,58 @@
-import { Upload, ShieldCheck, Store, Handshake, TrendingUp, ArrowRight } from "lucide-react";
+import { Upload, ShieldCheck, Store, Handshake, TrendingUp } from "lucide-react";
+import { Reveal } from "./Reveal";
 
 /**
- * How it works — 5 simple steps.
- * Upload → Review → Marketplace → Buyer → Revenue.
+ * How it works — 5-step timeline, presented as a horizontal filmstrip on
+ * desktop and a vertical stack on mobile. Each frame is a bordered card with
+ * subtle perforation motif, scene-number markers ("01"…"05"), and a soft
+ * gold glow on hover.
  */
 
 const STEPS = [
-  { icon: Upload, step: "01", title: "Upload", body: "Bring your title, assets and metadata." },
-  { icon: ShieldCheck, step: "02", title: "Review", body: "Rights, QC and readiness verified." },
-  { icon: Store, step: "03", title: "Marketplace", body: "Your title goes live to verified buyers." },
-  { icon: Handshake, step: "04", title: "Buyer", body: "Negotiate and close licensing deals." },
-  { icon: TrendingUp, step: "05", title: "Revenue", body: "Track earnings across every channel." },
+  { icon: Upload,     step: "01", title: "Upload",      body: "Bring your title, assets and metadata." },
+  { icon: ShieldCheck, step: "02", title: "Review",      body: "Rights, QC and readiness verified." },
+  { icon: Store,      step: "03", title: "Marketplace", body: "Your title goes live to verified buyers." },
+  { icon: Handshake,  step: "04", title: "Buyer",       body: "Negotiate and close licensing deals." },
+  { icon: TrendingUp, step: "05", title: "Revenue",     body: "Track earnings across every channel." },
 ];
 
 export const Workflow = () => (
-  <section id="workflow" className="py-16 sm:py-24 border-b border-border/40 relative overflow-hidden">
-    <div
-      aria-hidden
-      className="pointer-events-none absolute inset-0 opacity-[0.3]"
-      style={{
-        backgroundImage:
-          "radial-gradient(circle at 30% 20%, hsl(var(--primary) / 0.15), transparent 55%), radial-gradient(circle at 75% 80%, hsl(var(--accent) / 0.12), transparent 55%)",
-      }}
-    />
-
+  <section id="workflow" className="py-20 sm:py-28 border-b border-border/40 relative overflow-hidden">
     <div className="container relative">
-      <div className="mb-16 text-center animate-fade-in">
+      <Reveal className="mb-16 text-center">
         <div className="flex items-center justify-center gap-3 mb-5">
-          <div className="w-8 h-px bg-accent" />
-          <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">How it works</span>
-          <div className="w-8 h-px bg-accent" />
+          <div className="w-8 h-px bg-cine-gold" />
+          <span className="scene-marker">How it works</span>
+          <div className="w-8 h-px bg-cine-gold" />
         </div>
-        <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-4xl md:text-5xl lg:text-6xl">
-          From upload <span className="gradient-text">to revenue</span>
+        <h2 className="h-cine text-4xl md:text-5xl lg:text-6xl">
+          From upload <span className="text-cine-gold italic">to revenue</span>
         </h2>
-      </div>
+      </Reveal>
 
-      <ol className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 sm:gap-6 lg:gap-2 relative">
+      <ol
+        className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-5"
+        aria-label="Five-step licensing workflow"
+      >
         {STEPS.map(({ icon: Icon, step, title, body }, i) => (
-          <li key={step} className="relative flex flex-col items-center text-center">
-            <div
-              className="relative w-[92px] h-[92px] rounded-full flex flex-col items-center justify-center border-2 mb-5"
-              style={{
-                borderColor: "hsl(var(--primary) / 0.45)",
-                background:
-                  "linear-gradient(145deg, hsl(var(--surface-elevated) / 0.9), hsl(var(--surface) / 0.7))",
-                boxShadow:
-                  "0 12px 32px -10px hsl(var(--primary) / 0.35), inset 0 1px 0 hsl(var(--accent) / 0.25)",
-              }}
-            >
-              <Icon className="w-6 h-6 text-primary" />
-              <span className="mt-1 font-mono-tech text-[10px] uppercase tracking-[0.25em] text-accent">{step}</span>
-            </div>
-            <h3 className="font-display text-base md:text-lg font-bold uppercase tracking-tight">{title}</h3>
-            <p className="text-xs md:text-sm text-muted-foreground leading-relaxed mt-2 max-w-[22ch]">{body}</p>
-            {i < STEPS.length - 1 && (
-              <ArrowRight
-                aria-hidden
-                className="hidden lg:block absolute top-[44px] -right-3 w-5 h-5 text-primary/40"
-              />
-            )}
-          </li>
+          <Reveal as="li" key={step} delay={i * 90}>
+            <article className="film-frame relative flex flex-col items-start gap-4 p-6 h-full">
+              <span className="scene-marker">Scene {step}</span>
+              <div className="w-11 h-11 rounded-md bg-cine-gold/10 border border-cine-gold flex items-center justify-center">
+                <Icon className="w-5 h-5 text-cine-gold" />
+              </div>
+              <h3 className="font-display text-base md:text-lg font-bold uppercase tracking-tight">
+                {title}
+              </h3>
+              <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
+                {body}
+              </p>
+            </article>
+          </Reveal>
         ))}
       </ol>
     </div>
+
+    <div className="scene-divider mt-20" aria-hidden />
   </section>
 );

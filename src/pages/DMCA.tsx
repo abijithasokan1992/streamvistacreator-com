@@ -6,7 +6,7 @@ export default function DMCA() {
   return (
     <main className="min-h-dvh">
       <div className="container max-w-3xl py-20">
-        <Link to="/" className="text-xs uppercase tracking-[0.3em] text-muted-foreground hover:text-foreground">← Back to StreamVista Cloud X</Link>
+        <Link to="/" className="text-xs uppercase tracking-[0.3em] text-muted-foreground hover:text-foreground">← Back to StreamVista Creator</Link>
 
         <header className="mt-8 mb-12">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass text-xs uppercase tracking-[0.2em] text-accent mb-5">
@@ -18,7 +18,7 @@ export default function DMCA() {
 
         <article className="glass-strong rounded-3xl p-8 md:p-10 space-y-8 text-sm md:text-base leading-relaxed">
           <Section icon={FileText} title="1. Our Commitment">
-            StreamVista Cloud X (operated by Crayons) respects the intellectual property rights of creators, studios, and rights-holders. We respond promptly to clear notices of alleged copyright infringement in compliance with the Digital Millennium Copyright Act (DMCA) and the Information Technology Act, 2000 (India), along with the Intermediary Guidelines, 2021.
+            StreamVista Creator (operated by Crayons) respects the intellectual property rights of creators, studios, and rights-holders. We respond promptly to clear notices of alleged copyright infringement in compliance with the Digital Millennium Copyright Act (DMCA) and the Information Technology Act, 2000 (India), along with the Intermediary Guidelines, 2021.
           </Section>
 
           <Section icon={FileText} title="2. Filing a Takedown Notice">
@@ -26,7 +26,7 @@ export default function DMCA() {
             <ul className="list-disc pl-6 space-y-1 mt-2">
               <li>A physical or electronic signature of the rights-holder or authorized agent.</li>
               <li>Identification of the copyrighted work claimed to be infringed.</li>
-              <li>The exact URL or asset reference of the allegedly infringing material on StreamVista Cloud X.</li>
+              <li>The exact URL or asset reference of the allegedly infringing material on StreamVista Creator.</li>
               <li>Your contact details — full name, address, telephone, and email.</li>
               <li>A statement of good-faith belief that the disputed use is not authorized by the rights-holder, its agent, or the law.</li>
               <li>A statement, under penalty of perjury, that the information is accurate and you are authorized to act on behalf of the rights-holder.</li>

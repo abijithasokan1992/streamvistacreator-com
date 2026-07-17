@@ -18,11 +18,11 @@ type Settings = {
 
 const FALLBACK_ICONS: { icon: LucideIcon; name: string; tag: string; description: string }[] = [
   { icon: Film, name: "Crayons Pictures", tag: "Production House",
-    description: "Feature films, series and branded content originating on the Cloud X pipeline — from dailies to DI." },
+    description: "Feature films, series and branded content originating on the StreamVista Creator pipeline — from dailies to DI." },
   { icon: Workflow, name: "Crayons Bridge", tag: "Studio Workflow OS",
     description: "The connective layer between editors, colorists and producers — review, approvals and version control across continents." },
   { icon: MonitorPlay, name: "Crayons Loop", tag: "Creator Distribution",
-    description: "Short-form, vertical and social cut-downs ingested directly from your Cloud X workspace to every platform." },
+    description: "Short-form, vertical and social cut-downs ingested directly from your StreamVista workspace to every platform." },
 ];
 
 const DEFAULT_SETTINGS: Settings = { aspect_ratio: "16/9", object_fit: "contain", container_bg: "#ffffff" };
@@ -56,17 +56,17 @@ export const CloudStudioPartners = () => {
             <div className="flex items-center gap-3 mb-5">
               <div className="w-8 h-px bg-accent" />
               <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">
-                Ecosystem — Cloud Studio Partners
+                Ecosystem — Studio Partners
               </span>
             </div>
             <h2 className="font-display font-black uppercase leading-[0.9] tracking-tight text-5xl md:text-6xl">
               Built with our
               <br />
-              <span className="gradient-text">cloud studio partners.</span>
+              <span className="gradient-text">studio partners.</span>
             </h2>
           </div>
           <p className="text-muted-foreground max-w-sm text-sm leading-relaxed">
-            The Crayons creative network powers every workspace — production, workflow and distribution operating as one Cloud X fabric.
+            The Crayons creative network powers every workspace — production, workflow and distribution operating as one connected fabric.
           </p>
         </div>
 

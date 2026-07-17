@@ -39,7 +39,7 @@ export default function About() {
         <LegalSection title="Registered entity">
           StreamVista OPC Pvt Ltd is an India-registered private company headquartered in{" "}
           <strong className="text-foreground">Ernakulam, Kerala</strong>. It owns and develops the
-          StreamVista Cloud X platform.
+          StreamVista Creator platform.
         </LegalSection>
         <LegalSection title="Trust & Security">
           <TrustBadges className="mt-2" />

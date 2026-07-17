@@ -13,22 +13,22 @@ export const AIContentLicensingSection = () => (
   <section
     id="ai-content-licensing"
     aria-labelledby="ai-content-licensing-heading"
-    className="py-24 border-b border-border/40 relative"
+    className="ai-band py-24 border-b border-border/40 relative overflow-hidden"
   >
-    <div className="container">
+    <div className="container relative">
       <div className="max-w-3xl animate-fade-in">
         <div className="flex items-center gap-3 mb-5">
-          <div className="w-8 h-px bg-accent" />
-          <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">
+          <div className="w-8 h-px bg-[hsl(198_88%_66%_/_0.7)]" />
+          <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] ai-accent">
             AI Training &amp; Machine Learning
           </span>
         </div>
         <h2
           id="ai-content-licensing-heading"
-          className="font-display font-black uppercase leading-[0.9] tracking-tight text-4xl md:text-5xl"
+          className="h-cine text-4xl md:text-5xl text-foreground"
         >
           License Content for{" "}
-          <span className="gradient-text">Responsible AI</span>
+          <span className="ai-accent italic">Responsible AI</span>
         </h2>
         <p className="mt-6 text-base md:text-lg text-muted-foreground leading-relaxed max-w-2xl">
           StreamVista helps verified rights owners evaluate and license
@@ -39,12 +39,12 @@ export const AIContentLicensingSection = () => (
 
         <ul className="mt-6 grid gap-2 text-sm text-muted-foreground/90 max-w-xl">
           <li className="flex items-start gap-2">
-            <ShieldCheck className="w-4 h-4 mt-0.5 text-accent shrink-0" />
+            <ShieldCheck className="w-4 h-4 mt-0.5 ai-accent shrink-0" />
             No automatic approvals. Written authorization required from the
             rights holder.
           </li>
           <li className="flex items-start gap-2">
-            <Brain className="w-4 h-4 mt-0.5 text-accent shrink-0" />
+            <Brain className="w-4 h-4 mt-0.5 ai-accent shrink-0" />
             Model, output and retention terms recorded per licence.
           </li>
         </ul>

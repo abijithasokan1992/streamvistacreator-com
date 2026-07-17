@@ -16,10 +16,10 @@ import { Seo } from "@/components/Seo";
  */
 export default function CreatorPreview() {
   return (
-    <div className="min-h-dvh bg-background text-foreground">
+    <div className="min-h-dvh bg-background text-foreground public-cinematic">
       <Seo
-        title="Creator Workspace Preview — StreamVista Cloud X"
-        description="See how creators track revenue, distribution, partner performance, licensing and storage inside StreamVista Cloud X. Interactive sample dashboard."
+        title="Creator Workspace Preview — StreamVista"
+        description="See how creators track revenue, distribution, partner performance, licensing and storage inside StreamVista. Interactive sample dashboard."
         path="/creator-preview"
       />
       <Navbar />

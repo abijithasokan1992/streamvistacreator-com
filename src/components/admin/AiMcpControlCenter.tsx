@@ -58,7 +58,7 @@ export default function AiMcpControlCenter() {
       .select("*")
       .order("created_at", { ascending: false })
       .limit(50);
-    if (!error && data) setAudit(data as AuditRow[]);
+    if (!error && data) setAudit(data as RawAuditRow[]);
   }, []);
 
   // Guard against duplicate realtime subscriptions across rerenders / StrictMode

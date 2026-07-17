@@ -228,9 +228,20 @@ export default function PriorityInbox() {
         </div>
 
         <div className="max-h-[520px] overflow-y-auto">
-          <Group label="Critical" tone="critical" items={grouped.critical} readIds={readIds} onOpen={(i) => { markRead(i.id); if (i.onOpen) i.onOpen(); else if (i.dept && i.section) jump(i.dept, i.section); setOpen(false); }} />
-          <Group label="Needs Attention" tone="warn" items={grouped.warn} readIds={readIds} onOpen={(i) => { markRead(i.id); if (i.onOpen) i.onOpen(); else if (i.dept && i.section) jump(i.dept, i.section); setOpen(false); }} />
-          <Group label="Information" tone="info" items={grouped.info} readIds={readIds} onOpen={(i) => { markRead(i.id); if (i.onOpen) i.onOpen(); else if (i.dept && i.section) jump(i.dept, i.section); setOpen(false); }} />
+          {(["critical","warn","info"] as const).map(tone => {
+            const label = tone === "critical" ? "Critical" : tone === "warn" ? "Needs Attention" : "Information";
+            return (
+              <Group
+                key={tone}
+                label={label}
+                tone={tone}
+                items={grouped[tone]}
+                readIds={readIds}
+                onDismiss={dismiss}
+                onOpen={(i) => { markRead(i.id); if (i.onOpen) i.onOpen(); else if (i.dept && i.section) jump(i.dept, i.section); setOpen(false); }}
+              />
+            );
+          })}
           {filtered.length === 0 && (
             <div className="py-10 text-center text-xs text-muted-foreground">All clear. Nothing needs your attention.</div>
           )}

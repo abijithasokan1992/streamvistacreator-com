@@ -11,7 +11,9 @@ export type AuthErrorCode =
   | "invalid_credentials"
   | "email_not_confirmed"
   | "session_expired"
+  | "invalid_link"
   | "user_suspended"
+  | "user_deleted"
   | "missing_role"
   | "rate_limited"
   | "network_error"
@@ -39,10 +41,20 @@ const COPY: Record<AuthErrorCode, MappedAuthError> = {
     message: "Your session expired. Please sign in again to continue.",
     action: "sign_in",
   },
+  invalid_link: {
+    code: "invalid_link",
+    message: "This link has expired or was already used. Request a fresh one to continue.",
+    action: "retry",
+  },
   user_suspended: {
     code: "user_suspended",
     message: "This account is on hold. Contact support if you believe this is a mistake.",
     action: "contact_support",
+  },
+  user_deleted: {
+    code: "user_deleted",
+    message: "This account no longer exists. Create a new account to continue.",
+    action: "sign_in",
   },
   missing_role: {
     code: "missing_role",
@@ -89,8 +101,24 @@ export function mapAuthError(err: unknown): MappedAuthError {
   if (raw.includes("jwt expired") || raw.includes("session_not_found") || raw.includes("session expired") || raw.includes("token has expired")) {
     return COPY.session_expired;
   }
-  if (raw.includes("user is suspended") || raw.includes("user_banned") || raw.includes("is_suspended")) {
+  if (
+    raw.includes("otp_expired") ||
+    raw.includes("otp expired") ||
+    raw.includes("invalid otp") ||
+    raw.includes("token is invalid") ||
+    raw.includes("token has been used") ||
+    raw.includes("recovery link") ||
+    raw.includes("link is invalid") ||
+    raw.includes("link expired") ||
+    raw.includes("invalid_link")
+  ) {
+    return COPY.invalid_link;
+  }
+  if (raw.includes("user is suspended") || raw.includes("user_banned") || raw.includes("is_suspended") || raw.includes("banned")) {
     return COPY.user_suspended;
+  }
+  if (raw.includes("user_not_found") || raw.includes("user not found") || raw.includes("user was deleted")) {
+    return COPY.user_deleted;
   }
   if (raw.includes("missing role") || raw.includes("missing_role") || raw.includes("no role assigned")) {
     return COPY.missing_role;

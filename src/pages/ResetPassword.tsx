@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { dashboardForRole, type AppRole } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { getAppOrigin } from "@/lib/site";
+import { mapAuthError } from "@/lib/auth/authErrors";
 import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
 import crayonsLogo from "@/assets/partner-crayons-pictures.png";
 
@@ -99,7 +100,7 @@ export default function ResetPassword() {
       redirectTo: `${getAppOrigin()}/reset-password`,
     });
     setResending(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(mapAuthError(error).message);
     toast.success("Fresh recovery link sent — check your inbox.");
   };
 
@@ -122,7 +123,7 @@ export default function ResetPassword() {
     setSavingPwd(true);
     const { error } = await supabase.auth.updateUser({ password });
     setSavingPwd(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(mapAuthError(error).message);
     toast.success("Password updated.");
     const target = await pickDashboard();
     navigate(target, { replace: true });

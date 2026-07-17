@@ -47,9 +47,20 @@ describe("mapAuthError", () => {
     expect(m.message).not.toContain("weird");
   });
 
-  it("marks only network/rate errors as retryable", () => {
+  it("marks only network/rate/invalid_link errors as retryable", () => {
     expect(isRetryableAuthError(new Error("Failed to fetch"))).toBe(true);
     expect(isRetryableAuthError({ status: 429 })).toBe(true);
     expect(isRetryableAuthError(new Error("Invalid login credentials"))).toBe(false);
+  });
+
+  it("maps expired/invalid magic or recovery link", () => {
+    expect(mapAuthError(new Error("Email link is invalid or has expired")).code).toBe("invalid_link");
+    expect(mapAuthError(new Error("otp_expired")).code).toBe("invalid_link");
+    expect(mapAuthError(new Error("Token has been used")).code).toBe("invalid_link");
+  });
+
+  it("maps deleted user separately from suspended", () => {
+    expect(mapAuthError(new Error("User not found")).code).toBe("user_deleted");
+    expect(mapAuthError(new Error("user_banned")).code).toBe("user_suspended");
   });
 });

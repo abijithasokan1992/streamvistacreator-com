@@ -435,6 +435,9 @@ function buildDepartments(args: {
         { id: "approvals", label: "Content Review", hint: "Title QC & legal review", content: (
           <ContentReviewWorkflow initialTab={args.reviewInitialTab} />
         )},
+        { id: "publish", label: "Publish Titles", hint: "Approved → Ready For Distribution", content: (
+          <ContentReviewWorkflow initialTab="approved" />
+        )},
         { id: "titles-catalog", label: "Titles Catalog", hint: "All titles, assets and metadata", content: <GlobalAssetManager /> },
         { id: "qc-queue", label: "QC Queue", hint: "Operational QC validation panel", content: (
           <QCLegalValidationSurface initialPanel="qc" />

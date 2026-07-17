@@ -1329,7 +1329,7 @@ var list_buyers_default = defineTool36({
     const denied = await authorize(ctx, "list_buyers", input);
     if (denied) return denied;
     const sb = userClient5(ctx);
-    let q = sb.from("entity_profiles").select("id, slug, display_name, kind, status, created_at").eq("kind", "buyer").order("created_at", { ascending: false }).limit(clampLimit(input.limit));
+    let q = sb.from("entity_profiles").select("id, display_name, kind, verification_status, created_at").eq("kind", "buyer").order("created_at", { ascending: false }).limit(clampLimit(input.limit));
     if (input.search) q = q.ilike("display_name", `%${input.search}%`);
     const { data, error } = await withTimeout(q, "list_buyers");
     if (error) return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };

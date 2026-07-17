@@ -81,14 +81,17 @@ export function detectMcpDrift(
     deployedVersion: "unknown",
     toolCount: 0,
   };
-  const expectedToolNames = typeof expected === "number" ? [] : expected.toolNames;
+  const nameDiffAvailable = typeof expected !== "number";
+  const expectedToolNames = nameDiffAvailable ? expected.toolNames : [];
   const expectedToolCount = typeof expected === "number" ? expected : expected.toolNames.length;
   const deployedNames = extractDeployedToolNames(manifest);
   const deployedSet = new Set(deployedNames);
   const expectedSet = new Set(expectedToolNames);
 
-  const missingRemote = expectedToolNames.filter((n) => !deployedSet.has(n)).sort();
-  const extraRemote = deployedNames.filter((n) => !expectedSet.has(n)).sort();
+  // Only compute name-based drift when the caller supplied the source-side
+  // tool name list; otherwise fall back to the legacy count-only comparison.
+  const missingRemote = nameDiffAvailable ? expectedToolNames.filter((n) => !deployedSet.has(n)).sort() : [];
+  const extraRemote = nameDiffAvailable ? deployedNames.filter((n) => !expectedSet.has(n)).sort() : [];
 
   const reasons: string[] = [];
   if (summary.deployedVersion === "unknown") reasons.push("deployed manifest missing version");

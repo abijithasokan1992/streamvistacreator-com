@@ -44,9 +44,8 @@ export const normalizeSynopsis = (v: unknown): string | null => {
 
 export const normalizeLanguage = (v: unknown): string | null => {
   if (typeof v !== "string") return null;
-  const t = v.trim();
+  const t = v.trim().toLowerCase();
   if (!t) return null;
-  // Title-case first letters so "english" and "ENGLISH" collapse to "English".
   return t.replace(/\b\w/g, (c) => c.toUpperCase()).slice(0, 60);
 };
 
@@ -59,7 +58,7 @@ export const normalizeGenres = (v: unknown): string[] => {
   const seen = new Set<string>();
   for (const raw of arr) {
     if (typeof raw !== "string") continue;
-    const g = raw.trim().replace(/\s+/g, " ").slice(0, 60);
+    const g = raw.trim().replace(/\s+/g, " ").slice(0, 60).toLowerCase();
     if (!g) continue;
     const cased = g.replace(/\b\w/g, (c) => c.toUpperCase());
     const key = cased.toLowerCase();

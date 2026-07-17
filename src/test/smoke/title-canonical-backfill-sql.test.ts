@@ -170,7 +170,7 @@ describe("title_canonical_backfill.sql — hardening", () => {
     // executable (non-commented) SELECT count(*) statement should be present.
     const commentedCounts = sql
       .split(/\r?\n/)
-      .filter((l) => /^\s*--\s*SELECT\s+count\(\*\)/i.test(l));
+      .filter((l) => /^\s*--(?:\s*--)?\s*SELECT\s+count\s*\(\s*\*\s*\)/i.test(l));
     expect(commentedCounts.length).toBeGreaterThanOrEqual(3);
     const uncommented = sql
       .split(/\r?\n/)

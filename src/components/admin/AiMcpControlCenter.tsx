@@ -37,8 +37,10 @@ export default function AiMcpControlCenter() {
   const [perms, setPerms] = useState<McpPermissions>(DEFAULT_MCP_PERMISSIONS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [audit, setAudit] = useState<AuditRow[]>([]);
-  const [filter, setFilter] = useState<"all" | "allowed" | "denied">("all");
+  const [audit, setAudit] = useState<RawAuditRow[]>([]);
+  const [detail, setDetail] = useState<NormalizedAudit | null>(null);
+  const [confirmEnable, setConfirmEnable] = useState<{ key: keyof McpPermissions; label: string } | null>(null);
+  const [filter, setFilter] = useState<AuditFilter>("all");
 
   const loadPerms = useCallback(async () => {
     const { data } = await supabase

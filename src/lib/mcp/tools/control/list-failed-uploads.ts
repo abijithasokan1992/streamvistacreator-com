@@ -15,7 +15,7 @@ export default defineTool({
     const { data, error } = await withTimeout(
       sb
         .from("ingest_job_items")
-        .select("id, job_id, filename, mime_type, size_bytes, error_message, retry_count, created_at, updated_at")
+        .select("id, job_id, file_name, mime_guess, size_bytes, error_message, metadata, created_at, updated_at")
         .eq("status", "failed")
         .order("updated_at", { ascending: false })
         .limit(clampLimit(input.limit)),

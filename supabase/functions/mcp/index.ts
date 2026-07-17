@@ -1158,7 +1158,7 @@ var list_creators_default = defineTool29({
     const denied = await authorize(ctx, "list_creators", input);
     if (denied) return denied;
     const sb = userClient5(ctx);
-    let q = sb.from("entity_profiles").select("id, slug, display_name, kind, status, created_at").in("kind", ["creator", "content_owner"]).order("created_at", { ascending: false }).limit(clampLimit(input.limit));
+    let q = sb.from("entity_profiles").select("id, display_name, kind, verification_status, created_at").eq("kind", "creator").order("created_at", { ascending: false }).limit(clampLimit(input.limit));
     if (input.search) q = q.ilike("display_name", `%${input.search}%`);
     const { data, error } = await withTimeout(q, "list_creators");
     if (error) return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
@@ -1208,7 +1208,7 @@ var list_uploads_default = defineTool31({
     const denied = await authorize(ctx, "list_uploads", input);
     if (denied) return denied;
     const sb = userClient5(ctx);
-    let q = sb.from("ingest_job_items").select("id, job_id, status, filename, mime_type, size_bytes, created_at, updated_at").order("created_at", { ascending: false }).limit(clampLimit(input.limit));
+    let q = sb.from("ingest_job_items").select("id, job_id, status, file_name, mime_guess, size_bytes, created_at, updated_at").order("created_at", { ascending: false }).limit(clampLimit(input.limit));
     if (input.status) q = q.eq("status", input.status);
     if (input.since) q = q.gte("created_at", input.since);
     const { data, error } = await withTimeout(q, "list_uploads");
@@ -1231,7 +1231,7 @@ var list_failed_uploads_default = defineTool32({
     if (denied) return denied;
     const sb = userClient5(ctx);
     const { data, error } = await withTimeout(
-      sb.from("ingest_job_items").select("id, job_id, filename, mime_type, size_bytes, error_message, retry_count, created_at, updated_at").eq("status", "failed").order("updated_at", { ascending: false }).limit(clampLimit(input.limit)),
+      sb.from("ingest_job_items").select("id, job_id, file_name, mime_guess, size_bytes, error_message, metadata, created_at, updated_at").eq("status", "failed").order("updated_at", { ascending: false }).limit(clampLimit(input.limit)),
       "list_failed_uploads"
     );
     if (error) return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
@@ -1254,7 +1254,7 @@ var list_failed_emails_default = defineTool33({
     if (denied) return denied;
     const sb = userClient5(ctx);
     const { data, error } = await withTimeout(
-      sb.from("email_send_log").select("id, message_id, template, status, error, created_at, updated_at").in("status", ["failed", "failed_permanent"]).order("updated_at", { ascending: false }).limit(clampLimit(input.limit)),
+      sb.from("email_send_log").select("id, message_id, template_name, status, error_message, created_at").in("status", ["failed", "failed_permanent", "dlq", "bounced"]).order("created_at", { ascending: false }).limit(clampLimit(input.limit)),
       "list_failed_emails"
     );
     if (error) return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
@@ -1329,7 +1329,7 @@ var list_buyers_default = defineTool36({
     const denied = await authorize(ctx, "list_buyers", input);
     if (denied) return denied;
     const sb = userClient5(ctx);
-    let q = sb.from("entity_profiles").select("id, slug, display_name, kind, status, created_at").eq("kind", "buyer").order("created_at", { ascending: false }).limit(clampLimit(input.limit));
+    let q = sb.from("entity_profiles").select("id, display_name, kind, verification_status, created_at").eq("kind", "buyer").order("created_at", { ascending: false }).limit(clampLimit(input.limit));
     if (input.search) q = q.ilike("display_name", `%${input.search}%`);
     const { data, error } = await withTimeout(q, "list_buyers");
     if (error) return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
@@ -1484,7 +1484,7 @@ import { defineTool as defineTool41 } from "npm:@lovable.dev/mcp-js@0.20.0";
 import { z as z32 } from "npm:zod@^3.25.76";
 var TABLE_ALLOWLIST = {
   content_titles: { columns: ["id", "title", "status", "created_at", "updated_at"], textCol: "title" },
-  entity_profiles: { columns: ["id", "slug", "display_name", "kind", "status", "created_at"], textCol: "display_name" },
+  entity_profiles: { columns: ["id", "display_name", "kind", "verification_status", "created_at"], textCol: "display_name" },
   ingest_jobs: { columns: ["id", "status", "source", "created_at", "updated_at"] },
   billing_orders: { columns: ["id", "status", "amount", "currency", "product_code", "created_at"] },
   invoices: { columns: ["id", "invoice_number", "status", "total_amount", "currency", "issue_date", "created_at"] }

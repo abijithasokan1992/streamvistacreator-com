@@ -18,7 +18,7 @@ export default defineTool({
     const sb = userClient(ctx);
     let q = sb
       .from("ingest_job_items")
-      .select("id, job_id, status, filename, mime_type, size_bytes, created_at, updated_at")
+      .select("id, job_id, status, file_name, mime_guess, size_bytes, created_at, updated_at")
       .order("created_at", { ascending: false })
       .limit(clampLimit(input.limit));
     if (input.status) q = q.eq("status", input.status);

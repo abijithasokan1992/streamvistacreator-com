@@ -17,7 +17,7 @@ export default defineTool({
     const sb = userClient(ctx);
     let q = sb
       .from("entity_profiles")
-      .select("id, slug, display_name, kind, status, created_at")
+      .select("id, display_name, kind, verification_status, created_at")
       .eq("kind", "buyer")
       .order("created_at", { ascending: false })
       .limit(clampLimit(input.limit));

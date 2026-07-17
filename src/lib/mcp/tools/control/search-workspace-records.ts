@@ -8,7 +8,7 @@ import { authorize, ok, err, redactDeep, userClient, withTimeout, clampLimit } f
  */
 const TABLE_ALLOWLIST: Record<string, { columns: string[]; textCol?: string }> = {
   content_titles: { columns: ["id", "title", "status", "created_at", "updated_at"], textCol: "title" },
-  entity_profiles: { columns: ["id", "slug", "display_name", "kind", "status", "created_at"], textCol: "display_name" },
+  entity_profiles: { columns: ["id", "display_name", "kind", "verification_status", "created_at"], textCol: "display_name" },
   ingest_jobs: { columns: ["id", "status", "source", "created_at", "updated_at"] },
   billing_orders: { columns: ["id", "status", "amount", "currency", "product_code", "created_at"] },
   invoices: { columns: ["id", "invoice_number", "status", "total_amount", "currency", "issue_date", "created_at"] },

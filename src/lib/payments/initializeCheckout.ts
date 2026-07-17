@@ -156,13 +156,21 @@ export async function initializeCheckout(opts: InitializeCheckoutOptions): Promi
     await ensureRazorpay();
 
     // Only pass non-empty prefill values to Razorpay. Empty/null/undefined
-    // values still cause the checkout modal to lock the corresponding field,
-    // preventing users from positioning their cursor and typing manually.
+    // (or whitespace-only) values still cause the checkout modal to lock the
+    // corresponding field, preventing users from positioning their cursor
+    // and typing manually.
     const rzpPrefill: Record<string, string> = {};
-    const prefillEmail = prefill?.email ?? sess?.session?.user?.email;
+    const clean = (v: unknown): string | undefined => {
+      if (typeof v !== "string") return undefined;
+      const t = v.trim();
+      return t.length > 0 ? t : undefined;
+    };
+    const prefillEmail = clean(prefill?.email) ?? clean(sess?.session?.user?.email);
+    const prefillContact = clean(prefill?.contact);
+    const prefillName = clean(prefill?.name);
     if (prefillEmail) rzpPrefill.email = prefillEmail;
-    if (prefill?.contact) rzpPrefill.contact = prefill.contact;
-    if (prefill?.name) rzpPrefill.name = prefill.name;
+    if (prefillContact) rzpPrefill.contact = prefillContact;
+    if (prefillName) rzpPrefill.name = prefillName;
 
     const rzp = new (window as any).Razorpay({
       key: (data as any).keyId,

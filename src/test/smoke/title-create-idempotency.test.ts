@@ -62,4 +62,14 @@ describe("createTitle idempotency", () => {
     expect(a.id).not.toBe(b.id);
     expect(state.rows.length).toBe(2);
   });
+
+  it("survives sequential rapid retries with the same draft id", async () => {
+    // Simulates a user double-clicking then refreshing then re-clicking.
+    const draftId = "draft-rapid";
+    const r1 = await createTitle("owner-1", null, "X", "feature_film", draftId);
+    const r2 = await createTitle("owner-1", null, "X", "feature_film", draftId);
+    const r3 = await createTitle("owner-1", null, "X", "feature_film", draftId);
+    expect(new Set([r1.id, r2.id, r3.id]).size).toBe(1);
+    expect(state.rows.length).toBe(1);
+  });
 });

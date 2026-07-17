@@ -153,7 +153,13 @@ export function syncCanonicalAndMetadata(
   const primaryPatch = pick(primaryGenre, [pCanon.genre, genresPatch]);
   const primaryCur = pick(primaryGenre, [curCanon.genre, genresCur]);
   const genre = primaryPatch ?? primaryCur;
-  const finalGenres = genresPatch.length ? genresPatch : genresCur;
+  const finalGenres = genresPatch.length
+    ? genresPatch
+    : genresCur.length
+      ? genresCur
+      : genre
+        ? [genre]
+        : [];
   const pGenreCanon = normalizeTitle(pCanon.genre);
   if (pGenreCanon && genresPatch.length && pGenreCanon !== genresPatch[0]) {
     conflicts.push({ field: "genre", canonical: pGenreCanon, metadata: genresPatch[0] });

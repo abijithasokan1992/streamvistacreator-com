@@ -16,6 +16,38 @@ import {
   TitleMetadataSchema,
   REQUIRES_CENSOR,
 } from "./titleSchema";
+import { syncCanonicalAndMetadata } from "./titleNormalization";
+
+/**
+ * Enrich a raw content_titles row so that `metadata` carries the canonical
+ * column values when the metadata JSON is blank. This lets the wizard
+ * resume from a persisted draft that only has canonical columns filled
+ * (e.g. rows created before the metadata-sync change or via bulk import)
+ * — step-completion checks then see the values without a DB migration.
+ */
+function enrichRow<T extends {
+  title?: string | null;
+  synopsis?: string | null;
+  language?: string | null;
+  genre?: string | null;
+  duration_minutes?: number | null;
+  metadata: TitleMetadata;
+}>(row: T): T {
+  const { metadata } = syncCanonicalAndMetadata(
+    {
+      canonical: {
+        title: row.title ?? null,
+        synopsis: row.synopsis ?? null,
+        language: row.language ?? null,
+        genre: row.genre ?? null,
+        duration_minutes: row.duration_minutes ?? null,
+      },
+      metadata: row.metadata,
+    },
+    { metadata: row.metadata },
+  );
+  return { ...row, metadata: { ...row.metadata, ...metadata } as TitleMetadata };
+}
 
 export type ContentStatus =
   | "draft"
@@ -103,7 +135,7 @@ export async function listTitles(userId: string): Promise<TitleRow[]> {
     .eq("owner_user_id", userId)
     .order("updated_at", { ascending: false });
   if (error) throw error;
-  return (data ?? []).map((r: any) => ({ ...r, metadata: parseMetadata(r.metadata) }));
+  return (data ?? []).map((r: any) => enrichRow({ ...r, metadata: parseMetadata(r.metadata) }));
 }
 
 /**
@@ -128,7 +160,7 @@ export async function listTitlesPage(
   const all = (data ?? []) as any[];
   const hasMore = all.length > limit;
   const rows = (hasMore ? all.slice(0, limit) : all).map(
-    (r: any) => ({ ...r, metadata: parseMetadata(r.metadata) }),
+    (r: any) => enrichRow({ ...r, metadata: parseMetadata(r.metadata) }),
   );
   return { rows, hasMore };
 }
@@ -141,7 +173,7 @@ export async function getTitle(id: string): Promise<TitleRow | null> {
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
-  return { ...data, metadata: parseMetadata(data.metadata) };
+  return enrichRow({ ...data, metadata: parseMetadata(data.metadata) });
 }
 
 /**

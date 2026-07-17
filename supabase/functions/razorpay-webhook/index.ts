@@ -237,6 +237,12 @@ async function processEvent(supabase: any, event: any, creds: any): Promise<void
     console.error("razorpay-webhook: billing_orders projection failed", e);
   }
 
+  // Fire buyer + master-admin invoice emails on successful capture. Idempotent
+  // per razorpay payment id via `email_send_log` inside send-transactional-email.
+  try { await dispatchInvoiceEmails(supabase, event); } catch (e) {
+    console.error("razorpay-webhook: invoice dispatch failed", e);
+  }
+
   const type = event?.event as string;
   const payment = event?.payload?.payment?.entity;
   const order = event?.payload?.order?.entity;

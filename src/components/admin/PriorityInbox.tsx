@@ -252,11 +252,12 @@ export default function PriorityInbox() {
 }
 
 function Group({
-  label, tone, items, readIds, onOpen,
+  label, tone, items, readIds, onOpen, onDismiss,
 }: {
   label: string; tone: Tone;
   items: InboxItem[]; readIds: Set<string>;
   onOpen: (i: InboxItem) => void;
+  onDismiss: (id: string) => void;
 }) {
   if (items.length === 0) return null;
   const dot =
@@ -274,13 +275,16 @@ function Group({
         {items.map(i => {
           const unread = !readIds.has(i.id) && !i.isRead;
           return (
-            <li key={i.id}>
+            <li
+              key={i.id}
+              className={cn(
+                "group relative flex items-stretch hover:bg-secondary/40 transition-all",
+                unread && "bg-accent/[0.03]",
+              )}
+            >
               <button
                 onClick={() => onOpen(i)}
-                className={cn(
-                  "w-full text-left px-4 py-2.5 hover:bg-secondary/40 transition-colors flex items-start gap-3",
-                  unread && "bg-accent/[0.03]",
-                )}
+                className="flex-1 min-w-0 text-left px-4 py-2.5 flex items-start gap-3"
               >
                 <div className={cn("mt-1.5 w-1.5 h-1.5 rounded-full shrink-0", unread ? dot : "bg-transparent border border-border")} />
                 <div className="flex-1 min-w-0">
@@ -293,6 +297,15 @@ function Group({
                   {i.subtitle && <div className="text-[11px] text-muted-foreground truncate">{i.subtitle}</div>}
                   {i.timestamp && <div className="text-[10px] text-muted-foreground/70 mt-0.5">{relTime(i.timestamp)}</div>}
                 </div>
+              </button>
+              <button
+                type="button"
+                aria-label="Dismiss notification"
+                title="Dismiss"
+                onClick={(e) => { e.stopPropagation(); onDismiss(i.id); }}
+                className="shrink-0 self-center mr-2 h-6 w-6 grid place-items-center rounded-md text-muted-foreground/60 hover:text-foreground hover:bg-secondary/70 opacity-60 group-hover:opacity-100 transition-opacity"
+              >
+                <X className="w-3.5 h-3.5" />
               </button>
             </li>
           );

@@ -66,11 +66,11 @@ describe("title_canonical_backfill.sql — hardening", () => {
 
     it("guards every genres-touching statement with jsonb_typeof(...)='array'", () => {
       for (const stmt of genreStatements) {
-        const touchesArrayLen = /jsonb_array_length\s*\(\s*metadata->('|")?genres/i.test(stmt);
-        const touchesFirst = /metadata->('|")?genres('|")?\s*->>\s*0/i.test(stmt);
+        const touchesArrayLen = /jsonb_array_length\s*\(\s*(?:\w+\.)?metadata->('|")?genres/i.test(stmt);
+        const touchesFirst = /(?:\w+\.)?metadata->('|")?genres('|")?\s*->>\s*0/i.test(stmt);
         if (!touchesArrayLen && !touchesFirst) continue;
         expect(
-          /jsonb_typeof\s*\(\s*metadata->('|")?genres('|")?\s*\)\s*(=|is distinct from)\s*'array'/i.test(stmt),
+          /jsonb_typeof\s*\(\s*(?:\w+\.)?metadata->('|")?genres('|")?\s*\)\s*(=|is distinct from)\s*'array'/i.test(stmt),
           `statement is missing jsonb_typeof(...)='array' guard:\n${stmt}`,
         ).toBe(true);
       }

@@ -2,11 +2,14 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useWorkspaces } from "@/hooks/useWorkspaces";
 import CreatorInvoices from "@/components/creator/CreatorInvoices";
 import UpgradeCreatorPlanCard from "@/components/creator/UpgradeCreatorPlanCard";
 import CreatorInauguralActivationCard from "@/components/creator/CreatorInauguralActivationCard";
+import CreatorRevenueSummary from "@/components/creator/CreatorRevenueSummary";
 import { HardDrive, ChevronDown, ChevronUp, LifeBuoy } from "lucide-react";
 import { Link } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
 type Topup = {
   id: string; tb_added: number | null; amount_inr: number | null;
@@ -27,10 +30,13 @@ const STATUS_TONE: Record<string, string> = {
 export default function StatementsSection() {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const { active } = useWorkspaces();
   const [topups, setTopups] = useState<Topup[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [showEvents, setShowEvents] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<"billing" | "revenue">("billing");
+  const [titleIds, setTitleIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -53,15 +59,51 @@ export default function StatementsSection() {
     })();
   }, [user?.id]);
 
+  // Load titleIds scoped to the active workspace so Revenue tab never leaks
+  // across workspaces. Falls back to owner_id when workspace column absent.
+  useEffect(() => {
+    if (!user) { setTitleIds([]); return; }
+    (async () => {
+      let q = (supabase as any).from("content_titles").select("id").eq("owner_id", user.id);
+      if (active?.id) q = q.eq("workspace_id", active.id);
+      const { data } = await q.limit(500);
+      setTitleIds((data ?? []).map((r: any) => r.id).filter(Boolean));
+    })();
+  }, [user?.id, active?.id]);
+
   return (
     <div className="space-y-6">
+      <div role="tablist" aria-label="Statements views" className="inline-flex rounded-lg border border-border/50 p-1 bg-secondary/20 text-xs">
+        {(["billing", "revenue"] as const).map((k) => (
+          <button
+            key={k}
+            role="tab"
+            aria-selected={tab === k}
+            onClick={() => setTab(k)}
+            className={cn(
+              "px-3 py-1.5 rounded-md capitalize focus:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+              tab === k ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {k}
+          </button>
+        ))}
+      </div>
+
+      {tab === "revenue" && (
+        <CreatorRevenueSummary titleIds={titleIds.length ? titleIds : undefined} />
+      )}
+
+      {tab === "billing" && (<>
       <div className="rounded-lg border border-border/40 bg-secondary/5 px-4 py-3 text-[11px] text-muted-foreground">
         {t("creator.billing.planIncludes")} {t("creator.billing.planIncludesFull")}
       </div>
       <CreatorInauguralActivationCard />
       <UpgradeCreatorPlanCard />
-      <CreatorInvoices />
+      <CreatorInvoices /></>
+      )}
 
+      {tab === "billing" && (<>
       {/* Storage allocation history — read-only record of past changes */}
       <section className="rounded-2xl border border-border/50 bg-card p-5">
         <div className="flex items-center justify-between mb-2 gap-3 flex-wrap">
@@ -156,6 +198,7 @@ export default function StatementsSection() {
           )
         )}
       </section>
+      </>)}
     </div>
   );
 }

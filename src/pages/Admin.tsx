@@ -34,6 +34,7 @@ import AdminInvoices from "@/components/admin/AdminInvoices";
 import ManualInvoiceConsole from "@/components/admin/ManualInvoiceConsole";
 import BillingOperations from "@/components/admin/BillingOperations";
 import AdminFinanceConsole from "@/components/admin/AdminFinanceConsole";
+import RevenueStatementImport from "@/components/admin/RevenueStatementImport";
 import RazorpayOpsBanner from "@/components/admin/RazorpayOpsBanner";
 import RazorpayAuditLog from "@/components/admin/RazorpayAuditLog";
 import PaymentTrace from "@/components/admin/PaymentTrace";
@@ -501,6 +502,7 @@ function buildDepartments(args: {
             <RazorpayAuditLog />
           </div>
         )},
+        { id: "revenue-statements", label: "Revenue Statements", hint: "Import buyer statements · map to titles · compute creator share", content: <RevenueStatementImport /> },
         { id: "vault", label: "Vault Purchases", hint: "Studio Vault revenue", content: <AdminStudioVaultPurchases /> },
         { id: "intelligence", label: "Market Intelligence", hint: "Buyer & competitor intelligence", content: <IntelligenceCenter /> },
         { id: "bi", label: "Business Intelligence", hint: "Uploads · Revenue · Rights · Delivery · AI Insights · Automation", content: <BusinessIntelligenceHub /> },

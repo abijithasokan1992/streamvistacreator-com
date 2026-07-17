@@ -79,7 +79,14 @@ export default function PriorityInbox() {
     try { return new Set(JSON.parse(localStorage.getItem("admin:inbox:read") ?? "[]")); }
     catch { return new Set(); }
   });
+  // Persistent dismissal set — survives tab switches, remounts, and reloads.
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem("admin:inbox:dismissed") ?? "[]")); }
+    catch { return new Set(); }
+  });
 
+  // Load notifications only once on mount and when the popover is (re)opened.
+  // Local dismissal state stays authoritative and is NOT invalidated on tab switches.
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -94,6 +101,18 @@ export default function PriorityInbox() {
     })();
     return () => { cancelled = true; };
   }, [open]);
+
+  const persistDismissed = (next: Set<string>) => {
+    try { localStorage.setItem("admin:inbox:dismissed", JSON.stringify([...next])); } catch {}
+  };
+
+  const dismiss = (id: string) => {
+    setDismissedIds(prev => {
+      const next = new Set(prev); next.add(id);
+      persistDismissed(next);
+      return next;
+    });
+  };
 
   const markRead = (id: string) => {
     setReadIds(prev => {

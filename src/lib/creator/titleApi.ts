@@ -144,27 +144,68 @@ export async function getTitle(id: string): Promise<TitleRow | null> {
   return { ...data, metadata: parseMetadata(data.metadata) };
 }
 
+/**
+ * Idempotent title creation.
+ *
+ * When `clientDraftId` is supplied, retries and rapid double-clicks resolve
+ * to the same row: we look up any existing (owner, client_draft_id) match
+ * first and only insert when none exists. If the DB column is not yet
+ * available (pre-migration), we fall back to a plain insert — never
+ * blocking title creation.
+ */
 export async function createTitle(
   userId: string,
   workspaceId: string | null,
   name: string,
   format: TitleMetadata["format"] = "feature_film",
+  clientDraftId?: string | null,
 ): Promise<TitleRow> {
   const trimmed = name.trim();
   if (!trimmed) throw new Error("Title name is required");
   const meta = { ...emptyMetadata(), format };
-  const { data, error } = await (supabase as any)
+
+  // 1. If caller supplied a stable draft id, look for a prior row first.
+  if (clientDraftId) {
+    const { data: existing, error: lookupErr } = await (supabase as any)
+      .from("content_titles")
+      .select("*")
+      .eq("owner_user_id", userId)
+      .eq("client_draft_id", clientDraftId)
+      .maybeSingle();
+    // Ignore column-missing errors ("column ... does not exist" / 42703) so the
+    // client stays compatible with pre-migration schemas. Any other error
+    // surfaces to the caller.
+    if (!lookupErr && existing) {
+      return { ...existing, metadata: parseMetadata(existing.metadata) };
+    }
+  }
+
+  // 2. Attempt insert including client_draft_id; retry without it if the
+  // column doesn't exist yet in this environment.
+  const basePayload: Record<string, unknown> = {
+    owner_user_id: userId,
+    workspace_id: workspaceId,
+    title: trimmed,
+    status: "draft",
+    locked: false,
+    metadata: meta,
+  };
+  const payload = clientDraftId ? { ...basePayload, client_draft_id: clientDraftId } : basePayload;
+
+  let { data, error } = await (supabase as any)
     .from("content_titles")
-    .insert({
-      owner_user_id: userId,
-      workspace_id: workspaceId,
-      title: trimmed,
-      status: "draft",
-      locked: false,
-      metadata: meta,
-    })
+    .insert(payload)
     .select("*")
     .single();
+
+  if (error && clientDraftId && /client_draft_id/i.test(error.message ?? "")) {
+    // Column not yet migrated — retry without it.
+    ({ data, error } = await (supabase as any)
+      .from("content_titles")
+      .insert(basePayload)
+      .select("*")
+      .single());
+  }
   if (error) throw error;
   return { ...data, metadata: parseMetadata(data.metadata) };
 }
@@ -322,17 +363,33 @@ export async function saveTitleMetadata(
     throw new Error(friendlyValidationMessage(parsed.error));
   }
   const safe = parsed.data;
-  const update: Record<string, unknown> = {
+
+  // Canonicalize both sides so top-level columns and metadata stay in sync.
+  // We treat empty strings / 0 as "absent" and don't overwrite valid values.
+  const { syncCanonicalAndMetadata } = await import("./titleNormalization");
+  const { canonical, metadata } = syncCanonicalAndMetadata(null, {
+    canonical: {
+      title: patch.title,
+      synopsis: safe.synopsis,
+      language: safe.original_language,
+      genre: safe.genres[0] ?? null,
+      duration_minutes: safe.runtime_minutes,
+    },
     metadata: safe,
-    synopsis: safe.synopsis || null,
-    genre: safe.genres[0] ?? null,
-    duration_minutes: safe.runtime_minutes || null,
+  });
+
+  const update: Record<string, unknown> = {
+    // Merge canonical outputs back into the full validated metadata.
+    metadata: { ...safe, ...metadata },
+    synopsis: canonical.synopsis,
+    language: canonical.language,
+    genre: canonical.genre,
+    duration_minutes: canonical.duration_minutes,
     updated_at: new Date().toISOString(),
   };
   if (patch.title !== undefined) {
-    const t = patch.title.trim();
-    if (!t) throw new Error("Please enter a title name before saving.");
-    update.title = t;
+    if (!canonical.title) throw new Error("Please enter a title name before saving.");
+    update.title = canonical.title;
   }
   const { error } = await (supabase as any).from("content_titles").update(update).eq("id", id);
   if (error) throw new Error("We couldn't save your changes. Please try again.");

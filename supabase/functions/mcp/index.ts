@@ -1015,10 +1015,21 @@ async function authorize(ctx, tool, params = {}, opts = {}) {
   }
   const sb = userClient5(ctx);
   const safeParams = redactDeep(params);
+  const correlationId = opts.correlationId ?? cryptoRandomId();
+  const startedAt = Date.now();
   const { data, error } = await withTimeout(
     sb.rpc("mcp_authorize_and_log", {
       _tool: tool,
-      _params: safeParams,
+      _params: {
+        ...safeParams,
+        _envelope: {
+          correlation_id: correlationId,
+          started_at: new Date(startedAt).toISOString(),
+          category: opts.category ?? (opts.writes ? "db_write" : "db_read"),
+          writes: !!opts.writes,
+          client_id: ctx.getClientId?.() ?? null
+        }
+      },
       _writes: opts.writes ?? false
     }),
     `authorize:${tool}`
@@ -1033,6 +1044,14 @@ async function authorize(ctx, tool, params = {}, opts = {}) {
   if (decision === "rate_limited")
     return err("rate_limited", "Rate limit exceeded \u2014 retry in a minute.");
   return err("authorize_unknown", decision);
+}
+function cryptoRandomId() {
+  try {
+    const g = globalThis;
+    if (g.crypto?.randomUUID) return g.crypto.randomUUID();
+  } catch {
+  }
+  return "cor-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
 }
 
 // src/lib/mcp/tools/control/whoami-control.ts

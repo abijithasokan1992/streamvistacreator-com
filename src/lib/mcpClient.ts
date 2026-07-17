@@ -4,7 +4,9 @@
  * Lightweight client-side gatekeeper that:
  *  1. Reads the admin-controlled `mcp_permissions` toggle row from `admin_settings`.
  *  2. Refuses actions the admin has disabled (or all actions if master_kill_switch is on).
- *  3. Writes every attempt (allowed + denied) to `mcp_audit_log`.
+ *  3. Writes every attempt (allowed + denied) to `mcp_audit_log`, with a
+ *     correlation-id / duration / decision envelope so C1 renderers can
+ *     display consistent metadata across allowed / denied / error rows.
  *
  * The DB-level RLS remains the source of truth — this layer makes denials
  * explicit to the user and produces a real-time admin audit trail.
@@ -12,6 +14,12 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { withRetry } from "@/lib/resilient";
+import {
+  categoryForPermission,
+  finishEnvelope,
+  startEnvelope,
+  type InstrumentDecision,
+} from "@/lib/mcp/auditInstrument";
 
 export type McpPermissionKey =
   | "allow_db_read"
@@ -106,14 +114,51 @@ export async function runGoverned<T>(opts: {
   run: () => Promise<T>;
 }): Promise<T> {
   const perms = await getMcpPermissions();
+  const category = categoryForPermission(opts.permission);
+  const start = startEnvelope(category);
+
+  const recordDenied = async (blockingKey: string, reason: string) => {
+    const env = finishEnvelope(start, "denied" as InstrumentDecision, { code: reason });
+    await logAudit({
+      action: opts.action,
+      resource: opts.resource,
+      permission_key: blockingKey,
+      allowed: false,
+      details: { ...(opts.details ?? {}), ...env, blocking_permission: blockingKey },
+    });
+  };
+
   if (perms.master_kill_switch) {
-    await logAudit({ ...opts, allowed: false, permission_key: "master_kill_switch" });
+    await recordDenied("master_kill_switch", "kill_switch");
     throw new McpPermissionError("master_kill_switch", opts.action);
   }
   if (!perms[opts.permission]) {
-    await logAudit({ ...opts, allowed: false, permission_key: opts.permission });
+    await recordDenied(opts.permission, "permission_off");
     throw new McpPermissionError(opts.permission, opts.action);
   }
-  await logAudit({ ...opts, allowed: true, permission_key: opts.permission });
-  return withRetry(opts.run, { label: opts.action });
+
+  try {
+    const value = await withRetry(opts.run, { label: opts.action });
+    const env = finishEnvelope(start, "allowed");
+    await logAudit({
+      action: opts.action,
+      resource: opts.resource,
+      permission_key: opts.permission,
+      allowed: true,
+      details: { ...(opts.details ?? {}), ...env },
+    });
+    return value;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err ?? "");
+    const env = finishEnvelope(start, "error", { message, code: "runtime_error" });
+    await logAudit({
+      action: opts.action,
+      resource: opts.resource,
+      permission_key: opts.permission,
+      allowed: false, // an errored attempt is not a success — surfaced as decision="error" in UI via `details.decision`
+      details: { ...(opts.details ?? {}), ...env },
+    });
+    throw err;
+  }
 }
+

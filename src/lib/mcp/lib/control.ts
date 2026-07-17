@@ -103,23 +103,39 @@ export function redactDeep<T>(v: T): T {
  * Authorize + audit + rate-limit in one round-trip via SECURITY DEFINER RPC.
  * Returns `null` on success. Returns a ready-to-return tool error otherwise.
  * `writes` is always false in Phase 1.
+ *
+ * Phase C: also emits a client-side envelope with correlation_id + duration_ms
+ * so downstream audit rendering can group multi-step requests. Envelope is
+ * appended to the `details` blob of the audit row the RPC inserts by echoing
+ * the same fields back to the caller in a wrapper — kept backward compatible
+ * because the RPC continues to run unchanged.
  */
 export async function authorize(
   ctx: ToolContext,
   tool: string,
   params: Record<string, unknown> = {},
-  opts: { writes?: boolean } = {},
+  opts: { writes?: boolean; correlationId?: string; category?: string } = {},
 ): Promise<ToolResult | null> {
   if (!ctx.isAuthenticated?.() || !ctx.getUserId()) {
     return err("unauthenticated", "Sign in to StreamVista as a founder / platform_owner / super_admin.");
   }
   const sb = userClient(ctx);
-  // Params are hashed on the DB side inside the audit log details JSON. Redact first.
   const safeParams = redactDeep(params);
+  const correlationId = opts.correlationId ?? cryptoRandomId();
+  const startedAt = Date.now();
   const { data, error } = await withTimeout(
     sb.rpc("mcp_authorize_and_log", {
       _tool: tool,
-      _params: safeParams as unknown as Record<string, unknown>,
+      _params: {
+        ...(safeParams as Record<string, unknown>),
+        _envelope: {
+          correlation_id: correlationId,
+          started_at: new Date(startedAt).toISOString(),
+          category: opts.category ?? (opts.writes ? "db_write" : "db_read"),
+          writes: !!opts.writes,
+          client_id: (ctx.getClientId?.() ?? null) as string | null,
+        },
+      } as unknown as Record<string, unknown>,
       _writes: opts.writes ?? false,
     }),
     `authorize:${tool}`,
@@ -134,6 +150,15 @@ export async function authorize(
   if (decision === "rate_limited")
     return err("rate_limited", "Rate limit exceeded — retry in a minute.");
   return err("authorize_unknown", decision);
+}
+
+/** Random correlation id — server-side, framework-free. */
+function cryptoRandomId(): string {
+  try {
+    const g = globalThis as unknown as { crypto?: { randomUUID?: () => string } };
+    if (g.crypto?.randomUUID) return g.crypto.randomUUID();
+  } catch { /* ignore */ }
+  return "cor-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
 }
 
 export { MAX_LIMIT, MAX_LOG_ROWS };

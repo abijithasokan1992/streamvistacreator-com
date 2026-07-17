@@ -68,7 +68,13 @@ const COPY: Record<AuthErrorCode, MappedAuthError> = {
 
 /** Map a raw error/response into a safe, specific message. */
 export function mapAuthError(err: unknown): MappedAuthError {
-  const raw = (err instanceof Error ? err.message : String(err ?? "")).toLowerCase();
+  const msg =
+    err instanceof Error
+      ? err.message
+      : typeof err === "object" && err !== null && typeof (err as { message?: unknown }).message === "string"
+        ? String((err as { message: string }).message)
+        : String(err ?? "");
+  const raw = msg.toLowerCase();
   const status = (err as { status?: number } | null)?.status;
 
   if (status === 429 || raw.includes("rate limit") || raw.includes("over_email_send_rate_limit")) {

@@ -12,7 +12,7 @@ const PILLARS = [
   { icon: KeyRound, title: "Controlled Access", body: "Role-scoped, watermarked links." },
   { icon: Lock, title: "Secure Storage", body: "Encrypted at rest, chain-of-custody." },
   { icon: History, title: "Audit Timeline", body: "Every status, every exchange logged." },
-  { icon: Cloud, title: "StreamVista Cloud X", body: "Enterprise-grade durability, secure residency and managed storage infrastructure." },
+  { icon: Cloud, title: "Managed Cloud Storage", body: "Enterprise-grade durability, secure residency and managed storage infrastructure." },
   { icon: Fingerprint, title: "Intellectual Property Protection", body: "DMCA and takedown built in." },
 ];
 

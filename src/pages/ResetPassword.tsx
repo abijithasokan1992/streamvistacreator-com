@@ -123,7 +123,7 @@ export default function ResetPassword() {
     setSavingPwd(true);
     const { error } = await supabase.auth.updateUser({ password });
     setSavingPwd(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(mapAuthError(error).message);
     toast.success("Password updated.");
     const target = await pickDashboard();
     navigate(target, { replace: true });

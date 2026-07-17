@@ -342,10 +342,48 @@ async function processEvent(supabase: any, event: any, creds: any): Promise<void
   }
 
   if (!orderId && !subscription?.id) {
+    // Orphan-event fall-through: the webhook received a valid, signature-verified
+    // event that could not be mapped to either an order or a subscription in our
+    // system (manual dashboard actions, refunds against archived orders,
+    // provider-side reconciliation events, etc.). We must NEVER swallow these:
+    //  1. Persist a WARN row to the payment log (existing behaviour).
+    //  2. Emit a status email to the founder alert address so an operator can
+    //     inspect the raw payload in the Razorpay dashboard. Buyer email is
+    //     intentionally omitted — we have no verified user mapping here.
     await logPayment(supabase, {
       severity: "WARN", source: "webhook", action_type: "payment.unknown_mapping",
       error_message: `Unhandled event ${type} with no order/subscription id`,
     });
+    try {
+      const founderEmail = Deno.env.get("FOUNDER_ALERT_EMAIL") || "abijithasokan@crayonspictures.com";
+      const eventPayload = (payload as any) ?? {};
+      const paymentEntity = eventPayload?.payment?.entity ?? {};
+      const orderEntity = eventPayload?.order?.entity ?? {};
+      const amountPaise = Number(paymentEntity.amount ?? orderEntity.amount ?? 0);
+      await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "purchase-confirmation",
+          recipientEmail: founderEmail,
+          idempotencyKey: `rzp-orphan-${type}-${paymentEntity.id ?? orderEntity.id ?? Date.now()}`,
+          templateData: {
+            audience: "founder",
+            productName: `Unmapped Razorpay event · ${type}`,
+            priceLabel: amountPaise ? `₹${(amountPaise / 100).toFixed(2)}` : "n/a",
+            quantity: 1,
+            entitlementSummary:
+              "No local order or subscription matched this event. Inspect the Razorpay dashboard and reconcile manually.",
+            buyerEmail: paymentEntity.email ?? orderEntity.notes?.email ?? "unknown",
+            buyerName: paymentEntity.contact ?? "",
+            paddleSubscriptionId: paymentEntity.id ?? orderEntity.id ?? null,
+            occurredAt: new Date().toISOString(),
+          },
+        },
+      });
+    } catch (e) {
+      // Never let notification failure block webhook ack — Razorpay retries
+      // the whole event on non-2xx and would duplicate the log row.
+      console.error("razorpay orphan-event notify failed", e);
+    }
   }
 }
 

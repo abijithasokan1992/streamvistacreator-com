@@ -79,7 +79,14 @@ export default function PriorityInbox() {
     try { return new Set(JSON.parse(localStorage.getItem("admin:inbox:read") ?? "[]")); }
     catch { return new Set(); }
   });
+  // Persistent dismissal set — survives tab switches, remounts, and reloads.
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem("admin:inbox:dismissed") ?? "[]")); }
+    catch { return new Set(); }
+  });
 
+  // Load notifications only once on mount and when the popover is (re)opened.
+  // Local dismissal state stays authoritative and is NOT invalidated on tab switches.
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -95,6 +102,18 @@ export default function PriorityInbox() {
     return () => { cancelled = true; };
   }, [open]);
 
+  const persistDismissed = (next: Set<string>) => {
+    try { localStorage.setItem("admin:inbox:dismissed", JSON.stringify([...next])); } catch {}
+  };
+
+  const dismiss = (id: string) => {
+    setDismissedIds(prev => {
+      const next = new Set(prev); next.add(id);
+      persistDismissed(next);
+      return next;
+    });
+  };
+
   const markRead = (id: string) => {
     setReadIds(prev => {
       const next = new Set(prev); next.add(id);
@@ -104,13 +123,23 @@ export default function PriorityInbox() {
   };
 
   const markAllRead = () => {
-    const ids = items.map(i => i.id);
+    // "Mark all read" doubles as a mass P3 flush: mark every currently-visible
+    // item read AND dismiss all P3 (info) rows so historical logs disappear
+    // from the active view in one click.
+    const visibleIds = items.map(i => i.id);
     setReadIds(prev => {
-      const next = new Set(prev); ids.forEach(x => next.add(x));
+      const next = new Set(prev); visibleIds.forEach(x => next.add(x));
       try { localStorage.setItem("admin:inbox:read", JSON.stringify([...next])); } catch {}
       return next;
     });
-    // Best-effort: mark notifications table rows read.
+    const p3Ids = items.filter(i => i.priority === "P3").map(i => i.id);
+    if (p3Ids.length) {
+      setDismissedIds(prev => {
+        const next = new Set(prev); p3Ids.forEach(x => next.add(x));
+        persistDismissed(next);
+        return next;
+      });
+    }
     const nIds = notifications.filter(n => !n.is_read).map(n => n.id);
     if (nIds.length) {
       (supabase as any).from("notifications").update({ is_read: true }).in("id", nIds).then(() => {});
@@ -129,8 +158,9 @@ export default function PriorityInbox() {
       isRead: !!n.is_read,
       onOpen: () => jump("users", "support"),
     }));
-    return [...fromSignals, ...fromNotif];
-  }, [signals, notifications]);
+    // Apply dismissal here so both filter groupings and unread counts respect it.
+    return [...fromSignals, ...fromNotif].filter(i => !dismissedIds.has(i.id));
+  }, [signals, notifications, dismissedIds]);
 
   const filtered = useMemo(() => {
     if (filter === "all") return items;
@@ -198,9 +228,20 @@ export default function PriorityInbox() {
         </div>
 
         <div className="max-h-[520px] overflow-y-auto">
-          <Group label="Critical" tone="critical" items={grouped.critical} readIds={readIds} onOpen={(i) => { markRead(i.id); if (i.onOpen) i.onOpen(); else if (i.dept && i.section) jump(i.dept, i.section); setOpen(false); }} />
-          <Group label="Needs Attention" tone="warn" items={grouped.warn} readIds={readIds} onOpen={(i) => { markRead(i.id); if (i.onOpen) i.onOpen(); else if (i.dept && i.section) jump(i.dept, i.section); setOpen(false); }} />
-          <Group label="Information" tone="info" items={grouped.info} readIds={readIds} onOpen={(i) => { markRead(i.id); if (i.onOpen) i.onOpen(); else if (i.dept && i.section) jump(i.dept, i.section); setOpen(false); }} />
+          {(["critical","warn","info"] as const).map(tone => {
+            const label = tone === "critical" ? "Critical" : tone === "warn" ? "Needs Attention" : "Information";
+            return (
+              <Group
+                key={tone}
+                label={label}
+                tone={tone}
+                items={grouped[tone]}
+                readIds={readIds}
+                onDismiss={dismiss}
+                onOpen={(i) => { markRead(i.id); if (i.onOpen) i.onOpen(); else if (i.dept && i.section) jump(i.dept, i.section); setOpen(false); }}
+              />
+            );
+          })}
           {filtered.length === 0 && (
             <div className="py-10 text-center text-xs text-muted-foreground">All clear. Nothing needs your attention.</div>
           )}
@@ -211,11 +252,12 @@ export default function PriorityInbox() {
 }
 
 function Group({
-  label, tone, items, readIds, onOpen,
+  label, tone, items, readIds, onOpen, onDismiss,
 }: {
   label: string; tone: Tone;
   items: InboxItem[]; readIds: Set<string>;
   onOpen: (i: InboxItem) => void;
+  onDismiss: (id: string) => void;
 }) {
   if (items.length === 0) return null;
   const dot =
@@ -233,13 +275,16 @@ function Group({
         {items.map(i => {
           const unread = !readIds.has(i.id) && !i.isRead;
           return (
-            <li key={i.id}>
+            <li
+              key={i.id}
+              className={cn(
+                "group relative flex items-stretch hover:bg-secondary/40 transition-all",
+                unread && "bg-accent/[0.03]",
+              )}
+            >
               <button
                 onClick={() => onOpen(i)}
-                className={cn(
-                  "w-full text-left px-4 py-2.5 hover:bg-secondary/40 transition-colors flex items-start gap-3",
-                  unread && "bg-accent/[0.03]",
-                )}
+                className="flex-1 min-w-0 text-left px-4 py-2.5 flex items-start gap-3"
               >
                 <div className={cn("mt-1.5 w-1.5 h-1.5 rounded-full shrink-0", unread ? dot : "bg-transparent border border-border")} />
                 <div className="flex-1 min-w-0">
@@ -252,6 +297,15 @@ function Group({
                   {i.subtitle && <div className="text-[11px] text-muted-foreground truncate">{i.subtitle}</div>}
                   {i.timestamp && <div className="text-[10px] text-muted-foreground/70 mt-0.5">{relTime(i.timestamp)}</div>}
                 </div>
+              </button>
+              <button
+                type="button"
+                aria-label="Dismiss notification"
+                title="Dismiss"
+                onClick={(e) => { e.stopPropagation(); onDismiss(i.id); }}
+                className="shrink-0 self-center mr-2 h-6 w-6 grid place-items-center rounded-md text-muted-foreground/60 hover:text-foreground hover:bg-secondary/70 opacity-60 group-hover:opacity-100 transition-opacity"
+              >
+                <X className="w-3.5 h-3.5" />
               </button>
             </li>
           );

@@ -12,7 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Loader2, ShieldCheck, Scale, AlertOctagon, UserCog, Lock, Unlock,
   CheckCircle2, XCircle, MinusCircle, Info, MessageSquareWarning, NotebookPen,
+  PlayCircle, Download, ChevronDown, Film,
 } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { toast } from "sonner";
 import {
   QC_CHECKLIST, LEGAL_CHECKLIST, SEND_BACK_REASONS, REASON_GROUP_LABELS,
@@ -53,6 +55,9 @@ const STATUS_OPTIONS: { value: ItemStatus; label: string; icon: any; cls: string
   { value: "not_applicable",  label: "Not applicable",  icon: Info, cls: "text-zinc-400" },
 ];
 
+type TitleMeta = { title: string; genre: string | null; duration_minutes: number | null };
+type MasterAsset = { url: string | null; file_name: string | null };
+
 export default function TitleReviewPanel({ titleId, currentStatus, onChanged }: Props) {
   const [stage, setStage] = useState<ChecklistStage>(currentStatus === "legal_review" ? "legal" : "qc");
   const [rows, setRows] = useState<Record<string, ChecklistRow>>({});
@@ -65,6 +70,10 @@ export default function TitleReviewPanel({ titleId, currentStatus, onChanged }: 
   const [busy, setBusy] = useState<string | null>(null);
   const [internalNote, setInternalNote] = useState("");
   const [sendBackOpen, setSendBackOpen] = useState(false);
+  const [titleMeta, setTitleMeta] = useState<TitleMeta | null>(null);
+  const [masterAsset, setMasterAsset] = useState<MasterAsset>({ url: null, file_name: null });
+  const [showRejectInput, setShowRejectInput] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -90,6 +99,77 @@ export default function TitleReviewPanel({ titleId, currentStatus, onChanged }: 
   }, [titleId]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Fetch title metadata + master delivery file for the Cinematic Preview hero.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: t } = await (supabase as any)
+          .from("content_titles")
+          .select("title, genre, duration_minutes")
+          .eq("id", titleId)
+          .maybeSingle();
+        if (!cancelled && t) setTitleMeta(t as TitleMeta);
+
+        // Best-effort master asset lookup: join title_assets → upload_sessions.
+        const { data: assets } = await (supabase as any)
+          .from("title_assets")
+          .select("category, upload_session_id, upload_sessions!inner(par_url, file_name, object_key)")
+          .eq("title_id", titleId);
+        if (cancelled || !assets?.length) return;
+        const master = assets.find((a: any) => (a.category ?? "").toLowerCase().includes("master")) ?? assets[0];
+        const s = master?.upload_sessions;
+        setMasterAsset({
+          url: s?.par_url ?? null,
+          file_name: s?.file_name ?? s?.object_key ?? null,
+        });
+      } catch { /* noop */ }
+    })();
+    return () => { cancelled = true; };
+  }, [titleId]);
+
+  // Executive dispositions
+  const passToLegal = async () => {
+    setBusy("disposition:pass");
+    const { error } = await (supabase as any).rpc("transition_title_status", {
+      _title_id: titleId, _target_status: "legal_review",
+    });
+    setBusy(null);
+    if (error) { toast.error(error.message); return; }
+    toast.success("QC passed — sent to Legal review");
+    await load();
+    onChanged?.();
+  };
+
+  const quickReject = async () => {
+    const reason = rejectReason.trim();
+    if (!reason) { toast.error("Enter a rejection reason for the creator"); return; }
+    setBusy("disposition:reject");
+    const { error } = await (supabase as any).rpc("request_title_changes", {
+      _title_id: titleId,
+      _reasons: [{
+        stage: "qc", group: "quality", key: "quick_reject",
+        label: "Quick reject", severity: "blocking",
+        creator_note: reason, internal_note: null,
+      }],
+      _creator_summary: reason,
+      _internal_note: null,
+    });
+    setBusy(null);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Sent back to draft — creator notified");
+    setShowRejectInput(false);
+    setRejectReason("");
+    await load();
+    onChanged?.();
+  };
+
+  const downloadMaster = () => {
+    if (!masterAsset.url) { toast.error("No master file available"); return; }
+    window.open(masterAsset.url, "_blank", "noopener,noreferrer");
+  };
+
 
   const groups: ChecklistGroup[] = stage === "qc" ? QC_CHECKLIST : LEGAL_CHECKLIST;
 
@@ -156,6 +236,113 @@ export default function TitleReviewPanel({ titleId, currentStatus, onChanged }: 
 
   return (
     <div className="space-y-4">
+      {/* CINEMATIC PREVIEW HERO */}
+      <section className="rounded-2xl border border-border/50 bg-gradient-to-br from-zinc-950/90 via-zinc-900/80 to-black/90 overflow-hidden shadow-2xl">
+        {/* Title / Genre / Runtime header row */}
+        <header className="px-5 py-3 flex items-center gap-3 border-b border-white/5 bg-black/40">
+          <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-indigo-500/30 to-fuchsia-500/20 border border-white/10 grid place-items-center">
+            <Film className="w-4 h-4 text-indigo-200" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="font-display font-bold text-lg md:text-xl text-white tracking-tight truncate">
+              {titleMeta?.title ?? "Loading title…"}
+            </h2>
+            <div className="text-[11px] text-white/50 flex items-center gap-3 mt-0.5">
+              <span>Genre: <span className="text-white/80 font-medium">{titleMeta?.genre || "—"}</span></span>
+              <span>Runtime: <span className="text-white/80 font-medium">{titleMeta?.duration_minutes ? `${titleMeta.duration_minutes} min` : "—"}</span></span>
+            </div>
+          </div>
+          <Badge variant="outline" className="border-white/20 text-white/80 text-[10px]">
+            {currentStatus.replace(/_/g, " ").toUpperCase()}
+          </Badge>
+        </header>
+
+        {/* Video player */}
+        <div className="relative aspect-video bg-black grid place-items-center">
+          {masterAsset.url ? (
+            <video
+              key={masterAsset.url}
+              src={masterAsset.url}
+              controls
+              controlsList="nodownload"
+              className="w-full h-full object-contain"
+              preload="metadata"
+            />
+          ) : (
+            <div className="flex flex-col items-center gap-2 text-white/40">
+              <PlayCircle className="w-10 h-10" />
+              <p className="text-xs">Master delivery file not attached yet.</p>
+            </div>
+          )}
+        </div>
+
+        {/* One-click disposition cluster */}
+        <div className="p-4 md:p-5 grid grid-cols-1 md:grid-cols-3 gap-3 bg-black/60">
+          <Button
+            size="lg"
+            disabled={busy === "disposition:pass"}
+            onClick={passToLegal}
+            className="h-12 font-semibold text-white bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-lg shadow-emerald-900/40 border-0"
+          >
+            {busy === "disposition:pass" ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+            Pass QC & Send to Legal
+          </Button>
+          <Button
+            size="lg"
+            variant="outline"
+            onClick={() => setShowRejectInput((v) => !v)}
+            className="h-12 font-semibold border-2 border-red-500/60 text-red-300 hover:bg-red-500/10 hover:text-red-200"
+          >
+            <XCircle className="w-4 h-4 mr-2" />
+            Reject & Send Back to Draft
+          </Button>
+          <Button
+            size="lg"
+            variant="ghost"
+            onClick={downloadMaster}
+            disabled={!masterAsset.url}
+            className="h-12 font-medium text-white/70 hover:text-white hover:bg-white/5 border border-white/10"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Download Master File
+          </Button>
+        </div>
+
+        {showRejectInput && (
+          <div className="px-4 md:px-5 pb-4 md:pb-5 -mt-1 flex items-center gap-2 bg-black/60">
+            <Input
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="Reason sent to creator (single line, required)…"
+              className="h-10 bg-white/5 border-red-500/40 text-white placeholder:text-white/30"
+              onKeyDown={(e) => { if (e.key === "Enter") quickReject(); }}
+              autoFocus
+            />
+            <Button
+              onClick={quickReject}
+              disabled={busy === "disposition:reject" || !rejectReason.trim()}
+              className="h-10 bg-red-600 hover:bg-red-500 text-white"
+            >
+              {busy === "disposition:reject" && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
+              Send
+            </Button>
+          </div>
+        )}
+      </section>
+
+      {/* ADVANCED SYSTEM LOGS — full historical audit, metadata, checklists */}
+      <Accordion type="single" collapsible className="rounded-xl border border-border/50 bg-card/30">
+        <AccordionItem value="advanced-logs" className="border-b-0">
+          <AccordionTrigger className="px-4 py-3 hover:no-underline">
+            <div className="flex items-center gap-2 text-sm font-semibold">
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+              View Advanced System Logs
+              <span className="text-[10px] font-normal text-muted-foreground ml-1">
+                (checklists · issues · reviewer notes · audit trail)
+              </span>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4 space-y-4">
       {/* SUMMARY BLOCK */}
       <div className="rounded-lg border border-border/50 bg-card/40 p-3 space-y-2">
         <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -323,6 +510,9 @@ export default function TitleReviewPanel({ titleId, currentStatus, onChanged }: 
           </ul>
         </div>
       </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
 
       <SendBackDialog
         open={sendBackOpen}

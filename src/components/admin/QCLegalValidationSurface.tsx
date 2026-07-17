@@ -228,15 +228,16 @@ function LegalPanel() {
         onReload={reload}
       />
 
-      <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-2.5">
-        <Lock className="w-4 h-4 text-amber-300 mt-0.5 shrink-0" />
-        <div className="text-[11px] leading-relaxed">
-          <p className="font-semibold text-amber-200">
+      <div className="rounded-xl border-2 border-white/20 bg-gradient-to-br from-amber-950/80 via-amber-900/70 to-yellow-900/60 shadow-lg shadow-amber-950/40 p-4 flex items-start gap-3">
+        <div className="h-8 w-8 rounded-lg bg-white/10 border border-white/20 grid place-items-center shrink-0">
+          <Lock className="w-4 h-4 text-white" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-white leading-snug tracking-tight">
             Immutable Rule Attached: Non-Sublicensable / No Right to Deliver to Next Person.
           </p>
-          <p className="text-amber-200/80 mt-0.5">
-            Granting distribution clearance does not lift this master rule. The rule is enforced at
-            the database layer and can only be lifted by the platform super admin.
+          <p className="text-[11px] text-white/70 mt-1">
+            Master rule enforced at the database layer by Platform Super Admin.
           </p>
         </div>
       </div>

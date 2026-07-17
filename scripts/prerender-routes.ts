@@ -170,10 +170,26 @@ export const ROUTES: RouteMeta[] = [
   },
   {
     path: "/blog/camera-to-cloud-guide",
-    title: "Camera-to-Cloud Guide — StreamVista Cloud X",
+    title: "Camera to Cloud Guide for Indie Filmmakers | StreamVista",
     description:
-      "A practical guide to camera-to-cloud workflows for filmmakers: proxies, dailies, secure uploads, and how StreamVista replaces ad-hoc transfer chains.",
+      "Practical Camera to Cloud (C2C) workflow guide for indie filmmakers: encoders, mobile rigs, NDI and cost-effective dailies delivery.",
     ogImage: `${SITE_ORIGIN}/og/camera-to-cloud-guide.jpg`,
+    ogType: "article",
+  },
+  {
+    path: "/blog/streamvista-vs-frame-io-camera-to-cloud",
+    title: "StreamVista vs Frame.io — Best C2C Alternative",
+    description:
+      "Compare StreamVista and Frame.io for Camera to Cloud: pricing, rights management, data residency and Indian cinema workflows.",
+    ogImage: `${SITE_ORIGIN}/og/home.jpg`,
+    ogType: "article",
+  },
+  {
+    path: "/guides/film-licensing-costs-and-agreements",
+    title: "Film Licensing Costs & Agreements — 2026 Guide | StreamVista",
+    description:
+      "How film licensing fees are structured across OTT, satellite TV, FAST and theatrical windows — with agreement types, term sheets and negotiation levers.",
+    ogImage: `${SITE_ORIGIN}/og/home.jpg`,
     ogType: "article",
   },
 ];

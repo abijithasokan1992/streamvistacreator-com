@@ -137,7 +137,7 @@ export default function Auth() {
         setView("signup");
         return;
       }
-      return toast.error(error.message);
+      return toast.error(mapAuthError(error).message);
     }
 
     // Stash the requested role so the callback page can apply it

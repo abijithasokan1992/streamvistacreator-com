@@ -70,6 +70,7 @@ import RegionalIndianCinema from "./pages/landing/RegionalIndianCinema.tsx";
 import GlobalFilmSales from "./pages/landing/GlobalFilmSales.tsx";
 import HowItWorks from "./pages/landing/HowItWorks.tsx";
 import TrustAndRights from "./pages/landing/TrustAndRights.tsx";
+import FilmLicensingCosts from "./pages/landing/FilmLicensingCosts.tsx";
 
 // Smart Uploads is not MVP-ready — hidden until the checksum + bucket work is production-safe.
 // import SmartUploads from "./pages/SmartUploads.tsx";
@@ -261,6 +262,7 @@ const PublicRoutes = () => (
     <Route path="/global-film-sales" element={<GlobalFilmSales />} />
     <Route path="/how-it-works" element={<HowItWorks />} />
     <Route path="/trust-and-rights" element={<TrustAndRights />} />
+    <Route path="/guides/film-licensing-costs-and-agreements" element={<FilmLicensingCosts />} />
     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
 
     <Route path="*" element={<NotFound />} />

@@ -8,6 +8,8 @@ import { lovable } from "@/integrations/lovable";
 import { useAuth, dashboardForRole } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { getAppOrigin } from "@/lib/site";
+import { safeNextPath } from "@/lib/auth/safeNext";
+import { mapAuthError } from "@/lib/auth/authErrors";
 import { Seo } from "@/components/Seo";
 import { CrayonsNetwork } from "@/components/streamvista/CrayonsNetwork";
 import { playMailVoice, prewarmMailVoice } from "@/lib/mailVoice";

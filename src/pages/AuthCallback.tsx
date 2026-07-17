@@ -25,14 +25,16 @@ export default function AuthCallback() {
     if (!user) {
       // Could be an invalid / expired link — bounce to login.
       const params = new URLSearchParams(window.location.hash.slice(1));
-      const err = params.get("error_description") || params.get("error");
-      if (err) toast.error(decodeURIComponent(err));
+      const rawErr = params.get("error_description") || params.get("error");
+      const mapped = rawErr ? mapAuthError(decodeURIComponent(rawErr)) : null;
+      if (mapped) toast.error(mapped.message);
       // Preserve the full original callback URL (with hash tokens / query params)
       // so the blocked-browser recovery UI can re-open it in Safari / Chrome.
       try {
         sessionStorage.setItem("sv_pending_auth_url", window.location.href);
       } catch { /* noop */ }
-      navigate(`/auth?in_app_error=1${err ? "&err=" + encodeURIComponent(err) : ""}`, { replace: true });
+      const reasonQs = mapped ? `&reason=${encodeURIComponent(mapped.code)}` : "";
+      navigate(`/auth?in_app_error=1${reasonQs}`, { replace: true });
       return;
     }
     // Clear any stale recovery stash once we have a real session.

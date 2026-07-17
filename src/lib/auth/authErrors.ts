@@ -41,10 +41,20 @@ const COPY: Record<AuthErrorCode, MappedAuthError> = {
     message: "Your session expired. Please sign in again to continue.",
     action: "sign_in",
   },
+  invalid_link: {
+    code: "invalid_link",
+    message: "This link has expired or was already used. Request a fresh one to continue.",
+    action: "retry",
+  },
   user_suspended: {
     code: "user_suspended",
     message: "This account is on hold. Contact support if you believe this is a mistake.",
     action: "contact_support",
+  },
+  user_deleted: {
+    code: "user_deleted",
+    message: "This account no longer exists. Create a new account to continue.",
+    action: "sign_in",
   },
   missing_role: {
     code: "missing_role",

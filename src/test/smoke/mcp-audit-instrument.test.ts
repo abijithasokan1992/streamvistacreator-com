@@ -18,7 +18,7 @@ describe("mcp audit instrumentation · Phase C envelope", () => {
     const start = startEnvelope("db_read");
     await new Promise((r) => setTimeout(r, 5));
     const done = finishEnvelope(start, "allowed");
-    expect(done.correlation_id).toBe(start.correlation_id);
+    expect(done.correlation_id).toBe(start.correlationId);
     expect(done.category).toBe("db_read");
     expect(done.decision).toBe("allowed");
     expect(typeof done.duration_ms).toBe("number");

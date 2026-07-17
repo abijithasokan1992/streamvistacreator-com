@@ -301,8 +301,10 @@ export default function BuyVaultDialog({ product, open, onOpenChange, onPurchase
         });
       });
 
+      setCheckoutOpen(true);
       rzp.open();
     } catch (e) {
+      try { document.body.removeAttribute("data-checkout-open"); } catch { /* noop */ }
       const msg = e instanceof Error ? e.message : "Could not start checkout";
       updateStep("payment_failed", msg, { lastError: msg });
       toast.error(msg);

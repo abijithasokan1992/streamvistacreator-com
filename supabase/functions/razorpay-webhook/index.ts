@@ -25,6 +25,125 @@ const ACTIVE_STATUSES = new Set(["active", "authenticated"]);
 const INACTIVE_STATUSES = new Set(["halted", "cancelled", "completed", "expired"]);
 
 /**
+ * Master Admin Identity — locked to abijithasokan@crayonspictures.com.
+ * Only `admin_settings.founder_email` or FOUNDER_ALERT_EMAIL env may override
+ * it (both are admin-only surfaces). No placeholder / test address is ever
+ * used as a fallback recipient.
+ */
+const MASTER_ADMIN_EMAIL = "abijithasokan@crayonspictures.com";
+
+async function resolveMasterAdminEmail(supabase: any): Promise<string> {
+  const envOverride = (Deno.env.get("FOUNDER_ALERT_EMAIL") ?? "").trim();
+  if (envOverride && /@/.test(envOverride)) return envOverride;
+  try {
+    const { data } = await supabase
+      .from("admin_settings").select("value").eq("key", "founder_email").maybeSingle();
+    const v = typeof data?.value === "string" ? data.value : (data?.value ?? "");
+    const parsed = String(v).replace(/^"|"$/g, "").trim();
+    if (parsed && /@/.test(parsed)) return parsed;
+  } catch { /* ignore */ }
+  return MASTER_ADMIN_EMAIL;
+}
+
+/**
+ * Dispatch the digital tax invoice on a successful capture.
+ *
+ * Idempotency is enforced by (message-id) keys — `rzp-invoice-buyer-<paymentId>`
+ * and `rzp-invoice-admin-<paymentId>`. `send-transactional-email` dedupes on
+ * the idempotency key via `email_send_log`, so Razorpay webhook replays for
+ * the same payment result in exactly one buyer email and one admin copy.
+ */
+async function dispatchInvoiceEmails(
+  supabase: any,
+  event: any,
+): Promise<void> {
+  const type = event?.event as string;
+  if (type !== "payment.captured" && type !== "order.paid") return;
+
+  const payment = event?.payload?.payment?.entity ?? {};
+  const order = event?.payload?.order?.entity ?? {};
+  const paymentId: string | null = payment?.id ?? null;
+  const orderId: string | null = payment?.order_id ?? order?.id ?? null;
+  if (!paymentId && !orderId) return;
+
+  // Resolve buyer email: prefer Razorpay's captured email; fall back to the
+  // authenticated user recorded in notes.
+  const notesUserId: string | null =
+    payment?.notes?.userId ?? order?.notes?.userId ?? null;
+  let buyerEmail: string = String(payment?.email ?? order?.notes?.email ?? "").trim();
+  if (!buyerEmail && notesUserId) {
+    try {
+      const { data } = await supabase.auth.admin.getUserById(notesUserId);
+      buyerEmail = String(data?.user?.email ?? "").trim();
+    } catch { /* ignore */ }
+  }
+
+  const totalPaise = Number(payment?.amount ?? order?.amount ?? 0) || 0;
+  const totalInr = totalPaise / 100;
+  // GST is captured server-side on the source order; derive an 18%
+  // presentational split when the payload does not include a tax breakdown.
+  const gstInr = Math.round((totalInr - totalInr / 1.18) * 100) / 100;
+  const subtotalInr = Math.round((totalInr - gstInr) * 100) / 100;
+
+  const description: string =
+    payment?.notes?.description ??
+    order?.notes?.description ??
+    payment?.description ??
+    "StreamVista services";
+
+  // Prefer canonical invoice id from billing_orders when we can find it.
+  let invoiceNumber = `INV-${(paymentId ?? orderId ?? "").slice(-10).toUpperCase()}`;
+  try {
+    const { data } = await supabase
+      .from("billing_orders").select("id")
+      .eq("source_type", "razorpay_order").eq("source_ref_id", orderId).maybeSingle();
+    if (data?.id) invoiceNumber = `SV-${String(data.id).slice(0, 8).toUpperCase()}`;
+  } catch { /* ignore */ }
+
+  const templateData = {
+    invoiceNumber,
+    description,
+    subtotalInr,
+    gstInr,
+    totalInr,
+    issuedAt: new Date().toISOString(),
+    billedToEmail: buyerEmail || undefined,
+  };
+
+  const adminEmail = await resolveMasterAdminEmail(supabase);
+
+  // Buyer copy — skipped when Razorpay did not return an email address.
+  if (buyerEmail) {
+    try {
+      await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "invoice-receipt",
+          recipientEmail: buyerEmail,
+          idempotencyKey: `rzp-invoice-buyer-${paymentId ?? orderId}`,
+          templateData,
+        },
+      });
+    } catch (e) {
+      console.error("razorpay-webhook: buyer invoice email failed", e);
+    }
+  }
+
+  // Master-admin verification copy.
+  try {
+    await supabase.functions.invoke("send-transactional-email", {
+      body: {
+        templateName: "invoice-receipt",
+        recipientEmail: adminEmail,
+        idempotencyKey: `rzp-invoice-admin-${paymentId ?? orderId}`,
+        templateData: { ...templateData, billedToEmail: buyerEmail || "(no buyer email captured)" },
+      },
+    });
+  } catch (e) {
+    console.error("razorpay-webhook: admin invoice copy failed", e);
+  }
+}
+
+/**
  * Project a Razorpay event onto `billing_orders`.
  *
  * Runs strictly under the service_role client — the `trg_billing_orders_paid_guard`

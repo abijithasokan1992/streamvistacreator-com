@@ -162,7 +162,7 @@ export default function Auth() {
       extraParams: { prompt: "select_account" },
     });
     setSubmitting(false);
-    if (result.error) toast.error(result.error.message || "Google sign-in failed.");
+    if (result.error) toast.error(mapAuthError(result.error).message);
   };
 
 

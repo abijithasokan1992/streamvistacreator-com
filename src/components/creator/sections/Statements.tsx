@@ -59,14 +59,49 @@ export default function StatementsSection() {
     })();
   }, [user?.id]);
 
+  // Load titleIds scoped to the active workspace so Revenue tab never leaks
+  // across workspaces. Falls back to owner_id when workspace column absent.
+  useEffect(() => {
+    if (!user) { setTitleIds([]); return; }
+    (async () => {
+      let q = (supabase as any).from("content_titles").select("id").eq("owner_id", user.id);
+      if (active?.id) q = q.eq("workspace_id", active.id);
+      const { data } = await q.limit(500);
+      setTitleIds((data ?? []).map((r: any) => r.id).filter(Boolean));
+    })();
+  }, [user?.id, active?.id]);
+
   return (
     <div className="space-y-6">
+      <div role="tablist" aria-label="Statements views" className="inline-flex rounded-lg border border-border/50 p-1 bg-secondary/20 text-xs">
+        {(["billing", "revenue"] as const).map((k) => (
+          <button
+            key={k}
+            role="tab"
+            aria-selected={tab === k}
+            onClick={() => setTab(k)}
+            className={cn(
+              "px-3 py-1.5 rounded-md capitalize focus:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+              tab === k ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {k}
+          </button>
+        ))}
+      </div>
+
+      {tab === "revenue" && (
+        <CreatorRevenueSummary titleIds={titleIds.length ? titleIds : undefined} />
+      )}
+
+      {tab === "billing" && (<>
       <div className="rounded-lg border border-border/40 bg-secondary/5 px-4 py-3 text-[11px] text-muted-foreground">
         {t("creator.billing.planIncludes")} {t("creator.billing.planIncludesFull")}
       </div>
       <CreatorInauguralActivationCard />
       <UpgradeCreatorPlanCard />
-      <CreatorInvoices />
+      <CreatorInvoices /></>
+      )}
 
       {/* Storage allocation history — read-only record of past changes */}
       <section className="rounded-2xl border border-border/50 bg-card p-5">

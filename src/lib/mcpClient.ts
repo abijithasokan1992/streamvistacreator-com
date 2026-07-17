@@ -4,7 +4,9 @@
  * Lightweight client-side gatekeeper that:
  *  1. Reads the admin-controlled `mcp_permissions` toggle row from `admin_settings`.
  *  2. Refuses actions the admin has disabled (or all actions if master_kill_switch is on).
- *  3. Writes every attempt (allowed + denied) to `mcp_audit_log`.
+ *  3. Writes every attempt (allowed + denied) to `mcp_audit_log`, with a
+ *     correlation-id / duration / decision envelope so C1 renderers can
+ *     display consistent metadata across allowed / denied / error rows.
  *
  * The DB-level RLS remains the source of truth — this layer makes denials
  * explicit to the user and produces a real-time admin audit trail.
@@ -12,6 +14,12 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { withRetry } from "@/lib/resilient";
+import {
+  categoryForPermission,
+  finishEnvelope,
+  startEnvelope,
+  type InstrumentDecision,
+} from "@/lib/mcp/auditInstrument";
 
 export type McpPermissionKey =
   | "allow_db_read"

@@ -595,6 +595,8 @@ function AdminMainPanel({
     [departments],
   );
 
+  const queryClient = useQueryClient();
+
   const jumpTo = (deptId: string, sectionId: string) => {
     setDept(deptId as DeptKey);
     setSectionByDept((prev) => ({ ...prev, [deptId]: sectionId }));
@@ -603,6 +605,15 @@ function AdminMainPanel({
     url.searchParams.set("dept", deptId);
     url.searchParams.set("section", sectionId);
     window.history.replaceState(null, "", url.toString());
+    // Force-refresh server state so the destination panel never renders
+    // against a frozen browser cache. Broadcasts a signal for any panel
+    // that manages its own fetching outside react-query.
+    try { queryClient.invalidateQueries(); } catch { /* noop */ }
+    try {
+      window.dispatchEvent(new CustomEvent("admin:revalidate", {
+        detail: { dept: deptId, section: sectionId, at: Date.now() },
+      }));
+    } catch { /* noop */ }
   };
 
   // Priority Inbox + Quick Actions dispatch this event to route the operator
@@ -614,7 +625,16 @@ function AdminMainPanel({
     };
     window.addEventListener("admin:jump", handler as EventListener);
     return () => window.removeEventListener("admin:jump", handler as EventListener);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // On mount and whenever the active department/section changes, invalidate
+  // caches so switching tabs always pulls fresh server state.
+  useEffect(() => {
+    try { queryClient.invalidateQueries(); } catch { /* noop */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dept, sectionByDept[dept]]);
+
 
   const current = departments.find((d) => d.id === dept) ?? departments[0];
 

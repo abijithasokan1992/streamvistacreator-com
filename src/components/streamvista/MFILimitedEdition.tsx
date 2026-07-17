@@ -191,7 +191,7 @@ export const MFILimitedEdition = () => {
               <div className="text-center py-10">
                 <div className="font-display text-2xl font-bold mb-2">All 500 seats claimed</div>
                 <p className="text-muted-foreground text-sm">
-                  Standard Cloud X plans below remain open with full GST invoicing.
+                  Standard StreamVista Creator plans below remain open with full GST invoicing.
                 </p>
               </div>
             ) : (

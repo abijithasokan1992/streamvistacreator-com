@@ -201,7 +201,7 @@ export default function PriorityInbox() {
             {unreadCount > 0 && <span className="text-[10px] font-mono text-muted-foreground">{unreadCount} unread</span>}
           </div>
           <button
-            onClick={markAllRead}
+            onClick={clearAll}
             className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
           >
             <CheckCheck className="w-3 h-3" /> Mark all read

@@ -133,11 +133,24 @@ export default function AiMcpControlCenter() {
     toast.success("MCP permissions updated");
   };
 
-  const toggle = (key: keyof McpPermissions) => (v: boolean) => save({ ...perms, [key]: v });
+  const requestToggle = (key: keyof McpPermissions, dangerous: boolean, label: string) => (v: boolean) => {
+    // High-risk enable → require explicit confirmation. Turning OFF is
+    // always immediate — you can always make the agent less powerful.
+    if (v && dangerous) {
+      setConfirmEnable({ key, label });
+      return;
+    }
+    save({ ...perms, [key]: v });
+  };
 
-  const filtered = audit.filter((r) =>
-    filter === "all" ? true : filter === "allowed" ? r.allowed : !r.allowed
-  );
+  const normalized = useMemo(() => audit.map(normalizeAuditRow), [audit]);
+  const filtered = useMemo(() => filterAudit(normalized, filter), [normalized, filter]);
+
+  const decisionIcon = (d: NormalizedAudit["decision"]) => {
+    if (d === "allowed") return <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />;
+    if (d === "denied") return <ShieldAlert className="w-3.5 h-3.5 text-amber-400 shrink-0" />;
+    return <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />;
+  };
 
   return (
     <div className="rounded-2xl border border-border/60 bg-card/40 backdrop-blur-xl p-6 space-y-6">
@@ -190,7 +203,7 @@ export default function AiMcpControlCenter() {
                   {t.label}
                   {t.dangerous && (
                     <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">
-                      High risk
+                      High risk · off by default
                     </span>
                   )}
                 </div>
@@ -199,7 +212,8 @@ export default function AiMcpControlCenter() {
               <Switch
                 checked={on}
                 disabled={disabled}
-                onCheckedChange={toggle(t.key)}
+                onCheckedChange={requestToggle(t.key, !!t.dangerous, t.label)}
+                aria-label={`${t.label}${t.dangerous ? " (high risk)" : ""}`}
               />
             </label>
           );
@@ -215,54 +229,144 @@ export default function AiMcpControlCenter() {
             <span className="text-[10px] text-muted-foreground">last 50</span>
           </div>
           <div className="flex items-center gap-1.5">
-            {(["all", "allowed", "denied"] as const).map((f) => (
+            {(["all", "allowed", "denied", "error"] as const).map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
                 className={`px-2.5 py-1 rounded-md text-[11px] font-mono uppercase tracking-wider transition ${
                   filter === f ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40" : "text-muted-foreground border border-border/50 hover:border-border"
                 }`}
+                aria-pressed={filter === f}
               >
                 {f}
               </button>
             ))}
-            <Button variant="ghost" size="sm" onClick={loadAudit} className="ml-1">
+            <Button variant="ghost" size="sm" onClick={loadAudit} className="ml-1" aria-label="Refresh audit log">
               <RefreshCw className="w-3.5 h-3.5" />
             </Button>
           </div>
         </div>
 
-        <div className="rounded-xl border border-border/50 bg-background/40 max-h-80 overflow-y-auto divide-y divide-border/30">
+        <div className="rounded-xl border border-border/50 bg-background/40 max-h-80 overflow-y-auto divide-y divide-border/30" role="list" aria-label="Audit log entries">
           {filtered.length === 0 ? (
             <div className="p-6 text-center text-xs text-muted-foreground">
               No audit entries yet. Agent actions will stream in live.
             </div>
           ) : (
             filtered.map((r) => (
-              <div key={r.id} className="px-4 py-2.5 flex items-center gap-3 text-xs hover:bg-background/60 transition">
-                {r.allowed ? (
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                ) : (
-                  <ShieldAlert className="w-3.5 h-3.5 text-red-400 shrink-0" />
-                )}
-                <span className="font-mono text-muted-foreground tabular-nums whitespace-nowrap">
-                  {new Date(r.created_at).toLocaleTimeString()}
+              <button
+                type="button"
+                key={r.id}
+                role="listitem"
+                onClick={() => setDetail(r)}
+                className="w-full text-left px-4 py-2.5 flex items-center gap-3 text-xs hover:bg-background/60 transition focus:outline-none focus:ring-1 focus:ring-cyan-500/40"
+                aria-label={`Audit entry ${r.action} at ${r.timestampLabel}, decision ${r.decision}`}
+              >
+                {decisionIcon(r.decision)}
+                <span className="font-mono text-muted-foreground tabular-nums whitespace-nowrap" title={r.timestampIso}>
+                  {r.timestampLabel}
                 </span>
                 <span className="font-semibold truncate min-w-0 flex-1">
-                  {r.action}
-                  {r.resource && <span className="text-muted-foreground"> · {r.resource}</span>}
+                  {r.toolName}
+                  <span className="text-muted-foreground"> · {r.resource}</span>
                 </span>
-                {r.permission_key && (
-                  <span className="px-1.5 py-0.5 rounded bg-muted/40 text-[10px] font-mono">{r.permission_key}</span>
+                <span className="px-1.5 py-0.5 rounded bg-muted/40 text-[10px] font-mono">{r.category}</span>
+                <span className="px-1.5 py-0.5 rounded bg-muted/40 text-[10px] font-mono">{r.permissionKey}</span>
+                {r.durationMs != null && (
+                  <span className="text-muted-foreground tabular-nums whitespace-nowrap">{r.durationMs}ms</span>
                 )}
                 <span className="text-muted-foreground truncate max-w-[200px] hidden md:inline">
-                  {r.actor_email ?? "—"}
+                  {r.actorEmail}
                 </span>
-              </div>
+              </button>
             ))
           )}
         </div>
       </div>
+
+      {/* Detail dialog — accessible, keyboard-dismissible */}
+      <Dialog open={!!detail} onOpenChange={(v) => !v && setDetail(null)}>
+        <DialogContent className="max-w-lg">
+          {detail && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  {decisionIcon(detail.decision)}
+                  {detail.toolName}
+                </DialogTitle>
+                <DialogDescription>
+                  {detail.timestampLabel}
+                </DialogDescription>
+              </DialogHeader>
+              <dl className="text-xs grid grid-cols-3 gap-y-2 gap-x-4">
+                <dt className="text-muted-foreground">Decision</dt>
+                <dd className="col-span-2 font-mono">{detail.decision}</dd>
+                <dt className="text-muted-foreground">Outcome</dt>
+                <dd className="col-span-2 font-mono">{detail.outcome}</dd>
+                <dt className="text-muted-foreground">Category</dt>
+                <dd className="col-span-2 font-mono">{detail.category}</dd>
+                <dt className="text-muted-foreground">Permission</dt>
+                <dd className="col-span-2 font-mono">{detail.permissionKey}</dd>
+                <dt className="text-muted-foreground">Actor</dt>
+                <dd className="col-span-2 font-mono">{detail.actorEmail}</dd>
+                <dt className="text-muted-foreground">User id</dt>
+                <dd className="col-span-2 font-mono">{detail.actorUserId}</dd>
+                <dt className="text-muted-foreground">OAuth client</dt>
+                <dd className="col-span-2 font-mono">{detail.clientId}</dd>
+                <dt className="text-muted-foreground">Resource</dt>
+                <dd className="col-span-2 font-mono break-all">{detail.resource}</dd>
+                <dt className="text-muted-foreground">Correlation id</dt>
+                <dd className="col-span-2 font-mono break-all">{detail.correlationId}</dd>
+                <dt className="text-muted-foreground">Duration</dt>
+                <dd className="col-span-2 font-mono">{detail.durationMs != null ? `${detail.durationMs} ms` : UNKNOWN}</dd>
+                <dt className="text-muted-foreground">Timestamp</dt>
+                <dd className="col-span-2 font-mono break-all">{detail.timestampIso}</dd>
+                {detail.errorMessage && (
+                  <>
+                    <dt className="text-muted-foreground">Error</dt>
+                    <dd className="col-span-2 font-mono text-red-400 break-all">{detail.errorMessage}</dd>
+                  </>
+                )}
+              </dl>
+              <DialogFooter>
+                <Button variant="outline" size="sm" onClick={() => setDetail(null)}>Close</Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* High-risk confirm dialog */}
+      <Dialog open={!!confirmEnable} onOpenChange={(v) => !v && setConfirmEnable(null)}>
+        <DialogContent className="max-w-md">
+          {confirmEnable && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-amber-300">
+                  <AlertTriangle className="w-4 h-4" /> Enable “{confirmEnable.label}”?
+                </DialogTitle>
+                <DialogDescription>
+                  This is a high-risk capability and is off by default. Enabling it will let the AI agent perform this action. Confirm you have the authority to grant this.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="gap-2">
+                <Button variant="outline" size="sm" onClick={() => setConfirmEnable(null)}>Cancel</Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => {
+                    const k = confirmEnable.key;
+                    setConfirmEnable(null);
+                    save({ ...perms, [k]: true });
+                  }}
+                >
+                  Yes, enable
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -355,8 +355,8 @@ async function processEvent(supabase: any, event: any, creds: any): Promise<void
       error_message: `Unhandled event ${type} with no order/subscription id`,
     });
     try {
-      const founderEmail = Deno.env.get("FOUNDER_ALERT_EMAIL") || "abijithasokan@crayonspictures.com";
-      const eventPayload = (payload as any) ?? {};
+      const founderEmail = await resolveMasterAdminEmail(supabase);
+      const eventPayload = (event as any)?.payload ?? {};
       const paymentEntity = eventPayload?.payment?.entity ?? {};
       const orderEntity = eventPayload?.order?.entity ?? {};
       const amountPaise = Number(paymentEntity.amount ?? orderEntity.amount ?? 0);

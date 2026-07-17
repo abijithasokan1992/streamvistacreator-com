@@ -48,18 +48,32 @@ export type DriftReport = {
   deployedVersion: string;
   deployedToolCount: number;
   expectedToolCount: number;
+  /** Tools present in source but not advertised by the deployed manifest. */
+  missingRemote: string[];
+  /** Tools advertised by the deployed manifest but not present in source. */
+  extraRemote: string[];
   reasons: string[];
+  status: "pass" | "warn";
 };
+
+/** Best-effort extraction of advertised tool names from a manifest blob. */
+export function extractDeployedToolNames(manifest: unknown): string[] {
+  const m = manifest as { mcp?: { tools?: Array<{ name?: unknown }> } } | null;
+  const list = Array.isArray(m?.mcp?.tools) ? m!.mcp!.tools! : [];
+  return list
+    .map((t) => (typeof t?.name === "string" ? t.name : ""))
+    .filter((n) => n.length > 0);
+}
 
 /**
  * Compare deployed manifest against local expectations without hitting
- * the network or triggering any deployment. `expectedToolCount` is the
- * count from the local MCP registration; caller passes it in so we
- * don't import the MCP module at admin-page load time.
+ * the network or triggering any deployment. Callers pass in the local
+ * tool list (names) so this module does not have to import the MCP
+ * registration at admin-page load time.
  */
 export function detectMcpDrift(
   manifest: unknown,
-  expectedToolCount: number,
+  expected: { toolNames: string[] } | number,
 ): DriftReport {
   const src = getSourceVersion();
   const summary = summarizeManifest(manifest) ?? {
@@ -67,13 +81,23 @@ export function detectMcpDrift(
     deployedVersion: "unknown",
     toolCount: 0,
   };
+  const expectedToolNames = typeof expected === "number" ? [] : expected.toolNames;
+  const expectedToolCount = typeof expected === "number" ? expected : expected.toolNames.length;
+  const deployedNames = extractDeployedToolNames(manifest);
+  const deployedSet = new Set(deployedNames);
+  const expectedSet = new Set(expectedToolNames);
+
+  const missingRemote = expectedToolNames.filter((n) => !deployedSet.has(n)).sort();
+  const extraRemote = deployedNames.filter((n) => !expectedSet.has(n)).sort();
+
   const reasons: string[] = [];
   if (summary.deployedVersion === "unknown") reasons.push("deployed manifest missing version");
   if (summary.toolCount !== expectedToolCount) {
-    reasons.push(
-      `tool count drift (deployed=${summary.toolCount}, source=${expectedToolCount})`,
-    );
+    reasons.push(`tool count drift (deployed=${summary.toolCount}, source=${expectedToolCount})`);
   }
+  if (missingRemote.length > 0) reasons.push(`missing in remote: ${missingRemote.join(", ")}`);
+  if (extraRemote.length > 0) reasons.push(`extra in remote: ${extraRemote.join(", ")}`);
+
   return {
     hasDrift: reasons.length > 0,
     sourceVersion: src.version,
@@ -81,6 +105,9 @@ export function detectMcpDrift(
     deployedVersion: summary.deployedVersion,
     deployedToolCount: summary.toolCount,
     expectedToolCount,
+    missingRemote,
+    extraRemote,
     reasons,
+    status: reasons.length > 0 ? "warn" : "pass",
   };
 }

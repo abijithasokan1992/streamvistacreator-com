@@ -198,6 +198,7 @@ export default function StatementsSection() {
           )
         )}
       </section>
+      </>)}
     </div>
   );
 }

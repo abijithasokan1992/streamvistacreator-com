@@ -155,6 +155,15 @@ export async function initializeCheckout(opts: InitializeCheckoutOptions): Promi
 
     await ensureRazorpay();
 
+    // Only pass non-empty prefill values to Razorpay. Empty/null/undefined
+    // values still cause the checkout modal to lock the corresponding field,
+    // preventing users from positioning their cursor and typing manually.
+    const rzpPrefill: Record<string, string> = {};
+    const prefillEmail = prefill?.email ?? sess?.session?.user?.email;
+    if (prefillEmail) rzpPrefill.email = prefillEmail;
+    if (prefill?.contact) rzpPrefill.contact = prefill.contact;
+    if (prefill?.name) rzpPrefill.name = prefill.name;
+
     const rzp = new (window as any).Razorpay({
       key: (data as any).keyId,
       order_id: (data as any).orderId,
@@ -162,11 +171,7 @@ export async function initializeCheckout(opts: InitializeCheckoutOptions): Promi
       currency: (data as any).currency || "INR",
       name: "StreamVista",
       description: description || label || "Secure payment",
-      prefill: {
-        email: prefill?.email ?? sess?.session?.user?.email ?? undefined,
-        contact: prefill?.contact,
-        name: prefill?.name,
-      },
+      prefill: rzpPrefill,
       notes: enrichedMetadata as Record<string, string>,
       theme: { color: themeColor || "#a855f7" },
       modal: { ondismiss: () => onDismiss?.() },

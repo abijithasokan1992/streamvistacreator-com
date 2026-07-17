@@ -100,7 +100,7 @@ export const Footer = () => {
         <div className="mt-10 pt-6 border-t border-border/40 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <p className="text-[11px] leading-relaxed text-muted-foreground">
             © {new Date().getFullYear()}{" "}
-            <strong className="text-foreground/80">STREAMVISTA (OPC) PRIVATE LIMITED</strong>
+            <strong className="text-foreground/80">{BRAND_LEGAL_ENTITY}</strong>
             <span className="opacity-60"> · Ernakulam, Kerala, India.</span>
           </p>
         </div>

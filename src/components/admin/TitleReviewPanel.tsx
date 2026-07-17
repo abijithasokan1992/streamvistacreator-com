@@ -172,6 +172,22 @@ export default function TitleReviewPanel({ titleId, currentStatus, onChanged }: 
     window.open(masterAsset.url, "_blank", "noopener,noreferrer");
   };
 
+  const holdForReview = async () => {
+    const reason = holdReason.trim();
+    if (!reason) { toast.error("Enter a hold reason (visible to reviewers)"); return; }
+    setBusy("disposition:hold");
+    const { error } = await (supabase as any).rpc("add_internal_review_note", {
+      _title_id: titleId, _body: `[HOLD] ${reason}`,
+    });
+    setBusy(null);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Title placed on hold — reviewers notified");
+    setShowHoldInput(false);
+    setHoldReason("");
+    await load();
+    onChanged?.();
+  };
+
 
   const groups: ChecklistGroup[] = stage === "qc" ? QC_CHECKLIST : LEGAL_CHECKLIST;
 

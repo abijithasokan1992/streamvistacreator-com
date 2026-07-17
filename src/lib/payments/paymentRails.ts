@@ -1,15 +1,22 @@
 /**
- * Payment-rail registry (Phase D1 consolidation).
+ * Payment-rail registry (Phase D1 consolidation, corrected in Revenue MVP).
  *
- * Single source of truth naming every payment rail the codebase references
- * and its current activation state. The active production rail is Razorpay
- * standard checkout on the streamvista.in domain. All other rails
- * (Paddle, RazorpayX payouts, and legacy Django/PythonAnywhere flows) are
- * explicitly deprecated and MUST NOT be surfaced in user-facing UI without
- * an intentional re-activation.
+ * Truth source for every payment rail this codebase references and its
+ * activation state on streamvista.in production.
  *
- * This module does not import or execute rail SDKs. It exists so that
- * runtime checks and tests can assert the deprecated rails stay inert.
+ * Semantics:
+ *   - `active`        the rail is live and may be surfaced.
+ *   - `disabled`      rail exists as scaffold but is turned off at build time.
+ *   - `unconfigured`  rail is a real, non-deprecated capability but has not
+ *                     been provisioned in this environment. UI must not
+ *                     surface it until an operator provisions it.
+ *   - `deprecated`    rail is retired and must not be resurrected.
+ *
+ * IMPORTANT: RazorpayX (creator payouts) is NOT deprecated. It is an
+ * automatic-payout capability that requires external production
+ * verification (KYC, RazorpayX account, webhook parity) before it can be
+ * flipped to `active`. No manual "Send Money" or fake payout fallback is
+ * ever surfaced by the app.
  */
 import { PADDLE_ENABLED } from "@/lib/paddle";
 
@@ -19,11 +26,14 @@ export type PaymentRailId =
   | "razorpayx_payouts"
   | "legacy_django_pythonanywhere";
 
-export type PaymentRailStatus = "active" | "disabled" | "deprecated";
+export type PaymentRailStatus = "active" | "disabled" | "unconfigured" | "deprecated";
+
+export type PaymentRailCapability = "collection" | "payout" | "subscription";
 
 export interface PaymentRail {
   id: PaymentRailId;
   status: PaymentRailStatus;
+  capability: PaymentRailCapability;
   /** Human-readable label for admin diagnostics. */
   label: string;
   /** Why the rail is in its current state — audit trail only. */
@@ -34,26 +44,30 @@ export const PAYMENT_RAILS: readonly PaymentRail[] = [
   {
     id: "razorpay_standard",
     status: "active",
+    capability: "collection",
     label: "Razorpay Standard Checkout",
     note: "Live rail on streamvista.in — collections, top-ups, vault, subscriptions.",
   },
   {
     id: "paddle",
     status: PADDLE_ENABLED ? "active" : "disabled",
+    capability: "collection",
     label: "Paddle (non-India billing)",
     note: "Dormant scaffold; requires catalog + webhook parity before activation.",
   },
   {
     id: "razorpayx_payouts",
-    status: "deprecated",
-    label: "RazorpayX Payouts",
-    note: "Creator payouts handled manually in Phase D1. Do not surface a Send Money entry point.",
+    status: "unconfigured",
+    capability: "payout",
+    label: "RazorpayX Automatic Payouts",
+    note: "Automatic creator/producer payout capability. Requires configuration and external production verification (KYC, webhook parity) before activation. No manual fallback.",
   },
   {
     id: "legacy_django_pythonanywhere",
     status: "deprecated",
-    label: "Legacy Django / PythonAnywhere",
-    note: "Historical films_payment ledger only. No live integration exists.",
+    capability: "collection",
+    label: "Legacy Django / PythonAnywhere Razorpay",
+    note: "Historical films_payment ledger only. Retired — do not resurrect credentials or flows.",
   },
 ] as const;
 
@@ -70,4 +84,10 @@ export function isRailActive(id: PaymentRailId): boolean {
 /** True when it's safe to render a user-facing entry point for the rail. */
 export function canSurfaceRail(id: PaymentRailId): boolean {
   return isRailActive(id);
+}
+
+/** True when the rail is a legitimate future capability (not deprecated). */
+export function isRailAvailableCapability(id: PaymentRailId): boolean {
+  const s = getRail(id).status;
+  return s === "active" || s === "unconfigured";
 }

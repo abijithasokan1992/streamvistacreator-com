@@ -100,6 +100,77 @@ export default function TitleReviewPanel({ titleId, currentStatus, onChanged }: 
 
   useEffect(() => { load(); }, [load]);
 
+  // Fetch title metadata + master delivery file for the Cinematic Preview hero.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: t } = await (supabase as any)
+          .from("content_titles")
+          .select("title, genre, duration_minutes")
+          .eq("id", titleId)
+          .maybeSingle();
+        if (!cancelled && t) setTitleMeta(t as TitleMeta);
+
+        // Best-effort master asset lookup: join title_assets → upload_sessions.
+        const { data: assets } = await (supabase as any)
+          .from("title_assets")
+          .select("category, upload_session_id, upload_sessions!inner(par_url, file_name, object_key)")
+          .eq("title_id", titleId);
+        if (cancelled || !assets?.length) return;
+        const master = assets.find((a: any) => (a.category ?? "").toLowerCase().includes("master")) ?? assets[0];
+        const s = master?.upload_sessions;
+        setMasterAsset({
+          url: s?.par_url ?? null,
+          file_name: s?.file_name ?? s?.object_key ?? null,
+        });
+      } catch { /* noop */ }
+    })();
+    return () => { cancelled = true; };
+  }, [titleId]);
+
+  // Executive dispositions
+  const passToLegal = async () => {
+    setBusy("disposition:pass");
+    const { error } = await (supabase as any).rpc("transition_title_status", {
+      _title_id: titleId, _target_status: "legal_review",
+    });
+    setBusy(null);
+    if (error) { toast.error(error.message); return; }
+    toast.success("QC passed — sent to Legal review");
+    await load();
+    onChanged?.();
+  };
+
+  const quickReject = async () => {
+    const reason = rejectReason.trim();
+    if (!reason) { toast.error("Enter a rejection reason for the creator"); return; }
+    setBusy("disposition:reject");
+    const { error } = await (supabase as any).rpc("request_title_changes", {
+      _title_id: titleId,
+      _reasons: [{
+        stage: "qc", group: "quality", key: "quick_reject",
+        label: "Quick reject", severity: "blocking",
+        creator_note: reason, internal_note: null,
+      }],
+      _creator_summary: reason,
+      _internal_note: null,
+    });
+    setBusy(null);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Sent back to draft — creator notified");
+    setShowRejectInput(false);
+    setRejectReason("");
+    await load();
+    onChanged?.();
+  };
+
+  const downloadMaster = () => {
+    if (!masterAsset.url) { toast.error("No master file available"); return; }
+    window.open(masterAsset.url, "_blank", "noopener,noreferrer");
+  };
+
+
   const groups: ChecklistGroup[] = stage === "qc" ? QC_CHECKLIST : LEGAL_CHECKLIST;
 
   const upsertItem = async (

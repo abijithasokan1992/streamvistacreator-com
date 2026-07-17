@@ -172,6 +172,17 @@ export async function initializeCheckout(opts: InitializeCheckoutOptions): Promi
     if (prefillContact) rzpPrefill.contact = prefillContact;
     if (prefillName) rzpPrefill.name = prefillName;
 
+    // Visual-only lock: toggle a body attribute so `index.css` can dim/blur
+    // the app underneath. Never uses `pointer-events: none` — if Razorpay
+    // ever fails to mount, users are not trapped.
+    const setCheckoutOpen = (open: boolean) => {
+      try {
+        if (open) document.body.setAttribute("data-checkout-open", "true");
+        else document.body.removeAttribute("data-checkout-open");
+      } catch { /* SSR / detached DOM — noop */ }
+    };
+    const clearCheckoutOpen = () => setCheckoutOpen(false);
+
     const rzp = new (window as any).Razorpay({
       key: (data as any).keyId,
       order_id: (data as any).orderId,
@@ -182,7 +193,12 @@ export async function initializeCheckout(opts: InitializeCheckoutOptions): Promi
       prefill: rzpPrefill,
       notes: enrichedMetadata as Record<string, string>,
       theme: { color: themeColor || "#a855f7" },
-      modal: { ondismiss: () => onDismiss?.() },
+      modal: {
+        ondismiss: () => {
+          clearCheckoutOpen();
+          onDismiss?.();
+        },
+      },
       handler: async (resp: any) => {
         try {
           const verifyToken = await freshAccessToken();
@@ -203,16 +219,20 @@ export async function initializeCheckout(opts: InitializeCheckoutOptions): Promi
             );
           }
           toast.success("Payment successful", { id: toastId });
+          clearCheckoutOpen();
           onSuccess?.(verify.data);
         } catch (e: any) {
           toast.error(e?.message || "Payment verification failed", { id: toastId });
+          clearCheckoutOpen();
           onError?.(e instanceof Error ? e : new Error(String(e)));
         }
       },
     });
     toast.dismiss(toastId);
+    setCheckoutOpen(true);
     rzp.open();
   } catch (e: any) {
+    try { document.body.removeAttribute("data-checkout-open"); } catch { /* noop */ }
     toast.error(e?.message || "Could not start checkout", { id: toastId });
     onError?.(e instanceof Error ? e : new Error(String(e)));
   }

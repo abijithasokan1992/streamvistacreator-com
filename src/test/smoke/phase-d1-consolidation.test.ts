@@ -117,7 +117,9 @@ describe("obsolete user-facing entry points are absent (Phase D1)", () => {
     return acc;
   }
 
-  const files = walk(SRC);
+  // The rails registry intentionally names deprecated rails — exempt it.
+  const REGISTRY = join(SRC, "lib/payments/paymentRails.ts");
+  const files = walk(SRC).filter((f) => f !== REGISTRY);
 
   it("no source file renders a 'Send Money' user action", () => {
     const offenders = files.filter((f) => /send\s+money/i.test(readFileSync(f, "utf8")));

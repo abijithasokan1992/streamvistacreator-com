@@ -70,7 +70,7 @@ export const Footer = () => {
               <Wordmark />
             </Link>
             <p className="mt-3 text-[11px] text-muted-foreground leading-relaxed max-w-[240px]">
-              One Secure Cloud for Films, Series &amp; Shows
+              {BRAND_TAGLINE_LEAD}
             </p>
             {isHome && (
               <ul className="mt-5 flex flex-wrap items-center gap-1.5">

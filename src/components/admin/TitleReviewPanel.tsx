@@ -285,6 +285,8 @@ export default function TitleReviewPanel({ titleId, currentStatus, onChanged }: 
               {currentStatus.replace(/_/g, " ").toUpperCase()}
             </Badge>
           </div>
+        </header>
+
 
         {/* Video player */}
         <div className="relative aspect-video bg-black grid place-items-center">

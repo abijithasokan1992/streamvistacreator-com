@@ -74,6 +74,8 @@ export default function TitleReviewPanel({ titleId, currentStatus, onChanged }: 
   const [masterAsset, setMasterAsset] = useState<MasterAsset>({ url: null, file_name: null });
   const [showRejectInput, setShowRejectInput] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const [showHoldInput, setShowHoldInput] = useState(false);
+  const [holdReason, setHoldReason] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);

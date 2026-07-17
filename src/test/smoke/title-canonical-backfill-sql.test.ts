@@ -8,6 +8,13 @@ const SQL_PATH = resolve(
 );
 const sql = readFileSync(SQL_PATH, "utf8");
 const lower = sql.toLowerCase();
+// SQL with `--` line comments stripped, used for tests that inspect executable
+// statements only (comments contain illustrative snippets that intentionally
+// don't satisfy the runtime guards).
+const sqlNoComments = sql
+  .split(/\r?\n/)
+  .map((l) => l.replace(/--.*$/, ""))
+  .join("\n");
 
 /**
  * Static text-safety checks for the pending title canonical backfill. The

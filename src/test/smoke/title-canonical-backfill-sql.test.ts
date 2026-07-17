@@ -57,7 +57,7 @@ describe("title_canonical_backfill.sql — hardening", () => {
     // statement level: every SQL statement that references 'genres' also
     // references jsonb_typeof(...) = 'array' OR is a write-side guard that
     // includes the same check.
-    const statements = sql.split(/;\s*(?:\r?\n|$)/);
+    const statements = sqlNoComments.split(/;\s*(?:\r?\n|$)/);
     const genreStatements = statements.filter((s) => /metadata->('|")?genres/i.test(s));
 
     it("has at least three statements that touch metadata.genres", () => {

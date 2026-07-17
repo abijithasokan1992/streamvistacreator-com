@@ -236,6 +236,113 @@ export default function TitleReviewPanel({ titleId, currentStatus, onChanged }: 
 
   return (
     <div className="space-y-4">
+      {/* CINEMATIC PREVIEW HERO */}
+      <section className="rounded-2xl border border-border/50 bg-gradient-to-br from-zinc-950/90 via-zinc-900/80 to-black/90 overflow-hidden shadow-2xl">
+        {/* Title / Genre / Runtime header row */}
+        <header className="px-5 py-3 flex items-center gap-3 border-b border-white/5 bg-black/40">
+          <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-indigo-500/30 to-fuchsia-500/20 border border-white/10 grid place-items-center">
+            <Film className="w-4 h-4 text-indigo-200" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="font-display font-bold text-lg md:text-xl text-white tracking-tight truncate">
+              {titleMeta?.title ?? "Loading title…"}
+            </h2>
+            <div className="text-[11px] text-white/50 flex items-center gap-3 mt-0.5">
+              <span>Genre: <span className="text-white/80 font-medium">{titleMeta?.genre || "—"}</span></span>
+              <span>Runtime: <span className="text-white/80 font-medium">{titleMeta?.duration_minutes ? `${titleMeta.duration_minutes} min` : "—"}</span></span>
+            </div>
+          </div>
+          <Badge variant="outline" className="border-white/20 text-white/80 text-[10px]">
+            {currentStatus.replace(/_/g, " ").toUpperCase()}
+          </Badge>
+        </header>
+
+        {/* Video player */}
+        <div className="relative aspect-video bg-black grid place-items-center">
+          {masterAsset.url ? (
+            <video
+              key={masterAsset.url}
+              src={masterAsset.url}
+              controls
+              controlsList="nodownload"
+              className="w-full h-full object-contain"
+              preload="metadata"
+            />
+          ) : (
+            <div className="flex flex-col items-center gap-2 text-white/40">
+              <PlayCircle className="w-10 h-10" />
+              <p className="text-xs">Master delivery file not attached yet.</p>
+            </div>
+          )}
+        </div>
+
+        {/* One-click disposition cluster */}
+        <div className="p-4 md:p-5 grid grid-cols-1 md:grid-cols-3 gap-3 bg-black/60">
+          <Button
+            size="lg"
+            disabled={busy === "disposition:pass"}
+            onClick={passToLegal}
+            className="h-12 font-semibold text-white bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-lg shadow-emerald-900/40 border-0"
+          >
+            {busy === "disposition:pass" ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+            Pass QC & Send to Legal
+          </Button>
+          <Button
+            size="lg"
+            variant="outline"
+            onClick={() => setShowRejectInput((v) => !v)}
+            className="h-12 font-semibold border-2 border-red-500/60 text-red-300 hover:bg-red-500/10 hover:text-red-200"
+          >
+            <XCircle className="w-4 h-4 mr-2" />
+            Reject & Send Back to Draft
+          </Button>
+          <Button
+            size="lg"
+            variant="ghost"
+            onClick={downloadMaster}
+            disabled={!masterAsset.url}
+            className="h-12 font-medium text-white/70 hover:text-white hover:bg-white/5 border border-white/10"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Download Master File
+          </Button>
+        </div>
+
+        {showRejectInput && (
+          <div className="px-4 md:px-5 pb-4 md:pb-5 -mt-1 flex items-center gap-2 bg-black/60">
+            <Input
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="Reason sent to creator (single line, required)…"
+              className="h-10 bg-white/5 border-red-500/40 text-white placeholder:text-white/30"
+              onKeyDown={(e) => { if (e.key === "Enter") quickReject(); }}
+              autoFocus
+            />
+            <Button
+              onClick={quickReject}
+              disabled={busy === "disposition:reject" || !rejectReason.trim()}
+              className="h-10 bg-red-600 hover:bg-red-500 text-white"
+            >
+              {busy === "disposition:reject" && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
+              Send
+            </Button>
+          </div>
+        )}
+      </section>
+
+      {/* ADVANCED SYSTEM LOGS — full historical audit, metadata, checklists */}
+      <Accordion type="single" collapsible className="rounded-xl border border-border/50 bg-card/30">
+        <AccordionItem value="advanced-logs" className="border-b-0">
+          <AccordionTrigger className="px-4 py-3 hover:no-underline">
+            <div className="flex items-center gap-2 text-sm font-semibold">
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+              View Advanced System Logs
+              <span className="text-[10px] font-normal text-muted-foreground ml-1">
+                (checklists · issues · reviewer notes · audit trail)
+              </span>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4 space-y-4">
       {/* SUMMARY BLOCK */}
       <div className="rounded-lg border border-border/50 bg-card/40 p-3 space-y-2">
         <div className="flex flex-wrap items-center gap-2 text-xs">

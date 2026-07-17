@@ -90,7 +90,7 @@ export default function AiMcpControlCenter() {
       channel.on(
         "postgres_changes" as never,
         { event: "INSERT", schema: "public", table: "mcp_audit_log" },
-        (payload: { new: AuditRow }) =>
+        (payload: { new: RawAuditRow }) =>
           setAudit((prev) => [payload.new, ...prev].slice(0, 50))
       );
       channel.subscribe((status) => {

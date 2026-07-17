@@ -331,29 +331,13 @@ export function AssetUploader({
     void runUpload(f);
   }, [category, locked, runUpload, wouldExceedQuota, preliminaryMatch, runShaDedup, sha256Hex, devLog, quotaRemainingBytes]);
 
-  const [topupOpen, setTopupOpen] = useState(false);
-  const [topupReason, setTopupReason] = useState<string | undefined>(undefined);
-
-  // Trigger the centralized checkout overlay when a picked file would exceed quota.
-  // Replaces the previous inline "Storage tight" hint that repeated under every slot.
-  useEffect(() => {
-    if (!stagedFile) return;
-    if (!stagedPreflight?.ok) return;
-    if (!wouldExceedQuota(stagedFile.size)) return;
-    setTopupReason(
-      `This ${humanBytes(stagedFile.size)} upload exceeds your remaining ${humanBytes(quotaRemainingBytes)} of ${humanBytes(quotaTotalBytes)} storage. Add capacity below to continue.`,
-    );
-    setTopupOpen(true);
-  }, [stagedFile, stagedPreflight, wouldExceedQuota, quotaRemainingBytes, quotaTotalBytes]);
-
   const startUpload = useCallback(() => {
     if (!stagedFile) return;
     if (dup.kind === "block-same-title") return;
     if (stagedPreflight?.ok && wouldExceedQuota(stagedFile.size)) {
-      setTopupReason(
-        `This ${humanBytes(stagedFile.size)} upload exceeds your remaining ${humanBytes(quotaRemainingBytes)} of ${humanBytes(quotaTotalBytes)} storage. Add capacity below to continue.`,
+      toast.error(
+        `This ${humanBytes(stagedFile.size)} upload exceeds your remaining ${humanBytes(quotaRemainingBytes)} of ${humanBytes(quotaTotalBytes)} storage. Free up space and try again.`,
       );
-      setTopupOpen(true);
       return;
     }
     void runUpload(stagedFile);

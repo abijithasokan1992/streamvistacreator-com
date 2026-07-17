@@ -17,8 +17,8 @@ export default defineTool({
     const sb = userClient(ctx);
     let q = sb
       .from("entity_profiles")
-      .select("id, slug, display_name, kind, status, created_at")
-      .in("kind", ["creator", "content_owner"])
+      .select("id, display_name, kind, verification_status, created_at")
+      .eq("kind", "creator")
       .order("created_at", { ascending: false })
       .limit(clampLimit(input.limit));
     if (input.search) q = q.ilike("display_name", `%${input.search}%`);

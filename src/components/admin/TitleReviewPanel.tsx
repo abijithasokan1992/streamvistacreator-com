@@ -74,6 +74,8 @@ export default function TitleReviewPanel({ titleId, currentStatus, onChanged }: 
   const [masterAsset, setMasterAsset] = useState<MasterAsset>({ url: null, file_name: null });
   const [showRejectInput, setShowRejectInput] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const [showHoldInput, setShowHoldInput] = useState(false);
+  const [holdReason, setHoldReason] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -170,6 +172,22 @@ export default function TitleReviewPanel({ titleId, currentStatus, onChanged }: 
     window.open(masterAsset.url, "_blank", "noopener,noreferrer");
   };
 
+  const holdForReview = async () => {
+    const reason = holdReason.trim();
+    if (!reason) { toast.error("Enter a hold reason (visible to reviewers)"); return; }
+    setBusy("disposition:hold");
+    const { error } = await (supabase as any).rpc("add_internal_review_note", {
+      _title_id: titleId, _body: `[HOLD] ${reason}`,
+    });
+    setBusy(null);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Title placed on hold — reviewers notified");
+    setShowHoldInput(false);
+    setHoldReason("");
+    await load();
+    onChanged?.();
+  };
+
 
   const groups: ChecklistGroup[] = stage === "qc" ? QC_CHECKLIST : LEGAL_CHECKLIST;
 
@@ -252,10 +270,23 @@ export default function TitleReviewPanel({ titleId, currentStatus, onChanged }: 
               <span>Runtime: <span className="text-white/80 font-medium">{titleMeta?.duration_minutes ? `${titleMeta.duration_minutes} min` : "—"}</span></span>
             </div>
           </div>
-          <Badge variant="outline" className="border-white/20 text-white/80 text-[10px]">
-            {currentStatus.replace(/_/g, " ").toUpperCase()}
-          </Badge>
+          <div className="flex items-center gap-2">
+            {masterAsset.url && (
+              <button
+                type="button"
+                onClick={downloadMaster}
+                className="hidden md:inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md border border-white/10 bg-white/[0.03] text-[11px] text-white/70 hover:text-white hover:bg-white/10 transition"
+                title="Download master delivery file"
+              >
+                <Download className="w-3.5 h-3.5" /> Master
+              </button>
+            )}
+            <Badge variant="outline" className="border-white/20 text-white/80 text-[10px]">
+              {currentStatus.replace(/_/g, " ").toUpperCase()}
+            </Badge>
+          </div>
         </header>
+
 
         {/* Video player */}
         <div className="relative aspect-video bg-black grid place-items-center">
@@ -298,15 +329,35 @@ export default function TitleReviewPanel({ titleId, currentStatus, onChanged }: 
           </Button>
           <Button
             size="lg"
-            variant="ghost"
-            onClick={downloadMaster}
-            disabled={!masterAsset.url}
-            className="h-12 font-medium text-white/70 hover:text-white hover:bg-white/5 border border-white/10"
+            variant="outline"
+            onClick={() => setShowHoldInput((v) => !v)}
+            className="h-12 font-semibold border-2 border-amber-500/50 text-amber-200 hover:bg-amber-500/10 hover:text-amber-100"
           >
-            <Download className="w-4 h-4 mr-2" />
-            Download Master File
+            <MinusCircle className="w-4 h-4 mr-2" />
+            Hold for Review
           </Button>
         </div>
+
+        {showHoldInput && (
+          <div className="px-4 md:px-5 pb-4 md:pb-5 -mt-1 flex items-center gap-2 bg-black/60">
+            <Input
+              value={holdReason}
+              onChange={(e) => setHoldReason(e.target.value)}
+              placeholder="Hold reason (visible to reviewers, required)…"
+              className="h-10 bg-white/5 border-amber-500/40 text-white placeholder:text-white/30"
+              onKeyDown={(e) => { if (e.key === "Enter") holdForReview(); }}
+              autoFocus
+            />
+            <Button
+              onClick={holdForReview}
+              disabled={busy === "disposition:hold" || !holdReason.trim()}
+              className="h-10 bg-amber-600 hover:bg-amber-500 text-white"
+            >
+              {busy === "disposition:hold" && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
+              Hold
+            </Button>
+          </div>
+        )}
 
         {showRejectInput && (
           <div className="px-4 md:px-5 pb-4 md:pb-5 -mt-1 flex items-center gap-2 bg-black/60">

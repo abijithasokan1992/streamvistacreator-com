@@ -270,10 +270,21 @@ export default function TitleReviewPanel({ titleId, currentStatus, onChanged }: 
               <span>Runtime: <span className="text-white/80 font-medium">{titleMeta?.duration_minutes ? `${titleMeta.duration_minutes} min` : "—"}</span></span>
             </div>
           </div>
-          <Badge variant="outline" className="border-white/20 text-white/80 text-[10px]">
-            {currentStatus.replace(/_/g, " ").toUpperCase()}
-          </Badge>
-        </header>
+          <div className="flex items-center gap-2">
+            {masterAsset.url && (
+              <button
+                type="button"
+                onClick={downloadMaster}
+                className="hidden md:inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md border border-white/10 bg-white/[0.03] text-[11px] text-white/70 hover:text-white hover:bg-white/10 transition"
+                title="Download master delivery file"
+              >
+                <Download className="w-3.5 h-3.5" /> Master
+              </button>
+            )}
+            <Badge variant="outline" className="border-white/20 text-white/80 text-[10px]">
+              {currentStatus.replace(/_/g, " ").toUpperCase()}
+            </Badge>
+          </div>
 
         {/* Video player */}
         <div className="relative aspect-video bg-black grid place-items-center">

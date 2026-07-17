@@ -71,7 +71,17 @@ export function finishEnvelope(
     decision,
     category: start.category,
   };
-  if (error?.message) env.error = error.message.length > 512 ? error.message.slice(0, 512) + "…" : error.message;
+  if (error?.message) {
+    // Redact secrets before persisting so audit rows never carry JWTs / bearer tokens.
+    const raw = error.message;
+    const redacted = raw
+      .replace(/eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}/g, "[REDACTED_JWT]")
+      .replace(/Bearer\s+[A-Za-z0-9._~+/=-]{20,}/gi, "Bearer [REDACTED]")
+      .replace(/sbp_[A-Za-z0-9]{20,}/g, "[REDACTED_SUPABASE_PAT]")
+      .replace(/sk_(?:live|test)_[A-Za-z0-9]{20,}/g, "[REDACTED_STRIPE_KEY]")
+      .replace(/rzp_(?:live|test)_[A-Za-z0-9]{10,}/g, "[REDACTED_RAZORPAY_KEY]");
+    env.error = redacted.length > 512 ? redacted.slice(0, 512) + "…" : redacted;
+  }
   if (error?.code) env.error_code = error.code;
   return env;
 }

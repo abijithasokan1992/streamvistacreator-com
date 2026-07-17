@@ -55,6 +55,9 @@ const STATUS_OPTIONS: { value: ItemStatus; label: string; icon: any; cls: string
   { value: "not_applicable",  label: "Not applicable",  icon: Info, cls: "text-zinc-400" },
 ];
 
+type TitleMeta = { title: string; genre: string | null; duration_minutes: number | null };
+type MasterAsset = { url: string | null; file_name: string | null };
+
 export default function TitleReviewPanel({ titleId, currentStatus, onChanged }: Props) {
   const [stage, setStage] = useState<ChecklistStage>(currentStatus === "legal_review" ? "legal" : "qc");
   const [rows, setRows] = useState<Record<string, ChecklistRow>>({});
@@ -67,6 +70,10 @@ export default function TitleReviewPanel({ titleId, currentStatus, onChanged }: 
   const [busy, setBusy] = useState<string | null>(null);
   const [internalNote, setInternalNote] = useState("");
   const [sendBackOpen, setSendBackOpen] = useState(false);
+  const [titleMeta, setTitleMeta] = useState<TitleMeta | null>(null);
+  const [masterAsset, setMasterAsset] = useState<MasterAsset>({ url: null, file_name: null });
+  const [showRejectInput, setShowRejectInput] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);

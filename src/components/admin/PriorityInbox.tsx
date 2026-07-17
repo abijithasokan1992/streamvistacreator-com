@@ -122,24 +122,20 @@ export default function PriorityInbox() {
     });
   };
 
-  const markAllRead = () => {
-    // "Mark all read" doubles as a mass P3 flush: mark every currently-visible
-    // item read AND dismiss all P3 (info) rows so historical logs disappear
-    // from the active view in one click.
+  const clearAll = () => {
+    // Global "Clear all": dismiss every currently-visible item (all tones,
+    // including legacy P3 test logs) and mark unread notifications as read.
     const visibleIds = items.map(i => i.id);
+    setDismissedIds(prev => {
+      const next = new Set(prev); visibleIds.forEach(x => next.add(x));
+      persistDismissed(next);
+      return next;
+    });
     setReadIds(prev => {
       const next = new Set(prev); visibleIds.forEach(x => next.add(x));
       try { localStorage.setItem("admin:inbox:read", JSON.stringify([...next])); } catch {}
       return next;
     });
-    const p3Ids = items.filter(i => i.priority === "P3").map(i => i.id);
-    if (p3Ids.length) {
-      setDismissedIds(prev => {
-        const next = new Set(prev); p3Ids.forEach(x => next.add(x));
-        persistDismissed(next);
-        return next;
-      });
-    }
     const nIds = notifications.filter(n => !n.is_read).map(n => n.id);
     if (nIds.length) {
       (supabase as any).from("notifications").update({ is_read: true }).in("id", nIds).then(() => {});

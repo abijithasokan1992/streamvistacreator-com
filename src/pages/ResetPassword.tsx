@@ -100,7 +100,7 @@ export default function ResetPassword() {
       redirectTo: `${getAppOrigin()}/reset-password`,
     });
     setResending(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(mapAuthError(error).message);
     toast.success("Fresh recovery link sent — check your inbox.");
   };
 

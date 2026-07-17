@@ -1,81 +1,82 @@
-## AI Training Content Licensing — Implementation Plan
+# Razorpay Payment Integration Audit (Read-Only)
 
-Scope is large; I'll ship in 4 sequential batches, each independently verifiable. No existing UI, titles, assets, or rights records are altered destructively. All new AI-rights fields default to "not reviewed" / disabled.
+## 1. Is Razorpay integrated?
 
----
+**Yes — Razorpay is the active, primary payment provider** for StreamVista, running in live mode. A parallel Paddle scaffold exists (see §6) but is not the primary path.
 
-### Batch 1 — Public marketing surface + legal corrections (frontend only)
+## 2. Source paths & Edge Functions
 
-**Files touched**
-- `src/components/Hero.tsx` or nearest Rights & Distribution block → add "AI Training & Machine Learning" chip alongside OTT/Broadcasters/FAST/Airlines/Hospitality/Educational.
-- `src/components/home/AIContentLicensingSection.tsx` (new) → "License Content for Responsible AI" band with two CTAs (`I Own Content` → `/onboarding`, `Request an AI Dataset` → `/solutions/ai-content-licensing#request`). Slotted into `Index.tsx` under existing rights section — does NOT replace hero.
-- `src/pages/SolutionsAIContentLicensing.tsx` (new) → 7 sections exactly as specced (Overview → CTAs). Added to `App.tsx` route `/solutions/ai-content-licensing` + `scripts/prerender-routes.ts` for route-specific meta.
-- `src/components/Footer.tsx` → correct legal name to `© 2026 STREAMVISTA (OPC) PRIVATE LIMITED · Ernakulam, Kerala, India.`
-- Audit trust-claim strings across `Footer.tsx`, `Pricing.tsx`, `Hero.tsx`, `Contact.tsx`:
-  - "100% Secure Payments" → "Secure Payment Processing" (Razorpay is wired ⇒ allowed)
-  - "99.9% Uptime SLA" → remove (no contractual SLA)
-  - "DMCA Protected" → "IP & Copyright Compliance"
-  - "Free forever" → "Free plan available"
-  - "256-bit SSL" → remove unless we can confirm HTTPS everywhere (keep only if literally rendered nowhere sensitive; safer to remove)
+**Edge Functions (`supabase/functions/`):**
+- `create-razorpay-order` — order creation for onboarding
+- `create-razorpay-subscription` — recurring subscriptions
+- `verify-razorpay-payment` — client-side handler signature verification
+- `razorpay-webhook` — server webhook (signature + ledger idempotency + side-effects)
+- `razorpay-webhook-retry` — retries side-effects for prior ledger rows
+- `razorpay-admin` — admin ops
+- `check-razorpay-status` — live credential/health probe
+- `generate-test-razorpay-order`, `simulate-razorpay-verify` — test utilities
+- `create-storage-topup` / `verify-storage-topup` — storage add-on flow
+- `create-vault-purchase`, `inaugural-activation-pay`, `fastlink-pay`, `charge-overages`, `admin-billing-proof-url`, `payment-telemetry`
+- `_shared/razorpay-config.ts`, `_shared/payment-logger.ts`, `_shared/payment-trace.ts`, `_shared/billing-cancel.ts`
 
-**Verify:** hero unchanged, new section renders, `/solutions/ai-content-licensing` loads, footer legal name correct, no unsupported claims remain (rg sweep).
+**Frontend:**
+- `src/lib/payments/initializeCheckout.ts` — unified Razorpay checkout opener
+- `src/lib/payments/checkoutHostGuard.ts`, `billingFailure.ts`
+- `src/components/payments/GlobalPaymentProvider.tsx` — app-wide opener
+- `src/lib/paymentTelemetry.ts`
 
----
+**Database (from `<supabase-tables>`):** `billing_orders`, `billing_payment_attempts`, `billing_ledger_events`, `razorpay_config`, `razorpay_audit_log`, `razorpay_webhook_ledger`, `payment_debug_logs`, `payment_traces`, `storage_topups`, `subscriptions`, `invoices`, `manual_invoices`, `billing_manual_payment_submissions`, `fastlink_payments`.
 
-### Batch 2 — Database schema (single migration)
+## 3. Environment variable NAMES (values NOT shown)
 
-New tables (all RLS-on, workspace-scoped, service_role full, authenticated scoped by workspace membership or admin role):
+Razorpay (active): `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` — read from edge-function secrets; `razorpay_config` DB row may hold non-sensitive `key_id`/`mode` for admin display only, per `_shared/razorpay-config.ts`.
 
-1. `title_ai_licensing` (1:1 with `content_titles`)
-   - `title_id` FK, `workspace_id`, `available_for_review` (`yes|no|undecided`, default `undecided`), `rights_holder_authorized` (`yes|no|pending`, default `pending`), `approved_use_cases text[]`, `prohibited_use_cases text[]`, `licence_term`, `territory`, `exclusivity` (`exclusive|non_exclusive|unspecified`), `commercial_model`, `performer_consent_status`, `music_rights_status`, `source_master_available bool`, `resolution`, `frame_rate`, `lip_sync_qc_status`, `audio_languages text[]`, `subtitle_languages text[]`
-   - Review workflow: `review_status` enum (`not_submitted|rights_review_required|technical_review_required|clarification_requested|eligible_for_matching|not_eligible|licensed|suspended`, default `not_submitted`)
-   - `reviewed_by`, `reviewed_at`, `admin_notes` — kept in sibling `title_ai_licensing_admin` table (admin-only RLS) to prevent creator leak (matches pattern used for `commercial_requests_admin`).
+Paddle (scaffold only): `PADDLE_API_KEY`, `PADDLE_ENVIRONMENT`, `PADDLE_LIVE_API_KEY`, `PADDLE_SANDBOX_API_KEY`, `PADDLE_WEBHOOK_SECRET`.
 
-2. `title_ai_licensing_documents` — private references to storage objects (chain-of-title, consent, music rights). Not publicly listable.
+## 4. Payment purposes covered
 
-3. `ai_buyer_requirements` — the buyer intake form (all 19 fields). RLS: insertable by authenticated (public form → allow anon INSERT via edge function), readable admin-only.
+- **Customer collection**: onboarding activation (`create-razorpay-order` → `onboarding_requests`), storage top-ups (`create-storage-topup`), vault purchases (`create-vault-purchase`), FastLink one-off pay (`fastlink-pay`), inaugural activation (`inaugural-activation-pay`), overage charges (`charge-overages`).
+- **Subscription**: `create-razorpay-subscription` → `subscriptions` table.
+- **Invoices**: HTML tax invoices auto-emailed on webhook success; ledger in `invoices` / `manual_invoices`.
+- **Creator payout**: `deal_payouts`, `partner_statements`, `settlements`, `royalty_*` tables exist — but no Razorpay **Payouts / RazorpayX** integration code was found. Payouts are tracked/settled internally, not disbursed via Razorpay API.
 
-4. `ai_licensing_opportunities` — internal buyer opportunity records (SHAIP-style). Admin-only RLS.
+## 5. Controls in place
 
-5. `ai_licensing_matches` — join between `title_ai_licensing` and `ai_licensing_opportunities`. Admin-only.
+- **Order creation** (`create-razorpay-order`): auth-gated (Bearer JWT), ownership check against `onboarding_requests.submitter_user_id`, server-computed authoritative price via `computeFinalPricePaise`, idempotent (returns existing `razorpay_order_id` if set), logs to `payment_debug_logs`.
+- **Signature verification**:
+  - `verify-razorpay-payment`: HMAC-SHA256 over `order_id|payment_id` with `RAZORPAY_KEY_SECRET` via `node:crypto createHmac`.
+  - `razorpay-webhook`: HMAC-SHA256 over raw body with `RAZORPAY_WEBHOOK_SECRET`, compared with `timingSafeEqual`. Invalid signature → 400 and ERROR log.
+- **Webhook idempotency**: `razorpay_webhook_ledger` keyed on `event_id` (from `x-razorpay-event-id`), short-circuit before side-effects; `email_send_log` idempotency keys (`rzp-invoice-buyer-…`, `rzp-invoice-admin-…`, `rzp-orphan-…`) guard email replays.
+- **Refunds**: handled inbound only — `refund.processed` webhook updates `billing_orders.status='refunded'` and `storage_topups.payment_status='refunded'`; refunded rows are never regressed. No outbound refund API call code.
+- **Payouts**: no Razorpay Payouts/RazorpayX code. Internal ledger only.
+- **Audit logging**: `payment_debug_logs` (structured, action_type-keyed), `razorpay_audit_log`, `razorpay_webhook_ledger`, `payment_traces` (via `payment_trace_upsert` RPC), `admin_audit_log`, `mcp_audit_log`.
+- **DB triggers referenced elsewhere**: `trg_enforce_billing_orders_paid_guard` (service_role-only `paid` transition), server-side amount validation on `billing_orders`.
 
-6. `ai_licensing_audit_log` — document access + status changes.
+## 6. Legacy code
 
-**Trigger `enforce_ai_licensing_review_transitions`:** creators can only set `available_for_review` / edit their-own metadata; only admins may change `review_status`, `rights_holder_authorized` to `yes`, or move to `eligible_for_matching` (requires non-null admin doc references).
+- **Django / PythonAnywhere / `films_payment`**: **no references found** anywhere in the repo (`rg` returned zero hits for all three). Classified **absent**.
+- **Paddle**: a full scaffold exists — `server/` Node/Express service, `supabase/functions/paddle-portal`, `supabase/functions/payments-webhook`, `supabase/functions/_shared/paddle.ts`, `_shared/paddleAccess.ts`, `src/lib/paddle.ts`, `src/hooks/usePaddleCheckout.ts`, `paddle_customers` table. Not the production path; some pages (`Refund`, `Terms`, `CheckoutStorage`, `PaymentTestModeBanner`) still reference Paddle-era strings.
 
-**Seed:** insert SHAIP #700 opportunity record with all fields "Pending clarification" as specified. Private (admin RLS).
+## Classification
 
-**Grandfathering:** no data mutation of existing `content_titles`. `title_ai_licensing` rows are lazily created on first save — absence = "AI rights not reviewed".
+| Component | Status |
+|---|---|
+| `create-razorpay-order`, `verify-razorpay-payment`, `razorpay-webhook` (+ retry) | **Current** |
+| `razorpay_webhook_ledger` idempotency, `_shared/razorpay-config.ts`, `_shared/payment-logger.ts`, `_shared/payment-trace.ts` | **Current** |
+| `initializeCheckout.ts` + `GlobalPaymentProvider.tsx` | **Current** |
+| `create-storage-topup` / `verify-storage-topup`, `create-vault-purchase`, `create-razorpay-subscription`, `charge-overages`, `fastlink-pay`, `inaugural-activation-pay` | **Current** |
+| `check-razorpay-status`, `razorpay-admin`, `payment-telemetry`, `admin-billing-proof-url` | **Current** (operational) |
+| `generate-test-razorpay-order`, `simulate-razorpay-verify` | **Current — test utilities**; verify not exposed in production (naming implies dev-only). |
+| Refund handling (inbound webhook only) | **Current but partial** — no outbound refund API. Worth reimplementing if merchant-initiated refunds are required. |
+| Razorpay Payouts / RazorpayX for creator disbursement | **Absent** — internal ledger only. Reimplement if platform is to disburse via Razorpay. |
+| Paddle scaffold (`server/`, `paddle-portal`, `payments-webhook`, `src/lib/paddle.ts`, `usePaddleCheckout.ts`, `paddle_customers`, Paddle env vars) | **Legacy-compatible / unsafe if left half-wired** — no evidence it's driving live traffic, but env vars, `PaymentTestModeBanner`, and public policy pages still reference it. Recommend explicit decision: fully remove, or freeze behind a feature flag. |
+| Django / PythonAnywhere / `films_payment` legacy | **Absent** |
 
----
+## Residual risks (no code changes proposed here)
 
-### Batch 3 — Creator dashboard AI Licensing panel
+- No outbound refund/payout API path — merchant-side refunds are manual via Razorpay Dashboard; reconciliation relies on webhook.
+- Dual-provider surface (Paddle scaffold + Razorpay live) risks operator confusion; policy pages mention Paddle.
+- `simulate-razorpay-verify` and `generate-test-razorpay-order` should be confirmed disabled/guarded in production; not verified in this audit.
+- `razorpay_config` DB row is display-only per code; confirmed secrets are read from env, not DB.
 
-- `src/components/creator/sections/TitleAILicensingPanel.tsx` (new) → collapsible section within existing title editor. Read-only display of admin fields; editable creator fields; upload widget writes to private storage bucket `title-ai-rights-docs` (created via migration).
-- `src/lib/creator/aiLicensingApi.ts` (new) → typed wrappers.
-- Copy: "Submitting content for AI review does not grant AI training rights. StreamVista reviews rights and only qualifies content after written authorization."
-- Never shows a "self-approve" toggle.
-
-**Verify:** existing titles show "AI rights status: Not reviewed"; save persists; unauthorized status transitions rejected by trigger.
-
----
-
-### Batch 4 — Admin review console + public buyer form
-
-- `src/pages/AdminAILicensing.tsx` (new, route `/admin/ai-licensing`, gated by `has_role('admin')`) → queue by `review_status`, per-title review drawer with all admin controls, match to opportunity, record proposal / contract / delivery.
-- `src/pages/SolutionsAIContentLicensing.tsx#request` → embeds `AIBuyerRequirementForm.tsx` (new). Public submit posts to edge function `submit-ai-buyer-requirement` that validates + writes `ai_buyer_requirements` with rate limiting.
-- `supabase/functions/submit-ai-buyer-requirement/index.ts` (new).
-
-**Security guarantees enforced end-to-end:**
-- Private rights docs stored in a bucket with no public list, signed-URL only, admin-only download in Phase 1.
-- Buyers never receive master URLs; matching = internal note only.
-- SHAIP #700 details never rendered on public pages.
-
----
-
-### Deliverables on completion
-- Route/component inventory, migration diff, RLS matrix, list of corrected legal claims, before/after screenshots of home + footer + new AI page (desktop + mobile), and explicit confirmation that no existing title was opted into AI licensing.
-
----
-
-If this plan looks right I'll start with Batch 1 (public page + legal). Reply "go" or edit any batch.
+No secret values were read or emitted. No files modified.

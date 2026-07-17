@@ -135,7 +135,7 @@ export async function listTitles(userId: string): Promise<TitleRow[]> {
     .eq("owner_user_id", userId)
     .order("updated_at", { ascending: false });
   if (error) throw error;
-  return (data ?? []).map((r: any) => ({ ...r, metadata: parseMetadata(r.metadata) }));
+  return (data ?? []).map((r: any) => enrichRow({ ...r, metadata: parseMetadata(r.metadata) }));
 }
 
 /**
@@ -160,7 +160,7 @@ export async function listTitlesPage(
   const all = (data ?? []) as any[];
   const hasMore = all.length > limit;
   const rows = (hasMore ? all.slice(0, limit) : all).map(
-    (r: any) => ({ ...r, metadata: parseMetadata(r.metadata) }),
+    (r: any) => enrichRow({ ...r, metadata: parseMetadata(r.metadata) }),
   );
   return { rows, hasMore };
 }
@@ -173,7 +173,7 @@ export async function getTitle(id: string): Promise<TitleRow | null> {
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
-  return { ...data, metadata: parseMetadata(data.metadata) };
+  return enrichRow({ ...data, metadata: parseMetadata(data.metadata) });
 }
 
 /**

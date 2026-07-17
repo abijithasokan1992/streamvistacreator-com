@@ -83,8 +83,8 @@ export default function Auth() {
 
   // If we arrived with ?next=..., stash it so the callback can honor it after sign-in.
   useEffect(() => {
-    const n = new URLSearchParams(window.location.search).get("next");
-    if (n && n.startsWith("/") && !n.startsWith("//")) {
+    const n = safeNextPath(new URLSearchParams(window.location.search).get("next"));
+    if (n) {
       try { sessionStorage.setItem("sv_consent_next", n); } catch { /* noop */ }
     }
   }, []);
@@ -92,11 +92,11 @@ export default function Auth() {
   // Already signed in → return to consent flow if pending, else role dashboard.
   useEffect(() => {
     if (loading || !user) return;
-    const urlNext = new URLSearchParams(window.location.search).get("next");
+    const urlNext = safeNextPath(new URLSearchParams(window.location.search).get("next"));
     let stashed: string | null = null;
     try { stashed = sessionStorage.getItem("sv_consent_next"); } catch { /* noop */ }
-    const next = urlNext ?? stashed;
-    if (next && next.startsWith("/") && !next.startsWith("//")) {
+    const next = urlNext ?? safeNextPath(stashed);
+    if (next) {
       try { sessionStorage.removeItem("sv_consent_next"); } catch { /* noop */ }
       navigate(next, { replace: true });
       return;

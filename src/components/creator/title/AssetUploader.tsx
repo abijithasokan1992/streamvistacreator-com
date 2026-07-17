@@ -10,7 +10,7 @@ import { useWorkspaces } from "@/hooks/useWorkspaces";
 import { useWorkspaceStorage } from "@/hooks/useWorkspaceStorage";
 import { supabase } from "@/integrations/supabase/client";
 import { AssetPreviewModal, canPreview } from "./AssetPreview";
-import { PremiumStorageTopupModal } from "./PremiumStorageTopupModal";
+
 import { cn } from "@/lib/utils";
 
 // ---------- Allowed-format & size matrix (client-side preflight) ----------

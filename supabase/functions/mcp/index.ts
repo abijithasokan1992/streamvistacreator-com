@@ -1208,7 +1208,7 @@ var list_uploads_default = defineTool31({
     const denied = await authorize(ctx, "list_uploads", input);
     if (denied) return denied;
     const sb = userClient5(ctx);
-    let q = sb.from("ingest_job_items").select("id, job_id, status, filename, mime_type, size_bytes, created_at, updated_at").order("created_at", { ascending: false }).limit(clampLimit(input.limit));
+    let q = sb.from("ingest_job_items").select("id, job_id, status, file_name, mime_guess, size_bytes, created_at, updated_at").order("created_at", { ascending: false }).limit(clampLimit(input.limit));
     if (input.status) q = q.eq("status", input.status);
     if (input.since) q = q.gte("created_at", input.since);
     const { data, error } = await withTimeout(q, "list_uploads");

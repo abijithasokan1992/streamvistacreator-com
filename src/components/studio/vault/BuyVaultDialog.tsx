@@ -201,6 +201,36 @@ export default function BuyVaultDialog({ product, open, onOpenChange, onPurchase
         p_extra: { topup_id: d.topupId } as any,
       }).then(() => {}, () => {});
 
+      // Radix pointer-events leak fix — Razorpay is portaled to <body> which
+      // Radix Dialog locks with `pointer-events: none`. Force it back to
+      // `auto` on <html>+<body> while checkout is open so the phone / email /
+      // card fields are actually clickable, and restore on close.
+      let priorBodyPE = "";
+      let priorHtmlPE = "";
+      const setCheckoutOpen = (open: boolean) => {
+        try {
+          if (open) {
+            document.body.setAttribute("data-checkout-open", "true");
+            priorBodyPE = document.body.style.pointerEvents;
+            priorHtmlPE = document.documentElement.style.pointerEvents;
+            document.body.style.pointerEvents = "auto";
+            document.documentElement.style.pointerEvents = "auto";
+          } else {
+            document.body.removeAttribute("data-checkout-open");
+            document.body.style.pointerEvents = priorBodyPE;
+            document.documentElement.style.pointerEvents = priorHtmlPE;
+          }
+        } catch { /* noop */ }
+      };
+      const clearCheckoutOpen = () => setCheckoutOpen(false);
+
+      // Only forward prefill fields that actually have a value — empty
+      // strings cause Razorpay to lock the field, making the phone input
+      // un-editable when the user has no stored contact on their profile.
+      const rzpPrefill: Record<string, string> = {};
+      const emailClean = typeof user.email === "string" ? user.email.trim() : "";
+      if (emailClean) rzpPrefill.email = emailClean;
+
       const rzp = new window.Razorpay!({
         key: d.keyId,
         order_id: d.orderId,
@@ -208,7 +238,7 @@ export default function BuyVaultDialog({ product, open, onOpenChange, onPurchase
         currency: "INR",
         name: "StreamVista Studio Vault",
         description: `${product.name} · ${effectiveTb} TB · ${months}mo`,
-        prefill: { email: user.email },
+        prefill: rzpPrefill,
         theme: { color: "#a855f7" },
         handler: async (resp: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
           // Forensic trace: payment success callback fired on client.

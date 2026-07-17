@@ -30,10 +30,13 @@ const STATUS_TONE: Record<string, string> = {
 export default function StatementsSection() {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const { active } = useWorkspaces();
   const [topups, setTopups] = useState<Topup[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [showEvents, setShowEvents] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<"billing" | "revenue">("billing");
+  const [titleIds, setTitleIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (!user) return;

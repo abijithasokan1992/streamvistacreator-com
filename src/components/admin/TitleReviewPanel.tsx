@@ -510,6 +510,9 @@ export default function TitleReviewPanel({ titleId, currentStatus, onChanged }: 
           </ul>
         </div>
       </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
 
       <SendBackDialog
         open={sendBackOpen}

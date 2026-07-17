@@ -94,7 +94,7 @@ describe("title_canonical_backfill.sql — hardening", () => {
       // Any occurrence of (metadata->>'runtime_minutes')::int must be
       // textually preceded by a CASE / WHEN on the same value. We check by
       // splitting into statements and requiring CASE ... WHEN ... ~ ... THEN ... ::int.
-      const statements = sql.split(/;\s*(?:\r?\n|$)/);
+      const statements = sqlNoComments.split(/;\s*(?:\r?\n|$)/);
       for (const stmt of statements) {
         const casts = stmt.match(/\(\s*metadata->>'runtime_minutes'\s*\)::int/gi) ?? [];
         if (casts.length === 0) continue;

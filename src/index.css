@@ -592,3 +592,203 @@ body[data-checkout-open="true"] main {
   filter: blur(2px);
   transition: opacity 150ms ease, filter 150ms ease;
 }
+
+/* =============================================================
+   Cinematic public-page layer — scoped, additive, dark-only.
+   Applied via `.public-cinematic` root class on the <main>
+   wrapper of public routes. Zero effect on dashboards/admin.
+   ============================================================= */
+
+.public-cinematic {
+  --sv-ink: 225 40% 3%;
+  --sv-ink-elevated: 225 30% 6%;
+  --sv-gold: 42 90% 60%;
+  --sv-gold-soft: 38 80% 66%;
+  --sv-off-white: 40 22% 94%;
+  --sv-rule: 42 40% 45%;
+}
+
+.public-cinematic .font-serif-display {
+  font-family: 'DM Serif Display', 'Big Shoulders Display', Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  font-feature-settings: "kern", "liga", "dlig";
+}
+
+/* Amber/gold accent color helper — always resolves to warm gold on public
+   pages regardless of the underlying theme's accent hue. */
+.public-cinematic .text-cine-gold { color: hsl(var(--sv-gold)); }
+.public-cinematic .bg-cine-gold   { background-color: hsl(var(--sv-gold)); }
+.public-cinematic .border-cine-gold { border-color: hsl(var(--sv-gold) / 0.5); }
+
+/* Letterbox hero — subtle top/bottom cinematic bars using pseudo-elements.
+   Bars are visual only; they never intercept clicks or scroll. */
+.public-cinematic .hero-letterbox {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse 90% 55% at 50% 15%, hsl(var(--sv-gold) / 0.10), transparent 60%),
+    radial-gradient(ellipse 70% 45% at 15% 85%, hsl(220 60% 20% / 0.35), transparent 65%),
+    linear-gradient(180deg, hsl(var(--sv-ink)) 0%, hsl(var(--sv-ink-elevated)) 100%);
+}
+.public-cinematic .hero-letterbox::before,
+.public-cinematic .hero-letterbox::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0;
+  height: clamp(24px, 4.5vh, 56px);
+  background: hsl(var(--sv-ink) / 0.95);
+  pointer-events: none;
+  z-index: 2;
+}
+.public-cinematic .hero-letterbox::before { top: 0; }
+.public-cinematic .hero-letterbox::after  { bottom: 0; }
+
+/* Soft projector light-leak overlay — very low opacity, GPU-cheap. */
+.public-cinematic .light-leak {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background:
+    radial-gradient(1200px 400px at 85% 5%, hsl(var(--sv-gold) / 0.12), transparent 60%),
+    radial-gradient(900px 300px at 10% 95%, hsl(var(--sv-gold-soft) / 0.08), transparent 65%);
+  mix-blend-mode: screen;
+  opacity: 0.9;
+}
+
+/* Scene divider — thin gold rule that fades at edges, used between sections. */
+.public-cinematic .scene-divider {
+  position: relative;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    hsl(var(--sv-rule) / 0.55) 50%,
+    transparent 100%);
+  margin: 0 auto;
+  width: min(70%, 720px);
+}
+
+/* Film-strip card — thin bordered frame with scene-number motif.
+   The perforations use radial gradients on the ::before/::after so no
+   images are downloaded. */
+.public-cinematic .film-frame {
+  position: relative;
+  border: 1px solid hsl(var(--sv-gold) / 0.28);
+  background: linear-gradient(160deg,
+    hsl(var(--sv-ink-elevated) / 0.9),
+    hsl(var(--sv-ink) / 0.85));
+  border-radius: 6px;
+  transition: transform .3s ease, border-color .3s ease, box-shadow .3s ease;
+}
+.public-cinematic .film-frame:hover {
+  border-color: hsl(var(--sv-gold) / 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 20px 40px -20px hsl(var(--sv-gold) / 0.35);
+}
+.public-cinematic .film-frame::before,
+.public-cinematic .film-frame::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  height: 6px;
+  background-image: radial-gradient(circle, hsl(var(--sv-ink)) 2px, transparent 2.5px);
+  background-size: 14px 6px;
+  background-repeat: repeat-x;
+  opacity: 0.7;
+  pointer-events: none;
+}
+.public-cinematic .film-frame::before { top: -3px; }
+.public-cinematic .film-frame::after  { bottom: -3px; }
+
+/* Scene marker — a small monospace "01" badge for step numbering. */
+.public-cinematic .scene-marker {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: hsl(var(--sv-gold));
+  font-size: 0.72rem;
+  text-transform: uppercase;
+}
+
+/* Elegant tag chip with soft hover glow (dark cards only). */
+.public-cinematic .chip-glow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid hsl(var(--sv-gold) / 0.25);
+  background: hsl(var(--sv-ink-elevated) / 0.6);
+  color: hsl(var(--sv-off-white) / 0.92);
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  transition: border-color .35s ease, box-shadow .35s ease, background .35s ease;
+}
+.public-cinematic .chip-glow:hover {
+  border-color: hsl(var(--sv-gold) / 0.6);
+  background: hsl(var(--sv-ink-elevated) / 0.85);
+  box-shadow: 0 0 22px -6px hsl(var(--sv-gold) / 0.45);
+}
+
+/* Muted marquee row for partners. Pauses on hover and on focus-within. */
+.public-cinematic .marquee-track {
+  display: flex;
+  gap: 2.5rem;
+  width: max-content;
+  animation: sv-marquee 42s linear infinite;
+}
+.public-cinematic .marquee-mask {
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent);
+}
+.public-cinematic .marquee-mask:hover .marquee-track,
+.public-cinematic .marquee-mask:focus-within .marquee-track {
+  animation-play-state: paused;
+}
+@keyframes sv-marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
+}
+
+/* Cool-tone card treatment for the AI/ML band — deliberately distinct
+   from the warm gold used elsewhere on public pages. */
+.public-cinematic .ai-band {
+  background:
+    radial-gradient(ellipse 60% 50% at 15% 20%, hsl(200 90% 40% / 0.14), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 85% 80%, hsl(220 70% 45% / 0.10), transparent 65%),
+    linear-gradient(180deg, hsl(220 40% 6%), hsl(215 40% 4%));
+  border-top: 1px solid hsl(200 40% 30% / 0.4);
+  border-bottom: 1px solid hsl(200 40% 30% / 0.4);
+}
+.public-cinematic .ai-accent { color: hsl(198 88% 66%); }
+
+/* Scroll reveal — used by <Reveal /> in the public shell. */
+.sv-reveal {
+  opacity: 0;
+  transform: translate3d(0, 14px, 0);
+  transition: opacity 700ms cubic-bezier(0.2, 0.7, 0.2, 1),
+              transform 700ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  will-change: opacity, transform;
+}
+.sv-reveal--in {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .sv-reveal { opacity: 1; transform: none; transition: none; }
+  .public-cinematic .marquee-track { animation: none; }
+}
+
+/* Cinematic H1 helper — pairs the serif display face with the existing
+   letter-spacing / weight rules used across public heroes. */
+.public-cinematic .h-cine {
+  font-family: 'DM Serif Display', 'Big Shoulders Display', Georgia, serif;
+  font-weight: 400;
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+}
+

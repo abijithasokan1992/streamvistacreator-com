@@ -485,8 +485,11 @@ export function AssetUploader({
           {!stagedPreflight.ok && (
             <p className="text-rose-400 text-sm">{(stagedPreflight as { ok: false; reason: string }).reason}</p>
           )}
-          {/* Oversize uploads now trigger the centralized PremiumStorageTopupModal
-              instead of an inline chip — see the effect above. */}
+          {stagedPreflight.ok && wouldExceedQuota(stagedFile.size) && (
+            <p className="text-rose-400 text-sm">
+              This upload exceeds your remaining storage quota. Free up space and try again.
+            </p>
+          )}
           {stagedPreflight.ok && !wouldExceedQuota(stagedFile.size) && dup.kind === "checking" && (
             <p className="text-sm text-muted-foreground inline-flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Running preflight fingerprint…</p>
           )}

@@ -12,7 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Loader2, ShieldCheck, Scale, AlertOctagon, UserCog, Lock, Unlock,
   CheckCircle2, XCircle, MinusCircle, Info, MessageSquareWarning, NotebookPen,
+  PlayCircle, Download, ChevronDown, Film,
 } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { toast } from "sonner";
 import {
   QC_CHECKLIST, LEGAL_CHECKLIST, SEND_BACK_REASONS, REASON_GROUP_LABELS,

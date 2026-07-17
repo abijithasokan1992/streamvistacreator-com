@@ -123,13 +123,23 @@ export default function PriorityInbox() {
   };
 
   const markAllRead = () => {
-    const ids = items.map(i => i.id);
+    // "Mark all read" doubles as a mass P3 flush: mark every currently-visible
+    // item read AND dismiss all P3 (info) rows so historical logs disappear
+    // from the active view in one click.
+    const visibleIds = items.map(i => i.id);
     setReadIds(prev => {
-      const next = new Set(prev); ids.forEach(x => next.add(x));
+      const next = new Set(prev); visibleIds.forEach(x => next.add(x));
       try { localStorage.setItem("admin:inbox:read", JSON.stringify([...next])); } catch {}
       return next;
     });
-    // Best-effort: mark notifications table rows read.
+    const p3Ids = items.filter(i => i.priority === "P3").map(i => i.id);
+    if (p3Ids.length) {
+      setDismissedIds(prev => {
+        const next = new Set(prev); p3Ids.forEach(x => next.add(x));
+        persistDismissed(next);
+        return next;
+      });
+    }
     const nIds = notifications.filter(n => !n.is_read).map(n => n.id);
     if (nIds.length) {
       (supabase as any).from("notifications").update({ is_read: true }).in("id", nIds).then(() => {});
@@ -148,8 +158,9 @@ export default function PriorityInbox() {
       isRead: !!n.is_read,
       onOpen: () => jump("users", "support"),
     }));
-    return [...fromSignals, ...fromNotif];
-  }, [signals, notifications]);
+    // Apply dismissal here so both filter groupings and unread counts respect it.
+    return [...fromSignals, ...fromNotif].filter(i => !dismissedIds.has(i.id));
+  }, [signals, notifications, dismissedIds]);
 
   const filtered = useMemo(() => {
     if (filter === "all") return items;

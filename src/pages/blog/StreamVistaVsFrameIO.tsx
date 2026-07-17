@@ -17,8 +17,8 @@ export default function StreamVistaVsFrameIO() {
   return (
     <main className="min-h-dvh bg-background text-foreground">
       <Seo
-        title="StreamVista vs Frame.io for Camera to Cloud — The Best Frame.io Alternative"
-        description="Looking for a Frame.io alternative? Compare Camera to Cloud (C2C) workflows, pricing, rights management, and data residency. StreamVista is the Indian-made intake-to-deal platform built for cinema operators."
+        title="StreamVista vs Frame.io — Best C2C Alternative"
+        description="Compare StreamVista and Frame.io for Camera to Cloud: pricing, rights management, data residency and Indian cinema workflows."
         path={URL_PATH}
         type="article"
         jsonLd={[

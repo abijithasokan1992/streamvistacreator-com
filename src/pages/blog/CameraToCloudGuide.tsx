@@ -11,8 +11,8 @@ export default function CameraToCloudGuide() {
   return (
     <main className="min-h-dvh bg-background text-foreground">
       <Seo
-        title="Camera to Cloud for Indie Filmmakers — StreamVista"
-        description="A practical Camera to Cloud (C2C) workflow guide for indie filmmakers and small crews — compare hardware encoders, mobile rigs, NDI and software encoders, and ship dailies to the cloud cheaply."
+        title="Camera to Cloud Guide for Indie Filmmakers | StreamVista"
+        description="Practical Camera to Cloud (C2C) workflow guide for indie filmmakers: encoders, mobile rigs, NDI and cost-effective dailies delivery."
         path={URL_PATH}
         type="article"
         image="/og/camera-to-cloud-guide.jpg"

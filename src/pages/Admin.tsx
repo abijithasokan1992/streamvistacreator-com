@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useBackGuard } from "@/hooks/useBackGuard";
 import AdminCommandBar, { type AdminDepartment } from "@/components/admin/AdminCommandBar";
 import DeptSubNav, { type DeptSubSection } from "@/components/admin/DeptSubNav";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Kept (MVP 8 buckets)
 import PlatformOverview from "@/components/admin/PlatformOverview";

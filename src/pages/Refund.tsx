@@ -5,13 +5,13 @@ export default function Refund() {
   return (
     <>
       <Seo
-        title="Refund & Cancellation Policy — StreamVista Cloud X"
-        description="StreamVista Cloud X refund and cancellation policy, including the 30-day money-back guarantee for new paid subscriptions and how Paddle handles refunds as Merchant of Record."
+        title="Refund & Cancellation Policy — StreamVista Creator"
+        description="StreamVista Creator refund and cancellation policy, including the 30-day money-back guarantee for new paid subscriptions and how Paddle handles refunds as Merchant of Record."
         path="/refund"
       />
       <LegalLayout title="Refund & Cancellation Policy" eyebrow="Legal · Billing">
         <LegalSection title="1. Overview">
-          StreamVista Cloud X is operated by <strong className="text-foreground">Crayons Pictures</strong>{" "}
+          StreamVista Creator is operated by <strong className="text-foreground">Crayons Pictures</strong>{" "}
           (StreamVista OPC Pvt Ltd). Card-based subscriptions and one-time purchases on the
           platform are sold and processed by{" "}
           <strong className="text-foreground">Paddle.com Market Ltd ("Paddle")</strong> as our

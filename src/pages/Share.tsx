@@ -101,15 +101,15 @@ const Share = () => {
         title={info ? `${info.filename} · Shared on StreamVista` : "Shared file · StreamVista"}
         description={
           info
-            ? `Securely view or download "${info.filename}" (${fmtSize(info.size_bytes)}) shared via StreamVista Cloud X — encrypted in transit and access-logged.`
-            : "Securely view or download a file shared via StreamVista Cloud X — encrypted in transit, access-logged, and protected by expiring share links."
+            ? `Securely view or download "${info.filename}" (${fmtSize(info.size_bytes)}) shared via StreamVista Creator — encrypted in transit and access-logged.`
+            : "Securely view or download a file shared via StreamVista Creator — encrypted in transit, access-logged, and protected by expiring share links."
         }
         path={`/s/${token ?? ""}`}
       />
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_bottom,_hsl(var(--primary)/0.15),_transparent_60%)]" />
       <header className="px-4 sm:px-8 py-4 flex items-center justify-between border-b border-white/5 backdrop-blur-xl bg-background/40 sticky top-0 z-10">
         <Link to="/" className="flex items-center gap-2 font-display font-bold">
-          <Shield className="h-4 w-4 text-accent" /> Cloud X
+          <Shield className="h-4 w-4 text-accent" /> StreamVista Creator
         </Link>
         {info && (
           <div className="text-xs text-muted-foreground hidden sm:flex items-center gap-3">

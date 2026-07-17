@@ -96,7 +96,7 @@ export default function OAuthConsent() {
           </h1>
         </div>
         <p className="text-sm text-muted-foreground">
-          This lets <strong className="text-foreground">{clientName}</strong> use StreamVista Cloud X on your behalf.
+          This lets <strong className="text-foreground">{clientName}</strong> use StreamVista Creator on your behalf.
           It will only see data you can see, and only through the tools this app exposes.
         </p>
         {Array.isArray(scopes) && scopes.length > 0 && (

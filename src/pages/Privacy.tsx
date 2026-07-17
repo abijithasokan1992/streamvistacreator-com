@@ -4,17 +4,17 @@ import { Seo } from "@/components/Seo";
 export default function Privacy() {
   return (
     <>
-      <Seo title="Privacy Policy — StreamVista Cloud X" description="How StreamVista collects, uses and protects your account, billing and content data on StreamVista Cloud X." path="/privacy" />
+      <Seo title="Privacy Policy — StreamVista Creator" description="How StreamVista collects, uses and protects your account, billing and content data on StreamVista Creator." path="/privacy" />
     <LegalLayout title="Privacy Policy" eyebrow="Legal · Privacy">
 
       <LegalSection title="1. Who We Are & Controller Status">
-        StreamVista Cloud X is owned by <strong className="text-foreground">StreamVista OPC Pvt Ltd</strong>{" "}
+        StreamVista Creator is owned by <strong className="text-foreground">StreamVista OPC Pvt Ltd</strong>{" "}
         and operated by <strong className="text-foreground">Crayons Pictures</strong>, with operations
         headquartered in Ernakulam, Kerala, India. Crayons Pictures acts as the{" "}
         <strong className="text-foreground">data controller</strong> for personal data collected through
         the Service and determines the purposes and means of its processing. This Privacy Policy
         explains how we collect, use, and protect your information. This page is maintained by
-        Crayons Pictures to answer common privacy questions about StreamVista Cloud X.
+        Crayons Pictures to answer common privacy questions about StreamVista Creator.
       </LegalSection>
 
       <LegalSection title="2. Information We Collect">

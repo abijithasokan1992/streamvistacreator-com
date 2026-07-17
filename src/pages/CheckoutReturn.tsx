@@ -16,7 +16,7 @@ export default function CheckoutReturn() {
         <h1 className="font-display text-3xl font-bold mb-3">Payment received</h1>
         <p className="text-muted-foreground mb-6">
           {sessionId
-            ? "Your Cloud X workspace will be provisioned shortly. We'll be in touch within 24 hours."
+            ? "Your StreamVista Creator workspace will be provisioned shortly. We'll be in touch within 24 hours."
             : "No session info was returned, but if your card was charged your account is being prepared."}
         </p>
         <Link to="/dashboard" className="inline-flex items-center px-6 h-11 rounded-md bg-gradient-primary text-primary-foreground font-semibold">

@@ -329,15 +329,35 @@ export default function TitleReviewPanel({ titleId, currentStatus, onChanged }: 
           </Button>
           <Button
             size="lg"
-            variant="ghost"
-            onClick={downloadMaster}
-            disabled={!masterAsset.url}
-            className="h-12 font-medium text-white/70 hover:text-white hover:bg-white/5 border border-white/10"
+            variant="outline"
+            onClick={() => setShowHoldInput((v) => !v)}
+            className="h-12 font-semibold border-2 border-amber-500/50 text-amber-200 hover:bg-amber-500/10 hover:text-amber-100"
           >
-            <Download className="w-4 h-4 mr-2" />
-            Download Master File
+            <MinusCircle className="w-4 h-4 mr-2" />
+            Hold for Review
           </Button>
         </div>
+
+        {showHoldInput && (
+          <div className="px-4 md:px-5 pb-4 md:pb-5 -mt-1 flex items-center gap-2 bg-black/60">
+            <Input
+              value={holdReason}
+              onChange={(e) => setHoldReason(e.target.value)}
+              placeholder="Hold reason (visible to reviewers, required)…"
+              className="h-10 bg-white/5 border-amber-500/40 text-white placeholder:text-white/30"
+              onKeyDown={(e) => { if (e.key === "Enter") holdForReview(); }}
+              autoFocus
+            />
+            <Button
+              onClick={holdForReview}
+              disabled={busy === "disposition:hold" || !holdReason.trim()}
+              className="h-10 bg-amber-600 hover:bg-amber-500 text-white"
+            >
+              {busy === "disposition:hold" && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
+              Hold
+            </Button>
+          </div>
+        )}
 
         {showRejectInput && (
           <div className="px-4 md:px-5 pb-4 md:pb-5 -mt-1 flex items-center gap-2 bg-black/60">

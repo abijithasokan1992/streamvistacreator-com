@@ -15,6 +15,37 @@
  * Callers should treat this as the *only* client-side path to Razorpay.
  * The Title Workspace modal is preserved verbatim — it delegates to this
  * helper internally.
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * MANDATORY CALLBACK CONTRACT — read before integrating.
+ * ─────────────────────────────────────────────────────────────────────────
+ * Every caller MUST wire ALL THREE of `onSuccess`, `onDismiss`, and `onError`.
+ * These callbacks are non-overlapping and must be handled independently:
+ *
+ *   • onSuccess — fires exactly once after `verify-*` returns a valid receipt.
+ *   • onError   — fires on create/verify/HTTP/signature failures. Does NOT
+ *                 fire when the user closes the Razorpay sheet.
+ *   • onDismiss — fires when the user manually closes the Razorpay modal,
+ *                 INCLUDING when they close it after a `payment.failed`
+ *                 event. Razorpay does not re-emit failures through
+ *                 `onError` in that case — if you skip `onDismiss`, a
+ *                 failed-then-dismissed payment leaves the UI silent
+ *                 (no toast, no lifecycle reset, spinner may linger).
+ *
+ * Minimum required wiring:
+ *
+ *   initializeCheckout({
+ *     …,
+ *     onSuccess: (r) => { … },
+ *     onError:   (e) => { toast.error(e.message); resetSubmissionLock(); },
+ *     onDismiss: ()  => { toast.dismiss(); resetSubmissionLock(); },
+ *   });
+ *
+ * Do NOT rely on `onError` alone. Do NOT collapse `onDismiss` into
+ * `onError` — the modal-close path has no error object. Callers that
+ * use `useModalSubmissionLifecycle` MUST call its reset from BOTH
+ * `onError` and `onDismiss` to prevent stuck submission locks.
+ * ─────────────────────────────────────────────────────────────────────────
  */
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";

@@ -228,15 +228,30 @@ function LegalPanel() {
         onReload={reload}
       />
 
-      <div className="rounded-xl border-2 border-white/20 bg-gradient-to-br from-amber-950/80 via-amber-900/70 to-yellow-900/60 shadow-lg shadow-amber-950/40 p-4 flex items-start gap-3">
-        <div className="h-8 w-8 rounded-lg bg-white/10 border border-white/20 grid place-items-center shrink-0">
-          <Lock className="w-4 h-4 text-white" />
+      {/* Semantic Obsidian Dark — Gold (#D4AF37) + Soft White accents */}
+      <div
+        className="relative rounded-xl p-4 flex items-start gap-3 overflow-hidden"
+        style={{
+          background: "linear-gradient(135deg, #0a0a0f 0%, #14141c 55%, #08080c 100%)",
+          border: "1px solid rgba(212,175,55,0.35)",
+          boxShadow: "0 10px 40px -12px rgba(0,0,0,0.8), inset 0 1px 0 rgba(212,175,55,0.15)",
+        }}
+      >
+        <div
+          className="h-9 w-9 rounded-lg grid place-items-center shrink-0"
+          style={{
+            background: "linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05))",
+            border: "1px solid rgba(212,175,55,0.4)",
+          }}
+        >
+          <Lock className="w-4 h-4" style={{ color: "#D4AF37" }} />
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-bold text-white leading-snug tracking-tight">
-            Immutable Rule Attached: Non-Sublicensable / No Right to Deliver to Next Person.
+          <p className="text-sm font-bold leading-snug tracking-tight" style={{ color: "#FFFFFF" }}>
+            <span style={{ color: "#D4AF37" }}>Immutable Rule Attached:</span>{" "}
+            Non-Sublicensable / No Right to Deliver to Next Person.
           </p>
-          <p className="text-[11px] text-white/70 mt-1">
+          <p className="text-[11px] mt-1" style={{ color: "rgba(255,255,255,0.7)" }}>
             Master rule enforced at the database layer by Platform Super Admin.
           </p>
         </div>

@@ -103,6 +103,7 @@ export default function StatementsSection() {
       <CreatorInvoices /></>
       )}
 
+      {tab === "billing" && (<>
       {/* Storage allocation history — read-only record of past changes */}
       <section className="rounded-2xl border border-border/50 bg-card p-5">
         <div className="flex items-center justify-between mb-2 gap-3 flex-wrap">

@@ -1254,7 +1254,7 @@ var list_failed_emails_default = defineTool33({
     if (denied) return denied;
     const sb = userClient5(ctx);
     const { data, error } = await withTimeout(
-      sb.from("email_send_log").select("id, message_id, template, status, error, created_at, updated_at").in("status", ["failed", "failed_permanent"]).order("updated_at", { ascending: false }).limit(clampLimit(input.limit)),
+      sb.from("email_send_log").select("id, message_id, template_name, status, error_message, created_at").in("status", ["failed", "failed_permanent", "dlq", "bounced"]).order("created_at", { ascending: false }).limit(clampLimit(input.limit)),
       "list_failed_emails"
     );
     if (error) return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };

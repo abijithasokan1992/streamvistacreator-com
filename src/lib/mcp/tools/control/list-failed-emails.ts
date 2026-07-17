@@ -15,9 +15,9 @@ export default defineTool({
     const { data, error } = await withTimeout(
       sb
         .from("email_send_log")
-        .select("id, message_id, template, status, error, created_at, updated_at")
-        .in("status", ["failed", "failed_permanent"])
-        .order("updated_at", { ascending: false })
+        .select("id, message_id, template_name, status, error_message, created_at")
+        .in("status", ["failed", "failed_permanent", "dlq", "bounced"])
+        .order("created_at", { ascending: false })
         .limit(clampLimit(input.limit)),
       "list_failed_emails",
     );

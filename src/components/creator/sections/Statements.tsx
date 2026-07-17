@@ -2,11 +2,14 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useWorkspaces } from "@/hooks/useWorkspaces";
 import CreatorInvoices from "@/components/creator/CreatorInvoices";
 import UpgradeCreatorPlanCard from "@/components/creator/UpgradeCreatorPlanCard";
 import CreatorInauguralActivationCard from "@/components/creator/CreatorInauguralActivationCard";
+import CreatorRevenueSummary from "@/components/creator/CreatorRevenueSummary";
 import { HardDrive, ChevronDown, ChevronUp, LifeBuoy } from "lucide-react";
 import { Link } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
 type Topup = {
   id: string; tb_added: number | null; amount_inr: number | null;

@@ -204,7 +204,7 @@ export default function PriorityInbox() {
             onClick={clearAll}
             className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
           >
-            <CheckCheck className="w-3 h-3" /> Mark all read
+            <CheckCheck className="w-3 h-3" /> Clear all
           </button>
         </div>
 

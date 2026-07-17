@@ -175,10 +175,31 @@ export async function initializeCheckout(opts: InitializeCheckoutOptions): Promi
     // Visual-only lock: toggle a body attribute so `index.css` can dim/blur
     // the app underneath. Never uses `pointer-events: none` — if Razorpay
     // ever fails to mount, users are not trapped.
+    //
+    // IMPORTANT — Radix pointer-events leak fix:
+    // When Razorpay is opened from inside a Radix Dialog / Sheet /
+    // AlertDialog, Radix writes `pointer-events: none` inline on
+    // `document.body` for the duration of the modal. Razorpay's checkout
+    // iframe is portaled to `document.body`, so it inherits that lock —
+    // the phone / email / card fields render but every click is swallowed.
+    // We snapshot the prior inline value, force pointer-events back to
+    // `auto` on <html> and <body> while checkout is open, and restore the
+    // original on close so Radix's own cleanup still works.
+    let priorBodyPE = "";
+    let priorHtmlPE = "";
     const setCheckoutOpen = (open: boolean) => {
       try {
-        if (open) document.body.setAttribute("data-checkout-open", "true");
-        else document.body.removeAttribute("data-checkout-open");
+        if (open) {
+          document.body.setAttribute("data-checkout-open", "true");
+          priorBodyPE = document.body.style.pointerEvents;
+          priorHtmlPE = document.documentElement.style.pointerEvents;
+          document.body.style.pointerEvents = "auto";
+          document.documentElement.style.pointerEvents = "auto";
+        } else {
+          document.body.removeAttribute("data-checkout-open");
+          document.body.style.pointerEvents = priorBodyPE;
+          document.documentElement.style.pointerEvents = priorHtmlPE;
+        }
       } catch { /* SSR / detached DOM — noop */ }
     };
     const clearCheckoutOpen = () => setCheckoutOpen(false);

@@ -58,7 +58,7 @@ describe("title_canonical_backfill.sql — hardening", () => {
     // references jsonb_typeof(...) = 'array' OR is a write-side guard that
     // includes the same check.
     const statements = sqlNoComments.split(/;\s*(?:\r?\n|$)/);
-    const genreStatements = statements.filter((s) => /metadata->('|")?genres/i.test(s));
+    const genreStatements = statements.filter((s) => /(?:\w+\.)?metadata->('|")?genres/i.test(s));
 
     it("has at least three statements that touch metadata.genres", () => {
       expect(genreStatements.length).toBeGreaterThanOrEqual(3);

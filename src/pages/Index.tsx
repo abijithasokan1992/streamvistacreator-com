@@ -20,7 +20,7 @@ const Index = () => {
   if (user) return <Navigate to={dashboardForRole(role)} replace />;
 
   return (
-    <main className="min-h-dvh home-serif public-cinematic">
+    <main className="min-h-dvh home-serif">
       <Seo
         title="StreamVista — Film Sales, Content Licensing & OTT Distribution Network"
         description="Connect films, series and screen content with verified OTT platforms, broadcasters, satellite TV, FAST channels, distributors and streaming services worldwide. StreamVista supports rights-ready catalogues, buyer discovery and professional delivery workflows."

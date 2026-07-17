@@ -103,11 +103,11 @@ export default function Partners() {
     <>
       <Seo
         path="/partners"
-        title="Partner Ecosystem — StreamVista Creator"
+        title="Partner Ecosystem — StreamVista Cloud X"
         description="Distribution and licensing partners in the StreamVista network — OTT, broadcasters, FAST, TVOD, AVOD, SVOD, educational, airline and rights-buyer categories."
       />
       <Navbar />
-      <main className="pt-24 public-cinematic">
+      <main className="pt-24">
         {/* 1. Hero */}
         <section className="container py-16 md:py-24">
           <div className="flex items-center gap-3 mb-5">

@@ -370,7 +370,7 @@ export default function C2CSetupManual() {
 
     <div className="min-h-dvh bg-background text-foreground">
       <Seo
-        title="Camera-to-Cloud (C2C) Setup Manual — StreamVista Creator"
+        title="Camera-to-Cloud (C2C) Setup Manual — StreamVista Cloud X"
         description="Step-by-step setup guides for hardware, mobile, NDI/IP and virtual encoders to ingest media directly into StreamVista's secure cloud."
         path="/c2c-setup"
         type="article"

@@ -80,7 +80,7 @@ export default class ErrorBoundary extends Component<Props, State> {
             <AlertTriangle className="h-8 w-8 text-destructive" />
           </div>
           <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.2em] text-primary/80">StreamVista Creator</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-primary/80">StreamVista Cloud X</p>
             <h1 className="text-2xl font-semibold tracking-tight">Something interrupted the stream</h1>
             <p className="text-sm text-muted-foreground">
               An unexpected error occurred while rendering this view. Your data is safe.

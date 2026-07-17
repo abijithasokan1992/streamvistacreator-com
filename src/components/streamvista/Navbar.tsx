@@ -5,18 +5,14 @@ import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useAuth, dashboardForRole } from "@/hooks/useAuth";
 
-import { BRAND_SECONDARY } from "@/lib/brand";
-
 /**
- * Brand hierarchy: STREAMVISTA is heavy/primary; the {BRAND_SECONDARY}
- * chip is muted and set in warm gold to read as an award-badge sub-mark.
- * CloudX is a separate company and must not appear on public pages.
+ * Brand hierarchy: STREAMVISTA is heavy/primary; "Cloud X" is muted secondary.
  */
 const Wordmark = ({ size = "sm" }: { size?: "sm" | "md" }) => (
   <div className={`font-display font-black tracking-tight uppercase leading-none ${size === "md" ? "text-lg" : "text-sm md:text-base"}`}>
     <span className="text-foreground">STREAMVISTA</span>
-    <span className="ml-1.5 text-accent/85 font-semibold text-[0.72em] tracking-[0.28em] align-middle">
-      {BRAND_SECONDARY.toUpperCase()}
+    <span className="ml-1.5 text-muted-foreground/70 font-semibold text-[0.72em] tracking-[0.2em] align-middle">
+      CLOUD X
     </span>
   </div>
 );

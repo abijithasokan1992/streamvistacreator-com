@@ -127,7 +127,7 @@ export const DMCAForm = () => {
         <Textarea value={form.copyright_work} onChange={e => set("copyright_work", e.target.value)} maxLength={2000} rows={2} required />
       </Field>
 
-      <Field label="URL / asset reference of infringing material on StreamVista *">
+      <Field label="URL / asset reference of infringing material on StreamVista Cloud X *">
         <Input value={form.infringing_url} onChange={e => set("infringing_url", e.target.value)} maxLength={1000} required placeholder="https://..." />
       </Field>
 

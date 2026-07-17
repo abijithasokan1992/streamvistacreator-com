@@ -160,7 +160,7 @@ export default function ResetPassword() {
       order_id: data.orderId,
       amount: data.amount,
       currency: data.currency,
-      name: "StreamVista Creator",
+      name: "StreamVista Cloud X",
       description: "Fast Link to Dashboard",
       prefill: { email },
       theme: { color: "#3D7BFD" },

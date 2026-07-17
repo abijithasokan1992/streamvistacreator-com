@@ -184,10 +184,10 @@ export default function Contact() {
   const activeTopic = TOPICS.find((t) => t.value === form.topic) ?? TOPICS[0];
 
   return (
-    <main className="min-h-dvh bg-background text-foreground public-cinematic">
+    <main className="min-h-dvh bg-background text-foreground">
       <Seo
-        title="Contact StreamVista Creator"
-        description="Reach the StreamVista team for partnerships, buyer access, licensing, billing, or product support."
+        title="Contact StreamVista Cloud X"
+        description="Reach the StreamVista Cloud X team for partnerships, buyer access, licensing, billing, or product support."
         path="/contact"
       />
 

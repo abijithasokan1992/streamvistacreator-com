@@ -21,14 +21,14 @@ export const LegalLayout = ({ eyebrow = "Legal · Policy", title, updated, child
   const HeadingTag = headingAs;
 
   return (
-    <main className="min-h-dvh public-cinematic">
+    <main className="min-h-dvh">
       <Navbar />
       <div className="container max-w-3xl pt-28 pb-20">
         <Link
           to="/"
           className="text-xs uppercase tracking-[0.3em] text-muted-foreground hover:text-foreground"
         >
-          ← Back to StreamVista
+          ← Back to StreamVista Cloud X
         </Link>
 
         <header className="mt-8 mb-10">

@@ -143,7 +143,7 @@ export const MFILimitedEdition = () => {
               <span className="gradient-text">Film Industry.</span>
             </h2>
             <p className="text-muted-foreground text-base md:text-lg leading-relaxed max-w-md mb-8">
-              We're handing 500 free StreamVista Creator workspaces to verified MFI creators.
+              We're handing 500 free Cloud X workspaces to verified MFI creators.
               Pay-as-you-go after onboarding · ₹1000 refundable security deposit ·
               no card needed to apply.
             </p>
@@ -191,7 +191,7 @@ export const MFILimitedEdition = () => {
               <div className="text-center py-10">
                 <div className="font-display text-2xl font-bold mb-2">All 500 seats claimed</div>
                 <p className="text-muted-foreground text-sm">
-                  Standard StreamVista Creator plans below remain open with full GST invoicing.
+                  Standard Cloud X plans below remain open with full GST invoicing.
                 </p>
               </div>
             ) : (

@@ -4,11 +4,11 @@ import { Seo } from "@/components/Seo";
 export default function Terms() {
   return (
     <>
-      <Seo title="Terms of Service — StreamVista Creator" description="Terms governing your use of the StreamVista Creator platform, operated by Crayons Pictures under StreamVista OPC Pvt Ltd." path="/terms" />
+      <Seo title="Terms of Service — StreamVista Cloud X" description="Terms governing your use of the StreamVista Cloud X platform, operated by Crayons Pictures under StreamVista OPC Pvt Ltd." path="/terms" />
     <LegalLayout title="Terms of Service" eyebrow="Legal · Terms">
 
       <LegalSection title="1. Acceptance of Terms">
-        These Terms of Service ("Terms") govern your access to and use of the StreamVista Creator
+        These Terms of Service ("Terms") govern your access to and use of the StreamVista Cloud X
         platform ("Service"), owned by <strong className="text-foreground">StreamVista OPC Pvt Ltd</strong> and
         operated by <strong className="text-foreground">Crayons Pictures</strong>. By creating an account or
         using the Service you agree to be bound by these Terms.
@@ -54,7 +54,7 @@ export default function Terms() {
       </LegalSection>
 
       <LegalSection title="5A. Payment Processing & Merchant of Record">
-        Card-based orders and subscriptions on StreamVista Creator are processed by{" "}
+        Card-based orders and subscriptions on StreamVista Cloud X are processed by{" "}
         <strong className="text-foreground">Paddle.com Market Ltd ("Paddle")</strong>, which acts
         as our authorised reseller and{" "}
         <strong className="text-foreground">Merchant of Record (MoR)</strong>. This means Paddle is

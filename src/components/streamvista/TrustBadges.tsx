@@ -1,11 +1,10 @@
 import { Lock, CreditCard, Cloud, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { BRAND_NAME } from "@/lib/brand";
 
 const BADGES = [
   { icon: Lock, label: "HTTPS Encrypted", emoji: "🔒" },
   { icon: CreditCard, label: "Secure Payment Processing", emoji: "💳" },
-  { icon: Cloud, label: BRAND_NAME, emoji: "🎬" },
+  { icon: Cloud, label: "StreamVista Cloud X", emoji: "☁️" },
   { icon: ShieldCheck, label: "IP & Copyright Compliance", emoji: "🛡️" },
 ];
 

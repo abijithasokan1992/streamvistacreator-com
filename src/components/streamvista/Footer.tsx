@@ -2,7 +2,6 @@ import type React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Lock, Cloud, ShieldCheck, type LucideIcon } from "lucide-react";
 import { CrayonsNetwork } from "./CrayonsNetwork";
-import { BRAND_NAME, BRAND_SECONDARY, BRAND_TAGLINE_LEAD, BRAND_LEGAL_ENTITY } from "@/lib/brand";
 
 const PRODUCT_LINKS = [
   { to: "/#platform", label: "Solutions" },
@@ -33,23 +32,21 @@ const TRUST_LINKS = [
 const BrandChipLabel = () => (
   <span className="inline-flex items-baseline gap-1">
     <span className="text-foreground/90 font-semibold tracking-[0.18em]">STREAMVISTA</span>
-    <span className="text-accent/80 tracking-[0.22em] text-[0.85em]">
-      {BRAND_SECONDARY.toUpperCase()}
-    </span>
+    <span className="text-muted-foreground/70 tracking-[0.22em] text-[0.85em]">CLOUD&nbsp;X</span>
   </span>
 );
 
 const TRUST: { icon: LucideIcon; label: string; content?: React.ReactNode }[] = [
   { icon: Lock, label: "HTTPS Encrypted" },
-  { icon: Cloud, label: BRAND_NAME, content: <BrandChipLabel /> },
+  { icon: Cloud, label: "StreamVista Cloud X", content: <BrandChipLabel /> },
   { icon: ShieldCheck, label: "IP & Copyright Compliance" },
 ];
 
 const Wordmark = () => (
   <div className="font-display font-black tracking-tight text-base uppercase leading-none inline-flex items-baseline gap-2">
     <span className="text-foreground">STREAMVISTA</span>
-    <span className="text-accent/80 font-semibold text-[0.72em] tracking-[0.28em]">
-      {BRAND_SECONDARY.toUpperCase()}
+    <span className="text-muted-foreground/70 font-semibold text-[0.72em] tracking-[0.2em]">
+      CLOUD&nbsp;X
     </span>
   </div>
 );
@@ -70,7 +67,7 @@ export const Footer = () => {
               <Wordmark />
             </Link>
             <p className="mt-3 text-[11px] text-muted-foreground leading-relaxed max-w-[240px]">
-              {BRAND_TAGLINE_LEAD}
+              One Secure Cloud for Films, Series &amp; Shows
             </p>
             {isHome && (
               <ul className="mt-5 flex flex-wrap items-center gap-1.5">
@@ -100,7 +97,7 @@ export const Footer = () => {
         <div className="mt-10 pt-6 border-t border-border/40 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <p className="text-[11px] leading-relaxed text-muted-foreground">
             © {new Date().getFullYear()}{" "}
-            <strong className="text-foreground/80">{BRAND_LEGAL_ENTITY}</strong>
+            <strong className="text-foreground/80">STREAMVISTA (OPC) PRIVATE LIMITED</strong>
             <span className="opacity-60"> · Ernakulam, Kerala, India.</span>
           </p>
         </div>

@@ -21,7 +21,7 @@ const NotFound = () => {
       <header className="relative z-10 border-b border-border/40 backdrop-blur-xl bg-background/40">
         <div className="container flex items-center h-16">
           <Link to="/" className="font-display font-black tracking-tight text-sm md:text-base uppercase leading-none">
-            STREAMVISTA <span className="gradient-text">CREATOR</span>
+            STREAMVISTA <span className="gradient-text">CLOUD X</span>
           </Link>
         </div>
       </header>

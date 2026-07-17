@@ -16,6 +16,38 @@ import {
   TitleMetadataSchema,
   REQUIRES_CENSOR,
 } from "./titleSchema";
+import { syncCanonicalAndMetadata } from "./titleNormalization";
+
+/**
+ * Enrich a raw content_titles row so that `metadata` carries the canonical
+ * column values when the metadata JSON is blank. This lets the wizard
+ * resume from a persisted draft that only has canonical columns filled
+ * (e.g. rows created before the metadata-sync change or via bulk import)
+ * — step-completion checks then see the values without a DB migration.
+ */
+function enrichRow<T extends {
+  title?: string | null;
+  synopsis?: string | null;
+  language?: string | null;
+  genre?: string | null;
+  duration_minutes?: number | null;
+  metadata: TitleMetadata;
+}>(row: T): T {
+  const { metadata } = syncCanonicalAndMetadata(
+    {
+      canonical: {
+        title: row.title ?? null,
+        synopsis: row.synopsis ?? null,
+        language: row.language ?? null,
+        genre: row.genre ?? null,
+        duration_minutes: row.duration_minutes ?? null,
+      },
+      metadata: row.metadata,
+    },
+    { metadata: row.metadata },
+  );
+  return { ...row, metadata: { ...row.metadata, ...metadata } as TitleMetadata };
+}
 
 export type ContentStatus =
   | "draft"

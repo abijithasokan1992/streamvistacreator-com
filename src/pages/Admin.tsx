@@ -34,6 +34,7 @@ import AdminInvoices from "@/components/admin/AdminInvoices";
 import ManualInvoiceConsole from "@/components/admin/ManualInvoiceConsole";
 import BillingOperations from "@/components/admin/BillingOperations";
 import AdminFinanceConsole from "@/components/admin/AdminFinanceConsole";
+import RevenueStatementImport from "@/components/admin/RevenueStatementImport";
 import RazorpayOpsBanner from "@/components/admin/RazorpayOpsBanner";
 import RazorpayAuditLog from "@/components/admin/RazorpayAuditLog";
 import PaymentTrace from "@/components/admin/PaymentTrace";

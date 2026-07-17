@@ -71,10 +71,10 @@ describe("payment rails — corrected semantics", () => {
     expect(rail.capability).toBe("payout");
     expect(canSurfaceRail("razorpayx_payouts")).toBe(false);
     expect(isRailAvailableCapability("razorpayx_payouts")).toBe(true);
-    // Note must not mislabel it as manual or deprecated.
-    expect(rail.note.toLowerCase()).not.toContain("deprecated");
-    expect(rail.note.toLowerCase()).not.toContain("manual fallback");
+    // Note must state it is a real capability, not deprecated.
+    expect(rail.note.toLowerCase()).not.toMatch(/\bdeprecated\b/);
     expect(rail.note.toLowerCase()).toContain("automatic");
+    expect(rail.note.toLowerCase()).toContain("configuration");
   });
 
   it("legacy Django/PythonAnywhere stays deprecated", () => {

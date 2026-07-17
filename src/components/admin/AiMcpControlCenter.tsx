@@ -1,25 +1,23 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Brain, ShieldAlert, ShieldCheck, RefreshCw, Power, Activity, Lock, Unlock } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Brain, ShieldAlert, ShieldCheck, RefreshCw, Power, Activity, Lock, Unlock, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import {
   DEFAULT_MCP_PERMISSIONS,
   type McpPermissions,
   invalidateMcpPermissionsCache,
 } from "@/lib/mcpClient";
-
-interface AuditRow {
-  id: string;
-  actor_email: string | null;
-  action: string;
-  resource: string | null;
-  permission_key: string | null;
-  allowed: boolean;
-  details: Record<string, unknown>;
-  created_at: string;
-}
+import {
+  normalizeAuditRow,
+  filterAudit,
+  type NormalizedAudit,
+  type RawAuditRow,
+  type AuditFilter,
+  UNKNOWN,
+} from "@/lib/mcp/auditNormalize";
 
 const TOGGLES: Array<{
   key: keyof Omit<McpPermissions, "master_kill_switch">;

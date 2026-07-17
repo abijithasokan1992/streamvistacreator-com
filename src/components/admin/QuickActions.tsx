@@ -1,44 +1,60 @@
 import { useState } from "react";
-import { CheckCircle2, Film, Scale, Inbox, KeyRound, HardDrive, Cloud, Send, Wrench, Loader2 } from "lucide-react";
+import {
+  CheckCircle2, Film, Scale, Inbox, KeyRound, HardDrive, Cloud, Send,
+  Wrench, Loader2, ArrowRight,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Persistent Quick Actions strip.
+ * Admin Quick Actions.
  *
- * Individual "Retry Upload", "Retry Email" and "Assign Reviewer" buttons have
- * been consolidated into a single primary "Execute Global Maintenance" action
- * that calls the `handle_global_platform_maintenance` RPC. The RPC atomically
- * requeues failed uploads, requeues failed emails, and nudges legal-review
- * titles that have no assigned reviewer.
+ * Layout:
+ *  1. Primary Actions row — highly visible hero buttons for the two most
+ *     used editorial flows: Approve Title and Publish Title. These deep-link
+ *     into the Content Review workflow with the correct tab pre-selected.
+ *  2. Global Maintenance action — atomic RPC to requeue failed uploads &
+ *     emails and reset stalled legal reviews.
+ *  3. Secondary quick-jumps — remaining ops shortcuts.
  */
 
 type Action = {
   id: string;
   label: string;
+  desc?: string;
   icon: JSX.Element;
   dept: string;
   section: string;
-  tone?: "default" | "accent" | "danger";
 };
 
-const ACTIONS: Action[] = [
-  { id: "approve-title",   label: "Approve Title",   icon: <CheckCircle2 className="w-3.5 h-3.5" />, dept: "content",  section: "approvals",   tone: "accent" },
-  { id: "qc-queue",        label: "QC Queue",        icon: <Film className="w-3.5 h-3.5" />,         dept: "content",  section: "qc-queue" },
-  { id: "legal-queue",     label: "Legal Queue",     icon: <Scale className="w-3.5 h-3.5" />,        dept: "content",  section: "legal-queue" },
-  { id: "publish-title",   label: "Publish Title",   icon: <Send className="w-3.5 h-3.5" />,         dept: "content",  section: "catalog-ops" },
-  { id: "reply-ticket",    label: "Reply Ticket",    icon: <Inbox className="w-3.5 h-3.5" />,        dept: "users",    section: "support" },
-  { id: "reset-password",  label: "Reset Password",  icon: <KeyRound className="w-3.5 h-3.5" />,     dept: "users",    section: "users" },
-  { id: "increase-storage",label: "Increase Storage",icon: <HardDrive className="w-3.5 h-3.5" />,    dept: "cloud",    section: "storage" },
-  { id: "restart-backup",  label: "Restart Backup",  icon: <Cloud className="w-3.5 h-3.5" />,        dept: "cloud",    section: "advanced" },
+const PRIMARY_ACTIONS: Action[] = [
+  {
+    id: "approve-title",
+    label: "Approve Title",
+    desc: "Review submitted titles and clear them for distribution.",
+    icon: <CheckCircle2 className="w-5 h-5" />,
+    dept: "content",
+    section: "approvals",
+  },
+  {
+    id: "publish-title",
+    label: "Publish Title",
+    desc: "Mark approved titles Ready for Distribution.",
+    icon: <Send className="w-5 h-5" />,
+    dept: "content",
+    section: "publish",
+  },
 ];
 
-const TONE_CLS: Record<NonNullable<Action["tone"]>, string> = {
-  default: "border-border/50 bg-secondary/30 hover:bg-secondary/60 text-foreground",
-  accent:  "border-accent/40 bg-accent/10 hover:bg-accent/20 text-foreground",
-  danger:  "border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-foreground",
-};
+const SECONDARY_ACTIONS: Action[] = [
+  { id: "qc-queue",         label: "QC Queue",         icon: <Film className="w-3.5 h-3.5" />,      dept: "content", section: "qc-queue" },
+  { id: "legal-queue",      label: "Legal Queue",      icon: <Scale className="w-3.5 h-3.5" />,     dept: "content", section: "legal-queue" },
+  { id: "reply-ticket",     label: "Reply Ticket",     icon: <Inbox className="w-3.5 h-3.5" />,     dept: "users",   section: "support" },
+  { id: "reset-password",   label: "Reset Password",   icon: <KeyRound className="w-3.5 h-3.5" />,  dept: "users",   section: "users" },
+  { id: "increase-storage", label: "Increase Storage", icon: <HardDrive className="w-3.5 h-3.5" />, dept: "cloud",   section: "storage" },
+  { id: "restart-backup",   label: "Restart Backup",   icon: <Cloud className="w-3.5 h-3.5" />,     dept: "cloud",   section: "advanced" },
+];
 
 type MaintenanceResult = {
   uploads_requeued?: number;
@@ -53,24 +69,16 @@ export default function QuickActions({ onJump }: { onJump: (dept: string, sectio
     if (isProcessing) return;
     setIsProcessing(true);
     try {
-      // Verify we have an authenticated session before invoking the RPC so
-      // any failure is unambiguously attributable (auth vs. RLS vs. RPC).
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) {
-        toast.error("Authentication error", {
-          description: `Could not read session: ${sessionError.message}`,
-        });
+        toast.error("Authentication error", { description: `Could not read session: ${sessionError.message}` });
         return;
       }
       if (!sessionData.session) {
-        toast.error("Not signed in", {
-          description: "Sign in as an admin before running global maintenance.",
-        });
+        toast.error("Not signed in", { description: "Sign in as an admin before running global maintenance." });
         return;
       }
 
-      // Invoke via the standard authenticated client. The user's JWT is
-      // attached automatically; the RPC's has_role() gate enforces admin-only.
       const { data, error } = await (supabase.rpc as unknown as (
         fn: "handle_global_platform_maintenance",
       ) => Promise<{
@@ -81,16 +89,9 @@ export default function QuickActions({ onJump }: { onJump: (dept: string, sectio
       if (error) {
         const code = error.code ? ` [${error.code}]` : "";
         const hint = error.hint ? ` — ${error.hint}` : "";
-        toast.error(`Global maintenance failed${code}`, {
-          description: `${error.message}${hint}`,
-        });
+        toast.error(`Global maintenance failed${code}`, { description: `${error.message}${hint}` });
         // eslint-disable-next-line no-console
-        console.error("[handle_global_platform_maintenance]", {
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-        });
+        console.error("[handle_global_platform_maintenance]", error);
         return;
       }
 
@@ -103,53 +104,86 @@ export default function QuickActions({ onJump }: { onJump: (dept: string, sectio
       });
     } catch (e) {
       const err = e as { code?: string; message?: string };
-      const code = err?.code ? ` [${err.code}]` : "";
-      toast.error(`Global maintenance failed${code}`, {
-        description: err?.message ?? "Unknown error",
-      });
+      toast.error("Global maintenance failed", { description: err?.message ?? "Unknown error" });
     } finally {
       setIsProcessing(false);
     }
   };
 
   return (
-    <div className="mb-6 rounded-2xl border border-border/50 bg-secondary/10 px-3 py-2.5">
-      <div className="flex items-center gap-2 flex-wrap">
-        <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground pr-2 border-r border-border/40">
-          Quick Actions
-        </div>
-
-        <button
-          onClick={runGlobalMaintenance}
-          disabled={isProcessing}
-          className={cn(
-            "inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border text-[11px] font-semibold transition-colors",
-            "border-accent/60 bg-accent/20 hover:bg-accent/30 text-foreground",
-            "disabled:opacity-60 disabled:cursor-not-allowed",
-          )}
-          title="Requeue failed uploads & emails, and reset unassigned legal reviews"
-        >
-          {isProcessing
-            ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            : <Wrench className="w-3.5 h-3.5" />}
-          <span>{isProcessing ? "Running maintenance…" : "Execute Global Maintenance"}</span>
-        </button>
-
-        {ACTIONS.map(a => (
+    <section className="mb-6 space-y-3">
+      {/* Primary Actions — hero buttons */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {PRIMARY_ACTIONS.map((a) => (
           <button
             key={a.id}
+            type="button"
             onClick={() => onJump(a.dept, a.section)}
             className={cn(
-              "inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border text-[11px] font-medium transition-colors",
-              TONE_CLS[a.tone ?? "default"],
+              "group relative overflow-hidden text-left rounded-2xl border p-4 sm:p-5 transition-all",
+              "border-accent/40 bg-gradient-to-br from-accent/15 via-accent/5 to-transparent",
+              "hover:border-accent/70 hover:from-accent/25 hover:shadow-[0_8px_32px_-12px_hsl(var(--accent)/0.55)]",
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60",
             )}
-            title={a.label}
+            data-testid={`quick-action-${a.id}`}
           >
-            {a.icon}
-            <span>{a.label}</span>
+            <div className="flex items-start gap-3">
+              <div className="rounded-xl bg-accent/25 text-accent p-2.5 ring-1 ring-accent/40 group-hover:bg-accent/35 transition-colors">
+                {a.icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm sm:text-base font-semibold text-foreground">{a.label}</span>
+                  <ArrowRight className="w-4 h-4 text-accent opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                </div>
+                {a.desc && (
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{a.desc}</p>
+                )}
+              </div>
+            </div>
           </button>
         ))}
       </div>
-    </div>
+
+      {/* Secondary strip */}
+      <div className="rounded-2xl border border-border/50 bg-secondary/10 px-3 py-2.5">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground pr-2 border-r border-border/40">
+            Quick Actions
+          </div>
+
+          <button
+            onClick={runGlobalMaintenance}
+            disabled={isProcessing}
+            className={cn(
+              "inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border text-[11px] font-semibold transition-colors",
+              "border-accent/60 bg-accent/20 hover:bg-accent/30 text-foreground",
+              "disabled:opacity-60 disabled:cursor-not-allowed",
+            )}
+            title="Requeue failed uploads & emails, and reset unassigned legal reviews"
+          >
+            {isProcessing
+              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              : <Wrench className="w-3.5 h-3.5" />}
+            <span>{isProcessing ? "Running maintenance…" : "Execute Global Maintenance"}</span>
+          </button>
+
+          {SECONDARY_ACTIONS.map((a) => (
+            <button
+              key={a.id}
+              onClick={() => onJump(a.dept, a.section)}
+              className={cn(
+                "inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border text-[11px] font-medium transition-colors",
+                "border-border/50 bg-secondary/30 hover:bg-secondary/60 text-foreground",
+              )}
+              title={a.label}
+            >
+              {a.icon}
+              <span>{a.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }

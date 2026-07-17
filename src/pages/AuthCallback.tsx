@@ -4,6 +4,8 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, dashboardForRole, pickPrimaryRole, type AppRole } from "@/hooks/useAuth";
+import { safeNextPath } from "@/lib/auth/safeNext";
+import { mapAuthError } from "@/lib/auth/authErrors";
 
 /**
  * Magic-link / OAuth callback target.

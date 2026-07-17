@@ -141,6 +141,7 @@ export function normalizeStatement(
 
     const model = partial.model && isCommercialModel(partial.model) ? partial.model : ctx.defaultModel ?? null;
 
+    // Per-row DB key (unique — includes lineIndex to allow legitimate repeats).
     const rowKey = rowIdempotencyKey({
       statementKey,
       titleExternalRef: partial.titleExternalRef ?? null,
@@ -151,10 +152,22 @@ export function normalizeStatement(
       grossAmountMinor: gross,
       lineIndex: idx,
     });
-    if (seenRowKeys.has(rowKey)) {
+    // Content fingerprint (no lineIndex) used to flag suspiciously identical
+    // rows inside the same statement for admin review.
+    const contentKey = rowIdempotencyKey({
+      statementKey,
+      titleExternalRef: partial.titleExternalRef ?? null,
+      occurredOn: partial.occurredOn ?? null,
+      channel: partial.channel ?? null,
+      territory: partial.territory ?? null,
+      units: partial.units ?? null,
+      grossAmountMinor: gross,
+      lineIndex: null,
+    });
+    if (seenRowKeys.has(contentKey)) {
       errors.push("duplicate_row_in_statement");
     } else {
-      seenRowKeys.add(rowKey);
+      seenRowKeys.add(contentKey);
     }
 
     const row: NormalizedRevenueRow = {

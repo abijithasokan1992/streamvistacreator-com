@@ -257,6 +257,7 @@ export default function BuyVaultDialog({ product, open, onOpenChange, onPurchase
         },
         modal: {
           ondismiss: () => {
+            clearCheckoutOpen();
             const cur = stepRef.current;
             if (
               cur === "payment_pending_verification" ||

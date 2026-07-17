@@ -108,9 +108,10 @@ export default function AuthCallback() {
         const primary = pickPrimaryRole(roles);
 
         // If we came here mid-way through an OAuth consent flow, return there.
-        let consentNext: string | null = null;
-        try { consentNext = sessionStorage.getItem("sv_consent_next"); } catch { /* noop */ }
-        if (consentNext && consentNext.startsWith("/") && !consentNext.startsWith("//")) {
+        let consentNextRaw: string | null = null;
+        try { consentNextRaw = sessionStorage.getItem("sv_consent_next"); } catch { /* noop */ }
+        const consentNext = safeNextPath(consentNextRaw);
+        if (consentNext) {
           try { sessionStorage.removeItem("sv_consent_next"); } catch { /* noop */ }
           navigate(consentNext, { replace: true });
           return;

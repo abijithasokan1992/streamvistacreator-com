@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { dashboardForRole, type AppRole } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { getAppOrigin } from "@/lib/site";
+import { mapAuthError } from "@/lib/auth/authErrors";
 import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
 import crayonsLogo from "@/assets/partner-crayons-pictures.png";
 

@@ -64,8 +64,11 @@ describe("C) DIT pending storage migration", () => {
   );
 
   it("provisions a PRIVATE bucket (never public)", () => {
-    expect(sql).toMatch(/dit-ingest-screenshots[\s\S]*false/);
-    expect(/public\s*=\s*true/i.test(sql)).toBe(false);
+    expect(sql).toMatch(/dit-ingest-screenshots[\s\S]*?\bfalse\b/);
+    // No live SQL statement should set public=true (comments describing what
+    // NOT to do are fine).
+    const nonComment = sql.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
+    expect(/public\s*=\s*true/i.test(nonComment)).toBe(false);
   });
 
   it("is idempotent — ON CONFLICT + DROP POLICY IF EXISTS", () => {

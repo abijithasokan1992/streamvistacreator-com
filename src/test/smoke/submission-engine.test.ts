@@ -20,12 +20,13 @@ const partial = {
   duration_minutes: 120,
   kind: "film",
   synopsis: "x".repeat(200),
+  genre: "Drama",
+  crew: { director: "A. Director" },
 };
 
 const full = {
   ...partial,
-  rights: { owner_name: "Studio X", territory: "IN" },
-  crew: { director: "A. Director" },
+  rights: { owner_name: "Studio X", territory: "IN", commercial_model: "SVOD" },
   assets: { master_uploaded: true },
   legal: { accepted_terms: true },
 };
@@ -46,7 +47,7 @@ describe("submission engine — deterministic, zero AI", () => {
   it("pickNextAction points at the first incomplete step", () => {
     const next = pickNextAction(partial);
     expect(next.submissionReady).toBe(false);
-    expect(next.stepId).toBe("rights");
+    expect(next.stepId).toBe("rights_business");
     expect(next.missingFieldKeys).toContain("rights.owner_name");
   });
 
@@ -57,10 +58,11 @@ describe("submission engine — deterministic, zero AI", () => {
   });
 
   it("validateStep flags a short synopsis with the minLength key", () => {
-    const step = getStep("synopsis")!;
-    const result = validateStep({ synopsis: "too short" }, step);
+    const step = getStep("story")!;
+    const result = validateStep({ synopsis: "too short", genre: "Drama", crew: { director: "D" } }, step);
     expect(result.complete).toBe(false);
-    expect(result.missing[0].errorKey).toBe("submission.validation.minLength");
+    const synopsisIssue = result.missing.find((m) => m.key === "synopsis");
+    expect(synopsisIssue?.errorKey).toBe("submission.validation.minLength");
   });
 
   it("validateAll returns one result per step", () => {

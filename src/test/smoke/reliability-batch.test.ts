@@ -86,6 +86,19 @@ describe("C) DIT pending storage migration", () => {
   });
 });
 
+describe("C2) DIT degraded evidence truthfulness", () => {
+  const src = readFn("src/components/studio/dit/DitIngestProtocol.tsx");
+
+  it("never marks a failed screenshot upload as uploaded", () => {
+    expect(src).toMatch(/screenshot_uploaded:\s*!uploadDegraded/);
+  });
+
+  it("does not promise durable local retention for an in-memory File", () => {
+    expect(src).not.toMatch(/Screenshot retained locally/);
+    expect(src).toMatch(/not uploaded; keep the original file and re-attach/);
+  });
+});
+
 describe("D) retry-failed-emails: sweep vs audit split", () => {
   const src = readFn("supabase/functions/retry-failed-emails/index.ts");
 

@@ -14,12 +14,16 @@ const denyCopy: Record<string, { title: string; body: string }> = {
   expired: { title: "Screening access expired", body: "This invite is no longer valid. Please contact StreamVista for a fresh screener." },
   revoked: { title: "Screening access revoked", body: "Access to this screener has been revoked by StreamVista." },
   exhausted: { title: "View limit reached", body: "This invite has reached its maximum number of views." },
+  locked: { title: "Verification complete", body: "This one-time B2B screener is now locked. Ask StreamVista only if a verified admin reset is required." },
 };
 
 export default function ScreeningRoom() {
   const { token = "" } = useParams();
   const [state, setState] = useState<{ loading: boolean; data: ResolveResult | null; error: string | null }>({ loading: true, data: null, error: null });
   const [accepted, setAccepted] = useState(false);
+  const [playbackUrl, setPlaybackUrl] = useState<string | null>(null);
+  const [starting, setStarting] = useState(false);
+  const [verificationComplete, setVerificationComplete] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const lastPingRef = useRef<number>(0);
 
@@ -30,7 +34,14 @@ export default function ScreeningRoom() {
         const { data, error } = await (supabase.rpc as any)("screening_resolve", { _token: token });
         if (cancelled) return;
         if (error) setState({ loading: false, data: null, error: error.message });
-        else setState({ loading: false, data: data as ResolveResult, error: null });
+        else {
+          const resolved = data as ResolveResult;
+          setState({ loading: false, data: resolved, error: null });
+          if (resolved.ok && resolved.playback_url) {
+            setAccepted(true);
+            setPlaybackUrl(resolved.playback_url);
+          }
+        }
       } catch (e: any) {
         setState({ loading: false, data: null, error: String(e?.message ?? e) });
       }
@@ -57,7 +68,11 @@ export default function ScreeningRoom() {
         log("playback_progress", pct);
       }
     };
-    const onEnded = () => log("playback_completed", 100);
+    const onEnded = () => {
+      log("playback_completed", 100);
+      setVerificationComplete(true);
+      setPlaybackUrl(null);
+    };
     v.addEventListener("play", onPlay);
     v.addEventListener("timeupdate", onTime);
     v.addEventListener("ended", onEnded);
@@ -67,6 +82,24 @@ export default function ScreeningRoom() {
       v.removeEventListener("ended", onEnded);
     };
   }, [state.data, token]);
+
+  const beginVerification = async () => {
+    setStarting(true);
+    try {
+      const { data, error } = await (supabase.rpc as any)("screening_begin_verification", { _token: token });
+      if (error) throw error;
+      if (!data?.ok) {
+        setState({ loading: false, data: { ok: false, reason: data?.reason || "locked" }, error: null });
+        return;
+      }
+      setAccepted(true);
+      setPlaybackUrl(data.playback_url ?? null);
+    } catch (e: any) {
+      setState((prev) => ({ ...prev, error: String(e?.message ?? e) }));
+    } finally {
+      setStarting(false);
+    }
+  };
 
   if (state.loading) {
     return (
@@ -92,7 +125,7 @@ export default function ScreeningRoom() {
     );
   }
 
-  const { title, invite, asset, playback_url } = data;
+  const { title, invite, asset } = data;
   const watermarkText = [
     invite.invite_email,
     invite.buyer_org_name,
@@ -136,19 +169,24 @@ export default function ScreeningRoom() {
               <li>Rights remain with StreamVista and the rights holder.</li>
             </ul>
             <button
-              onClick={() => setAccepted(true)}
-              className="px-4 py-2 rounded bg-white text-black text-sm font-medium hover:bg-white/90"
+              onClick={beginVerification}
+              disabled={starting}
+              className="px-4 py-2 rounded bg-white text-black text-sm font-medium hover:bg-white/90 disabled:opacity-60"
             >
-              I understand — open screener
+              {starting ? "Starting secure verification…" : "I understand — start one-time verification"}
             </button>
           </section>
         ) : (
           <section className="space-y-4">
             <div className="relative aspect-video bg-black border border-white/10 rounded-lg overflow-hidden">
-              {playback_url ? (
+              {verificationComplete ? (
+                <div className="grid place-items-center h-full text-sm text-emerald-300 p-6 text-center">
+                  Verification complete. This screener is now locked; only an audited admin reset can reopen it.
+                </div>
+              ) : playbackUrl ? (
                 <video
                   ref={videoRef}
-                  src={playback_url}
+                  src={playbackUrl}
                   controls
                   controlsList="nodownload noremoteplayback"
                   disablePictureInPicture
@@ -157,7 +195,7 @@ export default function ScreeningRoom() {
                 />
               ) : (
                 <div className="grid place-items-center h-full text-sm text-white/60 p-6 text-center">
-                  Playback source is not yet available. StreamVista will share an updated link shortly.
+                  The low-resolution screener proxy is not available. The master file is never exposed in this verification player.
                 </div>
               )}
               {invite.watermark_enabled && (
@@ -184,7 +222,7 @@ export default function ScreeningRoom() {
                 {invite.buyer_org_name && <div>Organisation: {invite.buyer_org_name}</div>}
                 {asset?.label && <div>Source: {asset.label}</div>}
                 <div className="pt-2 border-t border-white/10 text-[11px] text-white/70">
-                  Activity on this screener is logged for security and commercial follow-up.
+                  One verification session only. Completion or session expiry locks playback; an admin reason is required to reset it.
                 </div>
               </div>
             </div>

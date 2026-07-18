@@ -93,6 +93,38 @@ COMMENT ON COLUMN public.content_titles.client_draft_id IS
   'Client-generated UUID used to make title creation idempotent across '
   'retries. Nullable; unique per owner when set.';
 
+-- Legacy Crayons/PythonAnywhere source identity. These columns do not copy
+-- Django auth or payment credentials; they only make the verified film and
+-- draft JSON exports safely repeatable. Re-importing the same source row
+-- resolves to the same content title.
+ALTER TABLE public.content_titles
+  ADD COLUMN IF NOT EXISTS legacy_source_table text,
+  ADD COLUMN IF NOT EXISTS legacy_source_id text,
+  ADD COLUMN IF NOT EXISTS legacy_source_uuid text;
+
+CREATE UNIQUE INDEX IF NOT EXISTS content_titles_legacy_source_idx
+  ON public.content_titles (legacy_source_table, legacy_source_id)
+  WHERE legacy_source_table IS NOT NULL
+    AND legacy_source_id IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS content_titles_legacy_uuid_idx
+  ON public.content_titles (legacy_source_uuid)
+  WHERE legacy_source_uuid IS NOT NULL
+    AND btrim(legacy_source_uuid) <> '';
+
+COMMENT ON COLUMN public.content_titles.legacy_source_table IS
+  'Verified legacy export namespace, currently films_film or films_filmdraft.';
+COMMENT ON COLUMN public.content_titles.legacy_source_id IS
+  'Original row id within legacy_source_table; used for idempotent import.';
+COMMENT ON COLUMN public.content_titles.legacy_source_uuid IS
+  'Original legacy film UUID when present; retained for traceability.';
+
+-- Data API grants and RLS are separate controls. Keep the minimum client
+-- privileges used by the Creator editor explicit; existing content_titles
+-- RLS remains authoritative for row ownership.
+GRANT SELECT, INSERT, UPDATE ON public.content_titles TO authenticated;
+GRANT ALL ON public.content_titles TO service_role;
+
 -- 2. Conflict review table --------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.title_backfill_conflicts (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -320,6 +352,11 @@ COMMIT;
 -- rollback (manual, for reference only)
 --
 --   DROP INDEX IF EXISTS public.content_titles_owner_client_draft_idx;
+--   DROP INDEX IF EXISTS public.content_titles_legacy_source_idx;
+--   DROP INDEX IF EXISTS public.content_titles_legacy_uuid_idx;
+--   ALTER TABLE public.content_titles DROP COLUMN IF EXISTS legacy_source_uuid;
+--   ALTER TABLE public.content_titles DROP COLUMN IF EXISTS legacy_source_id;
+--   ALTER TABLE public.content_titles DROP COLUMN IF EXISTS legacy_source_table;
 --   ALTER TABLE public.content_titles DROP COLUMN IF EXISTS client_draft_id;
 --   DROP TABLE IF EXISTS public.title_backfill_conflicts;
 -- ---------------------------------------------------------------------------

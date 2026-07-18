@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
-  Activity, CheckCircle2, Film, Loader2, Lock, RefreshCw, Scale, ShieldCheck, Volume2, Monitor,
+  Activity, Award, CheckCircle2, Film, Loader2, Lock, RefreshCw, Scale, ShieldCheck, Volume2, Monitor,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -21,6 +21,34 @@ import { cn } from "@/lib/utils";
  */
 
 type Panel = "qc" | "legal";
+
+async function issueTrustSeal(row: TitleRow, kind: "qc_verified" | "legal_cleared") {
+  const fingerprint = window.prompt(
+    "Verified file/version fingerprint (required — checksum, asset version or immutable delivery ID)",
+  );
+  if (fingerprint === null) return;
+  if (fingerprint.trim().length < 16) {
+    toast.error("A stable version fingerprint of at least 16 characters is required");
+    return;
+  }
+  const reportReference = window.prompt("Report/reference number (optional)") || null;
+  const { error } = await (supabase.rpc as any)("admin_issue_title_trust_seal", {
+    _title_id: row.id,
+    _seal_kind: kind,
+    _version_fingerprint: fingerprint.trim(),
+    _report_reference: reportReference,
+    _service_order_id: null,
+    _valid_until: null,
+    _internal_notes: "Issued from Admin QC & Legal Validation",
+  });
+  if (error) {
+    toast.error(error.message);
+    return;
+  }
+  toast.success(kind === "qc_verified" ? "Crayons Bridge QC Verified issued" : "Crayons Bridge Legal Cleared issued", {
+    description: "The seal is bound to the verified version and recorded in the audit trail.",
+  });
+}
 
 type TitleRow = {
   id: string;
@@ -167,6 +195,15 @@ function QCPanel() {
                     icon={<Volume2 className="w-3.5 h-3.5" />}
                     label="Audio Tracks Clean"
                   />
+                  {qc === "passed" && (
+                    <button
+                      type="button"
+                      onClick={() => issueTrustSeal(r, "qc_verified")}
+                      className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-200 text-[11px] font-semibold"
+                    >
+                      <Award className="w-3.5 h-3.5" /> Issue Crayons Bridge QC Verified
+                    </button>
+                  )}
                   {busy[r.id] && <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />}
                 </div>
               </li>
@@ -305,6 +342,15 @@ function LegalPanel() {
                         ? <><ShieldCheck className="w-3.5 h-3.5" /> Clearance granted</>
                         : <><ShieldCheck className="w-3.5 h-3.5" /> Grant Distribution Clearance</>}
                   </button>
+                  {cleared && (
+                    <button
+                      type="button"
+                      onClick={() => issueTrustSeal(r, "legal_cleared")}
+                      className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-200 text-[11px] font-semibold"
+                    >
+                      <Award className="w-3.5 h-3.5" /> Issue Crayons Bridge Legal Cleared
+                    </button>
+                  )}
                 </div>
               </li>
             );

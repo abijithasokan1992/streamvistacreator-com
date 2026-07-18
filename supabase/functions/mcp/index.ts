@@ -983,6 +983,20 @@ var ok2 = (structured, summary) => ({
   content: [{ type: "text", text: summary }],
   structuredContent: structured
 });
+function isSchemaMissingError(e) {
+  if (!e) return false;
+  const msg = String(e.message ?? "").toLowerCase();
+  const code = String(e.code ?? "");
+  return code === "42703" || // undefined_column
+  code === "42P01" || // undefined_table
+  /column .* does not exist/.test(msg) || /relation .* does not exist/.test(msg) || /could not find the .* column/.test(msg);
+}
+function unavailable(structured, reason) {
+  return {
+    content: [{ type: "text", text: `unavailable: ${reason}` }],
+    structuredContent: { ...structured, unavailable: true, reason }
+  };
+}
 var SECRET_PATTERNS = [
   [/eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}/g, "[REDACTED_JWT]"],
   [/sbp_[A-Za-z0-9]{20,}/g, "[REDACTED_SUPABASE_PAT]"],
@@ -1276,7 +1290,12 @@ var list_failed_emails_default = defineTool33({
       sb.from("email_send_log").select("id, message_id, template_name, status, error_message, created_at").in("status", ["failed", "failed_permanent", "dlq", "bounced"]).order("created_at", { ascending: false }).limit(clampLimit(input.limit)),
       "list_failed_emails"
     );
-    if (error) return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    if (error) {
+      if (isSchemaMissingError(error)) {
+        return unavailable({ failed_emails: [], count: 0 }, `email_send_log schema drift: ${error.message}`);
+      }
+      return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    }
     const rows = redactDeep(data ?? []);
     return ok2({ failed_emails: rows, count: rows.length }, `Returned ${rows.length} failed emails`);
   }

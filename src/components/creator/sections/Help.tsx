@@ -194,10 +194,10 @@ export default function HelpSection() {
           </p>
           <div className="flex items-center justify-center gap-2 mt-4">
             <Link
-              to="/dashboard/notifications"
+              to="/dashboard/content?section=messages"
               className="text-xs rounded-md border border-border/50 px-3 py-1.5 hover:border-accent/50"
             >
-              View My Tickets
+              View Updates
             </Link>
             <button
               onClick={() => setSubmitted(null)}

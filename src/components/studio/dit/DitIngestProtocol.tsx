@@ -280,9 +280,9 @@ export default function DitIngestProtocol() {
       // 1. Attempt to upload screenshot to private storage. If the bucket is
       //    missing (e.g. not yet provisioned on this environment) or storage
       //    rejects the write, we degrade gracefully: the compliance log is
-      //    still saved with a local placeholder path so chain-of-custody
-      //    metadata is not lost. The screenshot itself is retained in memory
-      //    and the admin can re-attach once the bucket is provisioned.
+      //    still saved with a pending-evidence marker so the operational metadata
+      //    is not lost. The browser File is intentionally NOT described as
+      //    durable: it must be selected again after refresh or sign-out.
       const ext = screenshotFile!.name.split(".").pop() || "png";
       const path = `${user.id}/${new Date().toISOString().replace(/[:.]/g, "-")}-${uid()}.${ext}`;
 
@@ -313,7 +313,10 @@ export default function DitIngestProtocol() {
         setStorageUnavailable(false);
       }
 
-      const finalChecklist: ChecklistState = { ...checklist, screenshot_uploaded: true };
+      const finalChecklist: ChecklistState = {
+        ...checklist,
+        screenshot_uploaded: !uploadDegraded,
+      };
 
       // 2. Insert compliance log row.
       const { error } = await supabase.from("dit_ingest_logs").insert({
@@ -334,10 +337,10 @@ export default function DitIngestProtocol() {
 
       if (uploadDegraded) {
         toast.warning(
-          "DIT log saved — DIT evidence storage is being configured. Screenshot retained locally; re-attach once available.",
+          "DIT log saved as evidence pending. The screenshot was not uploaded; keep the original file and re-attach when storage is available.",
         );
-        // Retain the unsaved form (including the picked screenshot file) so
-        // the DIT can re-submit the evidence once storage is provisioned.
+        // Keep the current in-memory form open for an immediate retry. This is
+        // convenience only and is not durable across refresh or sign-out.
         // We do NOT clear `screenshotFile` or the form here.
         await loadHistory();
       } else {

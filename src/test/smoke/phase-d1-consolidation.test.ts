@@ -139,6 +139,13 @@ describe("obsolete user-facing entry points are absent (Phase D1)", () => {
     expect(offenders).toEqual([]);
   });
 
+  it("creator support success action routes to the real updates section", () => {
+    const help = readFileSync(join(SRC, "components/creator/sections/Help.tsx"), "utf8");
+    expect(help).toContain('/dashboard/content?section=messages');
+    expect(help).not.toContain('/dashboard/notifications');
+    expect(help).not.toContain('View My Tickets');
+  });
+
   it("no RazorpayX payout SDK reference exists in the client bundle", () => {
     const offenders = files.filter((f) => /razorpayx|razorpay_x\b/i.test(readFileSync(f, "utf8")));
     expect(offenders).toEqual([]);

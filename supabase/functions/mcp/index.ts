@@ -1194,7 +1194,12 @@ var list_creators_default = defineTool29({
     let q = sb.from("entity_profiles").select("id, display_name, kind, verification_status, created_at").eq("kind", "creator").order("created_at", { ascending: false }).limit(clampLimit(input.limit));
     if (input.search) q = q.ilike("display_name", `%${input.search}%`);
     const { data, error } = await withTimeout(q, "list_creators");
-    if (error) return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    if (error) {
+      if (isSchemaMissingError(error)) {
+        return unavailable({ creators: [], count: 0 }, `entity_profiles schema drift: ${error.message}`);
+      }
+      return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    }
     const rows = redactDeep(data ?? []);
     return ok2({ creators: rows, count: rows.length }, `Returned ${rows.length} creators`);
   }

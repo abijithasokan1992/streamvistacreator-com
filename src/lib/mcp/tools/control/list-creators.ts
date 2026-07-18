@@ -23,7 +23,12 @@ export default defineTool({
       .limit(clampLimit(input.limit));
     if (input.search) q = q.ilike("display_name", `%${input.search}%`);
     const { data, error } = await withTimeout(q, "list_creators");
-    if (error) return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    if (error) {
+      if (isSchemaMissingError(error)) {
+        return unavailable({ creators: [], count: 0 }, `entity_profiles schema drift: ${error.message}`);
+      }
+      return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    }
     const rows = redactDeep(data ?? []);
     return ok({ creators: rows, count: rows.length }, `Returned ${rows.length} creators`);
   },

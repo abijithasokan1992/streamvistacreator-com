@@ -33,8 +33,8 @@ type TabId = "overview" | "metadata" | "assets" | "rights" | "submission";
 const TABS: { id: TabId; label: string }[] = [
   { id: "overview",   label: "Basics" },
   { id: "metadata",   label: "Story" },
-  { id: "assets",     label: "Assets" },
   { id: "rights",     label: "Rights & Business" },
+  { id: "assets",     label: "Assets" },
   { id: "submission", label: "Review & Submit" },
 ];
 
@@ -260,13 +260,13 @@ export function TitleEditor({
     return {
       overview:   { complete: true, unlocked: true },
       metadata:   { complete: metadataComplete, unlocked: true },
-      assets:     { complete: assetsComplete, unlocked: bypass || metadataComplete },
-      rights:     { complete: rightsComplete,  unlocked: bypass || (metadataComplete && assetsComplete) },
+      rights:     { complete: rightsComplete,  unlocked: bypass || metadataComplete },
+      assets:     { complete: assetsComplete, unlocked: bypass || (metadataComplete && rightsComplete) },
       submission: { complete: !!ready,         unlocked: bypass || (metadataComplete && assetsComplete && rightsComplete) },
     } as Record<TabId, { complete: boolean; unlocked: boolean }>;
   }, [name, meta, localChecklist, readiness, isFree, mode, titleLocked, ready]);
 
-  const tabOrder: TabId[] = ["overview", "metadata", "assets", "rights", "submission"];
+  const tabOrder: TabId[] = ["overview", "metadata", "rights", "assets", "submission"];
   const currentIdx = tabOrder.indexOf(tab);
   const prevTab = currentIdx > 0 ? tabOrder[currentIdx - 1] : null;
   const nextTab = currentIdx < tabOrder.length - 1 ? tabOrder[currentIdx + 1] : null;

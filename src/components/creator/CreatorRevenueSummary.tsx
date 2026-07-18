@@ -55,7 +55,7 @@ export function CreatorRevenueSummary({ titleIds, limit = 50 }: Props) {
       const { data, error } = await q;
       if (cancelled) return;
       if (error) {
-        if (error.code === "42P01") setPending(true);
+        if (error.code === "42P01" || error.code === "42703") setPending(true);
         setRows([]);
       } else {
         setRows((data ?? []) as RevenueRow[]);

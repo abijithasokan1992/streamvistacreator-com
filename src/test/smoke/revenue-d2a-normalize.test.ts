@@ -126,6 +126,10 @@ describe("workspace / no-write fallback (static)", () => {
     expect(importApi).toMatch(/source_row_index:\s*r\.lineIndex/);
     expect(importApi).toMatch(/probeErr\?\.code === "42P01"[\s\S]*"42703"/);
   });
+  it("shows a safe pending state for a missing revenue table or typed column", () => {
+    const creatorSummary = readFileSync(join(process.cwd(), "src/components/creator/CreatorRevenueSummary.tsx"), "utf8");
+    expect(creatorSummary).toMatch(/error\.code === "42P01"\s*\|\|\s*error\.code === "42703"/);
+  });
   it("never silently overwrites existing statements", () => {
     expect(importApi).toMatch(/statementKey/);
     expect(importApi).toMatch(/\.eq\("statement_key", input\.normalization\.statementKey\)/);

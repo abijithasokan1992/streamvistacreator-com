@@ -139,6 +139,16 @@ describe("obsolete user-facing entry points are absent (Phase D1)", () => {
     expect(offenders).toEqual([]);
   });
 
+  it("creator revenue stays owner-scoped and fails closed", () => {
+    const statements = readFileSync(join(SRC, "components/creator/sections/Statements.tsx"), "utf8");
+    const summary = readFileSync(join(SRC, "components/creator/CreatorRevenueSummary.tsx"), "utf8");
+    expect(statements).toContain('.eq("owner_user_id", user.id)');
+    expect(statements).toContain("<CreatorRevenueSummary titleIds={titleIds} />");
+    expect(summary).toContain("if (!titleIds.length)");
+    expect(summary).toContain('q = q.in("title_id", titleIds)');
+    expect(summary).not.toContain('titleIds && titleIds.length');
+  });
+
   it("creator support success action routes to the real updates section", () => {
     const help = readFileSync(join(SRC, "components/creator/sections/Help.tsx"), "utf8");
     expect(help).toContain('/dashboard/content?section=messages');

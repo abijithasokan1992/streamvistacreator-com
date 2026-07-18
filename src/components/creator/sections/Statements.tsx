@@ -64,7 +64,7 @@ export default function StatementsSection() {
   useEffect(() => {
     if (!user) { setTitleIds([]); return; }
     (async () => {
-      let q = (supabase as any).from("content_titles").select("id").eq("owner_id", user.id);
+      let q = (supabase as any).from("content_titles").select("id").eq("owner_user_id", user.id);
       if (active?.id) q = q.eq("workspace_id", active.id);
       const { data } = await q.limit(500);
       setTitleIds((data ?? []).map((r: any) => r.id).filter(Boolean));
@@ -91,7 +91,7 @@ export default function StatementsSection() {
       </div>
 
       {tab === "revenue" && (
-        <CreatorRevenueSummary titleIds={titleIds.length ? titleIds : undefined} />
+        <CreatorRevenueSummary titleIds={titleIds} />
       )}
 
       {tab === "billing" && (<>

@@ -177,4 +177,30 @@ describe("title_canonical_backfill.sql — hardening", () => {
       .filter((l) => !/^\s*--/.test(l) && /\bselect\s+count\s*\(\s*\*\s*\)/i.test(l));
     expect(uncommented).toEqual([]);
   });
+
+  describe("legacy import identity", () => {
+    it("adds traceable source columns without making them required", () => {
+      expect(/add column if not exists legacy_source_table text/i.test(sql)).toBe(true);
+      expect(/add column if not exists legacy_source_id text/i.test(sql)).toBe(true);
+      expect(/add column if not exists legacy_source_uuid text/i.test(sql)).toBe(true);
+      expect(/legacy_source_(table|id|uuid)\s+text\s+not\s+null/i.test(sql)).toBe(false);
+    });
+
+    it("prevents a repeated legacy row or UUID from creating another title", () => {
+      expect(
+        /create unique index if not exists content_titles_legacy_source_idx[\s\S]*legacy_source_table\s*,\s*legacy_source_id/i.test(sql),
+      ).toBe(true);
+      expect(
+        /create unique index if not exists content_titles_legacy_uuid_idx[\s\S]*legacy_source_uuid/i.test(sql),
+      ).toBe(true);
+    });
+
+    it("uses explicit minimum Data API grants while RLS remains authoritative", () => {
+      expect(
+        /grant\s+select\s*,\s*insert\s*,\s*update\s+on\s+public\.content_titles\s+to\s+authenticated/i.test(sql),
+      ).toBe(true);
+      expect(/grant\s+all\s+on\s+public\.content_titles\s+to\s+service_role/i.test(sql)).toBe(true);
+      expect(/grant[^;]*delete[^;]*content_titles[^;]*authenticated/i.test(sql)).toBe(false);
+    });
+  });
 });

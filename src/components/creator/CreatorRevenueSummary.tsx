@@ -25,7 +25,7 @@ interface RevenueRow {
 }
 
 interface Props {
-  titleIds?: string[];
+  titleIds: string[];
   limit?: number;
 }
 
@@ -38,12 +38,20 @@ export function CreatorRevenueSummary({ titleIds, limit = 50 }: Props) {
     let cancelled = false;
     (async () => {
       setLoading(true);
+      setPending(false);
+      // Privacy guard: never issue an unscoped revenue query. An empty list
+      // means this creator has no owned titles in the active workspace.
+      if (!titleIds.length) {
+        setRows([]);
+        setLoading(false);
+        return;
+      }
       let q = supabase
         .from("revenue_lines")
         .select("id,title_id,partner_id,gross_amount_paise,net_amount_paise,platform_fee_paise,occurred_on,currency,metadata")
         .order("occurred_on", { ascending: false })
         .limit(limit);
-      if (titleIds && titleIds.length) q = q.in("title_id", titleIds);
+      q = q.in("title_id", titleIds);
       const { data, error } = await q;
       if (cancelled) return;
       if (error) {

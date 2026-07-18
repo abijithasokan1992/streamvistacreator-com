@@ -42,43 +42,50 @@ export interface PersistStatementInput {
 }
 
 export async function persistStatement(input: PersistStatementInput): Promise<{ importId: string; inserted: number; skipped: number }> {
-  // Idempotency check by statementKey in metadata (best effort — the raw
-  // metadata column may or may not be indexed yet).
-  const { data: existing, error: probeErr } = await supabase
+  // Exact indexed idempotency check. We intentionally require the pending
+  // typed-column migration: importing against the legacy shape would weaken
+  // duplicate protection and workspace isolation.
+  const { data: existing, error: probeErr } = await (supabase as any)
     .from("revenue_imports")
-    .select("id, notes, source_type, source_label")
-    .eq("source_type", input.sourceType)
-    .eq("source_label", input.sourceLabel)
-    .limit(1)
+    .select("id")
+    .eq("statement_key", input.normalization.statementKey)
     .maybeSingle();
 
-  if (probeErr && probeErr.code === "42P01") throw new DatabasePendingError();
-  if (existing && (existing.notes ?? "").includes(input.normalization.statementKey)) {
-    throw new StatementAlreadyImportedError(existing.id);
+  if (probeErr?.code === "42P01" || probeErr?.code === "42703") {
+    throw new DatabasePendingError();
   }
+  if (probeErr) throw probeErr;
+  if (existing?.id) throw new StatementAlreadyImportedError(existing.id);
 
   const { data: u } = await supabase.auth.getUser();
-  const { data: imp, error: impErr } = await supabase
+  const { data: imp, error: impErr } = await (supabase as any)
     .from("revenue_imports")
     .insert({
+      workspace_id: input.workspaceId,
       source_type: input.sourceType,
       source_label: input.sourceLabel,
+      source_statement_id: input.sourceStatementId,
+      statement_key: input.normalization.statementKey,
       partner_id: input.partnerId,
       period_start: input.periodStart,
       period_end: input.periodEnd,
       currency: input.currency,
-      // statementKey stashed in notes for pre-migration idempotency probe
-      notes: [`sk=${input.normalization.statementKey}`, input.notes ?? ""].filter(Boolean).join(" | "),
+      notes: input.notes,
       imported_by: u.user?.id ?? null,
       gross_amount_paise: input.normalization.totals.grossMinor,
+      tax_paise: input.normalization.totals.taxMinor,
+      gateway_fee_paise: input.normalization.totals.gatewayFeeMinor,
+      in_app_fee_paise: input.normalization.totals.inAppFeeMinor,
+      net_amount_paise: input.normalization.totals.netMinor,
       line_count: input.normalization.totals.rowCount,
+      mapping_status: "unmapped",
       status: "imported",
     })
     .select("id")
     .single();
 
   if (impErr) {
-    if (impErr.code === "42P01") throw new DatabasePendingError();
+    if (impErr.code === "42P01" || impErr.code === "42703") throw new DatabasePendingError();
     throw impErr;
   }
 
@@ -88,9 +95,9 @@ export async function persistStatement(input: PersistStatementInput): Promise<{ 
 
   if (!payload.length) return { importId: imp.id, inserted: 0, skipped: input.normalization.rows.length };
 
-  const { error: linesErr } = await supabase.from("revenue_lines").insert(payload);
+  const { error: linesErr } = await (supabase as any).from("revenue_lines").insert(payload);
   if (linesErr) {
-    if (linesErr.code === "42P01") throw new DatabasePendingError();
+    if (linesErr.code === "42P01" || linesErr.code === "42703") throw new DatabasePendingError();
     throw linesErr;
   }
 
@@ -100,6 +107,12 @@ export async function persistStatement(input: PersistStatementInput): Promise<{ 
 function toRevenueLineRow(importId: string, r: NormalizedRevenueRow, input: PersistStatementInput) {
   return {
     import_id: importId,
+    workspace_id: input.workspaceId,
+    row_key: r.rowKey,
+    statement_key: input.normalization.statementKey,
+    source_row_index: r.lineIndex,
+    source_statement_id: input.sourceStatementId,
+    commercial_model: r.model,
     title_id: null, // mapping stage will patch this after admin confirms the buyer/title
     partner_id: input.partnerId,
     territory: r.territory,
@@ -107,6 +120,14 @@ function toRevenueLineRow(importId: string, r: NormalizedRevenueRow, input: Pers
     units: r.units,
     gross_amount_paise: r.grossMinor ?? 0,
     platform_fee_paise: (r.gatewayFeeMinor ?? 0) + (r.inAppFeeMinor ?? 0),
+    tax_paise: r.taxMinor ?? 0,
+    gateway_fee_paise: r.gatewayFeeMinor ?? 0,
+    in_app_fee_paise: r.inAppFeeMinor ?? 0,
+    creator_share_paise: r.creatorShareMinor,
+    platform_share_paise: r.platformShareMinor,
+    share_rate: r.shareRate,
+    raw_row: r.raw,
+    mapping_status: "unmapped",
     net_amount_paise: r.netMinor ?? 0,
     currency: r.currency,
     occurred_on: r.occurredOn,

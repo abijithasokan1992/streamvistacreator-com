@@ -476,7 +476,7 @@ function buildDepartments(args: {
       icon: <Briefcase className="w-4 h-4" />,
       desc: "Plans, subscriptions, payments, invoices, rights, licensing.",
       sections: [
-        { id: "marketplace", label: "Marketplace Catalog / Buyer Surface", hint: "Live buyer-facing catalog (featured_films)", content: (
+        { id: "marketplace", label: "1 · Buyer Catalog & Mapping", hint: "Preview catalog · suggest and map buyers", content: (
           <div className="space-y-4">
             <div className="glass rounded-2xl p-4 text-xs text-muted-foreground">
               Read-only preview of the live buyer marketplace. Requests routed to
@@ -485,13 +485,13 @@ function buildDepartments(args: {
             <FindContentSection onRequestForTitle={() => { window.location.href = "/dashboard/buyer"; }} />
           </div>
         )},
-        { id: "signed-deals", label: "Signed Deals", hint: "Offers · contracts · licensing lifecycle", content: <DealOperationsConsole /> },
-        { id: "subscription-plans", label: "Subscription Plans", hint: "Products & pricing plans", content: <ProductsAndPlans /> },
-        { id: "pricing-calculator", label: "Business Estimates & Pricing Calculator", hint: "Commercial offer builder", content: <CommercialControlTower /> },
+        { id: "signed-deals", label: "2 · Deals, Agreements & Delivery", hint: "Offers · bulk agreements · payment · controlled delivery", content: <DealOperationsConsole /> },
+        { id: "subscription-plans", label: "Plans & Subscriptions", hint: "Products & pricing plans", content: <ProductsAndPlans /> },
+        { id: "pricing-calculator", label: "Commercial Requests & Pricing", hint: "Commercial offer builder", content: <CommercialControlTower /> },
         { id: "plans", label: "Plans & Pricing (full)", hint: "Products, vault pricing, free tier", content: (
           <div className="space-y-6"><ProductsAndPlans /><StudioVaultPricing /><FreeTierConfig /></div>
         )},
-        { id: "billing", label: "Billing & Payments", hint: "Invoices and finance ops", content: (
+        { id: "billing", label: "3 · Billing & Payments", hint: "Invoices and finance ops", content: (
           <div className="space-y-6">
             <RazorpayOpsBanner />
             <AdminFinanceConsole />
@@ -502,10 +502,10 @@ function buildDepartments(args: {
             <RazorpayAuditLog />
           </div>
         )},
-        { id: "revenue-statements", label: "Revenue Statements", hint: "Import buyer statements · map to titles · compute creator share", content: <RevenueStatementImport /> },
+        { id: "revenue-statements", label: "4 · Revenue Statements & Mapping", hint: "Import buyer statements · map to titles · compute creator share", content: <RevenueStatementImport /> },
         { id: "vault", label: "Vault Purchases", hint: "Studio Vault revenue", content: <AdminStudioVaultPurchases /> },
         { id: "intelligence", label: "Market Intelligence", hint: "Buyer & competitor intelligence", content: <IntelligenceCenter /> },
-        { id: "bi", label: "Business Intelligence", hint: "Uploads · Revenue · Rights · Delivery · AI Insights · Automation", content: <BusinessIntelligenceHub /> },
+        { id: "bi", label: "5 · Analytics & Commercial Tracking", hint: "Uploads · Revenue · Rights · Delivery · AI Insights · Automation", content: <BusinessIntelligenceHub /> },
       ],
     },
     {

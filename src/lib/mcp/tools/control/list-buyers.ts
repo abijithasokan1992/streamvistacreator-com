@@ -1,6 +1,6 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
-import { authorize, ok, redactDeep, userClient, withTimeout, clampLimit } from "../../lib/control";
+import { authorize, ok, redactDeep, userClient, withTimeout, clampLimit, isSchemaMissingError, unavailable } from "../../lib/control";
 
 export default defineTool({
   name: "list_buyers",

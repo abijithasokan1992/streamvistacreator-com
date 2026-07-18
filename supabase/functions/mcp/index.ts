@@ -1267,7 +1267,12 @@ var list_failed_uploads_default = defineTool32({
       sb.from("ingest_job_items").select("id, job_id, file_name, mime_guess, size_bytes, error_message, metadata, created_at, updated_at").eq("status", "failed").order("updated_at", { ascending: false }).limit(clampLimit(input.limit)),
       "list_failed_uploads"
     );
-    if (error) return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    if (error) {
+      if (isSchemaMissingError(error)) {
+        return unavailable({ failed_uploads: [], count: 0 }, `ingest_job_items schema drift: ${error.message}`);
+      }
+      return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    }
     const rows = redactDeep(data ?? []);
     return ok2({ failed_uploads: rows, count: rows.length }, `Returned ${rows.length} failed uploads`);
   }

@@ -21,7 +21,12 @@ export default defineTool({
         .limit(clampLimit(input.limit)),
       "list_failed_uploads",
     );
-    if (error) return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    if (error) {
+      if (isSchemaMissingError(error)) {
+        return unavailable({ failed_uploads: [], count: 0 }, `ingest_job_items schema drift: ${error.message}`);
+      }
+      return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    }
     const rows = redactDeep(data ?? []);
     return ok({ failed_uploads: rows, count: rows.length }, `Returned ${rows.length} failed uploads`);
   },

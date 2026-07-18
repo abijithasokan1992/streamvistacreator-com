@@ -83,7 +83,11 @@ Deno.serve(async (req) => {
       countOf('recent_uploads'),
       countOf('recent_uploads', (q) => q.eq('status', 'completed')),
       countOf('ingest_sources'),
-      countOf('ingest_telemetry', (q) => q.eq('successful', true)),
+      // ingest_telemetry has no `successful` column; derive from severity.
+      // Non-error rows (`info`, `notice`, `debug`, `warning`) represent
+      // events that reached the sink without a hard failure. See
+      // src/integrations/supabase/types.ts → ingest_telemetry.
+      countOf('ingest_telemetry', (q) => q.not('severity', 'in', '("error","critical","fatal")')),
       countOf('projects'),
       countOf('projects', (q) => q.not('crew', 'is', null)),
       countOf('workspace_storage_entitlements'),

@@ -99,11 +99,13 @@ AS $$
 $$;
 
 -- ---------- Least-privilege grants ---------------------------------------
--- authenticated may READ (subject to RLS) but never blanket write.
-REVOKE INSERT, UPDATE, DELETE ON public.revenue_imports FROM authenticated;
-REVOKE INSERT, UPDATE, DELETE ON public.revenue_lines FROM authenticated;
-GRANT SELECT ON public.revenue_imports TO authenticated;
-GRANT SELECT ON public.revenue_lines TO authenticated;
+-- authenticated may read and privileged operators may import/update through
+-- the admin client. RLS below is the authority; ordinary users fail the
+-- privileged-role WITH CHECK. DELETE remains service_role-only.
+REVOKE DELETE ON public.revenue_imports FROM authenticated;
+REVOKE DELETE ON public.revenue_lines FROM authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.revenue_imports TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.revenue_lines TO authenticated;
 GRANT ALL ON public.revenue_imports TO service_role;
 GRANT ALL ON public.revenue_lines TO service_role;
 
@@ -194,7 +196,7 @@ CREATE TABLE IF NOT EXISTS public.revenue_import_conflicts (
 CREATE UNIQUE INDEX IF NOT EXISTS revenue_import_conflicts_dedupe_uidx
   ON public.revenue_import_conflicts(statement_key, COALESCE(row_key,''), reason);
 
-GRANT SELECT ON public.revenue_import_conflicts TO authenticated;
+GRANT SELECT, UPDATE ON public.revenue_import_conflicts TO authenticated;
 GRANT ALL ON public.revenue_import_conflicts TO service_role;
 REVOKE INSERT, DELETE ON public.revenue_import_conflicts FROM authenticated;
 

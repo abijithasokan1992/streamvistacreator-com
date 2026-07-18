@@ -304,10 +304,13 @@ export default function DitIngestProtocol() {
 
       if (uploadDegraded) {
         storedPath = `pending-local://${path}`;
+        setStorageUnavailable(true);
         console.warn(
           "[DIT] screenshot upload unavailable — saving log with local placeholder",
           uploadErrorMessage,
         );
+      } else {
+        setStorageUnavailable(false);
       }
 
       const finalChecklist: ChecklistState = { ...checklist, screenshot_uploaded: true };
@@ -331,14 +334,18 @@ export default function DitIngestProtocol() {
 
       if (uploadDegraded) {
         toast.warning(
-          "DIT log saved — screenshot Pending local, not uploaded. Re-attach once storage is available.",
+          "DIT log saved — DIT evidence storage is being configured. Screenshot retained locally; re-attach once available.",
         );
+        // Retain the unsaved form (including the picked screenshot file) so
+        // the DIT can re-submit the evidence once storage is provisioned.
+        // We do NOT clear `screenshotFile` or the form here.
+        await loadHistory();
       } else {
         toast.success("DIT ingest log saved.");
+        resetForm();
+        await loadHistory();
+        setTab("history");
       }
-      resetForm();
-      await loadHistory();
-      setTab("history");
     } catch (e: any) {
       toast.error(e?.message || "Failed to submit DIT log.");
     } finally {

@@ -496,7 +496,7 @@ export function TitleEditor({
 
         {/* Body — full workspace width */}
         <div className="flex-1 overflow-y-auto">
-          <div className="px-4 sm:px-6 lg:px-8 py-5 sm:py-6 max-w-[1600px] mx-auto w-full">
+          <div className="px-4 sm:px-6 lg:px-8 py-5 sm:py-6 max-w-[1280px] mx-auto w-full">
             {!title || !meta ? (
               <div className="grid place-items-center py-16">
                 <Loader2 className="w-4 h-4 animate-spin text-accent" />
@@ -642,11 +642,11 @@ export function TitleEditor({
 
         {/* Sticky wizard footer — Prev / Next / Submit */}
         {title && meta && (
-          <div className="border-t border-border/40 bg-card/60 backdrop-blur-sm px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3">
+          <div className="border-t border-border/40 bg-card/90 backdrop-blur-md px-4 sm:px-6 lg:px-8 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex items-center justify-between gap-3 shadow-[0_-8px_24px_rgba(0,0,0,0.08)]">
             <button
               onClick={() => prevTab && setTab(prevTab)}
               disabled={!prevTab}
-              className="rounded-md border border-border/60 px-4 py-2 text-sm font-medium disabled:opacity-30 hover:bg-secondary/30"
+              className="rounded-md border border-border/60 px-3 sm:px-4 py-2 text-sm font-medium disabled:opacity-30 hover:bg-secondary/30"
             >
               ← Previous
             </button>
@@ -672,7 +672,7 @@ export function TitleEditor({
                 className="inline-flex items-center gap-2 rounded-md bg-accent text-accent-foreground text-sm font-semibold px-5 py-2 disabled:opacity-40 disabled:cursor-not-allowed"
                 title={!canAdvance ? "Finish this step to unlock the next" : "Continue"}
               >
-                Next: {nextTab ? TABS.find(t => t.id === nextTab)?.label : ""} →
+                <span className="sm:hidden">Continue →</span><span className="hidden sm:inline">Next: {nextTab ? TABS.find(t => t.id === nextTab)?.label : ""} →</span>
               </button>
             )}
           </div>

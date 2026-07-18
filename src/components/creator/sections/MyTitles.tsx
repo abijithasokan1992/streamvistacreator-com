@@ -130,8 +130,18 @@ export default function MyTitlesSection() {
       {/* Upgrade CTA lives on the Billing section — the inline free-plan banner above
           already surfaces the limit here and links straight to Billing. */}
 
-      {user && <CollectionsFranchisesManager userId={user.id} titles={titles} />}
-
+      {user && titles.length > 0 && (
+        <details className="mb-4 rounded-xl border border-border/40 bg-secondary/5 group">
+          <summary className="cursor-pointer list-none px-4 py-3 flex items-center justify-between gap-3 text-sm font-medium">
+            <span>Collections & franchises</span>
+            <span className="text-[11px] text-muted-foreground group-open:hidden">Optional</span>
+            <span className="text-[11px] text-muted-foreground hidden group-open:inline">Hide</span>
+          </summary>
+          <div className="border-t border-border/30 p-3 sm:p-4">
+            <CollectionsFranchisesManager userId={user.id} titles={titles} />
+          </div>
+        </details>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <p className="text-xs text-muted-foreground">
@@ -278,6 +288,7 @@ export default function MyTitlesSection() {
           {visible.map((t) => {
             const typeLabel = CONTENT_TYPE_LABEL[t.metadata.format] ?? "Title";
             const updated = new Date(t.updated_at).toLocaleDateString();
+            const canContinue = !t.locked && ["draft", "incomplete", "changes_requested"].includes(t.status);
             return (
               <li key={t.id} className="min-w-0">
                 <article className="h-full rounded-xl border border-border/40 bg-secondary/5 hover:bg-secondary/10 hover:border-border/60 transition-colors p-4 flex flex-col gap-3 min-w-0 focus-within:ring-2 focus-within:ring-accent/40">
@@ -300,28 +311,29 @@ export default function MyTitlesSection() {
                   <StatusBadge status={t.status} />
                   <div className="flex items-center gap-1.5 mt-auto pt-2">
                     <button
-                      onClick={() => { setEditorId(t.id); setEditorMode("view"); }}
-                      aria-label={`View ${t.title}`}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border border-border/50 text-xs px-2 py-2 min-h-9 hover:bg-secondary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+                      onClick={() => {
+                        setEditorId(t.id);
+                        setEditorMode(canContinue ? "edit" : "view");
+                      }}
+                      aria-label={canContinue ? `Continue ${t.title}` : `View ${t.title}`}
+                      className={cn(
+                        "flex-[2] inline-flex items-center justify-center gap-1.5 rounded-md text-xs font-medium px-3 py-2 min-h-9 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
+                        canContinue
+                          ? "bg-accent text-accent-foreground hover:bg-accent/90"
+                          : "border border-border/50 hover:bg-secondary/30",
+                      )}
                     >
-                      <Eye className="w-3.5 h-3.5" aria-hidden="true" /> View
-                    </button>
-                    <button
-                      disabled={t.locked}
-                      onClick={() => { setEditorId(t.id); setEditorMode("edit"); }}
-                      aria-label={t.locked ? `${t.title} is locked` : `Edit ${t.title}`}
-                      title={t.locked ? "Locked while under review" : undefined}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border border-border/50 text-xs px-2 py-2 min-h-9 hover:bg-secondary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      <Pencil className="w-3.5 h-3.5" aria-hidden="true" /> Edit
+                      {canContinue ? <Pencil className="w-3.5 h-3.5" aria-hidden="true" /> : <Eye className="w-3.5 h-3.5" aria-hidden="true" />}
+                      {canContinue ? "Continue" : "View details"}
                     </button>
                     {user?.id === t.owner_user_id && (
                       <button
                         onClick={() => setDeleteTarget(t)}
                         aria-label={`Delete ${t.title}`}
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border border-destructive/40 text-destructive text-xs px-2 py-2 min-h-9 hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50"
+                        className="shrink-0 inline-flex items-center justify-center rounded-md border border-destructive/30 text-destructive p-2 min-w-9 min-h-9 hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50"
                       >
-                        <Trash2 className="w-3.5 h-3.5" aria-hidden="true" /> Delete
+                        <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                        <span className="sr-only">Delete</span>
                       </button>
                     )}
                   </div>

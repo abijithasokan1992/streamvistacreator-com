@@ -70,6 +70,24 @@ describe("Creator editor — canonical stage wiring", () => {
   });
 });
 
+describe("Creator title list — low-friction resume UI", () => {
+  const src = readFileSync(
+    resolve(process.cwd(), "src/components/creator/sections/MyTitles.tsx"),
+    "utf8",
+  );
+
+  it("keeps collections optional instead of blocking the primary title flow", () => {
+    expect(src).toContain("<details");
+    expect(src).toContain("Collections & franchises");
+    expect(src).toContain("Optional");
+  });
+
+  it("uses one clear Continue action for editable drafts", () => {
+    expect(src).toContain('canContinue ? "Continue" : "View details"');
+    expect(src).toContain('setEditorMode(canContinue ? "edit" : "view")');
+  });
+});
+
 describe("Basics stage — essential fields only", () => {
   it("requires title, kind, language and runtime", () => {
     const step = getStep("basics")!;

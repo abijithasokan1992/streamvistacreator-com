@@ -119,11 +119,16 @@ describe("workspace / no-write fallback (static)", () => {
     expect(importApi).toMatch(/class DatabasePendingError/);
     expect(importApi).toMatch(/StatementAlreadyImportedError/);
   });
-  it("stores workspace_id in metadata until migration lands", () => {
+  it("requires typed workspace and idempotency columns", () => {
     expect(importApi).toMatch(/workspace_id:\s*input\.workspaceId/);
+    expect(importApi).toMatch(/statement_key:\s*input\.normalization\.statementKey/);
+    expect(importApi).toMatch(/row_key:\s*r\.rowKey/);
+    expect(importApi).toMatch(/source_row_index:\s*r\.lineIndex/);
+    expect(importApi).toMatch(/probeErr\?\.code === "42P01"[\s\S]*"42703"/);
   });
   it("never silently overwrites existing statements", () => {
     expect(importApi).toMatch(/statementKey/);
+    expect(importApi).toMatch(/\.eq\("statement_key", input\.normalization\.statementKey\)/);
     expect(importApi).toMatch(/StatementAlreadyImportedError\(existing\.id\)/);
   });
 });

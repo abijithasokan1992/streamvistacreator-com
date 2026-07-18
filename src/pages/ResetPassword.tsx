@@ -2,13 +2,12 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Loader2, Eye, EyeOff, Zap, KeyRound, CheckCircle2, Sparkles, Mail, AlertTriangle } from "lucide-react";
+import { Loader2, Eye, EyeOff, KeyRound, CheckCircle2, Sparkles, Mail, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { dashboardForRole, type AppRole } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { getAppOrigin } from "@/lib/site";
 import { mapAuthError } from "@/lib/auth/authErrors";
-import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
 import crayonsLogo from "@/assets/partner-crayons-pictures.png";
 
 /**
@@ -17,11 +16,6 @@ import crayonsLogo from "@/assets/partner-crayons-pictures.png";
  * Reached from the recovery email link. Supabase exchanges the recovery token
  * for a temporary session before this component mounts, so `auth.uid()` is
  * already valid here.
- *
- * Two paths forward:
- *   1. Set a new password (primary, top of page).
- *   2. "Fast Link to Dashboard" — pay ₹1 via Razorpay and route straight to
- *      the dashboard without setting a new password.
  *
  * No raw recovery URL is ever rendered on the page.
  */
@@ -45,17 +39,6 @@ async function pickDashboard(): Promise<string> {
   return dashboardForRole(primary);
 }
 
-function loadRazorpayScript(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if ((window as any).Razorpay) return resolve();
-    const s = document.createElement("script");
-    s.src = "https://checkout.razorpay.com/v1/checkout.js";
-    s.onload = () => resolve();
-    s.onerror = () => reject(new Error("Failed to load Razorpay"));
-    document.body.appendChild(s);
-  });
-}
-
 export default function ResetPassword() {
   const navigate = useNavigate();
   const [sessionReady, setSessionReady] = useState(false);
@@ -64,7 +47,6 @@ export default function ResetPassword() {
   const [confirm, setConfirm] = useState("");
   const [showPwd, setShowPwd] = useState(false);
   const [savingPwd, setSavingPwd] = useState(false);
-  const [fastSaving, setFastSaving] = useState(false);
   const [recoverEmail, setRecoverEmail] = useState("");
   const [resending, setResending] = useState(false);
 
@@ -129,75 +111,6 @@ export default function ResetPassword() {
     navigate(target, { replace: true });
   };
 
-  const runFastLink = async () => {
-    if (!sessionReady) return toast.error("Recovery link expired — request a new one.");
-    try { assertLiveCheckoutHost(); }
-    catch (e: any) { return toast.error(e?.message || "Live payments are only available on the production domain."); }
-    setFastSaving(true);
-
-    try {
-      await loadRazorpayScript();
-    } catch {
-      setFastSaving(false);
-      return toast.error("Checkout failed to load — please retry.");
-    }
-
-    toast.loading("Preparing ₹1 fast link…", { id: "fl" });
-    const { data, error } = await supabase.functions.invoke("fastlink-pay", {
-      body: { action: "create" },
-    });
-    toast.dismiss("fl");
-    if (error || !data?.orderId) {
-      setFastSaving(false);
-      return toast.error(error?.message || "Could not start payment.");
-    }
-
-    const Razorpay = (window as any).Razorpay;
-    const { data: u } = await supabase.auth.getUser();
-    const email = u?.user?.email ?? undefined;
-
-    const rzp = new Razorpay({
-      key: data.keyId,
-      order_id: data.orderId,
-      amount: data.amount,
-      currency: data.currency,
-      name: "StreamVista Cloud X",
-      description: "Fast Link to Dashboard",
-      prefill: { email },
-      theme: { color: "#3D7BFD" },
-      handler: async (resp: any) => {
-        toast.loading("Verifying payment…", { id: "fv" });
-        const { data: v, error: vErr } = await supabase.functions.invoke("fastlink-pay", {
-          body: {
-            action: "verify",
-            razorpay_order_id: resp.razorpay_order_id,
-            razorpay_payment_id: resp.razorpay_payment_id,
-            razorpay_signature: resp.razorpay_signature,
-          },
-        });
-        toast.dismiss("fv");
-        if (vErr || !v?.verified) {
-          setFastSaving(false);
-          return toast.error("Payment couldn't be verified. Contact support if you were charged.");
-        }
-        toast.success("Payment confirmed — routing to your dashboard.");
-        const target = await pickDashboard();
-        navigate(target, { replace: true });
-      },
-      modal: {
-        ondismiss: () => {
-          setFastSaving(false);
-          toast.message("Checkout closed — you can retry anytime.");
-        },
-      },
-    });
-    rzp.on("payment.failed", () => {
-      setFastSaving(false);
-      toast.error("Payment failed — please try again.");
-    });
-    rzp.open();
-  };
-
   return (
     <main className="min-h-screen bg-background text-foreground grid place-items-center px-4 py-10">
       <div className="w-full max-w-md space-y-6">
@@ -215,7 +128,7 @@ export default function ResetPassword() {
             </div>
             <h1 className="font-display text-3xl font-bold">Choose a new password</h1>
             <p className="text-sm text-muted-foreground">
-              Set a new password below, or use the Fast Link option to jump straight back in.
+              Set a new password below to securely return to your workspace.
             </p>
           </div>
         </header>
@@ -226,7 +139,7 @@ export default function ResetPassword() {
               <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
               <div className="text-xs text-muted-foreground leading-relaxed">
                 Your recovery link has expired or was already used. Enter your email below to
-                receive a fresh link — both options above will activate once you click it.
+                receive a fresh link.
               </div>
             </div>
             <div className="flex gap-2">
@@ -325,41 +238,6 @@ export default function ResetPassword() {
           </button>
         </form>
 
-        {/* Divider */}
-        <div className="flex items-center gap-3 text-[11px] uppercase tracking-wider text-muted-foreground">
-          <div className="flex-1 h-px bg-border/60" />
-          or
-          <div className="flex-1 h-px bg-border/60" />
-        </div>
-
-        {/* SECONDARY — Fast Link paywall */}
-        <div className="glass rounded-2xl p-6 space-y-3">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-accent/10 text-accent grid place-items-center shrink-0">
-              <Zap className="w-5 h-5" />
-            </div>
-            <div className="flex-1">
-              <h2 className="font-display text-lg font-bold">Fast Link to Dashboard</h2>
-              <p className="text-xs text-muted-foreground">
-                Skip the password reset and jump straight back into your workspace. A one-time
-                verification charge of <span className="text-foreground font-semibold">₹1</span> keeps
-                this channel abuse-free.
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={runFastLink}
-            disabled={fastSaving || !sessionReady}
-            className="w-full h-12 rounded-xl border border-accent/40 bg-secondary/40 text-sm font-semibold text-accent hover:bg-accent/10 disabled:opacity-60 inline-flex items-center justify-center gap-2"
-          >
-            {fastSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-            Pay ₹1 & open my dashboard
-          </button>
-          <p className="text-[11px] text-muted-foreground text-center">
-            Charged securely via Razorpay. Your existing password stays unchanged.
-          </p>
-        </div>
       </div>
     </main>
   );

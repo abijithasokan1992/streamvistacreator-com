@@ -216,6 +216,12 @@ export default function DitIngestProtocol() {
   const [history, setHistory] = useState<LogRow[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [tab, setTab] = useState<"form" | "history">("form");
+  // Storage-bucket configuration state. When the private DIT bucket is not
+  // yet provisioned we surface a persistent banner and keep the unsaved form
+  // in place so nothing is discarded — the compliance log itself is still
+  // saved (with a `pending-local://` placeholder) so chain-of-custody
+  // metadata survives the outage.
+  const [storageUnavailable, setStorageUnavailable] = useState(false);
 
   const loadHistory = useCallback(async () => {
     if (!user) return;

@@ -185,6 +185,104 @@ export async function getTitle(id: string): Promise<TitleRow | null> {
  * available (pre-migration), we fall back to a plain insert — never
  * blocking title creation.
  */
+const ACTIVE_DRAFT_STATUSES: ContentStatus[] = [
+  "draft",
+  "incomplete",
+  "changes_requested",
+];
+
+const createTitleInFlight = new Map<string, Promise<TitleRow>>();
+
+function isMissingDraftIdentityColumn(error: any): boolean {
+  return error?.code === "42703" || /client_draft_id.*does not exist|column.*client_draft_id/i.test(error?.message ?? "");
+}
+
+async function findEquivalentActiveDraft(
+  userId: string,
+  workspaceId: string | null,
+  title: string,
+): Promise<TitleRow | null> {
+  let query = (supabase as any)
+    .from("content_titles")
+    .select("*")
+    .eq("owner_user_id", userId)
+    .eq("title", title)
+    .in("status", ACTIVE_DRAFT_STATUSES)
+    .order("updated_at", { ascending: false })
+    .limit(1);
+  query = workspaceId ? query.eq("workspace_id", workspaceId) : query.is("workspace_id", null);
+  const { data, error } = await query.maybeSingle();
+  if (error) throw error;
+  return data ? enrichRow({ ...data, metadata: parseMetadata(data.metadata) }) : null;
+}
+
+async function createTitleOnce(
+  userId: string,
+  workspaceId: string | null,
+  trimmed: string,
+  format: TitleMetadata["format"],
+  clientDraftId?: string | null,
+): Promise<TitleRow> {
+  const meta = { ...emptyMetadata(), format };
+  let identityColumnMissing = false;
+
+  if (clientDraftId) {
+    const { data: existing, error: lookupErr } = await (supabase as any)
+      .from("content_titles")
+      .select("*")
+      .eq("owner_user_id", userId)
+      .eq("client_draft_id", clientDraftId)
+      .maybeSingle();
+    if (!lookupErr && existing) {
+      return enrichRow({ ...existing, metadata: parseMetadata(existing.metadata) });
+    }
+    if (lookupErr) {
+      if (!isMissingDraftIdentityColumn(lookupErr)) throw lookupErr;
+      identityColumnMissing = true;
+      const equivalent = await findEquivalentActiveDraft(userId, workspaceId, trimmed);
+      if (equivalent) return equivalent;
+    }
+  }
+
+  const basePayload: Record<string, unknown> = {
+    owner_user_id: userId,
+    workspace_id: workspaceId,
+    title: trimmed,
+    status: "draft",
+    locked: false,
+    metadata: meta,
+  };
+  const payload = clientDraftId && !identityColumnMissing
+    ? { ...basePayload, client_draft_id: clientDraftId }
+    : basePayload;
+
+  let { data, error } = await (supabase as any)
+    .from("content_titles")
+    .insert(payload)
+    .select("*")
+    .single();
+
+  if (error && clientDraftId && isMissingDraftIdentityColumn(error)) {
+    // A schema-cache or pre-migration environment can discover the missing
+    // column only at insert time. Recheck the active draft before the
+    // compatibility insert so retries never blindly create a duplicate.
+    const equivalent = await findEquivalentActiveDraft(userId, workspaceId, trimmed);
+    if (equivalent) return equivalent;
+    ({ data, error } = await (supabase as any)
+      .from("content_titles")
+      .insert(basePayload)
+      .select("*")
+      .single());
+  }
+  if (error) throw error;
+  return enrichRow({ ...data, metadata: parseMetadata(data.metadata) });
+}
+
+/**
+ * Idempotent title creation across double-clicks, retries and pre-migration
+ * schemas. A stable clientDraftId is preferred; the active title/workspace
+ * lookup is a compatibility guard until the unique DB index is applied.
+ */
 export async function createTitle(
   userId: string,
   workspaceId: string | null,
@@ -194,52 +292,23 @@ export async function createTitle(
 ): Promise<TitleRow> {
   const trimmed = name.trim();
   if (!trimmed) throw new Error("Title name is required");
-  const meta = { ...emptyMetadata(), format };
 
-  // 1. If caller supplied a stable draft id, look for a prior row first.
-  if (clientDraftId) {
-    const { data: existing, error: lookupErr } = await (supabase as any)
-      .from("content_titles")
-      .select("*")
-      .eq("owner_user_id", userId)
-      .eq("client_draft_id", clientDraftId)
-      .maybeSingle();
-    // Ignore column-missing errors ("column ... does not exist" / 42703) so the
-    // client stays compatible with pre-migration schemas. Any other error
-    // surfaces to the caller.
-    if (!lookupErr && existing) {
-      return { ...existing, metadata: parseMetadata(existing.metadata) };
-    }
+  const key = clientDraftId
+    ? `${userId}:${workspaceId ?? "personal"}:${clientDraftId}`
+    : null;
+  if (key) {
+    const running = createTitleInFlight.get(key);
+    if (running) return running;
   }
 
-  // 2. Attempt insert including client_draft_id; retry without it if the
-  // column doesn't exist yet in this environment.
-  const basePayload: Record<string, unknown> = {
-    owner_user_id: userId,
-    workspace_id: workspaceId,
-    title: trimmed,
-    status: "draft",
-    locked: false,
-    metadata: meta,
-  };
-  const payload = clientDraftId ? { ...basePayload, client_draft_id: clientDraftId } : basePayload;
-
-  let { data, error } = await (supabase as any)
-    .from("content_titles")
-    .insert(payload)
-    .select("*")
-    .single();
-
-  if (error && clientDraftId && /client_draft_id/i.test(error.message ?? "")) {
-    // Column not yet migrated — retry without it.
-    ({ data, error } = await (supabase as any)
-      .from("content_titles")
-      .insert(basePayload)
-      .select("*")
-      .single());
+  const operation = createTitleOnce(userId, workspaceId, trimmed, format, clientDraftId);
+  if (!key) return operation;
+  createTitleInFlight.set(key, operation);
+  try {
+    return await operation;
+  } finally {
+    if (createTitleInFlight.get(key) === operation) createTitleInFlight.delete(key);
   }
-  if (error) throw error;
-  return { ...data, metadata: parseMetadata(data.metadata) };
 }
 
 export type FreeTierStatus = {

@@ -1,12 +1,11 @@
 /**
  * Thin persistence layer for revenue statement imports.
  *
- * Uses the EXISTING `revenue_imports` / `revenue_lines` tables. Extended
- * fields (tax, gateway fee, in-app fee, shares, model, statement idempotency
- * key, source_row_key) are stored inside the existing JSONB `metadata`
- * column until the pending migration lands.
+ * Uses `revenue_imports` / `revenue_lines` with the typed columns from
+ * the pending revenue migration. Exact statement/row keys and workspace IDs
+ * are mandatory so imports cannot silently duplicate or lose tenant scope.
  *
- * If the required tables/columns are absent, callers get a
+ * If the required tables/typed columns are absent, callers get a
  * `DatabasePendingError` so the UI can show "database update pending" instead
  * of writing partial data.
  */

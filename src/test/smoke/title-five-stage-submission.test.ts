@@ -15,6 +15,8 @@
  * ZERO AI. No network. No production data.
  */
 import { describe, it, expect, beforeEach } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import {
   SUBMISSION_STEPS,
   computeProgress,
@@ -44,6 +46,27 @@ describe("five-stage title submission — structure", () => {
       "Assets",
       "Review & Submit",
     ]);
+  });
+});
+
+describe("Creator editor — canonical stage wiring", () => {
+  const src = readFileSync(
+    resolve(process.cwd(), "src/components/creator/title/TitleEditor.tsx"),
+    "utf8",
+  );
+
+  it("renders and advances Rights & Business before Assets", () => {
+    expect(src).toMatch(
+      /label: "Story"[\s\S]*label: "Rights & Business"[\s\S]*label: "Assets"[\s\S]*label: "Review & Submit"/,
+    );
+    expect(src).toContain(
+      'const tabOrder: TabId[] = ["overview", "metadata", "rights", "assets", "submission"]',
+    );
+  });
+
+  it("unlocks Rights after Story and Assets only after Rights", () => {
+    expect(src).toMatch(/rights:[\s\S]{0,100}unlocked: bypass \|\| metadataComplete/);
+    expect(src).toMatch(/assets:[\s\S]{0,120}metadataComplete && rightsComplete/);
   });
 });
 

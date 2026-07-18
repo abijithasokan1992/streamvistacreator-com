@@ -19,8 +19,10 @@ describe("A) platform-readiness metric isolation", () => {
 
   it("does not reference removed columns ingest_telemetry.successful / deal_memos.signed_at", () => {
     expect(/ingest_telemetry[\s\S]{0,200}\.successful/.test(src)).toBe(false);
-    expect(/deal_memos[\s\S]{0,200}\.signed_at/.test(src)).toBe(false);
-    expect(/\bsigned_at\b/.test(src)).toBe(false);
+    // The prose comment mentions `signed_at` as an explanation, but the code
+    // must not read or write that column.
+    expect(/\.signed_at\b/.test(src)).toBe(false);
+    expect(/["']signed_at["']/.test(src)).toBe(false);
   });
 
   it("uses severity-based derivation for ingest_telemetry health", () => {

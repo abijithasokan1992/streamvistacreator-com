@@ -24,7 +24,7 @@ import UsersAndCredentials from "@/components/admin/UsersAndCredentials";
 import AdminTeamManager from "@/components/admin/AdminTeamManager";
 import OnboardingApprovals from "@/components/admin/OnboardingApprovals";
 import ContentReviewWorkflow from "@/components/admin/ContentReviewWorkflow";
-import QCLegalValidationSurface from "@/components/admin/QCLegalValidationSurface";
+import QCLegalValidationSurface from "@/components/admin/QCLegalValidationSurface";\nimport AdminClassificationConsole from "@/components/admin/AdminClassificationConsole";
 import TitleEditRequestsInbox from "@/components/admin/TitleEditRequestsInbox";
 import ProductsAndPlans from "@/components/admin/ProductsAndPlans";
 import StudioVaultPricing from "@/components/admin/StudioVaultPricing";
@@ -437,6 +437,7 @@ function buildDepartments(args: {
         { id: "approvals", label: "Content Review", hint: "Title QC & legal review", content: (
           <ContentReviewWorkflow initialTab={args.reviewInitialTab} />
         )},
+        { id: "classification", label: "A / B / C Classification", hint: "Films · creators · studios · buyers", content: <AdminClassificationConsole /> },
         { id: "publish", label: "Publish Titles", hint: "Approved → Ready For Distribution", content: (
           <ContentReviewWorkflow initialTab="approved" />
         )},

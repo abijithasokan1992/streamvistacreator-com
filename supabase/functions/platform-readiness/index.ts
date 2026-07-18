@@ -114,8 +114,8 @@ Deno.serve(async (req) => {
       countOf('acquisition_requests'),
       countOf('featured_films'),
       countOf('intro_invites'),
-      // deal_memos has no `signed_at`; use approval_status='approved' as the
-      // signed-and-closed proxy per current schema.
+      // deal_memos has no `signed_at`; report approval_status='approved'
+      // accurately. Approval is not represented as a legal signature.
       countOf('deal_memos', (q) => q.eq('approval_status', 'approved')),
       admin.from('site_config').select('oracle_tenancy_ocid, oracle_bucket, oracle_region').eq('id', true).maybeSingle(),
       admin.from('razorpay_config').select('mode').eq('id', true).maybeSingle(),
@@ -248,7 +248,7 @@ Deno.serve(async (req) => {
           backend: b(acquisitionRequests.ok, `${acquisitionRequests.n} acquisition request(s)`),
           security: b(introInvites.ok, `${introInvites.n} invitation record(s)`),
           integration: b(acquisitionRequests.n > 0 || featuredFilms.n > 0, 'Buyer surface populated'),
-          production: b(dealsClosed.n > 0, `${dealsClosed.n} signed deal(s)`),
+          production: b(dealsClosed.n > 0, `${dealsClosed.n} approved deal memo(s)`),
         },
       },
     ];

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, RefreshCw, Plus, Film, Shield, Copy, Ban, Clock, ExternalLink, CheckCircle2 } from "lucide-react";
+import { Loader2, RefreshCw, Plus, Film, Shield, Copy, Ban, Clock, ExternalLink, CheckCircle2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +28,9 @@ type Invite = {
   revoked_at: string | null; revoke_reason: string | null;
   nda_required: boolean; watermark_enabled: boolean;
   playback_url: string | null; playback_url_expires_at: string | null;
-  notes: string | null; created_at: string;
+  verification_started_at: string | null; verification_session_expires_at: string | null;
+  verification_locked_at: string | null; verification_lock_reason: string | null;
+  reset_count: number; notes: string | null; created_at: string;
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -87,6 +89,21 @@ export default function ScreeningOpsConsole() {
     const { error } = await sb.rpc("admin_revoke_screening_invite", { _invite_id: id, _reason: reason });
     if (error) return toast.error(error.message);
     toast.success("Invite revoked");
+    load();
+  }
+  async function resetVerification(id: string) {
+    const reason = window.prompt("Reset reason (required — minimum 3 characters)");
+    if (reason === null) return;
+    if (reason.trim().length < 3) {
+      toast.error("A clear reset reason is required");
+      return;
+    }
+    const { error } = await sb.rpc("admin_reset_screening_verification", {
+      _invite_id: id,
+      _reason: reason.trim(),
+    });
+    if (error) return toast.error(error.message);
+    toast.success("One-time verification reset", { description: "The action was added to the audit trail." });
     load();
   }
   async function extend(id: string) {
@@ -195,6 +212,8 @@ export default function ScreeningOpsConsole() {
                         <td className="px-2 text-xs">{inv.last_viewed_at ? new Date(inv.last_viewed_at).toLocaleString() : "—"}</td>
                         <td className="px-2 text-xs">
                           {inv.max_progress_pct}% {inv.completed && <CheckCircle2 className="inline w-3 h-3 text-emerald-500" />}
+                          {inv.verification_locked_at && <div className="text-emerald-600">Verified · locked</div>}
+                          {(inv.reset_count ?? 0) > 0 && <div className="text-muted-foreground">{inv.reset_count} admin reset{inv.reset_count === 1 ? "" : "s"}</div>}
                           {inv.view_count > 0 && <div className="text-muted-foreground">{inv.view_count} opens</div>}
                         </td>
                         <td className="px-2 text-xs">{new Date(inv.expires_at).toLocaleDateString()}</td>
@@ -204,6 +223,9 @@ export default function ScreeningOpsConsole() {
                             <Button size="icon" variant="ghost" title="Open" aria-label="Open screening in new tab" onClick={() => window.open(screeningUrl(inv.token), "_blank")}><ExternalLink className="w-3.5 h-3.5" aria-hidden="true" /></Button>
                             <Button size="icon" variant="ghost" title="Extend expiry" aria-label="Extend screening expiry" onClick={() => extend(inv.id)}><Clock className="w-3.5 h-3.5" aria-hidden="true" /></Button>
                             <Button size="icon" variant="ghost" title="Rotate playback URL" aria-label="Rotate playback URL" onClick={() => rotateUrl(inv.id)}><RefreshCw className="w-3.5 h-3.5" aria-hidden="true" /></Button>
+                            {(inv.completed || !!inv.verification_locked_at) && inv.status !== "revoked" && (
+                              <Button size="icon" variant="ghost" title="Admin reset one-time verification" aria-label="Reset one-time screening verification" onClick={() => resetVerification(inv.id)}><RotateCcw className="w-3.5 h-3.5 text-amber-500" aria-hidden="true" /></Button>
+                            )}
                             {inv.status !== "revoked" && (
                               <Button size="icon" variant="ghost" title="Revoke" aria-label="Revoke screening access" onClick={() => revoke(inv.id)}><Ban className="w-3.5 h-3.5 text-red-500" aria-hidden="true" /></Button>
                             )}
@@ -286,7 +308,7 @@ function ShareScreenerDialog({
       _playback_url: playbackUrl || null,
       _playback_url_expires_at: playbackUrl ? expires : null,
       _nda_required: true,
-      _max_views: null,
+      _max_views: 1,
       _notes: notes || null,
     });
     setSubmitting(false);

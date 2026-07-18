@@ -5,14 +5,21 @@
  * validators read this catalog to compute state on the client without
  * touching a model.
  *
- * To add or reorder a step: edit this file. Every consumer picks it up
- * automatically.
+ * The canonical Creator/Studio submission flow has exactly FIVE stages:
+ *   Basics → Story → Rights & Business → Assets → Review & Submit.
+ *
+ * To keep the diff small, existing consumers that referred to legacy
+ * step ids ("synopsis", "cast_crew", "rights") can migrate to:
+ *   synopsis  → story
+ *   cast_crew → story (director now lives on Story)
+ *   rights    → rights_business
+ * The step ordering is preserved so downstream progress computations
+ * remain stable.
  */
 export type SubmissionStepId =
   | "basics"
-  | "synopsis"
-  | "rights"
-  | "cast_crew"
+  | "story"
+  | "rights_business"
   | "assets"
   | "review";
 
@@ -34,6 +41,8 @@ export interface StepDefinition {
   titleKey: string;
   /** i18n key for the step subtitle/description. */
   descriptionKey: string;
+  /** Short user-visible fallback label (English) when i18n is unavailable. */
+  fallbackLabel: string;
   fields: StepFieldSpec[];
 }
 
@@ -43,58 +52,64 @@ export const SUBMISSION_STEPS: readonly StepDefinition[] = [
     order: 1,
     titleKey: "submission.steps.basics.title",
     descriptionKey: "submission.steps.basics.description",
+    fallbackLabel: "Basics",
     fields: [
       { key: "title", required: true, min: 1, max: 200 },
+      { key: "kind", required: true },
       { key: "language", required: true },
       { key: "duration_minutes", required: true, min: 1 },
-      { key: "kind", required: true },
     ],
   },
   {
-    id: "synopsis",
+    id: "story",
     order: 2,
-    titleKey: "submission.steps.synopsis.title",
-    descriptionKey: "submission.steps.synopsis.description",
+    titleKey: "submission.steps.story.title",
+    descriptionKey: "submission.steps.story.description",
+    fallbackLabel: "Story",
     fields: [
       { key: "synopsis", required: true, min: 80, max: 4000 },
+      { key: "genre", required: true },
+      { key: "crew.director", required: true, min: 1 },
+      { key: "cast", required: false },
     ],
   },
   {
-    id: "rights",
+    id: "rights_business",
     order: 3,
-    titleKey: "submission.steps.rights.title",
-    descriptionKey: "submission.steps.rights.description",
+    titleKey: "submission.steps.rights_business.title",
+    descriptionKey: "submission.steps.rights_business.description",
+    fallbackLabel: "Rights & Business",
     fields: [
       { key: "rights.owner_name", required: true, min: 1, max: 200 },
       { key: "rights.territory", required: true },
+      { key: "rights.commercial_model", required: true },
+      // Advanced fields (exclusivity, term dates, holdbacks, currency, tax,
+      // share rates, windows, restrictions) stay behind a "More details"
+      // disclosure and are not required for stage completion.
       { key: "rights.window", required: false },
-    ],
-  },
-  {
-    id: "cast_crew",
-    order: 4,
-    titleKey: "submission.steps.cast_crew.title",
-    descriptionKey: "submission.steps.cast_crew.description",
-    fields: [
-      { key: "cast", required: false },
-      { key: "crew.director", required: true, min: 1 },
+      { key: "rights.exclusivity", required: false },
     ],
   },
   {
     id: "assets",
-    order: 5,
+    order: 4,
     titleKey: "submission.steps.assets.title",
     descriptionKey: "submission.steps.assets.description",
+    fallbackLabel: "Assets",
     fields: [
       { key: "assets.master_uploaded", required: true },
       { key: "assets.poster_uploaded", required: false },
+      { key: "assets.trailer_uploaded", required: false },
+      { key: "assets.subtitles_uploaded", required: false },
+      { key: "assets.legal_uploaded", required: false },
     ],
   },
   {
     id: "review",
-    order: 6,
+    order: 5,
     titleKey: "submission.steps.review.title",
     descriptionKey: "submission.steps.review.description",
+    fallbackLabel: "Review & Submit",
     fields: [
       { key: "legal.accepted_terms", required: true },
     ],

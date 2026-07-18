@@ -31,11 +31,11 @@ import { AILicensingPanel } from "./AILicensingPanel";
 type TabId = "overview" | "metadata" | "assets" | "rights" | "submission";
 
 const TABS: { id: TabId; label: string }[] = [
-  { id: "overview",   label: "Overview" },
-  { id: "metadata",   label: "Details" },
-  { id: "assets",     label: "Media & Assets" },
+  { id: "overview",   label: "Basics" },
+  { id: "metadata",   label: "Story" },
+  { id: "assets",     label: "Assets" },
   { id: "rights",     label: "Rights & Business" },
-  { id: "submission", label: "Submit" },
+  { id: "submission", label: "Review & Submit" },
 ];
 
 export function TitleEditor({

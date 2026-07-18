@@ -114,7 +114,9 @@ Deno.serve(async (req) => {
       countOf('acquisition_requests'),
       countOf('featured_films'),
       countOf('intro_invites'),
-      countOf('deal_memos', (q) => q.not('signed_at', 'is', null)),
+      // deal_memos has no `signed_at`; use approval_status='approved' as the
+      // signed-and-closed proxy per current schema.
+      countOf('deal_memos', (q) => q.eq('approval_status', 'approved')),
       admin.from('site_config').select('oracle_tenancy_ocid, oracle_bucket, oracle_region').eq('id', true).maybeSingle(),
       admin.from('razorpay_config').select('mode').eq('id', true).maybeSingle(),
       admin.from('free_tier_config').select('id').eq('id', true).maybeSingle(),

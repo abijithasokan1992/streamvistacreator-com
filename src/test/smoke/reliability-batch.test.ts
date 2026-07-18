@@ -29,8 +29,10 @@ describe("A) platform-readiness metric isolation", () => {
     expect(src).toMatch(/ingest_telemetry[\s\S]*severity/);
   });
 
-  it("uses approval_status as the deal-memo signed proxy", () => {
+  it("reports approved deal memos without calling them signed", () => {
     expect(src).toMatch(/deal_memos[\s\S]*approval_status[\s\S]*approved/);
+    expect(src).toMatch(/approved deal memo\(s\)/);
+    expect(src).not.toMatch(/signed deal\(s\)/);
   });
 });
 

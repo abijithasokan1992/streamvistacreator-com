@@ -54,13 +54,26 @@ export default function EmailLogMonitor() {
     setBanner(null);
     try {
       const { data, error } = await supabase.functions.invoke("retry-failed-emails", { body: {} });
+      // Distinguish real sweep failures (non-2xx or thrown) from audit-only
+      // failures. `invoke` sets `error` on non-2xx; audit-only failures
+      // arrive as 200 with `audit_status: "failed"`.
       if (error) throw error;
-      const audit = (data as any)?.audit;
-      setBanner(
-        audit?.passed
-          ? `Retry sweep OK — 0 stuck message_ids remaining.`
-          : `Retry sweep ran — ${audit?.pending_remaining ?? "?"} message_id(s) still stuck.`,
-      );
+      const payload = (data ?? {}) as {
+        sweep_status?: "ok" | "degraded" | "failed";
+        audit_status?: "ok" | "failed";
+        audit?: { passed?: boolean; pending_remaining?: number };
+      };
+      const sweep = payload.sweep_status ?? (payload.audit?.passed ? "ok" : "degraded");
+      const auditOk = payload.audit_status === "ok";
+      if (sweep === "failed") {
+        setBanner("Retry failed — sweeper did not complete. Check admin audit alerts.");
+      } else if (!auditOk) {
+        setBanner(
+          `Retry sweep succeeded — audit persistence unavailable (${payload.audit?.pending_remaining ?? 0} stuck). Sweep results are safe.`,
+        );
+      } else {
+        setBanner("Retry sweep OK — 0 stuck message_ids remaining.");
+      }
       await load();
     } catch (e) {
       setBanner(`Retry failed: ${e instanceof Error ? e.message : String(e)}`);

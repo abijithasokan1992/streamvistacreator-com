@@ -69,6 +69,34 @@ export const ok = (structured: Record<string, unknown>, summary: string): ToolRe
 });
 
 /**
+ * Detect PostgREST/Postgres errors that indicate a query referenced a
+ * column/relation that does not exist in the current schema (typically because
+ * a legacy field was renamed or dropped). Callers should treat these as
+ * "unavailable" instead of a hard error so the assistant returns a structured
+ * empty result rather than a 500-style crash.
+ */
+export function isSchemaMissingError(e: { message?: string; code?: string } | null | undefined): boolean {
+  if (!e) return false;
+  const msg = String(e.message ?? "").toLowerCase();
+  const code = String(e.code ?? "");
+  return (
+    code === "42703" || // undefined_column
+    code === "42P01" || // undefined_table
+    /column .* does not exist/.test(msg) ||
+    /relation .* does not exist/.test(msg) ||
+    /could not find the .* column/.test(msg)
+  );
+}
+
+/** Structured "unavailable" reply — HTTP 200, empty rows, explicit reason. */
+export function unavailable(structured: Record<string, unknown>, reason: string): ToolResult {
+  return {
+    content: [{ type: "text", text: `unavailable: ${reason}` }],
+    structuredContent: { ...structured, unavailable: true, reason },
+  };
+}
+
+/**
  * Redact obvious secrets and PII from strings before returning them.
  * Aggressive by design: MCP responses reach ChatGPT which reaches humans.
  */

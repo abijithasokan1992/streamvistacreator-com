@@ -297,9 +297,14 @@ Deno.serve(async (req) => {
     console.error("[retry-failed-emails] audit error", e);
   }
 
-  // Persist the audit result so admins can review historical runs.
+  // Persist the audit result so admins can review historical runs. This is
+  // deliberately separate from the sweep outcome: if the audit log write
+  // fails, the sweep itself may still have succeeded and MUST be reported
+  // as such.
+  let auditPersistStatus: "ok" | "failed" = "ok";
+  let auditPersistError: string | null = null;
   try {
-    await supabase.from("admin_audit_log").insert({
+    const { error: persistErr } = await supabase.from("admin_audit_log").insert({
       action: "email_retry_audit",
       details: {
         audit,
@@ -308,30 +313,40 @@ Deno.serve(async (req) => {
         ran_at: new Date().toISOString(),
       },
     });
+    if (persistErr) throw persistErr;
   } catch (e) {
+    auditPersistStatus = "failed";
+    // Redact any accidental identifier leakage — only surface the class.
+    auditPersistError = (e instanceof Error ? e.message : String(e)).replace(
+      /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g,
+      "[email]",
+    );
     console.error("[retry-failed-emails] failed to persist audit log", e);
   }
 
-  // The sweep always returns HTTP 200 once the function has run to
-  // completion. Sub-step outcomes (queue errors, audit residue, reconcile
-  // failures) are surfaced in the JSON payload via `ok` + `warnings` and
-  // ALSO persisted to `admin_audit_log` as a distinct `email_retry_alert`
-  // record so ops dashboards can page on them — HTTP 200 protects the UI
-  // loop but does NOT silently swallow the failure.
+  // ---------------------------------------------------------------------
+  // Outcome classification, separated per the reliability contract:
+  //   • sweep_status:   did the queue drain + reconcile pass run at all?
+  //   • audit_status:   did the post-run audit + admin_audit_log write succeed?
+  //   • http status:    2xx unless the sweep itself failed catastrophically.
+  // ---------------------------------------------------------------------
   const anyQueueError = Object.values(summary).some((s) => !!s.error);
   const allQueuesErrored =
     Object.keys(summary).length > 0 &&
     Object.values(summary).every((s) => !!s.error);
-  const sweeperDegraded =
-    allQueuesErrored && !!reconciled.error && !!audit.error;
-  const hasWarnings = anyQueueError || !!reconciled.error || !!audit.error || sweeperDegraded;
+  const sweepFailed = allQueuesErrored && !!reconciled.error;
+  const sweepStatus: "ok" | "degraded" | "failed" =
+    sweepFailed ? "failed" : anyQueueError || reconciled.error ? "degraded" : "ok";
+  const auditStatus: "ok" | "failed" =
+    audit.passed && auditPersistStatus === "ok" ? "ok" : "failed";
+  const hasWarnings = sweepStatus !== "ok" || auditStatus !== "ok";
 
   if (hasWarnings) {
     try {
       await supabase.from("admin_audit_log").insert({
         action: "email_retry_alert",
         details: {
-          severity: sweeperDegraded ? "critical" : "warning",
+          severity: sweepFailed ? "critical" : "warning",
           summary,
           reconciled,
           audit,
@@ -339,7 +354,8 @@ Deno.serve(async (req) => {
             any_queue_error: anyQueueError,
             reconcile_error: !!reconciled.error,
             audit_error: !!audit.error,
-            sweeper_degraded: sweeperDegraded,
+            audit_persist_error: auditPersistStatus === "failed",
+            sweep_failed: sweepFailed,
           },
           alerted_at: new Date().toISOString(),
         },
@@ -348,40 +364,59 @@ Deno.serve(async (req) => {
       console.error("[retry-failed-emails] failed to persist alert row", e);
     }
     console.warn("[retry-failed-emails] ALERT emitted", {
-      sweeperDegraded, anyQueueError,
+      sweepStatus, auditStatus,
       reconcile_error: !!reconciled.error, audit_error: !!audit.error,
     });
   }
 
+  // Sweep-level failure → structured non-2xx. Audit-only failures stay 2xx.
+  const httpStatus = sweepFailed ? 502 : 200;
+
   return new Response(
     JSON.stringify({
-      ok: !sweeperDegraded,
+      ok: sweepStatus !== "failed",
+      sweep_status: sweepStatus,
+      audit_status: auditStatus,
+      audit_persist_error: auditPersistError,
       degraded: hasWarnings,
       ...summary,
       reconciled,
       audit,
       alert: hasWarnings
         ? {
-            severity: sweeperDegraded ? "critical" : "warning",
+            severity: sweepFailed ? "critical" : "warning",
             queue_errors: anyQueueError,
             reconcile_error: !!reconciled.error,
             audit_error: !!audit.error,
+            audit_persist_error: auditPersistStatus === "failed",
           }
         : undefined,
       warnings: hasWarnings
-        ? { queue_errors: anyQueueError, reconcile_error: !!reconciled.error, audit_error: !!audit.error }
+        ? {
+            queue_errors: anyQueueError,
+            reconcile_error: !!reconciled.error,
+            audit_error: !!audit.error,
+            audit_persist_error: auditPersistStatus === "failed",
+          }
         : undefined,
     }),
     {
-      status: 200,
+      status: httpStatus,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     },
   );
   } catch (e) {
+    // Unhandled crash BEFORE the sweep completes → real failure. Return a
+    // proper non-2xx so the admin UI shows "Failed" and monitoring can page.
     console.error("[retry-failed-emails] unhandled error", e);
     return new Response(
-      JSON.stringify({ ok: false, error: e instanceof Error ? e.message : String(e), handled: true }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      JSON.stringify({
+        ok: false,
+        sweep_status: "failed",
+        audit_status: "failed",
+        error: e instanceof Error ? e.message : String(e),
+      }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });

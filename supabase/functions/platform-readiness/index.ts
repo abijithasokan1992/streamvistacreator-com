@@ -83,7 +83,11 @@ Deno.serve(async (req) => {
       countOf('recent_uploads'),
       countOf('recent_uploads', (q) => q.eq('status', 'completed')),
       countOf('ingest_sources'),
-      countOf('ingest_telemetry', (q) => q.eq('successful', true)),
+      // ingest_telemetry has no `successful` column; derive from severity.
+      // Non-error rows (`info`, `notice`, `debug`, `warning`) represent
+      // events that reached the sink without a hard failure. See
+      // src/integrations/supabase/types.ts → ingest_telemetry.
+      countOf('ingest_telemetry', (q) => q.not('severity', 'in', '("error","critical","fatal")')),
       countOf('projects'),
       countOf('projects', (q) => q.not('crew', 'is', null)),
       countOf('workspace_storage_entitlements'),
@@ -110,7 +114,9 @@ Deno.serve(async (req) => {
       countOf('acquisition_requests'),
       countOf('featured_films'),
       countOf('intro_invites'),
-      countOf('deal_memos', (q) => q.not('signed_at', 'is', null)),
+      // deal_memos has no `signed_at`; use approval_status='approved' as the
+      // signed-and-closed proxy per current schema.
+      countOf('deal_memos', (q) => q.eq('approval_status', 'approved')),
       admin.from('site_config').select('oracle_tenancy_ocid, oracle_bucket, oracle_region').eq('id', true).maybeSingle(),
       admin.from('razorpay_config').select('mode').eq('id', true).maybeSingle(),
       admin.from('free_tier_config').select('id').eq('id', true).maybeSingle(),

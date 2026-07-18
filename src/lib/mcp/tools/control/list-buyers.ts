@@ -1,6 +1,6 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
-import { authorize, ok, redactDeep, userClient, withTimeout, clampLimit } from "../../lib/control";
+import { authorize, ok, redactDeep, userClient, withTimeout, clampLimit, isSchemaMissingError, unavailable } from "../../lib/control";
 
 export default defineTool({
   name: "list_buyers",
@@ -23,7 +23,12 @@ export default defineTool({
       .limit(clampLimit(input.limit));
     if (input.search) q = q.ilike("display_name", `%${input.search}%`);
     const { data, error } = await withTimeout(q, "list_buyers");
-    if (error) return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    if (error) {
+      if (isSchemaMissingError(error)) {
+        return unavailable({ buyers: [], count: 0 }, `entity_profiles schema drift: ${error.message}`);
+      }
+      return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    }
     const rows = redactDeep(data ?? []);
     return ok({ buyers: rows, count: rows.length }, `Returned ${rows.length} buyers`);
   },

@@ -1,6 +1,6 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
-import { authorize, ok, redactDeep, userClient, withTimeout, clampLimit } from "../../lib/control";
+import { authorize, ok, redactDeep, userClient, withTimeout, clampLimit, isSchemaMissingError, unavailable } from "../../lib/control";
 
 export default defineTool({
   name: "list_failed_emails",
@@ -21,7 +21,12 @@ export default defineTool({
         .limit(clampLimit(input.limit)),
       "list_failed_emails",
     );
-    if (error) return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    if (error) {
+      if (isSchemaMissingError(error)) {
+        return unavailable({ failed_emails: [], count: 0 }, `email_send_log schema drift: ${error.message}`);
+      }
+      return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    }
     const rows = redactDeep(data ?? []);
     return ok({ failed_emails: rows, count: rows.length }, `Returned ${rows.length} failed emails`);
   },

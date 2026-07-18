@@ -983,6 +983,20 @@ var ok2 = (structured, summary) => ({
   content: [{ type: "text", text: summary }],
   structuredContent: structured
 });
+function isSchemaMissingError(e) {
+  if (!e) return false;
+  const msg = String(e.message ?? "").toLowerCase();
+  const code = String(e.code ?? "");
+  return code === "42703" || // undefined_column
+  code === "42P01" || // undefined_table
+  /column .* does not exist/.test(msg) || /relation .* does not exist/.test(msg) || /could not find the .* column/.test(msg);
+}
+function unavailable(structured, reason) {
+  return {
+    content: [{ type: "text", text: `unavailable: ${reason}` }],
+    structuredContent: { ...structured, unavailable: true, reason }
+  };
+}
 var SECRET_PATTERNS = [
   [/eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}/g, "[REDACTED_JWT]"],
   [/sbp_[A-Za-z0-9]{20,}/g, "[REDACTED_SUPABASE_PAT]"],
@@ -1180,7 +1194,12 @@ var list_creators_default = defineTool29({
     let q = sb.from("entity_profiles").select("id, display_name, kind, verification_status, created_at").eq("kind", "creator").order("created_at", { ascending: false }).limit(clampLimit(input.limit));
     if (input.search) q = q.ilike("display_name", `%${input.search}%`);
     const { data, error } = await withTimeout(q, "list_creators");
-    if (error) return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    if (error) {
+      if (isSchemaMissingError(error)) {
+        return unavailable({ creators: [], count: 0 }, `entity_profiles schema drift: ${error.message}`);
+      }
+      return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    }
     const rows = redactDeep(data ?? []);
     return ok2({ creators: rows, count: rows.length }, `Returned ${rows.length} creators`);
   }
@@ -1253,7 +1272,12 @@ var list_failed_uploads_default = defineTool32({
       sb.from("ingest_job_items").select("id, job_id, file_name, mime_guess, size_bytes, error_message, metadata, created_at, updated_at").eq("status", "failed").order("updated_at", { ascending: false }).limit(clampLimit(input.limit)),
       "list_failed_uploads"
     );
-    if (error) return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    if (error) {
+      if (isSchemaMissingError(error)) {
+        return unavailable({ failed_uploads: [], count: 0 }, `ingest_job_items schema drift: ${error.message}`);
+      }
+      return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    }
     const rows = redactDeep(data ?? []);
     return ok2({ failed_uploads: rows, count: rows.length }, `Returned ${rows.length} failed uploads`);
   }
@@ -1276,7 +1300,12 @@ var list_failed_emails_default = defineTool33({
       sb.from("email_send_log").select("id, message_id, template_name, status, error_message, created_at").in("status", ["failed", "failed_permanent", "dlq", "bounced"]).order("created_at", { ascending: false }).limit(clampLimit(input.limit)),
       "list_failed_emails"
     );
-    if (error) return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    if (error) {
+      if (isSchemaMissingError(error)) {
+        return unavailable({ failed_emails: [], count: 0 }, `email_send_log schema drift: ${error.message}`);
+      }
+      return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    }
     const rows = redactDeep(data ?? []);
     return ok2({ failed_emails: rows, count: rows.length }, `Returned ${rows.length} failed emails`);
   }
@@ -1351,7 +1380,12 @@ var list_buyers_default = defineTool36({
     let q = sb.from("entity_profiles").select("id, display_name, kind, verification_status, created_at").eq("kind", "buyer").order("created_at", { ascending: false }).limit(clampLimit(input.limit));
     if (input.search) q = q.ilike("display_name", `%${input.search}%`);
     const { data, error } = await withTimeout(q, "list_buyers");
-    if (error) return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    if (error) {
+      if (isSchemaMissingError(error)) {
+        return unavailable({ buyers: [], count: 0 }, `entity_profiles schema drift: ${error.message}`);
+      }
+      return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    }
     const rows = redactDeep(data ?? []);
     return ok2({ buyers: rows, count: rows.length }, `Returned ${rows.length} buyers`);
   }

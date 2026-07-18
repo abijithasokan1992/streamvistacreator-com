@@ -216,6 +216,12 @@ export default function DitIngestProtocol() {
   const [history, setHistory] = useState<LogRow[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [tab, setTab] = useState<"form" | "history">("form");
+  // Storage-bucket configuration state. When the private DIT bucket is not
+  // yet provisioned we surface a persistent banner and keep the unsaved form
+  // in place so nothing is discarded — the compliance log itself is still
+  // saved (with a `pending-local://` placeholder) so chain-of-custody
+  // metadata survives the outage.
+  const [storageUnavailable, setStorageUnavailable] = useState(false);
 
   const loadHistory = useCallback(async () => {
     if (!user) return;
@@ -298,10 +304,13 @@ export default function DitIngestProtocol() {
 
       if (uploadDegraded) {
         storedPath = `pending-local://${path}`;
+        setStorageUnavailable(true);
         console.warn(
           "[DIT] screenshot upload unavailable — saving log with local placeholder",
           uploadErrorMessage,
         );
+      } else {
+        setStorageUnavailable(false);
       }
 
       const finalChecklist: ChecklistState = { ...checklist, screenshot_uploaded: true };
@@ -325,14 +334,18 @@ export default function DitIngestProtocol() {
 
       if (uploadDegraded) {
         toast.warning(
-          "DIT log saved — screenshot Pending local, not uploaded. Re-attach once storage is available.",
+          "DIT log saved — DIT evidence storage is being configured. Screenshot retained locally; re-attach once available.",
         );
+        // Retain the unsaved form (including the picked screenshot file) so
+        // the DIT can re-submit the evidence once storage is provisioned.
+        // We do NOT clear `screenshotFile` or the form here.
+        await loadHistory();
       } else {
         toast.success("DIT ingest log saved.");
+        resetForm();
+        await loadHistory();
+        setTab("history");
       }
-      resetForm();
-      await loadHistory();
-      setTab("history");
     } catch (e: any) {
       toast.error(e?.message || "Failed to submit DIT log.");
     } finally {
@@ -371,6 +384,19 @@ export default function DitIngestProtocol() {
 
       {tab === "form" ? (
         <>
+          {storageUnavailable && (
+            <div
+              role="status"
+              className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200"
+            >
+              <div className="font-medium">DIT evidence storage is being configured.</div>
+              <p className="mt-1 text-xs text-amber-200/80">
+                Your DIT log is saved and the screenshot is retained locally. Once the private
+                storage bucket is provisioned, re-open this form and re-attach the screenshot to
+                complete chain-of-custody.
+              </p>
+            </div>
+          )}
           {/* Production identity */}
           <Section title="1. Production" step="Identity">
             <div className="grid gap-3 sm:grid-cols-2">

@@ -103,6 +103,7 @@ export default defineMcp({
     ctrlListTitles,
     ctrlListUploads,
     ctrlListFailedUploads,
+    ctrlListFailedUploadsAdmin,
     ctrlListFailedEmails,
     ctrlListPayments,
     ctrlListInvoices,

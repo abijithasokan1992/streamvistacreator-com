@@ -49,6 +49,7 @@ interface HistoryRow {
 // Current review workflow does NOT include "published" — the terminal positive
 // state is "ready_for_distribution". Commercial release is a future stream.
 const QUEUES: { value: Status; label: string }[] = [
+  { value: "draft", label: "Draft" },
   { value: "submitted", label: "Submitted" },
   { value: "in_review", label: "In Review" },
   { value: "qc_review", label: "QC Review" },
@@ -62,6 +63,7 @@ const QUEUES: { value: Status; label: string }[] = [
 ];
 
 const TRANSITIONS: Record<string, { value: Status; label: string; variant?: any }[]> = {
+  draft: [{ value: "submitted", label: "Submit for Review" }],
   submitted: [
     { value: "in_review", label: "Start Review" },
     { value: "changes_requested", label: "Request Changes" },

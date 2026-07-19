@@ -56,6 +56,11 @@ export function TitleEditor({
   const [autoSavedAt, setAutoSavedAt] = useState<number | null>(null);
   const [dirty, setDirty] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  // Synchronous guard against double-click / rapid re-entry — React state is
+  // async so `submitting` can still read `false` on a second click fired in the
+  // same tick. This ref locks the whole handleSubmit flow (including the
+  // pre-submit save + free-tier check) atomically.
+  const submitLockRef = useRef(false);
   const [termsOpen, setTermsOpen] = useState(false);
   const [pendingFreeSubmit, setPendingFreeSubmit] = useState(false);
   const [name, setName] = useState("");
@@ -282,33 +287,50 @@ export function TitleEditor({
       onSubmitted();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Submit failed.");
-    } finally { setSubmitting(false); }
+    } finally {
+      setSubmitting(false);
+      submitLockRef.current = false;
+    }
   };
 
   const handleSubmit = async () => {
     if (!title) return;
-    if (!ready) {
-      const preview = missing.slice(0, 3).join(", ");
-      const extra = missing.length > 3 ? ` +${missing.length - 3} more` : "";
-      toast.error(`A few items still need attention: ${preview}${extra}. Open the Submission tab to review.`);
-      return;
+    // Atomic re-entry guard — set synchronously so a second click in the same
+    // tick short-circuits before any async work (save flush, free-tier fetch,
+    // RPC) can start. Cleared in doSubmit's finally, or here on early return.
+    if (submitLockRef.current || submitting) return;
+    submitLockRef.current = true;
+    try {
+      if (!ready) {
+        const preview = missing.slice(0, 3).join(", ");
+        const extra = missing.length > 3 ? ` +${missing.length - 3} more` : "";
+        toast.error(`A few items still need attention: ${preview}${extra}. Open the Submission tab to review.`);
+        submitLockRef.current = false;
+        return;
+      }
+      // Flush any pending edits before submitting so the lock doesn't strand changes.
+      if (dirty) { await doSave(true); }
+      // Free-tier guard: 1 submission allowed.
+      const t = await fetchFreeTierStatus();
+      if (t?.is_free && !t.can_submit) {
+        toast.error("Free plan allows 1 submission. Upgrade from Storage & Billing to submit more titles.");
+        submitLockRef.current = false;
+        return;
+      }
+      // Free-tier: require explicit acknowledgement of commercial submission terms.
+      if (t?.is_free) {
+        setPendingFreeSubmit(true);
+        setTermsOpen(true);
+        // Lock stays engaged until the terms modal resolves (doSubmit clears it).
+        return;
+      }
+      await doSubmit();
+    } catch (e) {
+      submitLockRef.current = false;
+      throw e;
     }
-    // Flush any pending edits before submitting so the lock doesn't strand changes.
-    if (dirty) { await doSave(true); }
-    // Free-tier guard: 1 submission allowed.
-    const t = await fetchFreeTierStatus();
-    if (t?.is_free && !t.can_submit) {
-      toast.error("Free plan allows 1 submission. Upgrade from Storage & Billing to submit more titles.");
-      return;
-    }
-    // Free-tier: require explicit acknowledgement of commercial submission terms.
-    if (t?.is_free) {
-      setPendingFreeSubmit(true);
-      setTermsOpen(true);
-      return;
-    }
-    await doSubmit();
   };
+
 
   const byCat = (cats: AssetCategory[]) => assets.filter((a) => cats.includes(a.category));
 
@@ -682,8 +704,8 @@ export function TitleEditor({
       <FreeSubmissionTermsModal
         open={termsOpen}
         submitting={submitting}
-        onCancel={() => { setTermsOpen(false); setPendingFreeSubmit(false); }}
-        onConfirm={() => { if (pendingFreeSubmit) void doSubmit(); }}
+        onCancel={() => { setTermsOpen(false); setPendingFreeSubmit(false); submitLockRef.current = false; }}
+        onConfirm={() => { if (pendingFreeSubmit && !submitting) void doSubmit(); }}
       />
     </div>
   );

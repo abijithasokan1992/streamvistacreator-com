@@ -1,9 +1,49 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import fs from "fs";
 import { componentTagger } from "lovable-tagger";
 import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/supabase/vite";
 import { prerender } from "./scripts/prerender-routes";
+
+/**
+ * Mirror the SDK-owned MCP manifest at .lovable/mcp/manifest.json into
+ * public/.lovable/mcp/manifest.json so the manifest served from the deployed
+ * site (and read by McpHealthCenter / SettingsIntegrationsAI) never drifts
+ * from the tool list bundled into the edge function. Runs on dev start,
+ * on source-manifest change, and before every build.
+ */
+function syncMcpManifestToPublic() {
+  const src = path.resolve(__dirname, ".lovable/mcp/manifest.json");
+  const dst = path.resolve(__dirname, "public/.lovable/mcp/manifest.json");
+  const copy = () => {
+    try {
+      if (!fs.existsSync(src)) return;
+      fs.mkdirSync(path.dirname(dst), { recursive: true });
+      fs.copyFileSync(src, dst);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn("[mcp-manifest-sync] failed to copy manifest:", err);
+    }
+  };
+  return {
+    name: "streamvista-mcp-manifest-sync",
+    enforce: "post" as const,
+    buildStart() {
+      copy();
+    },
+    configureServer(server: { watcher: { add: (p: string) => void; on: (e: string, cb: (p: string) => void) => void } }) {
+      copy();
+      server.watcher.add(src);
+      const onChange = (file: string) => {
+        if (path.resolve(file) === src) copy();
+      };
+      server.watcher.on("add", onChange);
+      server.watcher.on("change", onChange);
+    },
+  };
+}
+
 
 /**
  * Emit per-route static HTML shells with route-specific <title>, description,

@@ -807,6 +807,33 @@
         "outputSchema": null
       },
       {
+        "name": "ctrl_list_failed_uploads",
+        "title": "List failed uploads (Control)",
+        "description": "Platform-wide list of failed ingest_job_items across all workspaces for founder audit. Optional job_id filter.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "job_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
         "name": "list_failed_emails",
         "title": "List failed emails",
         "description": "Failed rows from email_send_log with redacted error reasons.",

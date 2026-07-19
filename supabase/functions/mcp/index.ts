@@ -1283,14 +1283,67 @@ var list_failed_uploads_default = defineTool32({
   }
 });
 
-// src/lib/mcp/tools/control/list-failed-emails.ts
+// src/lib/mcp/tools/control/ctrl-list-failed-uploads.ts
 import { defineTool as defineTool33 } from "npm:@lovable.dev/mcp-js@0.20.0";
 import { z as z25 } from "npm:zod@^3.25.76";
-var list_failed_emails_default = defineTool33({
+var ctrl_list_failed_uploads_default = defineTool33({
+  name: "ctrl_list_failed_uploads",
+  title: "List failed uploads (Control)",
+  description: "Platform-wide list of failed ingest_job_items across all workspaces for founder audit. Optional job_id filter.",
+  inputSchema: {
+    job_id: z25.string().uuid().optional(),
+    limit: z25.number().int().min(1).max(200).optional()
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async (input, ctx) => {
+    const denied = await authorize(ctx, "ctrl_list_failed_uploads", input);
+    if (denied) return denied;
+    const sb = userClient5(ctx);
+    const limit = Math.max(1, Math.min(Math.floor(input.limit ?? 50), 200));
+    let q = sb.from("ingest_job_items").select(
+      "id, job_id, file_name, size_bytes, status, error_message, updated_at, ingest_jobs!inner(workspace_id, project_id)"
+    ).eq("status", "failed").order("updated_at", { ascending: false }).limit(limit);
+    if (input.job_id) q = q.eq("job_id", input.job_id);
+    const { data, error } = await withTimeout(q, "ctrl_list_failed_uploads");
+    if (error) {
+      if (isSchemaMissingError(error)) {
+        return unavailable(
+          { failed_uploads: [], count: 0 },
+          `ingest_job_items schema drift: ${error.message}`
+        );
+      }
+      return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    }
+    const rows = (data ?? []).map((r) => {
+      const parent = r.ingest_jobs ?? {};
+      return {
+        id: r.id,
+        job_id: r.job_id,
+        file_name: r.file_name,
+        size_bytes: r.size_bytes,
+        status: r.status,
+        error_message: r.error_message,
+        updated_at: r.updated_at,
+        workspace_id: parent.workspace_id ?? null,
+        project_id: parent.project_id ?? null
+      };
+    });
+    const redacted = redactDeep(rows);
+    return ok2(
+      { failed_uploads: redacted, count: redacted.length },
+      `Returned ${redacted.length} failed uploads platform-wide`
+    );
+  }
+});
+
+// src/lib/mcp/tools/control/list-failed-emails.ts
+import { defineTool as defineTool34 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z26 } from "npm:zod@^3.25.76";
+var list_failed_emails_default = defineTool34({
   name: "list_failed_emails",
   title: "List failed emails",
   description: "Failed rows from email_send_log with redacted error reasons.",
-  inputSchema: { limit: z25.number().int().min(1).max(100).optional() },
+  inputSchema: { limit: z26.number().int().min(1).max(100).optional() },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async (input, ctx) => {
     const denied = await authorize(ctx, "list_failed_emails", input);
@@ -1312,16 +1365,16 @@ var list_failed_emails_default = defineTool33({
 });
 
 // src/lib/mcp/tools/control/list-payments.ts
-import { defineTool as defineTool34 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z as z26 } from "npm:zod@^3.25.76";
-var list_payments_default = defineTool34({
+import { defineTool as defineTool35 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z27 } from "npm:zod@^3.25.76";
+var list_payments_default = defineTool35({
   name: "list_payments",
   title: "List payments",
   description: "Billing orders / payments summary (no PAN, no card data, no UPI IDs).",
   inputSchema: {
-    since: z26.string().datetime().optional(),
-    status: z26.string().max(40).optional(),
-    limit: z26.number().int().min(1).max(100).optional()
+    since: z27.string().datetime().optional(),
+    status: z27.string().max(40).optional(),
+    limit: z27.number().int().min(1).max(100).optional()
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async (input, ctx) => {
@@ -1338,15 +1391,15 @@ var list_payments_default = defineTool34({
 });
 
 // src/lib/mcp/tools/control/list-invoices.ts
-import { defineTool as defineTool35 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z as z27 } from "npm:zod@^3.25.76";
-var list_invoices_default = defineTool35({
+import { defineTool as defineTool36 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z28 } from "npm:zod@^3.25.76";
+var list_invoices_default = defineTool36({
   name: "list_invoices",
   title: "List invoices",
   description: "Invoice summary rows for founder audit.",
   inputSchema: {
-    since: z27.string().datetime().optional(),
-    limit: z27.number().int().min(1).max(100).optional()
+    since: z28.string().datetime().optional(),
+    limit: z28.number().int().min(1).max(100).optional()
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async (input, ctx) => {
@@ -1362,15 +1415,15 @@ var list_invoices_default = defineTool35({
 });
 
 // src/lib/mcp/tools/control/list-buyers.ts
-import { defineTool as defineTool36 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z as z28 } from "npm:zod@^3.25.76";
-var list_buyers_default = defineTool36({
+import { defineTool as defineTool37 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z29 } from "npm:zod@^3.25.76";
+var list_buyers_default = defineTool37({
   name: "list_buyers",
   title: "List buyers",
   description: "Buyer entity profiles (public directory columns only \u2014 contact PII redacted).",
   inputSchema: {
-    limit: z28.number().int().min(1).max(100).optional(),
-    search: z28.string().max(120).optional()
+    limit: z29.number().int().min(1).max(100).optional(),
+    search: z29.string().max(120).optional()
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async (input, ctx) => {
@@ -1392,15 +1445,15 @@ var list_buyers_default = defineTool36({
 });
 
 // src/lib/mcp/tools/control/get-storage-usage.ts
-import { defineTool as defineTool37 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z as z29 } from "npm:zod@^3.25.76";
-var get_storage_usage_default = defineTool37({
+import { defineTool as defineTool38 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z30 } from "npm:zod@^3.25.76";
+var get_storage_usage_default = defineTool38({
   name: "get_storage_usage",
   title: "Storage usage",
   description: "Workspace storage allocation vs usage.",
   inputSchema: {
-    workspace_id: z29.string().uuid().optional(),
-    limit: z29.number().int().min(1).max(100).optional()
+    workspace_id: z30.string().uuid().optional(),
+    limit: z30.number().int().min(1).max(100).optional()
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async (input, ctx) => {
@@ -1425,13 +1478,13 @@ var get_storage_usage_default = defineTool37({
 });
 
 // src/lib/mcp/tools/control/get-database-schema.ts
-import { defineTool as defineTool38 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z as z30 } from "npm:zod@^3.25.76";
-var get_database_schema_default = defineTool38({
+import { defineTool as defineTool39 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z31 } from "npm:zod@^3.25.76";
+var get_database_schema_default = defineTool39({
   name: "get_database_schema",
   title: "Database schema (public)",
   description: "Allowlisted read-only view of tables/columns in the public schema. Founder / platform_owner / super_admin only.",
-  inputSchema: { table: z30.string().max(80).optional() },
+  inputSchema: { table: z31.string().max(80).optional() },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async (input, ctx) => {
     const denied = await authorize(ctx, "get_database_schema", input);
@@ -1455,8 +1508,8 @@ var get_database_schema_default = defineTool38({
 });
 
 // src/lib/mcp/tools/control/get-security-advisors.ts
-import { defineTool as defineTool39 } from "npm:@lovable.dev/mcp-js@0.20.0";
-var get_security_advisors_default = defineTool39({
+import { defineTool as defineTool40 } from "npm:@lovable.dev/mcp-js@0.20.0";
+var get_security_advisors_default = defineTool40({
   name: "get_security_advisors",
   title: "Security advisors (DB snapshot)",
   description: "DB-side security snapshot: which public tables have RLS enabled. Founder / platform_owner / super_admin only.",
@@ -1473,17 +1526,17 @@ var get_security_advisors_default = defineTool39({
 });
 
 // src/lib/mcp/tools/control/get-edge-function-logs.ts
-import { defineTool as defineTool40 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z as z31 } from "npm:zod@^3.25.76";
-var get_edge_function_logs_default = defineTool40({
+import { defineTool as defineTool41 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z32 } from "npm:zod@^3.25.76";
+var get_edge_function_logs_default = defineTool41({
   name: "get_edge_function_logs",
   title: "Edge Function logs",
   description: "Recent log lines for a Lovable Cloud edge function via the Supabase Management API (read-only PAT, bounded window).",
   inputSchema: {
-    function_name: z31.string().min(1).max(80),
-    since: z31.string().datetime().optional(),
-    level: z31.enum(["info", "warn", "error"]).optional(),
-    limit: z31.number().int().min(1).max(200).optional()
+    function_name: z32.string().min(1).max(80),
+    since: z32.string().datetime().optional(),
+    level: z32.enum(["info", "warn", "error"]).optional(),
+    limit: z32.number().int().min(1).max(200).optional()
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async (input, ctx) => {
@@ -1533,8 +1586,8 @@ var get_edge_function_logs_default = defineTool40({
 });
 
 // src/lib/mcp/tools/control/search-workspace-records.ts
-import { defineTool as defineTool41 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z as z32 } from "npm:zod@^3.25.76";
+import { defineTool as defineTool42 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z33 } from "npm:zod@^3.25.76";
 var TABLE_ALLOWLIST = {
   content_titles: { columns: ["id", "title", "status", "created_at", "updated_at"], textCol: "title" },
   entity_profiles: { columns: ["id", "display_name", "kind", "verification_status", "created_at"], textCol: "display_name" },
@@ -1542,16 +1595,16 @@ var TABLE_ALLOWLIST = {
   billing_orders: { columns: ["id", "status", "amount", "currency", "product_code", "created_at"] },
   invoices: { columns: ["id", "invoice_number", "status", "total_amount", "currency", "issue_date", "created_at"] }
 };
-var OP = z32.enum(["eq", "neq", "gt", "gte", "lt", "lte", "ilike"]);
-var search_workspace_records_default = defineTool41({
+var OP = z33.enum(["eq", "neq", "gt", "gte", "lt", "lte", "ilike"]);
+var search_workspace_records_default = defineTool42({
   name: "search_workspace_records",
   title: "Search workspace records",
   description: "Typed, parameterized search across an allowlisted set of tables. Never runs raw SQL.",
   inputSchema: {
-    table: z32.string(),
-    filters: z32.array(z32.object({ column: z32.string(), op: OP, value: z32.union([z32.string(), z32.number(), z32.boolean(), z32.null()]) })).max(6).optional(),
-    text: z32.string().max(200).optional(),
-    limit: z32.number().int().min(1).max(50).optional()
+    table: z33.string(),
+    filters: z33.array(z33.object({ column: z33.string(), op: OP, value: z33.union([z33.string(), z33.number(), z33.boolean(), z33.null()]) })).max(6).optional(),
+    text: z33.string().max(200).optional(),
+    limit: z33.number().int().min(1).max(50).optional()
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async (input, ctx) => {
@@ -1574,14 +1627,14 @@ var search_workspace_records_default = defineTool41({
 });
 
 // src/lib/mcp/tools/control/find-duplicate-titles.ts
-import { defineTool as defineTool42 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z as z33 } from "npm:zod@^3.25.76";
-var find_duplicate_titles_default = defineTool42({
+import { defineTool as defineTool43 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z34 } from "npm:zod@^3.25.76";
+var find_duplicate_titles_default = defineTool43({
   name: "ctrl_find_duplicate_titles",
   title: "Find duplicate draft titles (Control)",
   description: "Detect likely duplicate/junk rows in content_titles limited to drafts that were never submitted. Groups by (owner, normalized title) with count > 1, and flags burst-insert bursts within 5 seconds. Read-only.",
   inputSchema: {
-    limit: z33.number().int().min(1).max(500).optional()
+    limit: z34.number().int().min(1).max(500).optional()
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async (input, ctx) => {
@@ -1603,14 +1656,14 @@ var find_duplicate_titles_default = defineTool42({
 });
 
 // src/lib/mcp/tools/control/delete-draft-titles.ts
-import { defineTool as defineTool43 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z as z34 } from "npm:zod@^3.25.76";
-var delete_draft_titles_default = defineTool43({
+import { defineTool as defineTool44 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z35 } from "npm:zod@^3.25.76";
+var delete_draft_titles_default = defineTool44({
   name: "ctrl_delete_draft_titles",
   title: "Delete draft titles by ID (Control)",
   description: "Delete specific content_titles rows by explicit ID. Server-side guard: only rows with status='draft' AND submitted_at/approved_at/published_at all NULL are removed; anything else is returned under skipped_not_eligible. Max 50 IDs per call. Respects the MCP kill switch. Writes one audit row per deletion.",
   inputSchema: {
-    title_ids: z34.array(z34.string().uuid()).min(1).max(50)
+    title_ids: z35.array(z35.string().uuid()).min(1).max(50)
   },
   annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
   handler: async (input, ctx) => {
@@ -1634,23 +1687,23 @@ var delete_draft_titles_default = defineTool43({
 });
 
 // src/lib/mcp/tools/control/import-legacy-titles.ts
-import { defineTool as defineTool44 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z as z35 } from "npm:zod@^3.25.76";
-var RecordSchema = z35.object({
-  legacy_ref: z35.string().min(1).max(200),
-  title: z35.string().min(1).max(500),
-  synopsis: z35.string().max(2e4).optional(),
-  language: z35.string().max(80).optional(),
-  genre: z35.string().max(120).optional(),
-  duration_minutes: z35.number().int().min(0).max(1e5).optional(),
-  owner_user_id: z35.string().uuid()
+import { defineTool as defineTool45 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z36 } from "npm:zod@^3.25.76";
+var RecordSchema = z36.object({
+  legacy_ref: z36.string().min(1).max(200),
+  title: z36.string().min(1).max(500),
+  synopsis: z36.string().max(2e4).optional(),
+  language: z36.string().max(80).optional(),
+  genre: z36.string().max(120).optional(),
+  duration_minutes: z36.number().int().min(0).max(1e5).optional(),
+  owner_user_id: z36.string().uuid()
 });
-var import_legacy_titles_default = defineTool44({
+var import_legacy_titles_default = defineTool45({
   name: "ctrl_import_legacy_titles",
   title: "Import legacy titles (Control)",
   description: "Idempotent import of legacy films into content_titles. Upserts on legacy_ref: existing rows are updated, new rows insert as status='draft'. Never auto-submits/approves/publishes. Max 50 records per call. Respects the MCP kill switch. Writes one audit row per insert/update.",
   inputSchema: {
-    records: z35.array(RecordSchema).min(1).max(50)
+    records: z36.array(RecordSchema).min(1).max(50)
   },
   annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   handler: async (input, ctx) => {
@@ -1722,6 +1775,7 @@ var mcp_default = defineMcp({
     ctrl_list_titles_default,
     list_uploads_default,
     list_failed_uploads_default,
+    ctrl_list_failed_uploads_default,
     list_failed_emails_default,
     list_payments_default,
     list_invoices_default,

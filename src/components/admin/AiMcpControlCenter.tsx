@@ -39,7 +39,13 @@ export default function AiMcpControlCenter() {
   const [saving, setSaving] = useState(false);
   const [audit, setAudit] = useState<RawAuditRow[]>([]);
   const [detail, setDetail] = useState<NormalizedAudit | null>(null);
-  const [confirmEnable, setConfirmEnable] = useState<{ key: keyof McpPermissions; label: string } | null>(null);
+  const [pendingChange, setPendingChange] = useState<{
+    key: keyof McpPermissions;
+    label: string;
+    nextValue: boolean;
+    dangerous: boolean;
+  } | null>(null);
+  const [reason, setReason] = useState("");
   const [filter, setFilter] = useState<AuditFilter>("all");
 
   const loadPerms = useCallback(async () => {
@@ -117,8 +123,9 @@ export default function AiMcpControlCenter() {
     };
   }, [loadPerms, loadAudit]);
 
-  const save = async (next: McpPermissions) => {
+  const save = async (next: McpPermissions, changed?: { key: keyof McpPermissions; label: string; oldValue: boolean; newValue: boolean; reason: string }) => {
     setSaving(true);
+    const prev = perms;
     setPerms(next);
     const { error } = await supabase
       .from("admin_settings")
@@ -126,22 +133,58 @@ export default function AiMcpControlCenter() {
     setSaving(false);
     if (error) {
       toast.error("Failed to save MCP permissions");
+      setPerms(prev);
       loadPerms();
       return;
     }
     invalidateMcpPermissionsCache();
     toast.success("MCP permissions updated");
+
+    // Audit the admin's toggle action itself (separate from AI tool-call audits).
+    if (changed) {
+      try {
+        const { data: u } = await supabase.auth.getUser();
+        await supabase.from("mcp_audit_log").insert({
+          actor_user_id: u.user?.id ?? null,
+          actor_email: u.user?.email ?? null,
+          action: "admin_permission_change",
+          resource: changed.key,
+          permission_key: changed.key,
+          allowed: true,
+          details: {
+            decision: "allowed",
+            label: changed.label,
+            old_value: changed.oldValue,
+            new_value: changed.newValue,
+            reason: changed.reason,
+            changed_at: new Date().toISOString(),
+          } as never,
+        });
+      } catch (e) {
+        console.warn("[mcp-audit] failed to log admin permission change:", e);
+      }
+    }
   };
 
   const requestToggle = (key: keyof McpPermissions, dangerous: boolean, label: string) => (v: boolean) => {
-    // High-risk enable → require explicit confirmation. Turning OFF is
-    // always immediate — you can always make the agent less powerful.
-    if (v && dangerous) {
-      setConfirmEnable({ key, label });
+    setReason("");
+    setPendingChange({ key, label, nextValue: v, dangerous });
+  };
+
+  const confirmPending = () => {
+    if (!pendingChange) return;
+    const trimmed = reason.trim();
+    if (trimmed.length < 3) {
+      toast.error("Please enter a short reason (min 3 characters).");
       return;
     }
-    save({ ...perms, [key]: v });
+    const { key, label, nextValue } = pendingChange;
+    const oldValue = !!perms[key];
+    setPendingChange(null);
+    setReason("");
+    save({ ...perms, [key]: nextValue }, { key, label, oldValue, newValue: nextValue, reason: trimmed });
   };
+
 
   const normalized = useMemo(() => audit.map(normalizeAuditRow), [audit]);
   const filtered = useMemo(() => filterAudit(normalized, filter), [normalized, filter]);
@@ -177,7 +220,15 @@ export default function AiMcpControlCenter() {
           variant={perms.master_kill_switch ? "default" : "destructive"}
           size="sm"
           disabled={saving}
-          onClick={() => save({ ...perms, master_kill_switch: !perms.master_kill_switch })}
+          onClick={() => {
+            setReason("");
+            setPendingChange({
+              key: "master_kill_switch",
+              label: "Master Kill Switch",
+              nextValue: !perms.master_kill_switch,
+              dangerous: true,
+            });
+          }}
           className="gap-2"
         >
           <Power className="w-4 h-4" />
@@ -336,35 +387,57 @@ export default function AiMcpControlCenter() {
         </DialogContent>
       </Dialog>
 
-      {/* High-risk confirm dialog */}
-      <Dialog open={!!confirmEnable} onOpenChange={(v) => !v && setConfirmEnable(null)}>
+      {/* Reason-required confirm dialog for every toggle change */}
+      <Dialog open={!!pendingChange} onOpenChange={(v) => { if (!v) { setPendingChange(null); setReason(""); } }}>
         <DialogContent className="max-w-md">
-          {confirmEnable && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2 text-amber-300">
-                  <AlertTriangle className="w-4 h-4" /> Enable “{confirmEnable.label}”?
-                </DialogTitle>
-                <DialogDescription>
-                  This is a high-risk capability and is off by default. Enabling it will let the AI agent perform this action. Confirm you have the authority to grant this.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter className="gap-2">
-                <Button variant="outline" size="sm" onClick={() => setConfirmEnable(null)}>Cancel</Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => {
-                    const k = confirmEnable.key;
-                    setConfirmEnable(null);
-                    save({ ...perms, [k]: true });
-                  }}
-                >
-                  Yes, enable
-                </Button>
-              </DialogFooter>
-            </>
-          )}
+          {pendingChange && (() => {
+            const oldValue = !!perms[pendingChange.key];
+            const enabling = pendingChange.nextValue;
+            const highRisk = pendingChange.dangerous && enabling;
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle className={`flex items-center gap-2 ${highRisk ? "text-amber-300" : ""}`}>
+                    {highRisk && <AlertTriangle className="w-4 h-4" />}
+                    {enabling ? "Enable" : "Disable"} “{pendingChange.label}”?
+                  </DialogTitle>
+                  <DialogDescription>
+                    {highRisk
+                      ? "This is a high-risk capability and is off by default. Enabling it lets the AI agent perform this action."
+                      : "Confirm this permission change. It will be recorded in the audit log."}
+                    {" "}Changing <span className="font-mono">{String(oldValue)}</span> → <span className="font-mono">{String(enabling)}</span>.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-2">
+                  <label htmlFor="mcp-reason" className="text-xs font-semibold text-muted-foreground">
+                    Reason for change <span className="text-red-400">*</span>
+                  </label>
+                  <textarea
+                    id="mcp-reason"
+                    autoFocus
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    placeholder="One-line reason (e.g. incident response, scheduled maintenance, granting write access to run backfill)"
+                    className="w-full rounded-md border border-border/60 bg-background/50 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500/40 min-h-[64px]"
+                    maxLength={500}
+                  />
+                </div>
+                <DialogFooter className="gap-2">
+                  <Button variant="outline" size="sm" onClick={() => { setPendingChange(null); setReason(""); }}>
+                    Cancel
+                  </Button>
+                  <Button
+                    variant={highRisk ? "destructive" : "default"}
+                    size="sm"
+                    onClick={confirmPending}
+                    disabled={reason.trim().length < 3 || saving}
+                  >
+                    {enabling ? "Yes, enable" : "Yes, disable"}
+                  </Button>
+                </DialogFooter>
+              </>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>

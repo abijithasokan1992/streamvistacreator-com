@@ -143,6 +143,7 @@ const AdminRoutes = () => (
     <Route path="/admin/qc" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/legal" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/legacy-recovery" element={<AdminErrorBoundary><AdminLegacyRecovery /></AdminErrorBoundary>} />
+    <Route path="/admin/failed-uploads" element={<AdminErrorBoundary><AdminFailedUploadsPlatform /></AdminErrorBoundary>} />
     {/* Legacy admin paths — Admin.tsx pathToTab maps these to the new buckets */}
     <Route path="/admin/content" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/support" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />

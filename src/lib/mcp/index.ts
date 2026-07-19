@@ -34,6 +34,7 @@ import ctrlListCreators from "./tools/control/list-creators";
 import ctrlListTitles from "./tools/control/ctrl-list-titles";
 import ctrlListUploads from "./tools/control/list-uploads";
 import ctrlListFailedUploads from "./tools/control/list-failed-uploads";
+import ctrlListFailedUploadsAdmin from "./tools/control/ctrl-list-failed-uploads";
 import ctrlListFailedEmails from "./tools/control/list-failed-emails";
 import ctrlListPayments from "./tools/control/list-payments";
 import ctrlListInvoices from "./tools/control/list-invoices";

@@ -29,12 +29,18 @@ export default defineTool({
     const denied = await authorize(ctx, "get_edge_function_logs", input);
     if (denied) return denied;
 
-    const token = process.env.SUPABASE_MANAGEMENT_ACCESS_TOKEN;
-    const ref = process.env.SUPABASE_PROJECT_REF ?? process.env.VITE_SUPABASE_PROJECT_ID;
+    // `SUPABASE_` prefix is reserved on Lovable Cloud secrets; use MGMT_* names.
+    const token =
+      process.env.MGMT_ACCESS_TOKEN ??
+      process.env.SUPABASE_MANAGEMENT_ACCESS_TOKEN;
+    const ref =
+      process.env.MGMT_PROJECT_REF ??
+      process.env.SUPABASE_PROJECT_REF ??
+      process.env.VITE_SUPABASE_PROJECT_ID;
     if (!token || !ref) {
       return err(
         "not_configured",
-        "SUPABASE_MANAGEMENT_ACCESS_TOKEN and SUPABASE_PROJECT_REF must be set (read-scoped PAT, server-side only).",
+        "MGMT_ACCESS_TOKEN and MGMT_PROJECT_REF must be set (read-scoped PAT, server-side only).",
       );
     }
 

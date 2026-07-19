@@ -220,7 +220,15 @@ export default function AiMcpControlCenter() {
           variant={perms.master_kill_switch ? "default" : "destructive"}
           size="sm"
           disabled={saving}
-          onClick={() => save({ ...perms, master_kill_switch: !perms.master_kill_switch })}
+          onClick={() => {
+            setReason("");
+            setPendingChange({
+              key: "master_kill_switch",
+              label: "Master Kill Switch",
+              nextValue: !perms.master_kill_switch,
+              dangerous: true,
+            });
+          }}
           className="gap-2"
         >
           <Power className="w-4 h-4" />

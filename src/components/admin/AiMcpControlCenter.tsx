@@ -123,8 +123,9 @@ export default function AiMcpControlCenter() {
     };
   }, [loadPerms, loadAudit]);
 
-  const save = async (next: McpPermissions) => {
+  const save = async (next: McpPermissions, changed?: { key: keyof McpPermissions; label: string; oldValue: boolean; newValue: boolean; reason: string }) => {
     setSaving(true);
+    const prev = perms;
     setPerms(next);
     const { error } = await supabase
       .from("admin_settings")
@@ -132,22 +133,58 @@ export default function AiMcpControlCenter() {
     setSaving(false);
     if (error) {
       toast.error("Failed to save MCP permissions");
+      setPerms(prev);
       loadPerms();
       return;
     }
     invalidateMcpPermissionsCache();
     toast.success("MCP permissions updated");
+
+    // Audit the admin's toggle action itself (separate from AI tool-call audits).
+    if (changed) {
+      try {
+        const { data: u } = await supabase.auth.getUser();
+        await supabase.from("mcp_audit_log").insert({
+          actor_user_id: u.user?.id ?? null,
+          actor_email: u.user?.email ?? null,
+          action: "admin_permission_change",
+          resource: changed.key,
+          permission_key: changed.key,
+          allowed: true,
+          details: {
+            decision: "allowed",
+            label: changed.label,
+            old_value: changed.oldValue,
+            new_value: changed.newValue,
+            reason: changed.reason,
+            changed_at: new Date().toISOString(),
+          } as never,
+        });
+      } catch (e) {
+        console.warn("[mcp-audit] failed to log admin permission change:", e);
+      }
+    }
   };
 
   const requestToggle = (key: keyof McpPermissions, dangerous: boolean, label: string) => (v: boolean) => {
-    // High-risk enable → require explicit confirmation. Turning OFF is
-    // always immediate — you can always make the agent less powerful.
-    if (v && dangerous) {
-      setConfirmEnable({ key, label });
+    setReason("");
+    setPendingChange({ key, label, nextValue: v, dangerous });
+  };
+
+  const confirmPending = () => {
+    if (!pendingChange) return;
+    const trimmed = reason.trim();
+    if (trimmed.length < 3) {
+      toast.error("Please enter a short reason (min 3 characters).");
       return;
     }
-    save({ ...perms, [key]: v });
+    const { key, label, nextValue } = pendingChange;
+    const oldValue = !!perms[key];
+    setPendingChange(null);
+    setReason("");
+    save({ ...perms, [key]: nextValue }, { key, label, oldValue, newValue: nextValue, reason: trimmed });
   };
+
 
   const normalized = useMemo(() => audit.map(normalizeAuditRow), [audit]);
   const filtered = useMemo(() => filterAudit(normalized, filter), [normalized, filter]);

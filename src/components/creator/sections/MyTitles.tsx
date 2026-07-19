@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Plus, Loader2, Pencil, Eye, Lock, Crown, AlertTriangle, X, Film, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -531,12 +531,24 @@ function CreateTitleModal({
   const [name, setName] = useState("");
   const [format, setFormat] = useState<Format>("feature_film");
   const [busy, setBusy] = useState(false);
+  // Synchronous in-flight guard — protects against rapid double-clicks that
+  // fire before React re-renders the disabled state.
+  const submitLockRef = useRef(false);
+  // Stable per-modal-instance draft id so identical rapid retries collapse
+  // to a single content_titles row via createTitle()'s idempotency lookup.
+  const clientDraftIdRef = useRef<string>(
+    (typeof crypto !== "undefined" && "randomUUID" in crypto)
+      ? crypto.randomUUID()
+      : `draft-${Date.now()}-${Math.random().toString(36).slice(2)}`
+  );
 
   const submit = async () => {
     if (!name.trim()) { toast.error("Title name is required."); return; }
+    if (submitLockRef.current) return;
+    submitLockRef.current = true;
     setBusy(true);
     try {
-      const t = await createTitle(userId, workspaceId, name, format);
+      const t = await createTitle(userId, workspaceId, name, format, clientDraftIdRef.current);
       onCreated(t.id);
     } catch (e) {
       const parsed = extractTitleErrorCode(e);
@@ -545,6 +557,8 @@ function CreateTitleModal({
       } else {
         toast.error(parsed.message);
       }
+      // Allow retry after a real failure
+      submitLockRef.current = false;
     } finally { setBusy(false); }
   };
 

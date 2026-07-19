@@ -43,6 +43,9 @@ import ctrlGetDatabaseSchema from "./tools/control/get-database-schema";
 import ctrlGetSecurityAdvisors from "./tools/control/get-security-advisors";
 import ctrlGetEdgeFunctionLogs from "./tools/control/get-edge-function-logs";
 import ctrlSearchWorkspaceRecords from "./tools/control/search-workspace-records";
+import ctrlFindDuplicateTitles from "./tools/control/find-duplicate-titles";
+import ctrlDeleteDraftTitles from "./tools/control/delete-draft-titles";
+import ctrlImportLegacyTitles from "./tools/control/import-legacy-titles";
 
 // Build the OAuth issuer from the Supabase project ref only (never SUPABASE_URL,
 // which is the .lovable.cloud proxy on Cloud apps). Vite inlines this literal.
@@ -108,5 +111,9 @@ export default defineMcp({
     ctrlGetSecurityAdvisors,
     ctrlGetEdgeFunctionLogs,
     ctrlSearchWorkspaceRecords,
+    // Cleanup + legacy import (write-guarded by kill switch)
+    ctrlFindDuplicateTitles,
+    ctrlDeleteDraftTitles,
+    ctrlImportLegacyTitles,
   ],
 });

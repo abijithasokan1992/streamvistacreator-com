@@ -39,7 +39,13 @@ export default function AiMcpControlCenter() {
   const [saving, setSaving] = useState(false);
   const [audit, setAudit] = useState<RawAuditRow[]>([]);
   const [detail, setDetail] = useState<NormalizedAudit | null>(null);
-  const [confirmEnable, setConfirmEnable] = useState<{ key: keyof McpPermissions; label: string } | null>(null);
+  const [pendingChange, setPendingChange] = useState<{
+    key: keyof McpPermissions;
+    label: string;
+    nextValue: boolean;
+    dangerous: boolean;
+  } | null>(null);
+  const [reason, setReason] = useState("");
   const [filter, setFilter] = useState<AuditFilter>("all");
 
   const loadPerms = useCallback(async () => {

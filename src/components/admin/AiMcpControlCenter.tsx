@@ -387,35 +387,57 @@ export default function AiMcpControlCenter() {
         </DialogContent>
       </Dialog>
 
-      {/* High-risk confirm dialog */}
-      <Dialog open={!!confirmEnable} onOpenChange={(v) => !v && setConfirmEnable(null)}>
+      {/* Reason-required confirm dialog for every toggle change */}
+      <Dialog open={!!pendingChange} onOpenChange={(v) => { if (!v) { setPendingChange(null); setReason(""); } }}>
         <DialogContent className="max-w-md">
-          {confirmEnable && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2 text-amber-300">
-                  <AlertTriangle className="w-4 h-4" /> Enable “{confirmEnable.label}”?
-                </DialogTitle>
-                <DialogDescription>
-                  This is a high-risk capability and is off by default. Enabling it will let the AI agent perform this action. Confirm you have the authority to grant this.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter className="gap-2">
-                <Button variant="outline" size="sm" onClick={() => setConfirmEnable(null)}>Cancel</Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => {
-                    const k = confirmEnable.key;
-                    setConfirmEnable(null);
-                    save({ ...perms, [k]: true });
-                  }}
-                >
-                  Yes, enable
-                </Button>
-              </DialogFooter>
-            </>
-          )}
+          {pendingChange && (() => {
+            const oldValue = !!perms[pendingChange.key];
+            const enabling = pendingChange.nextValue;
+            const highRisk = pendingChange.dangerous && enabling;
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle className={`flex items-center gap-2 ${highRisk ? "text-amber-300" : ""}`}>
+                    {highRisk && <AlertTriangle className="w-4 h-4" />}
+                    {enabling ? "Enable" : "Disable"} “{pendingChange.label}”?
+                  </DialogTitle>
+                  <DialogDescription>
+                    {highRisk
+                      ? "This is a high-risk capability and is off by default. Enabling it lets the AI agent perform this action."
+                      : "Confirm this permission change. It will be recorded in the audit log."}
+                    {" "}Changing <span className="font-mono">{String(oldValue)}</span> → <span className="font-mono">{String(enabling)}</span>.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-2">
+                  <label htmlFor="mcp-reason" className="text-xs font-semibold text-muted-foreground">
+                    Reason for change <span className="text-red-400">*</span>
+                  </label>
+                  <textarea
+                    id="mcp-reason"
+                    autoFocus
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    placeholder="One-line reason (e.g. incident response, scheduled maintenance, granting write access to run backfill)"
+                    className="w-full rounded-md border border-border/60 bg-background/50 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500/40 min-h-[64px]"
+                    maxLength={500}
+                  />
+                </div>
+                <DialogFooter className="gap-2">
+                  <Button variant="outline" size="sm" onClick={() => { setPendingChange(null); setReason(""); }}>
+                    Cancel
+                  </Button>
+                  <Button
+                    variant={highRisk ? "destructive" : "default"}
+                    size="sm"
+                    onClick={confirmPending}
+                    disabled={reason.trim().length < 3 || saving}
+                  >
+                    {enabling ? "Yes, enable" : "Yes, disable"}
+                  </Button>
+                </DialogFooter>
+              </>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>

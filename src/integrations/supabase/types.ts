@@ -1947,6 +1947,7 @@ export type Database = {
           id: string
           kind: Database["public"]["Enums"]["title_kind"]
           language: string | null
+          legacy_ref: string | null
           legal_clearance: string
           locked: boolean
           locked_at: string | null
@@ -1980,6 +1981,7 @@ export type Database = {
           id?: string
           kind?: Database["public"]["Enums"]["title_kind"]
           language?: string | null
+          legacy_ref?: string | null
           legal_clearance?: string
           locked?: boolean
           locked_at?: string | null
@@ -2013,6 +2015,7 @@ export type Database = {
           id?: string
           kind?: Database["public"]["Enums"]["title_kind"]
           language?: string | null
+          legacy_ref?: string | null
           legal_clearance?: string
           locked?: boolean
           locked_at?: string | null
@@ -11858,6 +11861,7 @@ export type Database = {
           id: string
           kind: Database["public"]["Enums"]["title_kind"]
           language: string | null
+          legacy_ref: string | null
           legal_clearance: string
           locked: boolean
           locked_at: string | null
@@ -12316,6 +12320,11 @@ export type Database = {
         Args: { _tool: string; _user_id: string }
         Returns: boolean
       }
+      mcp_delete_draft_titles: { Args: { _ids: string[] }; Returns: Json }
+      mcp_find_duplicate_draft_titles: {
+        Args: { _limit?: number }
+        Returns: Json
+      }
       mcp_get_public_schema: {
         Args: never
         Returns: {
@@ -12326,6 +12335,7 @@ export type Database = {
         }[]
       }
       mcp_get_security_advisors: { Args: never; Returns: Json }
+      mcp_import_legacy_titles: { Args: { _records: Json }; Returns: Json }
       mcp_kill_switch_on: { Args: never; Returns: boolean }
       mfi_seats_taken: { Args: never; Returns: number }
       move_to_dlq: {

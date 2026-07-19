@@ -12312,6 +12312,10 @@ export type Database = {
         Args: { _ids: string[] }
         Returns: undefined
       }
+      mark_stalled_ingest_jobs: {
+        Args: { _stall_hours?: number }
+        Returns: Json
+      }
       mcp_authorize_and_log: {
         Args: { _params?: Json; _tool: string; _writes?: boolean }
         Returns: string
@@ -12409,6 +12413,7 @@ export type Database = {
         Args: { _issue_id: string; _resolution_note?: string }
         Returns: Json
       }
+      resolve_user_workspace: { Args: { _user_id: string }; Returns: string }
       retry_failed_distribution_deliveries: {
         Args: { _title_id?: string }
         Returns: number

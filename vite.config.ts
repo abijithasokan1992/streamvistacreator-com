@@ -84,9 +84,11 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mcpPlugin(),
+    syncMcpManifestToPublic(),
     mode === "development" && componentTagger(),
     mode !== "development" && prerenderRoutes(),
   ].filter(Boolean),
+
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

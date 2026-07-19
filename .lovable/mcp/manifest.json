@@ -1092,6 +1092,129 @@
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
         "outputSchema": null
+      },
+      {
+        "name": "ctrl_find_duplicate_titles",
+        "title": "Find duplicate draft titles (Control)",
+        "description": "Detect likely duplicate/junk rows in content_titles limited to drafts that were never submitted. Groups by (owner, normalized title) with count > 1, and flags burst-insert bursts within 5 seconds. Read-only.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "ctrl_delete_draft_titles",
+        "title": "Delete draft titles by ID (Control)",
+        "description": "Delete specific content_titles rows by explicit ID. Server-side guard: only rows with status='draft' AND submitted_at/approved_at/published_at all NULL are removed; anything else is returned under skipped_not_eligible. Max 50 IDs per call. Respects the MCP kill switch. Writes one audit row per deletion.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "idempotentHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "title_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "minItems": 1,
+              "maxItems": 50
+            }
+          },
+          "required": [
+            "title_ids"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "ctrl_import_legacy_titles",
+        "title": "Import legacy titles (Control)",
+        "description": "Idempotent import of legacy films into content_titles. Upserts on legacy_ref: existing rows are updated, new rows insert as status='draft'. Never auto-submits/approves/publishes. Max 50 records per call. Respects the MCP kill switch. Writes one audit row per insert/update.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "records": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "legacy_ref": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  },
+                  "synopsis": {
+                    "type": "string",
+                    "maxLength": 20000
+                  },
+                  "language": {
+                    "type": "string",
+                    "maxLength": 80
+                  },
+                  "genre": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "duration_minutes": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100000
+                  },
+                  "owner_user_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "legacy_ref",
+                  "title",
+                  "owner_user_id"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 1,
+              "maxItems": 50
+            }
+          },
+          "required": [
+            "records"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
       }
     ]
   }

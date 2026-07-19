@@ -1573,6 +1573,107 @@ var search_workspace_records_default = defineTool41({
   }
 });
 
+// src/lib/mcp/tools/control/find-duplicate-titles.ts
+import { defineTool as defineTool42 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z33 } from "npm:zod@^3.25.76";
+var find_duplicate_titles_default = defineTool42({
+  name: "ctrl_find_duplicate_titles",
+  title: "Find duplicate draft titles (Control)",
+  description: "Detect likely duplicate/junk rows in content_titles limited to drafts that were never submitted. Groups by (owner, normalized title) with count > 1, and flags burst-insert bursts within 5 seconds. Read-only.",
+  inputSchema: {
+    limit: z33.number().int().min(1).max(500).optional()
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async (input, ctx) => {
+    const denied = await authorize(ctx, "ctrl_find_duplicate_titles", input);
+    if (denied) return denied;
+    const sb = userClient5(ctx);
+    const { data, error } = await withTimeout(
+      sb.rpc("mcp_find_duplicate_draft_titles", { _limit: input.limit ?? 100 }),
+      "ctrl_find_duplicate_titles"
+    );
+    if (error)
+      return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    const groups = data ?? [];
+    return ok2(
+      { duplicate_groups: groups },
+      `Found ${groups.length} duplicate draft group(s).`
+    );
+  }
+});
+
+// src/lib/mcp/tools/control/delete-draft-titles.ts
+import { defineTool as defineTool43 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z34 } from "npm:zod@^3.25.76";
+var delete_draft_titles_default = defineTool43({
+  name: "ctrl_delete_draft_titles",
+  title: "Delete draft titles by ID (Control)",
+  description: "Delete specific content_titles rows by explicit ID. Server-side guard: only rows with status='draft' AND submitted_at/approved_at/published_at all NULL are removed; anything else is returned under skipped_not_eligible. Max 50 IDs per call. Respects the MCP kill switch. Writes one audit row per deletion.",
+  inputSchema: {
+    title_ids: z34.array(z34.string().uuid()).min(1).max(50)
+  },
+  annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
+  handler: async (input, ctx) => {
+    const denied = await authorize(ctx, "ctrl_delete_draft_titles", input, { writes: true });
+    if (denied) return denied;
+    const sb = userClient5(ctx);
+    const { data, error } = await withTimeout(
+      sb.rpc("mcp_delete_draft_titles", { _ids: input.title_ids }),
+      "ctrl_delete_draft_titles"
+    );
+    if (error)
+      return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    const result = data ?? {};
+    const deleted = result.deleted ?? [];
+    const skipped = result.skipped_not_eligible ?? [];
+    return ok2(
+      { deleted, skipped_not_eligible: skipped },
+      `Deleted ${deleted.length} title(s); skipped ${skipped.length}.`
+    );
+  }
+});
+
+// src/lib/mcp/tools/control/import-legacy-titles.ts
+import { defineTool as defineTool44 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z35 } from "npm:zod@^3.25.76";
+var RecordSchema = z35.object({
+  legacy_ref: z35.string().min(1).max(200),
+  title: z35.string().min(1).max(500),
+  synopsis: z35.string().max(2e4).optional(),
+  language: z35.string().max(80).optional(),
+  genre: z35.string().max(120).optional(),
+  duration_minutes: z35.number().int().min(0).max(1e5).optional(),
+  owner_user_id: z35.string().uuid()
+});
+var import_legacy_titles_default = defineTool44({
+  name: "ctrl_import_legacy_titles",
+  title: "Import legacy titles (Control)",
+  description: "Idempotent import of legacy films into content_titles. Upserts on legacy_ref: existing rows are updated, new rows insert as status='draft'. Never auto-submits/approves/publishes. Max 50 records per call. Respects the MCP kill switch. Writes one audit row per insert/update.",
+  inputSchema: {
+    records: z35.array(RecordSchema).min(1).max(50)
+  },
+  annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  handler: async (input, ctx) => {
+    const denied = await authorize(ctx, "ctrl_import_legacy_titles", { count: input.records.length }, { writes: true });
+    if (denied) return denied;
+    const sb = userClient5(ctx);
+    const { data, error } = await withTimeout(
+      sb.rpc("mcp_import_legacy_titles", { _records: input.records }),
+      "ctrl_import_legacy_titles"
+    );
+    if (error)
+      return { content: [{ type: "text", text: `db_error: ${error.message}` }], isError: true };
+    const result = data ?? {};
+    const inserted = result.inserted ?? [];
+    const updated = result.updated ?? [];
+    const skipped = result.skipped_invalid ?? [];
+    return ok2(
+      { inserted, updated, skipped_invalid: skipped },
+      `Inserted ${inserted.length}, updated ${updated.length}, skipped ${skipped.length}.`
+    );
+  }
+});
+
 // src/lib/mcp/index.ts
 var projectRef = "hllgmkfqgeuqlmpcirvn";
 var mcp_default = defineMcp({
@@ -1629,7 +1730,11 @@ var mcp_default = defineMcp({
     get_database_schema_default,
     get_security_advisors_default,
     get_edge_function_logs_default,
-    search_workspace_records_default
+    search_workspace_records_default,
+    // Cleanup + legacy import (write-guarded by kill switch)
+    find_duplicate_titles_default,
+    delete_draft_titles_default,
+    import_legacy_titles_default
   ]
 });
 

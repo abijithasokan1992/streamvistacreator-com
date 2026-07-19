@@ -56,6 +56,11 @@ export function TitleEditor({
   const [autoSavedAt, setAutoSavedAt] = useState<number | null>(null);
   const [dirty, setDirty] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  // Synchronous guard against double-click / rapid re-entry — React state is
+  // async so `submitting` can still read `false` on a second click fired in the
+  // same tick. This ref locks the whole handleSubmit flow (including the
+  // pre-submit save + free-tier check) atomically.
+  const submitLockRef = useRef(false);
   const [termsOpen, setTermsOpen] = useState(false);
   const [pendingFreeSubmit, setPendingFreeSubmit] = useState(false);
   const [name, setName] = useState("");

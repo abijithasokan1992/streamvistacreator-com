@@ -704,8 +704,8 @@ export function TitleEditor({
       <FreeSubmissionTermsModal
         open={termsOpen}
         submitting={submitting}
-        onCancel={() => { setTermsOpen(false); setPendingFreeSubmit(false); }}
-        onConfirm={() => { if (pendingFreeSubmit) void doSubmit(); }}
+        onCancel={() => { setTermsOpen(false); setPendingFreeSubmit(false); submitLockRef.current = false; }}
+        onConfirm={() => { if (pendingFreeSubmit && !submitting) void doSubmit(); }}
       />
     </div>
   );

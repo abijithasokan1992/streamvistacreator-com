@@ -60,8 +60,29 @@ Deno.serve(async (req) => {
       headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ query, limit }),
     });
-    const data = await res.json().catch(() => null);
-    if (!res.ok) return json({ error: 'search_failed', status: res.status }, 502);
+    const rawBody = await res.text();
+    let data: any = null;
+    try { data = rawBody ? JSON.parse(rawBody) : null; } catch { /* non-JSON body */ }
+    if (!res.ok) {
+      const upstreamMessage =
+        (data && (data.error || data.message)) || rawBody.slice(0, 300) || `firecrawl_${res.status}`;
+      console.error('research-firecrawl upstream_error', {
+        status: res.status,
+        upstreamMessage,
+        category,
+        query: rawQuery,
+      });
+      // Return 200 so per-lane callers can render a graceful error instead of a blanket non-2xx.
+      return json({
+        category,
+        query: rawQuery,
+        results: [],
+        error: res.status === 401 || res.status === 403 ? 'firecrawl_auth_failed' : 'search_failed',
+        upstream_status: res.status,
+        upstream_message: String(upstreamMessage).slice(0, 300),
+      });
+    }
+
 
     const items: Array<{ title?: string; url?: string; description?: string; snippet?: string }> =
       Array.isArray(data?.data)

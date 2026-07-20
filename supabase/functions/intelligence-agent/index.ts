@@ -134,11 +134,17 @@ async function runAgent(apiKey: string, laneId: LaneId, query: string, model: st
     },
     body: JSON.stringify({ prompt, model, jsonSchema: lane.schema }),
   });
-  const data = await res.json().catch(() => null);
+  const rawBody = await res.text();
+  let data: any = null;
+  try { data = rawBody ? JSON.parse(rawBody) : null; } catch { /* non-JSON body */ }
   if (!res.ok) {
-    const message = (data && (data.error || data.message)) || `firecrawl_${res.status}`;
-    throw new Error(message);
+    const message = (data && (data.error || data.message)) || rawBody.slice(0, 300) || `firecrawl_${res.status}`;
+    console.error("intelligence-agent upstream_error", { status: res.status, laneId, message });
+    const err: any = new Error(String(message).slice(0, 300));
+    err.upstreamStatus = res.status;
+    throw err;
   }
+
 
   // Firecrawl v2/agent typically returns { success, data: <jsonMatchingSchema>, sources? }
   // Normalize to always emit the lane's array key at the top level plus optional sources.

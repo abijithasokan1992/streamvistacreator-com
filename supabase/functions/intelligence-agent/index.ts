@@ -134,11 +134,17 @@ async function runAgent(apiKey: string, laneId: LaneId, query: string, model: st
     },
     body: JSON.stringify({ prompt, model, jsonSchema: lane.schema }),
   });
-  const data = await res.json().catch(() => null);
+  const rawBody = await res.text();
+  let data: any = null;
+  try { data = rawBody ? JSON.parse(rawBody) : null; } catch { /* non-JSON body */ }
   if (!res.ok) {
-    const message = (data && (data.error || data.message)) || `firecrawl_${res.status}`;
-    throw new Error(message);
+    const message = (data && (data.error || data.message)) || rawBody.slice(0, 300) || `firecrawl_${res.status}`;
+    console.error("intelligence-agent upstream_error", { status: res.status, laneId, message });
+    const err: any = new Error(String(message).slice(0, 300));
+    err.upstreamStatus = res.status;
+    throw err;
   }
+
 
   // Firecrawl v2/agent typically returns { success, data: <jsonMatchingSchema>, sources? }
   // Normalize to always emit the lane's array key at the top level plus optional sources.
@@ -199,7 +205,22 @@ Deno.serve(async (req) => {
     const structured = await runAgent(key, lane, query, model);
     return json({ lane, query, ...structured });
   } catch (e) {
-    console.error("intelligence-agent error", e);
-    return json({ error: "internal_error", message: (e as Error).message }, 500);
+    const upstreamStatus = (e as any)?.upstreamStatus as number | undefined;
+    const message = (e as Error).message;
+    console.error("intelligence-agent error", { message, upstreamStatus });
+    // Return 200 so per-lane callers can render a graceful error instead of a blanket non-2xx.
+    return json({
+      lane: null,
+      results: [],
+      error:
+        upstreamStatus === 401 || upstreamStatus === 403
+          ? "firecrawl_auth_failed"
+          : upstreamStatus
+            ? "search_failed"
+            : "internal_error",
+      upstream_status: upstreamStatus ?? null,
+      message: String(message).slice(0, 300),
+    });
   }
 });
+

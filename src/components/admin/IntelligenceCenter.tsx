@@ -179,13 +179,29 @@ export default function IntelligenceCenter() {
         body: { category: lane.category, query, limit: 8 },
       });
       if (error) throw new Error(error.message);
-      if ((data as { error?: string })?.error === "firecrawl_not_connected") {
+      const payload = data as { error?: string; upstream_message?: string; upstream_status?: number; results?: ResearchResult[] };
+      if (payload?.error === "firecrawl_not_connected") {
         const next: LaneState = { status: "error", activeQuery: query, error: "Firecrawl not connected." };
         setState((s) => ({ ...s, [lane.id]: next }));
         toast.error("Firecrawl not connected. Link it in Settings → Integrations.");
         return next;
       }
-      const results = ((data as { results?: ResearchResult[] })?.results) ?? [];
+      if (payload?.error === "firecrawl_auth_failed") {
+        const msg = "Firecrawl API key rejected (check FIRECRAWL_API_KEY in Project Settings → Secrets).";
+        const next: LaneState = { status: "error", activeQuery: query, error: msg };
+        setState((s) => ({ ...s, [lane.id]: next }));
+        toast.error(`${lane.label}: ${msg}`);
+        return next;
+      }
+      if (payload?.error) {
+        const msg = payload.upstream_message || payload.error;
+        const next: LaneState = { status: "error", activeQuery: query, error: msg };
+        setState((s) => ({ ...s, [lane.id]: next }));
+        toast.error(`${lane.label}: ${msg}`);
+        return next;
+      }
+      const results = payload?.results ?? [];
+
       const next: LaneState = { status: "success", activeQuery: query, results, ranAt: Date.now() };
       setState((s) => ({ ...s, [lane.id]: next }));
       return next;

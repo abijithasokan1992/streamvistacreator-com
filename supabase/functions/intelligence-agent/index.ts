@@ -205,7 +205,22 @@ Deno.serve(async (req) => {
     const structured = await runAgent(key, lane, query, model);
     return json({ lane, query, ...structured });
   } catch (e) {
-    console.error("intelligence-agent error", e);
-    return json({ error: "internal_error", message: (e as Error).message }, 500);
+    const upstreamStatus = (e as any)?.upstreamStatus as number | undefined;
+    const message = (e as Error).message;
+    console.error("intelligence-agent error", { message, upstreamStatus });
+    // Return 200 so per-lane callers can render a graceful error instead of a blanket non-2xx.
+    return json({
+      lane: null,
+      results: [],
+      error:
+        upstreamStatus === 401 || upstreamStatus === 403
+          ? "firecrawl_auth_failed"
+          : upstreamStatus
+            ? "search_failed"
+            : "internal_error",
+      upstream_status: upstreamStatus ?? null,
+      message: String(message).slice(0, 300),
+    });
   }
 });
+

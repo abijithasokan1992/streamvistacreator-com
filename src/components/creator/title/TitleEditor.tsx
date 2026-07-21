@@ -106,14 +106,103 @@ export function TitleEditor({
     setReadiness(r);
     setTimeline(tl);
     if (t) {
-      setName(t.title);
-      setMeta(t.metadata);
+      // Restore from localStorage if a newer unsaved copy exists (autosave
+      // failed on a previous session — refresh must not lose that work).
+      try {
+        const raw = localStorage.getItem(`titleDraft:${titleId}`);
+        if (raw) {
+          const parsed = JSON.parse(raw) as { name?: string; metadata?: TitleMetadata; savedAt?: number };
+          const serverTs = new Date(t.updated_at).getTime();
+          const backupTs = Number(parsed?.savedAt ?? 0);
+          if (parsed?.metadata && backupTs > serverTs + 500) {
+            const restore = window.confirm(
+              "We found unsaved changes from your previous session on this title. Restore them?",
+            );
+            if (restore) {
+              setName(parsed.name || t.title);
+              setMeta(parsed.metadata);
+              // Immediately trigger a real save so backup is durable.
+              setTimeout(() => { setDirty(true); }, 0);
+            } else {
+              setName(t.title);
+              setMeta(t.metadata);
+              try { localStorage.removeItem(`titleDraft:${titleId}`); } catch { /* ignore */ }
+            }
+          } else {
+            setName(t.title);
+            setMeta(t.metadata);
+          }
+        } else {
+          setName(t.title);
+          setMeta(t.metadata);
+        }
+      } catch {
+        setName(t.title);
+        setMeta(t.metadata);
+      }
     }
     loadedRef.current = true;
     setDirty(false);
   }, [titleId]);
 
   useEffect(() => { reload(); }, [reload]);
+
+  // First-open auto-fill from TMDb. Only for fresh drafts (no synopsis / no
+  // genres / no cast) — never overwrites anything the creator has typed.
+  const autoFillTriedRef = useRef(false);
+  useEffect(() => {
+    if (autoFillTriedRef.current) return;
+    if (!title || !meta || !loadedRef.current || readOnly) return;
+    if (title.status !== "draft") return;
+    const isFresh =
+      !meta.synopsis?.trim() &&
+      (meta.genres?.length ?? 0) === 0 &&
+      (meta.cast?.length ?? 0) === 0 &&
+      !meta.tmdb_id;
+    if (!isFresh) return;
+    const attemptKey = `titleAutofillAttempted:${title.id}`;
+    try { if (localStorage.getItem(attemptKey)) return; } catch { /* ignore */ }
+    autoFillTriedRef.current = true;
+    try { localStorage.setItem(attemptKey, "1"); } catch { /* ignore */ }
+
+    (async () => {
+      const preview = await tryAutoFillFromTmdb(name || title.title);
+      if (!preview) return;
+      // Capture snapshot for Undo.
+      const before: Partial<TitleMetadata> = { ...meta };
+      let applied = false;
+      setMeta((prev) => {
+        if (!prev) return prev;
+        const next: TitleMetadata = { ...prev };
+        const isEmpty = (v: unknown) => {
+          if (v === null || v === undefined) return true;
+          if (typeof v === "string") return v.trim() === "";
+          if (typeof v === "number") return v === 0;
+          if (Array.isArray(v)) return v.length === 0;
+          return false;
+        };
+        for (const f of IMPORTABLE_FIELDS) {
+          if (f === "title" || f === "poster_url") continue;
+          const cur = (next as any)[f];
+          const inc = (preview as any)[f];
+          if (isEmpty(cur) && !isEmpty(inc)) {
+            (next as any)[f] = inc;
+            applied = true;
+          }
+        }
+        return next;
+      });
+      if (applied) {
+        toast.success("Metadata pre-filled from TMDb — review before submitting.", {
+          duration: 8000,
+          action: {
+            label: "Undo",
+            onClick: () => setMeta((cur) => ({ ...(cur as TitleMetadata), ...before } as TitleMetadata)),
+          },
+        });
+      }
+    })().catch(() => { /* non-fatal */ });
+  }, [title, meta, readOnly, name]);
 
   // Detect free vs paid creator to drive commercial UI gating.
   useEffect(() => {

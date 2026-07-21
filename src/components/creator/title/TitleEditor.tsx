@@ -5,13 +5,15 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
-  getTitle, listAssets, saveTitleMetadata, submitTitle,
+  getTitle, listAssets, saveTitleMetadata, saveTitleDraft, submitTitle,
   evaluateChecklist, fetchReadiness, fetchTitleTimeline, fetchFreeTierStatus,
   type TitleRow, type TitleAsset, type ServerReadiness, type ContentStatus, type TitleTimelineEntry,
 } from "@/lib/creator/titleApi";
 import {
   type TitleMetadata, type AssetCategory, CATEGORY_LABEL,
 } from "@/lib/creator/titleSchema";
+import { tryAutoFillFromTmdb, IMPORTABLE_FIELDS } from "@/lib/creator/metadataProviders";
+import { WhereItsStreamingPanel } from "./WhereItsStreaming";
 import { AssetUploader, AssetList } from "./AssetUploader";
 import { StatusBadge } from "./StatusBadge";
 import { RightsAvailabilityPanel } from "./RightsAvailabilityPanel";

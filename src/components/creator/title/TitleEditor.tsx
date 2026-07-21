@@ -56,6 +56,7 @@ export function TitleEditor({
   const [tab, setTab] = useState<TabId>("overview");
   const [saving, setSaving] = useState(false);
   const [autoSavedAt, setAutoSavedAt] = useState<number | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   // Synchronous guard against double-click / rapid re-entry — React state is
@@ -160,22 +161,45 @@ export function TitleEditor({
   }, [profileDefaults, meta?.rights_owner, meta?.production_company]);
 
 
+  const LS_BACKUP_KEY = `titleDraft:${titleId}`;
+
+  const writeLocalBackup = useCallback((n: string, m: TitleMetadata) => {
+    try {
+      localStorage.setItem(LS_BACKUP_KEY, JSON.stringify({ name: n, metadata: m, savedAt: Date.now() }));
+    } catch { /* ignore quota */ }
+  }, [LS_BACKUP_KEY]);
+
+  const clearLocalBackup = useCallback(() => {
+    try { localStorage.removeItem(LS_BACKUP_KEY); } catch { /* ignore */ }
+  }, [LS_BACKUP_KEY]);
+
   const doSave = useCallback(async (silent = false) => {
     if (!title || !meta) return;
     setSaving(true);
+    // Always mirror to localStorage BEFORE the network call so a mid-flight
+    // reload can still restore the creator's typing.
+    writeLocalBackup(name, meta);
     try {
-      await saveTitleMetadata(title.id, { title: name, metadata: meta });
+      const isDraft = title.status === "draft" || title.status === "incomplete" || title.status === "changes_requested";
+      if (silent && isDraft) {
+        // Draft autosave: raw persist, no strict Zod. Empty rows are pruned.
+        await saveTitleDraft(title.id, { title: name, metadata: meta });
+      } else {
+        await saveTitleMetadata(title.id, { title: name, metadata: meta });
+      }
       setDirty(false);
       setAutoSavedAt(Date.now());
+      setSaveError(null);
+      clearLocalBackup();
       if (!silent) toast.success("Saved.");
     } catch (e) {
-      // Never surface raw Zod / JSON errors to the user.
       const raw = e instanceof Error ? e.message : "";
       const looksTechnical = /^\s*[\[{]/.test(raw) || /ZodError|"code":/.test(raw);
       const msg = !raw || looksTechnical ? "Please review the highlighted fields before saving." : raw;
+      setSaveError(msg);
       if (!silent) toast.error(msg);
     } finally { setSaving(false); }
-  }, [title, meta, name]);
+  }, [title, meta, name, writeLocalBackup, clearLocalBackup]);
 
   const save = () => doSave(false);
 

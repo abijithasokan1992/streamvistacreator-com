@@ -385,6 +385,54 @@ function pruneMetadata(m: TitleMetadata): TitleMetadata {
   };
 }
 
+/**
+ * Draft-safe autosave. Does NOT run strict Zod validation — a half-filled
+ * crew row would otherwise cause the silent autosave to swallow the error
+ * and lose the creator's typing on refresh. Strict validation still runs at
+ * Submit time via `saveTitleMetadata` / `submitTitle`.
+ *
+ * Uses `.select("id")` so an RLS-blocked or locked-title write (0 rows
+ * affected) surfaces as an error instead of a false-positive success.
+ */
+export async function saveTitleDraft(
+  id: string,
+  patch: { title?: string; metadata: TitleMetadata },
+): Promise<void> {
+  const pruned = pruneMetadata(patch.metadata);
+  const { syncCanonicalAndMetadata } = await import("./titleNormalization");
+  const { canonical, metadata } = syncCanonicalAndMetadata(null, {
+    canonical: {
+      title: patch.title,
+      synopsis: pruned.synopsis,
+      language: pruned.original_language,
+      genre: (pruned.genres ?? [])[0] ?? null,
+      duration_minutes: pruned.runtime_minutes,
+    },
+    metadata: pruned,
+  });
+
+  const update: Record<string, unknown> = {
+    metadata: { ...pruned, ...metadata },
+    synopsis: canonical.synopsis,
+    language: canonical.language,
+    genre: canonical.genre,
+    duration_minutes: canonical.duration_minutes,
+    updated_at: new Date().toISOString(),
+  };
+  if (patch.title !== undefined && canonical.title) {
+    update.title = canonical.title;
+  }
+  const { data, error } = await (supabase as any)
+    .from("content_titles")
+    .update(update)
+    .eq("id", id)
+    .select("id");
+  if (error) throw new Error(error.message || "We couldn't save your changes. Please try again.");
+  if (!data || data.length === 0) {
+    throw new Error("This title is locked or not editable — your latest changes weren't saved.");
+  }
+}
+
 export async function saveTitleMetadata(
   id: string,
   patch: { title?: string; metadata: TitleMetadata },
@@ -411,7 +459,6 @@ export async function saveTitleMetadata(
   });
 
   const update: Record<string, unknown> = {
-    // Merge canonical outputs back into the full validated metadata.
     metadata: { ...safe, ...metadata },
     synopsis: canonical.synopsis,
     language: canonical.language,
@@ -423,8 +470,15 @@ export async function saveTitleMetadata(
     if (!canonical.title) throw new Error("Please enter a title name before saving.");
     update.title = canonical.title;
   }
-  const { error } = await (supabase as any).from("content_titles").update(update).eq("id", id);
+  const { data, error } = await (supabase as any)
+    .from("content_titles")
+    .update(update)
+    .eq("id", id)
+    .select("id");
   if (error) throw new Error("We couldn't save your changes. Please try again.");
+  if (!data || data.length === 0) {
+    throw new Error("This title is locked or not editable — your latest changes weren't saved.");
+  }
 }
 
 export async function listAssets(titleId: string): Promise<TitleAsset[]> {

@@ -748,6 +748,12 @@ export function TitleEditor({
                     >
                       <RightsAvailabilityPanel meta={meta} setMeta={setMeta} readOnly={metadataLocked} isFree={isFree} />
                     </SmartExpand>
+                    <WhereItsStreamingPanel
+                      meta={meta}
+                      onUpdate={(patch) => setMeta((prev) => ({ ...(prev as TitleMetadata), ...patch }))}
+                      readOnly={metadataLocked}
+                    />
+                    </SmartExpand>
                     <SmartExpand
                       title="Add Business Intelligence"
                       hint="ROI estimates, platform affinity, target audience — helps buyers evaluate market potential."

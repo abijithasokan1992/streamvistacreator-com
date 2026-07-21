@@ -207,6 +207,31 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    if (action === "watch_providers") {
+      const id = Number(body.id);
+      const kind = body.kind === "tv" ? "tv" : "movie";
+      if (!Number.isFinite(id) || id <= 0) return json({ error: "Please pick a title from the results." }, 400);
+      const data = await tmdbFetch(`/${kind}/${id}/watch/providers`, {});
+      const raw = (data.results ?? {}) as Record<string, any>;
+      const regions: Record<string, {
+        link: string;
+        flatrate: string[]; rent: string[]; buy: string[]; free: string[]; ads: string[];
+      }> = {};
+      const names = (list: any[]) => (list ?? []).map((p) => String(p.provider_name ?? "").trim()).filter(Boolean);
+      for (const [code, entry] of Object.entries(raw)) {
+        const e = entry as any;
+        regions[code] = {
+          link: String(e.link ?? ""),
+          flatrate: names(e.flatrate),
+          rent: names(e.rent),
+          buy: names(e.buy),
+          free: names(e.free),
+          ads: names(e.ads),
+        };
+      }
+      return json({ providers: { source: "tmdb", fetched_at: new Date().toISOString(), regions } });
+    }
+
     return json({ error: "Unknown action." }, 400);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

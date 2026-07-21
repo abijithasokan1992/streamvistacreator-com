@@ -118,6 +118,22 @@ export const TitleMetadataSchema = z.object({
   }).default({ roi_estimate: "unspecified", platform_affinity_tags: [] }),
   tags: z.array(z.string().trim().max(60)).default([]),
   notes: z.string().max(5000).default(""),
+  // Where-it's-streaming intelligence, sourced from TMDb watch/providers.
+  // Not a business decision — purely informational for admins to see which
+  // regions/platforms currently carry the title (helps flag already-exploited
+  // vs still-available rights). Free-form to accommodate future providers.
+  availability: z.object({
+    source: z.string().max(40).default(""),
+    fetched_at: z.string().max(40).default(""),
+    regions: z.record(z.string(), z.object({
+      link: z.string().max(500).default(""),
+      flatrate: z.array(z.string().max(120)).default([]),
+      rent: z.array(z.string().max(120)).default([]),
+      buy: z.array(z.string().max(120)).default([]),
+      free: z.array(z.string().max(120)).default([]),
+      ads: z.array(z.string().max(120)).default([]),
+    })).default({}),
+  }).default({ source: "", fetched_at: "", regions: {} }),
 });
 
 export const ROI_ESTIMATE_OPTIONS = ["unspecified", "low", "medium", "high", "very_high"] as const;

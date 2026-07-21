@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
-import { Loader2, ShieldCheck, Lock, Unlock, AlertTriangle, Cloud, Terminal, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, ShieldCheck, Lock, Unlock, AlertTriangle, Cloud, Terminal, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface OciPublicConfig {
   tenancyOcid: string;
+  userOcid: string;
   keyFingerprint: string;
+  region: string;
   namespace: string;
   bucketName: string;
 }
@@ -20,20 +22,22 @@ interface EdgeFnLog {
 }
 
 /**
- * Oracle OCI Storage configuration card with a strict lock / modify toggle.
+ * Oracle OCI Storage configuration card.
  *
- * - Public fields (tenancy OCID, fingerprint, namespace, bucket) are stored
- *   in the `admin_settings` table under key `oci_config_public`.
- * - The private key is NEVER stored here — it lives only in the
- *   `ORACLE_PRIVATE_KEY` backend secret and is used server-side by the
- *   `verify-oci-connection` edge function.
- * - Verifying flips the card into a locked state with a green pill; admins
- *   must explicitly hit "Modify Credentials" to edit again.
+ * Single source of truth: `site_config` (row id=true) — the same table the
+ * upload edge functions read via `_shared/oci.ts::loadOciConfig`. The private
+ * key + user OCID + region backend secrets are surfaced here so admins know
+ * what's missing without hunting through Project Settings.
+ *
+ * Legacy `admin_settings.oci_config_public` values (if present) are migrated
+ * into `site_config` on first load.
  */
 export default function OracleOciStorageCard() {
   const [config, setConfig] = useState<OciPublicConfig>({
     tenancyOcid: "",
+    userOcid: "",
     keyFingerprint: "",
+    region: "",
     namespace: "",
     bucketName: "",
   });
@@ -44,22 +48,70 @@ export default function OracleOciStorageCard() {
   const [uiMessage, setUiMessage] = useState("");
   const [lastLog, setLastLog] = useState<EdgeFnLog | null>(null);
   const [showLogDetails, setShowLogDetails] = useState(false);
+  const [privateKeyPresent, setPrivateKeyPresent] = useState<boolean | null>(null);
+  const [userOcidSecretPresent, setUserOcidSecretPresent] = useState<boolean | null>(null);
+  const [regionSecretPresent, setRegionSecretPresent] = useState<boolean | null>(null);
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from("admin_settings")
-        .select("value")
-        .eq("key", "oci_config_public")
+      // 1. Try site_config first (single source of truth).
+      const { data: cfg } = await (supabase as any)
+        .from("site_config")
+        .select(
+          "oracle_tenancy_ocid, oracle_user_ocid, oracle_fingerprint, oracle_region, oracle_namespace, oracle_bucket, oracle_private_key_set",
+        )
+        .eq("id", true)
         .maybeSingle();
-      const v = data?.value as Partial<OciPublicConfig> | null;
-      if (v && (v.tenancyOcid || v.namespace || v.bucketName)) {
-        setConfig({
-          tenancyOcid: v.tenancyOcid ?? "",
-          keyFingerprint: v.keyFingerprint ?? "",
-          namespace: v.namespace ?? "",
-          bucketName: v.bucketName ?? "",
-        });
+
+      let next: OciPublicConfig = {
+        tenancyOcid: cfg?.oracle_tenancy_ocid ?? "",
+        userOcid: cfg?.oracle_user_ocid ?? "",
+        keyFingerprint: cfg?.oracle_fingerprint ?? "",
+        region: cfg?.oracle_region ?? "",
+        namespace: cfg?.oracle_namespace ?? "",
+        bucketName: cfg?.oracle_bucket ?? "",
+      };
+
+      // 2. One-time migration from the legacy admin_settings row.
+      const missingCore = !next.tenancyOcid || !next.keyFingerprint || !next.namespace || !next.bucketName;
+      if (missingCore) {
+        const { data: legacy } = await (supabase as any)
+          .from("admin_settings")
+          .select("value")
+          .eq("key", "oci_config_public")
+          .maybeSingle();
+        const v = legacy?.value as Partial<OciPublicConfig> | null;
+        if (v) {
+          next = {
+            tenancyOcid: next.tenancyOcid || v.tenancyOcid || "",
+            userOcid: next.userOcid || v.userOcid || "",
+            keyFingerprint: next.keyFingerprint || v.keyFingerprint || "",
+            region: next.region || v.region || "",
+            namespace: next.namespace || v.namespace || "",
+            bucketName: next.bucketName || v.bucketName || "",
+          };
+          // Best-effort sync back into site_config so uploads pick it up.
+          if (next.tenancyOcid && next.namespace && next.bucketName) {
+            await (supabase as any).from("site_config").upsert({
+              id: true,
+              oracle_tenancy_ocid: next.tenancyOcid,
+              oracle_user_ocid: next.userOcid,
+              oracle_fingerprint: next.keyFingerprint,
+              oracle_region: next.region,
+              oracle_namespace: next.namespace,
+              oracle_bucket: next.bucketName,
+            });
+          }
+        }
+      }
+
+      setConfig(next);
+      setPrivateKeyPresent(Boolean(cfg?.oracle_private_key_set));
+      // We can only infer secret presence server-side via a verify call.
+      // Assume present until verify says otherwise.
+      setUserOcidSecretPresent(null);
+      setRegionSecretPresent(null);
+      if (next.tenancyOcid && next.namespace && next.bucketName) {
         setIsLocked(true);
         setConnectionStatus("GREEN");
       }
@@ -68,15 +120,15 @@ export default function OracleOciStorageCard() {
   }, []);
 
   const handleSaveAndVerify = async () => {
-    if (!config.tenancyOcid || !config.keyFingerprint || !config.namespace || !config.bucketName) {
+    if (!config.tenancyOcid || !config.userOcid || !config.keyFingerprint || !config.region || !config.namespace || !config.bucketName) {
       setConnectionStatus("RED");
-      setUiMessage("All four public fields are required before verifying.");
+      setUiMessage("All six fields are required (Tenancy OCID, User OCID, Fingerprint, Region, Namespace, Bucket) before verifying.");
       return;
     }
     setIsVerifying(true);
-    setUiMessage("Verifying connection with OCI Bucket…");
+    setUiMessage("Saving configuration and verifying connection…");
     const startedAt = performance.now();
-    let log: EdgeFnLog = {
+    const log: EdgeFnLog = {
       ts: new Date().toISOString(),
       name: "verify-oci-connection",
       durationMs: 0,
@@ -86,6 +138,21 @@ export default function OracleOciStorageCard() {
       error: null,
     };
     try {
+      // 1. Persist to site_config FIRST — single source of truth.
+      const { error: cfgErr } = await (supabase as any)
+        .from("site_config")
+        .upsert({
+          id: true,
+          oracle_tenancy_ocid: config.tenancyOcid,
+          oracle_user_ocid: config.userOcid,
+          oracle_fingerprint: config.keyFingerprint,
+          oracle_region: config.region,
+          oracle_namespace: config.namespace,
+          oracle_bucket: config.bucketName,
+        });
+      if (cfgErr) throw cfgErr;
+
+      // 2. Verify against OCI using the values now sitting in site_config.
       const { data, error } = await supabase.functions.invoke("verify-oci-connection", {
         body: { ...config },
       });
@@ -96,29 +163,26 @@ export default function OracleOciStorageCard() {
         throw error;
       }
       log.response = data ?? null;
+      const env = (data as any)?.environment;
+      if (env) {
+        setPrivateKeyPresent(!!env.OCI_PRIVATE_KEY);
+        setUserOcidSecretPresent(!!env.OCI_USER_OCID);
+        setRegionSecretPresent(!!env.OCI_REGION);
+      }
       if (data && (data as any).error) {
         log.error = (data as any).error;
         throw new Error((data as any).error);
       }
 
-      const { error: upErr } = await supabase
-        .from("admin_settings")
-        .upsert({ key: "oci_config_public", value: config as any });
-      if (upErr) throw upErr;
-
       setConnectionStatus("GREEN");
       setIsLocked(true);
-      setUiMessage("Connection verified. Public fields saved and locked.");
+      setUiMessage("Connection verified. Configuration saved to site_config and locked.");
     } catch (err: any) {
       log.durationMs = Math.round(performance.now() - startedAt);
       if (!log.error) log.error = err?.message ?? String(err);
       setConnectionStatus("RED");
       const msg = err?.message ?? "Unknown error";
-      setUiMessage(
-        msg.toLowerCase().includes("oracle_private_key")
-          ? msg
-          : `Verification failed: ${msg}. Ensure ORACLE_PRIVATE_KEY is set in Backend → Secrets.`,
-      );
+      setUiMessage(`Verification failed: ${msg}`);
     } finally {
       setIsVerifying(false);
       setLastLog(log);
@@ -144,6 +208,11 @@ export default function OracleOciStorageCard() {
     </div>
   );
 
+  const missingSecrets: string[] = [];
+  if (privateKeyPresent === false) missingSecrets.push("ORACLE_PRIVATE_KEY");
+  if (userOcidSecretPresent === false) missingSecrets.push("OCI_USER_OCID");
+  if (regionSecretPresent === false) missingSecrets.push("OCI_REGION");
+
   return (
     <div className="glass rounded-2xl p-6 space-y-5">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -163,6 +232,17 @@ export default function OracleOciStorageCard() {
         )}
       </div>
 
+      {missingSecrets.length > 0 && (
+        <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-200 font-mono flex items-start gap-2">
+          <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+          <div>
+            Missing backend {missingSecrets.length === 1 ? "secret" : "secrets"}:{" "}
+            <code className="text-amber-100">{missingSecrets.join(", ")}</code>. Uploads will fail with
+            "OCI not fully configured" until these are set in Project Settings → Secrets.
+          </div>
+        </div>
+      )}
+
       {isLoading ? (
         <div className="py-10 grid place-items-center text-muted-foreground">
           <Loader2 className="w-5 h-5 animate-spin" />
@@ -171,14 +251,16 @@ export default function OracleOciStorageCard() {
         <>
           <div className="grid sm:grid-cols-2 gap-4">
             {field("Tenancy OCID", "tenancyOcid", "ocid1.tenancy.oc1..…")}
+            {field("User OCID", "userOcid", "ocid1.user.oc1..…")}
             {field("Key Fingerprint", "keyFingerprint", "aa:bb:cc:dd:…")}
+            {field("Region", "region", "ap-mumbai-1")}
             {field("Namespace", "namespace", "your-namespace")}
             {field("Bucket Name", "bucketName", "your-bucket")}
           </div>
 
           <p className="text-[11px] text-muted-foreground bg-secondary/40 border border-border rounded-md px-3 py-2">
             🔒 Private key is managed as the <code className="text-cyan-300">ORACLE_PRIVATE_KEY</code> backend secret.
-            Set it in Backend → Secrets — it cannot be stored in this table for security reasons.
+            Set it in Project Settings → Secrets — it cannot be stored in this table for security reasons.
           </p>
 
           {uiMessage && (
@@ -222,7 +304,6 @@ export default function OracleOciStorageCard() {
             )}
           </div>
 
-          {/* Edge Function Debug Panel */}
           {lastLog && (
             <div className="mt-2 rounded-xl border border-border bg-black/40 overflow-hidden">
               <button
@@ -236,57 +317,12 @@ export default function OracleOciStorageCard() {
                     {lastLog.name} · {new Date(lastLog.ts).toLocaleTimeString()}
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  {lastLog.status !== null && (
-                    <span
-                      className={`text-[10px] font-mono px-1.5 py-0.5 rounded ring-1 ${
-                        lastLog.status >= 200 && lastLog.status < 300
-                          ? "bg-emerald-500/15 text-emerald-300 ring-emerald-500/40"
-                          : lastLog.status >= 400
-                          ? "bg-destructive/15 text-destructive ring-destructive/40"
-                          : "bg-amber-500/15 text-amber-300 ring-amber-500/40"
-                      }`}
-                    >
-                      HTTP {lastLog.status}
-                    </span>
-                  )}
-                  <span className="text-[10px] font-mono text-muted-foreground">{lastLog.durationMs}ms</span>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setLastLog(null); }}
-                    className="text-muted-foreground hover:text-destructive transition-colors"
-                    aria-label="Clear log"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                  {showLogDetails ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
-                </div>
+                {showLogDetails ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               </button>
-
               {showLogDetails && (
-                <div className="border-t border-border/60 px-4 py-3 space-y-3">
-                  <div>
-                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Request body</div>
-                    <pre className="text-[11px] font-mono bg-black/30 rounded-md p-3 overflow-x-auto text-cyan-300/90">
-                      {JSON.stringify(lastLog.request, null, 2)}
-                    </pre>
-                  </div>
-                  {lastLog.error && (
-                    <div>
-                      <div className="text-[10px] uppercase tracking-wider text-destructive mb-1">Error</div>
-                      <pre className="text-[11px] font-mono bg-black/30 rounded-md p-3 overflow-x-auto text-destructive">
-                        {lastLog.error}
-                      </pre>
-                    </div>
-                  )}
-                  {lastLog.response && (
-                    <div>
-                      <div className="text-[10px] uppercase tracking-wider text-emerald-300 mb-1">Response</div>
-                      <pre className="text-[11px] font-mono bg-black/30 rounded-md p-3 overflow-x-auto text-emerald-300/90">
-                        {JSON.stringify(lastLog.response, null, 2)}
-                      </pre>
-                    </div>
-                  )}
-                </div>
+                <pre className="text-[10px] font-mono p-3 overflow-auto text-muted-foreground max-h-64">
+                  {JSON.stringify(lastLog, null, 2)}
+                </pre>
               )}
             </div>
           )}

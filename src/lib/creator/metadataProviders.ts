@@ -106,3 +106,59 @@ export const IMPORTABLE_FIELDS = [
   "trailer_url",
 ] as const;
 export type ImportableField = (typeof IMPORTABLE_FIELDS)[number];
+
+export interface WatchProviders {
+  source: string;
+  fetched_at: string;
+  regions: Record<string, {
+    link: string;
+    flatrate: string[];
+    rent: string[];
+    buy: string[];
+    free: string[];
+    ads: string[];
+  }>;
+}
+
+export async function fetchWatchProviders(id: string | number, kind: "movie" | "tv"): Promise<WatchProviders> {
+  const { data, error } = await supabase.functions.invoke("tmdb-lookup", {
+    body: { action: "watch_providers", id, kind },
+  });
+  if (error) throw new Error((error as any)?.message || "Couldn't load streaming availability.");
+  if (data && typeof data === "object" && "error" in (data as any)) {
+    throw new Error(String((data as any).error));
+  }
+  return (data as any)?.providers ?? { source: "tmdb", fetched_at: "", regions: {} };
+}
+
+/**
+ * Confident-match auto-fill: pick top TMDb result whose normalized title
+ * closely matches the user's title. Returns null when no strong match.
+ */
+export async function tryAutoFillFromTmdb(name: string): Promise<MetadataPreview | null> {
+  const q = name.trim();
+  if (!q) return null;
+  let results: MetadataSearchResult[];
+  try {
+    results = await searchMetadata(q);
+  } catch {
+    return null;
+  }
+  if (!results || results.length === 0) return null;
+  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
+  const target = norm(q);
+  const top = results[0];
+  const topNorm = norm(top.title);
+  const originalNorm = norm(top.original_title || "");
+  const confident =
+    topNorm === target ||
+    originalNorm === target ||
+    (target.length >= 6 && (topNorm.startsWith(target) || target.startsWith(topNorm)));
+  if (!confident) return null;
+  try {
+    return await previewMetadata(top.id, top.kind);
+  } catch {
+    return null;
+  }
+}
+

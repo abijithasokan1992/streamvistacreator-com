@@ -365,7 +365,7 @@ export default function OrganizationsConsole() {
                         <div className="text-[11px] text-muted-foreground">{row.primary_contact?.email ?? "No email"}</div>
                       </td>
                       <td className="px-3 py-3">
-                        <Badge variant="outline" className={cn("text-[10px] capitalize", stageTone(row.stage))}>{row.stage.replaceAll("_", " ")}</Badge>
+                        <Badge variant="outline" className={cn("text-[10px] capitalize", stageTone(row.stage))}>{row.stage.split("_").join(" ")}</Badge>
                       </td>
                       <td className="px-3 py-3 text-xs">{row.priority ?? "—"}{row.tier ? ` · Tier ${row.tier}` : ""}</td>
                       <td className="px-3 py-3 text-xs text-muted-foreground">{formatDate(row.last_contacted_at)}</td>

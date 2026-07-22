@@ -592,3 +592,50 @@ body[data-checkout-open="true"] main {
   filter: blur(2px);
   transition: opacity 150ms ease, filter 150ms ease;
 }
+
+/* =============================================================
+   Light-mode legibility overrides (WCAG AA)
+   The app was designed dark-first, so many components hardcode
+   pale text shades (amber-300, cyan-300, zinc-400, etc.) that
+   collapse against light surfaces. Rather than touching 80+
+   files, we remap those specific utilities to darker, AA-safe
+   equivalents ONLY when the `.dark` class is NOT applied on
+   <html>. The dark theme is untouched.
+   ============================================================= */
+html:not(.dark) {
+  /* Warm accents (gold / amber / yellow / orange) — target ≥ 4.5:1 on white */
+  .text-amber-200, .text-amber-300, .text-amber-400 { color: rgb(146 64 14) !important; }   /* amber-800 */
+  .text-yellow-200, .text-yellow-300, .text-yellow-400 { color: rgb(133 77 14) !important; } /* yellow-800 */
+  .text-orange-200, .text-orange-300, .text-orange-400 { color: rgb(154 52 18) !important; } /* orange-800 */
+
+  /* Cool accents */
+  .text-cyan-200, .text-cyan-300, .text-cyan-400 { color: rgb(14 116 144) !important; }     /* cyan-700 */
+  .text-sky-200, .text-sky-300, .text-sky-400 { color: rgb(3 105 161) !important; }         /* sky-700 */
+  .text-indigo-200, .text-indigo-300, .text-indigo-400 { color: rgb(55 48 163) !important; } /* indigo-800 */
+  .text-violet-200, .text-violet-300, .text-violet-400 { color: rgb(76 29 149) !important; } /* violet-900 */
+  .text-fuchsia-200, .text-fuchsia-300, .text-fuchsia-400 { color: rgb(134 25 143) !important; } /* fuchsia-800 */
+
+  /* Status greens / reds — dark-mode pastels lose contrast on light */
+  .text-emerald-200, .text-emerald-300, .text-emerald-400 { color: rgb(6 95 70) !important; }   /* emerald-800 */
+  .text-green-200, .text-green-300, .text-green-400 { color: rgb(22 101 52) !important; }        /* green-800 */
+  .text-rose-200, .text-rose-300, .text-rose-400 { color: rgb(159 18 57) !important; }           /* rose-800 */
+  .text-red-200, .text-red-300, .text-red-400 { color: rgb(153 27 27) !important; }              /* red-800 */
+
+  /* Neutral greys used for captions/labels */
+  .text-zinc-200, .text-zinc-300, .text-zinc-400 { color: rgb(63 63 70) !important; }            /* zinc-700 */
+  .text-gray-200, .text-gray-300, .text-gray-400 { color: rgb(55 65 81) !important; }            /* gray-700 */
+  .text-slate-200, .text-slate-300, .text-slate-400 { color: rgb(51 65 85) !important; }         /* slate-700 */
+  .text-neutral-200, .text-neutral-300, .text-neutral-400 { color: rgb(64 64 64) !important; }   /* neutral-700 */
+
+  /* Low-opacity muted captions — restore to solid muted token for AA */
+  .text-muted-foreground\/50,
+  .text-muted-foreground\/60,
+  .text-muted-foreground\/70,
+  .text-foreground\/40,
+  .text-foreground\/50,
+  .text-foreground\/60 { color: hsl(var(--muted-foreground)) !important; }
+
+  /* Hard-coded gold hex used in one place */
+  [style*="#D4AF37"], [style*="#d4af37"] { color: rgb(133 77 14) !important; }
+}
+

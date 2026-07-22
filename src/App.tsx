@@ -40,6 +40,7 @@ import CameraToCloudGuide from "./pages/blog/CameraToCloudGuide.tsx";
 import StreamVistaVsFrameIO from "./pages/blog/StreamVistaVsFrameIO.tsx";
 import Unsubscribe from "./pages/Unsubscribe.tsx";
 import Contact from "./pages/Contact.tsx";
+import SubmitContent from "./pages/SubmitContent.tsx";
 import InvoiceReceipt from "./pages/InvoiceReceipt.tsx";
 import ManualInvoiceReceipt from "./pages/ManualInvoiceReceipt.tsx";
 import ScreeningRoom from "./pages/ScreeningRoom.tsx";
@@ -122,7 +123,6 @@ const AdminRoutes = () => (
     <Route path="/auth" element={<Auth />} />
     <Route path="/auth/callback" element={<AuthCallback />} />
     <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
-
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/connectors" element={<Navigate to="/connect" replace />} />
     <Route path="/admin" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
@@ -144,12 +144,9 @@ const AdminRoutes = () => (
     <Route path="/admin/legal" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/legacy-recovery" element={<AdminErrorBoundary><AdminLegacyRecovery /></AdminErrorBoundary>} />
     <Route path="/admin/failed-uploads" element={<AdminErrorBoundary><AdminFailedUploadsPlatform /></AdminErrorBoundary>} />
-    {/* Legacy admin paths — Admin.tsx pathToTab maps these to the new buckets */}
     <Route path="/admin/content" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/support" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/reports" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-
-    {/* Anything else on the admin host = wrong portal */}
     <Route path="*" element={<WrongPortal expected="public" />} />
   </Routes>
 );
@@ -165,12 +162,8 @@ const PublicRoutes = () => (
     <Route path="/connectors" element={<Navigate to="/connect" replace />} />
     <Route path="/settings/integrations/ai-assistants" element={<SettingsIntegrationsAI />} />
     <Route path="/solutions/ai-content-licensing" element={<SolutionsAIContentLicensing />} />
-
-    {/* Linear onboarding wizard — kept for legacy accounts only. */}
     <Route path="/onboarding" element={<Onboarding />} />
     <Route path="/auth/role-unknown" element={<RoleUnknown />} />
-
-    {/* New role-based dashboards (Phase 2 — empty states, no fake cards). */}
     <Route path="/dashboard/content" element={<OnboardingGate><RoleGate allow={["content_owner"]}><ContentOwnerDashboard /></RoleGate></OnboardingGate>} />
     <Route path="/dashboard/studio" element={<OnboardingGate><RoleGate allow={["studio"]}><StudioProfileOnboardingGate><StudioDashboard /></StudioProfileOnboardingGate></RoleGate></OnboardingGate>} />
     <Route path="/dashboard/buyer" element={<OnboardingGate><RoleGate allow={["buyer"]}><BuyerDashboard /></RoleGate></OnboardingGate>} />
@@ -181,17 +174,8 @@ const PublicRoutes = () => (
     <Route path="/my-workspace" element={<MyWorkspace />} />
     <Route path="/dashboard/localization" element={<CanonicalDashboardRedirect />} />
     <Route path="/dashboard/distribution" element={<CanonicalDashboardRedirect />} />
-
-    {/* Legacy shared dashboard entry — always normalize to the role dashboard. */}
     <Route path="/dashboard" element={<CanonicalDashboardRedirect />} />
-    {/* Smart Uploads disabled for MVP — redirect any stray links home. */}
     <Route path="/uploads" element={<Navigate to="/" replace />} />
-
-
-
-    {/* Role-gated dashboards. RLS at the DB enforces the real boundary;
-        OnboardingGate enforces the linear flow, RoleGate keeps the
-        wrong UI off the screen. */}
     <Route path="/producer" element={<CanonicalDashboardRedirect />} />
     <Route path="/vault" element={<CanonicalDashboardRedirect />} />
     <Route path="/studio" element={<CanonicalDashboardRedirect />} />
@@ -199,8 +183,6 @@ const PublicRoutes = () => (
     <Route path="/projects" element={<CanonicalDashboardRedirect />} />
     <Route path="/archive" element={<CanonicalDashboardRedirect />} />
     <Route path="/team" element={<CanonicalDashboardRedirect />} />
-
-    {/* Admin console is also reachable on the main domain until the admin subdomain DNS is fully configured. */}
     <Route path="/admin" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/home" element={<AdminHome />} />
     <Route path="/admin/super" element={<AdminErrorBoundary><SuperAdminWorkspace /></AdminErrorBoundary>} />
@@ -220,13 +202,9 @@ const PublicRoutes = () => (
     <Route path="/admin/legal" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/legacy-recovery" element={<AdminErrorBoundary><AdminLegacyRecovery /></AdminErrorBoundary>} />
     <Route path="/admin/failed-uploads" element={<AdminErrorBoundary><AdminFailedUploadsPlatform /></AdminErrorBoundary>} />
-    {/* Legacy admin paths — Admin.tsx pathToTab maps these to the new buckets */}
     <Route path="/admin/content" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/support" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
     <Route path="/admin/reports" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-
-
-
     <Route path="/checkout/return" element={<CheckoutReturn />} />
     <Route path="/checkout/storage" element={<CheckoutStorage />} />
     <Route path="/billing/status/:topupId" element={<OrderStatus />} />
@@ -242,13 +220,12 @@ const PublicRoutes = () => (
     <Route path="/about" element={<About />} />
     <Route path="/partners" element={<Partners />} />
     <Route path="/creator-preview" element={<CreatorPreview />} />
-
-
     <Route path="/c2c-setup" element={<C2CSetupManual />} />
     <Route path="/blog/camera-to-cloud-guide" element={<CameraToCloudGuide />} />
     <Route path="/blog/streamvista-vs-frame-io-camera-to-cloud" element={<StreamVistaVsFrameIO />} />
     <Route path="/support" element={<Navigate to="/contact" replace />} />
     <Route path="/contact" element={<Contact />} />
+    <Route path="/submit-content" element={<SubmitContent />} />
     <Route path="/unsubscribe" element={<Unsubscribe />} />
     <Route path="/invoice/:id" element={<InvoiceReceipt />} />
     <Route path="/invoice/manual/:id" element={<ManualInvoiceReceipt />} />
@@ -266,8 +243,6 @@ const PublicRoutes = () => (
     <Route path="/how-it-works" element={<HowItWorks />} />
     <Route path="/trust-and-rights" element={<TrustAndRights />} />
     <Route path="/guides/film-licensing-costs-and-agreements" element={<FilmLicensingCosts />} />
-    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
@@ -290,7 +265,6 @@ const App = () => (
                 <StorageQuotaProvider>
                   <GlobalPaymentProvider>
                     <GlobalErrorListener />
-
                     <a href="#main-content" className="skip-to-content">
                       Skip to main content
                     </a>
@@ -303,7 +277,6 @@ const App = () => (
                     </ErrorBoundary>
                   </GlobalPaymentProvider>
                 </StorageQuotaProvider>
-
               </SystemMessageProvider>
             </AuthProvider>
           </BrowserRouter>

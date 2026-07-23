@@ -1,82 +1,86 @@
-# Razorpay Payment Integration Audit (Read-Only)
+## Goal
+Produce one read-only evidence document at `docs/STREAMVISTA_DATABASE_SECURITY_TRUTH.md`. No fixes, no mutating SQL, no deploys, no publish, no Task 2. Owner (Abijith U A) authorised access is preserved and only reported on — never modified.
 
-## 1. Is Razorpay integrated?
+## Hard stops (fail-closed identity check first)
+- Lovable project id `6efc82ec-bd50-4b3a-90ba-234ec4d1014c` + preview / published / custom domain URLs.
+- `supabase--project_info` must return ref `hllgmkfqgeuqlmpcirvn`. Any other ref → write only the identity-mismatch section and stop.
+- Git: `git remote -v`, `git rev-parse --abbrev-ref HEAD`, `git rev-parse HEAD`. Redact any embedded credentials/tokens in remote URLs; record only safe `owner/name` + sanitised URL.
+- Env var names from `.env`, `.env.example`, `supabase/config.toml`, edge function source references (names only, target project only). Never read or print secret values.
 
-**Yes — Razorpay is the active, primary payment provider** for StreamVista, running in live mode. A parallel Paddle scaffold exists (see §6) but is not the primary path.
+## Allowed operations
+Read-only only: `code--view`, `code--exec` (git + `rg` + `ls` only), `supabase--project_info`, `supabase--linter`, `supabase--read_query` (catalog SELECT only — no RPC, no application function, no edge function invocation), `security--get_scan_results` (cached only; no forced rescan), `project_monitoring--list_pending_findings`, `supabase--edge_function_logs` (existing logs only).
 
-## 2. Source paths & Edge Functions
+Forbidden: migrations, INSERT/UPDATE/DELETE/UPSERT/MERGE/TRUNCATE/DROP/ALTER/GRANT/REVOKE, RPC/application/edge function invocation, edge function deploy, storage mutations, publishing, reproducing any of the 12 operational failures (no Firecrawl calls, email retries, imports, uploads, task creation, QC transitions).
 
-**Edge Functions (`supabase/functions/`):**
-- `create-razorpay-order` — order creation for onboarding
-- `create-razorpay-subscription` — recurring subscriptions
-- `verify-razorpay-payment` — client-side handler signature verification
-- `razorpay-webhook` — server webhook (signature + ledger idempotency + side-effects)
-- `razorpay-webhook-retry` — retries side-effects for prior ledger rows
-- `razorpay-admin` — admin ops
-- `check-razorpay-status` — live credential/health probe
-- `generate-test-razorpay-order`, `simulate-razorpay-verify` — test utilities
-- `create-storage-topup` / `verify-storage-topup` — storage add-on flow
-- `create-vault-purchase`, `inaugural-activation-pay`, `fastlink-pay`, `charge-overages`, `admin-billing-proof-url`, `payment-telemetry`
-- `_shared/razorpay-config.ts`, `_shared/payment-logger.ts`, `_shared/payment-trace.ts`, `_shared/billing-cancel.ts`
+## Inspection plan
+1. **Identity & environment** — as above.
+2. **Schema & relationships** — `pg_tables`, `information_schema.table_constraints` + `key_column_usage` for touched risk areas only. Aggregate counts, not per-table enumeration of all 190+ tables.
+3. **RLS & grants matrix** — `pg_tables.rowsecurity`, `pg_policies`, `information_schema.role_table_grants` for risk-flagged tables. Flag RLS off, `USING (true)`, grants exceeding policy scope, missing service_role grants for edge-function-touched tables.
+4. **Views & SECURITY DEFINER functions** — `pg_views`, `pg_proc` where `prosecdef=true`; `proacl` for `PUBLIC` execute; `proconfig` for `search_path`.
+5. **Storage buckets & policies** — `storage.buckets` (public flag), `pg_policies` where schema='storage'. Cross-reference signed URL surfaces via `rg` (`createSignedUrl`, `generateSecurePreviewUrl`).
+6. **Realtime / workspace scoping** — `supabase_realtime` publication membership; policy scoping to `workspace_id` / `owner_id`.
+7. **Edge Functions & MCP** — enumerate `supabase/functions/*`; cross-check `supabase/config.toml` `verify_jwt` flags. MCP: `src/lib/mcp/tools/**`, `src/lib/mcp/lib/control.ts`, `src/lib/mcpClient.ts`. Verify `authorize()` on every tool, kill-switch precedence, writes=true handling.
+8. **Targeted security risk checks** (one subsection each):
+   - JWT email-match ownership: `members`, `onboarding_requests`, `role_invitations`, `premium_invitations`.
+   - Billing amount/status tamper: triggers on `billing_orders`, `billing_manual_payment_submissions` via `pg_trigger` + `pg_proc`.
+   - Internal cost-price exposure: `studio_vault_products`, `billing_price_versions`, views.
+   - PII: bank/UPI, onboarding, DMCA, invitations.
+   - Signed storage URL exposure to unauthenticated callers.
+   - MCP audit "Unknown / not recorded" root cause across delete ops, legacy imports, DB writes, storage writes, user-data exports, schema/workspace searches — counts and action-name distributions only, no PII.
+9. **Fail-closed high-risk controls** — kill switch default, `runGoverned` deny-on-master_kill_switch, `authorize({writes:true})` → `mcp_authorize_and_log(_writes=true)` returning `kill_switch`.
+10. **Access-path matrix** — separately posture-report for: Platform Owner / Founder / Super Admin, Admin, Creator, Buyer, Finance, QC, Legal, Support, Anonymous, Authenticated-with-no-role. **Classify owner access strictly from evidence as protected, incomplete or unverified — never assume and never modify it.**
+11. **Existing findings reconciliation** — pull cached `security--get_scan_results` and `project_monitoring--list_pending_findings`. Include all active and previously-ignored findings; if `mem://security-memory` or ignore reasons are inaccessible, mark them **unverified** rather than blocking the audit. Nothing silently dismissed.
 
-**Frontend:**
-- `src/lib/payments/initializeCheckout.ts` — unified Razorpay checkout opener
-- `src/lib/payments/checkoutHostGuard.ts`, `billingFailure.ts`
-- `src/components/payments/GlobalPaymentProvider.tsx` — app-wide opener
-- `src/lib/paymentTelemetry.ts`
+## Known Operational and Schema-Drift Findings
+New required section verifying these 12 findings using code, catalog metadata and existing logs only — no reproduction:
 
-**Database (from `<supabase-tables>`):** `billing_orders`, `billing_payment_attempts`, `billing_ledger_events`, `razorpay_config`, `razorpay_audit_log`, `razorpay_webhook_ledger`, `payment_debug_logs`, `payment_traces`, `storage_topups`, `subscriptions`, `invoices`, `manual_invoices`, `billing_manual_payment_submissions`, `fastlink_payments`.
+| # | Finding | Verification approach (read-only) |
+|---|---|---|
+| 1 | Organizations CRM Pipeline references missing CRM tables | `rg` in `src/components/admin/ecosystem/` for CRM table names; check `pg_tables` for existence |
+| 2 | BI Hub references missing `revenue_lines.gross_paise` | `rg` for `gross_paise`; `information_schema.columns` for `revenue_lines` |
+| 3 | Intelligence Agent sends invalid Firecrawl v2 request key | `code--view supabase/functions/intelligence-agent/index.ts` — inspect request body keys vs Firecrawl v2 spec; do NOT call Firecrawl |
+| 4 | MCP `show_team` references `user_profiles.id` instead of `user_id` | `rg` in `src/lib/mcp/tools/**` for `show_team`; column check via `information_schema.columns` |
+| 5 | Revenue import does not load/retain title/deal/buyer mappings | `code--view src/components/revenue/RevenueMappingStep.tsx`, `src/lib/revenue/mapping.ts` — inspect persistence path |
+| 6 | "Pass QC & Send to Legal" fails | `rg` for button handler; inspect QC/Legal RPC & trigger definitions in `pg_proc` |
+| 7 | DIT Protocol targets missing storage bucket | `storage.buckets` catalog query for `dit-ingest-screenshots`; compare against `supabase/migrations-pending/20260718_000000_dit_ingest_screenshots_bucket.sql` |
+| 8 | Email retry sweep returns audit-failed HTTP 500 | `code--view supabase/functions/retry-failed-emails/index.ts`; cached `supabase--edge_function_logs` |
+| 9 | Structured Intelligence hides Firecrawl failures | `code--view` intelligence functions/components; check error surfacing |
+| 10 | Custom Intelligence Search hides Firecrawl failures | Same code paths + `IntelligenceCenter.tsx` |
+| 11 | Email Retry banner reports wrong failure reason | `code--view src/components/admin/EmailLogMonitor.tsx` — trace banner reason source |
+| 12 | Creator Revenue workspace filtering references missing column, risks cross-workspace exposure | `rg` for Creator revenue query; `information_schema.columns` for referenced `workspace_id`; check RLS on `revenue_lines` / `revenue_imports` |
 
-## 3. Environment variable NAMES (values NOT shown)
+For each finding record: **evidence** (file:line / table / policy), **classification** (confirmed / protected / false positive / unverified), **impact**, **severity** (info / low / medium / high / critical), **Task 2 required** (yes/no).
 
-Razorpay (active): `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` — read from edge-function secrets; `razorpay_config` DB row may hold non-sensitive `key_id`/`mode` for admin display only, per `_shared/razorpay-config.ts`.
+## Deliverable
+Single markdown file `docs/STREAMVISTA_DATABASE_SECURITY_TRUTH.md`. **Files changed** means files created or modified in this task; preserve unrelated existing repository changes and do not overwrite them.
 
-Paddle (scaffold only): `PADDLE_API_KEY`, `PADDLE_ENVIRONMENT`, `PADDLE_LIVE_API_KEY`, `PADDLE_SANDBOX_API_KEY`, `PADDLE_WEBHOOK_SECRET`.
+Sections in order:
+1. Lovable project identity
+2. Supabase project ref confirmation (`hllgmkfqgeuqlmpcirvn`)
+3. Safe GitHub repo identity (owner/name, branch, commit SHA, sanitised URL)
+4. Environment variable names & target project
+5. Schema & relationship summary
+6. RLS & grants matrix
+7. Views & SECURITY DEFINER functions
+8. Storage buckets & policies
+9. Realtime & workspace scoping
+10. Edge Functions & MCP controls (kill switch, fail-closed verdicts)
+11. Owner-access verification (strictly evidence-based: protected / incomplete / unverified — never modified)
+12. Access-path matrix (10 roles)
+13. Targeted security findings
+14. **Known Operational and Schema-Drift Findings** (12 items above)
+15. Consolidated findings table — Area | Observation | Evidence | Classification | Severity | Task 2 required | Notes
+16. Remaining blockers
+17. Files changed (this task should show only `docs/STREAMVISTA_DATABASE_SECURITY_TRUTH.md`)
 
-## 4. Payment purposes covered
+## Output guardrails
+Do not print or write: secret values, access/refresh tokens, password hashes, personal emails, phone numbers, bank/IFSC/UPI details, payment identifiers, invitation tokens, signed URLs, private media paths. Only column names, aggregate counts, policy definitions, function signatures, file paths.
 
-- **Customer collection**: onboarding activation (`create-razorpay-order` → `onboarding_requests`), storage top-ups (`create-storage-topup`), vault purchases (`create-vault-purchase`), FastLink one-off pay (`fastlink-pay`), inaugural activation (`inaugural-activation-pay`), overage charges (`charge-overages`).
-- **Subscription**: `create-razorpay-subscription` → `subscriptions` table.
-- **Invoices**: HTML tax invoices auto-emailed on webhook success; ledger in `invoices` / `manual_invoices`.
-- **Creator payout**: `deal_payouts`, `partner_statements`, `settlements`, `royalty_*` tables exist — but no Razorpay **Payouts / RazorpayX** integration code was found. Payouts are tracked/settled internally, not disbursed via Razorpay API.
+No remediation SQL, bootstrap files, or repair code — those belong to Task 2.
 
-## 5. Controls in place
+## Closing
+Response ends with exactly:
 
-- **Order creation** (`create-razorpay-order`): auth-gated (Bearer JWT), ownership check against `onboarding_requests.submitter_user_id`, server-computed authoritative price via `computeFinalPricePaise`, idempotent (returns existing `razorpay_order_id` if set), logs to `payment_debug_logs`.
-- **Signature verification**:
-  - `verify-razorpay-payment`: HMAC-SHA256 over `order_id|payment_id` with `RAZORPAY_KEY_SECRET` via `node:crypto createHmac`.
-  - `razorpay-webhook`: HMAC-SHA256 over raw body with `RAZORPAY_WEBHOOK_SECRET`, compared with `timingSafeEqual`. Invalid signature → 400 and ERROR log.
-- **Webhook idempotency**: `razorpay_webhook_ledger` keyed on `event_id` (from `x-razorpay-event-id`), short-circuit before side-effects; `email_send_log` idempotency keys (`rzp-invoice-buyer-…`, `rzp-invoice-admin-…`, `rzp-orphan-…`) guard email replays.
-- **Refunds**: handled inbound only — `refund.processed` webhook updates `billing_orders.status='refunded'` and `storage_topups.payment_status='refunded'`; refunded rows are never regressed. No outbound refund API call code.
-- **Payouts**: no Razorpay Payouts/RazorpayX code. Internal ledger only.
-- **Audit logging**: `payment_debug_logs` (structured, action_type-keyed), `razorpay_audit_log`, `razorpay_webhook_ledger`, `payment_traces` (via `payment_trace_upsert` RPC), `admin_audit_log`, `mcp_audit_log`.
-- **DB triggers referenced elsewhere**: `trg_enforce_billing_orders_paid_guard` (service_role-only `paid` transition), server-side amount validation on `billing_orders`.
+`Task 1 of 2 complete. Exact database ref, repository, branch, commit, files changed and remaining blockers are documented in docs/STREAMVISTA_DATABASE_SECURITY_TRUTH.md. No mutating SQL executed, no production data changed, not deployed and not published.`
 
-## 6. Legacy code
-
-- **Django / PythonAnywhere / `films_payment`**: **no references found** anywhere in the repo (`rg` returned zero hits for all three). Classified **absent**.
-- **Paddle**: a full scaffold exists — `server/` Node/Express service, `supabase/functions/paddle-portal`, `supabase/functions/payments-webhook`, `supabase/functions/_shared/paddle.ts`, `_shared/paddleAccess.ts`, `src/lib/paddle.ts`, `src/hooks/usePaddleCheckout.ts`, `paddle_customers` table. Not the production path; some pages (`Refund`, `Terms`, `CheckoutStorage`, `PaymentTestModeBanner`) still reference Paddle-era strings.
-
-## Classification
-
-| Component | Status |
-|---|---|
-| `create-razorpay-order`, `verify-razorpay-payment`, `razorpay-webhook` (+ retry) | **Current** |
-| `razorpay_webhook_ledger` idempotency, `_shared/razorpay-config.ts`, `_shared/payment-logger.ts`, `_shared/payment-trace.ts` | **Current** |
-| `initializeCheckout.ts` + `GlobalPaymentProvider.tsx` | **Current** |
-| `create-storage-topup` / `verify-storage-topup`, `create-vault-purchase`, `create-razorpay-subscription`, `charge-overages`, `fastlink-pay`, `inaugural-activation-pay` | **Current** |
-| `check-razorpay-status`, `razorpay-admin`, `payment-telemetry`, `admin-billing-proof-url` | **Current** (operational) |
-| `generate-test-razorpay-order`, `simulate-razorpay-verify` | **Current — test utilities**; verify not exposed in production (naming implies dev-only). |
-| Refund handling (inbound webhook only) | **Current but partial** — no outbound refund API. Worth reimplementing if merchant-initiated refunds are required. |
-| Razorpay Payouts / RazorpayX for creator disbursement | **Absent** — internal ledger only. Reimplement if platform is to disburse via Razorpay. |
-| Paddle scaffold (`server/`, `paddle-portal`, `payments-webhook`, `src/lib/paddle.ts`, `usePaddleCheckout.ts`, `paddle_customers`, Paddle env vars) | **Legacy-compatible / unsafe if left half-wired** — no evidence it's driving live traffic, but env vars, `PaymentTestModeBanner`, and public policy pages still reference it. Recommend explicit decision: fully remove, or freeze behind a feature flag. |
-| Django / PythonAnywhere / `films_payment` legacy | **Absent** |
-
-## Residual risks (no code changes proposed here)
-
-- No outbound refund/payout API path — merchant-side refunds are manual via Razorpay Dashboard; reconciliation relies on webhook.
-- Dual-provider surface (Paddle scaffold + Razorpay live) risks operator confusion; policy pages mention Paddle.
-- `simulate-razorpay-verify` and `generate-test-razorpay-order` should be confirmed disabled/guarded in production; not verified in this audit.
-- `razorpay_config` DB row is display-only per code; confirmed secrets are read from env, not DB.
-
-No secret values were read or emitted. No files modified.
+Then stop. Do not begin Task 2.

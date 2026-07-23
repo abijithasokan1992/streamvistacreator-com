@@ -17,6 +17,15 @@ dist-ssr
 .env.*
 !.env.example
 
+# Database exports and private migration evidence - NEVER commit these
+*.backup
+*.dump
+*.sql.gz
+database_export_*
+migration/private/
+migration/quarantine/
+migration/reports/private/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

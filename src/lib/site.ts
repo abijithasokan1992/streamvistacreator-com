@@ -45,14 +45,15 @@ export function getAppOrigin(): string {
     hostname === "localhost" ||
     hostname === "127.0.0.1" ||
     hostname.endsWith(".lovable.app") ||
-    hostname.endsWith(".lovableproject.com");
+    hostname.endsWith(".lovableproject.com") ||
+    hostname.endsWith(".vercel.app");
   return isLocal ? origin : APP_ORIGIN;
 }
 
 /**
  * Classify the current browser origin for operator-facing diagnostics.
  * Returns 'production' on the canonical streamvista.in domains,
- * 'preview' on lovable preview hosts / localhost, and 'deprecated' if the
+ * 'preview' on supported preview hosts / localhost, and 'deprecated' if the
  * app is somehow being served from a retired domain.
  */
 export function classifyOrigin(origin?: string): "production" | "preview" | "deprecated" | "unknown" {
@@ -63,6 +64,7 @@ export function classifyOrigin(origin?: string): "production" | "preview" | "dep
   if (
     o.includes(".lovable.app") ||
     o.includes(".lovableproject.com") ||
+    o.includes(".vercel.app") ||
     o.includes("localhost") ||
     o.includes("127.0.0.1")
   ) return "preview";

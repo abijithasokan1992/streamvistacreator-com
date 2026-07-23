@@ -54,7 +54,8 @@ export default function AuthCallback() {
         const protectedRoles = ["admin", "super_admin", "qc_reviewer", "legal_reviewer", "localization_partner", "distributor"];
 
         if (chosen && publicSignupRoles.includes(chosen) && !protectedRoles.includes(role ?? "")) {
-          await supabase.rpc("set_initial_role" as never, { _role: chosen } as never);
+          const { error: roleError } = await supabase.rpc("set_initial_role" as never, { _role: chosen } as never);
+          if (roleError) throw roleError;
         }
         try { sessionStorage.removeItem("sv_pending_role"); } catch { /* noop */ }
 
@@ -66,7 +67,7 @@ export default function AuthCallback() {
           ?? user.email?.split("@")[0]
           ?? "Member";
 
-        await supabase.from("user_profiles").upsert(
+        const { error: profileError } = await supabase.from("user_profiles").upsert(
           {
             user_id: user.id,
             display_name: displayName,
@@ -76,13 +77,15 @@ export default function AuthCallback() {
           },
           { onConflict: "user_id" }
         );
+        if (profileError) throw profileError;
         try { sessionStorage.removeItem("sv_pending_name"); } catch { /* noop */ }
 
         // 2b. Claim any legacy films (from the old scrapped app) staged under
         // this user's email. Each becomes a draft in content_titles they can
-        // finish at their pace. Silent if there are none.
+        // finish at their pace. Silent if there are none, but log failures for diagnosis.
         try {
-          const { data: claimed } = await supabase.rpc("claim_legacy_films" as never);
+          const { data: claimed, error: claimError } = await supabase.rpc("claim_legacy_films" as never);
+          if (claimError) throw claimError;
           const n = Number(claimed ?? 0);
           if (n > 0) {
             toast.success(
@@ -94,16 +97,15 @@ export default function AuthCallback() {
           console.warn("legacy claim skipped", e);
         }
 
-
-
         // 3. Refresh role + redirect.
         await refreshRole();
         if (cancelled) return;
         // Re-read role after the RPC took effect.
-        const { data: rows } = await supabase
+        const { data: rows, error: rolesError } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", user.id);
+        if (rolesError) throw rolesError;
         const roles = (rows || []).map((r: any) => r.role as AppRole);
         const primary = pickPrimaryRole(roles);
 

@@ -19,24 +19,68 @@ export default function AuthCallback() {
   const navigate = useNavigate();
   const { user, role, loading, refreshRole } = useAuth();
   const [message, setMessage] = useState("Signing you in…");
+  const [sessionChecked, setSessionChecked] = useState(false);
+
+  // Supabase may need a moment to exchange callback tokens and publish the
+  // session to the auth hook. Do not treat the first user=null render as a
+  // failed login, especially on hosted preview deployments.
+  useEffect(() => {
+    if (loading || user || sessionChecked) return;
+
+    let cancelled = false;
+    const checkSession = async () => {
+      const hashParams = new URLSearchParams(window.location.hash.slice(1));
+      const queryParams = new URLSearchParams(window.location.search);
+      const rawErr =
+        hashParams.get("error_description") ||
+        hashParams.get("error") ||
+        queryParams.get("error_description") ||
+        queryParams.get("error");
+
+      if (rawErr) {
+        const mapped = mapAuthError(decodeURIComponent(rawErr));
+        toast.error(mapped.message);
+        try { sessionStorage.setItem("sv_pending_auth_url", window.location.href); } catch { /* noop */ }
+        navigate(`/auth?in_app_error=1&reason=${encodeURIComponent(mapped.code)}`, { replace: true });
+        return;
+      }
+
+      setMessage("Verifying your secure session…");
+
+      // Give the SDK time to process PKCE/hash callback state before the final
+      // session check. This avoids false failures on Vercel and slower devices.
+      await new Promise((resolve) => window.setTimeout(resolve, 2500));
+      if (cancelled) return;
+
+      const { data, error } = await supabase.auth.getSession();
+      if (cancelled) return;
+
+      if (error) {
+        const mapped = mapAuthError(error);
+        toast.error(mapped.message);
+        try { sessionStorage.setItem("sv_pending_auth_url", window.location.href); } catch { /* noop */ }
+        navigate(`/auth?in_app_error=1&reason=${encodeURIComponent(mapped.code)}`, { replace: true });
+        return;
+      }
+
+      if (!data.session) {
+        try { sessionStorage.setItem("sv_pending_auth_url", window.location.href); } catch { /* noop */ }
+        navigate("/auth?in_app_error=1&reason=invalid_link", { replace: true });
+        return;
+      }
+
+      // The auth listener should now update useAuth. Mark the check complete and
+      // leave this screen in place until that state arrives.
+      setSessionChecked(true);
+    };
+
+    void checkSession();
+    return () => { cancelled = true; };
+  }, [loading, user, sessionChecked, navigate]);
 
   useEffect(() => {
-    if (loading) return;
-    if (!user) {
-      // Could be an invalid / expired link — bounce to login.
-      const params = new URLSearchParams(window.location.hash.slice(1));
-      const rawErr = params.get("error_description") || params.get("error");
-      const mapped = rawErr ? mapAuthError(decodeURIComponent(rawErr)) : null;
-      if (mapped) toast.error(mapped.message);
-      // Preserve the full original callback URL (with hash tokens / query params)
-      // so the blocked-browser recovery UI can re-open it in Safari / Chrome.
-      try {
-        sessionStorage.setItem("sv_pending_auth_url", window.location.href);
-      } catch { /* noop */ }
-      const reasonQs = mapped ? `&reason=${encodeURIComponent(mapped.code)}` : "";
-      navigate(`/auth?in_app_error=1${reasonQs}`, { replace: true });
-      return;
-    }
+    if (loading || !user) return;
+
     // Clear any stale recovery stash once we have a real session.
     try { sessionStorage.removeItem("sv_pending_auth_url"); } catch { /* noop */ }
 
@@ -54,7 +98,8 @@ export default function AuthCallback() {
         const protectedRoles = ["admin", "super_admin", "qc_reviewer", "legal_reviewer", "localization_partner", "distributor"];
 
         if (chosen && publicSignupRoles.includes(chosen) && !protectedRoles.includes(role ?? "")) {
-          await supabase.rpc("set_initial_role" as never, { _role: chosen } as never);
+          const { error: roleError } = await supabase.rpc("set_initial_role" as never, { _role: chosen } as never);
+          if (roleError) throw roleError;
         }
         try { sessionStorage.removeItem("sv_pending_role"); } catch { /* noop */ }
 
@@ -66,7 +111,7 @@ export default function AuthCallback() {
           ?? user.email?.split("@")[0]
           ?? "Member";
 
-        await supabase.from("user_profiles").upsert(
+        const { error: profileError } = await supabase.from("user_profiles").upsert(
           {
             user_id: user.id,
             display_name: displayName,
@@ -76,13 +121,15 @@ export default function AuthCallback() {
           },
           { onConflict: "user_id" }
         );
+        if (profileError) throw profileError;
         try { sessionStorage.removeItem("sv_pending_name"); } catch { /* noop */ }
 
         // 2b. Claim any legacy films (from the old scrapped app) staged under
         // this user's email. Each becomes a draft in content_titles they can
-        // finish at their pace. Silent if there are none.
+        // finish at their pace. Silent if there are none, but log failures for diagnosis.
         try {
-          const { data: claimed } = await supabase.rpc("claim_legacy_films" as never);
+          const { data: claimed, error: claimError } = await supabase.rpc("claim_legacy_films" as never);
+          if (claimError) throw claimError;
           const n = Number(claimed ?? 0);
           if (n > 0) {
             toast.success(
@@ -94,16 +141,15 @@ export default function AuthCallback() {
           console.warn("legacy claim skipped", e);
         }
 
-
-
         // 3. Refresh role + redirect.
         await refreshRole();
         if (cancelled) return;
         // Re-read role after the RPC took effect.
-        const { data: rows } = await supabase
+        const { data: rows, error: rolesError } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", user.id);
+        if (rolesError) throw rolesError;
         const roles = (rows || []).map((r: any) => r.role as AppRole);
         const primary = pickPrimaryRole(roles);
 
@@ -129,8 +175,9 @@ export default function AuthCallback() {
         }
       } catch (err) {
         console.error("auth callback failed", err);
-        toast.error("Couldn't complete sign-in. Please try again.");
-        navigate("/auth?in_app_error=1", { replace: true });
+        const mapped = mapAuthError(err);
+        toast.error(mapped.message || "Couldn't complete sign-in. Please try again.");
+        navigate(`/auth?in_app_error=1&reason=${encodeURIComponent(mapped.code)}`, { replace: true });
       }
     })();
     return () => { cancelled = true; };

@@ -80,8 +80,8 @@ export function isSchemaMissingError(e: { message?: string; code?: string } | nu
   const msg = String(e.message ?? "").toLowerCase();
   const code = String(e.code ?? "");
   return (
-    code === "42703" || // undefined_column
-    code === "42P01" || // undefined_table
+    code === "42703" ||
+    code === "42P01" ||
     /column .* does not exist/.test(msg) ||
     /relation .* does not exist/.test(msg) ||
     /could not find the .* column/.test(msg)
@@ -147,28 +147,37 @@ export async function authorize(
   if (!ctx.isAuthenticated?.() || !ctx.getUserId()) {
     return err("unauthenticated", "Sign in to StreamVista as a founder / platform_owner / super_admin.");
   }
-  const sb = userClient(ctx);
-  const safeParams = redactDeep(params);
-  const correlationId = opts.correlationId ?? cryptoRandomId();
-  const startedAt = Date.now();
-  const { data, error } = await withTimeout(
-    sb.rpc("mcp_authorize_and_log", {
-      _tool: tool,
-      _params: {
-        ...(safeParams as Record<string, unknown>),
-        _envelope: {
-          correlation_id: correlationId,
-          started_at: new Date(startedAt).toISOString(),
-          category: opts.category ?? (opts.writes ? "db_write" : "db_read"),
-          writes: !!opts.writes,
-          client_id: (ctx.getClientId?.() ?? null) as string | null,
-        },
-      } as unknown as Record<string, unknown>,
-      _writes: opts.writes ?? false,
-    }),
-    `authorize:${tool}`,
-  );
-  if (error) return err("authorize_failed", redact(error.message));
+
+  let data: unknown;
+  try {
+    const sb = userClient(ctx);
+    const safeParams = redactDeep(params);
+    const correlationId = opts.correlationId ?? cryptoRandomId();
+    const startedAt = Date.now();
+    const response = await withTimeout(
+      sb.rpc("mcp_authorize_and_log", {
+        _tool: tool,
+        _params: {
+          ...(safeParams as Record<string, unknown>),
+          _envelope: {
+            correlation_id: correlationId,
+            started_at: new Date(startedAt).toISOString(),
+            category: opts.category ?? (opts.writes ? "db_write" : "db_read"),
+            writes: !!opts.writes,
+            client_id: (ctx.getClientId?.() ?? null) as string | null,
+          },
+        } as unknown as Record<string, unknown>,
+        _writes: opts.writes ?? false,
+      }),
+      `authorize:${tool}`,
+    );
+    if (response.error) return err("authorize_failed", redact(response.error.message));
+    data = response.data;
+  } catch (cause) {
+    const message = cause instanceof Error ? cause.message : String(cause);
+    return err("authorize_exception", redact(message));
+  }
+
   const decision = String(data ?? "");
   if (decision === "ok") return null;
   if (decision === "forbidden")

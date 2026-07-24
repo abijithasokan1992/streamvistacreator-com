@@ -1,25 +1,34 @@
 -- StreamVista manual-operations cleanup
 -- SOURCE ONLY / PENDING: do not execute without explicit production approval.
--- Purpose: disable automatic commercial/destructive jobs while preserving
--- manual admin tools and historical records.
+-- Purpose: keep only the eight approved core automations and disable other
+-- automatic commercial, lifecycle, research and cleanup jobs.
 
 begin;
 
--- Stop known cron jobs that perform automatic commercial or lifecycle actions.
+-- Stop known cron jobs outside the approved core automation set.
 do $$
+declare
+  v_job text;
 begin
   if exists (select 1 from pg_extension where extname = 'pg_cron') then
-    perform cron.unschedule('streamvista-charge-overages')
-      where exists (select 1 from cron.job where jobname = 'streamvista-charge-overages');
-
-    perform cron.unschedule('streamvista-reclaim-idle')
-      where exists (select 1 from cron.job where jobname = 'streamvista-reclaim-idle');
-
-    perform cron.unschedule('title-removal-worker')
-      where exists (select 1 from cron.job where jobname = 'title-removal-worker');
-
-    perform cron.unschedule('sv-title-removal-worker')
-      where exists (select 1 from cron.job where jobname = 'sv-title-removal-worker');
+    foreach v_job in array array[
+      'streamvista-track-usage',
+      'streamvista-charge-overages',
+      'streamvista-reclaim-idle',
+      'sv-archive-sweep-daily',
+      'sv-egress-sweep-monthly',
+      'topup-sweep',
+      'sv-topup-sweep',
+      'oci-multipart-reclaim',
+      'sv-oci-multipart-reclaim',
+      'intelligence-snapshots-daily',
+      'sv-intelligence-snapshots-daily',
+      'title-removal-worker',
+      'sv-title-removal-worker'
+    ] loop
+      perform cron.unschedule(v_job)
+        where exists (select 1 from cron.job where jobname = v_job);
+    end loop;
   end if;
 end $$;
 
@@ -40,6 +49,15 @@ end $$;
 
 commit;
 
--- Rollback guidance (manual and explicit only):
--- Recreate only the individually approved cron job with reviewed authentication,
--- rate limits, observability and a documented manual kill switch.
+-- Approved core automation set retained in source:
+-- 1. Failed email retry
+-- 2. Failed upload recovery
+-- 3. Payment webhook protection
+-- 4. Title autosave and resume
+-- 5. Legal/QC status tracking
+-- 6. Role and access security
+-- 7. Audit logging
+-- 8. Important notifications
+--
+-- Rollback guidance: recreate only an individually approved cron job after
+-- security review, tests, observability and a documented manual kill switch.

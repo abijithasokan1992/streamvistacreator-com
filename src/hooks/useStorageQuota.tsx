@@ -151,6 +151,13 @@ export function StorageQuotaProvider({ children }: { children: React.ReactNode }
           setOpen(false);
           refresh();
         },
+        onError: (e) => {
+          toast.error(e?.message || "Payment failed. Please try again.");
+          setPaying(false);
+        },
+        onDismiss: () => {
+          setPaying(false);
+        },
       });
     } finally {
       setPaying(false);

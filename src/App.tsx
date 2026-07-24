@@ -171,7 +171,7 @@ const PublicRoutes = () => (
     <Route path="/dashboard/studio/profile" element={<OnboardingGate><MyStudioProfile /></OnboardingGate>} />
     <Route path="/dashboard/studio/settings/advanced" element={<OnboardingGate><RoleGate allow={["studio"]}><StudioAdvancedSettings /></RoleGate></OnboardingGate>} />
     <Route path="/studio/ingest/engine" element={<OnboardingGate><RoleGate allow={["studio"]}><IngestEnginePage /></RoleGate></OnboardingGate>} />
-    <Route path="/my-workspace" element={<MyWorkspace />} />
+    <Route path="/my-workspace" element={<OnboardingGate><MyWorkspace /></OnboardingGate>} />
     <Route path="/dashboard/localization" element={<CanonicalDashboardRedirect />} />
     <Route path="/dashboard/distribution" element={<CanonicalDashboardRedirect />} />
     <Route path="/dashboard" element={<CanonicalDashboardRedirect />} />

@@ -66,15 +66,17 @@ export default function AuthCallback() {
           ?? user.email?.split("@")[0]
           ?? "Member";
 
+        // Do NOT force onboarding_step="done" here — that would let magic-link /
+        // OAuth users bypass the onboarding flow entirely. Only create the
+        // profile row with default step; the Onboarding page marks it "done".
         await supabase.from("user_profiles").upsert(
           {
             user_id: user.id,
             display_name: displayName,
             first_name: displayName.split(" ")[0],
             last_name: displayName.split(" ").slice(1).join(" ") || null,
-            onboarding_step: "done",
           },
-          { onConflict: "user_id" }
+          { onConflict: "user_id", ignoreDuplicates: false }
         );
         try { sessionStorage.removeItem("sv_pending_name"); } catch { /* noop */ }
 

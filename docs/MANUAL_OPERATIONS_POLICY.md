@@ -2,7 +2,18 @@
 
 ## Decision
 
-Commercial, legal, QC, access, settlement and destructive actions remain manual until each automation is separately approved, tested and documented.
+Only the following eight core automations are approved to remain in the product source:
+
+1. Failed email retry.
+2. Failed upload recovery.
+3. Payment webhook protection.
+4. Title autosave and resume.
+5. Legal/QC status tracking.
+6. Role and access security.
+7. Audit logging.
+8. Important notifications that request human review.
+
+All other background automations are removed, unscheduled through a pending migration, or deferred until separately approved.
 
 ## Manual-only actions
 
@@ -15,18 +26,22 @@ The system may provide forms, queues, calculations and status views, but it must
 - invoice and settlement approval;
 - payout approval or execution.
 
-## Deferred automations
-
-These capabilities are intentionally disabled, removed from active function registration, or deferred:
+## Removed or deferred automations
 
 - automatic seller onboarding;
 - automatic buyer onboarding;
 - automatic buyer matching;
+- automatic usage tracking schedules;
 - automatic overage charging;
 - automatic idle-account reclaim;
+- automatic archive movement;
+- automatic egress invoice staging;
+- automatic stale top-up sweep;
+- automatic OCI multipart cleanup sweep;
+- automatic intelligence/news snapshots;
 - automatic title removal or deletion.
 
-## Allowed assistance
+## Allowed manual tools
 
 The app may continue to provide non-decisional tools:
 
@@ -34,13 +49,13 @@ The app may continue to provide non-decisional tools:
 - search, filters and status queues;
 - draft calculations clearly marked as estimates;
 - warnings for missing information;
-- audit logging;
+- manual upload diagnostics and cancel/retry controls;
 - notifications that request human review;
 - explicit Approve, Reject, Assign and Revoke controls.
 
 ## Safety rule
 
-No manual-only action may be converted into an automatic action without:
+No deferred automation may be enabled without:
 
 1. explicit owner approval;
 2. success and denial/error tests;

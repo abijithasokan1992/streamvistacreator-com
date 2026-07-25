@@ -10,7 +10,7 @@ export const FinalCta = () => {
   const { user, role, loading } = useAuth();
   const signedIn = !loading && !!user;
   const to = signedIn ? dashboardForRole(role) : "/auth?intent=signup";
-  const label = signedIn ? "Open Your Dashboard" : "Create Your Workspace";
+  const label = signedIn ? "Continue to your workspace" : "Create Your Workspace";
   const Icon = signedIn ? LayoutDashboard : ArrowRight;
   return (
     <section id="cta" className="py-28 relative overflow-hidden">

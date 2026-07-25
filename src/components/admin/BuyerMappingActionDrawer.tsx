@@ -128,12 +128,19 @@ export function BuyerMappingActionDrawer({ offer, open, onOpenChange, onChanged 
     onChanged?.(optimistic);
 
     try {
-      const patch: Record<string, unknown> = { status: next };
-      if (next === "offered")   patch.offered_at   = new Date().toISOString();
-      if (next === "accepted")  patch.accepted_at  = new Date().toISOString();
-      if (next === "rejected")  patch.rejected_at  = new Date().toISOString();
+      const nowIso = new Date().toISOString();
+      const patch: {
+        status: OfferStatus;
+        offered_at?: string;
+        accepted_at?: string;
+        rejected_at?: string;
+        legal_text_snapshot?: string;
+      } = { status: next };
+      if (next === "offered")  patch.offered_at  = nowIso;
+      if (next === "accepted") patch.accepted_at = nowIso;
+      if (next === "rejected") patch.rejected_at = nowIso;
       if (note && (next === "cancelled" || next === "rejected")) {
-        patch.legal_text_snapshot = note; // reason captured on the record for audit
+        patch.legal_text_snapshot = note;
       }
       const { data, error } = await supabase
         .from("distribution_program_offers")

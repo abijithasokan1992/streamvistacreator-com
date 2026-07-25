@@ -142,9 +142,11 @@ Source of truth today: `recalc_workspace_storage_usage()` treating `recent_uploa
 ## Tests to add (once implementation begins, not now)
 - `homepage-simple-copy.test.ts` — asserts hero copy, no "Cloud X", no duplicate trust.
 - `creator-submission-steps.test.tsx` — five stages, required-field matrix per step.
-- `admin-nav-4-items.test.tsx` — top nav = 4.
+- `admin-nav-6-items.test.tsx` — regular admin sees exactly 6 departments; founder-vault hidden for non-super-admins.
 - `button-wiring.test.tsx` — every rendered `<button>` in creator/admin/buyer has an `onClick` or `type="submit"` inside a form.
 - Extend existing `dashboard-routing-no-loop.test.ts`.
+- `admin-deep-links.test.ts` — `/admin/failed-uploads`, `/admin/legacy-recovery`, `/admin/integrations`, `/admin/research`, `/admin/super` remain reachable after nav restructure.
+
 
 ## Migrations
 None in this batch. Kept non-executed. All changes above are frontend/copy.

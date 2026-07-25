@@ -172,8 +172,10 @@ const PublicRoutes = () => (
     <Route path="/dashboard/studio/settings/advanced" element={<OnboardingGate><RoleGate allow={["studio"]}><StudioAdvancedSettings /></RoleGate></OnboardingGate>} />
     <Route path="/studio/ingest/engine" element={<OnboardingGate><RoleGate allow={["studio"]}><IngestEnginePage /></RoleGate></OnboardingGate>} />
     <Route path="/my-workspace" element={<OnboardingGate><MyWorkspace /></OnboardingGate>} />
-    <Route path="/dashboard/localization" element={<CanonicalDashboardRedirect />} />
-    <Route path="/dashboard/distribution" element={<CanonicalDashboardRedirect />} />
+    {/* Dormant Phase-2 roles now route to canonical dashboards via
+        toDashboardRole(); the standalone /dashboard/localization and
+        /dashboard/distribution routes were removed to prevent an infinite
+        <Navigate replace> loop against CanonicalDashboardRedirect. */}
     <Route path="/dashboard" element={<CanonicalDashboardRedirect />} />
     <Route path="/uploads" element={<Navigate to="/" replace />} />
     <Route path="/producer" element={<CanonicalDashboardRedirect />} />

@@ -189,6 +189,9 @@ const PublicRoutes = () => (
         /dashboard/distribution routes were removed to prevent an infinite
         <Navigate replace> loop against CanonicalDashboardRedirect. */}
     <Route path="/dashboard" element={<CanonicalDashboardRedirect />} />
+    {/* Legacy shell paths kept as redirects so old magic-links, bookmarks and
+        emailed URLs still land on the user's canonical dashboard instead of
+        404-ing. Safe to delete once inbound traffic drops to zero. */}
     <Route path="/uploads" element={<Navigate to="/" replace />} />
     <Route path="/producer" element={<CanonicalDashboardRedirect />} />
     <Route path="/vault" element={<CanonicalDashboardRedirect />} />
@@ -197,28 +200,7 @@ const PublicRoutes = () => (
     <Route path="/projects" element={<CanonicalDashboardRedirect />} />
     <Route path="/archive" element={<CanonicalDashboardRedirect />} />
     <Route path="/team" element={<CanonicalDashboardRedirect />} />
-    <Route path="/admin" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/home" element={<AdminHome />} />
-    <Route path="/admin/super" element={<AdminErrorBoundary><SuperAdminWorkspace /></AdminErrorBoundary>} />
-    <Route path="/admin/users" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/approvals" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/ecosystem" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/catalog" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/billing" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/storage" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/comms" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/settings" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/integrations" element={<AdminErrorBoundary><AdminIntegrations /></AdminErrorBoundary>} />
-    <Route path="/admin/research" element={<AdminErrorBoundary><AdminResearch /></AdminErrorBoundary>} />
-    <Route path="/admin/audit" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/homepage" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/qc" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/legal" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/legacy-recovery" element={<AdminErrorBoundary><AdminLegacyRecovery /></AdminErrorBoundary>} />
-    <Route path="/admin/failed-uploads" element={<AdminErrorBoundary><AdminFailedUploadsPlatform /></AdminErrorBoundary>} />
-    <Route path="/admin/content" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/support" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
-    <Route path="/admin/reports" element={<AdminErrorBoundary><Admin /></AdminErrorBoundary>} />
+    {renderAdminRoutes()}
     <Route path="/checkout/return" element={<CheckoutReturn />} />
     <Route path="/checkout/storage" element={<CheckoutStorage />} />
     <Route path="/billing/status/:topupId" element={<OrderStatus />} />

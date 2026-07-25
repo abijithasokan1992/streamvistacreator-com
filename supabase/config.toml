@@ -7,6 +7,13 @@ project_id = "hllgmkfqgeuqlmpcirvn"
     verify_jwt = false
   [functions.create-razorpay-order]
     verify_jwt = false
+
+  # Minimal authenticated one-time service payment flow.
+  [functions.create-service-order]
+    verify_jwt = true
+  [functions.verify-service-order]
+    verify_jwt = true
+
   [functions.payments-webhook]
     verify_jwt = false
   [functions.process-email-queue]
@@ -45,9 +52,6 @@ project_id = "hllgmkfqgeuqlmpcirvn"
   # before the MCP handler runs (surfaces to clients as JSON-RPC -32603).
   [functions.mcp]
     verify_jwt = false
-
-
-
 
   [functions.integrations-status]
     verify_jwt = false

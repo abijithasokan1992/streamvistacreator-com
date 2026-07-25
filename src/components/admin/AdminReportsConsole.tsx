@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Loader2, BarChart3, RefreshCw, Users, Film, Building2, ShoppingBag, Receipt, Eye, Wallet, ShieldAlert } from "lucide-react";
+import { Loader2, BarChart3, RefreshCw, Users, Film, Building2, ShoppingBag, Receipt, Eye, Wallet, ShieldAlert, FileDown, Printer } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 
 /**
  * Finance / management / audit reporting console.

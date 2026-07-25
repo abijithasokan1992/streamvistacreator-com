@@ -158,6 +158,9 @@ None in this batch. Kept non-executed. All changes above are frontend/copy.
 - No deploy until you approve.
 
 ## What I need from you to start
-1. "Approved — start P0" (home + submission + admin trim + buyer basic + storage copy).
-2. Whether to hide or delete the Vault pages.
-3. Confirm the four admin top-nav items (Inbox / Titles / Buyers / Settings) or propose alternates.
+1. "Approved — start P0" (home + submission + admin rename + buyer basic + storage copy).
+2. Vault pages: **hide from navigation**; do not delete until import/route/CTA/backend-job/billing/contract audit proves unused.
+3. Admin nav: confirmed as **6 regular departments + Founder Secure Vault** above.
+
+Decisions recorded: admin nav restructure, standalone-route mapping, Vault hide-only. No code, Supabase, database, storage, migration, infrastructure, or deployment changes made.
+

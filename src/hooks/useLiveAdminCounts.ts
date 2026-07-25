@@ -57,7 +57,7 @@ export function useLiveAdminCounts() {
         const r1 = await supabase
           .from("distribution_program_offers")
           .select("id", { count: "exact", head: true })
-          .in("status", ["open", "negotiating"]);
+          .in("status", ["offered", "draft"]);
         openOffers = r1.count ?? 0;
         const r2 = await supabase
           .from("distribution_program_offers")

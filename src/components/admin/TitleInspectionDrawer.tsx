@@ -96,7 +96,7 @@ export function TitleInspectionDrawer({
       if (kind === "approve") { patch.status = "approved"; patch.approved_at = new Date().toISOString(); }
       if (kind === "sendback") { patch.status = "changes_requested"; patch.review_notes = reason.trim(); }
       if (kind === "ready") { patch.status = "ready_for_distribution"; }
-      const { error } = await supabase.from("content_titles").update(patch).eq("id", title.id);
+      const { error } = await (supabase.from("content_titles") as any).update(patch).eq("id", title.id);
       if (error) throw error;
       toast.success(kind === "approve" ? "Approved" : kind === "sendback" ? "Sent back to creator" : "Marked ready");
       setTimeout(() => onOpenChange(false), 800);

@@ -22,8 +22,21 @@ interface Invoice {
   issued_at: string;
 }
 
-const inr = (paise: number) =>
-  "₹" + (Number(paise) / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const formatMoney = (minorUnits: number, currency: string | null | undefined) => {
+  const code = (currency || "INR").toUpperCase();
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: code,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(Number(minorUnits) / 100);
+  } catch {
+    return `${code} ${(Number(minorUnits) / 100).toFixed(2)}`;
+  }
+};
+
+const PAID_STATES = new Set(["paid", "succeeded", "captured"]);
 
 export default function InvoiceReceipt() {
   const { id } = useParams<{ id: string }>();
@@ -48,6 +61,14 @@ export default function InvoiceReceipt() {
   if (loading) return <div className="min-h-dvh grid place-items-center"><Loader2 className="w-5 h-5 animate-spin" /></div>;
   if (denied || !inv) return <Navigate to="/" replace />;
 
+  const normalizedStatus = String(inv.status || "pending").toLowerCase();
+  const isPaid = PAID_STATES.has(normalizedStatus);
+  const statusClass = isPaid
+    ? "text-emerald-600"
+    : normalizedStatus === "failed"
+      ? "text-red-600"
+      : "text-amber-600";
+
   return (
     <div className="min-h-dvh bg-muted/30 py-8 print:bg-white print:py-0">
       <div className="max-w-2xl mx-auto px-4">
@@ -66,7 +87,7 @@ export default function InvoiceReceipt() {
               <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground font-mono mb-1">
                 StreamVista · Tax Invoice
               </div>
-              <div className="font-display text-2xl font-bold">Payment Receipt</div>
+              <div className="font-display text-2xl font-bold">{isPaid ? "Payment Receipt" : "Invoice"}</div>
             </div>
             <div className="text-right text-xs">
               <div className="text-muted-foreground uppercase tracking-wider">Invoice</div>
@@ -98,28 +119,30 @@ export default function InvoiceReceipt() {
               <div className="text-sm">
                 <div className="font-medium">{inv.description}</div>
                 <div className="text-xs text-muted-foreground mt-1 capitalize">
-                  Source: {inv.source.replace("_", " ")}
+                  Source: {inv.source.replace(/_/g, " ")}
                 </div>
               </div>
-              <div className="text-right font-mono text-sm shrink-0">{inr(inv.subtotal_paise)}</div>
+              <div className="text-right font-mono text-sm shrink-0">{formatMoney(inv.subtotal_paise, inv.currency)}</div>
             </div>
           </div>
 
           <div className="space-y-1.5 text-sm">
-            <Row label="Subtotal" value={inr(inv.subtotal_paise)} />
-            <Row label={`GST (${Number(inv.gst_percent)}%)`} value={inr(inv.gst_paise)} />
+            <Row label="Subtotal" value={formatMoney(inv.subtotal_paise, inv.currency)} />
+            <Row label={`GST (${Number(inv.gst_percent)}%)`} value={formatMoney(inv.gst_paise, inv.currency)} />
             <div className="border-t pt-3 mt-3 flex items-center justify-between">
-              <div className="font-display font-bold">Total paid</div>
-              <div className="font-display font-bold text-xl">{inr(inv.total_paise)}</div>
+              <div className="font-display font-bold">{isPaid ? "Total paid" : "Total due"}</div>
+              <div className="font-display font-bold text-xl">{formatMoney(inv.total_paise, inv.currency)}</div>
             </div>
           </div>
 
           <div className="mt-8 pt-4 border-t text-xs text-muted-foreground leading-relaxed">
             <div className="uppercase tracking-wider text-foreground/70 font-mono mb-1">
-              Status: <span className="text-emerald-600">{inv.status.toUpperCase()}</span>
+              Status: <span className={statusClass}>{normalizedStatus.replace(/_/g, " ").toUpperCase()}</span>
             </div>
-            This invoice is a tax invoice issued by StreamVista. Keep it for your records.
-            For questions about this receipt, contact support@streamvista.in.
+            {isPaid
+              ? "This tax invoice records a completed payment. Keep it for your records."
+              : "This invoice does not record a completed payment yet. Check the status before treating it as paid."}
+            {" "}For questions about this invoice, contact support@streamvista.in.
           </div>
         </div>
       </div>

@@ -593,6 +593,15 @@ body[data-checkout-open="true"] main {
   transition: opacity 150ms ease, filter 150ms ease;
 }
 
+/* Razorpay may preload a portal container as soon as its script loads. If the
+   previous preview session crashed/reloaded while that portal was mounted, the
+   fixed backdrop can remain above the app and look like a black screen. Keep
+   it inert unless our checkout helper has explicitly marked checkout open. */
+body:not([data-checkout-open="true"]) .razorpay-container {
+  display: none !important;
+  pointer-events: none !important;
+}
+
 /* =============================================================
    Light-mode legibility overrides (WCAG AA)
    The app was designed dark-first, so many components hardcode

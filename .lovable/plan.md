@@ -39,7 +39,30 @@ No DB changes. UI-only fixes:
 - Remove the standalone Storage section from primary creator nav; keep as a small footer chip in Settings.
 
 ### 4. Admin dashboard (`src/pages/Admin.tsx` + `src/components/admin/*`)
-Reduce to 4 top items: **Inbox**, **Titles**, **Buyers**, **Settings**. Move everything else behind a "More" menu. Kill duplicate Approve/Publish surfaces — the hero buttons already exist in `QuickActions.tsx` and `QCLegalValidationSurface.tsx`; keep the QC/Legal surface only. Remove tabs mixing title workflow with commercial workflow.
+Keep **six** regular-admin departments plus one super-admin-only vault. Rename only; do not remove routes or backend consumers.
+
+| # | Label | id | Contains |
+|---|-------|----|----------|
+| 1 | **Overview** | `mission` | Readiness, alerts, audit summary, system status (renamed from "Mission Control"). `/admin` becomes the canonical landing page here. |
+| 2 | **Content** | `content` | Titles, catalogue, approvals, Technical QC Review, Rights & Legal Review, publishing. |
+| 3 | **Users & Support** | `users` | Users, organizations, invitations, onboarding, roles, support tickets, storage requests (renamed from "Users"). |
+| 4 | **Business & Finance** | `business` | Billing, invoices, revenue, deals, payouts, reports, ecosystem products (renamed from "Business"). |
+| 5 | **Cloud & Delivery** | `cloud` | Storage, uploads, failed-upload recovery, ingest, delivery partners, operational integrations (renamed from "Cloud"). |
+| 6 | **Platform & Communications** | `platform` | Settings, homepage CMS, email operations, communications, research, AI/integration controls (renamed from "Platform"). |
+| 7 | **Founder Secure Vault** | `founder-vault` | Super-admin-only. Never exposed to regular admins, reviewers, creators, studios or buyers (renamed from "Founder Vault"). |
+
+Standalone-route treatment:
+- `/admin` → canonical **Overview** landing. Avoid duplicate AdminHome/Admin shells; share one panel.
+- QC reviewers land directly inside **Content → Technical QC Review**.
+- Legal reviewers land directly inside **Content → Rights & Legal Review**.
+- `/admin/failed-uploads` → **Cloud & Delivery**.
+- `/admin/legacy-recovery` → **Cloud & Delivery**, privileged.
+- `/admin/integrations` → **Platform & Communications** unless storage/delivery-specific.
+- `/admin/research` → **Platform & Communications**.
+- `/admin/super` → protected super-admin workspace, accessible from **Overview**, not a regular-admin nav item.
+
+Deep links must keep working. Plan canonical redirects or shared panels so duplicate page shells are eliminated while every route remains reachable. Authorization stays enforced by backend RLS/RPC/function checks; frontend navigation visibility is not authorization.
+
 
 ### 5. Buyer basic page (`src/pages/landing/Buyers.tsx` + `src/pages/dashboards/Buyer.tsx`)
 Public: one hero line, "How buying works" (3 steps), "Request access" form. Dashboard: one list of available titles + saved list + messages. Remove all licensing jargon from public copy; keep detail terms inside signed-in deal flow.
@@ -119,9 +142,11 @@ Source of truth today: `recalc_workspace_storage_usage()` treating `recent_uploa
 ## Tests to add (once implementation begins, not now)
 - `homepage-simple-copy.test.ts` — asserts hero copy, no "Cloud X", no duplicate trust.
 - `creator-submission-steps.test.tsx` — five stages, required-field matrix per step.
-- `admin-nav-4-items.test.tsx` — top nav = 4.
+- `admin-nav-6-items.test.tsx` — regular admin sees exactly 6 departments; founder-vault hidden for non-super-admins.
 - `button-wiring.test.tsx` — every rendered `<button>` in creator/admin/buyer has an `onClick` or `type="submit"` inside a form.
 - Extend existing `dashboard-routing-no-loop.test.ts`.
+- `admin-deep-links.test.ts` — `/admin/failed-uploads`, `/admin/legacy-recovery`, `/admin/integrations`, `/admin/research`, `/admin/super` remain reachable after nav restructure.
+
 
 ## Migrations
 None in this batch. Kept non-executed. All changes above are frontend/copy.
@@ -133,6 +158,9 @@ None in this batch. Kept non-executed. All changes above are frontend/copy.
 - No deploy until you approve.
 
 ## What I need from you to start
-1. "Approved — start P0" (home + submission + admin trim + buyer basic + storage copy).
-2. Whether to hide or delete the Vault pages.
-3. Confirm the four admin top-nav items (Inbox / Titles / Buyers / Settings) or propose alternates.
+1. "Approved — start P0" (home + submission + admin rename + buyer basic + storage copy).
+2. Vault pages: **hide from navigation**; do not delete until import/route/CTA/backend-job/billing/contract audit proves unused.
+3. Admin nav: confirmed as **6 regular departments + Founder Secure Vault** above.
+
+Decisions recorded: admin nav restructure, standalone-route mapping, Vault hide-only. No code, Supabase, database, storage, migration, infrastructure, or deployment changes made.
+

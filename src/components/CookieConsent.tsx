@@ -80,7 +80,9 @@ export const CookieConsent = () => {
       role="dialog"
       aria-live="polite"
       aria-label="Cookie consent"
-      className="fixed inset-x-3 bottom-3 sm:inset-x-auto sm:right-4 sm:bottom-4 z-[60] max-w-md sm:w-[26rem] rounded-xl border border-border/60 bg-card/95 backdrop-blur-xl shadow-elevated animate-fade-in"
+      // z-40 so the AssistantLauncher FAB (z-50+) sits above the banner on
+      // desktop, and bottom-24 on mobile so the banner clears the FAB.
+      className="fixed inset-x-3 bottom-24 sm:inset-x-auto sm:right-4 sm:bottom-4 z-40 max-w-md sm:w-[26rem] rounded-xl border border-border/60 bg-card/95 backdrop-blur-xl shadow-elevated animate-fade-in"
     >
       <div className="p-4 sm:p-5">
         <div className="flex items-start gap-3">

@@ -29,6 +29,7 @@ export default function IPCopyright() {
         Guidelines, 2021.
       </LegalSection>
 
+      <div id="submit-notice" className="scroll-mt-28">
       <LegalSection title="2. Filing a Takedown Notice">
         <p>
           To report content that you believe infringes your copyright on StreamVista Cloud X, send a
@@ -49,6 +50,7 @@ export default function IPCopyright() {
           </li>
         </ul>
       </LegalSection>
+      </div>
 
       <LegalSection title="3. Counter-Notice">
         If you believe your content was removed by mistake or misidentification, you may submit a
@@ -68,10 +70,11 @@ export default function IPCopyright() {
         damages, including legal costs, under applicable copyright law.
       </LegalSection>
 
-      <LegalSection title="6. Designated Agent">
+      <div id="grievance" className="scroll-mt-28">
+      <LegalSection title="6. Designated Agent / Grievance Officer">
         <div className="space-y-1">
           <div>
-            <span>Attention:</span> DMCA Agent, StreamVista OPC Pvt Ltd
+            <span>Attention:</span> DMCA Agent &amp; Grievance Officer, StreamVista OPC Pvt Ltd
           </div>
           <div>
             <span>Email:</span>{" "}
@@ -87,6 +90,7 @@ export default function IPCopyright() {
           </p>
         </div>
       </LegalSection>
+      </div>
     </LegalLayout>
     </>
   );

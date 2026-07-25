@@ -20,6 +20,7 @@ const Wordmark = ({ size = "sm" }: { size?: "sm" | "md" }) => (
 const NAV_LINKS = [
   { to: "/", label: "Home" },
   { to: "/#platform", label: "Solutions" },
+  { to: "/how-it-works", label: "How it works" },
   { to: "/pricing", label: "Pricing" },
   { to: "/creator-preview", label: "Creator Preview" },
   { to: "/partners", label: "Partners" },

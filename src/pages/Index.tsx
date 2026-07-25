@@ -9,7 +9,7 @@ import { RightsDistribution } from "@/components/streamvista/RightsDistribution"
 import { AIContentLicensingSection } from "@/components/home/AIContentLicensingSection";
 import { FinalCta } from "@/components/streamvista/FinalCta";
 import { Footer } from "@/components/streamvista/Footer";
-import { TrustBadges } from "@/components/streamvista/TrustBadges";
+
 import { Seo } from "@/components/Seo";
 import { dashboardForRole, useAuth } from "@/hooks/useAuth";
 
@@ -58,11 +58,9 @@ const Index = () => {
       <Navbar />
       <Hero />
       <TrustedDistributionPartners />
-      <section className="border-b border-border/40 bg-background/60">
-        <div className="container py-6">
-          <TrustBadges compact className="justify-center" />
-        </div>
-      </section>
+      {/* Trust chips render once in the Footer's home-only block —
+          the standalone TrustBadges band was removed to eliminate the
+          duplicate "Cloud X" / "IP & Copyright Compliance" chips. */}
       <Workflow />
       <PlatformOverview />
       <SupportedContent />

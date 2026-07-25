@@ -39,7 +39,30 @@ No DB changes. UI-only fixes:
 - Remove the standalone Storage section from primary creator nav; keep as a small footer chip in Settings.
 
 ### 4. Admin dashboard (`src/pages/Admin.tsx` + `src/components/admin/*`)
-Reduce to 4 top items: **Inbox**, **Titles**, **Buyers**, **Settings**. Move everything else behind a "More" menu. Kill duplicate Approve/Publish surfaces — the hero buttons already exist in `QuickActions.tsx` and `QCLegalValidationSurface.tsx`; keep the QC/Legal surface only. Remove tabs mixing title workflow with commercial workflow.
+Keep **six** regular-admin departments plus one super-admin-only vault. Rename only; do not remove routes or backend consumers.
+
+| # | Label | id | Contains |
+|---|-------|----|----------|
+| 1 | **Overview** | `mission` | Readiness, alerts, audit summary, system status (renamed from "Mission Control"). `/admin` becomes the canonical landing page here. |
+| 2 | **Content** | `content` | Titles, catalogue, approvals, Technical QC Review, Rights & Legal Review, publishing. |
+| 3 | **Users & Support** | `users` | Users, organizations, invitations, onboarding, roles, support tickets, storage requests (renamed from "Users"). |
+| 4 | **Business & Finance** | `business` | Billing, invoices, revenue, deals, payouts, reports, ecosystem products (renamed from "Business"). |
+| 5 | **Cloud & Delivery** | `cloud` | Storage, uploads, failed-upload recovery, ingest, delivery partners, operational integrations (renamed from "Cloud"). |
+| 6 | **Platform & Communications** | `platform` | Settings, homepage CMS, email operations, communications, research, AI/integration controls (renamed from "Platform"). |
+| 7 | **Founder Secure Vault** | `founder-vault` | Super-admin-only. Never exposed to regular admins, reviewers, creators, studios or buyers (renamed from "Founder Vault"). |
+
+Standalone-route treatment:
+- `/admin` → canonical **Overview** landing. Avoid duplicate AdminHome/Admin shells; share one panel.
+- QC reviewers land directly inside **Content → Technical QC Review**.
+- Legal reviewers land directly inside **Content → Rights & Legal Review**.
+- `/admin/failed-uploads` → **Cloud & Delivery**.
+- `/admin/legacy-recovery` → **Cloud & Delivery**, privileged.
+- `/admin/integrations` → **Platform & Communications** unless storage/delivery-specific.
+- `/admin/research` → **Platform & Communications**.
+- `/admin/super` → protected super-admin workspace, accessible from **Overview**, not a regular-admin nav item.
+
+Deep links must keep working. Plan canonical redirects or shared panels so duplicate page shells are eliminated while every route remains reachable. Authorization stays enforced by backend RLS/RPC/function checks; frontend navigation visibility is not authorization.
+
 
 ### 5. Buyer basic page (`src/pages/landing/Buyers.tsx` + `src/pages/dashboards/Buyer.tsx`)
 Public: one hero line, "How buying works" (3 steps), "Request access" form. Dashboard: one list of available titles + saved list + messages. Remove all licensing jargon from public copy; keep detail terms inside signed-in deal flow.

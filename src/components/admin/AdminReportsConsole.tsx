@@ -215,3 +215,97 @@ function Stat({ label, value, icon, tone = "muted" }: { label: string; value: st
     </div>
   );
 }
+
+function csvEscape(v: unknown): string {
+  const s = v == null ? "" : String(v);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function downloadBlob(content: string, filename: string, mime: string) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function exportCsv(fin: FinSummary | null, mgmt: MgmtSummary | null, audit: AuditLogRow[]) {
+  if (!fin || !mgmt) return;
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  const lines: string[] = [];
+  lines.push("StreamVista — Reports & Audit Summary");
+  lines.push(`Generated,${new Date().toISOString()}`);
+  lines.push("");
+  lines.push("Section,Metric,Value");
+  lines.push(`Finance (30d),Invoices issued,${fin.invoices_30d_count}`);
+  lines.push(`Finance (30d),Invoiced total (INR),${fin.invoices_30d_total_inr}`);
+  lines.push(`Finance (30d),Manual outstanding,${fin.manual_invoices_outstanding}`);
+  lines.push(`Finance (30d),Active subscriptions,${fin.active_subscriptions}`);
+  lines.push(`Finance (30d),Refunds total (INR),${fin.refunds_30d_total_inr}`);
+  lines.push(`Management,Total users,${mgmt.total_users}`);
+  lines.push(`Management,Creators,${mgmt.creators}`);
+  lines.push(`Management,Studios,${mgmt.studios}`);
+  lines.push(`Management,Buyers,${mgmt.buyers}`);
+  lines.push(`Management,Active titles,${mgmt.active_titles}`);
+  lines.push(`Management,Pending review,${mgmt.pending_review}`);
+  lines.push("");
+  lines.push("Audit log");
+  lines.push("Timestamp,Action,Actor,Target");
+  for (const r of audit) {
+    lines.push([r.created_at, r.action, r.admin_user_id ?? "", r.target_user_id ?? ""].map(csvEscape).join(","));
+  }
+  downloadBlob(lines.join("\r\n"), `streamvista-audit-${stamp}.csv`, "text/csv;charset=utf-8");
+  toast({ title: "CSV exported", description: "Downloaded to your device." });
+}
+
+function exportPdf(fin: FinSummary | null, mgmt: MgmtSummary | null, audit: AuditLogRow[]) {
+  if (!fin || !mgmt) return;
+  const esc = (s: unknown) => String(s ?? "").replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]!));
+  const row = (k: string, v: string) => `<tr><td>${esc(k)}</td><td style="text-align:right">${esc(v)}</td></tr>`;
+  const auditRows = audit.map(r => `<tr>
+    <td>${esc(new Date(r.created_at).toLocaleString())}</td>
+    <td style="font-family:monospace">${esc(r.action)}</td>
+    <td style="font-family:monospace;font-size:10px">${esc(r.admin_user_id?.slice(0,8) ?? "—")}</td>
+    <td style="font-family:monospace;font-size:10px">${esc(r.target_user_id?.slice(0,8) ?? "—")}</td>
+  </tr>`).join("");
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>StreamVista Audit Report</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#111;padding:32px;max-width:900px;margin:auto}
+  h1{margin:0 0 4px;font-size:22px}
+  .muted{color:#666;font-size:12px;margin-bottom:24px}
+  h2{font-size:14px;text-transform:uppercase;letter-spacing:.08em;margin:24px 0 8px;color:#333}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th,td{border-bottom:1px solid #e5e5e5;padding:6px 8px;text-align:left}
+  th{background:#f7f7f7;font-weight:600}
+  @media print { body{padding:16px} }
+</style></head><body>
+<h1>StreamVista — Reports &amp; Audit Summary</h1>
+<div class="muted">Generated ${esc(new Date().toLocaleString())}</div>
+<h2>Finance · last 30 days</h2>
+<table><tbody>
+  ${row("Invoices issued", String(fin.invoices_30d_count))}
+  ${row("Invoiced total (INR)", fmtINR(fin.invoices_30d_total_inr))}
+  ${row("Manual outstanding", String(fin.manual_invoices_outstanding))}
+  ${row("Active subscriptions", String(fin.active_subscriptions))}
+  ${row("Refunds total (INR)", fmtINR(fin.refunds_30d_total_inr))}
+</tbody></table>
+<h2>Management summary</h2>
+<table><tbody>
+  ${row("Total users", String(mgmt.total_users))}
+  ${row("Creators", String(mgmt.creators))}
+  ${row("Studios", String(mgmt.studios))}
+  ${row("Buyers", String(mgmt.buyers))}
+  ${row("Active titles", String(mgmt.active_titles))}
+  ${row("Pending review", String(mgmt.pending_review))}
+</tbody></table>
+<h2>Audit log (${audit.length})</h2>
+<table><thead><tr><th>Timestamp</th><th>Action</th><th>Actor</th><th>Target</th></tr></thead>
+<tbody>${auditRows || '<tr><td colspan="4" style="color:#888;font-style:italic">No entries</td></tr>'}</tbody></table>
+<script>window.addEventListener('load',()=>{setTimeout(()=>window.print(),250)});</script>
+</body></html>`;
+  const w = window.open("", "_blank", "width=900,height=1000");
+  if (!w) { toast({ title: "Pop-up blocked", description: "Allow pop-ups to export PDF.", variant: "destructive" }); return; }
+  w.document.open(); w.document.write(html); w.document.close();
+  toast({ title: "PDF ready", description: "Use the print dialog → Save as PDF." });
+}

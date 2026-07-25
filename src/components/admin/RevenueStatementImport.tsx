@@ -122,7 +122,7 @@ export function RevenueStatementImport() {
     setStep("review");
   };
 
-  const confirm = async () => {
+  const confirm = async (confirmedMappings: RowMapping[]) => {
     if (!normalized) return;
     setBusy(true);
     try {
@@ -137,6 +137,7 @@ export function RevenueStatementImport() {
         periodEnd: periodEnd || null,
         notes: null,
         normalization: normalized,
+        mappings: confirmedMappings,
       });
       toast.success(`Imported ${res.inserted} rows (${res.skipped} skipped)`);
       setStep("done");
@@ -257,7 +258,10 @@ export function RevenueStatementImport() {
             deals={deals}
             buyers={buyers}
             workspaces={workspaces}
-            onConfirm={(m) => { setMappings(m); void confirm(); }}
+            onConfirm={(m) => {
+              setMappings(m);
+              void confirm(m);
+            }}
             onBack={() => setStep("review")}
           />
         )}

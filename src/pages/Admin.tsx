@@ -332,6 +332,12 @@ export default function Admin() {
             </div>
 
             {!isReviewer && <PriorityInbox />}
+            <a
+              href="/admin/office"
+              className="hidden md:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:opacity-90"
+            >
+              <Film className="w-3.5 h-3.5" /> Media Office
+            </a>
             <ThemeToggle />
             <button onClick={load} disabled={fetching} className="px-3 py-2 text-sm rounded-md border border-border hover:bg-secondary flex items-center gap-2">
               <RefreshCw className={`w-4 h-4 ${fetching ? "animate-spin" : ""}`} /> Refresh

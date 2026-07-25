@@ -37,6 +37,7 @@ export default function StatementsSection() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"billing" | "revenue">("billing");
   const [titleIds, setTitleIds] = useState<string[]>([]);
+  const [titlesLoading, setTitlesLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
@@ -59,16 +60,28 @@ export default function StatementsSection() {
     })();
   }, [user?.id]);
 
-  // Load titleIds scoped to the active workspace so Revenue tab never leaks
-  // across workspaces. Falls back to owner_id when workspace column absent.
+  // Revenue must be constrained to titles owned by this creator. The canonical
+  // ownership column is owner_user_id; workspace_id narrows the active workspace.
   useEffect(() => {
-    if (!user) { setTitleIds([]); return; }
+    if (!user) {
+      setTitleIds([]);
+      setTitlesLoading(false);
+      return;
+    }
+    let cancelled = false;
     (async () => {
-      let q = (supabase as any).from("content_titles").select("id").eq("owner_id", user.id);
+      setTitlesLoading(true);
+      let q = (supabase as any)
+        .from("content_titles")
+        .select("id")
+        .eq("owner_user_id", user.id);
       if (active?.id) q = q.eq("workspace_id", active.id);
-      const { data } = await q.limit(500);
-      setTitleIds((data ?? []).map((r: any) => r.id).filter(Boolean));
+      const { data, error } = await q.limit(500);
+      if (cancelled) return;
+      setTitleIds(error ? [] : (data ?? []).map((r: any) => r.id).filter(Boolean));
+      setTitlesLoading(false);
     })();
+    return () => { cancelled = true; };
   }, [user?.id, active?.id]);
 
   return (
@@ -91,7 +104,9 @@ export default function StatementsSection() {
       </div>
 
       {tab === "revenue" && (
-        <CreatorRevenueSummary titleIds={titleIds.length ? titleIds : undefined} />
+        titlesLoading
+          ? <div className="text-sm text-muted-foreground">Loading revenue scope…</div>
+          : <CreatorRevenueSummary titleIds={titleIds} />
       )}
 
       {tab === "billing" && (<>
@@ -104,7 +119,6 @@ export default function StatementsSection() {
       )}
 
       {tab === "billing" && (<>
-      {/* Storage allocation history — read-only record of past changes */}
       <section className="rounded-2xl border border-border/50 bg-card p-5">
         <div className="flex items-center justify-between mb-2 gap-3 flex-wrap">
           <div className="flex items-center gap-2">
@@ -160,7 +174,6 @@ export default function StatementsSection() {
         )}
       </section>
 
-      {/* Raw payment events — collapsed by default */}
       <section className="rounded-2xl border border-border/40 bg-card p-5">
         <button
           onClick={() => setShowEvents((v) => !v)}

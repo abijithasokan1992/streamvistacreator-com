@@ -29,6 +29,7 @@ export default function IPCopyright() {
         Guidelines, 2021.
       </LegalSection>
 
+      <div id="submit-notice" className="scroll-mt-28">
       <LegalSection title="2. Filing a Takedown Notice">
         <p>
           To report content that you believe infringes your copyright on StreamVista Cloud X, send a
@@ -49,6 +50,7 @@ export default function IPCopyright() {
           </li>
         </ul>
       </LegalSection>
+      </div>
 
       <LegalSection title="3. Counter-Notice">
         If you believe your content was removed by mistake or misidentification, you may submit a

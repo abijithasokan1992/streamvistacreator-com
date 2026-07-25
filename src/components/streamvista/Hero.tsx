@@ -46,17 +46,10 @@ export const Hero = () => {
             with <span className="gradient-text">Global Buyers</span>
           </h1>
 
-          <div className="mt-8 max-w-2xl text-base md:text-lg text-muted-foreground leading-relaxed space-y-3 animate-fade-in">
-            <p>
-              StreamVista connects creators, filmmakers, producers, studios and rights holders with
-              verified OTT platforms, broadcasters, satellite television, FAST channels,
-              distributors and digital streaming services worldwide.
-            </p>
-            <p>
-              Prepare rights-ready catalogues, present your films, series and documentaries to
-              qualified buyers, and run professional delivery workflows in one place.
-            </p>
-          </div>
+          <p className="mt-8 max-w-2xl text-base md:text-lg text-muted-foreground leading-relaxed animate-fade-in">
+            Prepare rights-ready films, series and documentaries, present them to qualified buyers,
+            and manage professional licensing and delivery workflows in one place.
+          </p>
 
       <div className="mt-10 sm:mt-12 flex flex-col sm:flex-row gap-3 animate-fade-in hero-button-container">
         <Link
@@ -78,10 +71,6 @@ export const Hero = () => {
           <p className="mt-6 max-w-2xl text-xs text-muted-foreground/80 leading-relaxed animate-fade-in">
             StreamVista provides professional connectivity and workflow support. Buyer response,
             licensing, distribution, release and revenue are not guaranteed.
-          </p>
-
-          <p className="mt-4 text-[11px] font-mono-tech uppercase tracking-[0.2em] text-muted-foreground/70 animate-fade-in">
-            Film Sales · OTT & FAST Licensing · Satellite &amp; Digital Distribution Workflow
           </p>
         </div>
       </div>

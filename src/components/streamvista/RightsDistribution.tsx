@@ -8,7 +8,6 @@ const CATEGORIES = [
   "Airlines",
   "Hospitality",
   "Educational",
-  "AI Training & Machine Learning",
 ];
 
 export const RightsDistribution = () => (

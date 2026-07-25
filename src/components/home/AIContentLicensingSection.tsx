@@ -13,10 +13,10 @@ export const AIContentLicensingSection = () => (
   <section
     id="ai-content-licensing"
     aria-labelledby="ai-content-licensing-heading"
-    className="py-24 border-b border-border/40 relative"
+    className="py-16 sm:py-20 border-b border-border/40 relative"
   >
     <div className="container">
-      <div className="max-w-3xl animate-fade-in">
+      <div className="max-w-3xl mx-auto animate-fade-in">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-8 h-px bg-accent" />
           <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent">
@@ -30,14 +30,14 @@ export const AIContentLicensingSection = () => (
           License Content for{" "}
           <span className="gradient-text">Responsible AI</span>
         </h2>
-        <p className="mt-6 text-base md:text-lg text-muted-foreground leading-relaxed max-w-2xl">
+        <p className="mt-5 text-base text-muted-foreground leading-relaxed max-w-2xl">
           StreamVista helps verified rights owners evaluate and license
           professionally produced audio-video content for approved AI and
           machine-learning use cases. Every opportunity remains subject to
           rights verification, technical review and written authorization.
         </p>
 
-        <ul className="mt-6 grid gap-2 text-sm text-muted-foreground/90 max-w-xl">
+        <ul className="mt-5 grid gap-2 text-sm text-muted-foreground/90 max-w-xl">
           <li className="flex items-start gap-2">
             <ShieldCheck className="w-4 h-4 mt-0.5 text-accent shrink-0" />
             No automatic approvals. Written authorization required from the
@@ -49,7 +49,7 @@ export const AIContentLicensingSection = () => (
           </li>
         </ul>
 
-        <div className="mt-8 flex flex-wrap gap-3">
+        <div className="mt-6 flex flex-wrap gap-3">
           <Link
             to="/onboarding?intent=ai-licensing"
             className="inline-flex items-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity"

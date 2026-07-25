@@ -12,15 +12,15 @@ const formatInr = (amount: number) =>
     maximumFractionDigits: 0,
   }).format(amount);
 
-export default function Services() {
+export function RevenueServicesSection() {
   return (
-    <main className="min-h-dvh bg-background text-foreground">
-      <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:px-8">
+    <section id="managed-services" className="border-t bg-background text-foreground">
+      <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
-          <Badge variant="secondary">StreamVista Services</Badge>
-          <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-5xl">
+          <Badge variant="secondary">StreamVista Managed Services</Badge>
+          <h2 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
             നിങ്ങളുടെ സിനിമ buyer-ready ആക്കാം
-          </h1>
+          </h2>
           <p className="mt-4 text-base leading-7 text-muted-foreground sm:text-lg">
             Metadata, rights checklist, QC coordination, screener preparation എന്നിവ structured service ആയി ലഭിക്കും.
             Online payment safety verification പൂർത്തിയായ ശേഷം checkout തുറക്കും.
@@ -74,7 +74,15 @@ export default function Services() {
             </Card>
           ))}
         </div>
-      </section>
+      </div>
+    </section>
+  );
+}
+
+export default function Services() {
+  return (
+    <main className="min-h-dvh bg-background text-foreground">
+      <RevenueServicesSection />
     </main>
   );
 }

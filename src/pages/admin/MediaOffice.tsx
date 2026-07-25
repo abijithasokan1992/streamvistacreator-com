@@ -9,6 +9,7 @@ import { useLiveAdminCounts } from "@/hooks/useLiveAdminCounts";
 import { TitleInspectionDrawer } from "@/components/admin/TitleInspectionDrawer";
 import { BuyerMappingActionDrawer, type BuyerOffer } from "@/components/admin/BuyerMappingActionDrawer";
 import { BuyerOfferAuditLog } from "@/components/admin/BuyerOfferAuditLog";
+import { ConnectionStatusPanel } from "@/components/admin/ConnectionStatusPanel";
 import AdminErrorBoundary from "@/components/admin/AdminErrorBoundary";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { cn } from "@/lib/utils";
@@ -189,14 +190,18 @@ function DashboardRoom({ onOpenMovies }: { onOpenMovies: () => void }) {
         <CounterCard label={OFFICE.countActiveMappings} value={counts.activeMappings} />
       </div>
 
-      <div className="rounded-xl border border-border/50 bg-card p-5 flex items-center justify-between gap-3">
-        <div>
-          <h3 className="font-medium">Move the queue forward</h3>
-          <p className="text-sm text-muted-foreground">Open the Movie Desk to approve, send back, or mark titles ready.</p>
+      <div className="grid md:grid-cols-[1fr_280px] gap-4">
+        <div className="rounded-xl border border-border/50 bg-card p-5 flex items-center justify-between gap-3">
+          <div>
+            <h3 className="font-medium">Move the queue forward</h3>
+            <p className="text-sm text-muted-foreground">Open the Movie Desk to approve, send back, or mark titles ready.</p>
+          </div>
+          <button onClick={onOpenMovies} className="h-9 px-4 rounded-md bg-primary text-primary-foreground text-sm hover:opacity-90">
+            Open Movie Desk
+          </button>
         </div>
-        <button onClick={onOpenMovies} className="h-9 px-4 rounded-md bg-primary text-primary-foreground text-sm hover:opacity-90">
-          Open Movie Desk
-        </button>
+
+        <ConnectionStatusPanel />
       </div>
 
       {updatedAt && (

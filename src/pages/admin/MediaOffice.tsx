@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
-import { Loader2, LayoutDashboard, Film, Users, Wallet, LogOut, ShieldCheck, ArrowUpRight } from "lucide-react";
+import { Loader2, LayoutDashboard, Film, Users, Wallet, LogOut, ShieldCheck, ArrowUpRight, WifiOff, RefreshCw } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";

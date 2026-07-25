@@ -56,6 +56,7 @@ import AdminResearch from "./pages/AdminResearch.tsx";
 import AdminLegacyRecovery from "./pages/admin/LegacyRecovery.tsx";
 import SuperAdminWorkspace from "./pages/admin/SuperAdminWorkspace.tsx";
 import AdminFailedUploadsPlatform from "./pages/admin/FailedUploadsPlatform.tsx";
+import MediaOffice from "./pages/admin/MediaOffice.tsx";
 import { CookieConsent } from "./components/CookieConsent";
 import CollegeERP from "./pages/CollegeERP.tsx";
 import Connect from "./pages/Connect.tsx";
@@ -123,6 +124,7 @@ const AdminRoot = () => {
  */
 const ADMIN_ROUTES: { path: string; element: JSX.Element }[] = [
   { path: "/admin", element: <AdminErrorBoundary><Admin /></AdminErrorBoundary> },
+  { path: "/admin/office", element: <AdminErrorBoundary><MediaOffice /></AdminErrorBoundary> },
   { path: "/admin/home", element: <AdminHome /> },
   { path: "/admin/super", element: <AdminErrorBoundary><SuperAdminWorkspace /></AdminErrorBoundary> },
   { path: "/admin/users", element: <AdminErrorBoundary><Admin /></AdminErrorBoundary> },

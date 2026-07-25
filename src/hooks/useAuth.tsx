@@ -266,10 +266,8 @@ export function dashboardForRole(r: AppRole | null): string {
     case "content_owner": return "/dashboard/content";
     case "studio": return "/dashboard/studio";
     case "buyer": return "/dashboard/buyer";
-    // Dormant (Phase 2) roles still have routes so existing assignees aren't broken,
-    // but are never offered through signup or admin UI.
-    case "localization_partner": return "/dashboard/localization";
-    case "distributor": return "/dashboard/distribution";
+    // Dormant (Phase 2) roles are mapped to canonical dashboards in
+    // toDashboardRole() above, so they never reach this switch anymore.
     // Unknown / unmapped role: send to onboarding so the user can pick a role
     // instead of bouncing into the admin console.
     default: return "/onboarding";
@@ -290,7 +288,5 @@ export const REGISTERED_DASHBOARD_ROUTES = [
   "/dashboard/content",
   "/dashboard/studio",
   "/dashboard/buyer",
-  "/dashboard/localization",
-  "/dashboard/distribution",
 ] as const;
 

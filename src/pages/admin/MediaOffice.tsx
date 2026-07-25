@@ -10,6 +10,7 @@ import { TitleInspectionDrawer } from "@/components/admin/TitleInspectionDrawer"
 import { BuyerMappingActionDrawer, type BuyerOffer } from "@/components/admin/BuyerMappingActionDrawer";
 import { BuyerOfferAuditLog } from "@/components/admin/BuyerOfferAuditLog";
 import { ConnectionStatusPanel } from "@/components/admin/ConnectionStatusPanel";
+import { BackendControlsGuide } from "@/components/admin/BackendControlsGuide";
 import AdminErrorBoundary from "@/components/admin/AdminErrorBoundary";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { cn } from "@/lib/utils";
@@ -203,6 +204,8 @@ function DashboardRoom({ onOpenMovies }: { onOpenMovies: () => void }) {
 
         <ConnectionStatusPanel />
       </div>
+
+      <BackendControlsGuide />
 
       {updatedAt && (
         <p className="text-[10px] text-muted-foreground/70">Last updated {new Date(updatedAt).toLocaleTimeString()}</p>

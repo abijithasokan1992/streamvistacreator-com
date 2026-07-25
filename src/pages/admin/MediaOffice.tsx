@@ -8,6 +8,7 @@ import { OFFICE } from "@/lib/admin/labels";
 import { useLiveAdminCounts } from "@/hooks/useLiveAdminCounts";
 import { TitleInspectionDrawer } from "@/components/admin/TitleInspectionDrawer";
 import { BuyerMappingActionDrawer, type BuyerOffer } from "@/components/admin/BuyerMappingActionDrawer";
+import { BuyerOfferAuditLog } from "@/components/admin/BuyerOfferAuditLog";
 import AdminErrorBoundary from "@/components/admin/AdminErrorBoundary";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { cn } from "@/lib/utils";
@@ -402,10 +403,13 @@ function BuyersRoom() {
     if (targets.length === 0) { toast.error("Select at least one offer"); return; }
     setBulkBusy(action);
     let ok = 0, skipped = 0, failed = 0;
+    const outcomes: Array<{ id: string; name: string; result: "ok" | "skipped" | "failed"; note?: string }> = [];
     for (const r of targets) {
+      const label = r.program_name || r.id.slice(0, 8);
       if (!eligibleFor(action, r.status)) {
         skipped++;
-        toast.message(`Skipped: ${r.program_name || r.id.slice(0, 8)}`, {
+        outcomes.push({ id: r.id, name: label, result: "skipped", note: `status=${r.status}` });
+        toast.message(`Skipped: ${label}`, {
           description: `Cannot ${action === "approve" ? "approve" : "send back"} an offer in "${r.status}".`,
         });
         continue;
@@ -422,12 +426,37 @@ function BuyersRoom() {
         if (error) throw error;
         patchRow({ ...r, status: patch.status, updated_at: nowIso });
         ok++;
-        toast.success(`${action === "approve" ? "Approved" : "Sent back"}: ${r.program_name || r.id.slice(0, 8)}`);
+        outcomes.push({ id: r.id, name: label, result: "ok" });
+        toast.success(`${action === "approve" ? "Approved" : "Sent back"}: ${label}`);
       } catch (e: any) {
         failed++;
-        toast.error(`Failed: ${r.program_name || r.id.slice(0, 8)}`, { description: e?.message ?? "Try again." });
+        outcomes.push({ id: r.id, name: label, result: "failed", note: e?.message });
+        toast.error(`Failed: ${label}`, { description: e?.message ?? "Try again." });
       }
     }
+
+    // Record an audit entry for this bulk run (best-effort — never blocks UX).
+    try {
+      const { data: userRes } = await supabase.auth.getUser();
+      const uid = userRes?.user?.id;
+      const email = userRes?.user?.email ?? null;
+      if (uid) {
+        await supabase.from("buyer_offer_audit_log").insert({
+          actor_id: uid,
+          actor_email: email,
+          action: action === "approve" ? "bulk_approve" : "bulk_sendback",
+          offer_ids: targets.map((t) => t.id),
+          outcomes,
+          reason: reason ?? null,
+          succeeded: ok,
+          skipped,
+          failed,
+        });
+      }
+    } catch (e) {
+      console.warn("[buyer-audit] failed to record", e);
+    }
+
     setBulkBusy(null);
     setChecked(new Set());
     setSendBackOpen(false);
@@ -436,6 +465,7 @@ function BuyersRoom() {
       description: `${ok} succeeded · ${skipped} skipped · ${failed} failed`,
     });
   };
+
 
   const onSendBackConfirm = () => {
     const trimmed = sendBackReason.trim();
@@ -578,9 +608,12 @@ function BuyersRoom() {
         onOpenChange={(v) => { setDrawerOpen(v); if (!v) setSelected(null); }}
         onChanged={patchRow}
       />
+
+      <BuyerOfferAuditLog />
     </div>
   );
 }
+
 
 /* -------------------- Accounts -------------------- */
 

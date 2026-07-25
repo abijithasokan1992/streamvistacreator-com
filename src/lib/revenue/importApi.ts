@@ -13,6 +13,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import type { NormalizationResult, NormalizedRevenueRow } from "./normalize";
+import type { RowMapping } from "./mapping";
 
 export class DatabasePendingError extends Error {
   constructor(msg = "Revenue tables not available on this environment") {
@@ -39,11 +40,10 @@ export interface PersistStatementInput {
   periodEnd: string | null;
   notes: string | null;
   normalization: NormalizationResult;
+  mappings?: RowMapping[];
 }
 
 export async function persistStatement(input: PersistStatementInput): Promise<{ importId: string; inserted: number; skipped: number }> {
-  // Idempotency check by statementKey in metadata (best effort — the raw
-  // metadata column may or may not be indexed yet).
   const { data: existing, error: probeErr } = await supabase
     .from("revenue_imports")
     .select("id, notes, source_type, source_label")
@@ -67,7 +67,6 @@ export async function persistStatement(input: PersistStatementInput): Promise<{ 
       period_start: input.periodStart,
       period_end: input.periodEnd,
       currency: input.currency,
-      // statementKey stashed in notes for pre-migration idempotency probe
       notes: [`sk=${input.normalization.statementKey}`, input.notes ?? ""].filter(Boolean).join(" | "),
       imported_by: u.user?.id ?? null,
       gross_amount_paise: input.normalization.totals.grossMinor,
@@ -82,9 +81,10 @@ export async function persistStatement(input: PersistStatementInput): Promise<{ 
     throw impErr;
   }
 
+  const mappingByRowKey = new Map((input.mappings ?? []).map((mapping) => [mapping.rowKey, mapping]));
   const payload = input.normalization.rows
     .filter((r) => r.errors.length === 0)
-    .map((r) => toRevenueLineRow(imp.id, r, input));
+    .map((r) => toRevenueLineRow(imp.id, r, input, mappingByRowKey.get(r.rowKey)));
 
   if (!payload.length) return { importId: imp.id, inserted: 0, skipped: input.normalization.rows.length };
 
@@ -97,10 +97,15 @@ export async function persistStatement(input: PersistStatementInput): Promise<{ 
   return { importId: imp.id, inserted: payload.length, skipped: input.normalization.totals.errorRowCount };
 }
 
-function toRevenueLineRow(importId: string, r: NormalizedRevenueRow, input: PersistStatementInput) {
+function toRevenueLineRow(
+  importId: string,
+  r: NormalizedRevenueRow,
+  input: PersistStatementInput,
+  mapping?: RowMapping,
+) {
   return {
     import_id: importId,
-    title_id: null, // mapping stage will patch this after admin confirms the buyer/title
+    title_id: mapping?.status === "mapped" ? mapping.titleId : null,
     partner_id: input.partnerId,
     territory: r.territory,
     channel: r.channel,
@@ -115,7 +120,11 @@ function toRevenueLineRow(importId: string, r: NormalizedRevenueRow, input: Pers
       statement_key: input.normalization.statementKey,
       source_type: input.sourceType,
       source_statement_id: input.sourceStatementId,
-      workspace_id: input.workspaceId,
+      workspace_id: mapping?.workspaceId ?? input.workspaceId,
+      buyer_user_id: mapping?.buyerUserId ?? null,
+      deal_memo_id: mapping?.dealMemoId ?? null,
+      mapping_status: mapping?.status ?? "hold_for_review",
+      mapping_reasons: mapping?.reasons ?? ["mapping_missing"],
       title_external_ref: r.titleExternalRef,
       model: r.model,
       tax_paise: r.taxMinor,

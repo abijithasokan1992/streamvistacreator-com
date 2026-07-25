@@ -30,7 +30,11 @@ export const FinalCta = () => {
           <div className="mt-12 flex justify-center">
             <Link
               to={to}
-              className="cta-guide group h-14 inline-flex items-center justify-center gap-3 px-10 bg-gradient-primary text-primary-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md"
+              className={
+                signedIn
+                  ? "group h-14 inline-flex items-center justify-center gap-3 px-10 border border-border/60 hover:border-accent/60 hover:bg-accent/5 text-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md transition-colors"
+                  : "cta-guide group h-14 inline-flex items-center justify-center gap-3 px-10 bg-gradient-primary text-primary-foreground font-semibold uppercase tracking-[0.18em] text-xs rounded-md"
+              }
             >
               <span>{label}</span>
               <Icon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

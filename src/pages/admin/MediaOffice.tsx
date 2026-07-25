@@ -8,6 +8,7 @@ import { OFFICE } from "@/lib/admin/labels";
 import { useLiveAdminCounts } from "@/hooks/useLiveAdminCounts";
 import { TitleInspectionDrawer } from "@/components/admin/TitleInspectionDrawer";
 import { BuyerMappingActionDrawer, type BuyerOffer } from "@/components/admin/BuyerMappingActionDrawer";
+import { BuyerOfferAuditLog } from "@/components/admin/BuyerOfferAuditLog";
 import AdminErrorBoundary from "@/components/admin/AdminErrorBoundary";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { cn } from "@/lib/utils";

@@ -1,9 +1,12 @@
-import { CheckCircle2, LockKeyhole } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { CheckCircle2, Loader2 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { REVENUE_SERVICES } from "@/config/revenueServices";
+import { REVENUE_SERVICES, type RevenueServiceId } from "@/config/revenueServices";
+import { initializeCheckout } from "@/lib/payments/initializeCheckout";
+import { toast } from "sonner";
 
 const formatInr = (amount: number) =>
   new Intl.NumberFormat("en-IN", {
@@ -13,6 +16,29 @@ const formatInr = (amount: number) =>
   }).format(amount);
 
 export function RevenueServicesSection() {
+  const navigate = useNavigate();
+  const [paying, setPaying] = useState<RevenueServiceId | null>(null);
+
+  const startPayment = async (serviceId: RevenueServiceId, serviceName: string) => {
+    if (paying) return;
+    setPaying(serviceId);
+    await initializeCheckout({
+      purpose: "service_order",
+      payload: { serviceCode: serviceId },
+      metadata: { payment_purpose: "managed_service", service_code: serviceId },
+      label: serviceName,
+      description: `${serviceName} — StreamVista`,
+      onSuccess: (result) => {
+        setPaying(null);
+        const invoiceId = (result as { invoiceId?: string } | null)?.invoiceId;
+        toast.success("Payment verified. Your service order is confirmed.");
+        if (invoiceId) navigate(`/invoice/${invoiceId}`);
+      },
+      onDismiss: () => setPaying(null),
+      onError: () => setPaying(null),
+    });
+  };
+
   return (
     <section id="managed-services" className="border-t bg-background text-foreground">
       <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:px-8">
@@ -23,7 +49,7 @@ export function RevenueServicesSection() {
           </h2>
           <p className="mt-4 text-base leading-7 text-muted-foreground sm:text-lg">
             Metadata, rights checklist, QC coordination, screener preparation എന്നിവ structured service ആയി ലഭിക്കും.
-            Online payment safety verification പൂർത്തിയായ ശേഷം checkout തുറക്കും.
+            Secure Razorpay payment, verification, order record, GST invoice എന്നിവ payment flow-ൽ ഉൾപ്പെടുത്തിയിട്ടുണ്ട്.
           </p>
         </div>
 
@@ -36,9 +62,7 @@ export function RevenueServicesSection() {
                     <CardTitle className="text-2xl">{service.name}</CardTitle>
                     <CardDescription className="mt-2">{service.description}</CardDescription>
                   </div>
-                  <Badge variant={service.enabled ? "default" : "outline"}>
-                    {service.enabled ? "Available" : "Coming soon"}
-                  </Badge>
+                  <Badge>Available</Badge>
                 </div>
                 <div className="mt-5">
                   <div className="text-3xl font-semibold">{formatInr(service.totalAmountInr)}</div>
@@ -60,15 +84,19 @@ export function RevenueServicesSection() {
               </CardContent>
 
               <CardFooter className="flex flex-col items-stretch gap-3">
-                <Button disabled={!service.enabled} className="w-full">
-                  {!service.enabled && <LockKeyhole className="mr-2 h-4 w-4" aria-hidden="true" />}
-                  {service.enabled ? "Proceed to secure payment" : "Payment safety check in progress"}
+                <Button
+                  className="w-full"
+                  disabled={paying !== null}
+                  onClick={() => startPayment(service.id, service.name)}
+                >
+                  {paying === service.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
+                  {paying === service.id ? "Opening secure payment…" : "Pay securely with Razorpay"}
                 </Button>
                 <Button asChild variant="outline" className="w-full">
                   <Link to="/contact">Talk to StreamVista</Link>
                 </Button>
                 <p className="text-center text-xs leading-5 text-muted-foreground">
-                  Checkout live ആക്കുന്നതിന് മുമ്പ് Razorpay verification, webhook, invoice, receipt എന്നിവ test ചെയ്യും.
+                  Successful payment കഴിഞ്ഞാൽ order confirmation ഉം GST invoice ഉം ലഭിക്കും.
                 </p>
               </CardFooter>
             </Card>

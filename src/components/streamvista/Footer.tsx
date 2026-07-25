@@ -1,6 +1,4 @@
-import type React from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Lock, Cloud, ShieldCheck, type LucideIcon } from "lucide-react";
+import { Link } from "react-router-dom";
 import { CrayonsNetwork } from "./CrayonsNetwork";
 
 const PRODUCT_LINKS = [
@@ -29,19 +27,6 @@ const TRUST_LINKS = [
   { to: "/ip-copyright", label: "IP policy" },
 ];
 
-const BrandChipLabel = () => (
-  <span className="inline-flex items-baseline gap-1">
-    <span className="text-foreground/90 font-semibold tracking-[0.18em]">STREAMVISTA</span>
-    <span className="text-muted-foreground/70 tracking-[0.22em] text-[0.85em]">CLOUD&nbsp;X</span>
-  </span>
-);
-
-const TRUST: { icon: LucideIcon; label: string; content?: React.ReactNode }[] = [
-  { icon: Lock, label: "HTTPS Encrypted" },
-  { icon: Cloud, label: "StreamVista Cloud X", content: <BrandChipLabel /> },
-  { icon: ShieldCheck, label: "IP & Copyright Compliance" },
-];
-
 const Wordmark = () => (
   <div className="font-display font-black tracking-tight text-base uppercase leading-none inline-flex items-baseline gap-2">
     <span className="text-foreground">STREAMVISTA</span>
@@ -52,11 +37,8 @@ const Wordmark = () => (
 );
 
 export const Footer = () => {
-  const location = useLocation();
-  const isHome = location.pathname === "/";
-
   return (
-    <footer className="relative mt-24 border-t border-border/40">
+    <footer className="relative border-t border-border/40">
       <div className="pointer-events-none absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
 
       <div className="container py-12">
@@ -69,19 +51,6 @@ export const Footer = () => {
             <p className="mt-3 text-[11px] text-muted-foreground leading-relaxed max-w-[240px]">
               One Secure Cloud for Films, Series &amp; Shows
             </p>
-            {isHome && (
-              <ul className="mt-5 flex flex-wrap items-center gap-1.5">
-                {TRUST.map(({ icon: Icon, label, content }) => (
-                  <li
-                    key={label}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-border/50 px-2 py-1 text-[10px] font-mono-tech uppercase tracking-[0.16em] text-muted-foreground"
-                  >
-                    <Icon className="w-3 h-3 opacity-70" strokeWidth={1.75} />
-                    <span>{content ?? label}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
           </div>
 
           <FooterColumn title="Product" links={PRODUCT_LINKS} />
@@ -105,12 +74,6 @@ export const Footer = () => {
         {/* Crayons Network lineage promoted */}
         <div className="mt-10 pt-8 border-t border-border/40">
           <CrayonsNetwork eyebrow="Powered by The Crayons Network" />
-          <p className="mt-4 text-center text-[11px] leading-relaxed text-muted-foreground/70 max-w-md mx-auto">
-            The founding media companies behind the StreamVista ecosystem —
-            <span className="text-foreground/70"> Crayons Pictures</span>,
-            <span className="text-foreground/70"> Crayons Bridge</span> and
-            <span className="text-foreground/70"> Crayons Loop</span>.
-          </p>
         </div>
       </div>
     </footer>

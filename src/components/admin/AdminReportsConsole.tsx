@@ -115,9 +115,17 @@ export default function AdminReportsConsole() {
               </p>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={load} disabled={loading}>
-            <RefreshCw className={`w-4 h-4 mr-1 ${loading ? "animate-spin" : ""}`} /> Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => exportCsv(fin, mgmt, audit)} disabled={loading || !fin || !mgmt}>
+              <FileDown className="w-4 h-4 mr-1" /> CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => exportPdf(fin, mgmt, audit)} disabled={loading || !fin || !mgmt}>
+              <Printer className="w-4 h-4 mr-1" /> PDF
+            </Button>
+            <Button variant="outline" size="sm" onClick={load} disabled={loading}>
+              <RefreshCw className={`w-4 h-4 mr-1 ${loading ? "animate-spin" : ""}`} /> Refresh
+            </Button>
+          </div>
         </header>
 
         {loading || !fin || !mgmt ? (

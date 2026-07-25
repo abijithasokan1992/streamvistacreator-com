@@ -9,7 +9,7 @@ import { RightsDistribution } from "@/components/streamvista/RightsDistribution"
 import { AIContentLicensingSection } from "@/components/home/AIContentLicensingSection";
 import { FinalCta } from "@/components/streamvista/FinalCta";
 import { Footer } from "@/components/streamvista/Footer";
-import { TrustBadges } from "@/components/streamvista/TrustBadges";
+
 import { Seo } from "@/components/Seo";
 import { dashboardForRole, useAuth } from "@/hooks/useAuth";
 

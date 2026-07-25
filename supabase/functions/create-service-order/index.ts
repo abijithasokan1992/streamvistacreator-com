@@ -6,8 +6,8 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const SERVICES = {
-  film_onboarding: { name: "Film Onboarding Package", subtotalPaise: 99900, gstPaise: 17982, totalPaise: 117882 },
-  licensing_ready: { name: "Licensing Ready Package", subtotalPaise: 299900, gstPaise: 53982, totalPaise: 353882 },
+  film_onboarding: { name: "Film Onboarding Package", subtotalPaise: 99900, gstPaise: 18000, totalPaise: 117900 },
+  licensing_ready: { name: "Licensing Ready Package", subtotalPaise: 299900, gstPaise: 54000, totalPaise: 353900 },
 } as const;
 
 function jsonWith(req: Request) {

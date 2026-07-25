@@ -1,107 +1,138 @@
-# StreamVista Read-Only Audit — Resolution Plan
+# StreamVista Creator MVP — Simplify, Restructure, Redesign (Plan Only)
 
-Scope: latest `main`. No code, DB, or deploy changes proposed here — only a file-level remediation plan. Creator RC1 (frozen per `docs/milestones/CREATOR_RC1_FROZEN.md`) is preserved: nothing in `src/components/creator/**`, `src/pages/dashboards/ContentOwner.tsx`, or the title editor is touched.
+No code, database, storage, migration, secret, GitHub, or deploy changes. GitHub Actions quota resets in 7 days. This plan tells us exactly what to change once you approve.
 
----
-
-## 1. Findings
-
-### A. Homepage (`src/pages/Index.tsx`)
-
-Order rendered: Hero → TrustedDistributionPartners → TrustBadges band → Workflow → PlatformOverview → SupportedContent → RightsDistribution → AIContentLicensingSection → FinalCta → Footer.
-
-- **[P1] Duplicate trust surfaces.** `TrustBadges` (Lock / Secure Payment / Cloud X / IP Compliance) render directly under `TrustedDistributionPartners`, then the Footer re-renders the same three chips (Lock / Cloud X / IP Compliance) via its `isHome` block (`Footer.tsx:72-84`). The "Cloud X" and "IP & Copyright Compliance" chips appear twice on `/`.
-- **[P1] Duplicate primary CTA copy.** Hero primary CTA = "Open Your Dashboard / Get Started · I'm a Creator"; FinalCta reuses the identical "Open Your Dashboard" label and same gradient/style — no differentiation between top and bottom of page.
-- **[P1] Section heading pattern repetition.** Every section (`Workflow`, `PlatformOverview`, `SupportedContent`, `RightsDistribution`, `AIContentLicensingSection`) uses the same eyebrow pattern (`w-8 h-px bg-accent` + mono-tech uppercase). Fine as a system, but the "License across every channel" and "Every format, one platform" headings sit back-to-back with near-identical structure — reads as filler.
-- **[P2] Wordmark repetition.** "STREAMVISTA · CLOUD X" appears in Navbar, Hero eyebrow, Footer brand block, Footer trust chip, and Footer Wordmark — 5 renders on `/`.
-- **[P2] Gap between `TrustedDistributionPartners` and standalone `TrustBadges` band** — two thin bordered strips stacked (`Index.tsx:60-65`), creating visual clutter before Workflow starts.
-
-### B. Navbar / Footer wiring
-
-`src/components/streamvista/Navbar.tsx` links:
-- `/`, `/#platform` (✓ id exists on `PlatformOverview`), `/pricing` (✓), `/creator-preview` (✓), `/partners` (✓), `/about` (✓), `/contact` (✓). All resolve.
-
-`src/components/streamvista/Footer.tsx` links:
-- Product: `/#platform`, `/pricing`, `/creator-preview`, `/partners`, `/connect` (all ✓).
-- Company/Legal: `/about`, `/contact`, `/terms`, `/privacy`, `/ip-copyright`, `/accessibility` (all ✓).
-- **[P1] Trust & Safety dead anchors.** `/dmca#submit-notice` and `/dmca#grievance` — `/dmca` route exists (aliases to `IPCopyright`) but `IPCopyright.tsx` does not render `id="submit-notice"` or `id="grievance"` anchors, so both links land at the top and look broken.
-- **[P2] Navbar missing Solutions surface.** Public landing routes `/sell-your-film`, `/film-distribution`, `/ott-content-licensing`, `/how-it-works`, `/trust-and-rights`, `/global-film-sales`, `/regional-indian-cinema`, `/film-rights`, `/buyers`, `/content-owners`, `/guides/film-licensing-costs-and-agreements` are registered in `App.tsx` but not reachable from the navbar or footer — only via SEO/direct links.
-
-### C. Login → role dashboard routing
-
-- `Index.tsx:19-20`: signed-in users are redirected off `/` via `<Navigate to={dashboardForRole(role)} replace />`.
-- `dashboardForRole` (`src/hooks/useAuth.tsx:252-270`) → registered targets are enumerated in `REGISTERED_DASHBOARD_ROUTES` and asserted by `src/test/smoke/reviewer-routing.test.tsx`.
-- **[P0] Redirect loop for dormant Phase-2 roles.** `dashboardForRole("localization_partner")` → `/dashboard/localization`, and `dashboardForRole("distributor")` → `/dashboard/distribution`. `App.tsx:175-176` maps both of those paths to `<CanonicalDashboardRedirect />`, which in turn calls `dashboardForRole(role)` and navigates back to the same URL → infinite `<Navigate replace>` loop for any user still holding one of these legacy roles. `REGISTERED_DASHBOARD_ROUTES` lists both, so the existing smoke test passes even though the runtime is a loop.
-- **[P1] Admin subdomain host reuses public dashboard redirects incorrectly.** `AdminRoutes` (`App.tsx:120-152`) has no `/dashboard/*` entries; any signed-in non-admin who lands on `admin.streamvista.in/dashboard/content` hits the `<WrongPortal expected="public" />` catch-all, which is correct — but `AdminRoot` unconditionally sends any signed-in user to `/admin` regardless of role, so a signed-in creator on `admin.streamvista.in/` sees the admin console shell before `RoleGate` decides. Confirm `Admin.tsx` internally gates by role; if not, add `RoleGate` around `<Admin />` routes.
-
-### D. Duplicate / dead routes and actions
-
-- **[P1] Duplicate route table.** Every `/admin/*` route (23 entries) is declared twice — once in `AdminRoutes` and again in `PublicRoutes` (`App.tsx:120-152` vs `186-207`). Two sources of truth; any future admin route must be added twice or admin subdomain drifts.
-- **[P2] Dead / orphan routes.** `/college-erp` (App.tsx:232, `CollegeERP.tsx`) is not linked from any nav, footer, or dashboard; ships to production as an orphan.
-- **[P2] Redirect-only routes that no longer have inbound links:** `/uploads`, `/producer`, `/vault`, `/studio`, `/client`, `/projects`, `/archive`, `/team` (App.tsx:178-185). Kept for legacy magic-link backwards-compat — safe to leave but should be documented.
-- **[P2] Dashboard "New Title" & Quick Actions duplication** was already flagged in `.lovable/plan.md` (previous audit) — not re-litigated here.
-
-### E. Cookie banner (`src/components/CookieConsent.tsx`)
-
-- **[P1] Z-index / layout collision.** Banner is `z-[60]`, positioned `bottom-3` right. `AssistantLauncher` and `RouteAgentDock` also mount at `App.tsx:274-276` at the bottom-right; on mobile (`inset-x-3`) the banner spans full width and overlaps the assistant FAB. `SUPPRESSED_PREFIXES` covers authoring routes but not `/`, so first-time visitors on the homepage see the banner cover the assistant.
-- **[P2] `/studio` prefix suppression is too broad.** It also suppresses the banner on the `/studio` legacy redirect and (more importantly) on the public `/studio/ingest/engine` route which is behind auth anyway — cosmetically fine, but the prefix rule should be `/studio/` (with trailing slash) or an exact list to avoid future collisions if a marketing `/studios` page is added.
-- **[P2] No "Manage preferences" affordance.** Only "Accept all" and "Essential only" are offered; a future GDPR audit will flag the missing granular toggle. Not urgent.
+Design system (locked from your picks):
+- Palette: Paper & Ink — `#f5f3ee` bg, `#e8e4dd` surface, `#2d2d2d` ink, `#0d0d0d` deep ink. Single subtle accent only.
+- Type: Sora (headings) + Manrope (body). No serif.
+- Layout: single column, generous whitespace, macOS-style rounded cards (14–20px radius), soft 1px borders, hairline dividers, no gradients, no glow.
+- Voice: plain English. No "storage", "quota", "bucket", "ingest", "QC", "pipeline", "wiring", "MVP" in user-facing copy.
 
 ---
 
-## 2. Resolution plan (file-level)
+## P0 — Ship first (visible, blocking, or misleading)
 
-### P0 — Fix before next release
+### 1. Homepage (`src/pages/Index.tsx` + `src/components/streamvista/*`)
+Rewrite into one calm single-column story:
+1. Hero: "Sell your film. License your show." + one line + two buttons: **I have content** / **I'm a buyer**.
+2. Three plain-English steps: Add your title → We check the rights → Buyers make offers.
+3. What you can list: Feature Film, Series, Short Film, Documentary, Music Video, Animation.
+4. Who buys: OTT, Broadcast, FAST, Satellite, Airlines, Hospitality, AI licensing (opt-in).
+5. Trust line + one CTA.
+Remove: "Cloud X", "HTTPS Encrypted" chip, duplicate trust badges, "Powered by The Crayons Network" block from hero area (keep once in footer only), duplicate "AI Training & Machine Learning" heading.
 
-| # | File | Change |
-|---|------|--------|
-| P0-1 | `src/hooks/useAuth.tsx` | In `toDashboardRole`, map `distributor` and `localization_partner` → `buyer` (or `content_owner`) so `dashboardForRole` no longer returns `/dashboard/distribution` or `/dashboard/localization`. |
-| P0-2 | `src/App.tsx` | Remove the `/dashboard/localization` and `/dashboard/distribution` routes (lines 175-176), or point them at a real page instead of `CanonicalDashboardRedirect`. |
-| P0-3 | `src/hooks/useAuth.tsx` | Drop `/dashboard/localization` and `/dashboard/distribution` from `REGISTERED_DASHBOARD_ROUTES` once P0-1 lands. |
+Files: `Hero.tsx`, `TrustedDistributionPartners.tsx`, `Workflow.tsx`, `PlatformOverview.tsx`, `SupportedContent.tsx`, `RightsDistribution.tsx`, `AIContentLicensingSection.tsx`, `FinalCta.tsx`, `Footer.tsx`, `Navbar.tsx`.
 
-### P1 — High-value cleanup
+### 2. Creator submission form — 5 clean steps
+Component: `src/components/creator/title/TitleEditor.tsx` + `src/lib/submission/stepDefinitions.ts`.
 
-| # | File | Change |
-|---|------|--------|
-| P1-1 | `src/pages/Index.tsx` | Remove the standalone `TrustBadges` band (lines 61-65) — trust chips already render in Footer for `/`. Collapses two stacked strips into one. |
-| P1-2 | `src/components/streamvista/Footer.tsx` | De-duplicate: keep the Footer trust chip block on `/`, or (preferred) remove `isHome` chips and keep only the standalone `TrustBadges`. Pick one home for the badges. |
-| P1-3 | `src/components/streamvista/FinalCta.tsx` | Change signed-in label from "Open Your Dashboard" to a differentiated bottom-of-page CTA (e.g. "Continue to your workspace"), and swap the outline style so it does not visually mirror the Hero primary CTA. |
-| P1-4 | `src/pages/IPCopyright.tsx` | Add `id="submit-notice"` and `id="grievance"` section anchors so the footer Trust & Safety links land correctly. |
-| P1-5 | `src/components/streamvista/Navbar.tsx` | Add a "Solutions" dropdown (Sheet on mobile) linking `/sell-your-film`, `/film-distribution`, `/ott-content-licensing`, `/how-it-works`, `/trust-and-rights`. Keep the current top-level `/#platform` for anchor jump. |
-| P1-6 | `src/App.tsx` | Extract the admin route list into a single `ADMIN_ROUTES` array consumed by both `AdminRoutes` and `PublicRoutes` to remove the 23-route duplication. Behaviour-preserving. |
-| P1-7 | `src/components/CookieConsent.tsx` | Raise assistant FAB z-index above `60`, or lower banner to `z-40` and shift banner up (`bottom-20`) on mobile so it does not overlap the assistant launcher; add `/` explicit case handled by shifted position rather than suppression. |
+- **Step 1 Basics** — required: Title, Content type, Primary language, Rights owner. Optional: original title, additional languages, year, runtime, genres, director, key credits. Content type list = Feature Film, Web Series, TV Series, Short Film, Documentary, Music Video, Animation, Vertical Drama, Other. Remove any social-platform publishing (YouTube/IG/FB/X) from the form; park as a future "Publish channels" module.
+- **Step 2 Story** — required: Synopsis, Primary poster. Optional (collapsed): logline, short synopsis, cast/crew, keywords, trailer link.
+- **Step 3 Preview assets** — required for review: Trailer or approved screener. Optional: teaser, replacement poster. Hide "Advanced Artwork Assets" (banner/tile/square/A/B) behind a "Show advanced" toggle; only unlock after approval. Do not require the full master at draft creation.
+- **Step 4 Rights & documents** — separate cards per category. Required before final: Rights owner, territories, rights types, start/end or perpetual, Chain of Title evidence, existing distribution contracts or explicit "No existing contracts", Censor certificate when legally applicable. Optional/conditional: music licences, talent releases, producer agreements, underlying-work permissions, litigation disclosure, exclusivity. Every field labelled with one of: **Required**, **Optional**, **Required if applicable**, **Required before final approval**.
+- **Step 5 Review & submit** — plain summary, single "Submit for review" button (uses existing `submitLockRef` + `submit_title_to_admin` RPC), success screen tells creator what happens next.
 
-### P2 — Cleanup / polish
+### 3. Storage / quota copy (misleading today)
+No DB changes. UI-only fixes:
+- Remove "Vault", "Nilavara A/B/C", "₹767/TB automatic top-up", "90/120-day lifecycle", "Initialize Vault" from any creator-visible surface until they match live contracts (`src/pages/*Vault*`, `src/components/creator/sections/Storage.tsx`, `src/components/workspace/StorageCard.tsx`).
+- Replace `StorageLive` labels with plain: "Space used / Space available" + one honest number sourced from the current `recalc_workspace_storage_usage` value. No "quota", "entitlement", "bucket".
+- Remove the standalone Storage section from primary creator nav; keep as a small footer chip in Settings.
 
-| # | File | Change |
-|---|------|--------|
-| P2-1 | `src/components/streamvista/Hero.tsx` | Drop the eyebrow "StreamVista · Cloud X" line — Navbar already carries the wordmark 30px above. |
-| P2-2 | `src/components/streamvista/Footer.tsx` | Consolidate the two brand renders (Wordmark + BrandChipLabel trust chip) into one. |
-| P2-3 | `src/pages/Index.tsx` | Consider merging `PlatformOverview` (Who is it for?) and `SupportedContent` (Every format) into a single 2-row section — reduces "wall of similar cards" feel between Workflow and Rights. |
-| P2-4 | `src/App.tsx` | Delete `/college-erp` route + `src/pages/CollegeERP.tsx` if the page is confirmed unused (owner sign-off first). |
-| P2-5 | `src/components/CookieConsent.tsx` | Tighten `SUPPRESSED_PREFIXES` to exact-match or trailing-slash form. |
-| P2-6 | `src/App.tsx` | Add a comment block above the legacy redirect group (`/uploads`, `/producer`, …) documenting why they remain. |
+### 4. Admin dashboard (`src/pages/Admin.tsx` + `src/components/admin/*`)
+Reduce to 4 top items: **Inbox**, **Titles**, **Buyers**, **Settings**. Move everything else behind a "More" menu. Kill duplicate Approve/Publish surfaces — the hero buttons already exist in `QuickActions.tsx` and `QCLegalValidationSurface.tsx`; keep the QC/Legal surface only. Remove tabs mixing title workflow with commercial workflow.
 
----
-
-## 3. Tests
-
-New / updated (all under `src/test/smoke/`):
-
-1. **`dashboard-routing-no-loop.test.tsx`** — for every `AppRole` (including `distributor`, `localization_partner`), assert `dashboardForRole(role)` returns a path whose route element in `App.tsx` is **not** `CanonicalDashboardRedirect`. Guards against re-introducing P0-1.
-2. **`homepage-no-duplicate-trust.test.tsx`** — render `<Index />` inside `MemoryRouter`, assert the string "IP & Copyright Compliance" appears at most once in the DOM and "Cloud X" trust chip renders at most once.
-3. **`footer-anchor-links.test.tsx`** — render `<IPCopyright />` and assert `document.getElementById("submit-notice")` and `document.getElementById("grievance")` exist (locks P1-4).
-4. **`admin-routes-single-source.test.ts`** — parse `App.tsx` via AST or regex; assert the extracted `ADMIN_ROUTES` array is referenced by both `AdminRoutes` and `PublicRoutes` (locks P1-6).
-5. **`cookie-banner-overlap.test.tsx`** — mount `<CookieConsent />` + `<AssistantLauncher />` on `/`, assert computed `zIndex` of the assistant FAB ≥ the banner's, or that their bounding boxes do not overlap on a 375-wide viewport.
-6. Extend existing `reviewer-routing.test.tsx` to also assert none of the returned targets are wired to `CanonicalDashboardRedirect` (belt-and-braces with #1).
+### 5. Buyer basic page (`src/pages/landing/Buyers.tsx` + `src/pages/dashboards/Buyer.tsx`)
+Public: one hero line, "How buying works" (3 steps), "Request access" form. Dashboard: one list of available titles + saved list + messages. Remove all licensing jargon from public copy; keep detail terms inside signed-in deal flow.
 
 ---
 
-## 4. Sequencing
+## P1 — Wiring & clutter
 
-1. Land P0-1 → P0-3 as one commit + tests #1 and updated reviewer-routing.
-2. P1 batch in a second commit (homepage + navbar + footer + cookie z-index) + tests #2, #3, #5.
-3. P1-6 admin route dedupe as its own commit + test #4 (touches routing structure, deserves isolation).
-4. P2 polish batch, gated on product confirmation for `CollegeERP` deletion.
+### 6. Button/handler audit (report only in this plan; fix list to follow)
+For each control below we'll produce: component · handler · route/RPC · success/error state · missing wiring.
+- Language switcher EN/ML (`LanguageSwitcher.tsx`)
+- Guide, Help, Submit ticket (`Contact.tsx`, `support_requests`)
+- Storage upgrade/request (`PremiumStorageTopupModal.tsx`, `create-storage-topup`)
+- Billing upgrade (`Pricing.tsx`, `create-storage-topup`, `razorpay-webhook`)
+- View/Edit/Delete title (`MyTitles.tsx`, `TitleEditor.tsx`, `submit_title_to_admin`)
+- Save, Submit, Prev/Next (`TitleEditor.tsx`)
+- Upload/replace/version (`AssetUploader.tsx`, `upload_sessions`)
+Rule: no visible button without a working handler. Buttons without handlers get hidden until wired.
 
-Creator RC1 surfaces (`ContentOwner.tsx`, `src/components/creator/**`, title editor, distribution read-only) are untouched throughout.
+### 7. Help page — keep to Guides · Contact · Submit ticket · Ticket history. Verify `support_requests` insert is wired. Remove the "1-business-day reply" promise for free tier unless ops signs it.
+
+### 8. Nav & footer
+Navbar: Home · How it works · Pricing · About · Contact + Login/Get started. Drop "Solutions", "Creator Preview", "Partners" from primary; move to footer.
+Footer: keep once, single trust chip row, no duplicate "Cloud X"/"IP & Copyright Compliance" chips.
+
+---
+
+## P2 — Cleanup / safe deletions (report only; deletion needs separate approval)
+
+Candidates for deletion after reference audit:
+- `src/pages/SmartUploads.tsx`, `src/components/uploads/SmartDropUploader.tsx` (already commented out in `App.tsx`).
+- Vault landing pages if unreachable and no active consumer.
+- Legacy dashboard aliases still redirecting (`/producer`, `/vault`, `/studio`, `/client`, `/projects`, `/archive`, `/team`) once inbound traffic = 0.
+- Duplicate trust badge component if unused after home rewrite.
+
+## Roles & dashboards audit (report only)
+Existing roles + routes:
+- creator/content_owner → `/dashboard/content` ✔
+- studio → `/dashboard/studio` ✔ (gated by profile onboarding)
+- buyer → `/dashboard/buyer` ✔
+- founder/platform_owner/super_admin/admin → `/admin/*` ✔
+- QC / Legal / Finance / Support → **no dedicated dashboard**; today they use `/admin` with role checks inside components. Recommend adding filtered admin views later, not new buckets or grants. No new storage buckets, no frontend-only grants.
+- RLS gaps to revisit later (not in this batch): `title_review_assignments` filtering for QC-only users; `revenue_lines` workspace scoping already tightened in pending migration.
+
+## Required / Optional field matrix (Creator submission)
+
+```text
+Step 1 Basics
+  Required:  title, content_type, primary_language, rights_owner
+  Optional:  original_title, additional_languages, year, runtime, genres, director, credits
+
+Step 2 Story
+  Required:  synopsis, primary_poster
+  Optional:  logline, short_synopsis, cast, crew, keywords, trailer_url
+
+Step 3 Preview assets
+  Required (for review): trailer_or_screener
+  Optional:  teaser, replacement_poster
+  Hidden until approved: banner, tile, square, A/B artwork, full master
+
+Step 4 Rights
+  Required before final: rights_owner, territories, rights_types,
+                         rights_window (start/end | perpetual),
+                         chain_of_title_doc, existing_contracts_or_none,
+                         censor_certificate_if_applicable
+  Conditional:           music_licences, talent_releases, producer_agreements,
+                         underlying_work_permissions, litigation_disclosure,
+                         exclusivity_restrictions
+
+Step 5 Review & submit
+  Required:  read summary, single Submit button
+```
+
+## Storage math — current vs suspected mismatch
+Source of truth today: `recalc_workspace_storage_usage()` treating `recent_uploads` as canonical (fixed in prior batch). UI still shows several derived numbers (entitlement + adjustments + top-ups) that don't visually reconcile. Plan: show only one number ("Used X of Y") + link to detailed breakdown. No SQL change.
+
+## Tests to add (once implementation begins, not now)
+- `homepage-simple-copy.test.ts` — asserts hero copy, no "Cloud X", no duplicate trust.
+- `creator-submission-steps.test.tsx` — five stages, required-field matrix per step.
+- `admin-nav-4-items.test.tsx` — top nav = 4.
+- `button-wiring.test.tsx` — every rendered `<button>` in creator/admin/buyer has an `onClick` or `type="submit"` inside a form.
+- Extend existing `dashboard-routing-no-loop.test.ts`.
+
+## Migrations
+None in this batch. Kept non-executed. All changes above are frontend/copy.
+
+## Risks & rollback
+- Copy changes are low-risk; revert = git revert per file.
+- Hiding buttons rather than deleting them keeps handlers intact if we need to restore.
+- No RLS, no bucket, no function, no secret touched.
+- No deploy until you approve.
+
+## What I need from you to start
+1. "Approved — start P0" (home + submission + admin trim + buyer basic + storage copy).
+2. Whether to hide or delete the Vault pages.
+3. Confirm the four admin top-nav items (Inbox / Titles / Buyers / Settings) or propose alternates.

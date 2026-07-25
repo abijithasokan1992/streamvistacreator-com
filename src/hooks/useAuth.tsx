@@ -82,6 +82,13 @@ function toDashboardRole(r: AppRole | null): AppRole | null {
     case "executive_producer":
     case "creator":
       return "content_owner";
+    // Dormant Phase-2 roles no longer have their own dashboards.
+    // Route distributors to buyer and localization partners to content_owner
+    // so `dashboardForRole` never returns a URL that redirects back to itself.
+    case "distributor":
+      return "buyer";
+    case "localization_partner":
+      return "content_owner";
     case "client":
       return "buyer";
     case "moderator":

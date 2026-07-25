@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { CheckCircle2, Loader2, Send } from "lucide-react";
 import { z } from "zod";
 import { Navbar } from "@/components/streamvista/Navbar";
@@ -13,6 +13,7 @@ const schema = z.object({
   language: z.string().trim().min(1, "Language is required").max(80),
   duration: z.string().trim().min(1, "Duration is required").max(40),
   rightsOwner: z.string().trim().min(1, "Rights owner is required").max(180),
+  email: z.string().trim().email("Enter a valid email address").max(254),
   trailerLink: z.string().trim().url("Enter a valid trailer link").max(1000),
   posterLink: z.string().trim().url("Enter a valid poster link").max(1000),
   contactNumber: z.string().trim().min(7, "Enter a valid contact number").max(30),
@@ -26,6 +27,7 @@ const initialForm: FormState = {
   language: "",
   duration: "",
   rightsOwner: "",
+  email: "",
   trailerLink: "",
   posterLink: "",
   contactNumber: "",
@@ -34,16 +36,33 @@ const initialForm: FormState = {
 const inputClass =
   "h-12 w-full rounded-md border border-border/70 bg-background px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20";
 
+function newSubmissionId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `submission-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 export default function SubmitContent() {
   const { toast } = useToast();
   const [form, setForm] = useState<FormState>(initialForm);
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [referenceId, setReferenceId] = useState<string | null>(null);
+  const submissionIdRef = useRef(newSubmissionId());
 
   const setField = (field: keyof FormState, value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
     setErrors((current) => ({ ...current, [field]: undefined }));
+  };
+
+  const resetForAnother = () => {
+    submissionIdRef.current = newSubmissionId();
+    setReferenceId(null);
+    setSubmitted(false);
+    setForm(initialForm);
+    setErrors({});
   };
 
   const submit = async (event: React.FormEvent) => {
@@ -61,13 +80,16 @@ export default function SubmitContent() {
     }
 
     setSubmitting(true);
+    const submissionId = submissionIdRef.current;
     try {
       const message = [
+        `Submission Reference: ${submissionId}`,
         `Content Title: ${parsed.data.title}`,
         `Type: ${parsed.data.type}`,
         `Language: ${parsed.data.language}`,
         `Duration: ${parsed.data.duration}`,
         `Rights Owner: ${parsed.data.rightsOwner}`,
+        `Email: ${parsed.data.email}`,
         `Trailer Link: ${parsed.data.trailerLink}`,
         `Poster Link: ${parsed.data.posterLink}`,
         `Contact Number: ${parsed.data.contactNumber}`,
@@ -75,40 +97,47 @@ export default function SubmitContent() {
 
       const { error } = await supabase.from("contact_messages").insert({
         name: parsed.data.rightsOwner,
-        email: null,
+        email: parsed.data.email,
         company: null,
         role: "Content rights owner",
         message,
-        source: "public_content_submission:whatsapp_onboarding",
+        source: `public_content_submission:${submissionId}`,
         user_agent: navigator.userAgent.slice(0, 500),
         user_id: null,
       });
 
       if (error) throw error;
 
-      supabase.functions
-        .invoke("send-transactional-email", {
-          body: {
-            templateName: "system-message-report",
-            recipientEmail: "support@streamvista.in",
-            idempotencyKey: `content-submission-${Date.now()}`,
-            templateData: {
-              userEmail: "Public submission",
-              userId: "anonymous",
-              severity: "info",
-              title: `New content submission · ${parsed.data.title}`,
-              message,
-              context: "Source: /submit-content",
-              page: "/submit-content",
-              occurredAt: new Date().toISOString(),
-            },
+      const { error: notificationError } = await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "system-message-report",
+          recipientEmail: "support@streamvista.in",
+          idempotencyKey: `content-submission-${submissionId}`,
+          templateData: {
+            userEmail: parsed.data.email,
+            userId: "anonymous",
+            severity: "info",
+            title: `New content submission · ${parsed.data.title}`,
+            message,
+            context: `Source: /submit-content · Reference: ${submissionId}`,
+            page: "/submit-content",
+            occurredAt: new Date().toISOString(),
           },
-        })
-        .catch(() => undefined);
+        },
+      });
 
+      setReferenceId(submissionId);
       setSubmitted(true);
       setForm(initialForm);
-      toast({ title: "Submission received", description: "StreamVista will contact you after review." });
+
+      if (notificationError) {
+        toast({
+          title: "Submission saved",
+          description: `Reference ${submissionId}. The team notification will be retried from the email queue.`,
+        });
+      } else {
+        toast({ title: "Submission received", description: `Reference ${submissionId}. StreamVista will contact you after review.` });
+      }
     } catch (error: any) {
       toast({
         title: "Submission failed",
@@ -147,9 +176,14 @@ export default function SubmitContent() {
             <p className="mt-2 text-sm text-muted-foreground">
               Our onboarding team will review the content and contact the rights owner.
             </p>
+            {referenceId && (
+              <p className="mt-3 rounded-md bg-background/70 px-3 py-2 font-mono text-xs text-muted-foreground">
+                Reference: {referenceId}
+              </p>
+            )}
             <button
               type="button"
-              onClick={() => setSubmitted(false)}
+              onClick={resetForAnother}
               className="mt-5 text-xs font-semibold uppercase tracking-[0.16em] text-primary hover:underline"
             >
               Submit another title
@@ -189,6 +223,10 @@ export default function SubmitContent() {
 
             <Field label="Rights Owner" error={errors.rightsOwner}>
               <input value={form.rightsOwner} onChange={(e) => setField("rightsOwner", e.target.value)} className={inputClass} maxLength={180} />
+            </Field>
+
+            <Field label="Contact Email" error={errors.email}>
+              <input value={form.email} onChange={(e) => setField("email", e.target.value)} type="email" autoComplete="email" className={inputClass} maxLength={254} />
             </Field>
 
             <Field label="Trailer Link" error={errors.trailerLink}>

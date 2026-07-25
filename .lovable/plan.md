@@ -1,86 +1,199 @@
-## Goal
-Produce one read-only evidence document at `docs/STREAMVISTA_DATABASE_SECURITY_TRUTH.md`. No fixes, no mutating SQL, no deploys, no publish, no Task 2. Owner (Abijith U A) authorised access is preserved and only reported on — never modified.
 
-## Hard stops (fail-closed identity check first)
-- Lovable project id `6efc82ec-bd50-4b3a-90ba-234ec4d1014c` + preview / published / custom domain URLs.
-- `supabase--project_info` must return ref `hllgmkfqgeuqlmpcirvn`. Any other ref → write only the identity-mismatch section and stop.
-- Git: `git remote -v`, `git rev-parse --abbrev-ref HEAD`, `git rev-parse HEAD`. Redact any embedded credentials/tokens in remote URLs; record only safe `owner/name` + sanitised URL.
-- Env var names from `.env`, `.env.example`, `supabase/config.toml`, edge function source references (names only, target project only). Never read or print secret values.
+# StreamVista Public + Dashboard Audit — Read-Only Findings & Resolution Plan
 
-## Allowed operations
-Read-only only: `code--view`, `code--exec` (git + `rg` + `ls` only), `supabase--project_info`, `supabase--linter`, `supabase--read_query` (catalog SELECT only — no RPC, no application function, no edge function invocation), `security--get_scan_results` (cached only; no forced rescan), `project_monitoring--list_pending_findings`, `supabase--edge_function_logs` (existing logs only).
+Scope: `main` at commit currently synced. Nothing to edit in this plan; every item is documented so you can approve fixes in a later batch. Creator RC1 frozen behaviour is preserved throughout — none of the proposed changes touch `TitleEditor.tsx`, Creator submission RPCs, or Distribution read-only state.
 
-Forbidden: migrations, INSERT/UPDATE/DELETE/UPSERT/MERGE/TRUNCATE/DROP/ALTER/GRANT/REVOKE, RPC/application/edge function invocation, edge function deploy, storage mutations, publishing, reproducing any of the 12 operational failures (no Firecrawl calls, email retries, imports, uploads, task creation, QC transitions).
+---
 
-## Inspection plan
-1. **Identity & environment** — as above.
-2. **Schema & relationships** — `pg_tables`, `information_schema.table_constraints` + `key_column_usage` for touched risk areas only. Aggregate counts, not per-table enumeration of all 190+ tables.
-3. **RLS & grants matrix** — `pg_tables.rowsecurity`, `pg_policies`, `information_schema.role_table_grants` for risk-flagged tables. Flag RLS off, `USING (true)`, grants exceeding policy scope, missing service_role grants for edge-function-touched tables.
-4. **Views & SECURITY DEFINER functions** — `pg_views`, `pg_proc` where `prosecdef=true`; `proacl` for `PUBLIC` execute; `proconfig` for `search_path`.
-5. **Storage buckets & policies** — `storage.buckets` (public flag), `pg_policies` where schema='storage'. Cross-reference signed URL surfaces via `rg` (`createSignedUrl`, `generateSecurePreviewUrl`).
-6. **Realtime / workspace scoping** — `supabase_realtime` publication membership; policy scoping to `workspace_id` / `owner_id`.
-7. **Edge Functions & MCP** — enumerate `supabase/functions/*`; cross-check `supabase/config.toml` `verify_jwt` flags. MCP: `src/lib/mcp/tools/**`, `src/lib/mcp/lib/control.ts`, `src/lib/mcpClient.ts`. Verify `authorize()` on every tool, kill-switch precedence, writes=true handling.
-8. **Targeted security risk checks** (one subsection each):
-   - JWT email-match ownership: `members`, `onboarding_requests`, `role_invitations`, `premium_invitations`.
-   - Billing amount/status tamper: triggers on `billing_orders`, `billing_manual_payment_submissions` via `pg_trigger` + `pg_proc`.
-   - Internal cost-price exposure: `studio_vault_products`, `billing_price_versions`, views.
-   - PII: bank/UPI, onboarding, DMCA, invitations.
-   - Signed storage URL exposure to unauthenticated callers.
-   - MCP audit "Unknown / not recorded" root cause across delete ops, legacy imports, DB writes, storage writes, user-data exports, schema/workspace searches — counts and action-name distributions only, no PII.
-9. **Fail-closed high-risk controls** — kill switch default, `runGoverned` deny-on-master_kill_switch, `authorize({writes:true})` → `mcp_authorize_and_log(_writes=true)` returning `kill_switch`.
-10. **Access-path matrix** — separately posture-report for: Platform Owner / Founder / Super Admin, Admin, Creator, Buyer, Finance, QC, Legal, Support, Anonymous, Authenticated-with-no-role. **Classify owner access strictly from evidence as protected, incomplete or unverified — never assume and never modify it.**
-11. **Existing findings reconciliation** — pull cached `security--get_scan_results` and `project_monitoring--list_pending_findings`. Include all active and previously-ignored findings; if `mem://security-memory` or ignore reasons are inaccessible, mark them **unverified** rather than blocking the audit. Nothing silently dismissed.
+## 1. Homepage — duplicate wording, blocks, badges, claims
 
-## Known Operational and Schema-Drift Findings
-New required section verifying these 12 findings using code, catalog metadata and existing logs only — no reproduction:
+### 1.1 Duplicate / stacked "trust" surfaces (P1)
+`src/pages/Index.tsx` renders three overlapping trust surfaces back-to-back:
+1. `<TrustedDistributionPartners />` — 5 partner chips.
+2. A wrapper `<section>` immediately below with `<TrustBadges compact />` (HTTPS / Payment / Cloud X / IP compliance).
+3. `<Footer />` re-renders the same trust chips (Lock / Cloud X / ShieldCheck) inside the brand column when `isHome` (`src/components/streamvista/Footer.tsx` lines ~90-104).
 
-| # | Finding | Verification approach (read-only) |
+Resolution: keep partners band only; delete the standalone `TrustBadges` section in `Index.tsx`; drop the `isHome` trust chip block from `Footer.tsx` (trust language already reachable via /trust-and-rights and legal footer column).
+
+### 1.2 Questionable partner claims (P0)
+`src/components/streamvista/TrustedDistributionPartners.tsx` hard-codes:
+```
+Sun Nxt, Amritha, Amazon Prime, JioCinema, ZEE5
+```
+under the eyebrow "Trusted Distribution Partners". Even without logos this is a written brand-affiliation claim; only "Amritha" (Amrita TV) is a verified StreamVista relationship. Amazon Prime, JioCinema, ZEE5, Sun NXT have no signed partnership on record in `partner_profiles`.
+
+Resolution options (pick one):
+- Replace hard-coded list with `fetchPartnerProfiles()` filtered to `verified = true` (same source as `/partners`).
+- Or restate the eyebrow as "Distribution surfaces we prepare deliveries for" with no logos and no brand names, only categories (OTT, FAST, Broadcast, Satellite, Airline, Educational).
+- Remove the section entirely and rely on `/partners`.
+
+### 1.3 Duplicate brand mark (P2)
+"STREAMVISTA · Cloud X" appears in: Navbar wordmark, Hero eyebrow (`Cloud X`), TrustBadges chip ("StreamVista Cloud X"), Footer wordmark, Footer trust chip. Recommend keeping Navbar + Footer only.
+
+### 1.4 Repetitive homepage sections & vertical rhythm (P1)
+Stack today: `Hero (pt-40 pb-32)` → partners (py-5) → trust badges (py-6) → `Workflow (py-24)` → `PlatformOverview (py-24)` → `SupportedContent` → `RightsDistribution (py-24)` → `AIContentLicensingSection (py-24)` → `FinalCta (py-28)` → `Footer (mt-24 py-12)`.
+- `Workflow` and `PlatformOverview` cover overlapping "here is how it works" content.
+- `SupportedContent` and `RightsDistribution` overlap on catalogue/format messaging.
+- Total vertical between Hero end and FinalCTA is ≥ 6× py-24.
+
+Resolution: merge `Workflow` + `PlatformOverview` into one "How StreamVista Works" section; merge `SupportedContent` into `RightsDistribution` as a single "Rights, formats & buyers" section; standardize non-hero sections to `py-16 sm:py-20`.
+
+### 1.5 Hero wording (P2)
+`src/components/streamvista/Hero.tsx`:
+- Two body paragraphs repeat "OTT platforms, broadcasters, satellite television, FAST channels, distributors" — the exact string is also in `Seo.description` and the trailing mono-tech line "Film Sales · OTT & FAST Licensing · Satellite & Digital Distribution Workflow".
+- The trailing eyebrow (line 82) duplicates the top eyebrow message.
+
+Resolution: keep top eyebrow + one 2-sentence paragraph + disclaimer; delete the trailing mono-tech eyebrow.
+
+### 1.6 CTA labels & destinations (verified)
+| Location | Label | Destination | Status |
+|---|---|---|---|
+| Navbar (signed-out) | "Get Started" | `/auth?intent=signup` | ✅ |
+| Navbar (signed-in) | "Dashboard" | `dashboardForRole(role)` | ✅ but see §3.1 |
+| Hero primary (signed-out) | "Get Started · I'm a Creator" | `/auth?intent=signup` | ✅ |
+| Hero secondary | "I'm a Buyer · Request Access" | `/contact?topic=buyer-access` | ✅ |
+| FinalCTA | "Create Your Workspace" | `/auth?intent=signup` | ✅ |
+| FinalCTA (signed-in) | "Open Your Dashboard" | `dashboardForRole(role)` | ✅ |
+
+No broken CTA destinations found; only the Hero eyebrow label "Get Started · I'm a Creator" implicitly narrows the audience even though the flow supports all four pillars (P2 copy nit).
+
+---
+
+## 2. Navbar / Footer / public routes
+
+### 2.1 Navbar (`src/components/streamvista/Navbar.tsx`)
+Links: `/`, `/#platform`, `/pricing`, `/creator-preview`, `/partners`, `/about`, `/contact`.
+- `/#platform` resolves to `<section id="platform">` in `PlatformOverview.tsx` ✅.
+- Item labelled "Solutions" is a single anchor and hides the 8 dedicated /sell-your-film, /film-distribution, /ott-content-licensing, /content-owners, /buyers, /film-rights, /regional-indian-cinema, /global-film-sales pages — those routes exist but are only reachable via SEO/direct URLs. P1 information-architecture gap: add a Solutions dropdown or a `/solutions` index page.
+
+### 2.2 Footer (`src/components/streamvista/Footer.tsx`)
+- `PRODUCT_LINKS` uses `/#platform` (same as Navbar) — fine but again hides the 8 landing pages.
+- `TRUST_LINKS` points to `/dmca#submit-notice` and `/dmca#grievance`. Route `/dmca` is aliased to `<IPCopyright />` in `App.tsx`. Need to verify those anchor ids exist inside `IPCopyright.tsx` (spot-check shows only `#submit-notice` present; `#grievance` missing → P2 dead anchor).
+- Footer link "Agent integrations" → `/connect` is jargon; rename to "Integrations & AI agents" (P2).
+- Legal footer duplicates `/ip-copyright` and `/dmca` (both render `IPCopyright`) — pick one.
+
+### 2.3 Public routes inventory (`src/App.tsx`)
+Verified renderable, non-duplicate: `/`, `/auth`, `/auth/callback`, `/.lovable/oauth/consent`, `/reset-password`, `/checkout/return`, `/checkout/storage`, `/billing/status/:topupId`, `/s/:token`, `/review/:token`, `/screening/:token`, `/terms`, `/privacy`, `/ip-copyright`, `/dmca` (aliased), `/refund`, `/pricing`, `/about`, `/partners`, `/creator-preview`, `/c2c-setup`, `/blog/*`, `/support→/contact`, `/contact`, `/submit-content`, `/unsubscribe`, `/invoice/:id`, `/invoice/manual/:id`, `/college-erp`, `/connect`, `/accessibility`, plus 10 /solutions-style landing pages.
+
+Duplicate/dead routes to review:
+- `/dmca` vs `/ip-copyright` — same component (P2 pick one, redirect the other).
+- `/submit-content` — no navbar/footer entry, only reachable from external links (P2 confirm still intended).
+- `/college-erp` — orphaned marketing page, no inbound link (P2).
+- `/connectors` → redirects to `/connect` (fine).
+
+---
+
+## 3. Role routing after login
+
+### 3.1 Loop risk in `dashboardForRole` fallbacks (P0)
+`src/hooks/useAuth.tsx` returns `/dashboard/localization` for `localization_partner` and `/dashboard/distribution` for `distributor`. `src/App.tsx` wires both of those paths to `<CanonicalDashboardRedirect />`, which itself calls `dashboardForRole(role)` and `<Navigate replace>` to the same path → **infinite redirect** for any user with those roles. Also `/studio` → `CanonicalDashboardRedirect` will loop if role is `studio` (redirects to `/dashboard/studio` which is fine, but for a non-studio user it redirects away — acceptable). The localization/distributor case is the real bug.
+
+Resolution: either add real dashboard pages for those two roles, or change `dashboardForRole` to fall those roles back to `/dashboard/content` (creator surface with distributor tools) with a system message.
+
+### 3.2 Missing `/dashboard` canonical redirect protection (P2)
+`/dashboard` → `CanonicalDashboardRedirect` works, but there is no `/creator` alias while `/studio` and `/buyer` (via `/dashboard/buyer`) exist. Add `/creator` → `/dashboard/content` for consistency, or remove `/studio` for symmetry.
+
+### 3.3 Admin subdomain fan-out (P1)
+`AdminRoutes` maps 18 paths (`/admin/users`, `/admin/approvals`, `/admin/catalog`, `/admin/billing`, `/admin/storage`, `/admin/comms`, `/admin/settings`, `/admin/audit`, `/admin/homepage`, `/admin/qc`, `/admin/legal`, `/admin/content`, `/admin/support`, `/admin/reports`, `/admin/ecosystem`) all to the same `<Admin />` component. Verify each corresponds to a section switch inside `Admin.tsx`; any without a handler is dead (renders default tab silently). File to audit next: `src/pages/Admin.tsx` — enumerate `?section=` handlers and delete unused route entries.
+
+### 3.4 Buyer / Studio dashboard nav
+- `Buyer.tsx` handles legacy `marketplace→find` and `deliveries→commercial` redirects ✅.
+- `StudioDash.tsx` (1285 lines) uses `StudioShell` sections — spot audit needed for orphan sections; not blocking.
+
+---
+
+## 4. Dashboard quick actions & navigation
+
+### 4.1 CreatorQuickActions (`src/components/creator/CreatorQuickActions.tsx`)
+All six cards route via `onNavigate(section)` (in-shell) or the Pricing page — no dead links found. RC1-safe.
+
+### 4.2 StudioQuickActions (`src/components/studio/StudioQuickActions.tsx`)
+Five cards; `Service Request` and `Plan Request` fall back to `onOpenBilling` when the specific handler is undefined. Verify in `StudioDash.tsx` that both callbacks are wired; a missing prop silently opens Billing. Not user-facing broken but audit for correctness (P2).
+
+### 4.3 Admin QuickActions (`src/components/admin/QuickActions.tsx`)
+Depends on Admin.tsx section switch — audit alongside §3.3.
+
+### 4.4 Buyer dashboard nav
+`BuyerNav` sections mapped 1:1 to renderers in `Buyer.tsx` — no dead entries.
+
+---
+
+## 5. Homepage → auth / onboarding / contact flow (verified paths)
+
+| From | Target | Behaviour |
 |---|---|---|
-| 1 | Organizations CRM Pipeline references missing CRM tables | `rg` in `src/components/admin/ecosystem/` for CRM table names; check `pg_tables` for existence |
-| 2 | BI Hub references missing `revenue_lines.gross_paise` | `rg` for `gross_paise`; `information_schema.columns` for `revenue_lines` |
-| 3 | Intelligence Agent sends invalid Firecrawl v2 request key | `code--view supabase/functions/intelligence-agent/index.ts` — inspect request body keys vs Firecrawl v2 spec; do NOT call Firecrawl |
-| 4 | MCP `show_team` references `user_profiles.id` instead of `user_id` | `rg` in `src/lib/mcp/tools/**` for `show_team`; column check via `information_schema.columns` |
-| 5 | Revenue import does not load/retain title/deal/buyer mappings | `code--view src/components/revenue/RevenueMappingStep.tsx`, `src/lib/revenue/mapping.ts` — inspect persistence path |
-| 6 | "Pass QC & Send to Legal" fails | `rg` for button handler; inspect QC/Legal RPC & trigger definitions in `pg_proc` |
-| 7 | DIT Protocol targets missing storage bucket | `storage.buckets` catalog query for `dit-ingest-screenshots`; compare against `supabase/migrations-pending/20260718_000000_dit_ingest_screenshots_bucket.sql` |
-| 8 | Email retry sweep returns audit-failed HTTP 500 | `code--view supabase/functions/retry-failed-emails/index.ts`; cached `supabase--edge_function_logs` |
-| 9 | Structured Intelligence hides Firecrawl failures | `code--view` intelligence functions/components; check error surfacing |
-| 10 | Custom Intelligence Search hides Firecrawl failures | Same code paths + `IntelligenceCenter.tsx` |
-| 11 | Email Retry banner reports wrong failure reason | `code--view src/components/admin/EmailLogMonitor.tsx` — trace banner reason source |
-| 12 | Creator Revenue workspace filtering references missing column, risks cross-workspace exposure | `rg` for Creator revenue query; `information_schema.columns` for referenced `workspace_id`; check RLS on `revenue_lines` / `revenue_imports` |
+| Hero primary (signed-out) | `/auth?intent=signup` | Auth page shows signup; on success → `AuthCallback` → `/my-workspace?first=1&next=…` → `Onboarding` when incomplete → dashboard. ✅ |
+| Hero buyer CTA | `/contact?topic=buyer-access` | Contact form pre-selects buyer intent. ✅ |
+| FinalCTA (signed-in) | `dashboardForRole(role)` | Same infinite-loop risk noted in §3.1 for distributor/localization. |
+| Navbar signed-in | `dashboardForRole(role)` | Same as above. |
+| `/my-workspace` | now wrapped in `OnboardingGate` (previous batch) | ✅ closed. |
 
-For each finding record: **evidence** (file:line / table / policy), **classification** (confirmed / protected / false positive / unverified), **impact**, **severity** (info / low / medium / high / critical), **Task 2 required** (yes/no).
+No stray direct-to-dashboard links skipping OnboardingGate found in public code.
 
-## Deliverable
-Single markdown file `docs/STREAMVISTA_DATABASE_SECURITY_TRUTH.md`. **Files changed** means files created or modified in this task; preserve unrelated existing repository changes and do not overwrite them.
+---
 
-Sections in order:
-1. Lovable project identity
-2. Supabase project ref confirmation (`hllgmkfqgeuqlmpcirvn`)
-3. Safe GitHub repo identity (owner/name, branch, commit SHA, sanitised URL)
-4. Environment variable names & target project
-5. Schema & relationship summary
-6. RLS & grants matrix
-7. Views & SECURITY DEFINER functions
-8. Storage buckets & policies
-9. Realtime & workspace scoping
-10. Edge Functions & MCP controls (kill switch, fail-closed verdicts)
-11. Owner-access verification (strictly evidence-based: protected / incomplete / unverified — never modified)
-12. Access-path matrix (10 roles)
-13. Targeted security findings
-14. **Known Operational and Schema-Drift Findings** (12 items above)
-15. Consolidated findings table — Area | Observation | Evidence | Classification | Severity | Task 2 required | Notes
-16. Remaining blockers
-17. Files changed (this task should show only `docs/STREAMVISTA_DATABASE_SECURITY_TRUTH.md`)
+## 6. Cookie banner (`src/components/CookieConsent.tsx`)
 
-## Output guardrails
-Do not print or write: secret values, access/refresh tokens, password hashes, personal emails, phone numbers, bank/IFSC/UPI details, payment identifiers, invitation tokens, signed URLs, private media paths. Only column names, aggregate counts, policy definitions, function signatures, file paths.
+Findings:
+- Suppression list is comprehensive (admin, dashboard, studio, review, screening, my-workspace, checkout, onboarding, .lovable). ✅
+- Layout is bottom-right desktop / bottom-full mobile, `max-w-md`, glass card. Overlaps the AssistantLauncher FAB (also bottom-right) on desktop viewports — P1 z-index/positioning collision to verify visually.
+- Wording claims: "With your consent we also record anonymous usage for reliability." No analytics library is currently wired to `readCookieConsent()` (checked via ripgrep). This is a **material claim** with no matching implementation — either remove the sentence or add the consent-gated telemetry hook (P1 legal/UX honesty).
+- The `X` (dismiss) icon writes `essential-only` — under GDPR/DPDP the close affordance should be a neutral dismiss (do nothing), and "Reject" should be an explicit button. Rename the second button to "Reject non-essential" and have `X` set nothing (or default to reject with the same value but change label) (P2).
+- No "Manage preferences" surface — acceptable for a one-category banner, but privacy policy link is present. ✅
 
-No remediation SQL, bootstrap files, or repair code — those belong to Task 2.
+---
 
-## Closing
-Response ends with exactly:
+## Consolidated priority matrix
 
-`Task 1 of 2 complete. Exact database ref, repository, branch, commit, files changed and remaining blockers are documented in docs/STREAMVISTA_DATABASE_SECURITY_TRUTH.md. No mutating SQL executed, no production data changed, not deployed and not published.`
+| # | Priority | File(s) | Fix |
+|---|---|---|---|
+| 1.2 | **P0** | `TrustedDistributionPartners.tsx` | Replace / remove unverified brand names. |
+| 3.1 | **P0** | `hooks/useAuth.tsx` + `App.tsx` | Remove distributor/localization redirect loop. |
+| 1.1 | P1 | `Index.tsx`, `Footer.tsx` | Remove duplicate TrustBadges + footer isHome trust chips. |
+| 1.4 | P1 | `Workflow.tsx`, `PlatformOverview.tsx`, `SupportedContent.tsx`, `RightsDistribution.tsx`, `Index.tsx` | Merge overlapping sections; normalize py-16/20. |
+| 2.1 | P1 | `Navbar.tsx` | Solutions dropdown or `/solutions` index. |
+| 3.3 | P1 | `App.tsx`, `Admin.tsx` | Prune admin routes not handled by section switch. |
+| 6a | P1 | `CookieConsent.tsx` | Remove/implement "anonymous usage" claim. |
+| 6b | P1 | `CookieConsent.tsx` + `AssistantLauncher` | Fix bottom-right stacking collision. |
+| 1.3 | P2 | Hero/TrustBadges/Footer | Trim brand mark repetition. |
+| 1.5 | P2 | `Hero.tsx` | Delete trailing eyebrow + tighten paragraphs. |
+| 1.6 | P2 | `Hero.tsx` | Broaden signup CTA copy beyond "I'm a Creator". |
+| 2.2 | P2 | `Footer.tsx`, `IPCopyright.tsx` | Remove `#grievance` link or add anchor; rename "Agent integrations". |
+| 2.3 | P2 | `App.tsx` | Consolidate `/dmca` vs `/ip-copyright`; drop `/college-erp` if unused. |
+| 3.2 | P2 | `App.tsx` | Add `/creator` alias or drop `/studio` for symmetry. |
+| 4.2 | P2 | `StudioDash.tsx` | Verify Studio quick-action callbacks are all wired. |
+| 4.3 | P2 | `Admin.tsx` | Enumerate section handlers, delete unused route entries. |
+| 6c | P2 | `CookieConsent.tsx` | Explicit "Reject non-essential" button; neutralize X. |
 
-Then stop. Do not begin Task 2.
+---
+
+## Tests to run after the fix batch (no changes yet)
+
+1. **Vitest focused:** `bunx vitest run src/test/smoke/**` — must stay green (Creator RC1 smoke).
+2. **Typecheck:** `tsgo -p tsconfig.json` — 0 errors.
+3. **Build:** production build must succeed.
+4. **Playwright public flow (headless):**
+   - `/` renders in light + dark, no duplicated TrustBadges band, single "Trusted…" band, footer has no trust chips.
+   - Navbar links: Solutions, Pricing, Creator Preview, Partners, About, Contact all 200 and correct target.
+   - Footer links: every URL 200; verify `#submit-notice` / `#grievance` anchors resolve.
+   - Hero CTA → `/auth?intent=signup`; Buyer CTA → `/contact?topic=buyer-access`.
+   - Cookie banner appears on `/`, hidden on `/dashboard*`, `/admin*`, `/my-workspace`, `/checkout/*`.
+5. **Role redirect matrix (Playwright, seeded users):**
+   - creator → `/dashboard/content`
+   - studio → `/dashboard/studio`
+   - buyer → `/dashboard/buyer`
+   - admin → `/admin`
+   - distributor / localization_partner → non-looping destination (after §3.1 fix).
+6. **Admin quick-action audit:** click each admin sidebar entry; expect either handled section or removed route.
+7. **Cookie banner:** accept / essential-only / dismiss; verify cookie `sv_cookie_consent` written and banner does not re-appear.
+8. **Contrast re-check (`/contact`):** the previously-flagged 4 findings (text-accent, .opacity-60) — still open; include in any P1 fix batch that touches Contact.
+
+---
+
+## Not changed / preserved
+
+- `TitleEditor.tsx`, `submit_title_to_admin` RPC, `Distribution.tsx` read-only lock, `checkoutHostGuard`, Razorpay flow, Master Admin identity — untouched by any proposed fix.
+- Paddle stays disabled.
+- No Supabase migrations, no deploys, no publish.
+
+Approve this plan and I'll implement in strict P0 → P1 → P2 order, one batch per priority tier, with tests between tiers.

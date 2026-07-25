@@ -199,6 +199,9 @@ export function AssetUploader({
     (size: number) => quotaKnown && quotaTotalBytes > 0 && (quotaUsedBytes + size) > quotaTotalBytes,
     [quotaKnown, quotaTotalBytes, quotaUsedBytes],
   );
+  const quotaBlocked = Boolean(
+    stagedFile && stagedPreflight?.ok && wouldExceedQuota(stagedFile.size),
+  );
 
 
   // Per founder policy: never hash the entire file in the browser. Preflight
@@ -485,30 +488,36 @@ export function AssetUploader({
           {!stagedPreflight.ok && (
             <p className="text-rose-400 text-sm">{(stagedPreflight as { ok: false; reason: string }).reason}</p>
           )}
-          {stagedPreflight.ok && wouldExceedQuota(stagedFile.size) && (
-            <p className="text-rose-400 text-sm">
-              This upload exceeds your remaining storage quota. Free up space and try again.
-            </p>
+          {quotaBlocked && (
+            <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-rose-200 text-sm">
+              <p className="font-medium inline-flex items-center gap-1.5">
+                <HardDrive className="w-4 h-4" /> Storage is currently full. This file has not been uploaded.
+              </p>
+              <p className="mt-1 text-xs text-rose-100/80">
+                {humanBytes(stagedFile.size)} selected · {humanBytes(quotaRemainingBytes)} available of {humanBytes(quotaTotalBytes)}.
+                Free space or request more storage before trying again.
+              </p>
+            </div>
           )}
-          {stagedPreflight.ok && !wouldExceedQuota(stagedFile.size) && dup.kind === "checking" && (
+          {!quotaBlocked && stagedPreflight.ok && dup.kind === "checking" && (
             <p className="text-sm text-muted-foreground inline-flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Running preflight fingerprint…</p>
           )}
-          {dup.kind === "preliminary" && (
+          {!quotaBlocked && dup.kind === "preliminary" && (
             <div className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-amber-200/90 text-sm">
               <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-4 h-4" /> Preflight match — server will reconcile checksum after upload.</p>
             </div>
           )}
-          {dup.kind === "hash-skipped" && (
+          {!quotaBlocked && dup.kind === "hash-skipped" && (
             <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-amber-200 text-sm">
               <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-4 h-4" /> Possible duplicate — upload anyway if this is a new revision.</p>
             </div>
           )}
-          {dup.kind === "block-same-title" && (
+          {!quotaBlocked && dup.kind === "block-same-title" && (
             <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-rose-200 text-sm">
               <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-4 h-4" /> Duplicate on this title — replace the version or pick a different file.</p>
             </div>
           )}
-          {dup.kind === "warn-same-workspace" && (
+          {!quotaBlocked && dup.kind === "warn-same-workspace" && (
             <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-amber-200 text-sm">
               <p className="font-medium inline-flex items-center gap-1.5"><Copy className="w-4 h-4" /> Matching file exists in your workspace — you can upload as a new version.</p>
             </div>
@@ -520,10 +529,10 @@ export function AssetUploader({
             <button
               type="button"
               onClick={startUpload}
-              disabled={!stagedPreflight.ok || locked || dup.kind === "block-same-title" || dup.kind === "checking" || dup.kind === "preliminary"}
+              disabled={quotaBlocked || !stagedPreflight.ok || locked || dup.kind === "block-same-title" || dup.kind === "checking" || dup.kind === "preliminary"}
               className="inline-flex items-center gap-2 rounded-md bg-accent text-accent-foreground text-sm font-semibold px-5 py-2.5 shadow-lg shadow-accent/20 ring-1 ring-accent/40 hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none disabled:ring-0 transition"
             >
-              <Upload className="w-4 h-4" /> {dup.kind === "warn-same-workspace" || dup.kind === "hash-skipped" ? "Upload as new version" : "Start upload"}
+              <Upload className="w-4 h-4" /> {quotaBlocked ? "Storage full — upload paused" : dup.kind === "warn-same-workspace" || dup.kind === "hash-skipped" ? "Upload as new version" : "Start upload"}
             </button>
             <button
               type="button"

@@ -1217,13 +1217,6 @@ function PosterGridInner({
   titleId: string; assets: TitleAsset[]; locked: boolean; onUploaded: () => void;
   primary: TitleAsset | undefined; fileName: string | null; fileSizeMb: string | null;
 }) {
-  const [advancedOpen, setAdvancedOpen] = useState(false);
-  const advancedVariants = [
-    { label: "Alt poster", hint: "Secondary key art for A/B testing" },
-    { label: "Banner", hint: "16:9 horizontal hero art" },
-    { label: "Tile", hint: "Streaming platform tile" },
-    { label: "Square", hint: "1:1 social / thumbnail" },
-  ];
   return (
     <section>
       <div className="flex items-baseline justify-between">
@@ -1268,48 +1261,6 @@ function PosterGridInner({
         <AssetList assets={assets} />
       </div>
 
-      {/* Advanced Artwork Assets — collapsed by default to reduce clutter */}
-      <div className="mt-5 rounded-lg border border-border/40 bg-background/30">
-        <button
-          type="button"
-          onClick={() => setAdvancedOpen((v) => !v)}
-          className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-accent/5 transition"
-          aria-expanded={advancedOpen}
-        >
-          <div className="min-w-0">
-            <div className="text-sm font-semibold flex items-center gap-2">
-              Advanced Artwork Assets
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Optional</span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Alt poster, banner, tile and square variants for distribution partners.
-            </p>
-          </div>
-          <ChevronDown className={cn("w-4 h-4 shrink-0 transition-transform", advancedOpen && "rotate-180")} />
-        </button>
-        {advancedOpen && (
-          <div className="px-4 pb-4 pt-1 border-t border-border/40">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
-              {advancedVariants.map((p) => (
-                <div key={p.label} className="rounded-lg border border-dashed border-border/50 bg-background/40 p-2 flex flex-col">
-                  <div className="aspect-[2/3] rounded-md border border-border/30 bg-secondary/5 grid place-items-center text-center px-2">
-                    <div>
-                      <ImageIcon className="w-5 h-5 mx-auto text-muted-foreground/60" />
-                      <div className="mt-1 text-[10px] text-muted-foreground">{p.hint}</div>
-                    </div>
-                  </div>
-                  <div className="mt-2 text-[10px] uppercase tracking-wider text-muted-foreground inline-flex items-center gap-1">
-                    <Lock className="w-2.5 h-2.5" /> {p.label}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <p className="text-[11px] text-muted-foreground mt-3">
-              Additional variant slots activate once your title is accepted for distribution — no action needed today.
-            </p>
-          </div>
-        )}
-      </div>
     </section>
   );
 }

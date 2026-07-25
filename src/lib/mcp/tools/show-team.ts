@@ -24,11 +24,11 @@ export default defineTool({
     if (userIds.length > 0) {
       const { data: profs } = await sb
         .from("user_profiles")
-        .select("id, display_name, email, avatar_url")
-        .in("id", userIds);
+        .select("user_id, display_name, email, avatar_url")
+        .in("user_id", userIds);
       profiles = profs ?? [];
     }
-    const byId = new Map(profiles.map((p) => [p.id, p]));
+    const byId = new Map(profiles.map((p) => [p.user_id, p]));
     const team = (members ?? []).map((m: any) => {
       const p = byId.get(m.user_id) ?? {};
       return {

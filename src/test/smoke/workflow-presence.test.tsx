@@ -1,5 +1,5 @@
 /**
- * Smoke test: the "One pipeline / Security & Trust" Workflow section
+ * Smoke test: the "From upload to revenue" Workflow section
  * MUST be present in the rendered DOM for every public homepage route,
  * at every common viewport size we ship for.
  *
@@ -100,16 +100,15 @@ describe("Workflow section presence", () => {
             `If the section was intentionally removed, update HOMEPAGE_ROUTES in this test.`,
         ).not.toBeNull();
 
-        // The section must actually contain the pipeline + trust copy,
+        // The section must contain the current workflow copy,
         // not just an empty anchor placeholder.
         const text = section?.textContent ?? "";
-        expect(text, "Workflow section should mention 'One pipeline'").toMatch(/one pipeline/i);
-        expect(text, "Workflow section should mention 'Security & Trust'").toMatch(
-          /security\s*&\s*trust/i,
+        expect(text, "Workflow section should mention 'From upload to revenue'").toMatch(
+          /from upload to revenue/i,
         );
 
-        // All 5 pipeline stages must be present.
-        for (const stage of ["Ingest", "Store", "Prepare", "Control Access", "License"]) {
+        // All 5 current workflow stages must be present.
+        for (const stage of ["Upload", "Review", "Marketplace", "Buyer", "Revenue"]) {
           expect(text, `Workflow section should mention stage '${stage}'`).toContain(stage);
         }
       });

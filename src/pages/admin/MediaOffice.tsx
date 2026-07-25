@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
-import { Loader2, LayoutDashboard, Film, Users, Wallet, LogOut, ShieldCheck, ArrowUpRight } from "lucide-react";
+import { Loader2, LayoutDashboard, Film, Users, Wallet, LogOut, ShieldCheck, ArrowUpRight, WifiOff, RefreshCw } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -122,7 +122,17 @@ function CounterCard({ label, value }: { label: string; value: number }) {
 }
 
 function DashboardRoom({ onOpenMovies }: { onOpenMovies: () => void }) {
-  const { counts, live, updatedAt, error, refresh } = useLiveAdminCounts();
+  const { counts, live, syncStatus, syncError, updatedAt, error, refresh, reconnect } = useLiveAdminCounts();
+  const [reconnecting, setReconnecting] = useState(false);
+  const handleReconnect = async () => {
+    setReconnecting(true);
+    try {
+      await reconnect();
+      toast.success("Reconnecting live sync…");
+    } finally {
+      setTimeout(() => setReconnecting(false), 800);
+    }
+  };
   return (
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-3">
@@ -136,6 +146,29 @@ function DashboardRoom({ onOpenMovies }: { onOpenMovies: () => void }) {
           <button onClick={refresh} className="text-xs text-muted-foreground hover:text-foreground">Refresh</button>
         </div>
       </div>
+
+      {syncStatus === "error" && (
+        <div className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 flex items-start gap-3">
+          <div className="w-8 h-8 rounded-full bg-destructive/15 grid place-items-center shrink-0">
+            <WifiOff className="w-4 h-4 text-destructive" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-semibold text-foreground">Live sync interrupted</div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {syncError ?? "The database connection dropped."} Numbers below are the last known values —
+              they will not update until you reconnect.
+            </p>
+          </div>
+          <button
+            onClick={handleReconnect}
+            disabled={reconnecting}
+            className="shrink-0 inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-destructive text-destructive-foreground text-xs font-medium hover:opacity-90 disabled:opacity-60"
+          >
+            <RefreshCw className={cn("w-3.5 h-3.5", reconnecting && "animate-spin")} />
+            {reconnecting ? "Reconnecting…" : "Retry sync"}
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">

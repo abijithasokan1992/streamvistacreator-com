@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -6,6 +7,9 @@ import { supabase } from "@/integrations/supabase/client";
  * `content_titles` and `distribution_program_offers` and refetches the
  * affected counter on any change. Keeps last-known values on failure so
  * the UI never flashes zeros.
+ *
+ * Exposes an explicit `syncError` + `reconnect()` so the UI can show a
+ * clear notification and a manual retry button when realtime drops.
  */
 export type AdminCounts = {
   awaitingQc: number;
@@ -31,14 +35,20 @@ async function countBy(filter: (q: any) => any): Promise<number> {
   return count ?? 0;
 }
 
+export type RealtimeSyncStatus = "connecting" | "live" | "error";
+
 export function useLiveAdminCounts() {
   const [counts, setCounts] = useState<AdminCounts>(ZERO);
-  const [live, setLive] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<RealtimeSyncStatus>("connecting");
+  const [syncError, setSyncError] = useState<string | null>(null);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const inFlight = useRef(false);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const notifiedRef = useRef(false);
+  const nonceRef = useRef(0);
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     if (inFlight.current) return;
     inFlight.current = true;
     try {
@@ -79,22 +89,67 @@ export function useLiveAdminCounts() {
     } finally {
       inFlight.current = false;
     }
-  };
+  }, []);
 
-  useEffect(() => {
-    refresh();
+  const subscribe = useCallback(() => {
+    // Tear down any previous channel before reconnecting.
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+    setSyncStatus("connecting");
+    const nonce = ++nonceRef.current;
     const channel = supabase
-      .channel("media-office-counters")
+      .channel(`media-office-counters-${nonce}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "content_titles" }, () => refresh())
       .on("postgres_changes", { event: "*", schema: "public", table: "distribution_program_offers" }, () => refresh())
       .subscribe((status) => {
-        setLive(status === "SUBSCRIBED");
+        if (status === "SUBSCRIBED") {
+          setSyncStatus("live");
+          setSyncError(null);
+          notifiedRef.current = false;
+        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          setSyncStatus("error");
+          setSyncError(
+            status === "TIMED_OUT"
+              ? "Live sync timed out."
+              : status === "CHANNEL_ERROR"
+              ? "Live sync lost connection to the database."
+              : "Live sync channel closed.",
+          );
+          if (!notifiedRef.current) {
+            notifiedRef.current = true;
+            toast.error("Live sync interrupted", {
+              description: "Counters may be out of date. Tap Retry sync to reconnect.",
+            });
+          }
+        }
       });
-    return () => {
-      supabase.removeChannel(channel);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    channelRef.current = channel;
+  }, [refresh]);
 
-  return { counts, live, updatedAt, error, refresh };
+  const reconnect = useCallback(async () => {
+    await refresh();
+    subscribe();
+  }, [refresh, subscribe]);
+
+  useEffect(() => {
+    refresh();
+    subscribe();
+    return () => {
+      if (channelRef.current) supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    };
+  }, [refresh, subscribe]);
+
+  return {
+    counts,
+    live: syncStatus === "live",
+    syncStatus,
+    syncError,
+    updatedAt,
+    error,
+    refresh,
+    reconnect,
+  };
 }

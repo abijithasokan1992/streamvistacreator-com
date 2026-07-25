@@ -275,8 +275,29 @@ export async function listDeliveryLogs(deliveryId: string): Promise<Distribution
   return (data ?? []) as DistributionDeliveryLog[];
 }
 
+const DISTRIBUTION_RELEASE_ROLES = ["platform_owner", "founder", "super_admin", "admin"] as const;
+
+async function assertCanReleaseDistribution(): Promise<void> {
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  const userId = sessionData.session?.user?.id;
+  if (sessionError || !userId) {
+    throw new Error("You must be signed in to release a title for distribution.");
+  }
+
+  for (const role of DISTRIBUTION_RELEASE_ROLES) {
+    const { data: hasRole, error } = await (supabase as any).rpc("has_role", {
+      _user_id: userId,
+      _role: role,
+    });
+    if (!error && hasRole === true) return;
+  }
+
+  throw new Error("Distribution release requires Platform Owner, Founder, Super Admin, or Admin access.");
+}
+
 /* ---------------- Dispatch (edge function) ---------------- */
 export async function dispatchQueue(queueId: string, correlationId?: string) {
+  await assertCanReleaseDistribution();
   const cid = correlationId ?? newCorrelationId();
   return supabase.functions.invoke("distribution-dispatch", {
     body: { queue_id: queueId, correlation_id: cid },

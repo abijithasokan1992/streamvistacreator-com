@@ -70,10 +70,11 @@ export default function IPCopyright() {
         damages, including legal costs, under applicable copyright law.
       </LegalSection>
 
-      <LegalSection title="6. Designated Agent">
+      <div id="grievance" className="scroll-mt-28">
+      <LegalSection title="6. Designated Agent / Grievance Officer">
         <div className="space-y-1">
           <div>
-            <span>Attention:</span> DMCA Agent, StreamVista OPC Pvt Ltd
+            <span>Attention:</span> DMCA Agent &amp; Grievance Officer, StreamVista OPC Pvt Ltd
           </div>
           <div>
             <span>Email:</span>{" "}
@@ -89,6 +90,7 @@ export default function IPCopyright() {
           </p>
         </div>
       </LegalSection>
+      </div>
     </LegalLayout>
     </>
   );

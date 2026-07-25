@@ -74,9 +74,6 @@ import HowItWorks from "./pages/landing/HowItWorks.tsx";
 import TrustAndRights from "./pages/landing/TrustAndRights.tsx";
 import FilmLicensingCosts from "./pages/landing/FilmLicensingCosts.tsx";
 
-// Smart Uploads is not MVP-ready — hidden until the checksum + bucket work is production-safe.
-// import SmartUploads from "./pages/SmartUploads.tsx";
-
 import ReferralCapture from "./components/ReferralCapture.tsx";
 import { RouteAgentDock } from "./components/agents/RouteAgentDock.tsx";
 import { AssistantLauncher } from "./components/assistant/AssistantLauncher.tsx";

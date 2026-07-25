@@ -348,6 +348,10 @@ function BuyersRoom() {
   const [err, setErr] = useState<string | null>(null);
   const [selected, setSelected] = useState<BuyerOffer | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [checked, setChecked] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState<null | "approve" | "sendback">(null);
+  const [sendBackOpen, setSendBackOpen] = useState(false);
+  const [sendBackReason, setSendBackReason] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -377,16 +381,116 @@ function BuyersRoom() {
     setSelected((cur) => (cur && cur.id === next.id ? { ...cur, ...next } : cur));
   };
 
+  const toggleOne = (id: string) => {
+    setChecked((prev) => {
+      const n = new Set(prev);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+  };
+
+  // Only "offered" offers can be approved (→accepted); only "draft"/"offered"
+  // can be sent back (→cancelled with reason). Silently skip incompatible rows
+  // and surface a per-row toast so admins see exactly what happened.
+  const eligibleFor = (action: "approve" | "sendback", status: string) => {
+    if (action === "approve") return status === "offered";
+    return status === "draft" || status === "offered";
+  };
+
+  const runBulk = async (action: "approve" | "sendback", reason?: string) => {
+    const targets = rows.filter((r) => checked.has(r.id));
+    if (targets.length === 0) { toast.error("Select at least one offer"); return; }
+    setBulkBusy(action);
+    let ok = 0, skipped = 0, failed = 0;
+    for (const r of targets) {
+      if (!eligibleFor(action, r.status)) {
+        skipped++;
+        toast.message(`Skipped: ${r.program_name || r.id.slice(0, 8)}`, {
+          description: `Cannot ${action === "approve" ? "approve" : "send back"} an offer in "${r.status}".`,
+        });
+        continue;
+      }
+      try {
+        const nowIso = new Date().toISOString();
+        const patch: any = action === "approve"
+          ? { status: "accepted", accepted_at: nowIso }
+          : { status: "cancelled", legal_text_snapshot: reason };
+        const { error } = await supabase
+          .from("distribution_program_offers")
+          .update(patch)
+          .eq("id", r.id);
+        if (error) throw error;
+        patchRow({ ...r, status: patch.status, updated_at: nowIso });
+        ok++;
+        toast.success(`${action === "approve" ? "Approved" : "Sent back"}: ${r.program_name || r.id.slice(0, 8)}`);
+      } catch (e: any) {
+        failed++;
+        toast.error(`Failed: ${r.program_name || r.id.slice(0, 8)}`, { description: e?.message ?? "Try again." });
+      }
+    }
+    setBulkBusy(null);
+    setChecked(new Set());
+    setSendBackOpen(false);
+    setSendBackReason("");
+    toast.info(`Bulk ${action === "approve" ? "approve" : "send back"} finished`, {
+      description: `${ok} succeeded · ${skipped} skipped · ${failed} failed`,
+    });
+  };
+
+  const onSendBackConfirm = () => {
+    const trimmed = sendBackReason.trim();
+    if (trimmed.length < 4 || trimmed.length > 500) {
+      toast.error("Reason must be 4–500 characters");
+      return;
+    }
+    runBulk("sendback", trimmed);
+  };
+
+  const selectedCount = checked.size;
+
   return (
     <div className="space-y-5">
       <div>
         <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground/70">{OFFICE.buyerMapping}</p>
         <h1 className="font-display text-2xl md:text-3xl mt-1">Buyers and offers</h1>
-        <p className="text-sm text-muted-foreground mt-1">Click any offer to move it forward — send, mark mapped, or close.</p>
+        <p className="text-sm text-muted-foreground mt-1">Select offers to approve or send back in bulk, or click one to open the full flow.</p>
       </div>
       {err && (
         <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">{err}</div>
       )}
+
+      {selectedCount > 0 && (
+        <div className="sticky top-[62px] z-20 rounded-xl border border-border/60 bg-background/95 backdrop-blur px-3 py-2 flex items-center justify-between gap-3 shadow-sm">
+          <div className="text-xs text-muted-foreground">
+            <span className="font-semibold text-foreground">{selectedCount}</span> selected
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setChecked(new Set())}
+              className="text-xs text-muted-foreground hover:text-foreground px-2 py-1"
+              disabled={!!bulkBusy}
+            >
+              Clear
+            </button>
+            <button
+              onClick={() => setSendBackOpen(true)}
+              disabled={!!bulkBusy}
+              className="h-8 px-3 rounded-md border border-border text-xs hover:bg-secondary/40 disabled:opacity-60"
+            >
+              Send back
+            </button>
+            <button
+              onClick={() => runBulk("approve")}
+              disabled={!!bulkBusy}
+              className="h-8 px-3 rounded-md bg-primary text-primary-foreground text-xs hover:opacity-90 disabled:opacity-60 inline-flex items-center gap-1.5"
+            >
+              {bulkBusy === "approve" && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              Approve
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="rounded-xl border border-border/50 bg-card">
         {loading && rows.length === 0 ? (
           <div className="p-10 grid place-items-center"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
@@ -394,27 +498,79 @@ function BuyersRoom() {
           <div className="p-10 text-center text-sm text-muted-foreground">No buyer offers yet.</div>
         ) : (
           <ul className="divide-y divide-border/40">
-            {rows.map((r) => (
-              <li key={r.id}>
-                <button
-                  onClick={() => { setSelected(r); setDrawerOpen(true); }}
-                  className="w-full text-left px-4 py-3 hover:bg-secondary/30 flex items-center justify-between gap-3"
-                >
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium truncate">{r.program_name || `Offer · ${r.id.slice(0, 8)}`}</div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5">
-                      Status: {r.status}{r.term_years ? ` · ${r.term_years} yr term` : ""}
+            {rows.map((r) => {
+              const isChecked = checked.has(r.id);
+              return (
+                <li key={r.id} className={cn("flex items-center gap-2 pl-3", isChecked && "bg-primary/[0.04]")}>
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => toggleOne(r.id)}
+                    aria-label={`Select ${r.program_name || r.id}`}
+                    className="h-4 w-4 accent-primary shrink-0"
+                  />
+                  <button
+                    onClick={() => { setSelected(r); setDrawerOpen(true); }}
+                    className="w-full text-left px-2 py-3 hover:bg-secondary/30 flex items-center justify-between gap-3"
+                  >
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium truncate">{r.program_name || `Offer · ${r.id.slice(0, 8)}`}</div>
+                      <div className="text-[11px] text-muted-foreground mt-0.5">
+                        Status: {r.status}{r.term_years ? ` · ${r.term_years} yr term` : ""}
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-[10px] text-muted-foreground shrink-0">
-                    {r.updated_at ? new Date(r.updated_at).toLocaleDateString() : ""}
-                  </div>
-                </button>
-              </li>
-            ))}
+                    <div className="text-[10px] text-muted-foreground shrink-0">
+                      {r.updated_at ? new Date(r.updated_at).toLocaleDateString() : ""}
+                    </div>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
+
+      {sendBackOpen && (
+        <div className="fixed inset-0 z-40 bg-black/50 grid place-items-center p-4" role="dialog" aria-modal="true">
+          <div className="w-full max-w-md rounded-xl border border-border bg-background p-5 space-y-3 shadow-xl">
+            <div>
+              <h3 className="font-semibold">Send {selectedCount} offer{selectedCount === 1 ? "" : "s"} back</h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Only offers in Draft or Sent-to-buyer can be sent back. Others will be skipped.
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="bulk-sendback-reason" className="text-xs font-medium">Reason (4–500 chars)</label>
+              <textarea
+                id="bulk-sendback-reason"
+                value={sendBackReason}
+                onChange={(e) => setSendBackReason(e.target.value)}
+                maxLength={500}
+                className="w-full min-h-[100px] rounded-md border border-border bg-background px-3 py-2 text-sm"
+                placeholder="Recorded in audit history for every affected offer."
+              />
+              <div className="text-[10px] text-muted-foreground text-right">{sendBackReason.length}/500</div>
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button
+                onClick={() => { setSendBackOpen(false); setSendBackReason(""); }}
+                disabled={bulkBusy === "sendback"}
+                className="h-9 px-3 rounded-md border border-border text-sm hover:bg-secondary/40"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={onSendBackConfirm}
+                disabled={bulkBusy === "sendback"}
+                className="h-9 px-3 rounded-md bg-destructive text-destructive-foreground text-sm inline-flex items-center gap-1.5 disabled:opacity-60"
+              >
+                {bulkBusy === "sendback" && <Loader2 className="w-4 h-4 animate-spin" />}
+                Confirm send back
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <BuyerMappingActionDrawer
         offer={selected}

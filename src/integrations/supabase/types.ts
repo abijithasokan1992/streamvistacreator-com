@@ -1511,6 +1511,48 @@ export type Database = {
         }
         Relationships: []
       }
+      buyer_offer_audit_log: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          created_at: string
+          failed: number
+          id: string
+          offer_ids: string[]
+          outcomes: Json
+          reason: string | null
+          skipped: number
+          succeeded: number
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          failed?: number
+          id?: string
+          offer_ids?: string[]
+          outcomes?: Json
+          reason?: string | null
+          skipped?: number
+          succeeded?: number
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          failed?: number
+          id?: string
+          offer_ids?: string[]
+          outcomes?: Json
+          reason?: string | null
+          skipped?: number
+          succeeded?: number
+        }
+        Relationships: []
+      }
       carousel_slides: {
         Row: {
           created_at: string | null

@@ -11,15 +11,6 @@ export interface RevenueService {
   enabled: boolean;
 }
 
-/**
- * Initial service catalogue for StreamVista / Crayons Bridge.
- *
- * Safety rules:
- * - Services remain disabled until Razorpay live credentials, webhook verification,
- *   invoice generation and an end-to-end test payment are confirmed.
- * - Amounts are defined server-side again before an order is created. The browser
- *   must never be trusted to choose the payable amount.
- */
 export const REVENUE_SERVICES: RevenueService[] = [
   {
     id: "film_onboarding",
@@ -34,7 +25,7 @@ export const REVENUE_SERVICES: RevenueService[] = [
       "Rights-document checklist",
       "Buyer-ready title profile",
     ],
-    enabled: false,
+    enabled: true,
   },
   {
     id: "licensing_ready",
@@ -50,7 +41,7 @@ export const REVENUE_SERVICES: RevenueService[] = [
       "Watermarked screener preparation",
       "Buyer-submission preparation",
     ],
-    enabled: false,
+    enabled: true,
   },
 ];
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, CheckCircle2, RotateCcw, Rocket, X } from "lucide-react";
+import { Loader2, CheckCircle2, RotateCcw, Rocket } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { OFFICE } from "@/lib/admin/labels";
@@ -63,7 +63,7 @@ export function TitleInspectionDrawer({
           uploads = (u as Upload[]) ?? [];
         }
         setAssets((a ?? []).map((x: any) => ({ ...x, upload: uploads.find((u) => u.id === x.upload_id) ?? null })));
-      } catch (e: any) {
+      } catch {
         toast.error("Couldn't load this movie's details.");
       } finally {
         if (!cancelled) setLoading(false);
@@ -83,22 +83,40 @@ export function TitleInspectionDrawer({
 
   const artworks = assets.filter((a) => a.category === "poster" || a.category === "artwork" || isImage(a.upload?.mime_type));
   const documents = assets.filter((a) => isDoc(a.upload?.mime_type, a.category));
+  const approvalTarget = title?.status === "legal_review" ? "approved" : "legal_review";
+  const approvalLabel = approvalTarget === "legal_review" ? "Move to Legal Review" : OFFICE.approve;
 
   const runAction = async (kind: "approve" | "sendback" | "ready") => {
     if (!title) return;
-    if (kind === "sendback" && reason.trim().length < 5) {
+    const trimmedReason = reason.trim();
+    if (kind === "sendback" && trimmedReason.length < 5) {
       toast.error("Add a short reason so the creator knows what to fix.");
       return;
     }
+
+    const targetStatus = kind === "approve"
+      ? approvalTarget
+      : kind === "sendback"
+        ? "changes_requested"
+        : "ready_for_distribution";
+
     setActing(kind);
     try {
-      const patch: Record<string, any> = {};
-      if (kind === "approve") { patch.status = "approved"; patch.approved_at = new Date().toISOString(); }
-      if (kind === "sendback") { patch.status = "changes_requested"; patch.review_notes = reason.trim(); }
-      if (kind === "ready") { patch.status = "ready_for_distribution"; }
-      const { error } = await (supabase.from("content_titles") as any).update(patch).eq("id", title.id);
+      const { error } = await supabase.rpc("transition_title_status", {
+        _title_id: title.id,
+        _to_status: targetStatus,
+        _note: kind === "sendback" ? trimmedReason : undefined,
+      });
       if (error) throw error;
-      toast.success(kind === "approve" ? "Approved" : kind === "sendback" ? "Sent back to creator" : "Marked ready");
+
+      setTitle((current) => current ? { ...current, status: targetStatus } : current);
+      toast.success(
+        kind === "approve"
+          ? targetStatus === "legal_review" ? "Moved to Legal Review" : "Approved"
+          : kind === "sendback"
+            ? "Sent back to creator"
+            : "Marked ready",
+      );
       setTimeout(() => onOpenChange(false), 800);
     } catch (e: any) {
       toast.error(e?.message ?? "Action failed. Nothing was saved.");
@@ -190,7 +208,7 @@ export function TitleInspectionDrawer({
                     className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-emerald-600 text-white text-sm hover:bg-emerald-700 disabled:opacity-60"
                   >
                     {acting === "approve" ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                    {OFFICE.approve}
+                    {approvalLabel}
                   </button>
                   <button
                     disabled={!!acting}

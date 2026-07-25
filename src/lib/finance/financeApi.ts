@@ -106,43 +106,29 @@ export type Settlement = {
   paid_at: string | null;
 };
 
-// ============================================================================
-// Revenue Imports
-// ============================================================================
 export async function listRevenueImports(limit = 50): Promise<RevenueImport[]> {
-  const { data, error } = await supabase
-    .from("revenue_imports")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(limit);
+  const { data, error } = await supabase.from("revenue_imports").select("*").order("created_at", { ascending: false }).limit(limit);
   if (error) throw error;
   return (data ?? []) as RevenueImport[];
 }
 
 export async function createRevenueImport(input: Partial<RevenueImport>): Promise<string> {
   const { data: u } = await supabase.auth.getUser();
-  const { data, error } = await supabase
-    .from("revenue_imports")
-    .insert({
-      source_type: input.source_type ?? "manual",
-      source_label: input.source_label ?? null,
-      partner_id: input.partner_id ?? null,
-      period_start: input.period_start ?? null,
-      period_end: input.period_end ?? null,
-      currency: input.currency ?? "INR",
-      notes: input.notes ?? null,
-      imported_by: u.user?.id ?? null,
-    })
-    .select("id")
-    .single();
+  const { data, error } = await supabase.from("revenue_imports").insert({
+    source_type: input.source_type ?? "manual",
+    source_label: input.source_label ?? null,
+    partner_id: input.partner_id ?? null,
+    period_start: input.period_start ?? null,
+    period_end: input.period_end ?? null,
+    currency: input.currency ?? "INR",
+    notes: input.notes ?? null,
+    imported_by: u.user?.id ?? null,
+  }).select("id").single();
   if (error) throw error;
   return data.id;
 }
 
-export async function addRevenueLines(
-  importId: string,
-  rows: Array<Partial<RevenueLine>>
-): Promise<void> {
+export async function addRevenueLines(importId: string, rows: Array<Partial<RevenueLine>>): Promise<void> {
   if (!rows.length) return;
   const payload = rows.map((r) => ({
     import_id: importId,
@@ -155,31 +141,22 @@ export async function addRevenueLines(
     units: r.units ?? null,
     gross_amount_paise: r.gross_amount_paise ?? 0,
     platform_fee_paise: r.platform_fee_paise ?? 0,
-    net_amount_paise:
-      r.net_amount_paise ?? (r.gross_amount_paise ?? 0) - (r.platform_fee_paise ?? 0),
+    net_amount_paise: r.net_amount_paise ?? (r.gross_amount_paise ?? 0) - (r.platform_fee_paise ?? 0),
     currency: r.currency ?? "INR",
     occurred_on: r.occurred_on ?? null,
   }));
   const { error } = await supabase.from("revenue_lines").insert(payload);
   if (error) throw error;
-
-  // Update rollup
   const gross = payload.reduce((s, r) => s + Number(r.gross_amount_paise ?? 0), 0);
-  await supabase
-    .from("revenue_imports")
-    .update({
-      gross_amount_paise: gross,
-      line_count: payload.length,
-      status: "imported",
-    })
-    .eq("id", importId);
+  const { error: rollupError } = await supabase.from("revenue_imports").update({
+    gross_amount_paise: gross,
+    line_count: payload.length,
+    status: "imported",
+  }).eq("id", importId);
+  if (rollupError) throw rollupError;
 }
 
-export async function listRevenueLines(filter?: {
-  importId?: string;
-  titleId?: string;
-  limit?: number;
-}): Promise<RevenueLine[]> {
+export async function listRevenueLines(filter?: { importId?: string; titleId?: string; limit?: number }): Promise<RevenueLine[]> {
   let q = supabase.from("revenue_lines").select("*").order("occurred_on", { ascending: false });
   if (filter?.importId) q = q.eq("import_id", filter.importId);
   if (filter?.titleId) q = q.eq("title_id", filter.titleId);
@@ -189,15 +166,8 @@ export async function listRevenueLines(filter?: {
   return (data ?? []) as RevenueLine[];
 }
 
-// ============================================================================
-// Royalty Rules & Runs
-// ============================================================================
 export async function listRoyaltyRules(): Promise<RoyaltyRule[]> {
-  const { data, error } = await supabase
-    .from("royalty_rules")
-    .select("*")
-    .order("priority", { ascending: true })
-    .limit(200);
+  const { data, error } = await supabase.from("royalty_rules").select("*").order("priority", { ascending: true }).limit(200);
   if (error) throw error;
   return (data ?? []) as RoyaltyRule[];
 }
@@ -232,26 +202,14 @@ export async function deleteRoyaltyRule(id: string): Promise<void> {
 }
 
 export async function listRoyaltyRuns(): Promise<RoyaltyRun[]> {
-  const { data, error } = await supabase
-    .from("royalty_runs")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(50);
+  const { data, error } = await supabase.from("royalty_runs").select("*").order("created_at", { ascending: false }).limit(50);
   if (error) throw error;
   return (data ?? []) as RoyaltyRun[];
 }
 
-export async function createRoyaltyRun(input: {
-  run_label: string;
-  period_start: string;
-  period_end: string;
-}): Promise<string> {
+export async function createRoyaltyRun(input: { run_label: string; period_start: string; period_end: string }): Promise<string> {
   const { data: u } = await supabase.auth.getUser();
-  const { data, error } = await supabase
-    .from("royalty_runs")
-    .insert({ ...input, created_by: u.user?.id ?? null })
-    .select("id")
-    .single();
+  const { data, error } = await supabase.from("royalty_runs").insert({ ...input, created_by: u.user?.id ?? null }).select("id").single();
   if (error) throw error;
   return data.id;
 }
@@ -264,92 +222,54 @@ export async function computeRoyaltyRun(runId: string): Promise<any> {
 
 export async function approveRoyaltyRun(runId: string): Promise<void> {
   const { data: u } = await supabase.auth.getUser();
-  const { error } = await supabase
-    .from("royalty_runs")
-    .update({ status: "approved", approved_by: u.user?.id ?? null, approved_at: new Date().toISOString() })
-    .eq("id", runId);
+  const { error } = await supabase.from("royalty_runs").update({ status: "approved", approved_by: u.user?.id ?? null, approved_at: new Date().toISOString() }).eq("id", runId).eq("status", "computed");
   if (error) throw error;
-  await supabase.from("royalty_allocations").update({ status: "approved" }).eq("run_id", runId).eq("status", "draft");
+  const { error: allocationError } = await supabase.from("royalty_allocations").update({ status: "approved" }).eq("run_id", runId).eq("status", "draft");
+  if (allocationError) throw allocationError;
 }
 
 export async function listAllocationsForRun(runId: string): Promise<RoyaltyAllocation[]> {
-  const { data, error } = await supabase
-    .from("royalty_allocations")
-    .select("*")
-    .eq("run_id", runId)
-    .order("allocated_paise", { ascending: false })
-    .limit(500);
+  const { data, error } = await supabase.from("royalty_allocations").select("*").eq("run_id", runId).order("allocated_paise", { ascending: false }).limit(500);
   if (error) throw error;
   return (data ?? []) as RoyaltyAllocation[];
 }
 
-// ============================================================================
-// Partner Statements
-// ============================================================================
 export async function listPartnerStatements(): Promise<PartnerStatement[]> {
-  const { data, error } = await supabase
-    .from("partner_statements")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(100);
+  const { data, error } = await supabase.from("partner_statements").select("*").order("created_at", { ascending: false }).limit(100);
   if (error) throw error;
   return (data ?? []) as PartnerStatement[];
 }
 
-export async function generatePartnerStatement(input: {
-  partner_id?: string | null;
-  beneficiary_user_id?: string | null;
-  period_start: string;
-  period_end: string;
-}): Promise<string> {
-  // Aggregate revenue_lines for the partner in the given period.
-  let q = supabase
-    .from("revenue_lines")
-    .select("id,gross_amount_paise,platform_fee_paise,net_amount_paise,title_id,channel,territory,occurred_on")
-    .gte("occurred_on", input.period_start)
-    .lte("occurred_on", input.period_end);
+export async function generatePartnerStatement(input: { partner_id?: string | null; beneficiary_user_id?: string | null; period_start: string; period_end: string }): Promise<string> {
+  let q = supabase.from("revenue_lines").select("id,gross_amount_paise,platform_fee_paise,net_amount_paise,title_id,channel,territory,occurred_on").gte("occurred_on", input.period_start).lte("occurred_on", input.period_end);
   if (input.partner_id) q = q.eq("partner_id", input.partner_id);
   const { data: lines, error } = await q;
   if (error) throw error;
-
   const gross = (lines ?? []).reduce((s, r: any) => s + Number(r.gross_amount_paise ?? 0), 0);
   const fees = (lines ?? []).reduce((s, r: any) => s + Number(r.platform_fee_paise ?? 0), 0);
   const net = (lines ?? []).reduce((s, r: any) => s + Number(r.net_amount_paise ?? 0), 0);
-
   const stmtNum = `STMT-${new Date().getFullYear()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
   const { data: u } = await supabase.auth.getUser();
-
-  const { data, error: insErr } = await supabase
-    .from("partner_statements")
-    .insert({
-      partner_id: input.partner_id ?? null,
-      beneficiary_user_id: input.beneficiary_user_id ?? null,
-      statement_number: stmtNum,
-      period_start: input.period_start,
-      period_end: input.period_end,
-      gross_paise: gross,
-      fees_paise: fees,
-      net_paise: net,
-      status: "issued",
-      issued_at: new Date().toISOString(),
-      line_snapshot: (lines ?? []) as any,
-      created_by: u.user?.id ?? null,
-    })
-    .select("id")
-    .single();
+  const { data, error: insErr } = await supabase.from("partner_statements").insert({
+    partner_id: input.partner_id ?? null,
+    beneficiary_user_id: input.beneficiary_user_id ?? null,
+    statement_number: stmtNum,
+    period_start: input.period_start,
+    period_end: input.period_end,
+    gross_paise: gross,
+    fees_paise: fees,
+    net_paise: net,
+    status: "issued",
+    issued_at: new Date().toISOString(),
+    line_snapshot: (lines ?? []) as any,
+    created_by: u.user?.id ?? null,
+  }).select("id").single();
   if (insErr) throw insErr;
   return data.id;
 }
 
-// ============================================================================
-// Settlements
-// ============================================================================
 export async function listSettlements(): Promise<Settlement[]> {
-  const { data, error } = await supabase
-    .from("settlements")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(100);
+  const { data, error } = await supabase.from("settlements").select("*").order("created_at", { ascending: false }).limit(100);
   if (error) throw error;
   return (data ?? []) as Settlement[];
 }
@@ -357,40 +277,34 @@ export async function listSettlements(): Promise<Settlement[]> {
 export async function createSettlement(input: Partial<Settlement> & { amount_paise: number; beneficiary_type: string }): Promise<string> {
   const { data: u } = await supabase.auth.getUser();
   const stmtNum = `STL-${new Date().getFullYear()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
-  const { data, error } = await supabase
-    .from("settlements")
-    .insert({
-      settlement_number: stmtNum,
-      beneficiary_type: input.beneficiary_type,
-      beneficiary_user_id: input.beneficiary_user_id ?? null,
-      beneficiary_label: input.beneficiary_label ?? null,
-      partner_id: input.partner_id ?? null,
-      statement_id: (input as any).statement_id ?? null,
-      amount_paise: input.amount_paise,
-      method: input.method ?? "bank_transfer",
-      reference: input.reference ?? null,
-      status: input.status ?? "pending",
-      scheduled_for: input.scheduled_for ?? null,
-      notes: (input as any).notes ?? null,
-      created_by: u.user?.id ?? null,
-    })
-    .select("id")
-    .single();
+  const { data, error } = await supabase.from("settlements").insert({
+    settlement_number: stmtNum,
+    beneficiary_type: input.beneficiary_type,
+    beneficiary_user_id: input.beneficiary_user_id ?? null,
+    beneficiary_label: input.beneficiary_label ?? null,
+    partner_id: input.partner_id ?? null,
+    statement_id: (input as any).statement_id ?? null,
+    amount_paise: input.amount_paise,
+    method: input.method ?? "bank_transfer",
+    reference: input.reference ?? null,
+    status: "pending",
+    scheduled_for: input.scheduled_for ?? null,
+    notes: (input as any).notes ?? null,
+    created_by: u.user?.id ?? null,
+  }).select("id").single();
   if (error) throw error;
   return data.id;
 }
 
-export async function markSettlementPaid(id: string, reference?: string): Promise<void> {
-  const { error } = await supabase
-    .from("settlements")
-    .update({ status: "paid", paid_at: new Date().toISOString(), reference: reference ?? undefined })
-    .eq("id", id);
-  if (error) throw error;
+/**
+ * Settlement completion must be performed by a privileged server operation
+ * after verifying the payment provider or bank reference. Browser clients are
+ * intentionally blocked from writing paid status directly.
+ */
+export async function markSettlementPaid(_id: string, _reference?: string): Promise<void> {
+  throw new Error("Payment completion requires server verification and is not available from this browser.");
 }
 
-// ============================================================================
-// Revenue Dashboard summary
-// ============================================================================
 export async function getRevenueSummary(days = 90): Promise<{
   total_gross_paise: number;
   total_net_paise: number;
@@ -401,17 +315,12 @@ export async function getRevenueSummary(days = 90): Promise<{
 }> {
   const since = new Date(Date.now() - days * 86400_000).toISOString().slice(0, 10);
   const [{ data: lines }, { data: payouts }] = await Promise.all([
-    supabase
-      .from("revenue_lines")
-      .select("channel,gross_amount_paise,net_amount_paise,occurred_on")
-      .gte("occurred_on", since),
+    supabase.from("revenue_lines").select("channel,gross_amount_paise,net_amount_paise,occurred_on").gte("occurred_on", since),
     supabase.from("deal_payouts").select("payout_amount_paise,status"),
   ]);
-
   const rows = (lines ?? []) as any[];
   const total_gross_paise = rows.reduce((s, r) => s + Number(r.gross_amount_paise ?? 0), 0);
   const total_net_paise = rows.reduce((s, r) => s + Number(r.net_amount_paise ?? 0), 0);
-
   const chMap = new Map<string, { gross_paise: number; net_paise: number }>();
   for (const r of rows) {
     const k = r.channel ?? "other";
@@ -420,7 +329,6 @@ export async function getRevenueSummary(days = 90): Promise<{
     cur.net_paise += Number(r.net_amount_paise ?? 0);
     chMap.set(k, cur);
   }
-
   const monthMap = new Map<string, { gross_paise: number; net_paise: number }>();
   for (const r of rows) {
     if (!r.occurred_on) continue;
@@ -430,32 +338,21 @@ export async function getRevenueSummary(days = 90): Promise<{
     cur.net_paise += Number(r.net_amount_paise ?? 0);
     monthMap.set(m, cur);
   }
-
   const po = (payouts ?? []) as any[];
-  const outstanding_payouts_paise = po
-    .filter((r) => r.status !== "paid")
-    .reduce((s, r) => s + Number(r.payout_amount_paise ?? 0), 0);
-  const paid_payouts_paise = po
-    .filter((r) => r.status === "paid")
-    .reduce((s, r) => s + Number(r.payout_amount_paise ?? 0), 0);
-
+  const outstanding_payouts_paise = po.filter((r) => r.status !== "paid").reduce((s, r) => s + Number(r.payout_amount_paise ?? 0), 0);
+  const paid_payouts_paise = po.filter((r) => r.status === "paid").reduce((s, r) => s + Number(r.payout_amount_paise ?? 0), 0);
   return {
     total_gross_paise,
     total_net_paise,
-    by_channel: [...chMap.entries()]
-      .map(([channel, v]) => ({ channel, ...v }))
-      .sort((a, b) => b.gross_paise - a.gross_paise),
-    by_month: [...monthMap.entries()]
-      .map(([month, v]) => ({ month, ...v }))
-      .sort((a, b) => a.month.localeCompare(b.month)),
+    by_channel: [...chMap.entries()].map(([channel, v]) => ({ channel, ...v })).sort((a, b) => b.gross_paise - a.gross_paise),
+    by_month: [...monthMap.entries()].map(([month, v]) => ({ month, ...v })).sort((a, b) => a.month.localeCompare(b.month)),
     outstanding_payouts_paise,
     paid_payouts_paise,
   };
 }
 
-export const fmtINR = (paise: number) =>
-  new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format((paise || 0) / 100);
+export const fmtINR = (paise: number) => new Intl.NumberFormat("en-IN", {
+  style: "currency",
+  currency: "INR",
+  maximumFractionDigits: 0,
+}).format((paise || 0) / 100);

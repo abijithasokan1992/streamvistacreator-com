@@ -607,9 +607,12 @@ function BuyersRoom() {
         onOpenChange={(v) => { setDrawerOpen(v); if (!v) setSelected(null); }}
         onChanged={patchRow}
       />
+
+      <BuyerOfferAuditLog />
     </div>
   );
 }
+
 
 /* -------------------- Accounts -------------------- */
 

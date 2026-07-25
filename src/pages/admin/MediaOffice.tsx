@@ -205,6 +205,8 @@ function DashboardRoom({ onOpenMovies }: { onOpenMovies: () => void }) {
         <ConnectionStatusPanel />
       </div>
 
+      <BackendControlsGuide />
+
       {updatedAt && (
         <p className="text-[10px] text-muted-foreground/70">Last updated {new Date(updatedAt).toLocaleTimeString()}</p>
       )}

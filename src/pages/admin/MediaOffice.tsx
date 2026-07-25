@@ -343,20 +343,22 @@ function MoviesRoom({ canDecide }: { canDecide: boolean }) {
 /* -------------------- Buyers -------------------- */
 
 function BuyersRoom() {
-  const [rows, setRows] = useState<any[]>([]);
+  const [rows, setRows] = useState<BuyerOffer[]>([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [selected, setSelected] = useState<BuyerOffer | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const load = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from("distribution_program_offers")
-        .select("id,program_id,status,offer_amount,currency,updated_at")
+        .select("id,program_name,status,term_years,term_start_date,term_end_date,updated_at")
         .order("updated_at", { ascending: false })
         .limit(50);
       if (error) throw error;
-      setRows(data ?? []); setErr(null);
+      setRows((data as BuyerOffer[]) ?? []); setErr(null);
     } catch (e: any) {
       setErr(e?.message ?? "Couldn't load buyer offers.");
     } finally { setLoading(false); }
@@ -370,37 +372,56 @@ function BuyersRoom() {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
+  const patchRow = (next: BuyerOffer) => {
+    setRows((prev) => prev.map((r) => (r.id === next.id ? { ...r, ...next } : r)));
+    setSelected((cur) => (cur && cur.id === next.id ? { ...cur, ...next } : cur));
+  };
+
   return (
     <div className="space-y-5">
       <div>
         <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground/70">{OFFICE.buyerMapping}</p>
         <h1 className="font-display text-2xl md:text-3xl mt-1">Buyers and offers</h1>
-        <p className="text-sm text-muted-foreground mt-1">Everyone currently talking to us, and where each conversation stands.</p>
+        <p className="text-sm text-muted-foreground mt-1">Click any offer to move it forward — send, mark mapped, or close.</p>
       </div>
       {err && (
         <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">{err}</div>
       )}
       <div className="rounded-xl border border-border/50 bg-card">
-        {loading ? (
+        {loading && rows.length === 0 ? (
           <div className="p-10 grid place-items-center"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
         ) : rows.length === 0 ? (
           <div className="p-10 text-center text-sm text-muted-foreground">No buyer offers yet.</div>
         ) : (
           <ul className="divide-y divide-border/40">
             {rows.map((r) => (
-              <li key={r.id} className="px-4 py-3 flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="text-sm font-medium truncate">Offer · {r.program_id?.slice?.(0, 8) ?? r.id.slice(0, 8)}</div>
-                  <div className="text-[11px] text-muted-foreground mt-0.5">
-                    Status: {r.status} · {r.currency ?? "INR"} {Number(r.offer_amount ?? 0).toLocaleString("en-IN")}
+              <li key={r.id}>
+                <button
+                  onClick={() => { setSelected(r); setDrawerOpen(true); }}
+                  className="w-full text-left px-4 py-3 hover:bg-secondary/30 flex items-center justify-between gap-3"
+                >
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium truncate">{r.program_name || `Offer · ${r.id.slice(0, 8)}`}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                      Status: {r.status}{r.term_years ? ` · ${r.term_years} yr term` : ""}
+                    </div>
                   </div>
-                </div>
-                <div className="text-[10px] text-muted-foreground shrink-0">{new Date(r.updated_at).toLocaleDateString()}</div>
+                  <div className="text-[10px] text-muted-foreground shrink-0">
+                    {r.updated_at ? new Date(r.updated_at).toLocaleDateString() : ""}
+                  </div>
+                </button>
               </li>
             ))}
           </ul>
         )}
       </div>
+
+      <BuyerMappingActionDrawer
+        offer={selected}
+        open={drawerOpen}
+        onOpenChange={(v) => { setDrawerOpen(v); if (!v) setSelected(null); }}
+        onChanged={patchRow}
+      />
     </div>
   );
 }

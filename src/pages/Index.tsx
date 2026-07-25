@@ -58,11 +58,9 @@ const Index = () => {
       <Navbar />
       <Hero />
       <TrustedDistributionPartners />
-      <section className="border-b border-border/40 bg-background/60">
-        <div className="container py-6">
-          <TrustBadges compact className="justify-center" />
-        </div>
-      </section>
+      {/* Trust chips render once in the Footer's home-only block —
+          the standalone TrustBadges band was removed to eliminate the
+          duplicate "Cloud X" / "IP & Copyright Compliance" chips. */}
       <Workflow />
       <PlatformOverview />
       <SupportedContent />

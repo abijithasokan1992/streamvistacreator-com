@@ -102,14 +102,15 @@ export function useMissionSignals(pollMs = 60_000) {
     ];
     cache = { at: Date.now(), signals: next };
     setSignals(next); setLastUpdated(cache.at); setLoading(false);
-  }, []);
+  }, [authorized]);
 
   useEffect(() => {
+    if (authLoading) return;
     load();
-    if (!pollMs) return;
+    if (!pollMs || !authorized) return;
     const t = setInterval(() => load(true), pollMs);
     return () => clearInterval(t);
-  }, [load, pollMs]);
+  }, [load, pollMs, authLoading, authorized]);
 
   const totalOpen = signals.reduce((s, x) => s + x.count, 0);
   const critical = signals.filter(s => s.tone === "danger" && s.count > 0);

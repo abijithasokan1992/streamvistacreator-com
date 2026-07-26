@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 export type MissionSignal = {
   key: string;
@@ -31,11 +32,20 @@ const TTL_MS = 60_000;
  * don't each hit the DB independently.
  */
 export function useMissionSignals(pollMs = 60_000) {
+  const { isAdmin, isSuperAdmin, loading: authLoading } = useAuth();
+  const authorized = isAdmin || isSuperAdmin;
   const [signals, setSignals] = useState<MissionSignal[]>(cache?.signals ?? []);
-  const [loading, setLoading] = useState(!cache);
+  const [loading, setLoading] = useState(!cache && authorized);
   const [lastUpdated, setLastUpdated] = useState<number | null>(cache?.at ?? null);
 
   const load = useCallback(async (force = false) => {
+    // P0 guard: only admins/super_admins may query mission-signal tables.
+    // Non-admin callers would generate noisy RLS 401/403 traffic and pull
+    // aggregate counts they cannot act on. Return an empty snapshot.
+    if (!authorized) {
+      setSignals([]); setLastUpdated(Date.now()); setLoading(false);
+      return;
+    }
     if (!force && cache && Date.now() - cache.at < TTL_MS) {
       setSignals(cache.signals); setLastUpdated(cache.at); setLoading(false);
       return;
@@ -92,14 +102,15 @@ export function useMissionSignals(pollMs = 60_000) {
     ];
     cache = { at: Date.now(), signals: next };
     setSignals(next); setLastUpdated(cache.at); setLoading(false);
-  }, []);
+  }, [authorized]);
 
   useEffect(() => {
+    if (authLoading) return;
     load();
-    if (!pollMs) return;
+    if (!pollMs || !authorized) return;
     const t = setInterval(() => load(true), pollMs);
     return () => clearInterval(t);
-  }, [load, pollMs]);
+  }, [load, pollMs, authLoading, authorized]);
 
   const totalOpen = signals.reduce((s, x) => s + x.count, 0);
   const critical = signals.filter(s => s.tone === "danger" && s.count > 0);

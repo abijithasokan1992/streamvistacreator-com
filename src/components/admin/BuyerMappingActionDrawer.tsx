@@ -115,6 +115,42 @@ export function BuyerMappingActionDrawer({ offer, open, onOpenChange, onChanged 
     if (!open) { setReason(""); setSelectedAction(null); setPending(null); }
   }, [open]);
 
+  // Realtime: sync when another admin (or a background job) writes to
+  // buyer_offer_audit_log for this offer. Refetch the authoritative row so
+  // the drawer never shows stale status. Channel is scoped to the open offer
+  // and torn down on close/unmount to avoid subscription leaks.
+  useEffect(() => {
+    if (!open || !offer?.id) return;
+    const offerId = offer.id;
+    const channel = supabase
+      .channel(`buyer-offer-audit:${offerId}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "buyer_offer_audit_log" },
+        async (payload) => {
+          const row = payload.new as { offer_ids?: string[] | null; action?: string; actor_email?: string | null };
+          if (!row?.offer_ids?.includes(offerId)) return;
+          const { data, error } = await supabase
+            .from("distribution_program_offers")
+            .select("id,program_name,status,offer_amount,currency,term_years,term_start_date,term_end_date,updated_at")
+            .eq("id", offerId)
+            .maybeSingle();
+          if (error || !data) return;
+          const next = data as unknown as BuyerOffer;
+          onChanged?.(next);
+          if (next.status !== offer.status) {
+            toast.message("Offer updated elsewhere", {
+              description: `${row.actor_email ?? "Another admin"} moved it to "${next.status}".`,
+            });
+          }
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [open, offer?.id, offer?.status, onChanged]);
+
   const actions = useMemo(() => (offer ? NEXT_ACTIONS[offer.status] : []), [offer]);
   const activeAction = actions.find((a) => a.to === selectedAction) ?? null;
   const needsReason = !!activeAction?.needsReason;

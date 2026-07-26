@@ -50,7 +50,7 @@ import ctrlImportLegacyTitles from "./tools/control/import-legacy-titles";
 
 // Build the OAuth issuer from the Supabase project ref only (never SUPABASE_URL,
 // which is the .lovable.cloud proxy on Cloud apps). Vite inlines this literal.
-const projectRef = import.meta.env.VITE_SUPABASE_PROJECT_ID ?? "project-ref-unset";
+const projectRef = import.meta.env.VITE_SUPABASE_PROJECT_ID ?? "hllgmkfqgeuqlmpcirvn";
 
 export default defineMcp({
   name: "streamvista-mcp",

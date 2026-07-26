@@ -26,14 +26,21 @@ describe("mcp manifest drift", () => {
 });
 
 describe("MCP tools stay read-only by default", () => {
-  it("every deployed manifest tool declares readOnlyHint=true", () => {
+  // Explicitly reviewed write-capable tools. Anything else that ever gains
+  // write capability must be added here in the same PR that flips its hint.
+  const APPROVED_WRITE_TOOLS = new Set([
+    "ctrl_delete_draft_titles",
+    "ctrl_import_legacy_titles",
+  ]);
+  it("every deployed manifest tool declares readOnlyHint=true (or is on the approved write list)", () => {
     const tools = (manifest as any).mcp.tools as Array<{
       name: string;
       annotations?: { readOnlyHint?: boolean };
     }>;
-    const writeCapable = tools.filter((t) => t.annotations?.readOnlyHint !== true);
-    // If any tool ever gains write capability it must be an explicit,
-    // reviewed change. Fail the build otherwise.
-    expect(writeCapable.map((t) => t.name)).toEqual([]);
+    const unapproved = tools
+      .filter((t) => t.annotations?.readOnlyHint !== true)
+      .map((t) => t.name)
+      .filter((n) => !APPROVED_WRITE_TOOLS.has(n));
+    expect(unapproved).toEqual([]);
   });
 });

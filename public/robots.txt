@@ -1,6 +1,3 @@
-# Public marketing pages may be indexed by standard search and answer engines,
-# including OAI-SearchBot, PerplexityBot and Google crawlers. Private workspaces,
-# account flows, review links and commercial records remain excluded.
 User-agent: *
 Allow: /
 Disallow: /admin

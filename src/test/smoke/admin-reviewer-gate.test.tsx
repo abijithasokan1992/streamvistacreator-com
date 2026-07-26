@@ -52,11 +52,16 @@ const baseAuth = {
   isLegalReviewer: false,
 };
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
 function renderAt(path: string) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <MemoryRouter initialEntries={[path]}>
-      <Admin />
-    </MemoryRouter>,
+    <QueryClientProvider client={client}>
+      <MemoryRouter initialEntries={[path]}>
+        <Admin />
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 

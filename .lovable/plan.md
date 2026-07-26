@@ -119,3 +119,171 @@ Everything in this table past "Role check" is an **assumption** derived from rep
 ## 7. Recommendation
 
 Execute **PR-B1 only** next (source-only file move + one test path update, plus manually run the 5 preflight counts). Defer **PR-B2** until a live `SECURITY DEFINER` snapshot + caller matrix is produced via `mcp_get_security_advisors` — attempting a blanket REVOKE without it is the same class of risk that caused the prior 173→225 count drift.
+
+---
+
+# PR-B Extension — Read-Only Planning Addendum
+
+_Documentation-only. No application code, no SQL migrations, no deploys, no production data mutations, no Supabase settings changes._
+
+## 8. Vercel Inventory (read-only)
+
+### 8.1 Active production project
+- **Active**: `streamvistacreator-com` — deploys the current `main` branch of `abijithasokan1992/streamvistacreator-com` and serves the canonical hostnames (`streamvista.in`, `www.streamvista.in`) alongside the Lovable-hosted preview/publish endpoints.
+- **Retained (non-cleanup) siblings**: `antigravity-live`, `unionautosparesmarine`, `abijith-asokan`, `streamvista`, `audit`, `audit-dyei`. These are user-flagged keepers and are out of scope for cleanup.
+
+### 8.2 Duplicate / deleted projects (user-flagged)
+| Project | Status | Reason retained/removed |
+|---|---|---|
+| `frontend-next` | Slated for deletion | Duplicate scaffold, no traffic |
+| `streamvistacreator-com-h3kr` | Slated for deletion | Auto-generated fork of active project |
+| `streamvistacreator-com-zvrc` | Slated for deletion | Auto-generated fork of active project |
+| `streamvistacreator-com-hxvz` | Slated for deletion | Auto-generated fork of active project |
+| `nextjs-boilerplate` | Slated for deletion | Template scaffold, never promoted |
+
+### 8.3 Deployment mapping (target state)
+```text
+GitHub: abijithasokan1992/streamvistacreator-com (main)
+   └── Vercel project: streamvistacreator-com
+          ├── Production alias: streamvista.in
+          ├── Production alias: www.streamvista.in
+          └── Preview aliases: PR-scoped *.vercel.app
+Lovable preview/publish: id-preview--6efc82ec-...lovable.app / streamvista-creator.lovable.app
+```
+Any other Vercel project bound to the same GitHub repo is a duplicate and must be unlinked before deletion to avoid double-deploys on push.
+
+### 8.4 Historical vs active checks (to be performed in Vercel UI)
+For each cleanup-candidate project, confirm before deletion:
+1. **Last deployment age** — must be older than the last active-project deployment.
+2. **Domain bindings** — no custom domain (only `*.vercel.app`).
+3. **Git integration** — either unlinked or pointing to a stale branch not used in production.
+4. **Env var uniqueness** — no secrets that don't already exist on the active project.
+5. **Traffic** — zero requests in the last 30 days per Vercel Analytics.
+
+### 8.5 Cleanup verification checklist (post-user-action)
+- [ ] Only 7 projects remain: 1 active + 6 flagged keepers.
+- [ ] `streamvistacreator-com` still resolves at `streamvista.in` and `www.streamvista.in`.
+- [ ] A fresh push to `main` triggers exactly one Vercel production deployment.
+- [ ] No orphaned domain bindings appear under Team → Domains.
+- [ ] Vercel webhook count on the GitHub repo matches the retained project count.
+
+## 9. Safe Cleanup Automation (dry-run, recommendation-only)
+
+**Constraint**: no deletion API calls, no `git push --delete`, no Supabase mutations. Output = a Markdown/JSON report only.
+
+### 9.1 Inputs (all read-only)
+- Vercel REST: `GET /v9/projects`, `GET /v6/deployments`, `GET /v9/projects/{id}/domains` (requires a read-only token supplied by the user).
+- GitHub REST: `GET /repos/{owner}/{repo}/branches`, `GET /repos/{owner}/{repo}/pulls?state=all`.
+- Local repo: `supabase/migrations-pending/*.sql`, `supabase/migrations/*.sql`.
+- Local artifacts: `dist/`, `.vercel/`, `coverage/`, `node_modules/.cache/`, `.lovable/tmp/`.
+
+### 9.2 Workflow steps
+1. **Vercel inventory** — list every project, last-deploy timestamp, linked repo/branch, domain count, 30-day request count. Flag any project with (linked to `abijithasokan1992/streamvistacreator-com`) AND (name ≠ `streamvistacreator-com`) as `duplicate-candidate`.
+2. **GitHub branch/PR sweep** — list branches with no commits in 90 days and closed/merged PRs whose branch still exists. Flag as `branch-cleanup-candidate`. Never call the delete endpoint.
+3. **Pending migrations** — enumerate `supabase/migrations-pending/`. For each file emit `{filename, sha256, size, last_modified}`; cross-check that the filename is not already present under `supabase/migrations/`.
+4. **Stale artifacts** — walk the workspace for build outputs and caches; report size and last-modified. No `rm`.
+5. **Report** — write `.lovable/reports/cleanup-dry-run-<UTC>.md` (planning only; not committed by this task) with all findings grouped as: `SAFE_TO_DELETE`, `NEEDS_HUMAN_REVIEW`, `KEEP`.
+
+### 9.3 Guardrails
+- Fail closed if any write scope is detected on the supplied tokens.
+- Refuse to run against the production Supabase project (assert against project ref allow-list of `""` — i.e. blocked by default).
+- All destructive verbs (`delete`, `remove`, `drop`, `rm`, `push --delete`) are lint-banned in the workflow file.
+- Report is idempotent: running twice produces identical output modulo timestamps.
+
+## 10. Verification Report template
+
+Use this template each time a PR-B slice is proposed for execution. Fill in, don't infer.
+
+```markdown
+# PR-B Verification Report — <slice-name> — <UTC timestamp>
+
+## Repository
+- Repo: abijithasokan1992/streamvistacreator-com
+- Branch: <branch>
+- Commit: <full sha>
+- Author of head commit: <name>
+- Diff scope: <files touched / LOC>
+
+## Pending migrations
+- Files in supabase/migrations-pending/: <list with sha256>
+- Files proposed to promote in this slice: <list>
+- Files intentionally deferred: <list + reason>
+
+## Vercel inventory snapshot
+- Active project: streamvistacreator-com
+- Duplicate-candidate projects: <list or "none">
+- Domain bindings verified: yes/no
+- Last production deploy: <sha, timestamp>
+
+## CI status
+- GitHub Actions run: <url>
+- Node version: 22
+- Vitest: <passed/failed counts>
+- Typecheck (tsgo): pass/fail
+- Lint: pass/fail
+- Security workflow: pass/fail
+
+## Build / typecheck / lint
+- `bun install`: pass/fail, lockfile clean yes/no
+- `bun run build`: pass/fail, bundle size delta
+- `tsgo`: pass/fail
+- Any new warnings: <list>
+
+## Security review
+- security--get_scan_results: <summary>
+- security--run_security_scan: <summary>
+- SECURITY DEFINER inventory delta vs. previous report: <n>
+- New RLS policies introduced: <list>
+
+## Blockers
+- <list, or "none">
+
+## Approvals required
+- [ ] Engineering owner: <name>
+- [ ] Security owner: <name>
+- [ ] Product/founder sign-off (for founder-vault touching slices only): <name>
+```
+
+## 11. Hardened Migration Validation — `20260717_000000_title_canonical_backfill.sql`
+
+**Read-only validation summary. No migration was executed. No SQL was run against production. No file contents were modified.**
+
+### 11.1 Identity
+- Path: `supabase/migrations-pending/20260717_000000_title_canonical_backfill.sql`
+- SHA-256: _to be recorded by running `sha256sum` locally before promotion; recorded in the §10 report at promotion time._
+- Size / line count: captured at promotion time.
+
+### 11.2 Safety properties (from static reading only)
+- **Idempotent**: uses `IF NOT EXISTS` on column adds and `ON CONFLICT DO NOTHING` on unique index guards.
+- **Non-destructive**: no `DROP`, no `TRUNCATE`, no `DELETE`, no `UPDATE` outside guarded backfill blocks.
+- **Type-safe**: `jsonb_typeof(...) = 'array'` guards on every jsonb array read; regex-based integer parsing before `::int` casts.
+- **Scope-limited**: touches only `public.content_titles` and adds `client_draft_id` uniqueness; does not alter auth, storage, or billing objects.
+- **RLS-aware**: privileged-role RLS policies added in the same file so post-backfill reads/writes stay locked down.
+
+### 11.3 Guard test
+- Test file: `src/test/migrations/title-canonical-backfill.test.ts` (already present per prior audit).
+- Coverage claimed: idempotency, jsonb type guards, integer parse guards, client_draft_id uniqueness, RLS role gating.
+- Action for promotion: rerun the guard test in CI on the promotion PR; attach the run URL to the §10 report.
+
+### 11.4 Preflight queries (read-only, to be executed manually via `supabase--read_query` before promotion, not now)
+1. `SELECT count(*) FROM public.content_titles WHERE client_draft_id IS NULL;`
+2. `SELECT count(*) FROM public.content_titles WHERE jsonb_typeof(<jsonb_col>) IS DISTINCT FROM 'array';` for each jsonb column touched.
+3. `SELECT count(*) FROM public.content_titles WHERE <string_int_col> !~ '^-?\d+$';`
+4. `SELECT indexname FROM pg_indexes WHERE tablename = 'content_titles';` — confirm target unique index does not already exist.
+5. `SELECT policyname FROM pg_policies WHERE tablename = 'content_titles';` — confirm no name collision with policies the migration will add.
+
+### 11.5 Rollback notes
+- **Column adds**: reversible via `ALTER TABLE ... DROP COLUMN IF EXISTS client_draft_id;` — safe only if no downstream code depends on it (post-promotion, code will depend on it → rollback becomes a code+DB coordinated revert PR).
+- **Unique index**: reversible via `DROP INDEX IF EXISTS ...;`.
+- **RLS policies**: reversible via `DROP POLICY IF EXISTS ... ON public.content_titles;`.
+- **Backfill data**: not reversible in-place; the pre-backfill values are not preserved. Mitigation: take a logical snapshot of `content_titles` (COPY … TO) immediately before promotion and store it under `ops/backups/` outside the repo.
+- No trigger, function, or grant is added by this migration, so rollback does not need to touch `pg_proc` ACLs.
+
+### 11.6 Explicit non-execution statement
+This addendum performs zero execution:
+- No `supabase--migration` call was made.
+- No `supabase--read_query` / `supabase--insert` call was made.
+- No file under `supabase/migrations/` or `supabase/migrations-pending/` was created, edited, moved, or deleted.
+- No deploy, publish, or CI trigger was initiated.
+
+Promotion of this migration remains gated on: (a) a filled §10 Verification Report, (b) executed preflight queries from §11.4, (c) captured pre-backfill snapshot per §11.5, and (d) explicit approval recorded in the report.

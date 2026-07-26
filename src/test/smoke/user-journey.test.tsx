@@ -195,7 +195,13 @@ vi.mock("@/integrations/supabase/client", () => {
       },
       from: () => makeBuilder(),
       rpc: () => makeBuilder(),
-      channel: () => ({ on: () => ({ subscribe: () => ({ unsubscribe() {} }) }) }),
+      channel: () => {
+        const ch: any = {};
+        ch.on = () => ch;
+        ch.subscribe = () => ch;
+        ch.unsubscribe = () => ch;
+        return ch;
+      },
       removeChannel: () => {},
       functions: { invoke: async () => ({ data: null, error: null }) },
       storage: {

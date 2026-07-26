@@ -100,16 +100,16 @@ describe("Workflow section presence", () => {
             `If the section was intentionally removed, update HOMEPAGE_ROUTES in this test.`,
         ).not.toBeNull();
 
-        // The section must actually contain the pipeline + trust copy,
+        // The section must actually contain the pipeline copy,
         // not just an empty anchor placeholder.
         const text = section?.textContent ?? "";
-        expect(text, "Workflow section should mention 'One pipeline'").toMatch(/one pipeline/i);
-        expect(text, "Workflow section should mention 'Security & Trust'").toMatch(
-          /security\s*&\s*trust/i,
+        expect(text, "Workflow section should mention 'How it works'").toMatch(/how it works/i);
+        expect(text, "Workflow section should mention 'From upload to revenue'").toMatch(
+          /from upload\s*to revenue/i,
         );
 
         // All 5 pipeline stages must be present.
-        for (const stage of ["Ingest", "Store", "Prepare", "Control Access", "License"]) {
+        for (const stage of ["Upload", "Review", "Marketplace", "Buyer", "Revenue"]) {
           expect(text, `Workflow section should mention stage '${stage}'`).toContain(stage);
         }
       });

@@ -30,8 +30,28 @@ const Index = () => {
             "@context": "https://schema.org",
             "@type": "Organization",
             name: "StreamVista",
+            legalName: "STREAMVISTA (OPC) PRIVATE LIMITED",
             alternateName: "StreamVista Global Film Content Network",
             url: "https://streamvista.in/",
+            founder: {
+              "@type": "Person",
+              name: "Abijith Asokan",
+            },
+            foundingLocation: {
+              "@type": "Country",
+              name: "India",
+            },
+            areaServed: "Worldwide",
+            description:
+              "Business-to-business film sales, content licensing and media workflow platform for content owners and professional buyers.",
+            knowsAbout: [
+              "Film sales",
+              "Content licensing",
+              "OTT distribution",
+              "Film rights",
+              "FAST and AVOD distribution",
+              "Media asset workflows",
+            ],
           },
           {
             "@context": "https://schema.org",
@@ -49,8 +69,19 @@ const Index = () => {
             provider: {
               "@type": "Organization",
               name: "StreamVista",
+              legalName: "STREAMVISTA (OPC) PRIVATE LIMITED",
               url: "https://streamvista.in/",
             },
+            audience: [
+              {
+                "@type": "BusinessAudience",
+                audienceType: "Film producers, studios and content owners",
+              },
+              {
+                "@type": "BusinessAudience",
+                audienceType: "OTT platforms, broadcasters, distributors and content buyers",
+              },
+            ],
             areaServed: "Worldwide",
           },
         ]}

@@ -246,6 +246,12 @@ vi.mock("@/components/creator/CreatorTour", () => ({
   hasSeenCreatorTour: () => true,
 }));
 
+// LanguagePicker blocks the dashboard until a language is chosen — skip it in tests.
+vi.mock("@/hooks/useLocale", () => ({
+  useLocale: () => ({ chosen: true, locale: "en", setLocale: () => {} }),
+}));
+vi.mock("@/components/i18n/LanguagePicker", () => ({ default: () => null }));
+
 // AgreementGate stub — calls onAccepted after mount to skip the legal modal
 vi.mock("@/components/legal/AgreementGate", () => ({
   AgreementGate: ({ onAccepted }: { onAccepted: () => void }) => {

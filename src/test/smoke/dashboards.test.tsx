@@ -118,9 +118,9 @@ describe("Admin command bar smoke", () => {
     ];
     wrap(<AdminCommandBar departments={departments} onJump={onJump} />);
     // Trigger button visible
-    expect(screen.getByLabelText(/search admin sections/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/universal search/i)).toBeInTheDocument();
     fireEvent.keyDown(document, { key: "k", metaKey: true });
-    expect(screen.getByPlaceholderText(/search|type/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/try|show|failed uploads/i)).toBeInTheDocument();
     fireEvent.click(screen.getByText(/approvals/i));
     expect(onJump).toHaveBeenCalledWith("operations", "approvals");
   });

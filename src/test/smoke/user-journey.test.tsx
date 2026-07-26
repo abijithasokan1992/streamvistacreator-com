@@ -252,6 +252,24 @@ vi.mock("@/hooks/useLocale", () => ({
 }));
 vi.mock("@/components/i18n/LanguagePicker", () => ({ default: () => null }));
 
+// react-i18next stub — return sensible English fallbacks for the keys the
+// creator dashboard uses so accessible-name assertions match user-visible text.
+vi.mock("react-i18next", () => {
+  const dict: Record<string, string> = {
+    "common.signOut": "Sign out",
+    "common.toggleMenu": "Toggle menu",
+    "creator.header.workspace": "Workspace",
+  };
+  return {
+    useTranslation: () => ({
+      t: (key: string) => dict[key] ?? key,
+      i18n: { language: "en", changeLanguage: async () => {} },
+    }),
+    Trans: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+    initReactI18next: { type: "3rdParty", init: () => {} },
+  };
+});
+
 // AgreementGate stub — calls onAccepted after mount to skip the legal modal
 vi.mock("@/components/legal/AgreementGate", () => ({
   AgreementGate: ({ onAccepted }: { onAccepted: () => void }) => {

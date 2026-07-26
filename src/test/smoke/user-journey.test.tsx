@@ -144,7 +144,7 @@ vi.mock("@/hooks/useAuth", () => ({
 vi.mock("@/lib/creator/titleApi", () => ({
   fetchFreeTierStatus: mockFetchFreeTierStatus,
   listTitles: mockListTitles,
-  listTitlesPage: mockListTitles,
+  listTitlesPage: vi.fn(async () => ({ rows: [], hasMore: false })),
   createTitle: mockCreateTitle,
   findFirstActiveDraft: vi.fn(async () => null),
   getTitle: mockGetTitle,

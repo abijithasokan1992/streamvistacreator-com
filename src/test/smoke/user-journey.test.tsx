@@ -694,13 +694,13 @@ describe("Stop 6 — Submit title to Admin", () => {
     await screen.findByTestId("title-editor");
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /submit to admin/i })).toBeEnabled();
+      expect(screen.getAllByRole("button", { name: /submit for review/i })[0]).toBeEnabled();
     });
 
-    fireEvent.click(screen.getByRole("button", { name: /submit to admin/i }));
+    fireEvent.click(screen.getAllByRole("button", { name: /submit for review/i })[0]);
 
     await waitFor(() => {
-      expect(mockToastSuccess).toHaveBeenCalledWith("Submitted to Admin.");
+      expect(mockToastSuccess).toHaveBeenCalledWith("Submitted for review.");
     });
     expect(mockToastError).not.toHaveBeenCalled();
     expect(mockSubmitTitle).toHaveBeenCalledWith("title-1");

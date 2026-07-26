@@ -304,12 +304,12 @@ describe("Stop 1 — Home page", () => {
 
   it("renders the brand wordmark in the navbar", () => {
     renderAt("/", <Navbar />);
-    expect(screen.getByLabelText(/streamvista cloud x home/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/streamvista home/i)).toBeInTheDocument();
   });
 
   it("navbar exposes a Login link pointing to /auth", () => {
     renderAt("/", <Navbar />);
-    const loginLink = screen.getByRole("link", { name: /^login$/i });
+    const loginLink = screen.getByRole("link", { name: /log in to streamvista/i });
     expect(loginLink).toHaveAttribute("href", "/auth");
   });
 

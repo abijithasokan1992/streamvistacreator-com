@@ -144,6 +144,7 @@ vi.mock("@/hooks/useAuth", () => ({
 vi.mock("@/lib/creator/titleApi", () => ({
   fetchFreeTierStatus: mockFetchFreeTierStatus,
   listTitles: mockListTitles,
+  listTitlesPage: vi.fn(async () => ({ rows: [], hasMore: false })),
   createTitle: mockCreateTitle,
   findFirstActiveDraft: vi.fn(async () => null),
   getTitle: mockGetTitle,
@@ -194,7 +195,13 @@ vi.mock("@/integrations/supabase/client", () => {
       },
       from: () => makeBuilder(),
       rpc: () => makeBuilder(),
-      channel: () => ({ on: () => ({ subscribe: () => ({ unsubscribe() {} }) }) }),
+      channel: () => {
+        const ch: any = {};
+        ch.on = () => ch;
+        ch.subscribe = () => ch;
+        ch.unsubscribe = () => ch;
+        return ch;
+      },
       removeChannel: () => {},
       functions: { invoke: async () => ({ data: null, error: null }) },
       storage: {
@@ -238,6 +245,30 @@ vi.mock("@/components/creator/CreatorTour", () => ({
   default: () => null,
   hasSeenCreatorTour: () => true,
 }));
+
+// LanguagePicker blocks the dashboard until a language is chosen — skip it in tests.
+vi.mock("@/hooks/useLocale", () => ({
+  useLocale: () => ({ chosen: true, locale: "en", setLocale: () => {} }),
+}));
+vi.mock("@/components/i18n/LanguagePicker", () => ({ default: () => null }));
+
+// react-i18next stub — return sensible English fallbacks for the keys the
+// creator dashboard uses so accessible-name assertions match user-visible text.
+vi.mock("react-i18next", () => {
+  const dict: Record<string, string> = {
+    "common.signOut": "Sign out",
+    "common.toggleMenu": "Toggle menu",
+    "creator.header.workspace": "Workspace",
+  };
+  return {
+    useTranslation: () => ({
+      t: (key: string) => dict[key] ?? key,
+      i18n: { language: "en", changeLanguage: async () => {} },
+    }),
+    Trans: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+    initReactI18next: { type: "3rdParty", init: () => {} },
+  };
+});
 
 // AgreementGate stub — calls onAccepted after mount to skip the legal modal
 vi.mock("@/components/legal/AgreementGate", () => ({
@@ -297,12 +328,12 @@ describe("Stop 1 — Home page", () => {
 
   it("renders the brand wordmark in the navbar", () => {
     renderAt("/", <Navbar />);
-    expect(screen.getByLabelText(/streamvista cloud x home/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/streamvista home/i)).toBeInTheDocument();
   });
 
   it("navbar exposes a Login link pointing to /auth", () => {
     renderAt("/", <Navbar />);
-    const loginLink = screen.getByRole("link", { name: /^login$/i });
+    const loginLink = screen.getByRole("link", { name: /log in to streamvista/i });
     expect(loginLink).toHaveAttribute("href", "/auth");
   });
 
@@ -672,28 +703,28 @@ describe("Stop 6 — Submit title to Admin", () => {
 
   it("title card shows an Edit button when the title is not locked", async () => {
     render(<MemoryRouter><MyTitlesSection /></MemoryRouter>);
-    expect(await screen.findByRole("button", { name: /^edit$/i })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /^edit /i })).toBeInTheDocument();
   });
 
   it("clicking Edit opens TitleEditor for that title", async () => {
     render(<MemoryRouter><MyTitlesSection /></MemoryRouter>);
-    fireEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /^edit /i }));
     expect(await screen.findByTestId("title-editor")).toBeInTheDocument();
   });
 
   it("submits successfully with only a trailer attached and no main film", async () => {
     render(<MemoryRouter><MyTitlesSection /></MemoryRouter>);
-    fireEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /^edit /i }));
     await screen.findByTestId("title-editor");
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /submit to admin/i })).toBeEnabled();
+      expect(screen.getAllByRole("button", { name: /submit for review/i })[0]).toBeEnabled();
     });
 
-    fireEvent.click(screen.getByRole("button", { name: /submit to admin/i }));
+    fireEvent.click(screen.getAllByRole("button", { name: /submit for review/i })[0]);
 
     await waitFor(() => {
-      expect(mockToastSuccess).toHaveBeenCalledWith("Submitted to Admin.");
+      expect(mockToastSuccess).toHaveBeenCalledWith("Submitted for review.");
     });
     expect(mockToastError).not.toHaveBeenCalled();
     expect(mockSubmitTitle).toHaveBeenCalledWith("title-1");

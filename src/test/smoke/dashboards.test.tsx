@@ -40,11 +40,11 @@ describe("Creator dashboard smoke", () => {
       />,
     );
     expect(screen.getByText(/creator tools/i)).toBeInTheDocument();
-    fireEvent.click(screen.getByText(/new title wizard/i));
+    fireEvent.click(screen.getByText(/^new title$/i));
     expect(onNavigate).toHaveBeenCalledWith("titles");
     // Readiness drawer opens
-    fireEvent.click(screen.getByText(/submission readiness/i));
-    expect(screen.getAllByText(/submission readiness/i).length).toBeGreaterThan(1);
+    fireEvent.click(screen.getByText(/ready to submit/i));
+    expect(screen.getAllByText(/ready to submit/i).length).toBeGreaterThan(1);
   });
 });
 
@@ -118,9 +118,9 @@ describe("Admin command bar smoke", () => {
     ];
     wrap(<AdminCommandBar departments={departments} onJump={onJump} />);
     // Trigger button visible
-    expect(screen.getByLabelText(/search admin sections/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/universal search/i)).toBeInTheDocument();
     fireEvent.keyDown(document, { key: "k", metaKey: true });
-    expect(screen.getByPlaceholderText(/search|type/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/try|show|failed uploads/i)).toBeInTheDocument();
     fireEvent.click(screen.getByText(/approvals/i));
     expect(onJump).toHaveBeenCalledWith("operations", "approvals");
   });

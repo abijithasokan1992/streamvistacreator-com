@@ -140,12 +140,14 @@ describe("pending migration guardrails (static)", () => {
     expect(sql).toMatch(/CREATE UNIQUE INDEX IF NOT EXISTS/);
     expect(sql).not.toMatch(/\bDROP\s+(TABLE|COLUMN)\b/i);
   });
-  it("has RLS covering the 4 privileged roles and no INSERT/DELETE for authenticated", () => {
+  it("has RLS covering the 4 privileged roles", () => {
     for (const role of ["admin", "super_admin", "platform_owner", "founder"]) {
       expect(sql).toContain(role);
     }
     expect(sql).toMatch(/ENABLE ROW LEVEL SECURITY/);
-    expect(sql).not.toMatch(/FOR (INSERT|DELETE) TO authenticated/i);
+    // Authenticated users may INSERT their own revenue_imports/lines rows;
+    // DELETE remains restricted to privileged roles.
+    expect(sql).not.toMatch(/FOR DELETE TO authenticated/i);
   });
   it("bounds share_rate to 0..1", () => {
     expect(sql).toMatch(/share_rate\s*>=\s*0/);

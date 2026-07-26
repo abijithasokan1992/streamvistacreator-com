@@ -679,18 +679,18 @@ describe("Stop 6 — Submit title to Admin", () => {
 
   it("title card shows an Edit button when the title is not locked", async () => {
     render(<MemoryRouter><MyTitlesSection /></MemoryRouter>);
-    expect(await screen.findByRole("button", { name: /^edit$/i })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /^edit /i })).toBeInTheDocument();
   });
 
   it("clicking Edit opens TitleEditor for that title", async () => {
     render(<MemoryRouter><MyTitlesSection /></MemoryRouter>);
-    fireEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /^edit /i }));
     expect(await screen.findByTestId("title-editor")).toBeInTheDocument();
   });
 
   it("submits successfully with only a trailer attached and no main film", async () => {
     render(<MemoryRouter><MyTitlesSection /></MemoryRouter>);
-    fireEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /^edit /i }));
     await screen.findByTestId("title-editor");
 
     await waitFor(() => {

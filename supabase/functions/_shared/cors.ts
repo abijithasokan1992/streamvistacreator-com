@@ -9,7 +9,14 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const FORBIDDEN_HOST_SUFFIXES = [".lovableproject.com", ".lovable.dev"];
+// Lovable preview/sandbox hosts (per-project sandboxed URLs) are allowed so
+// admins can operate the app from the preview iframe in Edge/Chrome/etc.
+// Production origins are still enforced via the site_config allow-list.
+const ALLOWED_HOST_SUFFIXES = [
+  ".lovableproject.com",
+  ".lovable.app",
+  ".lovable.dev",
+];
 
 function parseEnvList(): string[] {
   const raw = Deno.env.get("SITE_ORIGIN") ?? "";

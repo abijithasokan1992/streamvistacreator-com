@@ -224,12 +224,26 @@ export default function IntelligenceCenter() {
         body: { lane: lane.id, query, limit: 5 },
       });
       if (error) throw new Error(error.message);
-      if ((data as { error?: string })?.error === "firecrawl_not_connected") {
+      // intelligence-agent returns HTTP 200 with a structured `{ error, ... }`
+      // envelope for every upstream failure (see supabase/functions/intelligence-agent).
+      // Surface every distinct code so operators aren't left staring at
+      // "no results".
+      const errCode = (data as { error?: string })?.error;
+      if (errCode) {
+        const messageMap: Record<string, string> = {
+          firecrawl_not_connected: "Firecrawl not connected. Link it in Settings → Integrations.",
+          firecrawl_auth_failed: "Firecrawl API key rejected (check FIRECRAWL_API_KEY).",
+          search_failed: "Upstream search failed. Try again in a moment.",
+          internal_error: "Intelligence agent hit an internal error.",
+        };
+        const upstream = (data as { upstream_message?: string })?.upstream_message;
+        const friendly = messageMap[errCode] ?? errCode;
+        const msg = upstream ? `${friendly} (${upstream})` : friendly;
         setState((s) => ({
           ...s,
-          [lane.id]: { ...s[lane.id], structuredLoading: false, structuredError: "Firecrawl not connected." },
+          [lane.id]: { ...s[lane.id], structuredLoading: false, structuredError: msg },
         }));
-        toast.error("Firecrawl not connected. Link it in Settings → Integrations.");
+        toast.error(`${lane.label}: ${msg}`);
         return;
       }
       const structured = data as StructuredLaneData;

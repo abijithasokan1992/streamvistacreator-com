@@ -232,9 +232,23 @@ function TitleCommercialDialog({
 
   const initialStatus = initialProfile?.commercial_status ?? "not_open";
   const initialPublished = initialProfile?.published_to_buyers ?? false;
+  const initialFlags = {
+    available_for_screeners: initialProfile?.available_for_screeners ?? false,
+    available_for_nonexclusive_license: initialProfile?.available_for_nonexclusive_license ?? false,
+    available_for_exclusive_license: initialProfile?.available_for_exclusive_license ?? false,
+    available_for_acquisition: initialProfile?.available_for_acquisition ?? false,
+    available_for_distribution_partnership: initialProfile?.available_for_distribution_partnership ?? false,
+  };
+  const flagsChanged =
+    profile.available_for_screeners !== initialFlags.available_for_screeners ||
+    profile.available_for_nonexclusive_license !== initialFlags.available_for_nonexclusive_license ||
+    profile.available_for_exclusive_license !== initialFlags.available_for_exclusive_license ||
+    profile.available_for_acquisition !== initialFlags.available_for_acquisition ||
+    profile.available_for_distribution_partnership !== initialFlags.available_for_distribution_partnership;
   const stateChanged =
     profile.commercial_status !== initialStatus ||
-    profile.published_to_buyers !== initialPublished;
+    profile.published_to_buyers !== initialPublished ||
+    flagsChanged;
 
   const [rights, setRights] = useState<Rights[]>([]);
   const [deals, setDeals] = useState<Deal[]>([]);
@@ -258,31 +272,47 @@ function TitleCommercialDialog({
 
   const saveProfile = async () => {
     if (stateChanged && stateReason.trim().length < 4) {
-      return toast.error("Enter an audit reason (min 4 chars) before changing commercial state.");
+      return toast.error("Enter an audit reason (min 4 chars) before changing commercial state or availability.");
     }
     setSavingProfile(true);
-    // Route state/visibility changes through the audited admin RPC first.
+    // Route commercial state, publication flag and all five availability flags
+    // through the audited admin RPC. Do NOT upsert these fields client-side.
     if (stateChanged) {
       const { error: sErr } = await (supabase as any).rpc("admin_set_title_commercial_state", {
         _title_id: title.id,
         _new_status: profile.commercial_status,
         _published_to_buyers: profile.published_to_buyers,
+        _available_for_screeners: profile.available_for_screeners,
+        _available_for_nonexclusive_license: profile.available_for_nonexclusive_license,
+        _available_for_exclusive_license: profile.available_for_exclusive_license,
+        _available_for_acquisition: profile.available_for_acquisition,
+        _available_for_distribution_partnership: profile.available_for_distribution_partnership,
         _reason: stateReason.trim(),
       });
       if (sErr) { setSavingProfile(false); return toast.error(sErr.message); }
     }
-    // Admin-only internal notes are stored in a separate admin table; split them off here.
-    const { admin_internal_notes, ...profilePayload } = profile as Profile & { admin_internal_notes?: string | null };
+    // Non-sensitive descriptive fields only. Sensitive commercial fields
+    // (status, published_to_buyers, available_for_*) are intentionally excluded —
+    // they are owned by the RPC above.
+    const descriptivePayload = {
+      title_id: profile.title_id,
+      owner_user_id: profile.owner_user_id,
+      rights_status_summary: profile.rights_status_summary,
+      legal_clearance_summary: profile.legal_clearance_summary,
+      delivery_readiness_summary: profile.delivery_readiness_summary,
+      chain_of_title_notes: profile.chain_of_title_notes,
+      buyer_facing_summary: profile.buyer_facing_summary,
+    };
     const { data: upserted, error } = await (supabase as any)
       .from("title_commercial_profiles")
-      .upsert(profilePayload, { onConflict: "title_id" })
+      .upsert(descriptivePayload, { onConflict: "title_id" })
       .select("id")
       .maybeSingle();
     if (error) { setSavingProfile(false); return toast.error(error.message); }
     if (upserted?.id) {
       const { error: nerr } = await (supabase as any).rpc("admin_tcp_set_internal_notes", {
         _profile_id: upserted.id,
-        _notes: admin_internal_notes ?? null,
+        _notes: profile.admin_internal_notes ?? null,
       });
       if (nerr) { setSavingProfile(false); return toast.error(nerr.message); }
     }
@@ -291,6 +321,7 @@ function TitleCommercialDialog({
     toast.success("Commercial profile saved");
     onSaved();
   };
+
 
 
   return (

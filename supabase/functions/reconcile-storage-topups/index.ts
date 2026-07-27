@@ -22,46 +22,22 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-type Action = "mark_paid" | "mark_failed" | "cancel";
-const ALLOWED_ACTIONS: Action[] = ["mark_paid", "mark_failed", "cancel"];
+import {
+  validateReconcilePayload,
+  type ReconcileAction,
+  type ReconcileActionItem,
+} from "./validate.ts";
+
 const ADMIN_ROLES = ["admin", "super_admin", "platform_owner", "founder"] as const;
 
-interface ActionItem {
-  topup_id: string;
-  action: Action;
-  reason: string;
-}
+type Action = ReconcileAction;
+type ActionItem = ReconcileActionItem;
 
 interface RowResult {
   topup_id: string;
   status: "ok" | "skipped" | "error";
   message: string;
   action?: Action;
-}
-
-function validatePayload(body: unknown): { actions: ActionItem[] } | { error: string } {
-  if (!body || typeof body !== "object") return { error: "Invalid body" };
-  const actions = (body as any).actions;
-  if (!Array.isArray(actions) || actions.length === 0) {
-    return { error: "actions array required" };
-  }
-  if (actions.length > 100) return { error: "Too many actions (max 100)" };
-  const out: ActionItem[] = [];
-  for (const a of actions) {
-    if (!a || typeof a !== "object") return { error: "Invalid action entry" };
-    const { topup_id, action, reason } = a;
-    if (typeof topup_id !== "string" || topup_id.length < 8) {
-      return { error: "topup_id must be a uuid string" };
-    }
-    if (!ALLOWED_ACTIONS.includes(action)) {
-      return { error: `action must be one of ${ALLOWED_ACTIONS.join(", ")}` };
-    }
-    if (typeof reason !== "string" || reason.trim().length < 5) {
-      return { error: "reason must be at least 5 characters" };
-    }
-    out.push({ topup_id, action, reason: reason.trim() });
-  }
-  return { actions: out };
 }
 
 async function fetchRazorpayOrder(orderId: string, keyId: string, keySecret: string) {

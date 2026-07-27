@@ -73,15 +73,26 @@ export default function SubmitContent() {
         `Contact Number: ${parsed.data.contactNumber}`,
       ].join("\n");
 
+      // contact_messages.email is NOT NULL with length 3..255. The public
+      // submission form does not collect an email address; use a stable
+      // synthetic address derived from the contact number so admins can
+      // still triage the row. If the user is signed in we also stamp
+      // user_id so RLS-owner rules apply.
+      const { data: authData } = await supabase.auth.getUser();
+      const authedUserId = authData?.user?.id ?? null;
+      const authedEmail = authData?.user?.email ?? null;
+      const digits = parsed.data.contactNumber.replace(/\D+/g, "").slice(0, 15) || "unknown";
+      const syntheticEmail = authedEmail ?? `submission+${digits}@public.streamvista.in`;
+
       const { error } = await supabase.from("contact_messages").insert({
         name: parsed.data.rightsOwner,
-        email: null,
+        email: syntheticEmail,
         company: null,
         role: "Content rights owner",
         message,
         source: "public_content_submission:whatsapp_onboarding",
         user_agent: navigator.userAgent.slice(0, 500),
-        user_id: null,
+        user_id: authedUserId,
       });
 
       if (error) throw error;
@@ -93,8 +104,8 @@ export default function SubmitContent() {
             recipientEmail: "support@streamvista.in",
             idempotencyKey: `content-submission-${Date.now()}`,
             templateData: {
-              userEmail: "Public submission",
-              userId: "anonymous",
+              userEmail: authedEmail ?? "Public submission",
+              userId: authedUserId ?? "anonymous",
               severity: "info",
               title: `New content submission · ${parsed.data.title}`,
               message,
@@ -110,9 +121,11 @@ export default function SubmitContent() {
       setForm(initialForm);
       toast({ title: "Submission received", description: "StreamVista will contact you after review." });
     } catch (error: any) {
+      // Surface the real DB error so backend problems aren't hidden.
+      const raw = error?.message ?? "Please try again.";
       toast({
         title: "Submission failed",
-        description: error?.message ?? "Please try again.",
+        description: raw,
         variant: "destructive",
       });
     } finally {

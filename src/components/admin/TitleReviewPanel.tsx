@@ -134,8 +134,13 @@ export default function TitleReviewPanel({ titleId, currentStatus, onChanged }: 
   // Executive dispositions
   const passToLegal = async () => {
     setBusy("disposition:pass");
+    // RPC signature is transition_title_status(_title_id uuid, _to_status text, _note text)
+    // (see migrations 20260619194714 / 20260620064130). Using the correct
+    // parameter names is mandatory — PostgREST rejects unknown args.
     const { error } = await (supabase as any).rpc("transition_title_status", {
-      _title_id: titleId, _target_status: "legal_review",
+      _title_id: titleId,
+      _to_status: "legal_review",
+      _note: null,
     });
     setBusy(null);
     if (error) { toast.error(error.message); return; }

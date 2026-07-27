@@ -38,6 +38,15 @@ export function CreatorRevenueSummary({ titleIds, limit = 50 }: Props) {
     let cancelled = false;
     (async () => {
       setLoading(true);
+      // Workspace isolation: if the caller provides `titleIds` (even empty),
+      // we scope strictly to that set. An empty array means "no owned titles
+      // in this workspace" and MUST resolve to zero rows — never fall back to
+      // an unscoped select that would leak across workspaces.
+      if (titleIds && titleIds.length === 0) {
+        setRows([]);
+        setLoading(false);
+        return;
+      }
       let q = supabase
         .from("revenue_lines")
         .select("id,title_id,partner_id,gross_amount_paise,net_amount_paise,platform_fee_paise,occurred_on,currency,metadata")

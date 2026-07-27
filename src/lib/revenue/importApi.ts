@@ -13,6 +13,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import type { NormalizationResult, NormalizedRevenueRow } from "./normalize";
+import type { RowMapping } from "./mapping";
 
 export class DatabasePendingError extends Error {
   constructor(msg = "Revenue tables not available on this environment") {
@@ -39,6 +40,14 @@ export interface PersistStatementInput {
   periodEnd: string | null;
   notes: string | null;
   normalization: NormalizationResult;
+  /**
+   * Admin-confirmed row-to-title mappings from the mapping step. When
+   * provided, each persisted `revenue_lines` row inherits its `title_id`,
+   * `partner_id`, and `metadata.workspace_id` from the mapping keyed by
+   * `rowKey`. Rows with no mapping are still inserted (title_id=null) so
+   * admins can complete the mapping later.
+   */
+  mappings?: RowMapping[];
 }
 
 export async function persistStatement(input: PersistStatementInput): Promise<{ importId: string; inserted: number; skipped: number }> {
@@ -82,9 +91,14 @@ export async function persistStatement(input: PersistStatementInput): Promise<{ 
     throw impErr;
   }
 
+  const mappingByRowKey = new Map<string, RowMapping>();
+  for (const m of input.mappings ?? []) {
+    if (m?.rowKey) mappingByRowKey.set(m.rowKey, m);
+  }
+
   const payload = input.normalization.rows
     .filter((r) => r.errors.length === 0)
-    .map((r) => toRevenueLineRow(imp.id, r, input));
+    .map((r) => toRevenueLineRow(imp.id, r, input, mappingByRowKey.get(r.rowKey) ?? null));
 
   if (!payload.length) return { importId: imp.id, inserted: 0, skipped: input.normalization.rows.length };
 
@@ -97,10 +111,15 @@ export async function persistStatement(input: PersistStatementInput): Promise<{ 
   return { importId: imp.id, inserted: payload.length, skipped: input.normalization.totals.errorRowCount };
 }
 
-function toRevenueLineRow(importId: string, r: NormalizedRevenueRow, input: PersistStatementInput) {
+function toRevenueLineRow(
+  importId: string,
+  r: NormalizedRevenueRow,
+  input: PersistStatementInput,
+  mapping: RowMapping | null,
+) {
   return {
     import_id: importId,
-    title_id: null, // mapping stage will patch this after admin confirms the buyer/title
+    title_id: mapping?.titleId ?? null,
     partner_id: input.partnerId,
     territory: r.territory,
     channel: r.channel,
@@ -115,7 +134,10 @@ function toRevenueLineRow(importId: string, r: NormalizedRevenueRow, input: Pers
       statement_key: input.normalization.statementKey,
       source_type: input.sourceType,
       source_statement_id: input.sourceStatementId,
-      workspace_id: input.workspaceId,
+      workspace_id: mapping?.workspaceId ?? input.workspaceId,
+      deal_memo_id: mapping?.dealMemoId ?? null,
+      buyer_user_id: mapping?.buyerUserId ?? null,
+      mapping_status: mapping?.status ?? "unmapped",
       title_external_ref: r.titleExternalRef,
       model: r.model,
       tax_paise: r.taxMinor,

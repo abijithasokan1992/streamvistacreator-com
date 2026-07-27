@@ -60,13 +60,18 @@ export default function StatementsSection() {
   }, [user?.id]);
 
   // Load titleIds scoped to the active workspace so Revenue tab never leaks
-  // across workspaces. Falls back to owner_id when workspace column absent.
+  // across workspaces. Column is `owner_user_id` (see supabase types).
   useEffect(() => {
     if (!user) { setTitleIds([]); return; }
     (async () => {
-      let q = (supabase as any).from("content_titles").select("id").eq("owner_id", user.id);
+      let q = (supabase as any).from("content_titles").select("id").eq("owner_user_id", user.id);
       if (active?.id) q = q.eq("workspace_id", active.id);
-      const { data } = await q.limit(500);
+      const { data, error } = await q.limit(500);
+      if (error) {
+        // Fail closed — never show unscoped revenue.
+        setTitleIds([]);
+        return;
+      }
       setTitleIds((data ?? []).map((r: any) => r.id).filter(Boolean));
     })();
   }, [user?.id, active?.id]);
@@ -91,7 +96,9 @@ export default function StatementsSection() {
       </div>
 
       {tab === "revenue" && (
-        <CreatorRevenueSummary titleIds={titleIds.length ? titleIds : undefined} />
+        // Always pass explicit titleIds (possibly []) so CreatorRevenueSummary
+        // NEVER falls back to an unscoped query that could leak workspaces.
+        <CreatorRevenueSummary titleIds={titleIds} />
       )}
 
       {tab === "billing" && (<>

@@ -638,6 +638,7 @@ function AccountsRoom() {
         <AccountTile to="/admin?dept=business&section=revenue-statements" title="Revenue Statements" desc="Import & map buyer statements" />
         <AccountTile to="/admin?dept=business&section=vault" title="Vault Purchases" desc="Studio vault revenue" />
       </div>
+      <StorageTopupsReconciler />
     </div>
   );
 }

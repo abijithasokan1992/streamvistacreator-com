@@ -111,8 +111,21 @@ export default function EmailRetryAuditPanel() {
           const audit = row.details?.audit;
           const reconciled = row.details?.reconciled;
           const summary = row.details?.summary ?? {};
-          const passed = audit?.passed === true;
+          const persistError = row.details?.audit_persist_error;
+          // Distinct semantics:
+          //  - stuckMessages: queue still has pending rows after the sweep
+          //  - auditPersistFailed: audit itself couldn't be written / probed
+          const auditPresent = !!audit;
+          const stuckMessages = auditPresent && audit!.passed !== true;
           const pending = audit?.pending_remaining ?? 0;
+          const auditPersistFailed = !!persistError || !!audit?.error;
+          const overallPassed = auditPresent && audit!.passed === true && !auditPersistFailed;
+          const badge = overallPassed
+            ? { cls: "border-emerald-500/30 bg-emerald-500/15 text-emerald-300", label: "Passed", Icon: CheckCircle2 }
+            : stuckMessages
+              ? { cls: "border-red-500/30 bg-red-500/15 text-red-300", label: `Stuck (${pending})`, Icon: XCircle }
+              : { cls: "border-amber-500/30 bg-amber-500/15 text-amber-300", label: "Audit degraded", Icon: XCircle };
+          const BadgeIcon = badge.Icon;
           return (
             <li
               key={row.id}
@@ -120,21 +133,16 @@ export default function EmailRetryAuditPanel() {
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  {passed ? (
-                    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2 py-0.5 text-emerald-300">
-                      <CheckCircle2 className="w-3 h-3" /> Passed
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 rounded-full border border-red-500/30 bg-red-500/15 px-2 py-0.5 text-red-300">
-                      <XCircle className="w-3 h-3" /> Failed
-                    </span>
-                  )}
+                  <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 ${badge.cls}`}>
+                    <BadgeIcon className="w-3 h-3" /> {badge.label}
+                  </span>
                   <span className="text-muted-foreground">
                     {new Date(row.created_at).toLocaleString()}
                   </span>
                 </div>
                 <span className="tabular-nums text-muted-foreground">
-                  pending remaining: <strong className={passed ? "text-emerald-300" : "text-red-300"}>{pending}</strong>
+                  pending remaining:{" "}
+                  <strong className={stuckMessages ? "text-red-300" : "text-emerald-300"}>{pending}</strong>
                 </span>
               </div>
               <div className="mt-1.5 grid grid-cols-2 gap-x-4 gap-y-0.5 text-[11px] text-muted-foreground sm:grid-cols-4">
@@ -151,7 +159,10 @@ export default function EmailRetryAuditPanel() {
                 )}
               </div>
               {audit?.error && (
-                <p className="mt-1 text-[11px] text-red-300">audit error: {audit.error}</p>
+                <p className="mt-1 text-[11px] text-amber-300">audit probe error: {audit.error}</p>
+              )}
+              {persistError && (
+                <p className="mt-1 text-[11px] text-amber-300">audit persistence failed: {persistError}</p>
               )}
             </li>
           );

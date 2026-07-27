@@ -150,9 +150,12 @@ describe("P0-E DIT Ingest Protocol", () => {
     expect(guardBlock).toMatch(/return;/);
   });
 
-  it("passes the REAL storage path (no pending-local:// sentinel)", () => {
-    expect(src).not.toMatch(/pending-local:\/\//);
+  it("passes the REAL storage path on write (no pending-local:// sentinel written)", () => {
+    // History rendering still tolerates old rows containing the sentinel, but
+    // the write path must ONLY persist a real storage path.
     expect(src).toMatch(/screenshot_url:\s*path/);
+    expect(src).not.toMatch(/screenshot_url:\s*["'`]pending-local:\/\//);
+    expect(src).not.toMatch(/insert\([^)]*pending-local/);
   });
 
   it("communicates local-draft state honestly (not as submitted)", () => {

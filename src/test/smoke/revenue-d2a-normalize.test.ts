@@ -119,8 +119,8 @@ describe("workspace / no-write fallback (static)", () => {
     expect(importApi).toMatch(/class DatabasePendingError/);
     expect(importApi).toMatch(/StatementAlreadyImportedError/);
   });
-  it("stores workspace_id in metadata until migration lands", () => {
-    expect(importApi).toMatch(/workspace_id:\s*input\.workspaceId/);
+  it("stores workspace_id in metadata (from mapping when present, else input) until migration lands", () => {
+    expect(importApi).toMatch(/workspace_id:\s*mapping\?\.workspaceId\s*\?\?\s*input\.workspaceId/);
   });
   it("never silently overwrites existing statements", () => {
     expect(importApi).toMatch(/statementKey/);

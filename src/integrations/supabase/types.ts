@@ -12068,6 +12068,28 @@ export type Database = {
         Args: { _topup_id: string }
         Returns: string
       }
+      buyer_list_marketplace_titles: {
+        Args: never
+        Returns: {
+          acquisition_available: boolean
+          buyer_facing_summary: string
+          commercial_status: Database["public"]["Enums"]["title_commercial_status"]
+          distribution_partnership_available: boolean
+          duration_minutes: number
+          genre: string
+          id: string
+          kind: Database["public"]["Enums"]["title_kind"]
+          language: string
+          licensing_exclusive_available: boolean
+          licensing_nonexclusive_available: boolean
+          metadata_year: number
+          poster_url: string
+          screener_available: boolean
+          synopsis: string
+          title: string
+          updated_at: string
+        }[]
+      }
       can_edit_entity_profile: {
         Args: { _kind: string; _org_id: string; _user_id: string }
         Returns: boolean

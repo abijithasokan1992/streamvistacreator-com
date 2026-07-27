@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { logCheckoutTelemetry } from "@/lib/paymentTelemetry";
 
 /**
  * Sprint 1 commercial lockdown.
@@ -19,6 +20,15 @@ export default function CheckoutStorage() {
 
   useEffect(() => {
     document.title = "Storage add-on — StreamVista";
+    // Legacy-link visit telemetry: measure traffic before eventual route removal.
+    logCheckoutTelemetry({
+      action_type: "legacy.checkout_storage_visit",
+      severity: "INFO",
+      extra: {
+        referrer: typeof document !== "undefined" ? document.referrer || null : null,
+        search: typeof window !== "undefined" ? window.location.search || null : null,
+      },
+    });
   }, []);
 
   if (loading) {

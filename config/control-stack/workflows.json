@@ -1,0 +1,99 @@
+{
+  "version": "1.0.0",
+  "transitionPolicy": {
+    "default": "deny",
+    "requireActorPermission": true,
+    "requireCurrentStateMatch": true,
+    "requireEvidence": true,
+    "requireAuditEvent": true,
+    "requireIdempotencyKeyForWrites": true,
+    "rejectUnknownTransitions": true
+  },
+  "workflows": {
+    "creatorTitle": {
+      "actors": ["creator", "admin", "platform_owner"],
+      "initial": "draft",
+      "terminal": ["ready_for_distribution"],
+      "transitions": [
+        {"from":"draft","to":"metadata_in_progress","by":["creator"],"requires":["owner_match"]},
+        {"from":"metadata_in_progress","to":"assets_in_progress","by":["creator"],"requires":["minimum_metadata_complete"]},
+        {"from":"assets_in_progress","to":"rights_documents_in_progress","by":["creator"],"requires":["required_assets_present"]},
+        {"from":"rights_documents_in_progress","to":"submitted","by":["creator"],"requires":["submission_checklist_complete"]},
+        {"from":"changes_requested","to":"submitted","by":["creator"],"requires":["requested_changes_addressed"]}
+      ]
+    },
+    "adminReview": {
+      "actors": ["admin", "platform_owner", "qc", "legal"],
+      "initial": "submitted",
+      "terminal": ["ready_for_distribution"],
+      "transitions": [
+        {"from":"submitted","to":"admin_intake_review","by":["admin","platform_owner"],"requires":["submission_snapshot"]},
+        {"from":"admin_intake_review","to":"metadata_review","by":["admin","platform_owner"],"requires":["intake_passed"]},
+        {"from":"metadata_review","to":"technical_qc_review","by":["admin","platform_owner"],"requires":["metadata_passed"]},
+        {"from":"technical_qc_review","to":"rights_legal_review","by":["qc","admin","platform_owner"],"requires":["qc_passed"]},
+        {"from":"rights_legal_review","to":"approved","by":["legal","admin","platform_owner"],"requires":["legal_passed","rights_verified"]},
+        {"from":"approved","to":"ready_for_distribution","by":["admin","platform_owner"],"requires":["commercial_profile_complete","marketplace_package_valid"]},
+        {"from":"admin_intake_review","to":"changes_requested","by":["admin","platform_owner"],"requires":["review_notes"]},
+        {"from":"metadata_review","to":"changes_requested","by":["admin","platform_owner"],"requires":["review_notes"]},
+        {"from":"technical_qc_review","to":"changes_requested","by":["qc","admin","platform_owner"],"requires":["qc_findings"]},
+        {"from":"rights_legal_review","to":"changes_requested","by":["legal","admin","platform_owner"],"requires":["legal_findings"]}
+      ]
+    },
+    "buyerDiscovery": {
+      "actors": ["buyer", "admin", "platform_owner"],
+      "initial": "buyer_verified",
+      "terminal": ["feedback_or_enquiry"],
+      "transitions": [
+        {"from":"buyer_verified","to":"catalogue_eligible","by":["admin","platform_owner"],"requires":["organization_verified","buyer_entitlement"]},
+        {"from":"catalogue_eligible","to":"title_viewed","by":["buyer"],"requires":["title_marketplace_eligible"]},
+        {"from":"title_viewed","to":"expression_of_interest","by":["buyer"],"requires":["buyer_identity"]},
+        {"from":"expression_of_interest","to":"screener_requested","by":["buyer"],"requires":["request_reason"]},
+        {"from":"screener_requested","to":"admin_review","by":["admin","platform_owner"],"requires":["request_snapshot"]},
+        {"from":"admin_review","to":"screener_approved","by":["admin","platform_owner"],"requires":["rights_match","buyer_match"]},
+        {"from":"screener_approved","to":"secure_access_active","by":["admin","platform_owner"],"requires":["expiring_access_token"]},
+        {"from":"secure_access_active","to":"screener_viewed","by":["buyer"],"requires":["valid_access"]},
+        {"from":"screener_viewed","to":"feedback_or_enquiry","by":["buyer"],"requires":["interaction_audited"]}
+      ]
+    },
+    "dealAgreement": {
+      "actors": ["buyer", "creator", "admin", "legal", "platform_owner"],
+      "initial": "enquiry_received",
+      "terminal": ["fulfilled","expired","terminated","cancelled"],
+      "transitions": [
+        {"from":"enquiry_received","to":"admin_qualified","by":["admin","platform_owner"],"requires":["buyer_verified","rights_package_available"]},
+        {"from":"admin_qualified","to":"creator_consultation","by":["admin","platform_owner"],"requires":["commercial_scope"]},
+        {"from":"creator_consultation","to":"offer_created","by":["admin","platform_owner"],"requires":["creator_position_recorded"]},
+        {"from":"offer_created","to":"negotiation","by":["buyer","admin","platform_owner"],"requires":["offer_version"]},
+        {"from":"negotiation","to":"terms_finalized","by":["admin","platform_owner"],"requires":["accepted_terms_snapshot"]},
+        {"from":"terms_finalized","to":"agreement_drafting","by":["admin","legal","platform_owner"],"requires":["complete_commercial_terms"]},
+        {"from":"agreement_drafting","to":"legal_review","by":["legal","platform_owner"],"requires":["agreement_version_hash"]},
+        {"from":"legal_review","to":"final_version_locked","by":["legal","platform_owner"],"requires":["legal_approval","all_reviews_complete"]},
+        {"from":"final_version_locked","to":"sent_for_signature","by":["admin","platform_owner"],"requires":["immutable_version"]},
+        {"from":"sent_for_signature","to":"partially_signed","by":["buyer","creator","admin"],"requires":["valid_signature"]},
+        {"from":"partially_signed","to":"signed","by":["buyer","creator","admin"],"requires":["all_required_signatures"]},
+        {"from":"signed","to":"payment_pending","by":["admin","finance","platform_owner"],"requires":["invoice_or_payment_terms"]},
+        {"from":"payment_pending","to":"active","by":["finance","admin","platform_owner"],"requires":["payment_condition_satisfied","license_created"]},
+        {"from":"active","to":"delivery_in_progress","by":["admin","platform_owner"],"requires":["delivery_entitlement"]},
+        {"from":"delivery_in_progress","to":"fulfilled","by":["admin","platform_owner"],"requires":["delivery_accepted"]}
+      ]
+    },
+    "financeRevenue": {
+      "actors": ["finance", "admin", "platform_owner"],
+      "initial": "buyer_report_received",
+      "terminal": ["payout_completed"],
+      "transitions": [
+        {"from":"buyer_report_received","to":"imported","by":["finance","admin","platform_owner"],"requires":["source_file","import_idempotency_key"]},
+        {"from":"imported","to":"validated","by":["finance","admin","platform_owner"],"requires":["schema_validation"]},
+        {"from":"validated","to":"duplicate_checked","by":["finance","admin","platform_owner"],"requires":["duplicate_report"]},
+        {"from":"duplicate_checked","to":"reconciled","by":["finance","admin","platform_owner"],"requires":["deal_title_buyer_mapping"]},
+        {"from":"reconciled","to":"revenue_lines_created","by":["finance","admin","platform_owner"],"requires":["balanced_totals"]},
+        {"from":"revenue_lines_created","to":"royalty_allocated","by":["finance","admin","platform_owner"],"requires":["contract_allocation_rules"]},
+        {"from":"royalty_allocated","to":"statement_generated","by":["finance","admin","platform_owner"],"requires":["commission_and_creator_share"]},
+        {"from":"statement_generated","to":"statement_approved","by":["finance","platform_owner"],"requires":["approval_evidence"]},
+        {"from":"statement_approved","to":"payout_pending","by":["finance","platform_owner"],"requires":["payee_verified","balance_due"]},
+        {"from":"payout_pending","to":"payout_initiated","by":["finance","platform_owner"],"requires":["explicit_payout_approval"]},
+        {"from":"payout_initiated","to":"payout_completed","by":["finance","platform_owner"],"requires":["provider_confirmation","reconciliation_complete"]}
+      ]
+    }
+  }
+}

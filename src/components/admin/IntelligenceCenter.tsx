@@ -321,7 +321,20 @@ export default function IntelligenceCenter() {
         body: { category: "production_company", query: customQuery.trim(), limit: 10 },
       });
       if (error) throw new Error(error.message);
-      setCustomResults(((data as { results?: ResearchResult[] })?.results) ?? []);
+      // research-firecrawl returns HTTP 200 with `{ error, upstream_message?, results: [] }`
+      // on upstream failure. Surface those instead of silently rendering "no results".
+      const payload = data as { error?: string; upstream_message?: string; results?: ResearchResult[] };
+      if (payload?.error) {
+        const map: Record<string, string> = {
+          firecrawl_not_connected: "Firecrawl not connected. Link it in Settings → Integrations.",
+          firecrawl_auth_failed: "Firecrawl API key rejected (check FIRECRAWL_API_KEY).",
+        };
+        const friendly = map[payload.error] ?? payload.upstream_message ?? payload.error;
+        toast.error(`Search failed: ${friendly}`);
+        setCustomResults([]);
+        return;
+      }
+      setCustomResults(payload?.results ?? []);
     } catch (e) {
       toast.error(`Search failed: ${(e as Error).message}`);
     } finally {

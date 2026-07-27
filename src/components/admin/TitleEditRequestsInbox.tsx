@@ -25,7 +25,7 @@ type Req = {
   request_type: string;
   message: string | null;
   requested_sections: string[];
-  status: "open" | "approved" | "rejected" | "closed";
+  status: "open" | "approved" | "rejected" | "closed" | "fulfilled" | "cancelled";
   admin_response: string | null;
   handled_at: string | null;
   created_at: string;
@@ -33,7 +33,7 @@ type Req = {
 };
 
 export default function TitleEditRequestsInbox() {
-  const [tab, setTab] = useState<"open" | "approved" | "rejected" | "all">("open");
+  const [tab, setTab] = useState<"open" | "approved" | "rejected" | "fulfilled" | "cancelled" | "all">("open");
   const [rows, setRows] = useState<Req[]>([]);
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState<Req | null>(null);
@@ -138,6 +138,8 @@ export default function TitleEditRequestsInbox() {
             <TabsTrigger value="open">Open {counts.open ? `(${counts.open})` : ""}</TabsTrigger>
             <TabsTrigger value="approved">Approved</TabsTrigger>
             <TabsTrigger value="rejected">Rejected</TabsTrigger>
+            <TabsTrigger value="fulfilled">Fulfilled</TabsTrigger>
+            <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
             <TabsTrigger value="all">All</TabsTrigger>
           </TabsList>
         </Tabs>

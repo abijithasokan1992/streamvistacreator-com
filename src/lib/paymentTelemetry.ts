@@ -7,7 +7,8 @@ export type TelemetryAction =
   | "checkout.modal_dismissed"
   | "checkout.handler_success"
   | "checkout.handler_error"
-  | "checkout.network_error";
+  | "checkout.network_error"
+  | "legacy.checkout_storage_visit";
 
 interface TelemetryPayload {
   action_type: TelemetryAction;

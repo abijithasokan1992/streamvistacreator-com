@@ -1981,6 +1981,7 @@ export type Database = {
         Row: {
           approved_at: string | null
           approved_by: string | null
+          client_draft_id: string | null
           created_at: string
           duration_minutes: number | null
           episode_number: number | null
@@ -2015,6 +2016,7 @@ export type Database = {
         Insert: {
           approved_at?: string | null
           approved_by?: string | null
+          client_draft_id?: string | null
           created_at?: string
           duration_minutes?: number | null
           episode_number?: number | null
@@ -2049,6 +2051,7 @@ export type Database = {
         Update: {
           approved_at?: string | null
           approved_by?: string | null
+          client_draft_id?: string | null
           created_at?: string
           duration_minutes?: number | null
           episode_number?: number | null
@@ -9225,6 +9228,57 @@ export type Database = {
           },
         ]
       }
+      title_backfill_conflicts: {
+        Row: {
+          canonical_value: string | null
+          detected_at: string
+          field: string
+          id: string
+          metadata_value: string | null
+          resolution: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          title_id: string
+        }
+        Insert: {
+          canonical_value?: string | null
+          detected_at?: string
+          field: string
+          id?: string
+          metadata_value?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          title_id: string
+        }
+        Update: {
+          canonical_value?: string | null
+          detected_at?: string
+          field?: string
+          id?: string
+          metadata_value?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          title_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "title_backfill_conflicts_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "content_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "title_backfill_conflicts_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "published_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       title_collection_items: {
         Row: {
           collection_id: string
@@ -11895,6 +11949,7 @@ export type Database = {
         Returns: {
           approved_at: string | null
           approved_by: string | null
+          client_draft_id: string | null
           created_at: string
           duration_minutes: number | null
           episode_number: number | null

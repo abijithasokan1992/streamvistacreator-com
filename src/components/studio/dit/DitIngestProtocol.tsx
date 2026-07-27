@@ -277,45 +277,37 @@ export default function DitIngestProtocol() {
     if (!user || !canSubmit) return;
     setSubmitting(true);
     try {
-      // 1. Attempt to upload screenshot to private storage. If the bucket is
-      //    missing (e.g. not yet provisioned on this environment) or storage
-      //    rejects the write, we degrade gracefully: the compliance log is
-      //    still saved with a local placeholder path so chain-of-custody
-      //    metadata is not lost. The screenshot itself is retained in memory
-      //    and the admin can re-attach once the bucket is provisioned.
+      // 1. Upload screenshot to private storage. This is a mandatory chain-of-
+      //    custody artefact — if the upload fails (bucket missing, RLS deny,
+      //    network error) we MUST NOT persist a compliance log. No synthetic
+      //    `pending-local://` placeholder is written to the database.
       const ext = screenshotFile!.name.split(".").pop() || "png";
       const path = `${user.id}/${new Date().toISOString().replace(/[:.]/g, "-")}-${uid()}.${ext}`;
 
-      let storedPath = path;
-      let uploadDegraded = false;
       let uploadErrorMessage: string | null = null;
       try {
         const up = await supabase.storage
           .from("dit-ingest-screenshots")
           .upload(path, screenshotFile!, { cacheControl: "3600", upsert: false });
-        if (up.error) {
-          uploadDegraded = true;
-          uploadErrorMessage = up.error.message;
-        }
+        if (up.error) uploadErrorMessage = up.error.message;
       } catch (uploadErr: any) {
-        uploadDegraded = true;
         uploadErrorMessage = uploadErr?.message ?? String(uploadErr);
       }
 
-      if (uploadDegraded) {
-        storedPath = `pending-local://${path}`;
+      if (uploadErrorMessage) {
+        // Honest failure. Preserve the form (and the picked file) as a LOCAL
+        // DRAFT — never as a submitted compliance record.
         setStorageUnavailable(true);
-        console.warn(
-          "[DIT] screenshot upload unavailable — saving log with local placeholder",
-          uploadErrorMessage,
+        toast.error(
+          `DIT log NOT submitted — screenshot upload failed (${uploadErrorMessage}). Your entries are kept as a local draft; re-submit once storage is available.`,
         );
-      } else {
-        setStorageUnavailable(false);
+        return;
       }
 
+      setStorageUnavailable(false);
       const finalChecklist: ChecklistState = { ...checklist, screenshot_uploaded: true };
 
-      // 2. Insert compliance log row.
+      // 2. Insert compliance log row with the real storage path.
       const { error } = await supabase.from("dit_ingest_logs").insert({
         user_id: user.id,
         workspace_id: workspaceId,
@@ -325,27 +317,15 @@ export default function DitIngestProtocol() {
         replication_regions: mode === "mode_3_pure_cloud_ingest" ? regions : null,
         camera_mapping: cameras,
         checklist_status: finalChecklist,
-        screenshot_url: storedPath,
-        notes: uploadDegraded
-          ? `${notes.trim()}${notes.trim() ? "\n\n" : ""}[System] Screenshot pending re-upload — storage bucket unavailable at submission (${uploadErrorMessage ?? "unknown"}).`.trim()
-          : notes.trim() || null,
+        screenshot_url: path,
+        notes: notes.trim() || null,
       });
       if (error) throw new Error(error.message);
 
-      if (uploadDegraded) {
-        toast.warning(
-          "DIT log saved — DIT evidence storage is being configured. Screenshot retained locally; re-attach once available.",
-        );
-        // Retain the unsaved form (including the picked screenshot file) so
-        // the DIT can re-submit the evidence once storage is provisioned.
-        // We do NOT clear `screenshotFile` or the form here.
-        await loadHistory();
-      } else {
-        toast.success("DIT ingest log saved.");
-        resetForm();
-        await loadHistory();
-        setTab("history");
-      }
+      toast.success("DIT ingest log saved.");
+      resetForm();
+      await loadHistory();
+      setTab("history");
     } catch (e: any) {
       toast.error(e?.message || "Failed to submit DIT log.");
     } finally {

@@ -69,12 +69,14 @@ try {
 function isAllowed(origin: string | null): string | null {
   if (!origin) return null;
   const normalized = origin.replace(/\/$/, "");
+  let host: string;
   try {
-    const host = new URL(normalized).hostname;
-    if (FORBIDDEN_HOST_SUFFIXES.some((s) => host.endsWith(s))) return null;
+    host = new URL(normalized).hostname;
   } catch {
     return null;
   }
+  // Allow Lovable preview/sandbox hosts (per-project).
+  if (ALLOWED_HOST_SUFFIXES.some((s) => host.endsWith(s))) return normalized;
   return ALLOW_LIST.includes(normalized) ? normalized : null;
 }
 

@@ -75,25 +75,20 @@ export default function SubmitContent() {
         `Language: ${parsed.data.language}`,
         `Duration: ${parsed.data.duration}`,
         `Rights Owner: ${parsed.data.rightsOwner}`,
+        `Email: ${parsed.data.email}`,
         `Trailer Link: ${parsed.data.trailerLink}`,
         `Poster Link: ${parsed.data.posterLink}`,
         `Contact Number: ${parsed.data.contactNumber}`,
       ].join("\n");
 
-      // contact_messages.email is NOT NULL with length 3..255. The public
-      // submission form does not collect an email address; use a stable
-      // synthetic address derived from the contact number so admins can
-      // still triage the row. If the user is signed in we also stamp
-      // user_id so RLS-owner rules apply.
+      // Persist ONLY the real user-provided email. No synthetic/fabricated
+      // fallback — an authenticated user without an email must supply one.
       const { data: authData } = await supabase.auth.getUser();
       const authedUserId = authData?.user?.id ?? null;
-      const authedEmail = authData?.user?.email ?? null;
-      const digits = parsed.data.contactNumber.replace(/\D+/g, "").slice(0, 15) || "unknown";
-      const syntheticEmail = authedEmail ?? `submission+${digits}@public.streamvista.in`;
 
       const { error } = await supabase.from("contact_messages").insert({
         name: parsed.data.rightsOwner,
-        email: syntheticEmail,
+        email: parsed.data.email,
         company: null,
         role: "Content rights owner",
         message,
@@ -111,7 +106,7 @@ export default function SubmitContent() {
             recipientEmail: "support@streamvista.in",
             idempotencyKey: `content-submission-${Date.now()}`,
             templateData: {
-              userEmail: authedEmail ?? "Public submission",
+              userEmail: parsed.data.email,
               userId: authedUserId ?? "anonymous",
               severity: "info",
               title: `New content submission · ${parsed.data.title}`,
@@ -128,7 +123,6 @@ export default function SubmitContent() {
       setForm(initialForm);
       toast({ title: "Submission received", description: "StreamVista will contact you after review." });
     } catch (error: any) {
-      // Surface the real DB error so backend problems aren't hidden.
       const raw = error?.message ?? "Please try again.";
       toast({
         title: "Submission failed",

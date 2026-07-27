@@ -228,6 +228,13 @@ function TitleCommercialDialog({
     published_to_buyers: false,
   });
   const [savingProfile, setSavingProfile] = useState(false);
+  const [stateReason, setStateReason] = useState("");
+
+  const initialStatus = initialProfile?.commercial_status ?? "not_open";
+  const initialPublished = initialProfile?.published_to_buyers ?? false;
+  const stateChanged =
+    profile.commercial_status !== initialStatus ||
+    profile.published_to_buyers !== initialPublished;
 
   const [rights, setRights] = useState<Rights[]>([]);
   const [deals, setDeals] = useState<Deal[]>([]);
@@ -250,7 +257,20 @@ function TitleCommercialDialog({
   useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 
   const saveProfile = async () => {
+    if (stateChanged && stateReason.trim().length < 4) {
+      return toast.error("Enter an audit reason (min 4 chars) before changing commercial state.");
+    }
     setSavingProfile(true);
+    // Route state/visibility changes through the audited admin RPC first.
+    if (stateChanged) {
+      const { error: sErr } = await (supabase as any).rpc("admin_set_title_commercial_state", {
+        _title_id: title.id,
+        _new_status: profile.commercial_status,
+        _published_to_buyers: profile.published_to_buyers,
+        _reason: stateReason.trim(),
+      });
+      if (sErr) { setSavingProfile(false); return toast.error(sErr.message); }
+    }
     // Admin-only internal notes are stored in a separate admin table; split them off here.
     const { admin_internal_notes, ...profilePayload } = profile as Profile & { admin_internal_notes?: string | null };
     const { data: upserted, error } = await (supabase as any)
@@ -267,9 +287,11 @@ function TitleCommercialDialog({
       if (nerr) { setSavingProfile(false); return toast.error(nerr.message); }
     }
     setSavingProfile(false);
+    setStateReason("");
     toast.success("Commercial profile saved");
     onSaved();
   };
+
 
   return (
     <Dialog open={true} onOpenChange={(o) => { if (!o) onClose(); }}>

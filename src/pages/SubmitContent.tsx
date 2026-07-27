@@ -205,6 +205,20 @@ export default function SubmitContent() {
               <input value={form.rightsOwner} onChange={(e) => setField("rightsOwner", e.target.value)} className={inputClass} maxLength={180} />
             </Field>
 
+            <Field label="Email" error={errors.email}>
+              <input
+                value={form.email}
+                onChange={(e) => setField("email", e.target.value)}
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+                className={inputClass}
+                maxLength={255}
+                required
+              />
+            </Field>
+
             <Field label="Trailer Link" error={errors.trailerLink}>
               <input value={form.trailerLink} onChange={(e) => setField("trailerLink", e.target.value)} type="url" placeholder="https://" className={inputClass} maxLength={1000} />
             </Field>

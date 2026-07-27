@@ -16,6 +16,7 @@ type AuditRow = {
   created_at: string;
   details: {
     audit?: { passed: boolean; pending_remaining: number; error?: string };
+    audit_persist_error?: string;
     reconciled?: { scanned: number; closed: number; error?: string };
     summary?: Record<string, { requeued: number; skipped: number; error?: string }>;
     ran_at?: string;

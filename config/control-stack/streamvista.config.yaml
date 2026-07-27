@@ -1,0 +1,87 @@
+version: 1.0.0
+name: StreamVista Control MCP
+system_role: full_stack_approval_control_plane
+source_of_truth:
+  repository: abijithasokan1992/streamvistacreator-com
+  documentation_root: docs/control-stack
+  configuration_root: config/control-stack
+business:
+  platform_type: confidential_b2b_content_licensing
+  master_distributor: StreamVista Admin
+  direct_creator_buyer_bypass: denied_unless_admin_authorized
+  title_distribution_state: ready_for_distribution
+  buyer_publication_scope: per_deal_release
+operating_mode:
+  default: READ_ONLY
+  allowed_modes:
+    - READ_ONLY
+    - PLAN_ONLY
+    - CODE_CHANGE_APPROVED
+    - DATABASE_CHANGE_APPROVED
+    - DEPLOY_APPROVED
+    - PRODUCTION_OPERATION_APPROVED
+approval:
+  required: true
+  permanent_global_approval: false
+  require_named_action: true
+  require_named_target: true
+  require_environment: true
+  require_scope: true
+  require_audit_event: true
+safety:
+  allow_code_changes: false
+  allow_database_changes: false
+  allow_deploy: false
+  allow_production_data: false
+  allow_paid_resources: false
+  allow_secret_rotation: false
+  destructive_sql: denied
+  expose_secrets: denied
+  bypass_rls: denied
+control_roles:
+  - founder
+  - platform_owner
+  - super_admin
+domains:
+  - repository
+  - ui_routes
+  - api_rpc
+  - database_schema
+  - rls_security
+  - edge_functions
+  - storage
+  - creator_workflow
+  - buyer_workflow
+  - admin_workflow
+  - title_assets
+  - qc_legal
+  - rights_territories
+  - licensing
+  - marketplace
+  - screener
+  - deal_room
+  - agreement_signing
+  - invoice_payment
+  - license_activation
+  - secure_delivery
+  - buyer_release
+  - revenue_reconciliation
+  - creator_statement
+  - payout
+  - renewal_expiry
+  - notifications
+  - audit_logs
+  - tests_ci
+reporting:
+  evidence_required: true
+  percentage_guessing: false
+  classifications:
+    - confirmed_end_to_end
+    - partially_wired
+    - missing_or_blocked
+    - not_applicable
+    - pending_verification
+  priorities:
+    - P0
+    - P1
+    - P2

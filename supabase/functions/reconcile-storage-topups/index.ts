@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
     }
     if (!allowed) return json({ error: "Forbidden" }, 403);
 
-    const parsed = validatePayload(await req.json().catch(() => null));
+    const parsed = validateReconcilePayload(await req.json().catch(() => null));
     if ("error" in parsed) return json({ error: parsed.error }, 400);
 
     const results: RowResult[] = [];

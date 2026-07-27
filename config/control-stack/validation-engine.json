@@ -1,0 +1,44 @@
+{
+  "version": "1.0.0",
+  "defaultOutcome": "invalid",
+  "severity": ["info", "warning", "error", "critical"],
+  "validationPhases": ["shape", "identity", "authorization", "state", "evidence", "business", "security", "audit"],
+  "globalRules": {
+    "rejectUnknownFieldsOnPrivilegedWrites": true,
+    "requireCorrelationId": true,
+    "requireIdempotencyKeyForWrites": true,
+    "requireActorContext": true,
+    "requireExpectedStateForTransitions": true,
+    "redactSecretsFromErrors": true,
+    "failClosedOnValidatorError": true
+  },
+  "validators": {
+    "identity": ["authenticated_user", "active_account", "role_present"],
+    "authorization": ["role_allowed", "resource_scope_allowed", "owner_or_entitled_or_staff"],
+    "workflow": ["known_workflow", "known_current_state", "known_target_state", "transition_allowed", "expected_state_matches"],
+    "title": ["title_id_valid", "minimum_metadata_complete", "required_assets_present", "runtime_in_bounds", "language_valid", "rights_documents_present"],
+    "rights": ["rights_owner_verified", "territory_valid", "window_valid", "license_model_valid", "no_exclusive_conflict", "legal_clearance_present"],
+    "buyer": ["buyer_verified", "organization_verified", "entitlement_active", "territory_match", "content_scope_match"],
+    "deal": ["buyer_and_title_match", "commercial_terms_complete", "rights_scope_available", "offer_version_current", "agreement_hash_matches"],
+    "delivery": ["active_license", "payment_condition_satisfied", "asset_manifest_valid", "secure_link_expiry_valid", "revocation_absent"],
+    "revenue": ["source_authorized", "schema_supported", "period_valid", "duplicate_import_absent", "mapping_complete", "totals_balanced"],
+    "payout": ["statement_approved", "payee_verified", "currency_matches_statement", "amount_matches_balance", "duplicate_payout_absent", "explicit_approval_present"],
+    "audit": ["event_type_present", "actor_recorded", "resource_recorded", "before_after_recorded_for_writes", "correlation_id_present", "secrets_redacted"]
+  },
+  "errorCodes": {
+    "VALIDATION_FAILED": "Input or business validation failed",
+    "AUTHENTICATION_REQUIRED": "Authentication is required",
+    "AUTHORIZATION_DENIED": "Actor is not authorized",
+    "STATE_CONFLICT": "Resource state changed or expected state does not match",
+    "EVIDENCE_REQUIRED": "Required evidence is missing",
+    "RIGHTS_CONFLICT": "Rights scope conflicts with the requested action",
+    "DUPLICATE_OPERATION": "The operation has already been processed",
+    "PRODUCTION_APPROVAL_REQUIRED": "Explicit approval is required for production mutation",
+    "SECURITY_POLICY_DENIED": "Security policy denied the operation"
+  },
+  "resultContract": {
+    "requiredFields": ["valid", "errors", "warnings", "correlation_id"],
+    "errorFields": ["code", "field", "message", "severity"],
+    "includeInternalDetails": false
+  }
+}

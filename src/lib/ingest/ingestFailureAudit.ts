@@ -34,7 +34,7 @@ export function categorizeIngestError(
   if (!error) return { category: "unknown", code: null, reason: "Unknown error" };
   const anyErr = error as PostgrestError & { status?: number };
   const code = anyErr.code ?? null;
-  const msg = (anyErr.message ?? String(error) ?? "").toLowerCase();
+  const msg = (anyErr.message ?? String(error)).toLowerCase();
 
   if (code === "42501" || msg.includes("row-level security") || msg.includes("permission denied")) {
     return { category: "rls_denied", code, reason: anyErr.message ?? "Row-level security denied insert" };

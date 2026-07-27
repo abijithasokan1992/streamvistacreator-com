@@ -216,11 +216,9 @@ export default function DitIngestProtocol() {
   const [history, setHistory] = useState<LogRow[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [tab, setTab] = useState<"form" | "history">("form");
-  // Storage-bucket configuration state. When the private DIT bucket is not
-  // yet provisioned we surface a persistent banner and keep the unsaved form
-  // in place so nothing is discarded — the compliance log itself is still
-  // saved (with a `pending-local://` placeholder) so chain-of-custody
-  // metadata survives the outage.
+  // Storage-bucket availability. When the private DIT bucket write fails we
+  // surface a persistent banner and keep the form values as an explicit
+  // LOCAL DRAFT. No compliance log is persisted server-side in that state.
   const [storageUnavailable, setStorageUnavailable] = useState(false);
 
   const loadHistory = useCallback(async () => {
@@ -277,45 +275,37 @@ export default function DitIngestProtocol() {
     if (!user || !canSubmit) return;
     setSubmitting(true);
     try {
-      // 1. Attempt to upload screenshot to private storage. If the bucket is
-      //    missing (e.g. not yet provisioned on this environment) or storage
-      //    rejects the write, we degrade gracefully: the compliance log is
-      //    still saved with a local placeholder path so chain-of-custody
-      //    metadata is not lost. The screenshot itself is retained in memory
-      //    and the admin can re-attach once the bucket is provisioned.
+      // 1. Upload screenshot to private storage. This is a mandatory chain-of-
+      //    custody artefact — if the upload fails (bucket missing, RLS deny,
+      //    network error) we MUST NOT persist a compliance log. No synthetic
+      //    `pending-local://` placeholder is written to the database.
       const ext = screenshotFile!.name.split(".").pop() || "png";
       const path = `${user.id}/${new Date().toISOString().replace(/[:.]/g, "-")}-${uid()}.${ext}`;
 
-      let storedPath = path;
-      let uploadDegraded = false;
       let uploadErrorMessage: string | null = null;
       try {
         const up = await supabase.storage
           .from("dit-ingest-screenshots")
           .upload(path, screenshotFile!, { cacheControl: "3600", upsert: false });
-        if (up.error) {
-          uploadDegraded = true;
-          uploadErrorMessage = up.error.message;
-        }
+        if (up.error) uploadErrorMessage = up.error.message;
       } catch (uploadErr: any) {
-        uploadDegraded = true;
         uploadErrorMessage = uploadErr?.message ?? String(uploadErr);
       }
 
-      if (uploadDegraded) {
-        storedPath = `pending-local://${path}`;
+      if (uploadErrorMessage) {
+        // Honest failure. Preserve the form (and the picked file) as a LOCAL
+        // DRAFT — never as a submitted compliance record.
         setStorageUnavailable(true);
-        console.warn(
-          "[DIT] screenshot upload unavailable — saving log with local placeholder",
-          uploadErrorMessage,
+        toast.error(
+          `DIT log NOT submitted — screenshot upload failed (${uploadErrorMessage}). Your entries are kept as a local draft; re-submit once storage is available.`,
         );
-      } else {
-        setStorageUnavailable(false);
+        return;
       }
 
+      setStorageUnavailable(false);
       const finalChecklist: ChecklistState = { ...checklist, screenshot_uploaded: true };
 
-      // 2. Insert compliance log row.
+      // 2. Insert compliance log row with the real storage path.
       const { error } = await supabase.from("dit_ingest_logs").insert({
         user_id: user.id,
         workspace_id: workspaceId,
@@ -325,27 +315,15 @@ export default function DitIngestProtocol() {
         replication_regions: mode === "mode_3_pure_cloud_ingest" ? regions : null,
         camera_mapping: cameras,
         checklist_status: finalChecklist,
-        screenshot_url: storedPath,
-        notes: uploadDegraded
-          ? `${notes.trim()}${notes.trim() ? "\n\n" : ""}[System] Screenshot pending re-upload — storage bucket unavailable at submission (${uploadErrorMessage ?? "unknown"}).`.trim()
-          : notes.trim() || null,
+        screenshot_url: path,
+        notes: notes.trim() || null,
       });
       if (error) throw new Error(error.message);
 
-      if (uploadDegraded) {
-        toast.warning(
-          "DIT log saved — DIT evidence storage is being configured. Screenshot retained locally; re-attach once available.",
-        );
-        // Retain the unsaved form (including the picked screenshot file) so
-        // the DIT can re-submit the evidence once storage is provisioned.
-        // We do NOT clear `screenshotFile` or the form here.
-        await loadHistory();
-      } else {
-        toast.success("DIT ingest log saved.");
-        resetForm();
-        await loadHistory();
-        setTab("history");
-      }
+      toast.success("DIT ingest log saved.");
+      resetForm();
+      await loadHistory();
+      setTab("history");
     } catch (e: any) {
       toast.error(e?.message || "Failed to submit DIT log.");
     } finally {
@@ -389,11 +367,13 @@ export default function DitIngestProtocol() {
               role="status"
               className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200"
             >
-              <div className="font-medium">DIT evidence storage is being configured.</div>
+              <div className="font-medium">
+                Local draft only — DIT compliance NOT submitted.
+              </div>
               <p className="mt-1 text-xs text-amber-200/80">
-                Your DIT log is saved and the screenshot is retained locally. Once the private
-                storage bucket is provisioned, re-open this form and re-attach the screenshot to
-                complete chain-of-custody.
+                The mandatory screenshot could not be uploaded to secure storage, so no compliance
+                log was written. Your form entries are preserved on this device as a local draft.
+                Re-submit once the private storage bucket is available.
               </p>
             </div>
           )}

@@ -350,12 +350,31 @@ function TitleCommercialDialog({
               <Field label="Admin internal notes"><Textarea rows={2} value={profile.admin_internal_notes ?? ""} onChange={e => setProfile(p => ({ ...p, admin_internal_notes: e.target.value }))} /></Field>
             </div>
 
+            {stateChanged && (
+              <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 space-y-1">
+                <Label className="text-xs text-amber-200">
+                  Audit reason (required for commercial state changes)
+                </Label>
+                <Input
+                  value={stateReason}
+                  onChange={(e) => setStateReason(e.target.value)}
+                  placeholder="e.g. Opening title for OTT licensing after legal sign-off"
+                  aria-label="Commercial state change reason"
+                  className="h-9"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  Logged to <code>commercial_audit_log</code> alongside previous/new status and visibility.
+                </p>
+              </div>
+            )}
+
             <div className="flex justify-end">
-              <Button size="sm" disabled={savingProfile} onClick={saveProfile}>
+              <Button size="sm" disabled={savingProfile || (stateChanged && stateReason.trim().length < 4)} onClick={saveProfile}>
                 {savingProfile ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Save className="w-3.5 h-3.5 mr-1" />}
                 Save profile
               </Button>
             </div>
+
           </TabsContent>
 
           <TabsContent value="rights" className="mt-4">

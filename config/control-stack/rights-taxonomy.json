@@ -1,0 +1,94 @@
+{
+  "version": "1.0.0",
+  "rightsDimensions": {
+    "media": ["svod", "tvod", "avod", "fast", "pay_tv", "free_tv", "airline", "educational", "non_theatrical", "digital_download", "electronic_sell_through"],
+    "territory": ["worldwide", "india", "south_asia", "middle_east", "north_america", "latin_america", "europe", "africa", "asia_pacific", "custom_country_list"],
+    "language": ["original_language", "dubbed_languages", "subtitled_languages", "all_languages", "custom_language_list"],
+    "exclusivity": ["exclusive", "non_exclusive", "sole", "co_exclusive"],
+    "window": ["fixed_start_end", "rolling_term", "perpetual", "event_limited", "holdback_based"],
+    "platform": ["all_platforms", "named_platforms", "owned_and_operated", "third_party_channels"],
+    "device": ["all_devices", "mobile", "web", "connected_tv", "smart_tv", "set_top_box", "in_flight_system"],
+    "commercialModel": ["minimum_guarantee", "flat_fee", "revenue_share", "hybrid", "per_view", "per_subscriber", "ad_revenue_share", "catalogue_bundle"]
+  },
+  "requiredGrantFields": [
+    "rights_owner_id",
+    "title_id",
+    "media_right",
+    "territory",
+    "language",
+    "exclusivity",
+    "start_date",
+    "end_date_or_perpetual",
+    "platform_scope",
+    "commercial_model",
+    "granting_document_id",
+    "legal_clearance_status"
+  ],
+  "availabilityRules": [
+    "grant_must_exist",
+    "grant_must_be_legally_cleared",
+    "current_date_must_be_inside_window",
+    "requested_territory_must_be_covered",
+    "requested_language_must_be_covered",
+    "requested_media_right_must_be_covered",
+    "requested_platform_scope_must_be_covered",
+    "exclusive_conflicts_must_be_absent",
+    "holdbacks_must_be_satisfied",
+    "termination_or_revocation_must_be_absent"
+  ],
+  "conflictTypes": [
+    "exclusive_overlap",
+    "territory_overlap",
+    "language_overlap",
+    "window_overlap",
+    "platform_overlap",
+    "media_right_overlap",
+    "holdback_violation",
+    "expired_grant",
+    "missing_chain_of_title",
+    "uncleared_music_or_archive",
+    "creator_claim_conflict",
+    "buyer_contract_conflict"
+  ],
+  "legalDocuments": [
+    "chain_of_title",
+    "producer_declaration",
+    "cast_release",
+    "crew_release",
+    "music_license",
+    "archive_license",
+    "location_release",
+    "censor_certificate",
+    "rights_assignment",
+    "distribution_mandate",
+    "buyer_license_agreement",
+    "amendment",
+    "termination_notice"
+  ],
+  "marketplaceEligibility": [
+    "title_ready_for_distribution",
+    "rights_available_for_at_least_one_offerable_package",
+    "no_unresolved_critical_conflict",
+    "commercial_profile_complete",
+    "legal_clearance_complete",
+    "marketplace_visibility_approved"
+  ],
+  "deliveryEntitlement": [
+    "signed_agreement",
+    "active_license",
+    "payment_condition_satisfied",
+    "delivery_scope_matches_contract",
+    "buyer_organization_matches_contract",
+    "secure_link_not_expired",
+    "revocation_absent"
+  ],
+  "renewalRules": [
+    "notify_at_90_60_30_7_days",
+    "revalidate_rights_before_extension",
+    "recheck_conflicts_before_extension",
+    "new_or_amended_commercial_terms_required",
+    "signature_required_before_activation",
+    "payment_terms_revalidated",
+    "expired_access_revoked"
+  ]
+}

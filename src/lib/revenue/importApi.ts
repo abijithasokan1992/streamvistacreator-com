@@ -13,6 +13,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import type { NormalizationResult, NormalizedRevenueRow } from "./normalize";
+import type { RowMapping } from "./mapping";
 
 export class DatabasePendingError extends Error {
   constructor(msg = "Revenue tables not available on this environment") {
@@ -39,6 +40,14 @@ export interface PersistStatementInput {
   periodEnd: string | null;
   notes: string | null;
   normalization: NormalizationResult;
+  /**
+   * Admin-confirmed row-to-title mappings from the mapping step. When
+   * provided, each persisted `revenue_lines` row inherits its `title_id`,
+   * `partner_id`, and `metadata.workspace_id` from the mapping keyed by
+   * `rowKey`. Rows with no mapping are still inserted (title_id=null) so
+   * admins can complete the mapping later.
+   */
+  mappings?: RowMapping[];
 }
 
 export async function persistStatement(input: PersistStatementInput): Promise<{ importId: string; inserted: number; skipped: number }> {

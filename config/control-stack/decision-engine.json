@@ -1,0 +1,60 @@
+{
+  "version": "1.0.0",
+  "defaultDecision": "deny",
+  "evaluationOrder": [
+    "identity",
+    "role",
+    "resource_scope",
+    "current_state",
+    "required_evidence",
+    "rights_and_legal",
+    "commercial_conditions",
+    "payment_conditions",
+    "risk_controls",
+    "approval_gate",
+    "auditability"
+  ],
+  "outcomes": ["allow", "deny", "request_changes", "escalate", "manual_review"],
+  "rules": {
+    "publishTitle": {
+      "allowWhen": ["title_ready_for_distribution", "marketplace_package_valid", "rights_clear", "admin_approved"],
+      "denyWhen": ["critical_conflict", "expired_rights", "missing_legal_clearance", "incomplete_commercial_profile"]
+    },
+    "grantScreener": {
+      "allowWhen": ["buyer_verified", "title_eligible", "buyer_scope_matches_rights", "admin_approved", "expiring_access_configured"],
+      "denyWhen": ["buyer_suspended", "rights_mismatch", "territory_mismatch", "window_closed", "active_revocation"]
+    },
+    "activateDeal": {
+      "allowWhen": ["agreement_signed", "license_created", "payment_condition_satisfied", "no_blocking_conflict"],
+      "denyWhen": ["unsigned_required_party", "payment_unverified", "license_scope_invalid", "agreement_version_mismatch"]
+    },
+    "releaseDelivery": {
+      "allowWhen": ["active_license", "buyer_matches_contract", "asset_manifest_valid", "secure_delivery_ready", "admin_approved"],
+      "denyWhen": ["license_expired", "payment_condition_failed", "asset_quarantined", "delivery_revoked"]
+    },
+    "approveStatement": {
+      "allowWhen": ["source_report_valid", "duplicate_check_passed", "reconciliation_balanced", "allocation_rules_applied", "finance_approved"],
+      "denyWhen": ["unmapped_revenue", "negative_unexplained_balance", "duplicate_import", "contract_missing"]
+    },
+    "initiatePayout": {
+      "allowWhen": ["statement_approved", "payee_verified", "balance_due_positive", "explicit_payout_approval", "idempotency_key_present"],
+      "denyWhen": ["statement_unapproved", "payee_unverified", "hold_active", "duplicate_payout", "reconciliation_incomplete"]
+    },
+    "productionWrite": {
+      "allowWhen": ["explicit_current_conversation_approval", "authorized_actor", "validated_change_plan", "rollback_ready", "audit_enabled"],
+      "denyWhen": ["approval_missing", "secret_exposure_risk", "irreversible_unreviewed_change", "unknown_environment"]
+    }
+  },
+  "escalation": {
+    "critical": ["platform_owner", "legal", "finance"],
+    "security": ["platform_owner", "security_admin"],
+    "rights": ["legal", "platform_owner"],
+    "finance": ["finance", "platform_owner"],
+    "technical": ["admin", "platform_owner"]
+  },
+  "decisionRecord": {
+    "requiredFields": ["decision_id", "action", "actor_id", "actor_role", "resource_type", "resource_id", "outcome", "matched_rules", "evidence_refs", "correlation_id", "created_at"],
+    "immutable": true,
+    "redactSecrets": true
+  }
+}

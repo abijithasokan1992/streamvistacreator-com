@@ -91,9 +91,14 @@ export async function persistStatement(input: PersistStatementInput): Promise<{ 
     throw impErr;
   }
 
+  const mappingByRowKey = new Map<string, RowMapping>();
+  for (const m of input.mappings ?? []) {
+    if (m?.rowKey) mappingByRowKey.set(m.rowKey, m);
+  }
+
   const payload = input.normalization.rows
     .filter((r) => r.errors.length === 0)
-    .map((r) => toRevenueLineRow(imp.id, r, input));
+    .map((r) => toRevenueLineRow(imp.id, r, input, mappingByRowKey.get(r.rowKey) ?? null));
 
   if (!payload.length) return { importId: imp.id, inserted: 0, skipped: input.normalization.rows.length };
 
@@ -106,10 +111,15 @@ export async function persistStatement(input: PersistStatementInput): Promise<{ 
   return { importId: imp.id, inserted: payload.length, skipped: input.normalization.totals.errorRowCount };
 }
 
-function toRevenueLineRow(importId: string, r: NormalizedRevenueRow, input: PersistStatementInput) {
+function toRevenueLineRow(
+  importId: string,
+  r: NormalizedRevenueRow,
+  input: PersistStatementInput,
+  mapping: RowMapping | null,
+) {
   return {
     import_id: importId,
-    title_id: null, // mapping stage will patch this after admin confirms the buyer/title
+    title_id: mapping?.titleId ?? null,
     partner_id: input.partnerId,
     territory: r.territory,
     channel: r.channel,
@@ -124,7 +134,10 @@ function toRevenueLineRow(importId: string, r: NormalizedRevenueRow, input: Pers
       statement_key: input.normalization.statementKey,
       source_type: input.sourceType,
       source_statement_id: input.sourceStatementId,
-      workspace_id: input.workspaceId,
+      workspace_id: mapping?.workspaceId ?? input.workspaceId,
+      deal_memo_id: mapping?.dealMemoId ?? null,
+      buyer_user_id: mapping?.buyerUserId ?? null,
+      mapping_status: mapping?.status ?? "unmapped",
       title_external_ref: r.titleExternalRef,
       model: r.model,
       tax_paise: r.taxMinor,

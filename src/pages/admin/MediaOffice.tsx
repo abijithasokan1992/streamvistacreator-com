@@ -11,6 +11,7 @@ import { BuyerMappingActionDrawer, type BuyerOffer } from "@/components/admin/Bu
 import { BuyerOfferAuditLog } from "@/components/admin/BuyerOfferAuditLog";
 import { ConnectionStatusPanel } from "@/components/admin/ConnectionStatusPanel";
 import { BackendControlsGuide } from "@/components/admin/BackendControlsGuide";
+import { StorageTopupsReconciler } from "@/components/admin/StorageTopupsReconciler";
 import AdminErrorBoundary from "@/components/admin/AdminErrorBoundary";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { cn } from "@/lib/utils";
@@ -638,6 +639,7 @@ function AccountsRoom() {
         <AccountTile to="/admin?dept=business&section=revenue-statements" title="Revenue Statements" desc="Import & map buyer statements" />
         <AccountTile to="/admin?dept=business&section=vault" title="Vault Purchases" desc="Studio vault revenue" />
       </div>
+      <StorageTopupsReconciler />
     </div>
   );
 }

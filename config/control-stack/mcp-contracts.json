@@ -1,0 +1,97 @@
+{
+  "version": "1.0.0",
+  "protocol": "streamvista-mcp-v1",
+  "defaults": {
+    "authentication": "required",
+    "authorization": "default_deny",
+    "audit": "required",
+    "idempotencyForWrites": true,
+    "secretRedaction": true,
+    "productionMutation": "requires_explicit_approval"
+  },
+  "errorContract": {
+    "requiredFields": ["code", "message", "correlation_id", "retryable"],
+    "optionalFields": ["details", "field_errors", "retry_after_seconds"],
+    "forbiddenFields": ["stack_trace", "access_token", "refresh_token", "service_role_key", "private_key"]
+  },
+  "tools": {
+    "title.read": {
+      "mode": "read",
+      "roles": ["creator", "buyer", "admin", "qc", "legal", "finance", "platform_owner"],
+      "input": ["title_id"],
+      "scopeRules": ["owner_or_entitled_or_staff"],
+      "output": ["title", "permissions", "workflow_state"]
+    },
+    "title.transition": {
+      "mode": "write",
+      "roles": ["creator", "admin", "qc", "legal", "platform_owner"],
+      "input": ["title_id", "expected_state", "target_state", "evidence", "idempotency_key"],
+      "guards": ["workflow_transition_allowed", "actor_authorized", "evidence_complete"],
+      "output": ["previous_state", "current_state", "audit_event_id"]
+    },
+    "buyer.screener.request": {
+      "mode": "write",
+      "roles": ["buyer"],
+      "input": ["title_id", "request_reason", "idempotency_key"],
+      "guards": ["buyer_verified", "title_marketplace_eligible"],
+      "output": ["request_id", "status"]
+    },
+    "buyer.screener.approve": {
+      "mode": "privileged_write",
+      "roles": ["admin", "platform_owner"],
+      "input": ["request_id", "expiry", "scope", "approval_evidence", "idempotency_key"],
+      "guards": ["rights_match", "buyer_match", "secure_access_configuration_valid"],
+      "output": ["access_id", "expires_at", "audit_event_id"]
+    },
+    "deal.create_offer": {
+      "mode": "privileged_write",
+      "roles": ["admin", "platform_owner"],
+      "input": ["deal_id", "commercial_terms", "rights_scope", "version", "idempotency_key"],
+      "guards": ["deal_qualified", "creator_position_recorded", "rights_available"],
+      "output": ["offer_id", "version", "status"]
+    },
+    "agreement.lock_version": {
+      "mode": "privileged_write",
+      "roles": ["legal", "platform_owner"],
+      "input": ["agreement_id", "version_hash", "approval_evidence", "idempotency_key"],
+      "guards": ["legal_review_complete", "all_reviews_complete"],
+      "output": ["locked_version", "audit_event_id"]
+    },
+    "delivery.release": {
+      "mode": "privileged_write",
+      "roles": ["admin", "platform_owner"],
+      "input": ["delivery_id", "entitlement_id", "asset_manifest_hash", "approval_evidence", "idempotency_key"],
+      "guards": ["active_license", "payment_condition_satisfied", "asset_manifest_valid", "secure_delivery_ready"],
+      "output": ["delivery_status", "secure_link_reference", "audit_event_id"]
+    },
+    "revenue.import": {
+      "mode": "privileged_write",
+      "roles": ["finance", "admin", "platform_owner"],
+      "input": ["source_reference", "buyer_id", "period", "schema_version", "idempotency_key"],
+      "guards": ["source_authorized", "schema_supported", "duplicate_import_absent"],
+      "output": ["import_id", "validation_status", "quarantine_count"]
+    },
+    "statement.approve": {
+      "mode": "privileged_write",
+      "roles": ["finance", "platform_owner"],
+      "input": ["statement_id", "approval_evidence", "idempotency_key"],
+      "guards": ["reconciliation_balanced", "allocation_complete", "no_blocking_exception"],
+      "output": ["statement_status", "audit_event_id"]
+    },
+    "payout.initiate": {
+      "mode": "high_risk_write",
+      "roles": ["finance", "platform_owner"],
+      "input": ["statement_id", "payee_id", "amount", "currency", "approval_evidence", "idempotency_key"],
+      "guards": ["explicit_payout_approval", "statement_approved", "payee_verified", "duplicate_payout_absent", "reconciliation_complete"],
+      "output": ["payout_id", "provider_status", "audit_event_id"],
+      "productionGate": "explicit_current_conversation_approval"
+    },
+    "audit.search": {
+      "mode": "read",
+      "roles": ["admin", "legal", "finance", "platform_owner"],
+      "input": ["filters", "cursor", "limit"],
+      "guards": ["audit_scope_authorized"],
+      "output": ["events", "next_cursor"]
+    }
+  }
+}

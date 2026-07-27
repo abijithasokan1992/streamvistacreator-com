@@ -63,23 +63,28 @@ export function RevenueStatementImport() {
 
   useEffect(() => {
     // Load workspace-scoped candidates. RLS on each table restricts what the
-    // admin can see. We never fabricate defaults.
+    // admin can see. We never fabricate defaults. Column names: content_titles
+    // owner column is `owner_user_id`; deal_memos uses `buyer_user_id`.
     (async () => {
       const [tRes, bRes, dRes, wRes] = await Promise.all([
-        (supabase as any).from("content_titles").select("id, title, owner_id").limit(500),
+        (supabase as any).from("content_titles").select("id, title, owner_user_id, workspace_id").limit(500),
         (supabase as any).from("entity_profiles")
           .select("id, display_name")
           .eq("kind", "buyer")
           .limit(200),
-        (supabase as any).from("deal_memos").select("id, title_id, buyer_id").limit(200),
+        (supabase as any).from("deal_memos").select("id, title_id, buyer_user_id").limit(200),
         (supabase as any).from("workspaces").select("id, name").limit(100),
       ]);
+      if (tRes.error) toast.error(`Titles load failed: ${tRes.error.message}`);
+      if (bRes.error) toast.error(`Buyers load failed: ${bRes.error.message}`);
+      if (dRes.error) toast.error(`Deals load failed: ${dRes.error.message}`);
+      if (wRes.error) toast.error(`Workspaces load failed: ${wRes.error.message}`);
       setTitles((tRes.data ?? []).map((t: any) => ({
-        id: t.id, title: t.title, externalRefs: [], ownerUserId: t.owner_id ?? null, workspaceId: null,
+        id: t.id, title: t.title, externalRefs: [], ownerUserId: t.owner_user_id ?? null, workspaceId: t.workspace_id ?? null,
       })));
       setBuyers((bRes.data ?? []).map((b: any) => ({ id: b.id, displayName: b.display_name ?? b.id })));
       setDeals((dRes.data ?? []).map((d: any) => ({
-        id: d.id, titleId: d.title_id ?? null, buyerUserId: d.buyer_id ?? null,
+        id: d.id, titleId: d.title_id ?? null, buyerUserId: d.buyer_user_id ?? null,
       })));
       setWorkspaces((wRes.data ?? []).map((w: any) => ({ id: w.id, name: w.name })));
     })();
@@ -122,8 +127,9 @@ export function RevenueStatementImport() {
     setStep("review");
   };
 
-  const confirm = async () => {
+  const confirm = async (finalMappings?: RowMapping[]) => {
     if (!normalized) return;
+    const useMappings = finalMappings ?? mappings ?? [];
     setBusy(true);
     try {
       const res = await persistStatement({
@@ -137,6 +143,7 @@ export function RevenueStatementImport() {
         periodEnd: periodEnd || null,
         notes: null,
         normalization: normalized,
+        mappings: useMappings,
       });
       toast.success(`Imported ${res.inserted} rows (${res.skipped} skipped)`);
       setStep("done");
@@ -257,7 +264,7 @@ export function RevenueStatementImport() {
             deals={deals}
             buyers={buyers}
             workspaces={workspaces}
-            onConfirm={(m) => { setMappings(m); void confirm(); }}
+            onConfirm={(m) => { setMappings(m); void confirm(m); }}
             onBack={() => setStep("review")}
           />
         )}

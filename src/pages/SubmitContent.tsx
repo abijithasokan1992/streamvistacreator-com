@@ -13,6 +13,12 @@ const schema = z.object({
   language: z.string().trim().min(1, "Language is required").max(80),
   duration: z.string().trim().min(1, "Duration is required").max(40),
   rightsOwner: z.string().trim().min(1, "Rights owner is required").max(180),
+  email: z
+    .string()
+    .trim()
+    .email("Enter a valid email address")
+    .min(3, "Enter a valid email address")
+    .max(255, "Email must be under 255 characters"),
   trailerLink: z.string().trim().url("Enter a valid trailer link").max(1000),
   posterLink: z.string().trim().url("Enter a valid poster link").max(1000),
   contactNumber: z.string().trim().min(7, "Enter a valid contact number").max(30),
@@ -26,6 +32,7 @@ const initialForm: FormState = {
   language: "",
   duration: "",
   rightsOwner: "",
+  email: "",
   trailerLink: "",
   posterLink: "",
   contactNumber: "",

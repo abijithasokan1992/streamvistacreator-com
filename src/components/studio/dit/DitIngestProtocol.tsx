@@ -367,11 +367,13 @@ export default function DitIngestProtocol() {
               role="status"
               className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200"
             >
-              <div className="font-medium">DIT evidence storage is being configured.</div>
+              <div className="font-medium">
+                Local draft only — DIT compliance NOT submitted.
+              </div>
               <p className="mt-1 text-xs text-amber-200/80">
-                Your DIT log is saved and the screenshot is retained locally. Once the private
-                storage bucket is provisioned, re-open this form and re-attach the screenshot to
-                complete chain-of-custody.
+                The mandatory screenshot could not be uploaded to secure storage, so no compliance
+                log was written. Your form entries are preserved on this device as a local draft.
+                Re-submit once the private storage bucket is available.
               </p>
             </div>
           )}

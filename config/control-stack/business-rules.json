@@ -1,0 +1,79 @@
+{
+  "version": "1.0.0",
+  "principles": [
+    "no_status_without_evidence",
+    "no_marketplace_without_clearance",
+    "no_screener_without_approval",
+    "no_deal_without_buyer_identity",
+    "no_license_without_signed_agreement",
+    "no_delivery_without_entitlement",
+    "no_payout_without_reconciliation",
+    "no_production_write_without_explicit_approval"
+  ],
+  "titleRules": [
+    "draft_owner_required",
+    "metadata_minimum_required_before_submission",
+    "runtime_must_be_valid",
+    "assets_must_match_title",
+    "submission_locks_critical_fields_until_reopened",
+    "qc_and_legal_must_pass_before_distribution_ready"
+  ],
+  "marketplaceRules": [
+    "distribution_ready_required",
+    "commercial_profile_required",
+    "offerable_rights_package_required",
+    "admin_visibility_approval_required",
+    "unresolved_critical_conflict_blocks_listing"
+  ],
+  "buyerRules": [
+    "verified_organization_required",
+    "role_and_entitlement_required",
+    "screener_access_is_time_bound",
+    "screener_access_is_audited",
+    "deal_access_is_organization_scoped"
+  ],
+  "dealRules": [
+    "offer_must_reference_rights_package",
+    "counter_offer_preserves_version_history",
+    "commercial_terms_must_be_complete",
+    "accepted_terms_generate_agreement_draft",
+    "material_changes_require_reapproval"
+  ],
+  "agreementRules": [
+    "legal_review_required",
+    "version_hash_required",
+    "all_required_signatures_required",
+    "signed_version_is_immutable",
+    "amendments_create_new_version"
+  ],
+  "paymentRules": [
+    "invoice_must_reference_contract",
+    "currency_and_tax_fields_required",
+    "provider_event_must_be_idempotent",
+    "payment_status_requires_verified_evidence",
+    "refund_or_chargeback_reopens_entitlement_review"
+  ],
+  "deliveryRules": [
+    "active_license_required",
+    "payment_condition_satisfied",
+    "delivery_manifest_required",
+    "secure_expiring_access_required",
+    "download_and_view_events_audited",
+    "revocation_must_take_effect_immediately"
+  ],
+  "revenueRules": [
+    "source_report_required",
+    "import_idempotency_required",
+    "contract_allocation_rules_required",
+    "exceptions_require_finance_review",
+    "statement_requires_approval",
+    "payout_requires_approved_statement_and_balance"
+  ],
+  "renewalRules": [
+    "rights_revalidation_required",
+    "conflict_recheck_required",
+    "commercial_terms_reconfirmed",
+    "signatures_required_before_extension",
+    "expired_access_revoked"
+  ]
+}

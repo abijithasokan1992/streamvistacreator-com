@@ -1,0 +1,52 @@
+{
+  "version": "1.0.0",
+  "defaultPolicy": "deny",
+  "roles": {
+    "founder": {"scope": "global", "controlMcp": true, "mayApprove": ["code", "database", "deploy", "production_operation"]},
+    "platform_owner": {"scope": "global", "controlMcp": true, "mayApprove": ["code", "database", "deploy", "production_operation"]},
+    "super_admin": {"scope": "global", "controlMcp": true, "mayApprove": ["code", "database", "deploy", "production_operation"]},
+    "admin": {"scope": "business_operations", "controlMcp": false, "mayApprove": ["title_review", "marketplace", "screener", "deal", "delivery"]},
+    "qc": {"scope": "technical_qc", "controlMcp": false, "mayApprove": ["qc_decision"]},
+    "legal": {"scope": "rights_legal", "controlMcp": false, "mayApprove": ["legal_decision", "agreement_review"]},
+    "finance": {"scope": "finance", "controlMcp": false, "mayApprove": ["invoice", "reconciliation", "statement", "payout"]},
+    "operations": {"scope": "delivery_operations", "controlMcp": false, "mayApprove": ["delivery_preparation", "delivery_acceptance_tracking"]},
+    "creator": {"scope": "owned_content", "controlMcp": false, "mayApprove": ["submission", "creator_agreement_review"]},
+    "buyer": {"scope": "organization_entitlements", "controlMcp": false, "mayApprove": ["screener_request", "offer_response", "buyer_signature", "delivery_acceptance", "revenue_report"]},
+    "support": {"scope": "support_cases", "controlMcp": false, "mayApprove": []}
+  },
+  "separationOfDuties": [
+    "creator_cannot_approve_own_qc",
+    "creator_cannot_activate_license",
+    "buyer_cannot_self_approve_screener",
+    "buyer_cannot_self_activate_delivery",
+    "finance_required_for_payout",
+    "legal_required_for_contract_clearance",
+    "admin_required_for_marketplace_visibility",
+    "production_writes_require_control_role_and_explicit_approval"
+  ],
+  "protectedActions": {
+    "code_change": ["founder", "platform_owner", "super_admin"],
+    "database_change": ["founder", "platform_owner", "super_admin"],
+    "deployment": ["founder", "platform_owner", "super_admin"],
+    "role_change": ["founder", "platform_owner", "super_admin"],
+    "marketplace_visibility": ["admin", "super_admin", "platform_owner", "founder"],
+    "screener_approval": ["admin", "super_admin", "platform_owner", "founder"],
+    "agreement_activation": ["legal", "admin", "super_admin", "platform_owner", "founder"],
+    "payment_verification": ["finance", "super_admin", "platform_owner", "founder"],
+    "delivery_release": ["operations", "admin", "super_admin", "platform_owner", "founder"],
+    "statement_approval": ["finance", "super_admin", "platform_owner", "founder"],
+    "payout_initiation": ["finance", "super_admin", "platform_owner", "founder"]
+  },
+  "mandatoryControls": [
+    "authenticated_actor",
+    "server_side_authorization",
+    "rls_enforcement",
+    "organization_isolation",
+    "entity_entitlement",
+    "explicit_approval_for_writes",
+    "immutable_audit_event",
+    "secret_redaction",
+    "rate_limit",
+    "correlation_id"
+  ]
+}

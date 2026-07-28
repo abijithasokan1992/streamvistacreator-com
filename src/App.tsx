@@ -216,6 +216,29 @@ const PublicRoutes = () => (
         emailed URLs still land on the user's canonical dashboard instead of
         404-ing. Safe to delete once inbound traffic drops to zero. */}
     <Route path="/uploads" element={<Navigate to="/" replace />} />
+    <Route
+      path="/creator"
+      element={
+        <OnboardingGate>
+          <RoleGate allow={["content_owner", "creator", "studio"]}>
+            <Suspense fallback={<CreatorPortalFallback />}>
+              <CreatorShell />
+            </Suspense>
+          </RoleGate>
+        </OnboardingGate>
+      }
+    >
+      <Route index element={<Navigate to="/creator/catalog" replace />} />
+      <Route path="catalog" element={<Suspense fallback={<CreatorPortalFallback />}><CreatorCatalog /></Suspense>} />
+      <Route path="deliveries" element={<Suspense fallback={<CreatorPortalFallback />}><CreatorDeliveries /></Suspense>} />
+      <Route path="deliveries/:titleId" element={<Suspense fallback={<CreatorPortalFallback />}><CreatorDeliveries /></Suspense>} />
+      <Route path="distribution" element={<Suspense fallback={<CreatorPortalFallback />}><CreatorDistribution /></Suspense>} />
+      <Route path="marketplace" element={<Suspense fallback={<CreatorPortalFallback />}><CreatorMarketplace /></Suspense>} />
+      <Route path="deals" element={<Suspense fallback={<CreatorPortalFallback />}><CreatorDeals /></Suspense>} />
+      <Route path="revenue" element={<Suspense fallback={<CreatorPortalFallback />}><CreatorRevenue /></Suspense>} />
+      <Route path="insights" element={<Suspense fallback={<CreatorPortalFallback />}><CreatorInsights /></Suspense>} />
+      <Route path="settings" element={<Suspense fallback={<CreatorPortalFallback />}><CreatorSettings /></Suspense>} />
+    </Route>
     <Route path="/producer" element={<CanonicalDashboardRedirect />} />
     <Route path="/vault" element={<CanonicalDashboardRedirect />} />
     <Route path="/studio" element={<CanonicalDashboardRedirect />} />

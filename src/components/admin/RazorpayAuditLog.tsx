@@ -8,6 +8,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { RefreshCw, Activity, ChevronDown, ChevronUp } from "lucide-react";
+import TechnicalDetailsDisclosure from "@/components/admin/TechnicalDetailsDisclosure";
+import { isTestRecord, razorpayEventLabel } from "@/lib/copy/adminLabels";
 
 type Row = {
   id: string;
@@ -117,6 +119,8 @@ export default function RazorpayAuditLog() {
           <div className="space-y-2">
             {filtered.map((r) => {
               const isOpen = expanded === r.id;
+              const humanEvent = razorpayEventLabel(r.event_type);
+              const testFlag = isTestRecord(r.event_type, r.source);
               return (
                 <div key={r.id} className="rounded-md border border-border/60 bg-background/40">
                   <button
@@ -125,13 +129,10 @@ export default function RazorpayAuditLog() {
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <Badge variant={statusVariant(r.status, r.error_code)} className="shrink-0">
-                        {r.event_type}
+                        {humanEvent}
                       </Badge>
                       <span className="text-xs text-muted-foreground shrink-0">
                         {new Date(r.created_at).toLocaleString()}
-                      </span>
-                      <span className="text-xs font-mono truncate">
-                        {r.payment_id || r.order_id || r.subscription_id || "—"}
                       </span>
                       {r.amount_paise != null && (
                         <span className="text-xs text-muted-foreground shrink-0">
@@ -140,29 +141,36 @@ export default function RazorpayAuditLog() {
                       )}
                       {r.error_code && (
                         <span className="text-xs text-destructive truncate">
-                          {r.error_code}: {r.error_description}
+                          Payment could not be completed.
                         </span>
                       )}
                     </div>
                     {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </button>
                   {isOpen && (
-                    <pre className="px-3 pb-3 pt-0 text-[11px] overflow-x-auto max-h-80 text-muted-foreground">
-{JSON.stringify(
-  {
-    source: r.source,
-    status: r.status,
-    signature_valid: r.signature_valid,
-    currency: r.currency,
-    order_id: r.order_id,
-    payment_id: r.payment_id,
-    subscription_id: r.subscription_id,
-    payload: r.payload,
-  },
-  null,
-  2,
-)}
-                    </pre>
+                    <div className="px-3 pb-3">
+                      <TechnicalDetailsDisclosure
+                        testRecord={testFlag}
+                        defaultOpen={false}
+                        title="Developer support fields"
+                        entries={[
+                          { label: "event_type", value: r.event_type, mono: true },
+                          { label: "source", value: r.source, mono: true },
+                          { label: "order_id", value: r.order_id ?? "—", mono: true },
+                          { label: "payment_id", value: r.payment_id ?? "—", mono: true },
+                          { label: "subscription_id", value: r.subscription_id ?? "—", mono: true },
+                          { label: "status", value: r.status ?? "—", mono: true },
+                          { label: "currency", value: r.currency ?? "—", mono: true },
+                          { label: "signature_valid", value: String(r.signature_valid ?? "—"), mono: true },
+                          { label: "error_code", value: r.error_code ?? "—", mono: true },
+                          { label: "error_description", value: r.error_description ?? "—", mono: true },
+                        ]}
+                      >
+                        <pre className="text-[11px] overflow-x-auto max-h-80 text-muted-foreground">
+{JSON.stringify(r.payload, null, 2)}
+                        </pre>
+                      </TechnicalDetailsDisclosure>
+                    </div>
                   )}
                 </div>
               );

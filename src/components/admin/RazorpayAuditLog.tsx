@@ -92,7 +92,7 @@ export default function RazorpayAuditLog() {
         </CardTitle>
         <div className="flex items-center gap-2 flex-wrap">
           <Input
-            placeholder="Search order / payment / sub id…"
+            placeholder="Search by order or payment…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-9 w-64"

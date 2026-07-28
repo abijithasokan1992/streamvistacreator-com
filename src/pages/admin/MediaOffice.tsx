@@ -3,6 +3,10 @@ import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { Loader2, LayoutDashboard, Film, Users, Wallet, LogOut, ShieldCheck, ArrowUpRight, WifiOff, RefreshCw } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  applyProductionFilterByTitleIdColumn,
+} from "@/lib/operations/productionFilters";
+import { fetchQuarantinedTitleIds } from "@/lib/operations/useQuarantinedTitleIds";
 import { toast } from "sonner";
 import { OFFICE } from "@/lib/admin/labels";
 import { useLiveAdminCounts } from "@/hooks/useLiveAdminCounts";

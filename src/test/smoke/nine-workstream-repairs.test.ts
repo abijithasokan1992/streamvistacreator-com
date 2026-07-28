@@ -257,13 +257,12 @@ describe("P1-C/D Intelligence 200-OK envelope interpretation", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Onboarding field-lock migration — quarantined
+// Onboarding field-lock migration — applied
 // ---------------------------------------------------------------------------
-describe("Onboarding field-lock migration (quarantined)", () => {
-  const sql = readFileSync(
-    join(process.cwd(), "supabase/migrations-pending/20260727130000_onboarding_requests_field_lock_trigger.sql"),
-    "utf8",
-  );
+describe("Onboarding field-lock migration (applied)", () => {
+  const APPLIED_PATH =
+    "supabase/migrations-pending/APPLIED_20260728_onboarding_requests_field_lock_trigger.sql.applied";
+  const sql = readFileSync(join(process.cwd(), APPLIED_PATH), "utf8");
 
   it("uses BEFORE UPDATE trigger comparing OLD vs NEW", () => {
     expect(sql).toMatch(/BEFORE UPDATE ON public\.onboarding_requests/);
@@ -297,15 +296,15 @@ describe("Onboarding field-lock migration (quarantined)", () => {
     expect(sql).toMatch(/DROP TRIGGER IF EXISTS trg_enforce_onboarding_owner_field_lock/);
   });
 
-  it("stays quarantined — not applied under supabase/migrations", () => {
-    // Sanity: the file's canonical location is migrations-pending, not migrations.
+  it("original quarantined filename is no longer present (renamed to APPLIED_*.applied)", () => {
     expect(() =>
       readFileSync(
         join(
           process.cwd(),
-          "supabase/migrations/20260727130000_onboarding_requests_field_lock_trigger.sql",
+          "supabase/migrations-pending/20260727130000_onboarding_requests_field_lock_trigger.sql",
         ),
       ),
     ).toThrow();
   });
 });
+

@@ -25,9 +25,9 @@ export default function FinanceExtensionHub() {
           <TrendingUp className="w-5 h-5 text-primary-foreground" />
         </div>
         <div>
-          <h3 className="font-display text-lg font-bold">Revenue, Royalties & Settlements</h3>
+          <h3 className="font-display text-lg font-bold">Revenue, Royalties & Completed Payments</h3>
           <p className="text-xs text-muted-foreground">
-            Import external revenue, compute royalty splits, issue partner statements and settle payouts —
+            Add external revenue, compute revenue share, issue partner earnings reports and complete payments —
             reusing invoices, deal memos and payouts.
           </p>
         </div>
@@ -36,11 +36,11 @@ export default function FinanceExtensionHub() {
       <Tabs defaultValue="dashboard" className="w-full">
         <TabsList className="flex flex-wrap gap-1 bg-transparent p-0 h-auto">
           <T v="dashboard" icon={<BarChart3 className="w-3.5 h-3.5" />}>Dashboard</T>
-          <T v="import" icon={<Upload className="w-3.5 h-3.5" />}>Revenue Import</T>
-          <T v="statements" icon={<FileText className="w-3.5 h-3.5" />}>Partner Statements</T>
-          <T v="royalty" icon={<Calculator className="w-3.5 h-3.5" />}>Royalty Engine</T>
+          <T v="import" icon={<Upload className="w-3.5 h-3.5" />}>Add Revenue Data</T>
+          <T v="statements" icon={<FileText className="w-3.5 h-3.5" />}>Partner Earnings Reports</T>
+          <T v="royalty" icon={<Calculator className="w-3.5 h-3.5" />}>Revenue Share Calculator</T>
           <T v="tracking" icon={<Wallet className="w-3.5 h-3.5" />}>Payment Tracking</T>
-          <T v="settlements" icon={<Landmark className="w-3.5 h-3.5" />}>Settlements</T>
+          <T v="settlements" icon={<Landmark className="w-3.5 h-3.5" />}>Completed Payments</T>
           <T v="analytics" icon={<TrendingUp className="w-3.5 h-3.5" />}>Analytics</T>
         </TabsList>
 
@@ -88,9 +88,9 @@ function RevenueDashboard() {
         <Button variant="outline" size="sm" onClick={load}><RefreshCw className="w-3.5 h-3.5 mr-1" /> Refresh</Button>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Stat label="Gross revenue · 90d" value={F.fmtINR(summary.total_gross_paise)} tone="ok" />
-        <Stat label="Net revenue · 90d" value={F.fmtINR(summary.total_net_paise)} tone="primary" />
-        <Stat label="Outstanding payouts" value={F.fmtINR(summary.outstanding_payouts_paise)} tone="warn" />
+        <Stat label="Total Revenue · 90d" value={F.fmtINR(summary.total_gross_paise)} tone="ok" />
+        <Stat label="Revenue After Deductions · 90d" value={F.fmtINR(summary.total_net_paise)} tone="primary" />
+        <Stat label="Payments Due" value={F.fmtINR(summary.outstanding_payouts_paise)} tone="warn" />
         <Stat label="Paid payouts" value={F.fmtINR(summary.paid_payouts_paise)} tone="muted" />
       </div>
 

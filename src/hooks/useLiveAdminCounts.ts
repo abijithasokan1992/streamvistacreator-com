@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { applyProductionFilterToTitlesQuery } from "@/lib/operations/productionFilters";
 
 /**
  * Live-wired counters for the Media Office dashboard. Subscribes to
@@ -10,6 +11,11 @@ import { supabase } from "@/integrations/supabase/client";
  *
  * Exposes an explicit `syncError` + `reconnect()` so the UI can show a
  * clear notification and a manual retry button when realtime drops.
+ *
+ * Every `content_titles` query is routed through
+ * `applyProductionFilterToTitlesQuery` so quarantined demo / test / seed
+ * / pre_production rows never contribute to Mission Control, QC, Legal,
+ * Draft, Approved, Published or Ready-for-distribution totals.
  */
 export type AdminCounts = {
   awaitingQc: number;
@@ -28,9 +34,9 @@ const ZERO: AdminCounts = {
 };
 
 async function countBy(filter: (q: any) => any): Promise<number> {
-  const { count, error } = await filter(
-    supabase.from("content_titles").select("id", { count: "exact", head: true }),
-  );
+  const base = supabase.from("content_titles").select("id", { count: "exact", head: true });
+  const production = applyProductionFilterToTitlesQuery(base);
+  const { count, error } = await filter(production);
   if (error) throw error;
   return count ?? 0;
 }

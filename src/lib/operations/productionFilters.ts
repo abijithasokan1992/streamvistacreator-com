@@ -59,10 +59,26 @@ export function isProductionTitle(row: OperationalTitleRow): boolean {
   const meta = row.metadata ?? {};
   if ((meta as any).is_test === true) return false;
   const classification = String((meta as any).data_classification ?? "").toLowerCase();
-  if (["demo", "test", "seed", "internal_test", "archived"].includes(classification)) return false;
+  if (NON_PRODUCTION_CLASSIFICATIONS.includes(classification as any)) return false;
 
   return true;
 }
+
+/**
+ * Classifications produced by the Batch 2 quarantine migration
+ * (see supabase/migrations-pending/20260728_quarantine_demo_titles.sql).
+ * Any row whose `metadata.data_classification` matches is excluded from
+ * operational counters and only surfaced in the Demo & Test review view.
+ */
+export const NON_PRODUCTION_CLASSIFICATIONS = [
+  "demo",
+  "test",
+  "seed",
+  "internal_test",
+  "system_test",
+  "pre_production",
+  "archived",
+] as const;
 
 /**
  * PostgREST filter fragment appended to `content_titles` counter queries.
@@ -74,6 +90,44 @@ export function isProductionTitle(row: OperationalTitleRow): boolean {
 export const PRODUCTION_TITLE_OWNER_EXCLUSION = NON_PRODUCTION_OWNER_IDS
   .map((id) => `owner_user_id.neq.${id}`)
   .join(",");
+
+/**
+ * Apply the shared production filter to any PostgREST query builder that
+ * targets `content_titles`. Excludes:
+ *   - known non-production owner ids (orphans, internal bridges)
+ *   - rows tagged `metadata.is_test = true` by the quarantine migration
+ *
+ * Callers that also need to exclude `data_classification` values beyond
+ * `is_test = true` can post-filter with `isProductionTitle` in-memory;
+ * every quarantined row has `is_test = true` so the DB filter alone is
+ * sufficient for the counters wired in Batch 2.
+ *
+ * Usage:
+ *   const q = supabase.from("content_titles").select("id", { count: "exact", head: true });
+ *   applyProductionFilterToTitlesQuery(q).eq("status", "draft")
+ */
+export function applyProductionFilterToTitlesQuery<Q extends { not: (col: string, op: string, val: unknown) => Q; filter?: unknown }>(
+  query: Q,
+): Q {
+  let q: any = query;
+  for (const ownerId of NON_PRODUCTION_OWNER_IDS) {
+    q = q.neq("owner_user_id", ownerId);
+  }
+  // Exclude rows where metadata.is_test === true. Coerced to text via ->>.
+  q = q.not("metadata->>is_test", "eq", "true");
+  return q as Q;
+}
+
+/**
+ * Inverse of `applyProductionFilterToTitlesQuery`: narrows a query to
+ * ONLY the quarantined rows so the Demo & Test review view can list
+ * them for founder inspection.
+ */
+export function applyQuarantineOnlyFilterToTitlesQuery<Q extends { eq: (col: string, val: unknown) => Q }>(
+  query: Q,
+): Q {
+  return (query as any).eq("metadata->>is_test", "true") as Q;
+}
 
 /** Labels used by counter chips — kept here so both dashboards stay in sync. */
 export const OPERATIONAL_COUNTER_LABELS = {

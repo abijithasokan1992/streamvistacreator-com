@@ -1,93 +1,73 @@
+# Checkpoint 0 — Evidence collected (build mode needed to persist docs)
 
-# StreamVista Production Readiness Program
+Phase 0 ran under the read-only scope you approved. All git and database evidence is now in hand. The only remaining step is writing the four documentation files, which requires build mode — plan mode blocked those writes.
 
-This is a multi-batch program, not a single change. Each batch ends with a written checkpoint report and an explicit "go / no-go" from you before the next batch starts. Nothing is published, no real payment runs, no data is deleted, and every DB change is reversible.
+## What Phase 0 confirmed (read-only, no mutations)
 
-## Guardrails (apply to every batch)
+### 1. Git and working-tree state
+- Current branch: `edit/edt-fb74646d-34bf-4b7f-8792-22c81c5a5c9d` @ `3d5dd808c6552b9a890fea84e08e2926e15184b7`
+- `main` HEAD: `3d5dd808…` — identical SHA. 0 commits ahead, 0 behind.
+- Working tree: **clean** (`git status --porcelain` returned no lines).
+- Batch commits (all already on `main`, ancestors of HEAD):
+  - Batch A regression tests — `3d5dd808`
+  - Batch 2b filter wiring — `8547f541`
+  - Batch 2 wiring — `cc8d503a`
+  - Batch 2 quarantine applied — `d1e2167f`
+  - Batch 2 migration SQL revamp — `e5a03325`
+  - Batch 2 manifest reprint — `1e718cf9`
+- **No batch work is trapped in an unmerged branch or in the working tree.** Creating `chatgpt/production-readiness` now from `3d5dd808` would preserve everything without cherry-picks.
 
-- Founder / Platform Owner / Super Admin roles preserved; verified before and after each batch.
-- No `DROP TABLE`, no bucket deletion, no destructive `DELETE` on business rows. Demo data is tagged, never removed.
-- Every migration ships as a pair: forward + rollback, idempotent, quarantined in `supabase/migrations-pending/` until you approve.
-- No secrets in the browser bundle or logs. No real Razorpay charges — Test Mode only.
-- Each batch produces: files changed, migrations proposed (not applied), tests run, before/after evidence, remaining risks.
+### 2. GitHub / PR surface — cannot be authoritatively enumerated
+- `origin` points at Lovable-managed git storage, not GitHub.
+- No GitHub connector exists in the workspace (checked via `standard_connectors--list_connections`).
+- Unauthenticated `GET api.github.com/repos/abijithasokan1992/streamvistacreator-com/pulls` returned **HTTP 404**.
+- Visible remote branches other than `main` / `edit/edt-*`: one Razorpay feature branch (likely already merged), three Copilot branches, three `lovable-backup-main-*` snapshots. All treated **do-not-merge by default** until PR metadata can be verified.
+- **Recommendation:** authorize the GitHub connector before Phase 1 if PR-based review is required.
 
-## Batch sequence
+### 3. Migration inventory — 8 files in `supabase/migrations-pending/`
+Latest remote `schema_migrations` version: `20260728042003`. Per-file status:
 
-### Batch 1 — Checkpoint & baseline
-- Snapshot: current roles for Founder accounts, list of buckets + policies, list of Edge Functions + secrets (names only), enabled RLS matrix, applied vs pending migrations, current counter values per dashboard.
-- Deliverable: `docs/release/BASELINE.md` + role-preservation proof. No code changes.
+| File | Applied remotely? | Status |
+|---|---|---|
+| `20260717_000000_title_canonical_backfill.sql` | No (`canonical_title` column absent) | **pending-still-required** |
+| `20260717_010000_revenue_statement_import.sql` | Partial (`revenue_imports` table present, `import_revenue_statement` RPC **absent**) | **pending, needs investigation** |
+| `20260718_000000_dit_ingest_screenshots_bucket.sql` | Yes (bucket present) | **applied-but-in-pending (do-not-reapply)** |
+| `20260727101915_buyer_marketplace_rpc.sql` | Yes (RPC present; `schema_migrations` `20260727101920`) | **applied-but-in-pending (do-not-reapply)** |
+| `20260727101916_user_profiles_privileged_guard.sql` | Yes (guard function present) | **applied-but-in-pending (do-not-reapply)** |
+| `20260727120000_admin_set_title_commercial_state.sql` | No (RPC absent) | **pending-still-required** |
+| `20260727130000_onboarding_requests_field_lock_trigger.sql` | No (neither trigger installed) | **pending-still-required** — matches the active `hard_disk_intakes_ineffective_admin_notes_check` scanner finding |
+| `20260728_quarantine_demo_titles.sql` | **Not in `schema_migrations`**, but 41 rows carry `metadata->>'quarantined_batch' = 'batch2_2026-07-28'` with the exact per-class counts from the Batch 2 manifest (`pre_production 21 · seed 13 · internal_test 6 · system_test 1`) | **applied-but-in-pending (do-not-reapply)** — must stay in `migrations-pending/` |
 
-### Batch 2 — Demo data quarantine (reversible)
-- Apply the already-drafted `20260728_quarantine_demo_titles.sql` after review, plus companion tags for related rows (owners, uploads, deals, revenue, emails tied to the 41 titles).
-- Wire the existing `src/lib/operations/productionFilters.ts` into `useLiveAdminCounts`, Mission Control, Media Office, Recent Activity, QC/Legal queues, Buyer Mapping, Accounts, Revenue, operational reports.
-- Expected result: operational counters read a true zero; quarantined rows visible only in a "Demo & Test" review tab.
+### 4. Defect baseline — nothing marked closed
+- **Active scanner:** `hard_disk_intakes_ineffective_admin_notes_check` — trigger drafted, un-applied, awaiting Checkpoint-1 approval.
+- **Nine defects:**
+  1. Submit Content — source-fixed, runtime 201 confirmed once; business-contract runtime **pending**.
+  2. QC → Legal — source-fixed (Batch A); end-to-end **blocked, no eligible title**.
+  3. Creator Revenue workspace scoping — source appears scoped; two-workspace isolation proof **pending**.
+  4. Revenue import mapping — **open** (RPC absent from live schema).
+  5. DIT bucket / log save — bucket now present; log-write path **unverified**.
+  6. Email retry HTTP 500 — last fix landed; runtime **unverified**.
+  7. Firecrawl structured-error visibility — **open**; connection not linked to project.
+  8. Firecrawl custom-search error visibility — **open**.
+  9. Email retry banner reason surfacing — **open**.
 
-### Batch 3 — Admin ↔ Media Office unification
-- `/admin` = Founder/Platform Owner home only. Move duplicated overview logic out.
-- `/admin/media-office` becomes the department workspace: Movie Desk, Content Quality Review, Rights & Legal, Buyer Mapping, Distribution Readiness, Accounts. All Quick Actions deep-link into these — no parallel business logic.
-- New restricted route `Platform → Developer Tools → Backend Details` (Founder-only) hosts Supabase project details, endpoints, RLS guidance, secrets metadata, logs. Removed from Media Office.
+### 5. Documentation write status
+The four Phase-0 documents were fully drafted this turn but blocked by plan mode:
+- `docs/release/CURRENT_WORK_PRESERVATION.md`
+- `docs/release/PR_CONSOLIDATION.md`
+- `docs/release/PENDING_MIGRATION_STATUS.md`
+- `docs/release/DEFECT_BASELINE.md`
 
-### Batch 4 — Live sync & counter reliability
-- One shared production-data filter used everywhere.
-- Realtime: single channel per surface, teardown on unmount, exponential reconnect, "last known good" + stale badge, explicit Retry Sync, no silent zeroes on failure.
-- Add `mission-signals` guard tests for disconnect, reconnect, and stale-state labels.
+Full drafts are held in this turn's context and will be persisted verbatim the moment build mode is granted. **No file has been written** — the working tree remains clean.
 
-### Batch 5 — Database readiness audit
-- Schema diff vs code expectations: missing columns, mismatched types, FK/cascade gaps, missing indexes, orphan triggers, workflow status enums vs code.
-- Every proposed fix arrives as a reversible migration in `supabase/migrations-pending/` with preflight + rollback notes. Nothing auto-applied.
+## Recommended consolidation sequence (for Checkpoint-0 review)
 
-### Batch 6 — Auth & permissions
-- End-to-end test matrix (signup, verify, login, logout, reset, magic link/OAuth where enabled, session restore, protected routes, onboarding gate, suspended/deleted users) for Founder, Admin, Staff, Creator, Buyer.
-- Confirm RLS + server-side checks agree; UI-hidden buttons never treated as security.
+1. **Approve build mode** so the four docs are persisted to the current edit branch (no commit, no push).
+2. Do **not** create `chatgpt/production-readiness` yet — `main` already contains every batch commit; the new branch is only useful once Phase 1 has approved artefacts to stack onto it.
+3. Authorize the **GitHub connector** for `abijithasokan1992/streamvistacreator-com` before Phase 1, so PR/CI status becomes authoritative.
+4. Keep `20260728_quarantine_demo_titles.sql` locked inside `migrations-pending/`. Never move it into `migrations/`. Never open a re-run migration.
+5. Phase 1 begins only after you explicitly approve Checkpoint 0.
 
-### Batch 7 — Creator & title workflow
-- Fix: duplicate titles, repeated metadata prompts, lost autosave, broken resume, upload/state mismatch, wrong quota, no-op buttons, false success toasts.
-- Regression tests for draft → upload → submit → send-back → resubmit.
+## What I need from you
 
-### Batch 8 — Storage readiness
-- Audit every bucket (existence, public/private, RLS on `storage.objects`, signed URLs, ownership prefix, MIME/size, multipart/resume, orphan handling, quota calc).
-- Investigate the 15 storage alerts; separate demo-generated from real config failures; fix real ones, archive demo ones with reason.
-
-### Batch 9 — Admin review workflow
-- QC → Legal → Approval → Ready for Distribution → Release must run without manual DB edits. Enforce valid transitions via RPC + trigger; audit every state change; notify creator on each hop.
-
-### Batch 10 — Buyer & distribution
-- Buyer create/access/mapping, catalogue visibility with territory/language/rights filters, offer + deal + agreement linkage, delivery assets, buyer-facing access limits. Remove fake mappings post-quarantine.
-
-### Batch 11 — Accounts, revenue, payments (Test Mode only)
-- Revenue import → row mapping → title/buyer matching → allocation → creator/platform split → invoice → approval → payout scheduling.
-- Razorpay: signature verification, idempotency, duplicate-charge prevention, refund/failure paths, full audit. No live charges.
-
-### Batch 12 — Email & notifications
-- Investigate current failed email(s). Verify: signup, reset, submission, QC/Legal, send-back, approval/release, invoice/payment.
-- Bounded retry, DLQ, manual replay, dedupe. Archive demo failures with reason; keep real provider errors visible.
-
-### Batch 13 — Edge Functions & integrations
-- Per-function audit: authn, authz, input validation (Zod), error handling, secrets, CORS, rate limits, idempotency, logging, retry safety, DB write permissions.
-- Integrations: Supabase, Razorpay, email provider, Oracle Cloud, AI, storage, cron.
-
-### Batch 14 — Security verification
-- RLS on every exposed table, service-role usage, storage policies, signed URLs, webhook signatures, billing trigger protections, PII redaction, audit-log access, rate limits, input validation, privilege escalation, Founder-only controls.
-- Each finding classified: Confirmed Vulnerability / Confirmed Protected / Accepted Risk / Needs Verification / Fixed and Tested. Documented accepted risks not re-flagged.
-
-### Batch 15 — Remove mocks & fake success states
-- Repo-wide sweep: mock data, hardcoded counters, demo accounts, placeholder success responses, fake payment IDs/webhook secrets, sample buyers, local-only fallbacks, buttons without backend action, premature success toasts, debug bypasses.
-- Fail-close on unsafe fallbacks; keep only clearly labelled test fixtures.
-
-### Batch 16 — Full test pass
-- Typecheck, lint, unit, integration, migration safety, RLS/authz, storage policy, Edge Function, realtime reconnect, payment/webhook, build, route smoke, E2E per role (Founder/Admin/Staff/Creator/Buyer).
-- Full production-readiness E2E: Creator signup → onboarding → draft → upload → submit → QC → Legal → approval → buyer mapping → deal → revenue import → invoice → payout-ready. Controlled test records quarantined after.
-
-### Batch 17 — Founder Release Report
-Deliverable `docs/release/FOUNDER_RELEASE_REPORT.md` containing every section you listed: issues found/fixed, remaining blockers, accepted risks, migrations required (with preflight + rollback), buckets/policies verified, Edge Functions verified, secrets still required, files changed, tests + exact results, build result, screenshots of critical workflows, before/after counters, role-access matrix, confirmation no real payment occurred, confirmation no production data deleted, deployment + rollback plan.
-
-Final status one of: **PRODUCTION READY / READY WITH ACCEPTED RISKS / BLOCKED**. No publish until you approve this report.
-
-## Clarifications I need before starting Batch 1
-
-1. **Cadence**: proceed batch-by-batch with your approval after each checkpoint (recommended), or run 1–4 together then pause?
-2. **Founder accounts to preserve**: confirm the exact user emails/IDs I must never touch (I will read them from `user_roles` and confirm back in Batch 1 if you'd rather).
-3. **Real integrations to leave OFF for now**: confirm Razorpay stays Test Mode, real email sending disabled to non-founder addresses during Batches 6–12 (I'll route to a sink or your address).
-4. **Quarantine scope**: apply the drafted `20260728_quarantine_demo_titles.sql` as-is in Batch 2, or want a fresh manifest review first?
-
-I'll wait for your answers (or a simple "proceed, batch-by-batch, defaults") before switching to build mode.
+Please **switch to build mode** and approve Checkpoint 0. That single approval covers only the write of the four documentation files listed above — no branch operations, no migrations, no PR mutation, no data change.

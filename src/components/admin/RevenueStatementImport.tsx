@@ -58,6 +58,7 @@ export function RevenueStatementImport() {
   const [deals, setDeals] = useState<DealCandidate[]>([]);
   const [workspaces, setWorkspaces] = useState<WorkspaceCandidate[]>([]);
   const [mappings, setMappings] = useState<RowMapping[] | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
   const adapter = useMemo(() => getAdapter(sourceType), [sourceType]);
 

@@ -69,10 +69,24 @@ const td = "px-3 py-2 align-top text-foreground/90";
 export function IntelligenceLaneTable({
   lane,
   data,
+  errorMessage,
 }: {
   lane: LaneId;
   data: StructuredLaneData | null | undefined;
+  /**
+   * When set, renders a destructive error banner instead of the empty state.
+   * Use this to surface upstream failures (e.g. Firecrawl auth/API errors)
+   * so admins can distinguish "nothing found" from "integration broken".
+   */
+  errorMessage?: string | null;
 }) {
+  if (errorMessage) {
+    return (
+      <p className="text-xs rounded-md border border-destructive/40 bg-destructive/10 text-destructive px-3 py-2">
+        Structured scan failed: {errorMessage}
+      </p>
+    );
+  }
   if (!data) {
     return <p className="text-xs text-muted-foreground italic">No structured scan yet.</p>;
   }

@@ -202,7 +202,7 @@ export default function SubmitContent() {
             </div>
 
             <Field label="Rights Owner" error={errors.rightsOwner}>
-              <input value={form.rightsOwner} onChange={(e) => setField("rightsOwner", e.target.value)} className={inputClass} maxLength={180} />
+              <input value={form.rightsOwner} onChange={(e) => setField("rightsOwner", e.target.value)} className={inputClass} maxLength={120} />
             </Field>
 
             <Field label="Email" error={errors.email}>

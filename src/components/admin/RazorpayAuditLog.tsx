@@ -85,7 +85,7 @@ export default function RazorpayAuditLog() {
       <CardHeader className="flex flex-row items-center justify-between gap-3 flex-wrap">
         <CardTitle className="flex items-center gap-2 text-base">
           <Activity className="w-4 h-4 text-primary" />
-          Razorpay Audit Log
+          Payment Activity History
           <Badge variant="secondary" className="ml-2">{filtered.length}</Badge>
         </CardTitle>
         <div className="flex items-center gap-2 flex-wrap">

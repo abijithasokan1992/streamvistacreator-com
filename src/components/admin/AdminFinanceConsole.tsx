@@ -66,7 +66,7 @@ export default function AdminFinanceConsole() {
               <Wallet className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <h3 className="font-display text-lg font-bold">Finance Operations</h3>
+              <h3 className="font-display text-lg font-bold">Payments & Finance</h3>
               <p className="text-xs text-muted-foreground">
                 Subscriptions, invoices, refunds and payment traces — scoped for finance staff.
               </p>

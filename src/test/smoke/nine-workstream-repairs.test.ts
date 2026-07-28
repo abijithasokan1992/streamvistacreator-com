@@ -296,7 +296,7 @@ describe("Onboarding field-lock migration (applied)", () => {
     expect(sql).toMatch(/DROP TRIGGER IF EXISTS trg_enforce_onboarding_owner_field_lock/);
   });
 
-  it("no longer lives in migrations-pending (was promoted to applied)", () => {
+  it("original quarantined filename is no longer present (renamed to APPLIED_*.applied)", () => {
     expect(() =>
       readFileSync(
         join(

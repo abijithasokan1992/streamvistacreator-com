@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import fs from "fs";
@@ -67,32 +67,51 @@ function prerenderRoutes() {
 }
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  server: {
-    host: "::",
-    port: 8080,
-    hmr: {
-      overlay: false,
-    },
-    headers: {
-      "X-Content-Type-Options": "nosniff",
-      "X-Frame-Options": "SAMEORIGIN",
-      "Referrer-Policy": "strict-origin-when-cross-origin",
-      "Permissions-Policy": "camera=(), microphone=(), geolocation=(), interest-cohort=()",
-    },
-  },
-  plugins: [
-    react(),
-    mcpPlugin(),
-    syncMcpManifestToPublic(),
-    mode === "development" && componentTagger(),
-    mode !== "development" && prerenderRoutes(),
-  ].filter(Boolean),
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), "");
+  const supabaseUrl = env.VITE_SUPABASE_URL ?? process.env.VITE_SUPABASE_URL ?? env.SUPABASE_URL ?? process.env.SUPABASE_URL;
+  const supabasePublishableKey =
+    env.VITE_SUPABASE_PUBLISHABLE_KEY ??
+    process.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
+    env.VITE_SUPABASE_ANON_KEY ??
+    process.env.VITE_SUPABASE_ANON_KEY ??
+    env.SUPABASE_ANON_KEY ??
+    process.env.SUPABASE_ANON_KEY;
 
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
+  if (supabaseUrl) process.env.VITE_SUPABASE_URL = supabaseUrl;
+  if (supabasePublishableKey) process.env.VITE_SUPABASE_PUBLISHABLE_KEY = supabasePublishableKey;
+
+  return {
+    define: {
+      "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(supabaseUrl),
+      "import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY": JSON.stringify(supabasePublishableKey),
     },
-    dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@tanstack/react-query", "@tanstack/query-core"],
-  },
-}));
+    server: {
+      host: "::",
+      port: 8080,
+      hmr: {
+        overlay: false,
+      },
+      headers: {
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "SAMEORIGIN",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Permissions-Policy": "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+      },
+    },
+    plugins: [
+      react(),
+      mcpPlugin(),
+      syncMcpManifestToPublic(),
+      mode === "development" && componentTagger(),
+      mode !== "development" && prerenderRoutes(),
+    ].filter(Boolean),
+
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
+      },
+      dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@tanstack/react-query", "@tanstack/query-core"],
+    },
+  };
+});

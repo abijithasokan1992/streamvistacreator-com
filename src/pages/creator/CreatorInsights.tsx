@@ -5,7 +5,7 @@ import { fetchFreeTierStatus } from "@/lib/creator/titleApi";
 import { useNavigate } from "react-router-dom";
 import type { SectionId } from "@/components/creator/CreatorSidebar";
 
-const SECTION_TO_ROUTE: Record<string, string> = {
+const SECTION_TO_ROUTE: Partial<Record<SectionId, string>> = {
   titles: "/creator/catalog",
   delivery_vault: "/creator/deliveries",
   distribution: "/creator/distribution",

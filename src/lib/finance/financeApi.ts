@@ -408,11 +408,14 @@ export async function getRevenueSummary(days = 90): Promise<{
   paid_payouts_paise: number;
 }> {
   const since = new Date(Date.now() - days * 86400_000).toISOString().slice(0, 10);
+  const quarantined = await fetchQuarantinedTitleIds();
+  const revenueBase = supabase
+    .from("revenue_lines")
+    .select("channel,gross_amount_paise,net_amount_paise,occurred_on,title_id")
+    .gte("occurred_on", since);
+  const revenueQuery = applyProductionFilterByTitleIdColumn(revenueBase, quarantined, "title_id");
   const [{ data: lines }, { data: payouts }] = await Promise.all([
-    supabase
-      .from("revenue_lines")
-      .select("channel,gross_amount_paise,net_amount_paise,occurred_on")
-      .gte("occurred_on", since),
+    revenueQuery,
     supabase.from("deal_payouts").select("payout_amount_paise,status"),
   ]);
 

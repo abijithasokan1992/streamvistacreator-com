@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Bell, AlertTriangle, AlertCircle, Info, X, CheckCheck, Filter } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
+import { applyProductionFilterByOwnerColumn } from "@/lib/operations/productionFilters";
 import { useMissionSignals, type MissionSignal } from "@/components/admin/hooks/useMissionSignals";
 import { cn } from "@/lib/utils";
 

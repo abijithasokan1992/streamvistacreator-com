@@ -150,7 +150,7 @@ export default function QuickActions({ onJump }: { onJump: (dept: string, sectio
       if (error) {
         const code = error.code ? ` [${error.code}]` : "";
         const hint = error.hint ? ` — ${error.hint}` : "";
-        toast.error(`Global maintenance failed${code}`, { description: `${error.message}${hint}` });
+        toast.error(`System check failed${code}`, { description: `${error.message}${hint}` });
         // eslint-disable-next-line no-console
         console.error("[handle_global_platform_maintenance]", error);
         return;
@@ -158,15 +158,15 @@ export default function QuickActions({ onJump }: { onJump: (dept: string, sectio
 
       const r = (data ?? {}) as MaintenanceResult;
       try { queryClient.invalidateQueries(); } catch { /* noop */ }
-      toast.success("Global maintenance complete", {
+      toast.success("System check complete", {
         description:
-          `Uploads requeued: ${r.uploads_requeued ?? 0} · ` +
-          `Emails requeued: ${r.emails_requeued ?? 0} · ` +
+          `Uploads retried: ${r.uploads_requeued ?? 0} · ` +
+          `Emails retried: ${r.emails_requeued ?? 0} · ` +
           `Legal reviews reset: ${r.legal_reviews_reset ?? 0}`,
       });
     } catch (e) {
       const err = e as { code?: string; message?: string };
-      toast.error("Global maintenance failed", { description: err?.message ?? "Unknown error" });
+      toast.error("System check failed", { description: err?.message ?? "Unknown error" });
     } finally {
       setIsProcessing(false);
     }

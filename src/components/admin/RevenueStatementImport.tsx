@@ -58,14 +58,26 @@ export function RevenueStatementImport() {
   const [deals, setDeals] = useState<DealCandidate[]>([]);
   const [workspaces, setWorkspaces] = useState<WorkspaceCandidate[]>([]);
   const [mappings, setMappings] = useState<RowMapping[] | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
   const adapter = useMemo(() => getAdapter(sourceType), [sourceType]);
 
   useEffect(() => {
-    // Load workspace-scoped candidates. RLS on each table restricts what the
-    // admin can see. We never fabricate defaults. Column names: content_titles
-    // owner column is `owner_user_id`; deal_memos uses `buyer_user_id`.
+    // Verify admin/super_admin role BEFORE loading candidate lists. Non-admin
+    // sessions get silently empty selects from RLS, which makes the whole
+    // mapping step unusable — surface that explicitly.
     (async () => {
+      const { data: authData } = await supabase.auth.getUser();
+      const uid = authData?.user?.id;
+      if (!uid) { setIsAdmin(false); return; }
+      const { data: roles } = await (supabase as any)
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", uid);
+      const admin = (roles ?? []).some((r: any) => r.role === "admin" || r.role === "super_admin");
+      setIsAdmin(admin);
+      if (!admin) return;
+
       const [tRes, bRes, dRes, wRes] = await Promise.all([
         (supabase as any).from("content_titles").select("id, title, owner_user_id, workspace_id").limit(500),
         (supabase as any).from("entity_profiles")
@@ -159,6 +171,23 @@ export function RevenueStatementImport() {
       setBusy(false);
     }
   };
+
+  if (isAdmin === false) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Admin role required</AlertTitle>
+            <AlertDescription>
+              Revenue statement import is restricted to admin / super_admin users. Sign in with an
+              admin account to load title, deal, buyer, and workspace candidate lists.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

@@ -147,6 +147,7 @@ export default function IntelligenceCenter() {
   const [customQuery, setCustomQuery] = useState("");
   const [customLoading, setCustomLoading] = useState(false);
   const [customResults, setCustomResults] = useState<ResearchResult[] | null>(null);
+  const [customError, setCustomError] = useState<string | null>(null);
   const [refreshingAll, setRefreshingAll] = useState(false);
   const [snapshots, setSnapshots] = useState<SnapshotSummary[]>([]);
   const [loadingSnapshots, setLoadingSnapshots] = useState(false);
@@ -316,13 +317,12 @@ export default function IntelligenceCenter() {
     if (!customQuery.trim()) return;
     setCustomLoading(true);
     setCustomResults(null);
+    setCustomError(null);
     try {
       const { data, error } = await supabase.functions.invoke("research-firecrawl", {
         body: { category: "production_company", query: customQuery.trim(), limit: 10 },
       });
       if (error) throw new Error(error.message);
-      // research-firecrawl returns HTTP 200 with `{ error, upstream_message?, results: [] }`
-      // on upstream failure. Surface those instead of silently rendering "no results".
       const payload = data as { error?: string; upstream_message?: string; results?: ResearchResult[] };
       if (payload?.error) {
         const map: Record<string, string> = {
@@ -330,13 +330,16 @@ export default function IntelligenceCenter() {
           firecrawl_auth_failed: "Firecrawl API key rejected (check FIRECRAWL_API_KEY).",
         };
         const friendly = map[payload.error] ?? payload.upstream_message ?? payload.error;
+        setCustomError(friendly);
         toast.error(`Search failed: ${friendly}`);
         setCustomResults([]);
         return;
       }
       setCustomResults(payload?.results ?? []);
     } catch (e) {
-      toast.error(`Search failed: ${(e as Error).message}`);
+      const msg = (e as Error).message;
+      setCustomError(msg);
+      toast.error(`Search failed: ${msg}`);
     } finally {
       setCustomLoading(false);
     }
@@ -785,6 +788,16 @@ export default function IntelligenceCenter() {
             <span className="ml-2">Run</span>
           </Button>
         </div>
+
+        {customError && (
+          <div className="mt-3 text-xs rounded-md border border-destructive/40 bg-destructive/10 text-destructive px-3 py-2">
+            Search failed: {customError}
+          </div>
+        )}
+
+        {!customError && customResults && customResults.length === 0 && !customLoading && (
+          <div className="mt-3 text-xs text-muted-foreground italic">No results for this query.</div>
+        )}
 
         {customResults && customResults.length > 0 && (
           <ul className="mt-4 divide-y divide-border/40">

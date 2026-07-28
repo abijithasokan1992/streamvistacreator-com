@@ -12,13 +12,13 @@ const schema = z.object({
   type: z.string().trim().min(1, "Content type is required").max(60),
   language: z.string().trim().min(1, "Language is required").max(80),
   duration: z.string().trim().min(1, "Duration is required").max(40),
-  rightsOwner: z.string().trim().min(1, "Rights owner is required").max(180),
+  rightsOwner: z.string().trim().min(1, "Rights owner is required").max(120, "Rights owner must be under 120 characters"),
   email: z
     .string()
     .trim()
     .email("Enter a valid email address")
     .min(3, "Enter a valid email address")
-    .max(255, "Email must be under 255 characters"),
+    .max(254, "Email must be under 254 characters"),
   trailerLink: z.string().trim().url("Enter a valid trailer link").max(1000),
   posterLink: z.string().trim().url("Enter a valid poster link").max(1000),
   contactNumber: z.string().trim().min(7, "Enter a valid contact number").max(30),
@@ -202,7 +202,7 @@ export default function SubmitContent() {
             </div>
 
             <Field label="Rights Owner" error={errors.rightsOwner}>
-              <input value={form.rightsOwner} onChange={(e) => setField("rightsOwner", e.target.value)} className={inputClass} maxLength={180} />
+              <input value={form.rightsOwner} onChange={(e) => setField("rightsOwner", e.target.value)} className={inputClass} maxLength={120} />
             </Field>
 
             <Field label="Email" error={errors.email}>

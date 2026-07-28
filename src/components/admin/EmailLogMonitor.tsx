@@ -54,23 +54,24 @@ export default function EmailLogMonitor() {
     setBanner(null);
     try {
       const { data, error } = await supabase.functions.invoke("retry-failed-emails", { body: {} });
-      // Distinguish real sweep failures (non-2xx or thrown) from audit-only
-      // failures. `invoke` sets `error` on non-2xx; audit-only failures
-      // arrive as 200 with `audit_status: "failed"`.
       if (error) throw error;
       const payload = (data ?? {}) as {
         sweep_status?: "ok" | "degraded" | "failed";
         audit_status?: "ok" | "failed";
+        audit_persist_status?: "ok" | "failed";
+        pending_remaining?: number;
         audit?: { passed?: boolean; pending_remaining?: number };
       };
-      const sweep = payload.sweep_status ?? (payload.audit?.passed ? "ok" : "degraded");
-      const auditOk = payload.audit_status === "ok";
+      const sweep = payload.sweep_status ?? "ok";
+      const auditPersistOk =
+        (payload.audit_persist_status ?? (payload.audit_status === "ok" ? "ok" : "failed")) === "ok";
+      const pending = payload.pending_remaining ?? payload.audit?.pending_remaining ?? 0;
       if (sweep === "failed") {
         setBanner("Retry failed — sweeper did not complete. Check admin audit alerts.");
-      } else if (!auditOk) {
-        setBanner(
-          `Retry sweep succeeded — audit persistence unavailable (${payload.audit?.pending_remaining ?? 0} stuck). Sweep results are safe.`,
-        );
+      } else if (!auditPersistOk) {
+        setBanner("Retry sweep succeeded — audit persistence unavailable. Sweep results are safe.");
+      } else if (pending > 0) {
+        setBanner(`Retry sweep OK — ${pending} message_id(s) still pending, will retry next run.`);
       } else {
         setBanner("Retry sweep OK — 0 stuck message_ids remaining.");
       }

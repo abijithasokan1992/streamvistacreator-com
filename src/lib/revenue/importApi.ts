@@ -120,6 +120,7 @@ function toRevenueLineRow(
   return {
     import_id: importId,
     title_id: mapping?.titleId ?? null,
+    deal_memo_id: mapping?.dealMemoId ?? null,
     partner_id: input.partnerId,
     territory: r.territory,
     channel: r.channel,

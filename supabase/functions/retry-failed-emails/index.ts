@@ -337,8 +337,10 @@ Deno.serve(async (req) => {
   const sweepFailed = allQueuesErrored && !!reconciled.error;
   const sweepStatus: "ok" | "degraded" | "failed" =
     sweepFailed ? "failed" : anyQueueError || reconciled.error ? "degraded" : "ok";
+  // audit_status now reflects ONLY whether admin_audit_log persistence
+  // succeeded. `pending_remaining` is informational and reported separately.
   const auditStatus: "ok" | "failed" =
-    audit.passed && auditPersistStatus === "ok" ? "ok" : "failed";
+    auditPersistStatus === "ok" ? "ok" : "failed";
   const hasWarnings = sweepStatus !== "ok" || auditStatus !== "ok";
 
   if (hasWarnings) {
@@ -377,7 +379,9 @@ Deno.serve(async (req) => {
       ok: sweepStatus !== "failed",
       sweep_status: sweepStatus,
       audit_status: auditStatus,
+      audit_persist_status: auditPersistStatus,
       audit_persist_error: auditPersistError,
+      pending_remaining: audit.pending_remaining,
       degraded: hasWarnings,
       ...summary,
       reconciled,

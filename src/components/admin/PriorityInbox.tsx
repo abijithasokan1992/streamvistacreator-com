@@ -92,11 +92,12 @@ export default function PriorityInbox() {
     let cancelled = false;
     (async () => {
       try {
-        const { data } = await (supabase as any)
+        const base = (supabase as any)
           .from("notifications")
-          .select("id, title, message, is_read, created_at")
+          .select("id, title, message, is_read, created_at, user_id")
           .order("created_at", { ascending: false })
           .limit(30);
+        const { data } = await applyProductionFilterByOwnerColumn(base, "user_id");
         if (!cancelled) setNotifications(data ?? []);
       } catch { /* noop */ }
     })();

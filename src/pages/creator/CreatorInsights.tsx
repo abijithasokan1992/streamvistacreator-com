@@ -3,6 +3,7 @@ import { ModuleHeader } from "@/components/creator/shell/ModuleHeader";
 import { useState, useEffect } from "react";
 import { fetchFreeTierStatus } from "@/lib/creator/titleApi";
 import { useNavigate } from "react-router-dom";
+import type { SectionId } from "@/components/creator/CreatorSidebar";
 
 const SECTION_TO_ROUTE: Record<string, string> = {
   titles: "/creator/catalog",

@@ -73,17 +73,17 @@ export default function BillingOperations() {
     <Card className="rounded-2xl border-border/40">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-primary" /> Billing Operations
+          <ShieldCheck className="w-4 h-4 text-primary" /> Billing & Payments
         </CardTitle>
-        <p className="text-xs text-muted-foreground">Canonical Payments OS — orders, payment attempts, manual proof review, and payment method configuration.</p>
+        <p className="text-xs text-muted-foreground">Orders, payment attempts, manual proof review, and payment settings.</p>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="reviews" className="w-full">
           <TabsList className="grid grid-cols-4 mb-4">
-            <TabsTrigger value="reviews">Pending Reviews</TabsTrigger>
+            <TabsTrigger value="reviews">Payments Awaiting Review</TabsTrigger>
             <TabsTrigger value="orders">Orders</TabsTrigger>
-            <TabsTrigger value="methods">Payment Methods</TabsTrigger>
-            <TabsTrigger value="override">Admin Override</TabsTrigger>
+            <TabsTrigger value="methods">Payment Settings</TabsTrigger>
+            <TabsTrigger value="override">Manual Admin Approval</TabsTrigger>
           </TabsList>
           <TabsContent value="reviews"><PendingReviews /></TabsContent>
           <TabsContent value="orders"><OrdersList /></TabsContent>

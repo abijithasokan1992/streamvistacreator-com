@@ -123,9 +123,12 @@ describe("workspace / no-write fallback (static)", () => {
     expect(importApi).toMatch(/workspace_id:\s*mapping\?\.workspaceId\s*\?\?\s*input\.workspaceId/);
   });
   it("never silently overwrites existing statements", () => {
-    expect(importApi).toMatch(/statementKey/);
-    expect(importApi).toMatch(/StatementAlreadyImportedError\(existing\.id\)/);
+    expect(importApi).toMatch(/statement_key/);
+    // Duplicates surface as StatementAlreadyImportedError parsed from the RPC's "duplicate_statement:<uuid>" payload.
+    expect(importApi).toMatch(/StatementAlreadyImportedError\(/);
+    expect(importApi).toMatch(/duplicate_statement/);
   });
+
 });
 
 describe("pending migration guardrails (static)", () => {

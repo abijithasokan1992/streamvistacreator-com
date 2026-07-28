@@ -332,15 +332,25 @@ export default function TitleReviewPanel({ titleId, currentStatus, onChanged }: 
 
         {/* One-click disposition cluster */}
         <div className="p-4 md:p-5 grid grid-cols-1 md:grid-cols-3 gap-3 bg-black/60">
-          <Button
-            size="lg"
-            disabled={busy === "disposition:pass"}
-            onClick={passToLegal}
-            className="h-12 font-semibold text-white bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-lg shadow-emerald-900/40 border-0"
-          >
-            {busy === "disposition:pass" ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
-            Pass QC & Send to Legal
-          </Button>
+          {/* Only allow the fast-pass when the current status can legally chain
+              to legal_review (see transition_title_status guard). Any other
+              status would trigger a server-side "Illegal transition" error
+              and appear to the admin as an unpredictable failure. */}
+          {(() => {
+            const canFastPass = ["submitted","in_review","qc_review","legal_review"].includes(currentStatus);
+            return (
+              <Button
+                size="lg"
+                disabled={busy === "disposition:pass" || !canFastPass}
+                onClick={passToLegal}
+                title={canFastPass ? undefined : `Fast-pass to Legal is unavailable for status "${currentStatus}"`}
+                className="h-12 font-semibold text-white bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-lg shadow-emerald-900/40 border-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {busy === "disposition:pass" ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                Pass QC & Send to Legal
+              </Button>
+            );
+          })()}
           <Button
             size="lg"
             variant="outline"

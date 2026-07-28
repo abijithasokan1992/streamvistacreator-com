@@ -344,7 +344,7 @@ function MoviesRoom({ canDecide }: { canDecide: boolean }) {
         )}
       </div>
 
-      <TitleWorkspace
+      <TitleInspectionDrawer
         titleId={openId}
         open={drawerOpen}
         onOpenChange={(v) => { setDrawerOpen(v); if (!v) setOpenId(null); }}

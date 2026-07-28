@@ -261,7 +261,7 @@ describe("P1-C/D Intelligence 200-OK envelope interpretation", () => {
 // ---------------------------------------------------------------------------
 describe("Onboarding field-lock migration (applied)", () => {
   const APPLIED_PATH =
-    "supabase/migrations/APPLIED_20260728_onboarding_requests_field_lock_trigger.sql.applied";
+    "supabase/migrations-pending/APPLIED_20260728_onboarding_requests_field_lock_trigger.sql.applied";
   const sql = readFileSync(join(process.cwd(), APPLIED_PATH), "utf8");
 
   it("uses BEFORE UPDATE trigger comparing OLD vs NEW", () => {

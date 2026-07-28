@@ -76,6 +76,25 @@ import HowItWorks from "./pages/landing/HowItWorks.tsx";
 import TrustAndRights from "./pages/landing/TrustAndRights.tsx";
 import FilmLicensingCosts from "./pages/landing/FilmLicensingCosts.tsx";
 
+// Creator Portal V2 (Filmhub-inspired) — Phase 1: available alongside legacy dashboard.
+import { lazy, Suspense } from "react";
+const CreatorShell = lazy(() => import("./components/creator/shell/CreatorShell"));
+const CreatorCatalog = lazy(() => import("./pages/creator/CreatorCatalog"));
+const CreatorDeliveries = lazy(() => import("./pages/creator/CreatorDeliveries"));
+const CreatorDistribution = lazy(() => import("./pages/creator/CreatorDistribution"));
+const CreatorMarketplace = lazy(() => import("./pages/creator/CreatorMarketplace"));
+const CreatorDeals = lazy(() => import("./pages/creator/CreatorDeals"));
+const CreatorRevenue = lazy(() => import("./pages/creator/CreatorRevenue"));
+const CreatorInsights = lazy(() => import("./pages/creator/CreatorInsights"));
+const CreatorSettings = lazy(() => import("./pages/creator/CreatorSettings"));
+
+const CreatorPortalFallback = () => (
+  <div className="min-h-dvh grid place-items-center text-muted-foreground">
+    <Loader2 className="w-5 h-5 animate-spin" />
+  </div>
+);
+
+
 // Smart Uploads is not MVP-ready — hidden until the checksum + bucket work is production-safe.
 
 

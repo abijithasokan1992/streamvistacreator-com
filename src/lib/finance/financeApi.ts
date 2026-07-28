@@ -315,7 +315,9 @@ export async function generatePartnerStatement(input: {
     .gte("occurred_on", input.period_start)
     .lte("occurred_on", input.period_end);
   if (input.partner_id) q = q.eq("partner_id", input.partner_id);
-  const { data: lines, error } = await q;
+  const quarantined = await fetchQuarantinedTitleIds();
+  const filtered = applyProductionFilterByTitleIdColumn(q, quarantined, "title_id");
+  const { data: lines, error } = await filtered;
   if (error) throw error;
 
   const gross = (lines ?? []).reduce((s, r: any) => s + Number(r.gross_amount_paise ?? 0), 0);

@@ -189,7 +189,7 @@ function PendingReviews() {
                 <Field label="Channel" value={active.payment_channel} />
                 <Field label="Amount paid" value={inr(active.amount_paid_paise)} />
                 <Field label="Order total" value={inr(active.order_total_paise)} />
-                <Field label="UTR / Reference" value={active.utr_or_reference ?? "—"} />
+                <Field label="Bank Reference Number" value={active.utr_or_reference ?? "—"} />
                 <Field label="Bank" value={active.bank_name ?? "—"} />
                 <Field label="Paid at" value={fmtDate(active.paid_at)} />
                 <Field label="Payer name" value={active.payer_name ?? "—"} />
@@ -322,7 +322,7 @@ function OrdersList() {
             <div className="space-y-4 text-xs">
               <Section title="Order" data={detail.order} />
               {detail.invoice && <Section title="Invoice" data={detail.invoice} />}
-              {detail.payment_trace && <Section title="Payment Trace" data={detail.payment_trace} />}
+              {detail.payment_trace && <Section title="Payment Journey" data={detail.payment_trace} />}
               <ListSection title={`Payment Attempts (${detail.attempts?.length ?? 0})`} items={detail.attempts ?? []} keys={["created_at","rail","status","amount_paise","razorpay_order_id","razorpay_payment_id","utr_or_reference","failure_reason"]} />
               <ListSection title={`Manual Submissions (${detail.manual_submissions?.length ?? 0})`} items={detail.manual_submissions ?? []} keys={["created_at","status","payment_channel","amount_paid_paise","utr_or_reference","review_notes"]} />
               <ListSection title={`Ledger Events (${detail.ledger?.length ?? 0})`} items={detail.ledger ?? []} keys={["created_at","event_type","actor_user_id","payload"]} />

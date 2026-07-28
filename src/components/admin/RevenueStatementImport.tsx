@@ -63,10 +63,21 @@ export function RevenueStatementImport() {
   const adapter = useMemo(() => getAdapter(sourceType), [sourceType]);
 
   useEffect(() => {
-    // Load workspace-scoped candidates. RLS on each table restricts what the
-    // admin can see. We never fabricate defaults. Column names: content_titles
-    // owner column is `owner_user_id`; deal_memos uses `buyer_user_id`.
+    // Verify admin/super_admin role BEFORE loading candidate lists. Non-admin
+    // sessions get silently empty selects from RLS, which makes the whole
+    // mapping step unusable — surface that explicitly.
     (async () => {
+      const { data: authData } = await supabase.auth.getUser();
+      const uid = authData?.user?.id;
+      if (!uid) { setIsAdmin(false); return; }
+      const { data: roles } = await (supabase as any)
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", uid);
+      const admin = (roles ?? []).some((r: any) => r.role === "admin" || r.role === "super_admin");
+      setIsAdmin(admin);
+      if (!admin) return;
+
       const [tRes, bRes, dRes, wRes] = await Promise.all([
         (supabase as any).from("content_titles").select("id, title, owner_user_id, workspace_id").limit(500),
         (supabase as any).from("entity_profiles")

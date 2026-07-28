@@ -172,6 +172,23 @@ export function RevenueStatementImport() {
     }
   };
 
+  if (isAdmin === false) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Admin role required</AlertTitle>
+            <AlertDescription>
+              Revenue statement import is restricted to admin / super_admin users. Sign in with an
+              admin account to load title, deal, buyer, and workspace candidate lists.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>

@@ -142,7 +142,7 @@ export function applyQuarantineOnlyFilterToTitlesQuery<Q extends { eq: (col: str
  * quarantined title stay visible everywhere else — see
  * `docs/release/BATCH2_QUARANTINE_MANIFEST.md`.
  */
-export function applyProductionFilterByOwnerColumn<Q extends { neq: (col: string, val: unknown) => Q }>(
+export function applyProductionFilterByOwnerColumn<Q>(
   query: Q,
   column: string = "user_id",
 ): Q {

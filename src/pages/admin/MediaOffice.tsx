@@ -370,11 +370,13 @@ function BuyersRoom() {
   const load = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const quarantined = await fetchQuarantinedTitleIds();
+      const base = supabase
         .from("distribution_program_offers")
-        .select("id,program_name,status,term_years,term_start_date,term_end_date,updated_at")
+        .select("id,program_name,status,term_years,term_start_date,term_end_date,updated_at,title_id")
         .order("updated_at", { ascending: false })
         .limit(50);
+      const { data, error } = await applyProductionFilterByTitleIdColumn(base, quarantined, "title_id");
       if (error) throw error;
       setRows((data as BuyerOffer[]) ?? []); setErr(null);
     } catch (e: any) {

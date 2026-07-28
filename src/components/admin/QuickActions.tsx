@@ -136,7 +136,7 @@ export default function QuickActions({ onJump }: { onJump: (dept: string, sectio
         return;
       }
       if (!sessionData.session) {
-        toast.error("Not signed in", { description: "Sign in as an admin before running global maintenance." });
+        toast.error("Not signed in", { description: "Sign in as an admin before running the system check." });
         return;
       }
 

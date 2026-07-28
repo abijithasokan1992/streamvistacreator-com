@@ -42,8 +42,8 @@ export default function CreatorInsights() {
       />
       <Home
         isFree={isFree}
-        onNavigate={(s) => {
-          const route = SECTION_TO_ROUTE[s as string];
+        onNavigate={(s: SectionId) => {
+          const route = SECTION_TO_ROUTE[s];
           if (route) navigate(route);
         }}
       />

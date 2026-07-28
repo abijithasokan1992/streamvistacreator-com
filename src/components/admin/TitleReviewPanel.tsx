@@ -134,16 +134,34 @@ export default function TitleReviewPanel({ titleId, currentStatus, onChanged }: 
   // Executive dispositions
   const passToLegal = async () => {
     setBusy("disposition:pass");
-    // RPC signature is transition_title_status(_title_id uuid, _to_status text, _note text)
-    // (see migrations 20260619194714 / 20260620064130). Using the correct
-    // parameter names is mandatory — PostgREST rejects unknown args.
-    const { error } = await (supabase as any).rpc("transition_title_status", {
-      _title_id: titleId,
-      _to_status: "legal_review",
-      _note: null,
-    });
+    // The DB transition matrix only allows single-step moves. To reach
+    // legal_review from earlier admin queues we must walk the chain:
+    //   submitted → in_review → qc_review → legal_review
+    // (see migrations 20260619194714 / 20260620064130).
+    const chain: string[] = [];
+    switch (currentStatus) {
+      case "submitted":     chain.push("in_review", "qc_review", "legal_review"); break;
+      case "in_review":     chain.push("qc_review", "legal_review"); break;
+      case "qc_review":     chain.push("legal_review"); break;
+      case "legal_review":  chain.push(); break; // already there
+      default:
+        setBusy(null);
+        toast.error(`Cannot fast-pass to Legal from status "${currentStatus}"`);
+        return;
+    }
+    for (const to of chain) {
+      const { error } = await (supabase as any).rpc("transition_title_status", {
+        _title_id: titleId,
+        _to_status: to,
+        _note: to === "legal_review" ? "Fast-pass QC → Legal" : null,
+      });
+      if (error) {
+        setBusy(null);
+        toast.error(`Transition to ${to} failed: ${error.message}`);
+        return;
+      }
+    }
     setBusy(null);
-    if (error) { toast.error(error.message); return; }
     toast.success("QC passed — sent to Legal review");
     await load();
     onChanged?.();

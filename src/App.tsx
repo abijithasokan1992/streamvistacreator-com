@@ -57,6 +57,7 @@ import AdminLegacyRecovery from "./pages/admin/LegacyRecovery.tsx";
 import SuperAdminWorkspace from "./pages/admin/SuperAdminWorkspace.tsx";
 import AdminFailedUploadsPlatform from "./pages/admin/FailedUploadsPlatform.tsx";
 import MediaOffice from "./pages/admin/MediaOffice.tsx";
+import DemoTestReview from "./pages/admin/DemoTestReview.tsx";
 import { CookieConsent } from "./components/CookieConsent";
 import CollegeERP from "./pages/CollegeERP.tsx";
 import Connect from "./pages/Connect.tsx";

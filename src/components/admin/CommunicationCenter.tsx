@@ -193,11 +193,13 @@ function NotificationsList({ search }: { search: string }) {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const { data, error } = await (supabase as any)
+      const base = (supabase as any)
         .from("notifications")
         .select("id, user_id, title, message, is_read, created_at")
         .order("created_at", { ascending: false })
         .limit(200);
+      const { applyProductionFilterByOwnerColumn } = await import("@/lib/operations/productionFilters");
+      const { data, error } = await applyProductionFilterByOwnerColumn(base, "user_id");
       if (error) {
         toast({ title: "Notifications unavailable", description: error.message, variant: "destructive" });
       }
@@ -423,8 +425,10 @@ function HealthStrip({ onJump }: { onJump: (t: TabKey) => void }) {
     (async () => {
       const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       const q = supabase as any;
+      const { applyProductionFilterByOwnerColumn } = await import("@/lib/operations/productionFilters");
+      const unreadBase = q.from("notifications").select("id", { count: "exact", head: true }).eq("is_read", false);
       const [unread, invites, support, failed] = await Promise.all([
-        q.from("notifications").select("id", { count: "exact", head: true }).eq("is_read", false),
+        applyProductionFilterByOwnerColumn(unreadBase, "user_id"),
         q.from("premium_invitations").select("id", { count: "exact", head: true }).eq("status", "pending"),
         q.from("support_requests").select("id", { count: "exact", head: true }).in("status", ["open", "waiting"]),
         q.from("email_send_log").select("id", { count: "exact", head: true }).in("status", ["dlq", "failed", "bounced"]).gte("created_at", since),

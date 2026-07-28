@@ -129,6 +129,53 @@ export function applyQuarantineOnlyFilterToTitlesQuery<Q extends { eq: (col: str
   return (query as any).eq("metadata->>is_test", "true") as Q;
 }
 
+/**
+ * Apply the shared production filter to ANY PostgREST query whose row
+ * shape carries an owner/user id column (not just `owner_user_id`).
+ * Excludes the known non-production owners (orphan + 2 internal bridge
+ * accounts). Use for `recent_uploads`, `notifications`, `invoices`,
+ * `billing_orders`, etc. so quarantined-owner rows never appear on
+ * Recent Activity, Accounts, or Priority Inbox surfaces.
+ *
+ * Note: this deliberately only excludes the 3 IDs in
+ * `NON_PRODUCTION_OWNER_IDS`. Legitimate creators who happen to have a
+ * quarantined title stay visible everywhere else — see
+ * `docs/release/BATCH2_QUARANTINE_MANIFEST.md`.
+ */
+export function applyProductionFilterByOwnerColumn<Q>(
+  query: Q,
+  column: string = "user_id",
+): Q {
+  let q: any = query;
+  for (const ownerId of NON_PRODUCTION_OWNER_IDS) {
+    q = q.neq(column, ownerId);
+  }
+  return q as Q;
+}
+
+/**
+ * Defensive filter for indirect joins: exclude any row that references a
+ * quarantined title through a `title_id` (or similarly-named) column.
+ *
+ * As of Batch 2 there are 0 join rows across
+ * distribution_program_offers, revenue_lines, royalty_allocations,
+ * partner_title_matches, and deal_memos — but the wiring stays so any
+ * future ingestion pipeline cannot re-surface a quarantined title on
+ * Buyer Mapping, Distribution Offers, Revenue, or Royalties.
+ *
+ * Uses PostgREST `not(col, in, ...)` when the id set is non-empty. When
+ * empty (no quarantined titles) it is a no-op.
+ */
+export function applyProductionFilterByTitleIdColumn<Q>(
+  query: Q,
+  quarantinedTitleIds: readonly string[] | null | undefined,
+  column: string = "title_id",
+): Q {
+  if (!quarantinedTitleIds || quarantinedTitleIds.length === 0) return query;
+  const list = `(${quarantinedTitleIds.join(",")})`;
+  return (query as any).not(column, "in", list) as Q;
+}
+
 /** Labels used by counter chips — kept here so both dashboards stay in sync. */
 export const OPERATIONAL_COUNTER_LABELS = {
   awaitingQc: "Waiting for Content Quality Review",

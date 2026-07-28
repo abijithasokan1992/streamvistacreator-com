@@ -3,6 +3,10 @@ import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { Loader2, LayoutDashboard, Film, Users, Wallet, LogOut, ShieldCheck, ArrowUpRight, WifiOff, RefreshCw } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  applyProductionFilterByTitleIdColumn,
+} from "@/lib/operations/productionFilters";
+import { fetchQuarantinedTitleIds } from "@/lib/operations/useQuarantinedTitleIds";
 import { toast } from "sonner";
 import { OFFICE } from "@/lib/admin/labels";
 import { useLiveAdminCounts } from "@/hooks/useLiveAdminCounts";
@@ -366,11 +370,13 @@ function BuyersRoom() {
   const load = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const quarantined = await fetchQuarantinedTitleIds();
+      const base = supabase
         .from("distribution_program_offers")
-        .select("id,program_name,status,term_years,term_start_date,term_end_date,updated_at")
+        .select("id,program_name,status,term_years,term_start_date,term_end_date,updated_at,title_id")
         .order("updated_at", { ascending: false })
         .limit(50);
+      const { data, error } = await applyProductionFilterByTitleIdColumn(base, quarantined, "title_id");
       if (error) throw error;
       setRows((data as BuyerOffer[]) ?? []); setErr(null);
     } catch (e: any) {

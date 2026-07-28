@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
+import { applyProductionFilterByTitleIdColumn } from "@/lib/operations/productionFilters";
+import { fetchQuarantinedTitleIds } from "@/lib/operations/useQuarantinedTitleIds";
 
 /**
  * Business Intelligence Hub — Admin extension over existing operational tables.
@@ -51,7 +53,11 @@ export default function BusinessIntelligenceHub() {
     const [jobs, telem, revLines, rightsActive, rightsExp, deliveriesOk, deliveriesFail, emailsFail] = await Promise.all([
       (supabase as any).from("ingest_job_items").select("status").gte("created_at", since).limit(5000),
       (supabase as any).from("ingest_telemetry").select("duration_ms").gte("created_at", since).not("duration_ms","is",null).limit(5000),
-      (supabase as any).from("revenue_lines").select("gross_paise,net_paise,occurred_on").gte("occurred_on", since.slice(0, 10)),
+      applyProductionFilterByTitleIdColumn(
+        (supabase as any).from("revenue_lines").select("gross_paise,net_paise,occurred_on,title_id").gte("occurred_on", since.slice(0, 10)),
+        await fetchQuarantinedTitleIds(),
+        "title_id",
+      ),
       (supabase as any).from("title_rights_availability").select("id", { count: "exact", head: true }).eq("status", "available"),
       (supabase as any).from("title_rights_availability").select("id", { count: "exact", head: true })
         .lte("available_until", in30d).gte("available_until", new Date().toISOString()),

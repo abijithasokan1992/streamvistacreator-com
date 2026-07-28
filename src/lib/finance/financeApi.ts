@@ -1,6 +1,8 @@
 // Finance extension API. Reuses invoices, deal_payouts, revenue_transactions,
 // partner_profiles, deal_memos, distribution_deliveries — no billing duplication.
 import { supabase } from "@/integrations/supabase/client";
+import { applyProductionFilterByTitleIdColumn } from "@/lib/operations/productionFilters";
+import { fetchQuarantinedTitleIds } from "@/lib/operations/useQuarantinedTitleIds";
 
 export type RevenueImport = {
   id: string;
@@ -184,7 +186,9 @@ export async function listRevenueLines(filter?: {
   if (filter?.importId) q = q.eq("import_id", filter.importId);
   if (filter?.titleId) q = q.eq("title_id", filter.titleId);
   q = q.limit(filter?.limit ?? 200);
-  const { data, error } = await q;
+  const quarantined = await fetchQuarantinedTitleIds();
+  const filtered = applyProductionFilterByTitleIdColumn(q, quarantined, "title_id");
+  const { data, error } = await filtered;
   if (error) throw error;
   return (data ?? []) as RevenueLine[];
 }
@@ -273,12 +277,14 @@ export async function approveRoyaltyRun(runId: string): Promise<void> {
 }
 
 export async function listAllocationsForRun(runId: string): Promise<RoyaltyAllocation[]> {
-  const { data, error } = await supabase
+  const base = supabase
     .from("royalty_allocations")
     .select("*")
     .eq("run_id", runId)
     .order("allocated_paise", { ascending: false })
     .limit(500);
+  const quarantined = await fetchQuarantinedTitleIds();
+  const { data, error } = await applyProductionFilterByTitleIdColumn(base, quarantined, "title_id");
   if (error) throw error;
   return (data ?? []) as RoyaltyAllocation[];
 }
@@ -309,7 +315,9 @@ export async function generatePartnerStatement(input: {
     .gte("occurred_on", input.period_start)
     .lte("occurred_on", input.period_end);
   if (input.partner_id) q = q.eq("partner_id", input.partner_id);
-  const { data: lines, error } = await q;
+  const quarantined = await fetchQuarantinedTitleIds();
+  const filtered = applyProductionFilterByTitleIdColumn(q, quarantined, "title_id");
+  const { data: lines, error } = await filtered;
   if (error) throw error;
 
   const gross = (lines ?? []).reduce((s, r: any) => s + Number(r.gross_amount_paise ?? 0), 0);
@@ -400,11 +408,14 @@ export async function getRevenueSummary(days = 90): Promise<{
   paid_payouts_paise: number;
 }> {
   const since = new Date(Date.now() - days * 86400_000).toISOString().slice(0, 10);
+  const quarantined = await fetchQuarantinedTitleIds();
+  const revenueBase = supabase
+    .from("revenue_lines")
+    .select("channel,gross_amount_paise,net_amount_paise,occurred_on,title_id")
+    .gte("occurred_on", since);
+  const revenueQuery = applyProductionFilterByTitleIdColumn(revenueBase, quarantined, "title_id");
   const [{ data: lines }, { data: payouts }] = await Promise.all([
-    supabase
-      .from("revenue_lines")
-      .select("channel,gross_amount_paise,net_amount_paise,occurred_on")
-      .gte("occurred_on", since),
+    revenueQuery,
     supabase.from("deal_payouts").select("payout_amount_paise,status"),
   ]);
 

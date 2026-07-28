@@ -11,6 +11,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Loader2, Plus, RefreshCw, Send, Ban, FileEdit, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  applyProductionFilterByTitleIdColumn,
+  applyProductionFilterToTitlesQuery,
+} from "@/lib/operations/productionFilters";
+import { fetchQuarantinedTitleIds } from "@/lib/operations/useQuarantinedTitleIds";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -91,10 +96,16 @@ export default function DistributionOffersConsole() {
 
   async function load() {
     setLoading(true);
-    const [oRes, tRes] = await Promise.all([
+    const quarantined = await fetchQuarantinedTitleIds();
+    const offersQuery = applyProductionFilterByTitleIdColumn(
       sb.from("distribution_program_offers").select("*").order("created_at", { ascending: false }).limit(200),
+      quarantined,
+      "title_id",
+    );
+    const titlesQuery = applyProductionFilterToTitlesQuery(
       sb.from("content_titles").select("id,title,creator_user_id,workspace_id").order("title").limit(500),
-    ]);
+    );
+    const [oRes, tRes] = await Promise.all([offersQuery, titlesQuery]);
     if (oRes.error) toast.error(oRes.error.message);
     setOffers(oRes.data ?? []);
     setTitles(tRes.data ?? []);

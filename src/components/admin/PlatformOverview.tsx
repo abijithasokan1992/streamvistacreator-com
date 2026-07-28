@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
+  applyProductionFilterToTitlesQuery,
+  applyProductionFilterByOwnerColumn,
+} from "@/lib/operations/productionFilters";
+import {
   Activity, AlertTriangle, CheckCircle2, Clock, Database, Film,
   HardDrive, Inbox, IndianRupee, Loader2, ShieldAlert, Users, Building2,
   Upload, Layers
@@ -52,12 +56,11 @@ export default function PlatformOverview() {
 
       const [titles, roles, orgs, uploads, allocations, invoicesMtd, invoicesLast, subs,
              onboarding, dmca, support, approvals, emailDlq] = await Promise.all([
-        supabase.from("content_titles").select("status"),
+        applyProductionFilterToTitlesQuery(supabase.from("content_titles").select("status")),
         supabase.from("user_roles").select("role"),
         supabase.from("organizations").select("id", { count: "exact", head: true }),
-        // FIXED: recent_uploads.file_size (not size_bytes)
-        supabase.from("recent_uploads").select("status, file_size, created_at"),
-        // FIXED: storage_allocations.allocated_gb (not quota_bytes)
+        // recent_uploads filtered to exclude flagged non-production owner uploads.
+        applyProductionFilterByOwnerColumn(supabase.from("recent_uploads").select("status, file_size, created_at"), "user_id"),
         supabase.from("storage_allocations").select("allocated_gb"),
         // CANONICAL revenue source: invoices.total_paise — NOT razorpay raw events.
         supabase.from("invoices").select("total_paise, status").gte("issued_at", startMonth),

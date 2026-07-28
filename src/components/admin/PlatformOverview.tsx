@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
+  applyProductionFilterToTitlesQuery,
+  applyProductionFilterByOwnerColumn,
+} from "@/lib/operations/productionFilters";
+import {
   Activity, AlertTriangle, CheckCircle2, Clock, Database, Film,
   HardDrive, Inbox, IndianRupee, Loader2, ShieldAlert, Users, Building2,
   Upload, Layers

@@ -154,13 +154,13 @@ export default function ManualInvoiceConsole() {
       <header className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2">
           <FileText className="w-5 h-5 text-accent" />
-          <h3 className="font-display text-lg font-bold">Founder-assisted Invoices</h3>
+          <h3 className="font-display text-lg font-bold">Custom Quotes & Invoices</h3>
           <span className="text-xs text-muted-foreground">
             Manual quotes & invoices for plans, services, and custom commercial work.
           </span>
         </div>
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={sweepOverdue}>Run overdue sweep</Button>
+          <Button size="sm" variant="outline" onClick={sweepOverdue}>Check Overdue Invoices</Button>
           <Button size="sm" variant="outline" onClick={load}><RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} /></Button>
           <Button size="sm" onClick={() => { setEditing(null); setCreateOpen(true); }}>
             <Plus className="w-3.5 h-3.5 mr-1" /> New invoice / quote

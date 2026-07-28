@@ -62,13 +62,13 @@ export default function DemoTestReview() {
     if (!user || !isPrivileged) return;
     let cancelled = false;
     (async () => {
-      const base = supabase
+      const query: any = supabase
         .from("content_titles")
         .select("id,title,status,owner_user_id,created_at,metadata")
+        .eq("metadata->>is_test", "true")
         .order("created_at", { ascending: false })
         .limit(500);
-      const filtered = applyQuarantineOnlyFilterToTitlesQuery(base);
-      const { data, error: err } = await filtered;
+      const { data, error: err } = await query;
       if (cancelled) return;
       if (err) {
         setError(err.message);

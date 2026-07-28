@@ -147,6 +147,7 @@ export default function IntelligenceCenter() {
   const [customQuery, setCustomQuery] = useState("");
   const [customLoading, setCustomLoading] = useState(false);
   const [customResults, setCustomResults] = useState<ResearchResult[] | null>(null);
+  const [customError, setCustomError] = useState<string | null>(null);
   const [refreshingAll, setRefreshingAll] = useState(false);
   const [snapshots, setSnapshots] = useState<SnapshotSummary[]>([]);
   const [loadingSnapshots, setLoadingSnapshots] = useState(false);

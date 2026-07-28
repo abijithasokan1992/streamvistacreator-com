@@ -12343,6 +12343,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      import_revenue_statement: { Args: { p_payload: Json }; Returns: Json }
       invoke_edge_function: { Args: { fn_name: string }; Returns: number }
       is_assigned_reviewer: {
         Args: { _stage: string; _title_id: string }

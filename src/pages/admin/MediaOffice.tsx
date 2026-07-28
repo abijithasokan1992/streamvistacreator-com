@@ -10,7 +10,7 @@ import { fetchQuarantinedTitleIds } from "@/lib/operations/useQuarantinedTitleId
 import { toast } from "sonner";
 import { OFFICE } from "@/lib/admin/labels";
 import { useLiveAdminCounts } from "@/hooks/useLiveAdminCounts";
-import { TitleInspectionDrawer } from "@/components/admin/TitleInspectionDrawer";
+import { TitleWorkspace } from "@/components/admin/office/TitleWorkspace";
 import { BuyerMappingActionDrawer, type BuyerOffer } from "@/components/admin/BuyerMappingActionDrawer";
 import { BuyerOfferAuditLog } from "@/components/admin/BuyerOfferAuditLog";
 import { ConnectionStatusPanel } from "@/components/admin/ConnectionStatusPanel";
@@ -344,7 +344,7 @@ function MoviesRoom({ canDecide }: { canDecide: boolean }) {
         )}
       </div>
 
-      <TitleInspectionDrawer
+      <TitleWorkspace
         titleId={openId}
         open={drawerOpen}
         onOpenChange={(v) => { setDrawerOpen(v); if (!v) setOpenId(null); }}

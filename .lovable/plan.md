@@ -1,73 +1,106 @@
-# Checkpoint 0 — Evidence collected (build mode needed to persist docs)
+# Media Office → Title Workspace
 
-Phase 0 ran under the read-only scope you approved. All git and database evidence is now in hand. The only remaining step is writing the four documentation files, which requires build mode — plan mode blocked those writes.
+Goal: replace the small `TitleInspectionDrawer` with an enterprise-grade **Title Workspace** that lets an Admin run the full lifecycle (QC → Legal → Rights → Buyer Mapping → Marketplace → Deals → Revenue) without leaving the surface. **Reuse-first.** No DB schema changes. No new business logic. No mock data.
 
-## What Phase 0 confirmed (read-only, no mutations)
+---
 
-### 1. Git and working-tree state
-- Current branch: `edit/edt-fb74646d-34bf-4b7f-8792-22c81c5a5c9d` @ `3d5dd808c6552b9a890fea84e08e2926e15184b7`
-- `main` HEAD: `3d5dd808…` — identical SHA. 0 commits ahead, 0 behind.
-- Working tree: **clean** (`git status --porcelain` returned no lines).
-- Batch commits (all already on `main`, ancestors of HEAD):
-  - Batch A regression tests — `3d5dd808`
-  - Batch 2b filter wiring — `8547f541`
-  - Batch 2 wiring — `cc8d503a`
-  - Batch 2 quarantine applied — `d1e2167f`
-  - Batch 2 migration SQL revamp — `e5a03325`
-  - Batch 2 manifest reprint — `1e718cf9`
-- **No batch work is trapped in an unmerged branch or in the working tree.** Creating `chatgpt/production-readiness` now from `3d5dd808` would preserve everything without cherry-picks.
+## Phase 0 — Audit (reuse-first inventory)
 
-### 2. GitHub / PR surface — cannot be authoritatively enumerated
-- `origin` points at Lovable-managed git storage, not GitHub.
-- No GitHub connector exists in the workspace (checked via `standard_connectors--list_connections`).
-- Unauthenticated `GET api.github.com/repos/abijithasokan1992/streamvistacreator-com/pulls` returned **HTTP 404**.
-- Visible remote branches other than `main` / `edit/edt-*`: one Razorpay feature branch (likely already merged), three Copilot branches, three `lovable-backup-main-*` snapshots. All treated **do-not-merge by default** until PR metadata can be verified.
-- **Recommendation:** authorize the GitHub connector before Phase 1 if PR-based review is required.
+Confirmed reusable building blocks already in the repo:
 
-### 3. Migration inventory — 8 files in `supabase/migrations-pending/`
-Latest remote `schema_migrations` version: `20260728042003`. Per-file status:
+| Concern | Existing component / API |
+|---|---|
+| Title header + status | `TitleInspectionDrawer.tsx`, `content_titles` query |
+| QC + Legal actions | `QCLegalValidationSurface.tsx`, `TitleReviewPanel.tsx` |
+| Commercial state / marketplace | `TitleCommercialOpsConsole.tsx` + `admin_set_title_commercial_state` RPC |
+| Buyer mapping | `BuyerMappingActionDrawer.tsx`, `partner_title_matches` |
+| Deals | `DealOperationsConsole.tsx`, `deal_memos`, `admin_deal_*` RPCs |
+| Revenue | `RevenueStatementImport.tsx`, `CreatorRevenueSummary`, `revenue_lines` |
+| Audit timeline | `admin_title_history` RPC, `title_removal_events`, `commercial_request_events` |
+| Assets | `title_assets` + `recent_uploads` (already loaded by drawer) |
+| Distribution | `DistributionOffersConsole.tsx`, `distribution_program_offers` |
 
-| File | Applied remotely? | Status |
-|---|---|---|
-| `20260717_000000_title_canonical_backfill.sql` | No (`canonical_title` column absent) | **pending-still-required** |
-| `20260717_010000_revenue_statement_import.sql` | Partial (`revenue_imports` table present, `import_revenue_statement` RPC **absent**) | **pending, needs investigation** |
-| `20260718_000000_dit_ingest_screenshots_bucket.sql` | Yes (bucket present) | **applied-but-in-pending (do-not-reapply)** |
-| `20260727101915_buyer_marketplace_rpc.sql` | Yes (RPC present; `schema_migrations` `20260727101920`) | **applied-but-in-pending (do-not-reapply)** |
-| `20260727101916_user_profiles_privileged_guard.sql` | Yes (guard function present) | **applied-but-in-pending (do-not-reapply)** |
-| `20260727120000_admin_set_title_commercial_state.sql` | No (RPC absent) | **pending-still-required** |
-| `20260727130000_onboarding_requests_field_lock_trigger.sql` | No (neither trigger installed) | **pending-still-required** — matches the active `hard_disk_intakes_ineffective_admin_notes_check` scanner finding |
-| `20260728_quarantine_demo_titles.sql` | **Not in `schema_migrations`**, but 41 rows carry `metadata->>'quarantined_batch' = 'batch2_2026-07-28'` with the exact per-class counts from the Batch 2 manifest (`pre_production 21 · seed 13 · internal_test 6 · system_test 1`) | **applied-but-in-pending (do-not-reapply)** — must stay in `migrations-pending/` |
+**No backend blockers for phase 1.** Every tab below binds to data that already exists behind current RLS.
 
-### 4. Defect baseline — nothing marked closed
-- **Active scanner:** `hard_disk_intakes_ineffective_admin_notes_check` — trigger drafted, un-applied, awaiting Checkpoint-1 approval.
-- **Nine defects:**
-  1. Submit Content — source-fixed, runtime 201 confirmed once; business-contract runtime **pending**.
-  2. QC → Legal — source-fixed (Batch A); end-to-end **blocked, no eligible title**.
-  3. Creator Revenue workspace scoping — source appears scoped; two-workspace isolation proof **pending**.
-  4. Revenue import mapping — **open** (RPC absent from live schema).
-  5. DIT bucket / log save — bucket now present; log-write path **unverified**.
-  6. Email retry HTTP 500 — last fix landed; runtime **unverified**.
-  7. Firecrawl structured-error visibility — **open**; connection not linked to project.
-  8. Firecrawl custom-search error visibility — **open**.
-  9. Email retry banner reason surfacing — **open**.
+---
 
-### 5. Documentation write status
-The four Phase-0 documents were fully drafted this turn but blocked by plan mode:
-- `docs/release/CURRENT_WORK_PRESERVATION.md`
-- `docs/release/PR_CONSOLIDATION.md`
-- `docs/release/PENDING_MIGRATION_STATUS.md`
-- `docs/release/DEFECT_BASELINE.md`
+## Phase 1 — Shell + reuse (this batch)
 
-Full drafts are held in this turn's context and will be persisted verbatim the moment build mode is granted. **No file has been written** — the working tree remains clean.
+Deliverables:
 
-## Recommended consolidation sequence (for Checkpoint-0 review)
+1. **`src/components/admin/office/TitleWorkspace.tsx`** — new tabbed workspace shell.
+   - Layout: sticky header (poster/banner/title/status pills/action bar) + left tab rail + main scroll region + optional right context panel. Desktop-first, collapses to single column under `md`.
+   - Opens in a full-height `Sheet` (side="right", `sm:max-w-6xl`) from Movie Desk. Retains existing `TitleInspectionDrawer` fallback flag for one release.
+2. **Header action bar** wires to existing handlers only:
+   - Approve / Send Back / Mark Ready → existing `content_titles` update path from `TitleInspectionDrawer`.
+   - Pass QC / Pass Legal → existing RPCs used by `QCLegalValidationSurface`.
+   - Publish to Marketplace / Create Deal / Generate Agreement / Generate Invoice / Trigger Delivery → open respective existing consoles inline (no new endpoints).
+3. **Tabs — each is a thin wrapper that mounts an existing component scoped to the current `titleId`:**
 
-1. **Approve build mode** so the four docs are persisted to the current edit branch (no commit, no push).
-2. Do **not** create `chatgpt/production-readiness` yet — `main` already contains every batch commit; the new branch is only useful once Phase 1 has approved artefacts to stack onto it.
-3. Authorize the **GitHub connector** for `abijithasokan1992/streamvistacreator-com` before Phase 1, so PR/CI status becomes authoritative.
-4. Keep `20260728_quarantine_demo_titles.sql` locked inside `migrations-pending/`. Never move it into `migrations/`. Never open a re-run migration.
-5. Phase 1 begins only after you explicitly approve Checkpoint 0.
+```text
+Overview        → summary cards built from content_titles + title_assets + review_checklist counts
+Metadata        → read-only field grid from content_titles (edit deferred to phase 2)
+Artwork & Media → existing artwork/preview/documents sections from TitleInspectionDrawer, extracted
+Technical QC    → <QCLegalValidationSurface mode="qc" titleId=... />
+Legal           → <QCLegalValidationSurface mode="legal" titleId=... />
+Rights          → title_rights_availability grid (read + inline status pill)
+Buyer Mapping   → <BuyerMappingActionDrawer titleId=... variant="embed" />
+Marketplace     → <TitleCommercialOpsConsole titleId=... variant="embed" />
+Deals           → <DealOperationsConsole titleId=... variant="embed" />
+Documents       → documents section (reuses drawer logic)
+Revenue         → revenue_lines filtered by title_id (reuses CreatorRevenueSummary query)
+Audit Timeline  → admin_title_history RPC + merged events, chronological
+```
 
-## What I need from you
+4. **Movie Desk integration** — `MediaOffice.tsx` row click already opens the drawer; swap the target component to `TitleWorkspace`. Keep list, filters, and counters untouched.
+5. **UX polish**: keyboard shortcut `⌘/Ctrl + K` for search inside workspace, `[ ]` to switch tabs, `Esc` to close, sticky action bar, status badges from existing `OFFICE` labels, resizable split for Deals/Buyer Mapping.
+6. **Guardrails**: every tab renders `null` + explanation banner when the underlying RLS returns no rows or the role lacks permission — never invented data.
 
-Please **switch to build mode** and approve Checkpoint 0. That single approval covers only the write of the four documentation files listed above — no branch operations, no migrations, no PR mutation, no data change.
+Out of scope for phase 1: metadata editing UI, rights matrix editor, agreement/invoice generation triggers (buttons visible but call existing consoles).
+
+---
+
+## Phase 2 — Fill gaps (follow-up batch, only after phase 1 lands)
+
+- Metadata inline edit (writes through existing `content_titles` update guarded by `title_lock_state`).
+- Rights matrix editable grid → `title_rights_availability` upserts.
+- Buyer auto-suggest ranking (genre/language/territory) computed client-side from existing `partner_profiles` + `title_commercial_profiles`; no new RPC.
+- Bulk actions in Movie Desk list.
+
+Any gap that would require a new RPC, table, or column will be reported as a **backend blocker** and paused per the user's rule — no invented data, no bypass.
+
+---
+
+## Files to add / change (phase 1)
+
+**Add:**
+- `src/components/admin/office/TitleWorkspace.tsx` (shell + header + tab router)
+- `src/components/admin/office/tabs/OverviewTab.tsx`
+- `src/components/admin/office/tabs/MetadataTab.tsx`
+- `src/components/admin/office/tabs/MediaTab.tsx` (poster/banner/trailer/gallery/subtitles from `title_assets`)
+- `src/components/admin/office/tabs/RightsTab.tsx`
+- `src/components/admin/office/tabs/DocumentsTab.tsx`
+- `src/components/admin/office/tabs/RevenueTab.tsx`
+- `src/components/admin/office/tabs/AuditTab.tsx`
+- `src/components/admin/office/WorkspaceHeader.tsx`
+- `src/components/admin/office/WorkspaceActionBar.tsx`
+
+**Modify (minimal):**
+- `src/pages/admin/MediaOffice.tsx` — swap `TitleInspectionDrawer` → `TitleWorkspace` (behind a `useWorkspaceUi` fallback flag).
+- `src/components/admin/QCLegalValidationSurface.tsx`, `BuyerMappingActionDrawer.tsx`, `TitleCommercialOpsConsole.tsx`, `DealOperationsConsole.tsx` — accept optional `variant="embed"` prop to hide their own outer chrome when embedded. No logic changes.
+
+**Do NOT touch:** RLS, RPCs, `types.ts`, `client.ts`, routes, permissions, `productionFilters.ts`, quarantine tags.
+
+---
+
+## Verification
+
+- `tsgo --noEmit`
+- Vitest suites: `admin-*`, `title-*`, `nine-workstream-repairs`, `batch2b-production-filter-wiring`
+- Playwright: open `/admin/office?room=movies`, click a real title, confirm each tab mounts, action bar buttons resolve to existing modals, no console errors.
+
+---
+
+## Rollback
+
+Single flag flip in `MediaOffice.tsx` returns to `TitleInspectionDrawer`. All new files are additive.

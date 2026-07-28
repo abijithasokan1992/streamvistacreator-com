@@ -277,12 +277,14 @@ export async function approveRoyaltyRun(runId: string): Promise<void> {
 }
 
 export async function listAllocationsForRun(runId: string): Promise<RoyaltyAllocation[]> {
-  const { data, error } = await supabase
+  const base = supabase
     .from("royalty_allocations")
     .select("*")
     .eq("run_id", runId)
     .order("allocated_paise", { ascending: false })
     .limit(500);
+  const quarantined = await fetchQuarantinedTitleIds();
+  const { data, error } = await applyProductionFilterByTitleIdColumn(base, quarantined, "title_id");
   if (error) throw error;
   return (data ?? []) as RoyaltyAllocation[];
 }

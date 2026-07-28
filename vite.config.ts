@@ -81,11 +81,12 @@ export default defineConfig(({ mode }) => {
   if (supabaseUrl) process.env.VITE_SUPABASE_URL = supabaseUrl;
   if (supabasePublishableKey) process.env.VITE_SUPABASE_PUBLISHABLE_KEY = supabasePublishableKey;
 
+  const envDefine: Record<string, string> = {};
+  if (supabaseUrl) envDefine["import.meta.env.VITE_SUPABASE_URL"] = JSON.stringify(supabaseUrl);
+  if (supabasePublishableKey) envDefine["import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY"] = JSON.stringify(supabasePublishableKey);
+
   return {
-    define: {
-      "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(supabaseUrl),
-      "import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY": JSON.stringify(supabasePublishableKey),
-    },
+    define: envDefine,
     server: {
       host: "::",
       port: 8080,

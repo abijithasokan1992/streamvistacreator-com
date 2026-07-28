@@ -317,13 +317,12 @@ export default function IntelligenceCenter() {
     if (!customQuery.trim()) return;
     setCustomLoading(true);
     setCustomResults(null);
+    setCustomError(null);
     try {
       const { data, error } = await supabase.functions.invoke("research-firecrawl", {
         body: { category: "production_company", query: customQuery.trim(), limit: 10 },
       });
       if (error) throw new Error(error.message);
-      // research-firecrawl returns HTTP 200 with `{ error, upstream_message?, results: [] }`
-      // on upstream failure. Surface those instead of silently rendering "no results".
       const payload = data as { error?: string; upstream_message?: string; results?: ResearchResult[] };
       if (payload?.error) {
         const map: Record<string, string> = {
@@ -331,13 +330,16 @@ export default function IntelligenceCenter() {
           firecrawl_auth_failed: "Firecrawl API key rejected (check FIRECRAWL_API_KEY).",
         };
         const friendly = map[payload.error] ?? payload.upstream_message ?? payload.error;
+        setCustomError(friendly);
         toast.error(`Search failed: ${friendly}`);
         setCustomResults([]);
         return;
       }
       setCustomResults(payload?.results ?? []);
     } catch (e) {
-      toast.error(`Search failed: ${(e as Error).message}`);
+      const msg = (e as Error).message;
+      setCustomError(msg);
+      toast.error(`Search failed: ${msg}`);
     } finally {
       setCustomLoading(false);
     }

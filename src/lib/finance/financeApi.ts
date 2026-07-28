@@ -186,7 +186,9 @@ export async function listRevenueLines(filter?: {
   if (filter?.importId) q = q.eq("import_id", filter.importId);
   if (filter?.titleId) q = q.eq("title_id", filter.titleId);
   q = q.limit(filter?.limit ?? 200);
-  const { data, error } = await q;
+  const quarantined = await fetchQuarantinedTitleIds();
+  const filtered = applyProductionFilterByTitleIdColumn(q, quarantined, "title_id");
+  const { data, error } = await filtered;
   if (error) throw error;
   return (data ?? []) as RevenueLine[];
 }

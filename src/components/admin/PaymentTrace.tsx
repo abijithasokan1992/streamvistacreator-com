@@ -181,9 +181,7 @@ export default function PaymentTrace() {
                     >
                       {s.label}
                     </Badge>
-                    <span className="font-mono text-xs">{t.order_id}</span>
-                    {t.payment_id && <span className="font-mono text-[11px] text-muted-foreground">{t.payment_id}</span>}
-                    {t.source && <Badge variant="outline" className="text-[10px]">{t.source}</Badge>}
+                    <span className="text-xs">Customer: <span className="font-medium">{t.user_id ? `#${String(t.user_id).slice(0, 8)}` : "—"}</span></span>
                     <span className="text-xs text-muted-foreground ml-auto">{rupees(t.amount_paise)} · {fmt(t.order_created_at)}</span>
                   </button>
 
@@ -210,34 +208,37 @@ export default function PaymentTrace() {
                         ))}
                       </div>
 
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-mono bg-background/40 rounded-lg p-3 border border-border/40">
-                        <div><span className="text-muted-foreground">order_status:</span> {t.razorpay_order_status ?? "—"}</div>
-                        <div><span className="text-muted-foreground">payment_status:</span> {t.razorpay_payment_status ?? "—"}</div>
-                        <div><span className="text-muted-foreground">frontend_state:</span> {t.frontend_state ?? "—"}</div>
-                        <div><span className="text-muted-foreground">webhook_event:</span> {t.webhook_event ?? "—"}</div>
-                        <div><span className="text-muted-foreground">sig_valid:</span> {String(t.webhook_signature_valid ?? "—")}</div>
-                        <div><span className="text-muted-foreground">invoice_created:</span> {String(t.invoice_created)}</div>
-                        <div><span className="text-muted-foreground">allocation_created:</span> {String(t.allocation_created)}</div>
-                        <div><span className="text-muted-foreground">final_result:</span> {t.final_result ?? "—"}</div>
-                        <div className="col-span-2"><span className="text-muted-foreground">topup_id:</span> {t.topup_id ?? "—"}</div>
-                        <div className="col-span-2"><span className="text-muted-foreground">user_id:</span> {t.user_id ?? "—"}</div>
-                        {t.invoice_id && <div className="col-span-2"><span className="text-muted-foreground">invoice_id:</span> {t.invoice_id}</div>}
-                      </div>
-
                       {t.last_error && (
                         <div className="text-xs text-destructive bg-destructive/10 rounded p-2 flex items-start gap-2 border border-destructive/30">
-                          <AlertTriangle className="w-3.5 h-3.5 mt-0.5" /> {t.last_error}
+                          <AlertTriangle className="w-3.5 h-3.5 mt-0.5" />
+                          <span>{t.last_error.includes("BAD_REQUEST_ERROR") ? "Payment could not be completed." : t.last_error}</span>
                         </div>
                       )}
 
-                      {t.extra && Object.keys(t.extra).length > 0 && (
-                        <details className="text-[11px]">
-                          <summary className="cursor-pointer text-muted-foreground">extra</summary>
-                          <pre className="mt-2 bg-background/40 border border-border/40 rounded p-2 overflow-auto max-h-48">
+                      <TechnicalDetailsDisclosure
+                        testRecord={isTestRecord(t.webhook_event, t.source)}
+                        title="Developer support fields"
+                        entries={[
+                          { label: "order_id", value: t.order_id, mono: true },
+                          { label: "payment_id", value: t.payment_id ?? "—", mono: true },
+                          { label: "topup_id", value: t.topup_id ?? "—", mono: true },
+                          { label: "user_id", value: t.user_id ?? "—", mono: true },
+                          { label: "source", value: t.source ?? "—", mono: true },
+                          { label: "order_status", value: t.razorpay_order_status ?? "—", mono: true },
+                          { label: "payment_status", value: t.razorpay_payment_status ?? "—", mono: true },
+                          { label: "frontend_state", value: t.frontend_state ?? "—", mono: true },
+                          { label: "webhook_event", value: t.webhook_event ?? "—", mono: true },
+                          { label: "signature_valid", value: String(t.webhook_signature_valid ?? "—"), mono: true },
+                          { label: "invoice_id", value: t.invoice_id ?? "—", mono: true },
+                          { label: "final_result", value: t.final_result ?? "—", mono: true },
+                        ]}
+                      >
+                        {t.extra && Object.keys(t.extra).length > 0 && (
+                          <pre className="mt-2 bg-background/40 border border-border/40 rounded p-2 overflow-auto max-h-48 text-[11px]">
 {JSON.stringify(t.extra, null, 2)}
                           </pre>
-                        </details>
-                      )}
+                        )}
+                      </TechnicalDetailsDisclosure>
                     </div>
                   )}
                 </div>

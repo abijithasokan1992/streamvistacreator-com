@@ -1,106 +1,100 @@
-# Media Office → Title Workspace
+# Creator Portal V2 — Filmhub-Inspired, Phased Rollout
 
-Goal: replace the small `TitleInspectionDrawer` with an enterprise-grade **Title Workspace** that lets an Admin run the full lifecycle (QC → Legal → Rights → Buyer Mapping → Marketplace → Deals → Revenue) without leaving the surface. **Reuse-first.** No DB schema changes. No new business logic. No mock data.
+Build the new Filmhub-style Creator Portal alongside the existing dashboard, verify feature parity end-to-end, then flip it to default and remove the legacy shell. Single backend throughout — no duplicate tables, RPCs, edge functions, or workflows. Studio, Buyer, Admin, Mission Control, and Platform Services untouched.
 
----
+## Phase 1 — Build (parallel, non-default)
 
-## Phase 0 — Audit (reuse-first inventory)
+New Portal mounted at `/creator/*` behind the existing `OnboardingGate` + `RoleGate allow={["content_owner","creator","studio"]}`. Legacy `/dashboard/content` remains the default landing so nothing breaks while V2 is under verification.
 
-Confirmed reusable building blocks already in the repo:
-
-| Concern | Existing component / API |
-|---|---|
-| Title header + status | `TitleInspectionDrawer.tsx`, `content_titles` query |
-| QC + Legal actions | `QCLegalValidationSurface.tsx`, `TitleReviewPanel.tsx` |
-| Commercial state / marketplace | `TitleCommercialOpsConsole.tsx` + `admin_set_title_commercial_state` RPC |
-| Buyer mapping | `BuyerMappingActionDrawer.tsx`, `partner_title_matches` |
-| Deals | `DealOperationsConsole.tsx`, `deal_memos`, `admin_deal_*` RPCs |
-| Revenue | `RevenueStatementImport.tsx`, `CreatorRevenueSummary`, `revenue_lines` |
-| Audit timeline | `admin_title_history` RPC, `title_removal_events`, `commercial_request_events` |
-| Assets | `title_assets` + `recent_uploads` (already loaded by drawer) |
-| Distribution | `DistributionOffersConsole.tsx`, `distribution_program_offers` |
-
-**No backend blockers for phase 1.** Every tab below binds to data that already exists behind current RLS.
-
----
-
-## Phase 1 — Shell + reuse (this batch)
-
-Deliverables:
-
-1. **`src/components/admin/office/TitleWorkspace.tsx`** — new tabbed workspace shell.
-   - Layout: sticky header (poster/banner/title/status pills/action bar) + left tab rail + main scroll region + optional right context panel. Desktop-first, collapses to single column under `md`.
-   - Opens in a full-height `Sheet` (side="right", `sm:max-w-6xl`) from Movie Desk. Retains existing `TitleInspectionDrawer` fallback flag for one release.
-2. **Header action bar** wires to existing handlers only:
-   - Approve / Send Back / Mark Ready → existing `content_titles` update path from `TitleInspectionDrawer`.
-   - Pass QC / Pass Legal → existing RPCs used by `QCLegalValidationSurface`.
-   - Publish to Marketplace / Create Deal / Generate Agreement / Generate Invoice / Trigger Delivery → open respective existing consoles inline (no new endpoints).
-3. **Tabs — each is a thin wrapper that mounts an existing component scoped to the current `titleId`:**
+### Shell
+- `src/components/creator/shell/CreatorShell.tsx` — shadcn `SidebarProvider` (`collapsible="icon"`) + top bar + `<Outlet />`.
+- `CreatorSidebarNav.tsx`, `CreatorTopBar.tsx` (breadcrumb, global search, notification bell, profile menu), `EmptyState.tsx`.
+- Light-mode default, hairline borders, uppercase micro-labels, StreamVista accent on primary CTAs / active nav / "live" chips. Tokens only — no hardcoded colors.
 
 ```text
-Overview        → summary cards built from content_titles + title_assets + review_checklist counts
-Metadata        → read-only field grid from content_titles (edit deferred to phase 2)
-Artwork & Media → existing artwork/preview/documents sections from TitleInspectionDrawer, extracted
-Technical QC    → <QCLegalValidationSurface mode="qc" titleId=... />
-Legal           → <QCLegalValidationSurface mode="legal" titleId=... />
-Rights          → title_rights_availability grid (read + inline status pill)
-Buyer Mapping   → <BuyerMappingActionDrawer titleId=... variant="embed" />
-Marketplace     → <TitleCommercialOpsConsole titleId=... variant="embed" />
-Deals           → <DealOperationsConsole titleId=... variant="embed" />
-Documents       → documents section (reuses drawer logic)
-Revenue         → revenue_lines filtered by title_id (reuses CreatorRevenueSummary query)
-Audit Timeline  → admin_title_history RPC + merged events, chronological
+┌──────────┬──────────────────────────────────────┐
+│ SV logo  │  Breadcrumb · search · profile menu  │
+│          ├──────────────────────────────────────┤
+│ Catalog  │                                      │
+│ Delivery │            Module content            │
+│ Distrib. │                                      │
+│ Market   │                                      │
+│ Rights   │                                      │
+│ Revenue  │                                      │
+│ Insights │                                      │
+│ Team     │                                      │
+└──────────┴──────────────────────────────────────┘
 ```
 
-4. **Movie Desk integration** — `MediaOffice.tsx` row click already opens the drawer; swap the target component to `TitleWorkspace`. Keep list, filters, and counters untouched.
-5. **UX polish**: keyboard shortcut `⌘/Ctrl + K` for search inside workspace, `[ ]` to switch tabs, `Esc` to close, sticky action bar, status badges from existing `OFFICE` labels, resizable split for Deals/Buyer Mapping.
-6. **Guardrails**: every tab renders `null` + explanation banner when the underlying RLS returns no rows or the role lacks permission — never invented data.
+### Modules (thin composers over existing components — zero backend duplication)
 
-Out of scope for phase 1: metadata editing UI, rights matrix editor, agreement/invoice generation triggers (buttons visible but call existing consoles).
+| # | Route | Reuses |
+|---|-------|--------|
+| 1 | `/creator/catalog` | `content_titles` (owner-scoped), `TitleEditor` for add/edit, `title_lock_state` for lock chips |
+| 2 | `/creator/deliveries/:titleId?` | `title_assets`, `deliverables`, `AssetUploader`, `title_media_versions` |
+| 3 | `/creator/distribution` | `distribution_program_offers`, `CreatorDistributionOffers`, `distribution_deliveries` |
+| 4 | `/creator/marketplace` | `ai_licensing_matches`, `ai_buyer_requirements`, `title_ai_licensing` |
+| 5 | `/creator/deals` | `deal_memos`, `title_rights_availability`, `screening_invites`, `offer_rounds` |
+| 6 | `/creator/revenue` | `CreatorRevenueSummary`, `revenue_lines`, `partner_statements`, `invoices`, `CreatorInvoices` |
+| 7 | `/creator/insights` | `intelligence_snapshots` + client aggregation of `revenue_lines` / `deal_memos` |
+| 8 | `/creator/settings` | `workspace_members`, `api_keys`, `BillingSnapshot`, `StorageLive`, `MyCreatorProfile` |
 
----
+Global: notification bell reads `notifications` + `onboarding_notifications` via existing hooks.
 
-## Phase 2 — Fill gaps (follow-up batch, only after phase 1 lands)
+### Routing (Phase 1)
+- `App.tsx`: add nested `<Route path="/creator" element={<CreatorShell />}>` with 8 lazy children.
+- Legacy `/dashboard/content` **remains default** — add a discoverable "Try new Creator Portal" link in the legacy header pointing to `/creator/catalog` so real users can drive verification.
+- No changes to `CanonicalDashboardRedirect` yet.
 
-- Metadata inline edit (writes through existing `content_titles` update guarded by `title_lock_state`).
-- Rights matrix editable grid → `title_rights_availability` upserts.
-- Buyer auto-suggest ranking (genre/language/territory) computed client-side from existing `partner_profiles` + `title_commercial_profiles`; no new RPC.
-- Bulk actions in Movie Desk list.
+### Backend contract
+- No new tables. No new RPCs. No RLS changes. No edge function changes.
+- All writes go through the same existing RPCs the legacy dashboard uses (`creator_resubmit_title`, `creator_request_title_edit`, `admin_set_title_status` where applicable, `submit_title_to_admin`, storage upload session RPCs, etc.).
+- All reads scoped by existing `auth.uid()`-based policies.
 
-Any gap that would require a new RPC, table, or column will be reported as a **backend blocker** and paused per the user's rule — no invented data, no bypass.
+## Phase 2 — Verify (feature parity + runtime)
 
----
+Executed against V2 only, using existing test accounts. Each workflow must PASS the same runtime checklist that the P0 verification uses.
 
-## Files to add / change (phase 1)
+Workflows to verify end-to-end on `/creator/*`:
+1. **Metadata** — create draft, edit fields, resume after sign-out.
+2. **Assets** — upload master + captions + artwork; verify storage bucket + `title_assets` row.
+3. **Deliveries** — checklist state transitions.
+4. **Distribution** — accept/decline `distribution_program_offers`; territory shown.
+5. **Rights** — set exclusivity/window; `title_rights_availability` row updated.
+6. **Revenue** — statements list + invoices load; workspace-scoped.
+7. **Notifications** — new review note surfaces bell + inbox item.
+8. **Draft Resume** — reopen exact draft; no duplicate row.
+9. **Publishing** — submit → admin queue → approved → published visible.
 
-**Add:**
-- `src/components/admin/office/TitleWorkspace.tsx` (shell + header + tab router)
-- `src/components/admin/office/tabs/OverviewTab.tsx`
-- `src/components/admin/office/tabs/MetadataTab.tsx`
-- `src/components/admin/office/tabs/MediaTab.tsx` (poster/banner/trailer/gallery/subtitles from `title_assets`)
-- `src/components/admin/office/tabs/RightsTab.tsx`
-- `src/components/admin/office/tabs/DocumentsTab.tsx`
-- `src/components/admin/office/tabs/RevenueTab.tsx`
-- `src/components/admin/office/tabs/AuditTab.tsx`
-- `src/components/admin/office/WorkspaceHeader.tsx`
-- `src/components/admin/office/WorkspaceActionBar.tsx`
+Each: UI evidence + DB evidence + audit row + negative test (other non-admin user cannot see it) + Playwright trace. Regression suites: `batch-a-repairs`, `nine-workstream-repairs`, plus new `creator-portal-v2` smoke suite.
 
-**Modify (minimal):**
-- `src/pages/admin/MediaOffice.tsx` — swap `TitleInspectionDrawer` → `TitleWorkspace` (behind a `useWorkspaceUi` fallback flag).
-- `src/components/admin/QCLegalValidationSurface.tsx`, `BuyerMappingActionDrawer.tsx`, `TitleCommercialOpsConsole.tsx`, `DealOperationsConsole.tsx` — accept optional `variant="embed"` prop to hide their own outer chrome when embedded. No logic changes.
+Fixes during Phase 2 stay inside V2 pages/components. If a shared component needs a change, apply it in place (both dashboards benefit) — never fork the backend.
 
-**Do NOT touch:** RLS, RPCs, `types.ts`, `client.ts`, routes, permissions, `productionFilters.ts`, quarantine tags.
+## Phase 3 — Cut over
 
----
+Only after all 9 workflows PASS and zero regressions in Studio / Buyer / Admin:
+1. `CanonicalDashboardRedirect` → `/creator/catalog` for creator roles.
+2. `/dashboard/content` → `<Navigate to="/creator/catalog" replace />`.
+3. Delete legacy `ContentOwnerDashboard` and now-unused legacy-only wrappers. Shared components (`CreatorSidebar`, `CreatorQuickActions`, `CreatorPlanStrip`, etc.) already reused by V2 stay.
+4. Update any deep links, emails, and i18n strings pointing at `/dashboard/content`.
+5. Final smoke pass on all 9 workflows post-cutover.
 
-## Verification
+## Architecture rules (enforced)
 
-- `tsgo --noEmit`
-- Vitest suites: `admin-*`, `title-*`, `nine-workstream-repairs`, `batch2b-production-filter-wiring`
-- Playwright: open `/admin/office?room=movies`, click a real title, confirm each tab mounts, action bar buttons resolve to existing modals, no console errors.
+- Single backend, single source of truth, no duplicate tables, no parallel APIs, no duplicate workflows.
+- All V2 writes go through existing RPCs; all reads through existing policies.
+- Buyer, Admin, Mission Control, Platform Services — untouched in all 3 phases.
 
----
+## Out of scope
 
-## Rollback
+- New AI matching algorithms (surface existing matches only).
+- E-sign on deals.
+- Notification pipeline / email template changes.
+- Studio / Buyer / Admin visual shells.
+- Any DB migration or RLS change in any phase.
 
-Single flag flip in `MediaOffice.tsx` returns to `TitleInspectionDrawer`. All new files are additive.
+## Acceptance
+
+- **End of Phase 1:** `/creator/*` renders all 8 modules with real data or empty-state CTAs, legacy dashboard still default, zero backend diffs.
+- **End of Phase 2:** all 9 workflows PASS on V2 with evidence archived under `docs/release/creator-portal-v2/`.
+- **End of Phase 3:** creators land on `/creator/catalog` by default, legacy dashboard removed, no regressions elsewhere.

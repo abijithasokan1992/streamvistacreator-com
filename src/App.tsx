@@ -76,6 +76,25 @@ import HowItWorks from "./pages/landing/HowItWorks.tsx";
 import TrustAndRights from "./pages/landing/TrustAndRights.tsx";
 import FilmLicensingCosts from "./pages/landing/FilmLicensingCosts.tsx";
 
+// Creator Portal V2 (Filmhub-inspired) — Phase 1: available alongside legacy dashboard.
+import { lazy, Suspense } from "react";
+const CreatorShell = lazy(() => import("./components/creator/shell/CreatorShell"));
+const CreatorCatalog = lazy(() => import("./pages/creator/CreatorCatalog"));
+const CreatorDeliveries = lazy(() => import("./pages/creator/CreatorDeliveries"));
+const CreatorDistribution = lazy(() => import("./pages/creator/CreatorDistribution"));
+const CreatorMarketplace = lazy(() => import("./pages/creator/CreatorMarketplace"));
+const CreatorDeals = lazy(() => import("./pages/creator/CreatorDeals"));
+const CreatorRevenue = lazy(() => import("./pages/creator/CreatorRevenue"));
+const CreatorInsights = lazy(() => import("./pages/creator/CreatorInsights"));
+const CreatorSettings = lazy(() => import("./pages/creator/CreatorSettings"));
+
+const CreatorPortalFallback = () => (
+  <div className="min-h-dvh grid place-items-center text-muted-foreground">
+    <Loader2 className="w-5 h-5 animate-spin" />
+  </div>
+);
+
+
 // Smart Uploads is not MVP-ready — hidden until the checksum + bucket work is production-safe.
 
 
@@ -197,6 +216,29 @@ const PublicRoutes = () => (
         emailed URLs still land on the user's canonical dashboard instead of
         404-ing. Safe to delete once inbound traffic drops to zero. */}
     <Route path="/uploads" element={<Navigate to="/" replace />} />
+    <Route
+      path="/creator"
+      element={
+        <OnboardingGate>
+          <RoleGate allow={["content_owner", "creator", "studio"]}>
+            <Suspense fallback={<CreatorPortalFallback />}>
+              <CreatorShell />
+            </Suspense>
+          </RoleGate>
+        </OnboardingGate>
+      }
+    >
+      <Route index element={<Navigate to="/creator/catalog" replace />} />
+      <Route path="catalog" element={<Suspense fallback={<CreatorPortalFallback />}><CreatorCatalog /></Suspense>} />
+      <Route path="deliveries" element={<Suspense fallback={<CreatorPortalFallback />}><CreatorDeliveries /></Suspense>} />
+      <Route path="deliveries/:titleId" element={<Suspense fallback={<CreatorPortalFallback />}><CreatorDeliveries /></Suspense>} />
+      <Route path="distribution" element={<Suspense fallback={<CreatorPortalFallback />}><CreatorDistribution /></Suspense>} />
+      <Route path="marketplace" element={<Suspense fallback={<CreatorPortalFallback />}><CreatorMarketplace /></Suspense>} />
+      <Route path="deals" element={<Suspense fallback={<CreatorPortalFallback />}><CreatorDeals /></Suspense>} />
+      <Route path="revenue" element={<Suspense fallback={<CreatorPortalFallback />}><CreatorRevenue /></Suspense>} />
+      <Route path="insights" element={<Suspense fallback={<CreatorPortalFallback />}><CreatorInsights /></Suspense>} />
+      <Route path="settings" element={<Suspense fallback={<CreatorPortalFallback />}><CreatorSettings /></Suspense>} />
+    </Route>
     <Route path="/producer" element={<CanonicalDashboardRedirect />} />
     <Route path="/vault" element={<CanonicalDashboardRedirect />} />
     <Route path="/studio" element={<CanonicalDashboardRedirect />} />

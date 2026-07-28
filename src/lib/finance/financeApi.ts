@@ -1,6 +1,8 @@
 // Finance extension API. Reuses invoices, deal_payouts, revenue_transactions,
 // partner_profiles, deal_memos, distribution_deliveries — no billing duplication.
 import { supabase } from "@/integrations/supabase/client";
+import { applyProductionFilterByTitleIdColumn } from "@/lib/operations/productionFilters";
+import { fetchQuarantinedTitleIds } from "@/lib/operations/useQuarantinedTitleIds";
 
 export type RevenueImport = {
   id: string;

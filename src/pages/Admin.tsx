@@ -775,11 +775,11 @@ function DomainHostingPanel() {
   const isProduction = currentOrigin.includes("streamvista.in");
   const isDeprecated = DEPRECATED.some(d => currentOrigin.startsWith(d));
   const envBadge = isDeprecated
-    ? { label: "DEPRECATED DOMAIN", cls: "bg-red-500/15 text-red-300 border-red-500/30" }
+    ? { label: "NO LONGER USED", cls: "bg-red-500/15 text-red-300 border-red-500/30" }
     : isProduction
     ? { label: "PRODUCTION", cls: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" }
     : isPreview
-    ? { label: "PREVIEW", cls: "bg-amber-500/15 text-amber-300 border-amber-500/30" }
+    ? { label: "TEST WEBSITE", cls: "bg-amber-500/15 text-amber-300 border-amber-500/30" }
     : { label: "UNKNOWN", cls: "bg-secondary text-muted-foreground border-border" };
 
   const [primary, setPrimary] = useState(DEFAULT_PRIMARY);

@@ -193,11 +193,13 @@ function NotificationsList({ search }: { search: string }) {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const { data, error } = await (supabase as any)
+      const base = (supabase as any)
         .from("notifications")
         .select("id, user_id, title, message, is_read, created_at")
         .order("created_at", { ascending: false })
         .limit(200);
+      const { applyProductionFilterByOwnerColumn } = await import("@/lib/operations/productionFilters");
+      const { data, error } = await applyProductionFilterByOwnerColumn(base, "user_id");
       if (error) {
         toast({ title: "Notifications unavailable", description: error.message, variant: "destructive" });
       }

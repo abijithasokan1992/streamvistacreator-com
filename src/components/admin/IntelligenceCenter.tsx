@@ -436,7 +436,7 @@ export default function IntelligenceCenter() {
         .empty{color:#888;font-size:11px;font-style:italic}
         @media print { body{margin:16mm} }
       </style></head><body>
-      <h1>Business Intelligence Briefing</h1>
+      <h1>Business Reports Briefing</h1>
       <div class="meta">Generated ${escapeHtml(now)} · StreamVista Cloud X</div>
       ${sections}
       <script>window.addEventListener('load',()=>setTimeout(()=>window.print(),300))</script>

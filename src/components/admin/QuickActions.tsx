@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { ADMIN_LABELS } from "@/lib/copy/adminLabels";
 
 /**
  * Admin Quick Actions — unified responsive action grid.
@@ -33,29 +34,29 @@ type Action = {
 const ACTIONS: Action[] = [
   {
     id: "approve-title",
-    label: "Approve Title",
-    desc: "Review submitted titles and clear them for distribution.",
+    label: ADMIN_LABELS.reviewAndApproveContent,
+    desc: "Review submitted content and clear it for distribution.",
     icon: <CheckCircle2 className="w-5 h-5" />,
     dept: "content", section: "approvals", tone: "primary",
   },
   {
     id: "publish-title",
-    label: "Publish Title",
-    desc: "Mark approved titles Ready for Distribution.",
+    label: ADMIN_LABELS.releaseContent,
+    desc: "Mark approved content ready for distribution.",
     icon: <Send className="w-5 h-5" />,
     dept: "content", section: "publish", tone: "primary",
   },
   {
     id: "qc-queue",
-    label: "QC Queue",
-    desc: "Operational QC validation panel.",
+    label: ADMIN_LABELS.contentQualityReview,
+    desc: ADMIN_LABELS.reviewTechnicalQuality + ".",
     icon: <Film className="w-5 h-5" />,
     dept: "content", section: "qc-queue", tone: "accent",
   },
   {
     id: "legal-queue",
-    label: "Legal Queue",
-    desc: "Operational legal clearance panel.",
+    label: ADMIN_LABELS.rightsAndLegalReview,
+    desc: ADMIN_LABELS.reviewRightsAndLegal + ".",
     icon: <Scale className="w-5 h-5" />,
     dept: "content", section: "legal-queue", tone: "accent",
   },
@@ -68,15 +69,15 @@ const ACTIONS: Action[] = [
   },
   {
     id: "trigger-payout",
-    label: "Trigger Payout",
-    desc: "Release scheduled partner and creator payouts.",
+    label: ADMIN_LABELS.sendPartnerPayments,
+    desc: "Release scheduled partner and creator payments.",
     icon: <Banknote className="w-5 h-5" />,
     dept: "business", section: "billing", tone: "accent",
   },
   {
     id: "restart-ingest",
-    label: "Restart Ingest Pipeline",
-    desc: "Requeue failed uploads and reprocess the ingest queue.",
+    label: ADMIN_LABELS.retryFailedUploads,
+    desc: "Retry failed uploads and process the upload queue again.",
     icon: <RefreshCcw className="w-5 h-5" />,
     dept: "cloud", section: "failed-uploads", tone: "warn",
   },
@@ -135,7 +136,7 @@ export default function QuickActions({ onJump }: { onJump: (dept: string, sectio
         return;
       }
       if (!sessionData.session) {
-        toast.error("Not signed in", { description: "Sign in as an admin before running global maintenance." });
+        toast.error("Not signed in", { description: "Sign in as an admin before running the system check." });
         return;
       }
 
@@ -149,7 +150,7 @@ export default function QuickActions({ onJump }: { onJump: (dept: string, sectio
       if (error) {
         const code = error.code ? ` [${error.code}]` : "";
         const hint = error.hint ? ` — ${error.hint}` : "";
-        toast.error(`Global maintenance failed${code}`, { description: `${error.message}${hint}` });
+        toast.error(`System check failed${code}`, { description: `${error.message}${hint}` });
         // eslint-disable-next-line no-console
         console.error("[handle_global_platform_maintenance]", error);
         return;
@@ -157,15 +158,15 @@ export default function QuickActions({ onJump }: { onJump: (dept: string, sectio
 
       const r = (data ?? {}) as MaintenanceResult;
       try { queryClient.invalidateQueries(); } catch { /* noop */ }
-      toast.success("Global maintenance complete", {
+      toast.success("System check complete", {
         description:
-          `Uploads requeued: ${r.uploads_requeued ?? 0} · ` +
-          `Emails requeued: ${r.emails_requeued ?? 0} · ` +
+          `Uploads retried: ${r.uploads_requeued ?? 0} · ` +
+          `Emails retried: ${r.emails_requeued ?? 0} · ` +
           `Legal reviews reset: ${r.legal_reviews_reset ?? 0}`,
       });
     } catch (e) {
       const err = e as { code?: string; message?: string };
-      toast.error("Global maintenance failed", { description: err?.message ?? "Unknown error" });
+      toast.error("System check failed", { description: err?.message ?? "Unknown error" });
     } finally {
       setIsProcessing(false);
     }
@@ -185,12 +186,12 @@ export default function QuickActions({ onJump }: { onJump: (dept: string, sectio
             "border-primary/60 bg-primary/15 hover:bg-primary/25 text-foreground",
             "disabled:opacity-60 disabled:cursor-not-allowed",
           )}
-          title="Requeue failed uploads & emails, and reset unassigned legal reviews"
+          title="Retry failed uploads and emails, and reset unassigned legal reviews"
         >
           {isProcessing
             ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
             : <Wrench className="w-3.5 h-3.5" />}
-          <span>{isProcessing ? "Running maintenance…" : "Execute Global Maintenance"}</span>
+          <span>{isProcessing ? "Running system check…" : ADMIN_LABELS.runSystemCheck}</span>
         </button>
       </div>
 

@@ -21,7 +21,7 @@ export default function AdminResearch() {
           </Link>
           <h1 className="font-display text-3xl font-bold tracking-tight inline-flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-accent" />
-            Business Intelligence Center
+            Business Reports Center
           </h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
             Automated Firecrawl-powered scans across buyers, festivals, industry news and brand

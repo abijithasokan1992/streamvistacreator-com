@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 /**
  * QCLegalValidationSurface
  * ────────────────────────
- * Dual-panel operational surface behind the Admin "QC Queue" and "Legal Queue"
+ * Dual-panel operational surface behind the Admin "Content Quality Review" and "Rights & Legal Review"
  * quick actions. Reads titles filtered by review status and writes the new
  * columns added in migration 20260716073359:
  *   - content_titles.qc_status         (pending | resolution_verified | audio_clean | passed | flagged)

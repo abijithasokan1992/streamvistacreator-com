@@ -73,17 +73,17 @@ export default function BillingOperations() {
     <Card className="rounded-2xl border-border/40">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-primary" /> Billing Operations
+          <ShieldCheck className="w-4 h-4 text-primary" /> Billing & Payments
         </CardTitle>
-        <p className="text-xs text-muted-foreground">Canonical Payments OS — orders, payment attempts, manual proof review, and payment method configuration.</p>
+        <p className="text-xs text-muted-foreground">Orders, payment attempts, manual proof review, and payment settings.</p>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="reviews" className="w-full">
           <TabsList className="grid grid-cols-4 mb-4">
-            <TabsTrigger value="reviews">Pending Reviews</TabsTrigger>
+            <TabsTrigger value="reviews">Payments Awaiting Review</TabsTrigger>
             <TabsTrigger value="orders">Orders</TabsTrigger>
-            <TabsTrigger value="methods">Payment Methods</TabsTrigger>
-            <TabsTrigger value="override">Admin Override</TabsTrigger>
+            <TabsTrigger value="methods">Payment Settings</TabsTrigger>
+            <TabsTrigger value="override">Manual Admin Approval</TabsTrigger>
           </TabsList>
           <TabsContent value="reviews"><PendingReviews /></TabsContent>
           <TabsContent value="orders"><OrdersList /></TabsContent>
@@ -189,7 +189,7 @@ function PendingReviews() {
                 <Field label="Channel" value={active.payment_channel} />
                 <Field label="Amount paid" value={inr(active.amount_paid_paise)} />
                 <Field label="Order total" value={inr(active.order_total_paise)} />
-                <Field label="UTR / Reference" value={active.utr_or_reference ?? "—"} />
+                <Field label="Bank Reference Number" value={active.utr_or_reference ?? "—"} />
                 <Field label="Bank" value={active.bank_name ?? "—"} />
                 <Field label="Paid at" value={fmtDate(active.paid_at)} />
                 <Field label="Payer name" value={active.payer_name ?? "—"} />
@@ -322,7 +322,7 @@ function OrdersList() {
             <div className="space-y-4 text-xs">
               <Section title="Order" data={detail.order} />
               {detail.invoice && <Section title="Invoice" data={detail.invoice} />}
-              {detail.payment_trace && <Section title="Payment Trace" data={detail.payment_trace} />}
+              {detail.payment_trace && <Section title="Payment Journey" data={detail.payment_trace} />}
               <ListSection title={`Payment Attempts (${detail.attempts?.length ?? 0})`} items={detail.attempts ?? []} keys={["created_at","rail","status","amount_paise","razorpay_order_id","razorpay_payment_id","utr_or_reference","failure_reason"]} />
               <ListSection title={`Manual Submissions (${detail.manual_submissions?.length ?? 0})`} items={detail.manual_submissions ?? []} keys={["created_at","status","payment_channel","amount_paid_paise","utr_or_reference","review_notes"]} />
               <ListSection title={`Ledger Events (${detail.ledger?.length ?? 0})`} items={detail.ledger ?? []} keys={["created_at","event_type","actor_user_id","payload"]} />

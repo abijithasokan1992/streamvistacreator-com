@@ -443,14 +443,14 @@ function buildDepartments(args: {
         { id: "approvals", label: "Content Review", hint: "Title QC & legal review", content: (
           <ContentReviewWorkflow initialTab={args.reviewInitialTab} />
         )},
-        { id: "publish", label: "Publish Titles", hint: "Approved → Ready For Distribution", content: (
+        { id: "publish", label: "Release Content", hint: "Approved → Ready for Distribution", content: (
           <ContentReviewWorkflow initialTab="approved" />
         )},
         { id: "titles-catalog", label: "Titles Catalog", hint: "All titles, assets and metadata", content: <GlobalAssetManager /> },
-        { id: "qc-queue", label: "QC Queue", hint: "Operational QC validation panel", content: (
+        { id: "qc-queue", label: "Content Quality Review", hint: "Review technical quality", content: (
           <QCLegalValidationSurface initialPanel="qc" />
         )},
-        { id: "legal-queue", label: "Legal Queue", hint: "Operational legal clearance panel", content: (
+        { id: "legal-queue", label: "Rights & Legal Review", hint: "Review rights and legal documents", content: (
           <QCLegalValidationSurface initialPanel="legal" />
         )},
         { id: "pipeline", label: "Pipeline", hint: "Title edits & QC flow", content: <TitleEditRequestsInbox /> },
@@ -482,10 +482,10 @@ function buildDepartments(args: {
       icon: <Briefcase className="w-4 h-4" />,
       desc: "Plans, subscriptions, payments, invoices, rights, licensing.",
       sections: [
-        { id: "marketplace", label: "Marketplace Catalog / Buyer Surface", hint: "Live buyer-facing catalog (featured_films)", content: (
+        { id: "marketplace", label: "Content Marketplace", hint: "Live buyer-facing catalog", content: (
           <div className="space-y-4">
             <div className="glass rounded-2xl p-4 text-xs text-muted-foreground">
-              Read-only preview of the live buyer marketplace. Requests routed to
+              Read-only preview of the live Content Marketplace. Requests routed to
               <code className="mx-1">/dashboard/buyer</code> for full buyer flow.
             </div>
             <FindContentSection onRequestForTitle={() => { window.location.href = "/dashboard/buyer"; }} />
@@ -493,11 +493,11 @@ function buildDepartments(args: {
         )},
         { id: "signed-deals", label: "Signed Deals", hint: "Offers · contracts · licensing lifecycle", content: <DealOperationsConsole /> },
         { id: "subscription-plans", label: "Subscription Plans", hint: "Products & pricing plans", content: <ProductsAndPlans /> },
-        { id: "pricing-calculator", label: "Business Estimates & Pricing Calculator", hint: "Commercial offer builder", content: <CommercialControlTower /> },
+        { id: "pricing-calculator", label: "Pricing Calculator", hint: "Commercial offer builder", content: <CommercialControlTower /> },
         { id: "plans", label: "Plans & Pricing (full)", hint: "Products, vault pricing, free tier", content: (
           <div className="space-y-6"><ProductsAndPlans /><StudioVaultPricing /><FreeTierConfig /></div>
         )},
-        { id: "billing", label: "Billing & Payments", hint: "Invoices and finance ops", content: (
+        { id: "billing", label: "Billing & Payments", hint: "Invoices and payments & finance", content: (
           <div className="space-y-6">
             <RazorpayOpsBanner />
             <AdminFinanceConsole />
@@ -508,10 +508,10 @@ function buildDepartments(args: {
             <RazorpayAuditLog />
           </div>
         )},
-        { id: "revenue-statements", label: "Revenue Statements", hint: "Import buyer statements · map to titles · compute creator share", content: <RevenueStatementImport /> },
-        { id: "vault", label: "Vault Purchases", hint: "Studio Vault revenue", content: <AdminStudioVaultPurchases /> },
-        { id: "intelligence", label: "Market Intelligence", hint: "Buyer & competitor intelligence", content: <IntelligenceCenter /> },
-        { id: "bi", label: "Business Intelligence", hint: "Uploads · Revenue · Rights · Delivery · AI Insights · Automation", content: <BusinessIntelligenceHub /> },
+        { id: "revenue-statements", label: "Partner Earnings Reports", hint: "Add revenue data · map to titles · compute creator share", content: <RevenueStatementImport /> },
+        { id: "vault", label: "Purchased Content", hint: "Studio Vault revenue", content: <AdminStudioVaultPurchases /> },
+        { id: "intelligence", label: "Market Insights", hint: "Buyer & competitor insights", content: <IntelligenceCenter /> },
+        { id: "bi", label: "Business Reports", hint: "Uploads · Revenue · Rights · Delivery · AI Insights · Automation", content: <BusinessIntelligenceHub /> },
       ],
     },
     {
@@ -775,11 +775,11 @@ function DomainHostingPanel() {
   const isProduction = currentOrigin.includes("streamvista.in");
   const isDeprecated = DEPRECATED.some(d => currentOrigin.startsWith(d));
   const envBadge = isDeprecated
-    ? { label: "DEPRECATED DOMAIN", cls: "bg-red-500/15 text-red-300 border-red-500/30" }
+    ? { label: "NO LONGER USED", cls: "bg-red-500/15 text-red-300 border-red-500/30" }
     : isProduction
     ? { label: "PRODUCTION", cls: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" }
     : isPreview
-    ? { label: "PREVIEW", cls: "bg-amber-500/15 text-amber-300 border-amber-500/30" }
+    ? { label: "TEST WEBSITE", cls: "bg-amber-500/15 text-amber-300 border-amber-500/30" }
     : { label: "UNKNOWN", cls: "bg-secondary text-muted-foreground border-border" };
 
   const [primary, setPrimary] = useState(DEFAULT_PRIMARY);

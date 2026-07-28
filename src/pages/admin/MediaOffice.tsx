@@ -637,7 +637,7 @@ function AccountsRoom() {
       <div className="grid sm:grid-cols-3 gap-3">
         <AccountTile to="/admin?dept=business&section=billing" title="Invoices" desc="Buyer & subscription invoices" />
         <AccountTile to="/admin?dept=business&section=revenue-statements" title="Revenue Statements" desc="Import & map buyer statements" />
-        <AccountTile to="/admin?dept=business&section=vault" title="Vault Purchases" desc="Studio vault revenue" />
+        <AccountTile to="/admin?dept=business&section=vault" title="Purchased Content" desc="Studio vault revenue" />
       </div>
       <StorageTopupsReconciler />
     </div>

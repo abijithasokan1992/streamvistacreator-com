@@ -1,62 +1,64 @@
-## Fix Plan — Issues #1–#6
+# Plain-Language Relabel — Admin, Finance & Payments
 
-Small, isolated patches. Frontend-only where possible; one RPC widening for #3.
+**Scope:** UI copy only. No changes to business logic, payment processing, DB columns, RLS/permissions, migrations, or deployments.
 
-### 1. Submit Content — always fails
-File: `src/pages/SubmitContent.tsx`
-- Tighten Zod: `rightsOwner` max **120** (was 180), `email` max **254** (was 255).
-- Mirror `maxLength` on the `<input>` for rightsOwner (120).
-- On DB error, surface `error.message` in the toast instead of a generic "Submission failed" so future RLS/constraint mismatches are visible.
+## Approach
 
-### 2. Revenue Statement Import — mapping empty & mapping lost
-Files: `src/components/admin/RevenueStatementImport.tsx`, `src/lib/revenue/importApi.ts`
-- **Candidate loading:** gate the mapping screen behind an admin/super_admin check; if not admin, show an inline "Admin role required" alert instead of silently rendering empty selects. Keep the existing queries — RLS will still allow admin reads.
-- **Mapping persistence:** in `toRevenueLineRow`, additionally write real FK columns when present on `revenue_lines`:
-  - `deal_memo_id` (add column if missing — see migration below)
-  - Keep `metadata.workspace_id`, `metadata.buyer_user_id` as-is (no columns exist for them yet).
-- Migration (only if `revenue_lines.deal_memo_id` is missing): `ALTER TABLE public.revenue_lines ADD COLUMN IF NOT EXISTS deal_memo_id uuid REFERENCES public.deal_memos(id) ON DELETE SET NULL;` plus index.
-- Guarantee `title_id` is set for every mapped row before insert; if any mapped rows have no `titleId`, block Confirm (already partially enforced by `canConfirmImport`) and show which rows are missing.
+**Single source of truth:** `src/lib/copy/adminLabels.ts`
+- Exports `ADMIN_LABELS` (all label swaps from the mapping table)
+- Exports `paymentStatusLabel(status: string): { label, tone, hint }` covering: Payment Successful, Payment Failed, Payment Started, Payment Window Closed, Payment Confirmation Pending, Refund Started, Refund Completed, Website Not Approved for Payment.
+- Exports `RAZORPAY_BANNER_COPY` (heading, current-websites block, status paragraph — verbatim from user's message).
+- Exports `SITE_ROLE_LABELS` (Official App & Payment Website / Main Registered Website / Website Registered with Razorpay / Test Website / Website Currently Open).
 
-### 3. "Pass QC & Send to Legal" — always errors
-File: `src/components/admin/TitleReviewPanel.tsx` + one migration
-- New RPC `admin_fast_pass_to_legal(_title_id)` (SECURITY DEFINER, admin-only) that internally walks whatever intermediate transitions the current status requires (`submitted → in_review → qc_review → legal_review`) in one call, reusing the same guardrails (blocking issues / checklist) as `transition_title_status`.
-- `passToLegal` in the panel calls the new RPC. All other buttons stay on `transition_title_status`.
+**Reusable disclosure:** `src/components/admin/TechnicalDetailsDisclosure.tsx`
+- shadcn `Collapsible` + `Button` labelled **"View Technical Details"**.
+- Props: `entries: { label: string; value: ReactNode; mono?: boolean }[]`, optional `testRecord?: boolean` badge, optional `title`.
+- Hides by default: `order_id`, `payment_id`, `topup_id`, `user_id`, callback/webhook/browser origin, synthetic verify, raw event names (`payment.captured`, etc.), raw error codes (`BAD_REQUEST_ERROR`), internal identifiers (`studio_vault`), `admin.test` synthetic records.
+- Visible row-level fields kept outside disclosure: Customer, Amount, Date, Payment Status, Recommended Action.
 
-### 4. DIT Ingest — "Upload failed"
-File: `src/components/studio/dit/DitIngestProtocol.tsx`
-- Ensure the storage upload path is **always** `${user.id}/…` regardless of workspace state (matches `dit_screenshots_owner_write` RLS: `foldername[1] = auth.uid()`).
-- If `user.id` is null, block the submit with an explicit "Sign-in required" toast rather than attempting the upload.
-- Surface `uploadError.message` in the toast so future 403s are diagnosable.
+## Batches (typecheck after each)
 
-### 5. Email retry sweeper — always shows Failed
-Files: `supabase/functions/retry-failed-emails/index.ts`, `src/components/admin/EmailLogMonitor.tsx`
-- Split the response into three orthogonal flags:
-  - `sweep_status` (unchanged)
-  - `audit_persist_status` — did `admin_audit_log` write succeed?
-  - `pending_remaining` — informational count, NOT a failure signal.
-- `audit_status` becomes `ok` when `audit_persist_status === "ok"` (drop the `audit.passed` requirement).
-- UI banner logic:
-  - `sweep === "failed"` → red "Retry failed…"
-  - `audit_persist_status === "failed"` → amber "audit persistence unavailable"
-  - `pending_remaining > 0` → neutral "Sweep OK — N still pending, will retry next run"
-  - else → green "Sweep OK — 0 stuck"
+**Batch 1 — Foundation**
+- Create `src/lib/copy/adminLabels.ts`.
+- Create `src/components/admin/TechnicalDetailsDisclosure.tsx`.
 
-### 6. Intelligence Center — silent Firecrawl errors
-Files: the structured-scan view and the custom-search view under `src/components/admin/intelligence/` (exact filenames to be located during build).
-- After `functions.invoke(...)`, inspect both the transport `error` and any `payload.error` / `payload.status === "failed"` from the edge function.
-- On failure: render a destructive `Alert` above the results area with the upstream error text; do NOT show "No records extracted". Also `toast.error` for parity with other admin surfaces.
+**Batch 2 — Admin shell & Quick Actions**
+- `src/pages/Admin.tsx`, `src/pages/AdminHome.tsx`, `src/pages/admin/MediaOffice.tsx`
+- `src/components/admin/QuickActions.tsx`, `AdminCommandBar.tsx`, `AdminRunbook.tsx`
+- Swaps: Execute Global Maintenance → Run System Check; Approve Title → Review & Approve Content; Publish Title → Release Content; Trigger Payout → Send Partner Payments; Restart Ingest Pipeline → Retry Failed Uploads; Admin Override → Manual Admin Approval; Audit Log → Activity History.
 
----
+**Batch 3 — QC & Legal**
+- `src/components/admin/QCLegalValidationSurface.tsx`, `TitleReviewPanel.tsx` (if labels present).
+- Swaps: QC Queue → Content Quality Review; Legal Queue → Rights & Legal Review; Operational QC validation panel → Review technical quality; Operational legal clearance panel → Review rights and legal documents; Requeue failed uploads → Retry failed uploads; Reprocess the ingest queue → Process upload again.
 
-### Out of scope (deliberately)
-- Issue #7 (Creator Revenue workspace scoping): already correct in source; noted as not-reproducing. No change.
-- Wider refactors to revenue schema (adding `workspace_id`, `buyer_user_id` columns on `revenue_lines`).
-- Any RC/publish/deploy.
+**Batch 4 — Finance & Payments**
+- `src/components/admin/BillingOperations.tsx`, `AdminFinanceConsole.tsx`, `FinanceExtensionHub.tsx`, `CommercialControlTower.tsx`
+- `src/components/admin/RevenueStatementImport.tsx`, `ManualInvoiceConsole.tsx`, `ManualInvoicesList.tsx`, `PaymentTrace.tsx`, `RazorpayAuditLog.tsx`, `RazorpayOpsBanner.tsx`, `RazorpayCredentials.tsx`
+- `src/components/admin/AdminStudioVaultPurchases.tsx` → Purchased Content
+- Swaps: Finance Operations → Payments & Finance; Billing Operations → Billing & Payments; Payment traces → Payment History; Revenue Import → Add Revenue Data; Partner Statements → Partner Earnings Reports; Royalty Engine → Revenue Share Calculator; Settlements → Completed Payments; Pending Reviews → Payments Awaiting Review; Founder-assisted Invoices → Custom Quotes & Invoices; Run overdue sweep → Check Overdue Invoices; Payment Trace → Payment Journey; Forensic timeline → Detailed Payment History; Checkout callback → Payment Return Check; Verify → Confirm Payment; Webhook → Automatic Payment Update; Entitlement → Access Granted; Vault Purchases → Purchased Content; Gross revenue → Total Revenue; Net revenue → Revenue After Deductions; Outstanding payouts → Payments Due; Scoped for finance staff → Available to Finance Team; Payment method configuration → Payment Settings; Submitted → Date Submitted; UTR → Bank Reference Number; Synthetic verify → Test Payment Check; Checkout Dismissed → Payment Window Closed; Checkout Open → Payment Started; Verify delayed → Payment Confirmation Pending; Deprecated → No Longer Used; Non-canonical → Test Only.
+- `PaymentTrace.tsx`, `RazorpayAuditLog.tsx`, `AdminStudioVaultPurchases.tsx`, `ManualInvoicesList.tsx`: move IDs / raw payloads / event names / signature / error codes / source into `TechnicalDetailsDisclosure`. `admin.test` rows collapsed with badge "Test record".
+- `RazorpayOpsBanner.tsx`: rewrite using `RAZORPAY_BANNER_COPY` (Razorpay Website Approval Pending heading, four current-websites cards using SITE_ROLE_LABELS, Current Status paragraph).
 
-### Verification
-- #1: submit form with 121-char name → expect "name too long" client error, no silent DB failure.
-- #2: sign in as admin, import a statement, confirm mapped rows have `title_id` and `deal_memo_id` set in `revenue_lines`.
-- #3: on a `submitted` title, click Pass QC → status advances to `legal_review`; blocking issues still block.
-- #4: submit DIT log signed-in with and without active workspace → both succeed.
-- #5: run sweeper with pending rows present → banner reads "Sweep OK — N pending", not "audit persistence unavailable".
-- #6: force a Firecrawl 401/500 in one intelligence run → error alert shown.
+**Batch 5 — Intelligence**
+- `src/components/admin/IntelligenceCenter.tsx`, `BusinessIntelligenceHub.tsx`, `src/pages/AdminResearch.tsx`
+- Swaps: Market Intelligence → Market Insights; Business Intelligence → Business Reports.
+
+**Batch 6 — Buyer Marketplace**
+- `src/components/streamvista/BuyerEntry.tsx`, `src/components/buyer/marketplace/*` where labels appear.
+- Swaps: Marketplace Catalog / Buyer Surface → Content Marketplace; Business Estimates & Pricing Calculator → Pricing Calculator; Vault Purchases → Purchased Content (buyer-facing tabs).
+
+**Batch 7 — i18n**
+- `src/i18n/locales/en.json` and `src/i18n/locales/ml.json`: only update keys whose current value matches an old label from the mapping. Do not add new keys unless a hardcoded string is being migrated to i18n as part of a swap already required above (avoided by default — hardcoded strings will use `ADMIN_LABELS` constants instead).
+
+## Intentionally retained technical terms
+Kept inside `TechnicalDetailsDisclosure` panels for developer support: `order_id`, `payment_id`, `topup_id`, `user_id`, `callback`, `webhook`, `browser origin`, `synthetic verify`, event names (`payment.captured`, `payment.failed`, `order.paid`, `refund.processed`, `subscription.*`, `admin.test`, `verify.payment`), raw error codes (`BAD_REQUEST_ERROR`), internal identifiers (`studio_vault`). These stay because they are the only strings that identify a payment record when contacting Razorpay support.
+
+Also retained (not user-visible): DB columns, RPC names, edge function names, MCP tool names, route paths.
+
+## Verification
+- `tsgo` typecheck after each batch.
+- Playwright screenshots at 1280×1800 of `/admin`, `/admin/finance`, `/admin/media-office`, `/studio/vault` — confirm new wording and that technical panels are collapsed by default.
+- `rg` sweep to confirm no user-visible occurrence of the old terms remains outside `TechnicalDetailsDisclosure` content, `types.ts`, tests, and backend code.
+
+## Final report will include
+Files changed, labels replaced (mapping used), typecheck output, screenshots, list of intentionally retained technical terms, and explicit confirmation that no logic / DB / permissions / migrations / deployment / production data were touched.

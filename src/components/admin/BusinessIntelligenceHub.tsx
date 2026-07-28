@@ -125,7 +125,7 @@ export default function BusinessIntelligenceHub() {
             <BarChart3 className="w-5 h-5 text-primary-foreground" />
           </div>
           <div>
-            <h3 className="font-display text-lg font-bold">Business Intelligence</h3>
+            <h3 className="font-display text-lg font-bold">Business Reports</h3>
             <p className="text-xs text-muted-foreground">
               Cross-domain analytics over uploads, revenue, rights and delivery. Reads live from existing tables — no duplicated data.
             </p>
@@ -213,7 +213,7 @@ export default function BusinessIntelligenceHub() {
                 <div>
                   <div className="font-semibold text-sm">Global Platform Maintenance</div>
                   <p className="text-xs text-muted-foreground">
-                    Requeues failed uploads and emails, reassigns unassigned reviews via <code className="font-mono">handle_global_platform_maintenance()</code>.
+                    Retries failed uploads and emails, and reassigns unassigned reviews.
                   </p>
                 </div>
                 <Button size="sm" onClick={runMaintenance} disabled={running}>

@@ -1,21 +1,21 @@
 import { AlertTriangle, CheckCircle2, ExternalLink, Globe } from "lucide-react";
-import { APP_ORIGIN, CORPORATE_SITE, PREVIEW_ORIGIN, classifyOrigin } from "@/lib/site";
+import { APP_ORIGIN, classifyOrigin } from "@/lib/site";
+import { RAZORPAY_BANNER_COPY, SITE_ROLE_LABELS } from "@/lib/copy/adminLabels";
+import TechnicalDetailsDisclosure from "@/components/admin/TechnicalDetailsDisclosure";
 
 /**
- * Operator-facing banner that makes the cutover window explicit:
- *  - StreamVista Creator is the canonical in-app payment domain (final).
- *  - Razorpay merchant dashboard may still list Crayons Loop as the primary
- *    website while the website-edit request is under review. That state lives
- *    in Razorpay's dashboard, NOT in this app. App-side checkout, callbacks,
- *    invoices and entitlements never depend on Crayons Loop.
+ * Plain-language banner explaining that the Razorpay merchant dashboard is
+ * still reviewing the request to switch the registered website. The wording
+ * mirrors the customer-facing copy so admins never have to translate for
+ * finance / support staff.
  *
- * This is intentionally read-only — it documents external operator state and
- * stops the team from re-introducing Crayons Loop into app code paths during
- * the review window.
+ * This banner is display-only. It does not change any payment routing or
+ * merchant configuration.
  */
 export default function RazorpayOpsBanner() {
   const origin = typeof window !== "undefined" ? window.location.origin : APP_ORIGIN;
   const kind = classifyOrigin(origin);
+  const c = RAZORPAY_BANNER_COPY;
 
   return (
     <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-5 space-y-4">
@@ -23,62 +23,73 @@ export default function RazorpayOpsBanner() {
         <div className="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-300 grid place-items-center shrink-0">
           <AlertTriangle className="w-4 h-4" />
         </div>
-        <div className="space-y-1">
-          <h3 className="font-display text-lg font-bold">
-            Razorpay website review pending — app build continues on StreamVista Creator
-          </h3>
-          <p className="text-xs text-muted-foreground max-w-3xl">
-            Razorpay is still reviewing the website-edit request to switch the merchant's
-            primary website to <span className="font-mono text-foreground">{APP_ORIGIN}</span>.
-            Until that approval lands, the Razorpay dashboard may still show
-            <span className="font-mono text-foreground"> https://www.crayonsloop.com</span> as
-            the current primary website. That is an external merchant-dashboard state — the
-            StreamVista app does not route any payment, callback, invoice or auth link through
-            Crayons Loop.
+        <div className="space-y-2">
+          <h3 className="font-display text-lg font-bold">{c.heading}</h3>
+          <p className="text-sm text-muted-foreground max-w-3xl">
+            {c.intro}
+          </p>
+          <p className="text-sm font-mono text-foreground">{c.approvedDomain}</p>
+          <p className="text-sm text-muted-foreground max-w-3xl">
+            {c.stillShowsIntro}
+          </p>
+          <p className="text-sm font-mono text-foreground">{c.stillShowsDomain}</p>
+          <p className="text-sm text-muted-foreground max-w-3xl">
+            {c.reassurance}
           </p>
         </div>
       </div>
 
-      <div className="grid sm:grid-cols-2 gap-3 text-xs">
-        <Row
-          tone="ok"
-          label="Canonical app + payment domain"
-          value={APP_ORIGIN}
-          note="Used by Studio Vault checkout, success callback, verify, webhook return, invoice CTAs."
-        />
-        <Row
-          tone="ok"
-          label="Corporate website"
-          value={CORPORATE_SITE}
-          note="Approved as additional business website. Not the app payment domain."
-        />
-        <Row
-          tone="warn"
-          label="Razorpay merchant primary (during review)"
-          value="https://www.crayonsloop.com"
-          note="External Razorpay state. Deprecated in StreamVista app logic — do not re-introduce."
-        />
-        <Row
-          tone="info"
-          label="Preview host (non-canonical)"
-          value={PREVIEW_ORIGIN}
-          note="Lovable preview only. Never treated as the production payment website."
-        />
-      </div>
+      <section className="space-y-2">
+        <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+          {c.currentWebsitesHeading}
+        </div>
+        <div className="grid sm:grid-cols-2 gap-3 text-xs">
+          <Row
+            tone="ok"
+            label={c.appPaymentLabel}
+            value={c.appPaymentDomain}
+          />
+          <Row
+            tone="ok"
+            label={c.companyLabel}
+            value={c.companyDomain}
+          />
+          <Row
+            tone="warn"
+            label={c.razorpayShownLabel}
+            value={c.razorpayShownDomain}
+            note={c.razorpayShownNote}
+          />
+          <Row
+            tone="info"
+            label={c.previewLabel}
+            value={c.previewDomain}
+            note={c.previewNote}
+          />
+        </div>
+      </section>
 
-      <div className="rounded-xl border border-border/40 bg-secondary/20 p-3 text-xs space-y-1">
-        <p className="font-semibold text-foreground inline-flex items-center gap-1.5">
-          <Globe className="w-3.5 h-3.5 text-accent" /> Current browser origin:
-          <span className="font-mono">{origin}</span>
-          {kind === "production" && <span className="text-emerald-300">· production</span>}
-          {kind === "preview" && <span className="text-amber-300">· preview — not the payment domain</span>}
-          {kind === "deprecated" && <span className="text-red-300">· deprecated — stop using</span>}
-        </p>
-        <p className="text-muted-foreground">
-          Safe to continue building. After Razorpay approves the website cutover, run one real
-          Studio Vault purchase from <span className="font-mono text-foreground">{APP_ORIGIN}</span> to
-          complete live launch validation.
-        </p>
+      <section className="rounded-xl border border-border/40 bg-secondary/20 p-3 text-sm space-y-1">
+        <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+          {c.statusHeading}
+        </div>
+        <p className="text-muted-foreground">{c.statusLine1}</p>
+        <p className="text-muted-foreground">{c.statusLine2}</p>
+      </section>
+
+      <TechnicalDetailsDisclosure
+        title="Support & operator information"
+        entries={[
+          { label: SITE_ROLE_LABELS.currentlyOpen, value: origin, mono: true },
+          {
+            label: "Origin classification",
+            value:
+              kind === "production" ? "Production" :
+              kind === "preview" ? "Test website" :
+              kind === "deprecated" ? "No longer used" : "Unknown",
+          },
+        ]}
+      >
         <a
           href="https://dashboard.razorpay.com/app/website-details"
           target="_blank"
@@ -87,7 +98,7 @@ export default function RazorpayOpsBanner() {
         >
           Open Razorpay → Website Details <ExternalLink className="w-3 h-3" />
         </a>
-      </div>
+      </TechnicalDetailsDisclosure>
     </div>
   );
 }
@@ -101,7 +112,7 @@ function Row({
   tone: "ok" | "warn" | "info";
   label: string;
   value: string;
-  note: string;
+  note?: string;
 }) {
   const toneClass =
     tone === "ok"
@@ -119,11 +130,11 @@ function Row({
     );
   return (
     <div className={`rounded-xl border p-3 space-y-1 ${toneClass}`}>
-      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+      <div className="flex items-center gap-1.5 text-[11px] font-semibold text-foreground">
         {dot} {label}
       </div>
       <div className="font-mono text-[12px] text-foreground break-all">{value}</div>
-      <div className="text-[11px] text-muted-foreground">{note}</div>
+      {note && <div className="text-[11px] text-muted-foreground">{note}</div>}
     </div>
   );
 }

@@ -789,6 +789,16 @@ export default function IntelligenceCenter() {
           </Button>
         </div>
 
+        {customError && (
+          <div className="mt-3 text-xs rounded-md border border-destructive/40 bg-destructive/10 text-destructive px-3 py-2">
+            Search failed: {customError}
+          </div>
+        )}
+
+        {!customError && customResults && customResults.length === 0 && !customLoading && (
+          <div className="mt-3 text-xs text-muted-foreground italic">No results for this query.</div>
+        )}
+
         {customResults && customResults.length > 0 && (
           <ul className="mt-4 divide-y divide-border/40">
             {customResults.map((r, i) => (

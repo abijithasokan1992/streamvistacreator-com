@@ -388,7 +388,7 @@ export default function McpHealthCenter() {
             { label: "MCP URL", value: MCP_URL },
             { label: "Resource metadata", value: MCP_RESOURCE_META },
             { label: "OIDC discovery", value: OIDC_DISCOVERY },
-          ].map((r) => (
+          ].filter((r) => r.value).map((r) => (
             <div key={r.label} className="flex items-center gap-2 rounded-md border border-border/40 bg-background/40 px-3 py-1.5">
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground w-32 shrink-0">{r.label}</span>
               <code className="font-mono text-[11px] truncate flex-1">{r.value}</code>

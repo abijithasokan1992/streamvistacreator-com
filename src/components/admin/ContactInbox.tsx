@@ -13,6 +13,7 @@ type Row = {
   status: "new" | "read" | "replied" | "archived";
   created_at: string;
   user_id: string | null;
+  source: string | null;
 };
 
 const STATUS_FLOW: Row["status"][] = ["new", "read", "replied", "archived"];
@@ -54,7 +55,7 @@ export default function ContactInbox() {
           <div>
             <h3 className="font-display font-bold text-base">Contact Inbox</h3>
             <p className="text-xs text-muted-foreground">
-              Messages from the public <code className="text-[10px]">/contact</code> page.
+              Public enquiries and <strong>content-submission leads</strong>.
               {newCount > 0 && <span className="ml-2 text-accent">{newCount} new</span>}
             </p>
           </div>
@@ -92,6 +93,8 @@ export default function ContactInbox() {
         <ul className="divide-y divide-border/40 rounded-lg overflow-hidden border border-border/40">
           {rows.map((r) => {
             const isOpen = openId === r.id;
+            const isContentSubmission = r.source?.startsWith("public_content_submission");
+            const leadType = isContentSubmission ? "Content submission" : "Contact enquiry";
             return (
               <li key={r.id} className="bg-background/50">
                 <button
@@ -117,7 +120,8 @@ export default function ContactInbox() {
                       </time>
                     </div>
                     <div className="text-xs text-muted-foreground truncate mt-0.5">
-                      {[r.company, r.role].filter(Boolean).join(" · ") || "—"}
+                      <span className={isContentSubmission ? "text-accent font-medium" : undefined}>{leadType}</span>
+                      <span> · {[r.company, r.role].filter(Boolean).join(" · ") || "—"}</span>
                     </div>
                     {!isOpen && (
                       <p className="text-xs text-muted-foreground/80 truncate mt-1">{r.message}</p>

@@ -12194,6 +12194,7 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      current_verified_email: { Args: never; Returns: string }
       deal_memo_check_conflict: {
         Args: { _deal_id: string }
         Returns: {

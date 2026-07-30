@@ -45,11 +45,11 @@ const projectRef =
   (import.meta.env.VITE_SUPABASE_PROJECT_ID as string | undefined) ??
   ((import.meta.env.VITE_SUPABASE_URL as string | undefined)?.match(/https:\/\/([a-z0-9]+)\.supabase\.co/i)?.[1] ?? "");
 
-const SUPABASE_HOST = `https://${projectRef}.supabase.co`;
-const MCP_URL = `${SUPABASE_HOST}/functions/v1/mcp`;
-const MCP_RESOURCE_META = `${MCP_URL}/.well-known/oauth-protected-resource`;
-const OIDC_DISCOVERY = `${SUPABASE_HOST}/auth/v1/.well-known/openid-configuration`;
-const AS_METADATA = `${SUPABASE_HOST}/auth/v1/.well-known/oauth-authorization-server`;
+const SUPABASE_HOST = projectRef ? `https://${projectRef}.supabase.co` : "";
+const MCP_URL = SUPABASE_HOST ? `${SUPABASE_HOST}/functions/v1/mcp` : "";
+const MCP_RESOURCE_META = MCP_URL ? `${MCP_URL}/.well-known/oauth-protected-resource` : "";
+const OIDC_DISCOVERY = SUPABASE_HOST ? `${SUPABASE_HOST}/auth/v1/.well-known/openid-configuration` : "";
+const AS_METADATA = SUPABASE_HOST ? `${SUPABASE_HOST}/auth/v1/.well-known/oauth-authorization-server` : "";
 
 const STATUS_STYLES: Record<Status, { pill: string; icon: JSX.Element; label: string }> = {
   pass: {
@@ -108,6 +108,22 @@ export default function McpHealthCenter() {
   const runChecks = useCallback(async () => {
     setRunning(true);
     const results: CheckResult[] = [];
+
+    // Do not manufacture an invalid https://undefined.supabase.co endpoint.
+    // The diagnostic must name the deployment configuration problem clearly.
+    if (!projectRef) {
+      results.push({
+        id: "configuration",
+        label: "Supabase project configuration",
+        hint: "VITE_SUPABASE_PROJECT_ID or VITE_SUPABASE_URL is required at build time",
+        status: "fail",
+        detail: "No Supabase project reference was injected into this deployment.",
+        icon: <AlertTriangle className="w-4 h-4" />,
+      });
+      setChecks(results);
+      setRunning(false);
+      return;
+    }
 
     // 1. MCP endpoint health — unauthenticated POST should be 401 with WWW-Authenticate
     try {
@@ -372,7 +388,7 @@ export default function McpHealthCenter() {
             { label: "MCP URL", value: MCP_URL },
             { label: "Resource metadata", value: MCP_RESOURCE_META },
             { label: "OIDC discovery", value: OIDC_DISCOVERY },
-          ].map((r) => (
+          ].filter((r) => r.value).map((r) => (
             <div key={r.label} className="flex items-center gap-2 rounded-md border border-border/40 bg-background/40 px-3 py-1.5">
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground w-32 shrink-0">{r.label}</span>
               <code className="font-mono text-[11px] truncate flex-1">{r.value}</code>

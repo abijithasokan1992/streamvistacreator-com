@@ -87,22 +87,10 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
   console.error(`[startup] Missing Supabase env vars: ${missing}`);
 } else {
   void (async () => {
-    // 1) Health check with retry — surfaces transient DNS / cold-start blips
-    //    instead of letting the app render into a broken auth state.
-    try {
-      await withRetry(() => probeBackend(SUPABASE_URL, SUPABASE_KEY), "backend-probe", 3, 500);
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error("[startup] backend unreachable after retries", err);
-      renderStartupError({
-        kicker: "Backend unreachable",
-        title: "Can&rsquo;t reach the backend",
-        message: "The app couldn&rsquo;t contact the backend after several attempts. This is usually a transient network issue or a cold-starting instance.",
-        hint: "Wait a few seconds and retry. If the issue persists, check your connection or the backend status.",
-      });
-      return;
-    }
-
+    // Render the public UI before an optional backend reachability probe.
+    // A temporary backend cold start must not turn into a full-screen startup
+    // failure: route-level data loading will surface its own actionable state.
+    // Chunk loading still has retries because no UI can render without it.
     // 2) Chunk loading with retry — protects against flaky preview asset fetches.
     try {
       const [{ default: App }, { HelmetProvider }] = await withRetry(
@@ -123,6 +111,13 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
           <App />
         </HelmetProvider>,
       );
+
+      // Diagnostic only — never block a usable public shell on this probe.
+      void withRetry(() => probeBackend(SUPABASE_URL, SUPABASE_KEY), "backend-probe", 3, 500)
+        .catch((err) => {
+          // eslint-disable-next-line no-console
+          console.warn("[startup] backend probe failed after UI render", err);
+        });
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error("[startup] failed to load app bundle", err);

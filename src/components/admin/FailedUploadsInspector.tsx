@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, RefreshCw, Loader2, ShieldAlert, Clock, KeyRound, WifiOff, FileWarning } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { UPLOAD_CATEGORY_LABELS, type UploadErrorCategory } from "@/lib/uploads/classifyUploadError";
 
@@ -21,6 +23,11 @@ type Row = {
   error_message: string | null;
   updated_at: string;
   metadata: Record<string, any> | null;
+  ingest_jobs: {
+    workspace_id: string | null;
+    created_by: string | null;
+    title_id: string | null;
+  } | null;
 };
 
 const CATEGORY_ICON: Record<UploadErrorCategory, JSX.Element> = {
@@ -58,8 +65,10 @@ function timeAgo(iso: string): string {
 }
 
 export default function FailedUploadsInspector() {
+  const navigate = useNavigate();
   const [rows, setRows] = useState<Row[] | null>(null);
   const [loading, setLoading] = useState(false);
+  const [actingId, setActingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | UploadErrorCategory>("all");
 
   const load = useCallback(async () => {
@@ -67,7 +76,7 @@ export default function FailedUploadsInspector() {
     try {
       const { data, error } = await (supabase as any)
         .from("ingest_job_items")
-        .select("id, job_id, file_name, size_bytes, status, error_message, updated_at, metadata")
+        .select("id, job_id, file_name, size_bytes, status, error_message, updated_at, metadata, ingest_jobs!inner(workspace_id, created_by, title_id)")
         .eq("status", "failed")
         .order("updated_at", { ascending: false })
         .limit(100);
@@ -82,10 +91,66 @@ export default function FailedUploadsInspector() {
 
   useEffect(() => { load(); }, [load]);
 
+  const ownerIds = useMemo(() => {
+    return Array.from(new Set((rows ?? []).map((r) => r.ingest_jobs?.created_by).filter(Boolean) as string[]));
+  }, [rows]);
+  const titleIds = useMemo(() => {
+    return Array.from(new Set((rows ?? []).map((r) => r.ingest_jobs?.title_id).filter(Boolean) as string[]));
+  }, [rows]);
+
+  const [owners, setOwners] = useState<Record<string, { name: string; email: string | null }>>({});
+  const [titles, setTitles] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (ownerIds.length === 0) {
+        if (!cancelled) setOwners({});
+        return;
+      }
+      const { data } = await (supabase as any)
+        .from("user_profiles")
+        .select("user_id, display_name, full_name, email")
+        .in("user_id", ownerIds);
+      if (cancelled) return;
+      const next: Record<string, { name: string; email: string | null }> = {};
+      (data ?? []).forEach((u: any) => {
+        next[u.user_id] = {
+          name: u.display_name ?? u.full_name ?? u.email ?? u.user_id,
+          email: u.email ?? null,
+        };
+      });
+      setOwners(next);
+    })();
+    return () => { cancelled = true; };
+  }, [ownerIds]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (titleIds.length === 0) {
+        if (!cancelled) setTitles({});
+        return;
+      }
+      const { data } = await (supabase as any)
+        .from("content_titles")
+        .select("id, title")
+        .in("id", titleIds);
+      if (cancelled) return;
+      const next: Record<string, string> = {};
+      (data ?? []).forEach((t: any) => { next[t.id] = t.title ?? t.id; });
+      setTitles(next);
+    })();
+    return () => { cancelled = true; };
+  }, [titleIds]);
+
   const enriched = useMemo(() => {
     return (rows ?? []).map((r) => {
       const diag = r.metadata?.upload_diagnostic;
       const category: UploadErrorCategory = (diag?.category as UploadErrorCategory) ?? "other";
+      const ownerId = r.ingest_jobs?.created_by ?? null;
+      const titleId = r.ingest_jobs?.title_id ?? null;
+      const owner = ownerId ? owners[ownerId] : null;
       return {
         row: r,
         category,
@@ -95,9 +160,14 @@ export default function FailedUploadsInspector() {
         stage: (diag?.stage as string) ?? null,
         surface: (diag?.surface as string) ?? null,
         classifiedAt: (diag?.classified_at as string) ?? null,
+        ownerId,
+        ownerName: owner?.name ?? ownerId ?? "—",
+        ownerEmail: owner?.email ?? null,
+        titleName: titleId ? (titles[titleId] ?? titleId) : "—",
+        workspaceId: r.ingest_jobs?.workspace_id ?? null,
       };
     });
-  }, [rows]);
+  }, [rows, owners, titles]);
 
   const counts = useMemo(() => {
     const c: Record<UploadErrorCategory | "all", number> = {
@@ -109,6 +179,41 @@ export default function FailedUploadsInspector() {
 
   const visible = filter === "all" ? enriched : enriched.filter((e) => e.category === filter);
 
+  const runAction = async (item: Row, action: "retry" | "resolve") => {
+    if (actingId) return;
+    setActingId(item.id);
+    try {
+      const metadata = item.metadata ?? {};
+      const auditPatch = {
+        ...metadata,
+        admin_last_action: {
+          type: action,
+          at: new Date().toISOString(),
+          previous_status: item.status,
+        },
+      };
+      const payload = action === "retry"
+        ? { status: "queued", error_message: null, metadata: auditPatch }
+        : { status: "skipped", metadata: auditPatch };
+
+      const { error } = await (supabase as any)
+        .from("ingest_job_items")
+        .update(payload)
+        .eq("id", item.id)
+        .eq("status", "failed");
+
+      if (error) throw error;
+      toast.success(action === "retry" ? "Retry queued" : "Marked resolved");
+      await load();
+    } catch (e: any) {
+      toast.error(action === "retry" ? "Retry failed" : "Resolve failed", {
+        description: e?.message ?? "Unknown error",
+      });
+    } finally {
+      setActingId(null);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <header className="flex items-center justify-between gap-3">
@@ -118,7 +223,7 @@ export default function FailedUploadsInspector() {
             Failed Uploads · Structural Diagnostics
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Every failure classified into one of five structural causes and persisted to the asset record.
+            Inspect owner/title/error context, retry safely, mark resolved, and jump to support messaging.
           </p>
         </div>
         <button
@@ -173,9 +278,39 @@ export default function FailedUploadsInspector() {
                 {e.surface && <span>Surface: <span className="font-mono">{e.surface}</span></span>}
                 {e.stage && <span>Stage: <span className="font-mono">{e.stage}</span></span>}
                 <span className="font-mono">job {e.row.job_id.slice(0, 8)}…</span>
+                {e.workspaceId && <span className="font-mono">workspace {e.workspaceId.slice(0, 8)}…</span>}
+              </div>
+              <div className="text-[11px] text-muted-foreground grid sm:grid-cols-2 gap-1">
+                <span>Title: <span className="text-foreground">{e.titleName}</span></span>
+                <span>Owner: <span className="text-foreground">{e.ownerName}</span></span>
+                {e.ownerEmail && <span className="sm:col-span-2">Email: <span className="font-mono">{e.ownerEmail}</span></span>}
               </div>
               <div className="text-xs bg-secondary/20 border border-border/30 rounded p-2 leading-relaxed">
                 {e.detail}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => runAction(e.row, "retry")}
+                  disabled={actingId === e.row.id}
+                  className="text-[11px] px-2.5 py-1 rounded-md border border-border/50 hover:bg-secondary/40 disabled:opacity-50"
+                >
+                  Retry safely
+                </button>
+                <button
+                  onClick={() => runAction(e.row, "resolve")}
+                  disabled={actingId === e.row.id}
+                  className="text-[11px] px-2.5 py-1 rounded-md border border-border/50 hover:bg-secondary/40 disabled:opacity-50"
+                >
+                  Mark resolved
+                </button>
+                {e.ownerName !== "—" && (
+                  <button
+                    onClick={() => navigate(`/admin?dept=users&section=support&q=${encodeURIComponent(e.ownerEmail ?? e.ownerName)}`)}
+                    className="text-[11px] px-2.5 py-1 rounded-md border border-border/50 hover:bg-secondary/40"
+                  >
+                    Contact user
+                  </button>
+                )}
               </div>
               {e.row.error_message && e.row.error_message !== `[${e.code}] ${e.detail}` && (
                 <details className="text-[11px] text-muted-foreground">

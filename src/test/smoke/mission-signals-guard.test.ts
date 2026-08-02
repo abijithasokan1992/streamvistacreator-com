@@ -65,5 +65,8 @@ describe("useMissionSignals guard", () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(rpcSpy).toHaveBeenCalledWith("admin_failure_counts", expect.any(Object));
     expect(fromSpy).toHaveBeenCalled();
+    const failedUploads = result.current.signals.find((s) => s.key === "up_fail");
+    expect(failedUploads?.dept).toBe("cloud");
+    expect(failedUploads?.section).toBe("failed-uploads");
   });
 });

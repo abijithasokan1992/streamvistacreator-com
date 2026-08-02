@@ -65,6 +65,30 @@ const DEFAULT_FOLDERS = [
 
 // Production Number generation is centralized in "@/lib/productionNumber".
 
+function archiveProductionCrew(crew: Record<string, any> | null | undefined) {
+  const next = { ...(crew ?? {}) };
+  const current = String(next.title_status ?? "").trim();
+  if (current && current.toLowerCase() !== "archived") {
+    next.archived_from_status = current;
+  }
+  next.title_status = "Archived";
+  return next;
+}
+
+function restoreProductionCrew(crew: Record<string, any> | null | undefined) {
+  const next = { ...(crew ?? {}) };
+  const fallback = String(next.archived_from_status ?? "").trim();
+  delete next.archived_from_status;
+  if (fallback && fallback.toLowerCase() !== "archived") {
+    next.title_status = fallback;
+  } else {
+    delete next.title_status;
+  }
+  return next;
+}
+
+export { archiveProductionCrew, restoreProductionCrew };
+
 function fmtBytes(n: number): string {
   if (!Number.isFinite(n) || n <= 0) return "0 B";
   if (n < 1_048_576) return `${(n / 1024).toFixed(0)} KB`;
@@ -277,9 +301,16 @@ export default function ProductionsManager({
 
   const handleArchive = async (p: ProjectRow) => {
     if (!canWriteActive) { toast.error("Viewer role — read-only"); return; }
-    const next = { ...(p.crew ?? {}), title_status: "Archived" };
+    const next = archiveProductionCrew(p.crew);
     const { error } = await supabase.from("projects").update({ crew: next }).eq("id", p.id);
     if (error) toast.error(error.message); else { toast.success("Archived"); refresh(); }
+  };
+
+  const handleRestore = async (p: ProjectRow) => {
+    if (!canWriteActive) { toast.error("Viewer role — read-only"); return; }
+    const next = restoreProductionCrew(p.crew);
+    const { error } = await supabase.from("projects").update({ crew: next }).eq("id", p.id);
+    if (error) toast.error(error.message); else { toast.success("Restored"); refresh(); }
   };
 
   const handleDelete = async (p: ProjectRow) => {
@@ -300,13 +331,27 @@ export default function ProductionsManager({
     if (!canWriteActive || selectedRows.length === 0) return;
     let ok = 0, fail = 0;
     for (const p of selectedRows) {
-      const next = { ...(p.crew ?? {}), title_status: "Archived" };
+      const next = archiveProductionCrew(p.crew);
       const { error } = await supabase.from("projects").update({ crew: next }).eq("id", p.id);
       if (error) fail++; else ok++;
     }
     if (ok) toast.success(`${ok} production${ok === 1 ? "" : "s"} archived`);
     if (fail) toast.error(`${fail} failed to archive`);
     setBulkArchiveOpen(false);
+    setSelection(new Set());
+    refresh();
+  };
+
+  const handleBulkRestore = async () => {
+    if (!canWriteActive || selectedRows.length === 0) return;
+    let ok = 0, fail = 0;
+    for (const p of selectedRows) {
+      const next = restoreProductionCrew(p.crew);
+      const { error } = await supabase.from("projects").update({ crew: next }).eq("id", p.id);
+      if (error) fail++; else ok++;
+    }
+    if (ok) toast.success(`${ok} production${ok === 1 ? "" : "s"} restored`);
+    if (fail) toast.error(`${fail} failed to restore`);
     setSelection(new Set());
     refresh();
   };
@@ -418,6 +463,11 @@ export default function ProductionsManager({
                     <Archive className="w-3 h-3 mr-1" /> Archive
                   </Button>
                 )}
+                {statusFilter === "archived" && (
+                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={handleBulkRestore}>
+                    Restore
+                  </Button>
+                )}
                 {selectedDeletable.length > 0 && (
                   <Button
                     size="sm"
@@ -449,6 +499,7 @@ export default function ProductionsManager({
               onEdit={(p) => setEditing(p)}
               onShare={(p) => setSharing(p)}
               onArchive={handleArchive}
+              onRestore={handleRestore}
               onDelete={(p) => setConfirmDelete(p)}
               dim={statusFilter === "archived"}
               query={query}
@@ -604,7 +655,7 @@ function FilterChips<T extends string>({
 function ProductionList({
   items, stats, activeProjectId, selection,
   onToggleSelect, onToggleSelectAll,
-  onSetActive, onOpen, onEdit, onShare, onArchive, onDelete,
+  onSetActive, onOpen, onEdit, onShare, onArchive, onRestore, onDelete,
   dim, query,
 }: {
   items: ProjectRow[];
@@ -618,6 +669,7 @@ function ProductionList({
   onEdit: (p: ProjectRow) => void;
   onShare: (p: ProjectRow) => void;
   onArchive: (p: ProjectRow) => void;
+  onRestore: (p: ProjectRow) => void;
   onDelete: (p: ProjectRow) => void;
   dim?: boolean;
   query: string;
@@ -726,9 +778,13 @@ function ProductionList({
                     <DropdownMenuItem onClick={() => onShare(p)}>
                       <Share2 className="w-3.5 h-3.5 mr-2" /> Share
                     </DropdownMenuItem>
-                    {String(p.crew?.title_status ?? "").toLowerCase() !== "archived" && (
+                    {String(p.crew?.title_status ?? "").toLowerCase() !== "archived" ? (
                       <DropdownMenuItem onClick={() => onArchive(p)}>
                         <Archive className="w-3.5 h-3.5 mr-2" /> Archive
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem onClick={() => onRestore(p)}>
+                        Restore
                       </DropdownMenuItem>
                     )}
                     {canDelete && (

@@ -13,6 +13,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { loadRazorpayCreds } from "../_shared/razorpay-config.ts";
 import { logPayment, timer } from "../_shared/payment-logger.ts";
 import { recordTrace, nowIso } from "../_shared/payment-trace.ts";
+import { isRetryableWebhookProcessingError } from "./retryable.ts";
 
 function ok(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -731,22 +732,35 @@ Deno.serve(async (req) => {
     return ok({ received: true });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
+    const retryable = isRetryableWebhookProcessingError(e);
     if (ledgerRowId) {
       await supabase
         .from("razorpay_webhook_ledger")
-        .update({ status: "failed", error_message: msg })
+        .update({
+          status: retryable ? "pending" : "failed",
+          error_message: msg,
+          last_attempt_at: new Date().toISOString(),
+        })
         .eq("id", ledgerRowId);
     }
     await logPayment(supabase, {
       severity: "ERROR", source: "webhook", action_type: "webhook.processing_failed",
       event_id: eventId, order_id: orderId, payment_id: paymentId,
       error_message: msg, duration_ms: procTimer(),
-      extra: { event_type: eventType },
+      extra: { event_type: eventType, retryable },
     });
     await recordTrace(supabase, orderId, {
       final_result: "webhook_processing_failed",
       last_error: msg,
+      extra: { retryable },
     });
-    return ok({ received: true, queued_for_retry: true });
+    return ok(
+      {
+        received: true,
+        queued_for_retry: retryable,
+        requires_manual_retry: !retryable,
+      },
+      retryable ? 503 : 200,
+    );
   }
 });

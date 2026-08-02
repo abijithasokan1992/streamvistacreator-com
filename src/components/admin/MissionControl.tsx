@@ -81,7 +81,7 @@ export default function MissionControl({ onJump }: { onJump?: (dept: string, sec
       { key: "qc",         label: "Titles awaiting QC",       count: qc,              icon: <ClipboardCheck className="w-4 h-4" />, to: "/admin?dept=content&section=approvals",     tone: "warn"   },
       { key: "legal",      label: "Titles awaiting Legal",    count: legal,           icon: <ShieldAlert className="w-4 h-4" />,    to: "/admin?dept=content&section=approvals",     tone: "warn"   },
       { key: "tickets",    label: "Open support tickets",     count: tickets,         icon: <Inbox className="w-4 h-4" />,          to: "/admin?dept=users&section=support",         tone: "info"   },
-      { key: "up_fail",    label: "Failed uploads",           count: failedUploads,   icon: <CloudUpload className="w-4 h-4" />,    to: "/admin?dept=cloud&section=storage",         tone: "danger" },
+      { key: "up_fail",    label: "Failed uploads",           count: failedUploads,   icon: <CloudUpload className="w-4 h-4" />,    to: "/admin?dept=cloud&section=failed-uploads",  tone: "danger" },
       { key: "em_fail",    label: "Failed emails",            count: failedEmails,    icon: <Mail className="w-4 h-4" />,           to: "/admin?dept=platform&section=email",        tone: "danger" },
       { key: "pay_fail",   label: "Failed payments",          count: failedPayments,  icon: <CreditCard className="w-4 h-4" />,     to: "/admin?dept=business&section=billing",      tone: "danger" },
       { key: "storage",    label: "Storage alerts",           count: storageAlerts,   icon: <HardDrive className="w-4 h-4" />,      to: "/admin?dept=cloud&section=storage",         tone: "warn"   },

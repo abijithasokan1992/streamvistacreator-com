@@ -55,7 +55,6 @@ import AdminIntegrations from "./pages/AdminIntegrations.tsx";
 import AdminResearch from "./pages/AdminResearch.tsx";
 import AdminLegacyRecovery from "./pages/admin/LegacyRecovery.tsx";
 import SuperAdminWorkspace from "./pages/admin/SuperAdminWorkspace.tsx";
-import AdminFailedUploadsPlatform from "./pages/admin/FailedUploadsPlatform.tsx";
 import MediaOffice from "./pages/admin/MediaOffice.tsx";
 import DemoTestReview from "./pages/admin/DemoTestReview.tsx";
 import { CookieConsent } from "./components/CookieConsent";
@@ -163,7 +162,7 @@ const ADMIN_ROUTES: { path: string; element: JSX.Element }[] = [
   { path: "/admin/qc", element: <AdminErrorBoundary><Admin /></AdminErrorBoundary> },
   { path: "/admin/legal", element: <AdminErrorBoundary><Admin /></AdminErrorBoundary> },
   { path: "/admin/legacy-recovery", element: <AdminErrorBoundary><AdminLegacyRecovery /></AdminErrorBoundary> },
-  { path: "/admin/failed-uploads", element: <AdminErrorBoundary><AdminFailedUploadsPlatform /></AdminErrorBoundary> },
+  { path: "/admin/failed-uploads", element: <Navigate to="/admin?dept=cloud&section=failed-uploads" replace /> },
   { path: "/admin/content", element: <AdminErrorBoundary><Admin /></AdminErrorBoundary> },
   { path: "/admin/support", element: <AdminErrorBoundary><Admin /></AdminErrorBoundary> },
   { path: "/admin/reports", element: <AdminErrorBoundary><Admin /></AdminErrorBoundary> },

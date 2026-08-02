@@ -101,6 +101,7 @@ interface Row {
 // ============================================================
 const DEPT_KEYS = ["mission", "content", "users", "business", "cloud", "platform"] as const;
 type DeptKey = typeof DEPT_KEYS[number];
+const AI_ADMIN_SURFACES_ENABLED = false;
 
 // Map legacy department + tab keys onto the new 6-workspace IA.
 const LEGACY_TAB_TO_DEPT: Record<string, DeptKey> = {
@@ -361,12 +362,12 @@ export default function Admin() {
 
       {/* Single-operator surface: assistant + universal action center.
           Hidden for reviewers (they are pinned to a single queue).      */}
-      {!isReviewer && (
+      {!isReviewer && AI_ADMIN_SURFACES_ENABLED && (
         <>
           <AiOpsAssistant />
-          <ActionCenter />
         </>
       )}
+      {!isReviewer && <ActionCenter />}
     </main>
   );
 }
@@ -407,10 +408,15 @@ function buildDepartments(args: {
     { id: "audit", label: "Audit", hint: "Finance reports, payment security", content: (
       <div className="space-y-6"><AdminReportsConsole /><PaymentSecurityEvents /></div>
     )},
-    { id: "mcp-health", label: "MCP Health", hint: "AI Agent connector health & OAuth audit", content: (
-      <div className="space-y-6"><McpHealthCenter /><AiMcpControlCenter /></div>
-    )},
   ];
+  if (AI_ADMIN_SURFACES_ENABLED) {
+    systemSections.push({
+      id: "mcp-health",
+      label: "MCP Health",
+      hint: "AI Agent connector health & OAuth audit",
+      content: <div className="space-y-6"><McpHealthCenter /><AiMcpControlCenter /></div>,
+    });
+  }
   if (isSuperAdmin) {
     systemSections.push({
       id: "founder-vault",
@@ -454,7 +460,6 @@ function buildDepartments(args: {
           <QCLegalValidationSurface initialPanel="legal" />
         )},
         { id: "pipeline", label: "Pipeline", hint: "Title edits & QC flow", content: <TitleEditRequestsInbox /> },
-        { id: "catalog-ops", label: "Catalog & Assets", hint: "Global assets", content: <GlobalAssetManager /> },
       ],
     },
     {
@@ -532,7 +537,6 @@ function buildDepartments(args: {
       icon: <SettingsIcon className="w-4 h-4" />,
       desc: "System settings, audit, email, AI, security, homepage CMS.",
       sections: [
-        { id: "mission-shortcut", label: "Mission Control", hint: "Live operations dashboard", content: <MissionControl /> },
         { id: "health", label: "Infrastructure Health", hint: "Live probes · no cached state", content: <InfrastructureHealth /> },
         { id: "metrics", label: "Metrics", hint: "Latency percentiles, throughput, failure rates", content: <MetricsDashboard /> },
         { id: "tests", label: "Test Runner", hint: "Live smoke + integration tests", content: <AdminTestRunner /> },

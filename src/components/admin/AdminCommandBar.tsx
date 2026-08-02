@@ -58,7 +58,7 @@ export default function AdminCommandBar({
   const runJump = (dept: string, section: string) => { setOpen(false); onJump(dept, section); };
 
   const quickCmds: QuickCmd[] = useMemo(() => [
-    { id: "failed-uploads", label: "Show failed uploads",   icon: <AlertCircle className="w-3.5 h-3.5" />, run: () => runJump("cloud", "storage") },
+    { id: "failed-uploads", label: "Show failed uploads",   icon: <AlertCircle className="w-3.5 h-3.5" />, run: () => runJump("cloud", "failed-uploads") },
     { id: "failed-emails",  label: "Show failed emails",    icon: <AlertCircle className="w-3.5 h-3.5" />, run: () => runJump("platform", "email") },
     { id: "failed-pay",     label: "Show failed payments",  icon: <CreditCard className="w-3.5 h-3.5" />,  run: () => runJump("business", "billing") },
     { id: "today-tickets",  label: "Open today's tickets",  icon: <Inbox className="w-3.5 h-3.5" />,       run: () => runJump("users", "support") },

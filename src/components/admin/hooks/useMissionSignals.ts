@@ -92,7 +92,7 @@ export function useMissionSignals(pollMs = 60_000) {
       { key: "qc",         label: "Titles awaiting QC",       count: qc,               dept: "content",  section: "approvals",  tone: "warn",   effortSec: 240 },
       { key: "legal",      label: "Titles awaiting Legal",    count: legal,            dept: "content",  section: "approvals",  tone: "warn",   effortSec: 300 },
       { key: "tickets",    label: "Open support tickets",     count: tickets,          dept: "users",    section: "support",    tone: "info",   effortSec: 180 },
-      { key: "up_fail",    label: "Failed uploads",           count: failedUploads,    dept: "cloud",    section: "storage",    tone: "danger", effortSec: 60  },
+      { key: "up_fail",    label: "Failed uploads",           count: failedUploads,    dept: "cloud",    section: "failed-uploads", tone: "danger", effortSec: 60  },
       { key: "em_fail",    label: "Failed emails",            count: failedEmails,     dept: "platform", section: "email",      tone: "danger", effortSec: 30  },
       { key: "pay_fail",   label: "Failed payments",          count: failedPayments,   dept: "business", section: "billing",    tone: "danger", effortSec: 240 },
       { key: "storage",    label: "Storage alerts",           count: storageAlerts,    dept: "cloud",    section: "storage",    tone: "warn",   effortSec: 60  },

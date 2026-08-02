@@ -75,6 +75,10 @@ describe("P0-B QC → Legal transition wiring", () => {
   it("does not use the legacy _target_status parameter name", () => {
     expect(panel).not.toMatch(/_target_status:/);
   });
+
+  it("surfaces actionable prerequisite guidance when transition is blocked", () => {
+    expect(panel).toMatch(/Resolve QC blocking checklist items and required reviewer assignments/);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -168,6 +172,8 @@ describe("P0-E DIT Ingest Protocol", () => {
 // P1-B — Email retry banner
 // ---------------------------------------------------------------------------
 describe("P1-A/B Email retry banner classification", () => {
+  const monitor = READ("src/components/admin/EmailLogMonitor.tsx");
+
   it("passed sweep + persisted audit → passed", () => {
     expect(classifyRetryBanner({ audit: { passed: true, pending_remaining: 0 }, sweep_status: "ok" })).toBe("passed");
   });
@@ -199,6 +205,14 @@ describe("P1-A/B Email retry banner classification", () => {
 
   it("authorization failure → unauthorized", () => {
     expect(classifyRetryBanner({ http_status: 403 })).toBe("unauthorized");
+  });
+
+  it("prioritizes stuck-message copy before audit-persistence copy in monitor banner", () => {
+    const pendingBranch = monitor.indexOf("pending > 0 && !auditPersistOk");
+    const auditOnlyBranch = monitor.indexOf("!auditPersistOk");
+    expect(pendingBranch).toBeGreaterThan(-1);
+    expect(auditOnlyBranch).toBeGreaterThan(-1);
+    expect(pendingBranch).toBeLessThan(auditOnlyBranch);
   });
 });
 
@@ -307,4 +321,3 @@ describe("Onboarding field-lock migration (applied)", () => {
     ).toThrow();
   });
 });
-

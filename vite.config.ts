@@ -98,6 +98,9 @@ export default defineConfig(({ mode }) => {
         "X-Frame-Options": "SAMEORIGIN",
         "Referrer-Policy": "strict-origin-when-cross-origin",
         "Permissions-Policy": "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+        "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
+        "Cross-Origin-Embedder-Policy": "credentialless",
+        "Cross-Origin-Resource-Policy": "cross-origin",
       },
     },
     plugins: [

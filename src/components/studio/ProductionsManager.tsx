@@ -48,6 +48,7 @@ import { toast } from "sonner";
 import { generateProductionNumber, getProductionNumber } from "@/lib/productionNumber";
 import { INVITABLE_ORG_ROLES, ORG_ROLE_LABEL, ORG_ROLE_DESCRIPTION, ORG_ROLE_BACKEND, labelForOrgRole } from "@/lib/rbac/labels";
 import { RoleLegend } from "@/components/rbac/RoleLegend";
+import { archiveProductionCrew, restoreProductionCrew } from "@/lib/studio/productionArchive";
 
 const CONTENT_TYPES = [
   "Feature Film", "Series", "Documentary", "Short Film",
@@ -64,30 +65,6 @@ const DEFAULT_FOLDERS = [
 ] as const;
 
 // Production Number generation is centralized in "@/lib/productionNumber".
-
-function archiveProductionCrew(crew: Record<string, any> | null | undefined) {
-  const next = { ...(crew ?? {}) };
-  const current = String(next.title_status ?? "").trim();
-  if (current && current.toLowerCase() !== "archived") {
-    next.archived_from_status = current;
-  }
-  next.title_status = "Archived";
-  return next;
-}
-
-function restoreProductionCrew(crew: Record<string, any> | null | undefined) {
-  const next = { ...(crew ?? {}) };
-  const fallback = String(next.archived_from_status ?? "").trim();
-  delete next.archived_from_status;
-  if (fallback && fallback.toLowerCase() !== "archived") {
-    next.title_status = fallback;
-  } else {
-    delete next.title_status;
-  }
-  return next;
-}
-
-export { archiveProductionCrew, restoreProductionCrew };
 
 function fmtBytes(n: number): string {
   if (!Number.isFinite(n) || n <= 0) return "0 B";

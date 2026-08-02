@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { archiveProductionCrew, restoreProductionCrew } from "@/components/studio/ProductionsManager";
+import { archiveProductionCrew, restoreProductionCrew } from "@/lib/studio/productionArchive";
 
 describe("production archive restore helpers", () => {
   it("preserves the previous status when archiving then restoring", () => {

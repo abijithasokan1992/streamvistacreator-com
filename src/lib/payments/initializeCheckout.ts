@@ -213,6 +213,32 @@ export async function initializeCheckout(opts: InitializeCheckoutOptions): Promi
         }
       },
     });
+
+    // Razorpay reports in-modal failures (declined card, failed OTP, bank
+    // timeout) through this event — the `handler` callback never fires for
+    // them, so without this the UI would silently stay in "checkout open".
+    let failureReported = false;
+    rzp.on?.("payment.failed", (evt) => {
+      if (failureReported) return;
+      failureReported = true;
+      clearCheckoutOpen();
+      const message = razorpayFailureMessage(evt);
+      toast.error(message, { id: toastId });
+      logCheckoutTelemetry({
+        action_type: "checkout.handler_error",
+        severity: "ERROR",
+        order_id: evt?.error?.metadata?.order_id ?? orderId,
+        payment_id: evt?.error?.metadata?.payment_id ?? null,
+        error_message: message,
+        extra: {
+          code: evt?.error?.code ?? null,
+          source: evt?.error?.source ?? null,
+          step: evt?.error?.step ?? null,
+        },
+      });
+      onError?.(new Error(message));
+    });
+
     toast.dismiss(toastId);
     setCheckoutOpen(true);
     rzp.open();

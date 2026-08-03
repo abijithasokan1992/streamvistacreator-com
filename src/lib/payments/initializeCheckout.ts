@@ -162,7 +162,9 @@ export async function initializeCheckout(opts: InitializeCheckoutOptions): Promi
     };
     const clearCheckoutOpen = () => setCheckoutOpen(false);
 
-    const rzp = new (window as any).Razorpay({
+    const orderId: string | null = ((data as any)?.orderId as string | undefined) ?? null;
+
+    const rzp: RazorpayInstance = new (window as any).Razorpay({
       key: (data as any).keyId,
       order_id: (data as any).orderId,
       amount: (data as any).amount,
@@ -172,7 +174,17 @@ export async function initializeCheckout(opts: InitializeCheckoutOptions): Promi
       prefill: rzpPrefill,
       notes: enrichedMetadata as Record<string, string>,
       theme: { color: themeColor || "#a855f7" },
-      modal: { ondismiss: () => { clearCheckoutOpen(); onDismiss?.(); } },
+      modal: {
+        ondismiss: () => {
+          clearCheckoutOpen();
+          logCheckoutTelemetry({
+            action_type: "checkout.modal_dismissed",
+            severity: "WARN",
+            order_id: orderId,
+          });
+          onDismiss?.();
+        },
+      },
       handler: async (resp: any) => {
         try {
           const verifyToken = await freshAccessToken();

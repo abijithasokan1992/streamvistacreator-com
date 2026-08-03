@@ -128,6 +128,10 @@ export default defineConfig(({ mode }) => {
       },
     },
     plugins: [
+      requirePublicEnv({
+        VITE_SUPABASE_URL: supabaseUrl,
+        VITE_SUPABASE_PUBLISHABLE_KEY: supabasePublishableKey,
+      }),
       react(),
       mcpPlugin(),
       syncMcpManifestToPublic(),

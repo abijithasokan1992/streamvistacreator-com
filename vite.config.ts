@@ -66,6 +66,32 @@ function prerenderRoutes() {
   };
 }
 
+/**
+ * Fail the production build early — with variable NAMES only, never values —
+ * when the browser-safe backend configuration is missing. Prevents shipping a
+ * bundle whose Supabase client initializes with `undefined`.
+ */
+function requirePublicEnv(resolved: Record<string, string | undefined>) {
+  return {
+    name: "streamvista-require-public-env",
+    apply: "build" as const,
+    buildStart() {
+      const missing = REQUIRED_PUBLIC_ENV.filter((key) => {
+        const value = resolved[key];
+        return !value || value.trim().length === 0;
+      });
+      if (missing.length) {
+        throw new Error(
+          `[config] Missing required build-time environment variable(s): ${missing.join(", ")}. ` +
+            `Reconnect Lovable Cloud (or set them in .env) and rebuild. No values are logged.`,
+        );
+      }
+      // eslint-disable-next-line no-console
+      console.log(`[config] backend configuration present (${REQUIRED_PUBLIC_ENV.join(", ")})`);
+    },
+  };
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");

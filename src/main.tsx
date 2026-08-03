@@ -1,4 +1,5 @@
 import { createRoot } from "react-dom/client";
+import { missingPublicEnv } from "./lib/config/requiredEnv";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;

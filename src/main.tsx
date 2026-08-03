@@ -1,4 +1,5 @@
 import { createRoot } from "react-dom/client";
+import { missingPublicEnv } from "./lib/config/requiredEnv";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -69,19 +70,18 @@ async function probeBackend(url: string, key: string): Promise<void> {
   }
 }
 
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-  const missing = [
-    !SUPABASE_URL && "VITE_SUPABASE_URL",
-    !SUPABASE_KEY && "VITE_SUPABASE_PUBLISHABLE_KEY",
-  ]
-    .filter(Boolean)
-    .join(", ");
+const missingEnv = missingPublicEnv((name) =>
+  name === "VITE_SUPABASE_URL" ? SUPABASE_URL : name === "VITE_SUPABASE_PUBLISHABLE_KEY" ? SUPABASE_KEY : undefined,
+);
+
+if (missingEnv.length > 0) {
+  const missing = missingEnv.join(", ");
 
   renderStartupError({
     kicker: "Configuration error",
     title: "Backend environment is not configured",
     message: `The app cannot start because required environment variables are missing: <code style="color:#ffb4b4;">${missing}</code>.`,
-    hint: "In Lovable, reconnect Lovable Cloud (or verify the project&rsquo;s <code>.env</code>) so these variables are injected at build time, then reload the preview.",
+    hint: "In Lovable, reconnect Lovable Cloud (or verify the project&rsquo;s <code>.env</code>) so these variables are injected at build time, then reload the preview. No secret values are shown on this page.",
   });
   // eslint-disable-next-line no-console
   console.error(`[startup] Missing Supabase env vars: ${missing}`);

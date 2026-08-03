@@ -162,7 +162,8 @@ export async function initializeCheckout(opts: InitializeCheckoutOptions): Promi
     };
     const clearCheckoutOpen = () => setCheckoutOpen(false);
 
-    const orderId: string | null = ((data as any)?.orderId as string | undefined) ?? null;
+    const orderId: string | null =
+      (data as { orderId?: string } | null)?.orderId ?? null;
 
     const rzp: RazorpayInstance = new (window as any).Razorpay({
       key: (data as any).keyId,

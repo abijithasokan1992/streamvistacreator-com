@@ -5,6 +5,7 @@ import fs from "fs";
 import { componentTagger } from "lovable-tagger";
 import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/supabase/vite";
 import { prerender } from "./scripts/prerender-routes";
+import { REQUIRED_PUBLIC_ENV } from "./src/lib/config/requiredEnv";
 
 /**
  * Mirror the SDK-owned MCP manifest at .lovable/mcp/manifest.json into

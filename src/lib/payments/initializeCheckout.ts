@@ -4,6 +4,38 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
+import { logCheckoutTelemetry } from "@/lib/paymentTelemetry";
+
+/** Shape Razorpay emits on the `payment.failed` event. All fields optional. */
+export interface RazorpayFailedEvent {
+  error?: {
+    code?: string;
+    description?: string;
+    reason?: string;
+    source?: string;
+    step?: string;
+    metadata?: { order_id?: string; payment_id?: string };
+  };
+}
+
+/** Minimal surface of the Razorpay instance this helper relies on. */
+interface RazorpayInstance {
+  open: () => void;
+  on?: (event: "payment.failed", handler: (evt: RazorpayFailedEvent) => void) => void;
+}
+
+/**
+ * Derive a safe, user-facing message from a Razorpay failure event.
+ * Never surfaces raw codes or internal fields on their own.
+ */
+export function razorpayFailureMessage(evt: RazorpayFailedEvent | undefined): string {
+  const description = evt?.error?.description?.trim();
+  if (description) return description;
+  const reason = evt?.error?.reason?.trim();
+  if (reason) return reason;
+  return "Payment failed. No amount was charged — please try again.";
+}
+
 
 export type CheckoutPurpose =
   | "storage_topup"

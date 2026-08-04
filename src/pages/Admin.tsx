@@ -334,7 +334,8 @@ export default function Admin() {
             {!isReviewer && <PriorityInbox />}
             <a
               href="/admin/control-center"
-              className="hidden md:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-md border border-emerald-400/40 text-emerald-300 hover:bg-emerald-500/10"
+              aria-label="Open Control Center"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-md border border-emerald-400/40 text-emerald-300 hover:bg-emerald-500/10"
             >
               <Activity className="w-3.5 h-3.5" /> Control Center
             </a>

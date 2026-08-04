@@ -1732,7 +1732,7 @@ var projectRef = "hllgmkfqgeuqlmpcirvn";
 var mcp_default = defineMcp({
   name: "streamvista-mcp",
   title: "StreamVista Cloud X",
-  version: "0.3.0",
+  version: "0.3.1",
   instructions: "Tools for a signed-in StreamVista Cloud X user. Creator Workspace tools (Creator accounts only): `creator_my_workspace`, `creator_list_titles`, `creator_open_title`, `creator_submission_status`, `creator_rights_status`, `creator_list_assets`, `creator_review_notes`, `creator_distribution_status`, `creator_storage_usage`, `creator_notifications`, `creator_search_my_titles`. Studio Workspace tools (Studio accounts only): `list_productions`, `open_production`, `show_todays_work`, `show_upload_progress`, `show_storage_usage`, `show_recent_activity`, `show_team`, `show_deliveries`, `show_billing`, `search_files`. Legacy read tools kept for compatibility: `list_titles`, `get_title`, `list_ingest_jobs`. Tools that are not available to the caller's role return a friendly access message instead of data. Use `whoami` to verify identity. All data is scoped to the signed-in user via RLS.",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,

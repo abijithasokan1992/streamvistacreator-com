@@ -1,28 +1,59 @@
-name: NodeJS with Webpack
+name: StreamVista GitHub Build
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: streamvista-build-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
+  test-and-build:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [18.x, 20.x, 22.x]
+    timeout-minutes: 30
 
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
 
-    - name: Build
-      run: |
-        npm install
-        npx webpack
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build application and MCP bundle
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+
+      - name: Verify generated MCP bundle
+        run: |
+          test -f supabase/functions/mcp/index.ts
+          test -f .lovable/mcp/manifest.json
+          test -f public/.lovable/mcp/manifest.json
+          grep -q "ctrl_connection_health" supabase/functions/mcp/index.ts
+
+      - name: Upload deployable MCP bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: streamvista-mcp-${{ github.sha }}
+          path: |
+            supabase/functions/mcp/**
+            supabase/config.toml
+          if-no-files-found: error
+          retention-days: 14

@@ -75,7 +75,6 @@ jobs:
           fi
 
       - name: Check Supabase deployment credential
-        id: credential
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
@@ -88,14 +87,11 @@ jobs:
             exit 1
           fi
 
-      - name: Install Supabase CLI
-        run: npm install --global supabase
-
       - name: Deploy MCP Edge Function
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
-          supabase functions deploy mcp \
+          npx --yes supabase@latest functions deploy mcp \
             --project-ref hllgmkfqgeuqlmpcirvn \
             --no-verify-jwt
 

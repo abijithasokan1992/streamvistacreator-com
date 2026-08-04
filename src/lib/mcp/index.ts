@@ -48,14 +48,16 @@ import ctrlFindDuplicateTitles from "./tools/control/find-duplicate-titles";
 import ctrlDeleteDraftTitles from "./tools/control/delete-draft-titles";
 import ctrlImportLegacyTitles from "./tools/control/import-legacy-titles";
 
-// Build the OAuth issuer from the Supabase project ref only (never SUPABASE_URL,
-// which is the .lovable.cloud proxy on Cloud apps). Vite inlines this literal.
-const projectRef = import.meta.env.VITE_SUPABASE_PROJECT_ID ?? "hllgmkfqgeuqlmpcirvn";
+// This MCP installation is bound to the production Supabase OAuth issuer.
+// Do not derive it from a generic Vite/Supabase environment variable: preview
+// and clean-room environments can inject a different project id and silently
+// break the ChatGPT account-connection handshake before any tool is invoked.
+const projectRef = "hllgmkfqgeuqlmpcirvn";
 
 export default defineMcp({
   name: "streamvista-mcp",
   title: "StreamVista Cloud X",
-  version: "0.3.0",
+  version: "0.3.1",
   instructions:
     "Tools for a signed-in StreamVista Cloud X user. " +
     "Creator Workspace tools (Creator accounts only): `creator_my_workspace`, `creator_list_titles`, `creator_open_title`, `creator_submission_status`, `creator_rights_status`, `creator_list_assets`, `creator_review_notes`, `creator_distribution_status`, `creator_storage_usage`, `creator_notifications`, `creator_search_my_titles`. " +

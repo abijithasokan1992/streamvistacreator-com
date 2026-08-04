@@ -121,13 +121,13 @@ export default function ControlCenter() {
     const [sessionRes, emailFailed, mcpFlags, agentEvents] = await Promise.all([
       supabase.auth.getSession(),
       supabase.from("email_send_log")
-        .select("id, recipient, status, created_at")
+        .select("id, recipient_email, status, created_at, error_message")
         .in("status", ["failed", "failed_permanent"])
         .order("created_at", { ascending: false })
         .limit(10),
       supabase.from("mcp_control_flags").select("*").limit(5),
       supabase.from("agent_events")
-        .select("id, severity, surface, message, created_at")
+        .select("id, severity, agent, title, summary, created_at")
         .order("created_at", { ascending: false })
         .limit(10),
     ]);
@@ -272,11 +272,11 @@ export default function ControlCenter() {
     ]);
 
     const inc: Incident[] = [
-      ...(emailFailed.data ?? []).map((r: { id: string; recipient: string | null; status: string; created_at: string }) => ({
+      ...(emailFailed.data ?? []).map((r: { id: string; recipient_email: string | null; status: string; created_at: string }) => ({
         id: `email-${r.id}`,
         source: "Email queue",
         when: r.created_at,
-        summary: `Delivery ${r.status} for ${r.recipient ?? "unknown recipient"}`,
+        summary: `Delivery ${r.status} for ${r.recipient_email ?? "unknown recipient"}`,
         severity: "FAILED" as CcStatus,
       })),
       ...(failedUploads.data ?? []).map((r: { id: string; file_name: string | null; error_message: string | null; updated_at: string }) => ({
@@ -288,11 +288,11 @@ export default function ControlCenter() {
       })),
       ...(agentEvents.data ?? [])
         .filter((r: { severity?: string }) => r.severity === "critical" || r.severity === "warn")
-        .map((r: { id: string; severity: string; surface: string | null; message: string | null; created_at: string }) => ({
+        .map((r: { id: string; severity: string; agent: string | null; title: string | null; summary: string | null; created_at: string }) => ({
           id: `agent-${r.id}`,
-          source: `Agent · ${r.surface ?? "platform"}`,
+          source: `Agent · ${r.agent ?? "platform"}`,
           when: r.created_at,
-          summary: r.message ?? r.severity,
+          summary: r.title ?? r.summary ?? r.severity,
           severity: (r.severity === "critical" ? "DANGER" : "BLOCKED") as CcStatus,
         })),
       ...(auditRows.data ?? []).map((r: { id: string; action: string; created_at: string }) => ({

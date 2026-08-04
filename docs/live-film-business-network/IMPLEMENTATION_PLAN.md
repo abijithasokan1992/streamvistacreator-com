@@ -1,7 +1,14 @@
 # StreamVista Live Film Business Network — Implementation Plan
 
 ## Goal
-Connect creators, content owners, buyers, partners and StreamVista admin through a real-time film licensing workflow. No fake activity, no duplicate messaging system, and no autonomous legal or payment approval.
+Connect creators, content owners, buyers, partners and StreamVista admin through a real-time film licensing workflow. No fake activity, no duplicate messaging system, and no autonomous legal, payment or master-delivery approval.
+
+## Production ownership and direct access
+- Founder/owner: Abijith Asokan
+- Production Supabase project ref: `hllgmkfqgeuqlmpcirvn`
+- Production URL: `https://hllgmkfqgeuqlmpcirvn.supabase.co`
+- Founder must retain direct owner-level access to Supabase and GitHub.
+- Do not route this project through the Union Auto Spares staging database.
 
 ## Existing architecture to reuse
 - `src/components/admin/CommunicationCenter.tsx`
@@ -9,39 +16,61 @@ Connect creators, content owners, buyers, partners and StreamVista admin through
 - Existing Supabase Auth and RLS
 - Existing `notifications`, `partner_profiles`, `distribution_partners`, `distribution_deliveries`, `distribution_delivery_logs`, `email_send_log`, support/contact inbox and invitation infrastructure
 
+## Founder operating model
+The platform is full automation with founder entry only at final control gates.
+
+### Agent-driven by default
+1. Detect inbound email/message/activity.
+2. Identify buyer, partner or creator.
+3. Extract requirements and rights needs.
+4. Match rights-cleared titles.
+5. Prepare draft replies, proposals and follow-ups.
+6. Maintain pipeline, reminders, meetings and status updates.
+7. Prepare deal documents and delivery-readiness checks.
+8. Synchronize authorized events to Slack, Notion, Linear, Drive and CRM.
+9. Record immutable audit events, retries and failures.
+
+### Founder-only gates
+- Final commercial terms approval
+- Contract/signature authorization
+- Payment release, refund or payout approval
+- Master delivery release
+- Exceptional-risk override
+
 ## Phase 1 delivery order
 1. Inventory current schemas, routes, event sources and RLS policies.
 2. Define the smallest schema addition for presence, connection requests, deal cases, AI draft approvals and auditable events.
 3. Add a live network dashboard inside the current admin shell.
 4. Add creator/buyer/partner presence with last-seen fallback.
-5. Add buyer-title connection requests with admin approval.
+5. Add buyer-title connection requests with automated validation and founder escalation only for exceptions.
 6. Detect incoming Hostinger/Gmail messages and normalize them into the existing communication layer.
 7. Identify buyer/partner, extract requirements and match rights-cleared titles.
-8. Generate a reply draft; require owner approval before any send.
+8. Generate and queue reply drafts; auto-run routine follow-up rules while keeping founder approval at final commercial/legal gates.
 9. Update deal status live and post approved operational events to Slack.
-10. Add Razorpay visibility only after invoice/payment-link stage.
+10. Add Razorpay visibility after invoice/payment-link stage.
 
 ## Connected service responsibilities
 | Service | Responsibility |
 |---|---|
 | GitHub | Source code, review and deployment history |
 | Supabase | Auth, database, RLS, realtime and Edge Functions |
-| Hostinger Mail / Gmail | Inbound partner communication and owner-approved replies |
+| Hostinger Mail / Gmail | Inbound partner communication and approved replies |
 | Resend | Transactional delivery after verified domain setup |
 | Close | CRM leads, contacts, opportunities and follow-up |
 | Google Calendar | Meetings and deal deadlines |
 | Google Drive | Rights packs, screeners, proposals and delivery documents |
 | Notion | Operating decisions and documentation |
 | Linear | Build execution and QA tracking |
-| Slack | Internal alerts and approvals |
+| Slack | Internal alerts and founder approval notifications |
 | Razorpay | Payment and settlement visibility |
 
 ## Security rules
 - Default-deny RLS.
 - Partner contacts, credentials and screener URLs remain private.
-- Owner approval required before outbound AI-generated messages.
-- No autonomous contract acceptance, legal approval, refunds, payouts or payment release.
-- Every AI extraction, match, draft, approval and send event must be auditable.
+- Founder approval is required only at final commercial, contract, payment, payout/refund, master-delivery and exceptional-risk gates.
+- No autonomous contract acceptance, legal sign-off, refunds, payouts, payment release or master delivery.
+- Every AI extraction, match, draft, follow-up, approval, send and state change must be auditable.
+- All jobs must be idempotent, retry-safe and reversible where technically possible.
 
 ## Initial data model proposal
 Final names must be checked against the existing schema before migration.
@@ -62,15 +91,16 @@ Final names must be checked against the existing schema before migration.
 ## Acceptance tests
 - Two authenticated users can appear online in the same network view.
 - A creator/title can request a buyer/partner connection.
-- Admin can approve or reject that request.
+- Routine validation and status progression occur without founder input.
 - A real inbound email can produce extracted requirements and a matched-title draft.
-- Draft cannot send without owner approval.
+- Final commercial/legal actions cannot execute without founder approval.
 - Approved status changes appear live for authorized users.
 - Private contacts and screener URLs remain inaccessible to unauthorized roles.
+- Duplicate events do not create duplicate sends, leads, deals or payments.
+- Failed jobs retry safely and surface actionable errors.
 - Mobile UI has no horizontal overflow.
 - Build and CI pass.
 
-## Blockers requiring owner action
-- Confirm the correct StreamVista production Supabase project; do not use Union Auto Spares staging.
-- Fix/verify the active Resend sending domain before enabling transactional sends.
+## Remaining external blocker
+- Fix and verify the active Resend sending domain before enabling transactional sends.
 - Approve paid Twilio numbers or messaging only when Phase 2 begins.

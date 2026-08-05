@@ -340,6 +340,13 @@ export default function Admin() {
               <Activity className="w-3.5 h-3.5" /> Control Center
             </a>
             <a
+              href="/admin/deployments"
+              aria-label="Open Deployment Control"
+              className="hidden md:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-md border border-sky-400/40 text-sky-300 hover:bg-sky-500/10"
+            >
+              <Rocket className="w-3.5 h-3.5" /> Deployments
+            </a>
+            <a
               href="/admin/office"
               className="hidden md:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:opacity-90"
             >

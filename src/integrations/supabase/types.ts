@@ -2567,6 +2567,57 @@ export type Database = {
           },
         ]
       }
+      deployment_audit_log: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_user_id: string | null
+          after_state: Json | null
+          before_state: Json | null
+          created_at: string
+          deployment_id: string | null
+          error_summary: string | null
+          id: string
+          project_id: string | null
+          provider: string
+          request_id: string | null
+          result: string
+          target_label: string | null
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_user_id?: string | null
+          after_state?: Json | null
+          before_state?: Json | null
+          created_at?: string
+          deployment_id?: string | null
+          error_summary?: string | null
+          id?: string
+          project_id?: string | null
+          provider?: string
+          request_id?: string | null
+          result?: string
+          target_label?: string | null
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_user_id?: string | null
+          after_state?: Json | null
+          before_state?: Json | null
+          created_at?: string
+          deployment_id?: string | null
+          error_summary?: string | null
+          id?: string
+          project_id?: string | null
+          provider?: string
+          request_id?: string | null
+          result?: string
+          target_label?: string | null
+        }
+        Relationships: []
+      }
       distribution_deliveries: {
         Row: {
           ack_reference: string | null
@@ -3762,6 +3813,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      execution_projects: {
+        Row: {
+          created_at: string
+          current_blocker: string | null
+          dependency: string | null
+          id: string
+          is_active: boolean
+          name: string
+          next_action: string | null
+          owner_name: string
+          project_group: string
+          scope: string
+          slug: string
+          source_context: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_blocker?: string | null
+          dependency?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          next_action?: string | null
+          owner_name?: string
+          project_group: string
+          scope: string
+          slug: string
+          source_context?: string | null
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_blocker?: string | null
+          dependency?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          next_action?: string | null
+          owner_name?: string
+          project_group?: string
+          scope?: string
+          slug?: string
+          source_context?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       fastlink_payments: {
         Row: {

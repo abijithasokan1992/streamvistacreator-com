@@ -177,10 +177,19 @@ export default function AdminIntegrations() {
               backend, RBAC, storage, and billing.
             </p>
           </div>
-          <Button variant="outline" size="sm" onClick={load} disabled={refreshing}>
-            {refreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-            <span className="ml-2">Refresh</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/admin/deployments"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-md border border-sky-400/40 text-sky-300 hover:bg-sky-500/10"
+              aria-label="Open Deployment Control"
+            >
+              <Cloud className="w-3.5 h-3.5" /> Deployment Control
+            </Link>
+            <Button variant="outline" size="sm" onClick={load} disabled={refreshing}>
+              {refreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              <span className="ml-2">Refresh</span>
+            </Button>
+          </div>
         </header>
 
         {summary && (

@@ -1,9 +1,10 @@
 import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { AlertTriangle, LifeBuoy, RefreshCw, LogOut } from "lucide-react";
+import { AlertTriangle, LifeBuoy, RefreshCw, LogOut, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { Seo } from "@/components/Seo";
+import { safeNextPath } from "@/lib/auth/safeNext";
 
 const REASON_COPY: Record<string, { title: string; body: string }> = {
   lookup_failed: {
@@ -16,17 +17,22 @@ const REASON_COPY: Record<string, { title: string; body: string }> = {
   },
   no_role: {
     title: "No role assigned to this account",
-    body: "Your account exists but has not been assigned a workspace role yet. An administrator must invite you or grant access.",
+    body: "Your account exists but has not been assigned a workspace role yet. Complete onboarding or ask an administrator to grant access.",
   },
   unmapped_role: {
     title: "Your role isn't wired to a dashboard yet",
     body: "Your account has a role we don't have a landing surface for. Support can route you manually.",
+  },
+  access_denied: {
+    title: "This workspace is not available to your role",
+    body: "Your account is signed in, but the requested area is outside your assigned role or organisation permissions. No protected data was shown.",
   },
 };
 
 export default function RoleUnknown() {
   const [params] = useSearchParams();
   const reason = params.get("reason") ?? "no_role";
+  const from = safeNextPath(params.get("from"));
   const copy = useMemo(
     () => REASON_COPY[reason] ?? REASON_COPY.no_role,
     [reason],
@@ -41,7 +47,7 @@ export default function RoleUnknown() {
     <>
       <Seo
         title="Access role unavailable — StreamVista"
-        description="We couldn't determine your dashboard role. Contact support or retry."
+        description="We couldn't determine or authorise your dashboard role. Contact support or retry."
         path="/auth/role-unknown"
       />
       <main className="min-h-screen grid place-items-center bg-background px-4">
@@ -56,16 +62,25 @@ export default function RoleUnknown() {
           <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
             {copy.body}
           </p>
-          <p className="text-[11px] text-muted-foreground/70 mt-4 font-mono">
+          <p className="text-[11px] text-muted-foreground/70 mt-4 font-mono break-all">
             Reference: <span className="text-foreground/80">{reason}</span>
+            {from ? <> · Route: <span className="text-foreground/80">{from}</span></> : null}
           </p>
 
           <div className="mt-6 flex flex-wrap gap-2">
-            <Button asChild size="sm" variant="default">
-              <Link to="/onboarding">
-                <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Retry
-              </Link>
-            </Button>
+            {reason === "access_denied" ? (
+              <Button asChild size="sm" variant="default">
+                <Link to="/dashboard">
+                  <ArrowLeft className="w-3.5 h-3.5 mr-1.5" /> My dashboard
+                </Link>
+              </Button>
+            ) : (
+              <Button asChild size="sm" variant="default">
+                <Link to="/onboarding">
+                  <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Retry onboarding
+                </Link>
+              </Button>
+            )}
             <Button asChild size="sm" variant="outline">
               <Link to="/contact?topic=access">
                 <LifeBuoy className="w-3.5 h-3.5 mr-1.5" /> Contact support

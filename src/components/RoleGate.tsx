@@ -1,11 +1,14 @@
 import { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { Loader2 } from "lucide-react";
-import { useAuth, dashboardForRole, type AppRole } from "@/hooks/useAuth";
+import { useAuth, type AppRole } from "@/hooks/useAuth";
 
 /**
- * Strict client-side gate. RLS still owns the real security boundary at the
- * database — this just keeps unauthorised users from seeing the wrong UI.
+ * Strict client-side RBAC gate.
+ *
+ * Database RLS remains the authoritative security boundary. This component
+ * must fail closed: a missing or disallowed role never renders protected UI,
+ * even when a dashboard redirect would point back to the same route.
  */
 export default function RoleGate({
   allow,
@@ -24,13 +27,24 @@ export default function RoleGate({
       </div>
     );
   }
-  if (!user) return <Navigate to={`/auth?next=${encodeURIComponent(location.pathname)}`} replace />;
-  if (!role || !allow.includes(role)) {
-    const target = dashboardForRole(role);
-    // Loop guard: if the role's home is the route we're guarding, render the
-    // children rather than ping-pong forever.
-    if (target === location.pathname) return <>{children}</>;
-    return <Navigate to={target} replace />;
+
+  if (!user) {
+    const next = `${location.pathname}${location.search}${location.hash}`;
+    return <Navigate to={`/auth?next=${encodeURIComponent(next)}`} replace />;
   }
+
+  if (!role) {
+    return <Navigate to="/auth/role-unknown?reason=no_role" replace />;
+  }
+
+  if (!allow.includes(role)) {
+    return (
+      <Navigate
+        to={`/auth/role-unknown?reason=access_denied&from=${encodeURIComponent(location.pathname)}`}
+        replace
+      />
+    );
+  }
+
   return <>{children}</>;
 }

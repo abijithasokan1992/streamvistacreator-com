@@ -28,6 +28,7 @@ import creatorSearchMyTitles from "./tools/creator-search-my-titles";
 // Every tool below authorizes + audits via `mcp_authorize_and_log` RPC and
 // respects the production write kill switch (Phase 1 has zero writes).
 import ctrlWhoami from "./tools/control/whoami-control";
+import ctrlConnectionHealth from "./tools/control/connection-health";
 import ctrlGetWorkspaceStatus from "./tools/control/get-workspace-status";
 import ctrlGetTodayActivity from "./tools/control/get-today-activity";
 import ctrlListCreators from "./tools/control/list-creators";
@@ -48,16 +49,19 @@ import ctrlFindDuplicateTitles from "./tools/control/find-duplicate-titles";
 import ctrlDeleteDraftTitles from "./tools/control/delete-draft-titles";
 import ctrlImportLegacyTitles from "./tools/control/import-legacy-titles";
 
-// Build the OAuth issuer from the Supabase project ref only (never SUPABASE_URL,
-// which is the .lovable.cloud proxy on Cloud apps). Vite inlines this literal.
-const projectRef = import.meta.env.VITE_SUPABASE_PROJECT_ID ?? "hllgmkfqgeuqlmpcirvn";
+// This MCP installation is bound to the production Supabase OAuth issuer.
+// Do not derive it from a generic Vite/Supabase environment variable: preview
+// and clean-room environments can inject a different project id and silently
+// break the ChatGPT account-connection handshake before any tool is invoked.
+const projectRef = "hllgmkfqgeuqlmpcirvn";
 
 export default defineMcp({
   name: "streamvista-mcp",
   title: "StreamVista Cloud X",
-  version: "0.3.0",
+  version: "0.3.2",
   instructions:
     "Tools for a signed-in StreamVista Cloud X user. " +
+    "When StreamVista Control appears unavailable, call `ctrl_connection_health` first. It retries transient connection, timeout, gateway, and rate-limit failures automatically and returns `reauth_required` only when OAuth user approval is genuinely necessary. " +
     "Creator Workspace tools (Creator accounts only): `creator_my_workspace`, `creator_list_titles`, `creator_open_title`, `creator_submission_status`, `creator_rights_status`, `creator_list_assets`, `creator_review_notes`, `creator_distribution_status`, `creator_storage_usage`, `creator_notifications`, `creator_search_my_titles`. " +
     "Studio Workspace tools (Studio accounts only): `list_productions`, `open_production`, `show_todays_work`, `show_upload_progress`, `show_storage_usage`, `show_recent_activity`, `show_team`, `show_deliveries`, `show_billing`, `search_files`. " +
     "Legacy read tools kept for compatibility: `list_titles`, `get_title`, `list_ingest_jobs`. " +
@@ -97,6 +101,7 @@ export default defineMcp({
     listIngestJobs,
     // Phase 1 Control Server — founder / platform_owner / super_admin only.
     ctrlWhoami,
+    ctrlConnectionHealth,
     ctrlGetWorkspaceStatus,
     ctrlGetTodayActivity,
     ctrlListCreators,

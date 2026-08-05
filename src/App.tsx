@@ -147,6 +147,7 @@ const AdminRoot = () => {
 const ADMIN_ROUTES: { path: string; element: JSX.Element }[] = [
   { path: "/admin", element: <AdminErrorBoundary><Admin /></AdminErrorBoundary> },
   { path: "/admin/control-center", element: <AdminErrorBoundary><AdminControlCenter /></AdminErrorBoundary> },
+  { path: "/admin/deployments", element: <AdminErrorBoundary><AdminDeployments /></AdminErrorBoundary> },
   { path: "/admin/office", element: <AdminErrorBoundary><MediaOffice /></AdminErrorBoundary> },
   { path: "/admin/demo-test", element: <AdminErrorBoundary><DemoTestReview /></AdminErrorBoundary> },
   { path: "/admin/home", element: <AdminHome /> },

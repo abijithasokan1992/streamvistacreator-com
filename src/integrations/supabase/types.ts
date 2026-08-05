@@ -2567,6 +2567,57 @@ export type Database = {
           },
         ]
       }
+      deployment_audit_log: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_user_id: string | null
+          after_state: Json | null
+          before_state: Json | null
+          created_at: string
+          deployment_id: string | null
+          error_summary: string | null
+          id: string
+          project_id: string | null
+          provider: string
+          request_id: string | null
+          result: string
+          target_label: string | null
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_user_id?: string | null
+          after_state?: Json | null
+          before_state?: Json | null
+          created_at?: string
+          deployment_id?: string | null
+          error_summary?: string | null
+          id?: string
+          project_id?: string | null
+          provider?: string
+          request_id?: string | null
+          result?: string
+          target_label?: string | null
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_user_id?: string | null
+          after_state?: Json | null
+          before_state?: Json | null
+          created_at?: string
+          deployment_id?: string | null
+          error_summary?: string | null
+          id?: string
+          project_id?: string | null
+          provider?: string
+          request_id?: string | null
+          result?: string
+          target_label?: string | null
+        }
+        Relationships: []
+      }
       distribution_deliveries: {
         Row: {
           ack_reference: string | null

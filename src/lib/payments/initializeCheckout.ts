@@ -4,6 +4,38 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { assertLiveCheckoutHost } from "@/lib/payments/checkoutHostGuard";
+import { logCheckoutTelemetry } from "@/lib/paymentTelemetry";
+
+/** Shape Razorpay emits on the `payment.failed` event. All fields optional. */
+export interface RazorpayFailedEvent {
+  error?: {
+    code?: string;
+    description?: string;
+    reason?: string;
+    source?: string;
+    step?: string;
+    metadata?: { order_id?: string; payment_id?: string };
+  };
+}
+
+/** Minimal surface of the Razorpay instance this helper relies on. */
+interface RazorpayInstance {
+  open: () => void;
+  on?: (event: "payment.failed", handler: (evt: RazorpayFailedEvent) => void) => void;
+}
+
+/**
+ * Derive a safe, user-facing message from a Razorpay failure event.
+ * Never surfaces raw codes or internal fields on their own.
+ */
+export function razorpayFailureMessage(evt: RazorpayFailedEvent | undefined): string {
+  const description = evt?.error?.description?.trim();
+  if (description) return description;
+  const reason = evt?.error?.reason?.trim();
+  if (reason) return reason;
+  return "Payment failed. No amount was charged — please try again.";
+}
+
 
 export type CheckoutPurpose =
   | "storage_topup"
@@ -130,7 +162,10 @@ export async function initializeCheckout(opts: InitializeCheckoutOptions): Promi
     };
     const clearCheckoutOpen = () => setCheckoutOpen(false);
 
-    const rzp = new (window as any).Razorpay({
+    const orderId: string | null =
+      (data as { orderId?: string } | null)?.orderId ?? null;
+
+    const rzp: RazorpayInstance = new (window as any).Razorpay({
       key: (data as any).keyId,
       order_id: (data as any).orderId,
       amount: (data as any).amount,
@@ -140,7 +175,17 @@ export async function initializeCheckout(opts: InitializeCheckoutOptions): Promi
       prefill: rzpPrefill,
       notes: enrichedMetadata as Record<string, string>,
       theme: { color: themeColor || "#a855f7" },
-      modal: { ondismiss: () => { clearCheckoutOpen(); onDismiss?.(); } },
+      modal: {
+        ondismiss: () => {
+          clearCheckoutOpen();
+          logCheckoutTelemetry({
+            action_type: "checkout.modal_dismissed",
+            severity: "WARN",
+            order_id: orderId,
+          });
+          onDismiss?.();
+        },
+      },
       handler: async (resp: any) => {
         try {
           const verifyToken = await freshAccessToken();
@@ -169,6 +214,32 @@ export async function initializeCheckout(opts: InitializeCheckoutOptions): Promi
         }
       },
     });
+
+    // Razorpay reports in-modal failures (declined card, failed OTP, bank
+    // timeout) through this event — the `handler` callback never fires for
+    // them, so without this the UI would silently stay in "checkout open".
+    let failureReported = false;
+    rzp.on?.("payment.failed", (evt) => {
+      if (failureReported) return;
+      failureReported = true;
+      clearCheckoutOpen();
+      const message = razorpayFailureMessage(evt);
+      toast.error(message, { id: toastId });
+      logCheckoutTelemetry({
+        action_type: "checkout.handler_error",
+        severity: "ERROR",
+        order_id: evt?.error?.metadata?.order_id ?? orderId,
+        payment_id: evt?.error?.metadata?.payment_id ?? null,
+        error_message: message,
+        extra: {
+          code: evt?.error?.code ?? null,
+          source: evt?.error?.source ?? null,
+          step: evt?.error?.step ?? null,
+        },
+      });
+      onError?.(new Error(message));
+    });
+
     toast.dismiss(toastId);
     setCheckoutOpen(true);
     rzp.open();

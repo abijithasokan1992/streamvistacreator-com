@@ -22,6 +22,7 @@ const NAV_LINKS = [
   { to: "/#platform", label: "Solutions" },
   { to: "/how-it-works", label: "How it works" },
   { to: "/pricing", label: "Pricing" },
+  { to: "/pricing#compare", label: "Compare" },
   { to: "/creator-preview", label: "Creator Preview" },
   { to: "/partners", label: "Partners" },
   { to: "/about", label: "About" },
@@ -41,7 +42,7 @@ export const Navbar = () => {
           <Wordmark />
         </Link>
 
-        <nav className="hidden md:flex items-center gap-6" aria-label="Primary">
+        <nav className="hidden md:flex items-center gap-5" aria-label="Primary">
           {NAV_LINKS.map((l) => (
             <Link
               key={l.to}
@@ -83,7 +84,6 @@ export const Navbar = () => {
             </>
           )}
 
-          {/* Mobile menu trigger */}
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger
               className="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-md border border-border/60 text-muted-foreground hover:text-foreground hover:border-accent/50 transition-colors"

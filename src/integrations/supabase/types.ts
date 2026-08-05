@@ -3763,6 +3763,57 @@ export type Database = {
           },
         ]
       }
+      execution_projects: {
+        Row: {
+          created_at: string
+          current_blocker: string | null
+          dependency: string | null
+          id: string
+          is_active: boolean
+          name: string
+          next_action: string | null
+          owner_name: string
+          project_group: string
+          scope: string
+          slug: string
+          source_context: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_blocker?: string | null
+          dependency?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          next_action?: string | null
+          owner_name?: string
+          project_group: string
+          scope: string
+          slug: string
+          source_context?: string | null
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_blocker?: string | null
+          dependency?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          next_action?: string | null
+          owner_name?: string
+          project_group?: string
+          scope?: string
+          slug?: string
+          source_context?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       fastlink_payments: {
         Row: {
           amount_inr: number

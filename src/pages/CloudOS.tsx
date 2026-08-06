@@ -1,6 +1,6 @@
-import { ArrowRight, Boxes, Bot, CheckCircle2, Search, Sparkles } from "lucide-react";
-import { Link } from "react-router-dom";
-import { STREAMVISTA_APPS, STREAMVISTA_SUITES } from "@/platform/appRegistry";
+import { ArrowLeft, ArrowRight, Boxes, Bot, CheckCircle2, Search, Sparkles } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { cloudOsAppUrl, STREAMVISTA_APPS, STREAMVISTA_SUITES } from "@/platform/appRegistry";
 
 const statusLabel = {
   live: "Live",
@@ -9,8 +9,67 @@ const statusLabel = {
 } as const;
 
 export default function CloudOS() {
+  const [searchParams] = useSearchParams();
+  const selectedId = searchParams.get("app");
+  const selectedApp = STREAMVISTA_APPS.find((app) => app.id === selectedId);
   const liveCount = STREAMVISTA_APPS.filter((app) => app.status === "live").length;
   const commercialCount = STREAMVISTA_APPS.filter((app) => app.commercial).length;
+
+  if (selectedApp) {
+    const suite = STREAMVISTA_SUITES.find((item) => item.id === selectedApp.suite);
+    return (
+      <main className="min-h-screen bg-background text-foreground">
+        <section className="border-b border-border/70 bg-gradient-to-b from-primary/10 via-background to-background">
+          <div className="mx-auto max-w-6xl px-5 py-10 md:px-8 md:py-14">
+            <Link to="/settings/integrations/ai-assistants" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+              <ArrowLeft className="h-4 w-4" /> Back to App Store
+            </Link>
+            <div className="mt-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-3xl">
+                <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-sm text-primary">
+                  <Sparkles className="h-4 w-4" /> {suite?.name ?? "StreamVista Cloud OS"}
+                </div>
+                <h1 className="mt-5 text-4xl font-semibold tracking-tight md:text-6xl">{selectedApp.name}</h1>
+                <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground md:text-lg">{selectedApp.description}</p>
+              </div>
+              <div className="rounded-2xl border border-border bg-card px-5 py-4">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Status</p>
+                <p className="mt-1 text-lg font-semibold">{statusLabel[selectedApp.status]}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-5 py-10 md:px-8">
+          <div className="grid gap-4 md:grid-cols-2">
+            {selectedApp.capabilities.map((capability) => (
+              <article key={capability} className="rounded-2xl border border-border bg-card p-5">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-xl bg-primary/10 p-2.5 text-primary"><CheckCircle2 className="h-5 w-5" /></div>
+                  <div>
+                    <p className="font-medium">{capability}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">Connected module workspace in StreamVista Cloud OS.</p>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <div className="mt-8 rounded-2xl border border-border bg-card p-6">
+            <h2 className="text-xl font-semibold">Module workspace</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              This public preview keeps navigation open without login. Production actions such as save, publish, payment, deletion and customer data access remain disabled until the module is connected to its governed backend.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <button className="rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground">Open demo workspace</button>
+              <button className="rounded-xl border border-border px-4 py-2.5 text-sm font-medium">View workflow</button>
+              <button className="rounded-xl border border-border px-4 py-2.5 text-sm font-medium">Commercial setup</button>
+            </div>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -19,17 +78,13 @@ export default function CloudOS() {
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-sm text-primary">
-                <Sparkles className="h-4 w-4" />
-                StreamVista Cloud OS
+                <Sparkles className="h-4 w-4" /> StreamVista Cloud OS
               </div>
-              <h1 className="text-4xl font-semibold tracking-tight md:text-6xl">
-                One operating system. Every business app.
-              </h1>
+              <h1 className="text-4xl font-semibold tracking-tight md:text-6xl">One operating system. Every business app.</h1>
               <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground md:text-lg">
                 Activate media, business, automotive, commerce, finance, legal, cloud and AI products from one governed platform.
               </p>
             </div>
-
             <div className="grid grid-cols-3 gap-3">
               <Metric value={String(STREAMVISTA_SUITES.length)} label="Suites" />
               <Metric value={String(commercialCount)} label="Apps" />
@@ -48,9 +103,9 @@ export default function CloudOS() {
               <p className="text-sm text-muted-foreground">Own UI generation, component systems and deployment workflows.</p>
             </div>
           </div>
-          <button className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground">
+          <Link to={cloudOsAppUrl("ai-designer")} className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground">
             Open Designer <ArrowRight className="h-4 w-4" />
-          </button>
+          </Link>
         </div>
 
         <div className="mt-8 flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
@@ -70,17 +125,13 @@ export default function CloudOS() {
                 <h2 className="mt-5 text-xl font-semibold">{suite.name}</h2>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">{suite.description}</p>
                 <div className="mt-5 space-y-3">
-                  {apps.slice(0, 4).map((app) => (
+                  {apps.map((app) => (
                     <div key={app.id} className="flex items-center justify-between gap-3 rounded-xl border border-border/70 p-3">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium">{app.name}</p>
                         <p className="mt-1 text-xs text-muted-foreground">{statusLabel[app.status]}</p>
                       </div>
-                      {app.route ? (
-                        <Link to={app.route} className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted">Open</Link>
-                      ) : (
-                        <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-                      )}
+                      <Link to={cloudOsAppUrl(app.id)} className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted">Open</Link>
                     </div>
                   ))}
                 </div>

@@ -1,23 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, Navigate, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
+  ArrowLeft,
+  Bot,
+  Boxes,
+  CheckCircle2,
   Copy,
   ExternalLink,
-  ShieldCheck,
-  Server,
-  BookOpen,
-  ArrowLeft,
+  Film,
+  LayoutDashboard,
   Loader2,
   Lock,
-  ChevronDown,
-  LayoutDashboard,
-  Film,
-  Clapperboard,
-  HardDrive,
-  UploadCloud,
-  Scale,
-  Receipt,
-  Bell,
+  LogIn,
+  Palette,
+  ShieldCheck,
+  Sparkles,
+  UserPlus,
+  WandSparkles,
+  Workflow,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -29,125 +29,65 @@ const projectRef =
   (import.meta.env.VITE_SUPABASE_PROJECT_ID as string | undefined) ??
   ((import.meta.env.VITE_SUPABASE_URL as string | undefined)?.match(/https:\/\/([a-z0-9]+)\.supabase\.co/i)?.[1] ?? "");
 
-const MCP_URL = `https://${projectRef}.supabase.co/functions/v1/mcp`;
+const MCP_URL = projectRef ? `https://${projectRef}.supabase.co/functions/v1/mcp` : "";
 
-interface ToolEntry {
+type ToolEntry = { name: string; title?: string; description?: string };
+type AppEntry = {
   name: string;
-  title?: string;
-  description?: string;
-  annotations?: { readOnlyHint?: boolean; destructiveHint?: boolean };
-}
-
-type CapabilityGroup = {
-  key: string;
-  label: string;
+  description: string;
+  href: string;
   icon: LucideIcon;
-  blurb: string;
-  match: (name: string) => boolean;
+  badge: string;
+  external?: boolean;
 };
 
-// Grouping is display-only; tool authorization is enforced server-side by RLS.
-const GROUPS: CapabilityGroup[] = [
+const APPS: AppEntry[] = [
   {
-    key: "workspace",
-    label: "Workspace Overview",
-    icon: LayoutDashboard,
-    blurb: "Identity, workspace status, today's activity, and team.",
-    match: (n) =>
-      [
-        "whoami",
-        "ctrl_whoami",
-        "creator_my_workspace",
-        "get_workspace_status",
-        "get_today_activity",
-        "show_todays_work",
-        "show_recent_activity",
-        "show_team",
-      ].includes(n),
-  },
-  {
-    key: "titles",
-    label: "Titles",
+    name: "Creator Workspace",
+    description: "Titles, rights, uploads, files, review notes and creator operations.",
+    href: "/my-workspace",
     icon: Film,
-    blurb: "Browse titles, review status, and search your catalog.",
-    match: (n) =>
-      n.includes("title") ||
-      n === "list_creators" ||
-      n === "search_workspace_records" ||
-      n === "creator_review_notes",
+    badge: "Core",
   },
   {
-    key: "productions",
-    label: "Productions",
-    icon: Clapperboard,
-    blurb: "Production projects and their current stage.",
-    match: (n) => n.includes("production"),
+    name: "Admin Studio OS",
+    description: "QC, legal, marketplace, deals, payments, delivery and platform control.",
+    href: "/admin",
+    icon: LayoutDashboard,
+    badge: "Admin",
   },
   {
-    key: "storage",
-    label: "Storage",
-    icon: HardDrive,
-    blurb: "Storage usage, quotas, and file search.",
-    match: (n) => n.includes("storage") || n === "search_files",
+    name: "AI Assistants",
+    description: "Connect ChatGPT, Claude and other MCP-compatible assistants.",
+    href: "/settings/integrations/ai-assistants",
+    icon: Bot,
+    badge: "MCP",
   },
   {
-    key: "uploads",
-    label: "Uploads",
-    icon: UploadCloud,
-    blurb: "Upload progress, ingest jobs, and failed transfers.",
-    match: (n) => n.includes("upload") || n.includes("ingest"),
+    name: "Design Studio AI",
+    description: "Prompt-first visual UI/UX builder with responsive preview and export.",
+    href: "https://streamvista-design-studio.vercel.app",
+    icon: Palette,
+    badge: "Builder",
+    external: true,
   },
   {
-    key: "rights",
-    label: "Rights",
-    icon: Scale,
-    blurb: "Rights status, distribution offers, and deliveries.",
-    match: (n) =>
-      n === "creator_rights_status" ||
-      n === "creator_distribution_status" ||
-      n === "creator_list_assets" ||
-      n === "show_deliveries",
+    name: "StreamVista Cloud X",
+    description: "Platform operations, system modules and infrastructure workspace.",
+    href: "https://streamvista.in",
+    icon: Boxes,
+    badge: "Platform",
+    external: true,
   },
   {
-    key: "billing",
-    label: "Billing",
-    icon: Receipt,
-    blurb: "Invoices, payments, and buyer accounts.",
-    match: (n) =>
-      n === "show_billing" || n === "list_payments" || n === "list_invoices" || n === "list_buyers",
-  },
-  {
-    key: "notifications",
-    label: "Notifications",
-    icon: Bell,
-    blurb: "Alerts, delivery failures, and system advisories.",
-    match: (n) =>
-      n === "creator_notifications" ||
-      n === "list_failed_emails" ||
-      n === "get_security_advisors" ||
-      n === "get_edge_function_logs" ||
-      n === "get_database_schema",
+    name: "Workflow Control",
+    description: "Operational flows for titles, approvals, delivery and revenue actions.",
+    href: "/connect",
+    icon: Workflow,
+    badge: "Operations",
   },
 ];
 
-function groupTools(tools: ToolEntry[]) {
-  const remaining = new Set(tools.map((t) => t.name));
-  const grouped = GROUPS.map((g) => {
-    const items = tools.filter((t) => g.match(t.name));
-    items.forEach((t) => remaining.delete(t.name));
-    return { ...g, items };
-  });
-  const other = tools.filter((t) => remaining.has(t.name));
-  return { grouped, other };
-}
-
-/**
- * AUTHENTICATED AI Assistant integration setup.
- *
- * Route: /settings/integrations/ai-assistants
- * Guard: requires a signed-in StreamVista user. Unauthenticated visitors are
- * redirected to /auth with a `next` param preserving this page.
- */
 export default function SettingsIntegrationsAI() {
   const { session, user, loading } = useAuth();
   const location = useLocation();
@@ -156,283 +96,118 @@ export default function SettingsIntegrationsAI() {
   useEffect(() => {
     if (!session) return;
     fetch("/.lovable/mcp/manifest.json")
-      .then((r) => r.json())
-      .then((m) => setTools(m?.mcp?.tools ?? []))
+      .then((response) => response.json())
+      .then((manifest) => setTools(manifest?.mcp?.tools ?? []))
       .catch(() => setTools([]));
   }, [session]);
 
-  const { grouped, other } = useMemo(() => groupTools(tools), [tools]);
+  const toolGroups = useMemo(() => {
+    const names = tools.map((tool) => tool.name);
+    return [
+      { label: "Workspace", count: names.filter((name) => name.includes("workspace") || name.includes("whoami")).length },
+      { label: "Titles & Rights", count: names.filter((name) => name.includes("title") || name.includes("rights")).length },
+      { label: "Files & Delivery", count: names.filter((name) => name.includes("file") || name.includes("upload") || name.includes("delivery")).length },
+      { label: "Business", count: names.filter((name) => name.includes("billing") || name.includes("payment") || name.includes("invoice")).length },
+    ];
+  }, [tools]);
 
   if (loading) {
-    return (
-      <div className="min-h-dvh grid place-items-center text-muted-foreground">
-        <Loader2 className="w-5 h-5 animate-spin" />
-      </div>
-    );
-  }
-  if (!session) {
-    return <Navigate to={`/auth?next=${encodeURIComponent(location.pathname)}`} replace />;
+    return <main className="min-h-dvh grid place-items-center bg-background"><Loader2 className="w-5 h-5 animate-spin" /></main>;
   }
 
-  const copy = (v: string) => navigator.clipboard.writeText(v).then(() => toast.success("Copied"));
+  const next = encodeURIComponent(location.pathname);
+  const copyEndpoint = () => {
+    if (!MCP_URL) return toast.error("MCP endpoint is not configured");
+    navigator.clipboard.writeText(MCP_URL).then(() => toast.success("Endpoint copied"));
+  };
+
+  if (!session) {
+    return (
+      <main className="min-h-dvh bg-background text-foreground">
+        <Seo title="StreamVista App Hub" description="Access StreamVista apps, AI assistants and workspace tools." path={location.pathname} />
+        <section className="max-w-6xl mx-auto px-6 py-16 md:py-24">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs text-primary">
+              <Sparkles className="w-3.5 h-3.5" /> StreamVista App Hub
+            </div>
+            <h1 className="font-display text-4xl md:text-6xl mt-6 leading-tight">One account. Every StreamVista app.</h1>
+            <p className="text-muted-foreground mt-5 text-base md:text-lg max-w-2xl">
+              Create an account or sign in once to access Creator Workspace, Admin Studio OS, AI Assistants, Design Studio and operational tools.
+            </p>
+            <div className="mt-8 flex flex-col sm:flex-row gap-3">
+              <Button asChild size="lg" className="gap-2"><Link to={`/auth?mode=signup&next=${next}`}><UserPlus className="w-4 h-4" /> Create Account</Link></Button>
+              <Button asChild size="lg" variant="outline" className="gap-2"><Link to={`/auth?mode=login&next=${next}`}><LogIn className="w-4 h-4" /> Sign In</Link></Button>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mt-14">
+            {APPS.map(({ name, description, icon: Icon, badge }) => (
+              <div key={name} className="rounded-2xl border border-border/60 bg-card/40 p-5 opacity-80">
+                <div className="flex items-center justify-between"><Icon className="w-5 h-5" /><span className="text-[10px] rounded-full border border-border px-2 py-1 text-muted-foreground">{badge}</span></div>
+                <h2 className="font-medium mt-5">{name}</h2>
+                <p className="text-sm text-muted-foreground mt-2">{description}</p>
+                <div className="text-xs text-muted-foreground mt-5 flex items-center gap-1"><Lock className="w-3 h-3" /> Sign in required</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-dvh bg-background text-foreground">
-      <Seo
-        title="AI Assistant Integrations — Workspace Settings"
-        description="Configure your StreamVista workspace's MCP integration for ChatGPT, Claude, and other AI assistants."
-        path="/settings/integrations/ai-assistants"
-      />
+      <Seo title="StreamVista App Hub & AI Assistants" description="Launch StreamVista apps and connect AI assistants." path={location.pathname} />
       <header className="border-b border-border/40">
-        <div className="max-w-4xl mx-auto px-6 py-5 flex items-center justify-between">
-          <Link to="/my-workspace" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="w-3.5 h-3.5" /> Workspace
-          </Link>
-          <span className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground/70">
-            Settings · Integrations · AI Assistants
-          </span>
+        <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between gap-4">
+          <Link to="/my-workspace" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="w-3.5 h-3.5" /> Workspace</Link>
+          <div className="text-right"><div className="text-xs font-medium">{user?.email}</div><div className="text-[10px] text-emerald-400 flex items-center justify-end gap-1"><CheckCircle2 className="w-3 h-3" /> Signed in</div></div>
         </div>
       </header>
 
-      <section className="max-w-4xl mx-auto px-6 py-12 space-y-8">
+      <section className="max-w-6xl mx-auto px-6 py-10 space-y-10">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground/70">Model Context Protocol</p>
-          <h1 className="font-display text-3xl md:text-4xl mt-2">AI Assistant integrations</h1>
-          <p className="text-sm text-muted-foreground mt-3 max-w-2xl">
-            Connect ChatGPT, Claude, or any MCP-compatible AI client to <strong>your</strong> StreamVista
-            workspace. Every request runs as {user?.email ?? "you"} and is scoped by row-level security —
-            other workspaces remain invisible.
-          </p>
+          <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground">StreamVista Control Centre</p>
+          <h1 className="font-display text-3xl md:text-5xl mt-2">Apps & AI Assistants</h1>
+          <p className="text-sm text-muted-foreground mt-3 max-w-2xl">All StreamVista applications are organised here. Open any app directly without searching through separate dashboards.</p>
         </div>
 
-        {/* Connection status */}
-        <div className="rounded-2xl border border-border/60 bg-card/40 p-6">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div>
-              <div className="text-xs uppercase tracking-wider text-muted-foreground">Connection status</div>
-              <div className="mt-1 text-sm">
-                Signed in as <span className="font-medium">{user?.email}</span>
-              </div>
-            </div>
-            <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 px-2.5 py-1 text-[11px]">
-              Ready to connect
-            </span>
-          </div>
-        </div>
-
-        {/* Connection endpoint card */}
-        <div className="rounded-2xl border border-border/60 bg-gradient-to-b from-card/60 to-card/30 p-6">
-          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
-            <Server className="w-3.5 h-3.5" /> Connection Endpoint
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Paste this URL into ChatGPT or Claude when adding the StreamVista connector.
-          </p>
-          <div className="mt-4 flex flex-col sm:flex-row gap-2 sm:items-center">
-            <div className="flex-1 rounded-lg border border-border/50 bg-background/70 px-3 py-2.5">
-              <code className="font-mono text-sm break-all">{MCP_URL}</code>
-            </div>
-            <div className="flex gap-2">
-              <Button size="sm" onClick={() => copy(MCP_URL)} className="gap-1.5">
-                <Copy className="w-3.5 h-3.5" /> Copy
-              </Button>
-              <Button asChild size="sm" variant="outline" className="gap-1.5">
-                <a href={MCP_URL} target="_blank" rel="noreferrer" aria-label="Open endpoint">
-                  <ExternalLink className="w-3.5 h-3.5" /> Open
-                </a>
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* ChatGPT setup */}
-        <div className="rounded-2xl border border-border/60 bg-card/40 p-6 space-y-3">
-          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
-            <BookOpen className="w-3.5 h-3.5" /> Connect ChatGPT
-          </div>
-          <ol className="space-y-2 text-sm list-decimal pl-5 text-foreground/90">
-            <li>
-              Open{" "}
-              <a className="underline" href="https://chatgpt.com/#settings/Connectors/Advanced" target="_blank" rel="noreferrer">
-                ChatGPT Settings → Connectors → Advanced
-              </a>{" "}
-              and enable Developer mode. Review the risk notice.
-            </li>
-            <li>In the composer, open the “+” menu and enable Developer mode.</li>
-            <li>Click <strong>Add sources</strong>, then <strong>Connect more</strong>.</li>
-            <li>Name the connector "StreamVista" and paste the URL above.</li>
-            <li>Sign in with your StreamVista account when prompted.</li>
-          </ol>
-        </div>
-
-        {/* Claude setup */}
-        <div className="rounded-2xl border border-border/60 bg-card/40 p-6 space-y-3">
-          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
-            <BookOpen className="w-3.5 h-3.5" /> Connect Claude
-          </div>
-          <ol className="space-y-2 text-sm list-decimal pl-5 text-foreground/90">
-            <li>
-              Open{" "}
-              <a className="underline" href="https://claude.ai/customize/connectors?modal=add-custom-connector" target="_blank" rel="noreferrer">
-                Claude → Add custom connector
-              </a>
-              .
-            </li>
-            <li>Name the connector "StreamVista" and paste the URL above.</li>
-            <li>Sign in with your StreamVista account when prompted.</li>
-            <li>Enable the connector from the chat composer.</li>
-          </ol>
-        </div>
-
-        {/* Permissions */}
-        <div className="rounded-2xl border border-border/60 bg-card/40 p-6">
-          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
-            <Lock className="w-3.5 h-3.5" /> Permissions
-          </div>
-          <ul className="mt-3 space-y-1.5 text-sm text-foreground/90 list-disc pl-5">
-            <li>Read-only by default — assistants cannot publish, delete, or spend on your behalf.</li>
-            <li>Scoped to your workspace via row-level security. Other workspaces are invisible.</li>
-            <li>Service-role credentials and secrets are never exposed to the assistant.</li>
-            <li>Widening beyond read-only requires a separate workspace-admin approval.</li>
-          </ul>
-        </div>
-
-        {/* Available capabilities — grouped */}
-        <div className="rounded-2xl border border-border/60 bg-card/40 p-6">
-          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
-            <ShieldCheck className="w-3.5 h-3.5" /> Available capabilities
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            What connected assistants can do inside your workspace. All capabilities are read-only.
-          </p>
-
-          <div className="mt-5 grid gap-2.5 sm:grid-cols-2">
-            {grouped.map((g) => {
-              const Icon = g.icon;
-              return (
-                <div
-                  key={g.key}
-                  className="rounded-xl border border-border/40 bg-background/40 p-4 flex items-start gap-3"
-                >
-                  <div className="rounded-lg bg-secondary/40 p-2 shrink-0">
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium flex items-center gap-2">
-                      {g.label}
-                      <span className="text-[10px] text-muted-foreground">
-                        {g.items.length} {g.items.length === 1 ? "capability" : "capabilities"}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{g.blurb}</p>
-                  </div>
+        <section>
+          <div className="flex items-center gap-2 mb-4"><WandSparkles className="w-4 h-4 text-primary" /><h2 className="font-medium">Launch an app</h2></div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {APPS.map(({ name, description, href, icon: Icon, badge, external }) => {
+              const content = (
+                <div className="h-full rounded-2xl border border-border/60 bg-card/40 p-5 hover:border-primary/50 hover:bg-card/70 transition-all group">
+                  <div className="flex items-center justify-between"><div className="rounded-xl bg-primary/10 p-2.5"><Icon className="w-5 h-5 text-primary" /></div><span className="text-[10px] rounded-full border border-border px-2 py-1 text-muted-foreground">{badge}</span></div>
+                  <h3 className="font-medium mt-5 flex items-center gap-2">{name}{external && <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />}</h3>
+                  <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{description}</p>
+                  <div className="mt-5 text-xs text-primary group-hover:translate-x-1 transition-transform">Open app →</div>
                 </div>
               );
+              return external ? <a key={name} href={href} target="_blank" rel="noreferrer">{content}</a> : <Link key={name} to={href}>{content}</Link>;
             })}
           </div>
+        </section>
 
-          <details className="group mt-5 rounded-xl border border-border/40 bg-background/30 [&[open]>summary_svg]:rotate-180">
-            <summary className="flex items-center justify-between gap-3 cursor-pointer list-none select-none px-4 py-3">
-              <span className="text-sm">View all capabilities</span>
-              <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform" />
-            </summary>
-            <div className="px-4 pb-4 pt-1 space-y-4">
-              {grouped
-                .filter((g) => g.items.length > 0)
-                .map((g) => (
-                  <div key={g.key}>
-                    <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2">
-                      {g.label}
-                    </div>
-                    <div className="grid gap-1.5">
-                      {g.items.map((t) => (
-                        <div key={t.name} className="rounded-lg border border-border/30 bg-background/40 px-3 py-2">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <code className="font-mono text-[12px]">{t.name}</code>
-                            {t.title && <span className="text-xs text-muted-foreground">· {t.title}</span>}
-                            {t.annotations?.readOnlyHint && (
-                              <span className="text-[10px] rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 px-1.5 py-0.5">
-                                read-only
-                              </span>
-                            )}
-                          </div>
-                          {t.description && (
-                            <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">{t.description}</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              {other.length > 0 && (
-                <div>
-                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2">Other</div>
-                  <div className="grid gap-1.5">
-                    {other.map((t) => (
-                      <div key={t.name} className="rounded-lg border border-border/30 bg-background/40 px-3 py-2">
-                        <code className="font-mono text-[12px]">{t.name}</code>
-                        {t.description && (
-                          <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">{t.description}</p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {tools.length === 0 && (
-                <div className="text-xs text-muted-foreground py-4 text-center">Loading tool manifest…</div>
-              )}
-            </div>
-          </details>
-        </div>
-
-        {/* Revoke */}
-        <div className="rounded-2xl border border-border/60 bg-card/40 p-6">
-          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
-            Revoke access
+        <section className="rounded-2xl border border-border/60 bg-gradient-to-b from-card/60 to-card/30 p-6">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div><div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground"><Bot className="w-4 h-4" /> AI Assistant Connection</div><p className="text-sm text-muted-foreground mt-2">Use this endpoint in ChatGPT, Claude or another MCP-compatible assistant.</p></div>
+            <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 px-3 py-1 text-xs">Ready</span>
           </div>
-          <p className="text-sm text-muted-foreground mt-2">
-            To disconnect an assistant, remove the StreamVista connector from that assistant's settings
-            (ChatGPT → Connectors, or Claude → Connectors). Your OAuth tokens are invalidated immediately.
-            For per-session audit information, contact{" "}
-            <Link to="/contact" className="underline hover:text-foreground">StreamVista support</Link>.
-          </p>
-        </div>
+          <div className="mt-5 flex flex-col md:flex-row gap-2"><code className="flex-1 rounded-xl border border-border/50 bg-background/70 px-4 py-3 text-sm break-all">{MCP_URL || "MCP endpoint not configured"}</code><Button onClick={copyEndpoint} className="gap-2"><Copy className="w-4 h-4" /> Copy</Button>{MCP_URL && <Button asChild variant="outline"><a href={MCP_URL} target="_blank" rel="noreferrer"><ExternalLink className="w-4 h-4 mr-2" /> Open</a></Button>}</div>
+        </section>
 
-        {/* Advanced technical details */}
-        <details className="group rounded-2xl border border-border/60 bg-card/40 [&[open]>summary_svg]:rotate-180">
-          <summary className="flex items-center justify-between gap-3 cursor-pointer list-none select-none px-6 py-4">
-            <span className="text-xs uppercase tracking-wider text-muted-foreground">
-              Advanced technical details
-            </span>
-            <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform" />
-          </summary>
-          <div className="px-6 pb-6 space-y-3">
-            <p className="text-xs text-muted-foreground">
-              Transport and authentication standards used by the MCP endpoint.
-            </p>
-            <div className="flex flex-wrap gap-2 text-[11px]">
-              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 px-2 py-0.5">
-                OAuth 2.1
-              </span>
-              <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 px-2 py-0.5">
-                PKCE S256
-              </span>
-              <span className="rounded-full border border-border/50 text-muted-foreground px-2 py-0.5">
-                Dynamic Client Registration
-              </span>
-              <span className="rounded-full border border-border/50 text-muted-foreground px-2 py-0.5">
-                Streamable HTTP
-              </span>
-            </div>
+        <section className="grid md:grid-cols-2 gap-4">
+          <div className="rounded-2xl border border-border/60 bg-card/40 p-6">
+            <div className="flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-emerald-400" /><h2 className="font-medium">Security</h2></div>
+            <ul className="mt-4 space-y-2 text-sm text-muted-foreground list-disc pl-5"><li>Workspace-scoped access through row-level security.</li><li>Read-only assistant capabilities by default.</li><li>Secrets and service credentials are never shown to assistants.</li><li>Financial, destructive and publishing actions require separate approval.</li></ul>
           </div>
-        </details>
-
-        <div className="text-center">
-          <Button asChild variant="outline" size="sm">
-            <Link to="/my-workspace">Back to workspace</Link>
-          </Button>
-        </div>
+          <div className="rounded-2xl border border-border/60 bg-card/40 p-6">
+            <div className="flex items-center gap-2"><Boxes className="w-4 h-4 text-primary" /><h2 className="font-medium">Available capabilities</h2></div>
+            <div className="grid grid-cols-2 gap-2 mt-4">{toolGroups.map((group) => <div key={group.label} className="rounded-xl border border-border/40 bg-background/40 p-3"><div className="text-xs text-muted-foreground">{group.label}</div><div className="text-xl font-semibold mt-1">{group.count}</div></div>)}</div>
+            <p className="text-xs text-muted-foreground mt-4">Total detected tools: {tools.length}</p>
+          </div>
+        </section>
       </section>
     </main>
   );

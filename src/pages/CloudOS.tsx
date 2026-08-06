@@ -16,7 +16,7 @@ import {
   Users,
 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
-import { cloudOsAppUrl, STREAMVISTA_APPS, STREAMVISTA_SUITES } from "@/platform/appRegistry";
+import { cloudOsAppUrl, STREAMVISTA_APPS, STREAMVISTA_SUITES } from "@/platform/cloud-os";
 
 const statusLabel = {
   live: "Live",

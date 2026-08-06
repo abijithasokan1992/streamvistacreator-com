@@ -2,16 +2,15 @@
 
 Apply repository-wide.
 
-- No repeated approval after a tool/workflow is active.
-- No routine progress messages.
-- Complete pending work end-to-end with available connected tools.
-- For every blocker: diagnose, recover, test, and continue automatically.
-- Report only Success, the exact unresolved blocker, or approval required for destructive, irreversible, legal, security-sensitive, or paid actions.
-- Protect production data, secrets, billing, DNS, domains, payments, and destructive resources.
-- Prefer safe branches and pull requests unless explicitly authorized otherwise.
-- Reuse existing code, workflows, infrastructure, schemas, and components.
-- Verify tests, CI, build, deployment health, and the accessible target before claiming completion.
+Workflow:
 
-Tool routing: GitHub for repo/CI/PR/branch recovery; Vercel or Cloudflare for deployment; Gmail for email; Razorpay for payments; Asana, ClickUp, or Linear for task tracking; Memory for cross-chat behavior.
+Idea → Branch → Code Change → Commit → Pull Request → CI Check → Review → Merge → Deploy Verification
+
+Rules:
+- No direct production changes without safe branch and pull request.
+- Preserve existing code, history, schemas, and infrastructure.
+- Verify tests, CI, build, deployment health, and accessible target before completion.
+- Protect production data, secrets, billing, DNS, domains, and payments.
+- Diagnose blockers, recover, test, and continue using available tools.
 
 Owner: Abijith Asokan — BUSINESS COMMAND CENTER

@@ -1,58 +1,26 @@
-import { useState, useRef, useEffect } from "react";
-import { Send, Loader2, Sparkles } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Loader2, Send, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { runAgent } from "@/lib/agent-platform/client";
 
 export type AgentSurface = "home" | "creator" | "studio" | "buyer" | "chief";
 
-const GREETINGS: Record<AgentSurface, { name: string; tagline: string; opener: string }> = {
-  home: {
-    name: "Vista",
-    tagline: "Concierge · StreamVista",
-    opener: "Welcome to **StreamVista Cloud X**. I'm Vista — tell me whether you're here as a **Creator**, **Studio**, or **Buyer** and I'll route you in seconds.",
-  },
-  creator: {
-    name: "Aria",
-    tagline: "Your Creator workspace AI",
-    opener: "Hi — I'm **Aria**. Need help with **title intake**, **storage upgrades**, or **review links**? Ask away.",
-  },
-  studio: {
-    name: "Orion",
-    tagline: "Studio operations AI",
-    opener: "**Orion** online. Ingest, mastering, QC, delivery — tell me where you're stuck.",
-  },
-  buyer: {
-    name: "Atlas",
-    tagline: "Licensing AI · NDA-gated",
-    opener: "I'm **Atlas**. All conversations are NDA-gated. Tell me which **title or rights window** you're interested in.",
-  },
-  chief: {
-    name: "Sovereign",
-    tagline: "Chief AI · Founder access only",
-    opener: "Reporting to **Abijith Asokan**. Ask for a briefing, drill into a surface, or request a voice report.",
-  },
-};
-
 type Msg = { role: "user" | "assistant"; content: string };
 
-function renderInline(text: string) {
-  // tiny markdown: **bold**
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
-  return parts.map((p, i) =>
-    p.startsWith("**") && p.endsWith("**") ? (
-      <strong key={i} className="font-black text-foreground">{p.slice(2, -2)}</strong>
-    ) : (
-      <span key={i}>{p}</span>
-    ),
-  );
-}
+const GREETINGS: Record<AgentSurface, { name: string; tagline: string; opener: string; agentId: string }> = {
+  home: { name: "Vista", tagline: "Concierge · StreamVista", opener: "Welcome to StreamVista. Tell me what you need.", agentId: "vista-concierge-agent" },
+  creator: { name: "Aria", tagline: "Creator workspace AI", opener: "Need help with title intake, rights, storage, or review links?", agentId: "creator-success-agent" },
+  studio: { name: "Orion", tagline: "Studio operations AI", opener: "Ingest, mastering, QC, and delivery support.", agentId: "studio-operations-agent" },
+  buyer: { name: "Atlas", tagline: "Licensing AI", opener: "Tell me the title, territory, term, and rights window you need.", agentId: "buyer-success-agent" },
+  chief: { name: "Sovereign", tagline: "Founder operations AI", opener: "Founder briefing and decision support.", agentId: "executive-briefing-agent" },
+};
 
 export function AgentChat({ surface, className }: { surface: AgentSurface; className?: string }) {
-  const g = GREETINGS[surface];
-  const [messages, setMessages] = useState<Msg[]>([{ role: "assistant", content: g.opener }]);
+  const profile = GREETINGS[surface];
+  const [messages, setMessages] = useState<Msg[]>([{ role: "assistant", content: profile.opener }]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -61,123 +29,34 @@ export function AgentChat({ surface, className }: { surface: AgentSurface; class
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, loading]);
 
-  const redirectToAuth = (reason: string) => {
-    const next = window.location.pathname + window.location.search;
-    setMessages((prev) => {
-      const last = prev[prev.length - 1];
-      const msg = `⚠️ ${reason}`;
-      if (last?.role === "assistant" && last.content === msg) return prev;
-      return [...prev, { role: "assistant", content: msg }];
-    });
-    // Small delay so the user sees the message before we navigate.
-    window.setTimeout(() => {
-      window.location.href = `/auth?next=${encodeURIComponent(next)}`;
-    }, 400);
-  };
-
   const send = async () => {
     const text = input.trim();
     if (!text || loading) return;
-    const next = [...messages, { role: "user" as const, content: text }];
+
+    const next: Msg[] = [...messages, { role: "user", content: text }];
     setMessages(next);
-    const priorInput = text;
     setInput("");
     setLoading(true);
+
     try {
-      // Session preflight for protected surfaces — attempt refresh first so a
-      // still-refreshable token is renewed rather than sent expired. If refresh
-      // fails or no session exists, do NOT invoke the Edge Function.
-      if (surface !== "home") {
-        let hasValidSession = false;
-        try {
-          const { data: refreshed, error: refreshErr } =
-            await supabase.auth.refreshSession();
-          if (!refreshErr && refreshed?.session) {
-            hasValidSession = true;
-          }
-        } catch {
-          /* fall through to getSession fallback */
-        }
-        if (!hasValidSession) {
-          // Fallback: a valid (non-expired) session may exist that simply
-          // couldn't be refreshed (e.g. offline). Accept it if present.
-          const { data: sessionData } = await supabase.auth.getSession();
-          if (sessionData?.session) hasValidSession = true;
-        }
-        if (!hasValidSession) {
-          setInput(priorInput); // preserve the user's typed message
-          setMessages(messages); // roll back the pending user bubble
-          redirectToAuth("Your session expired. Please sign in again to continue.");
-          setLoading(false);
-          return;
-        }
+      const result = await runAgent<{ content?: string }>({
+        agentId: profile.agentId,
+        input: { surface, messages: next },
+        context: { pathname: window.location.pathname },
+      });
+
+      if (result.status === "failed") {
+        throw new Error(result.error?.message ?? "Agent Platform request failed.");
       }
 
-      const { data, error } = await supabase.functions.invoke("agent-chat", {
-        body: { surface, messages: next.map((m) => ({ role: m.role, content: m.content })) },
-      });
-      if (error) {
-        // Parse the structured backend error { error: { code, message } } from the edge function.
-        let detail = error?.message ?? "Request failed";
-        let code: string | undefined;
-        let status: number | undefined;
-        try {
-          const ctx: any = (error as any).context;
-          const resp: Response | undefined = ctx instanceof Response ? ctx : undefined;
-          if (resp) status = resp.status;
-          let raw = "";
-          if (resp) {
-            raw = await resp.clone().text();
-          } else if (ctx?.body) {
-            raw = typeof ctx.body === "string"
-              ? ctx.body
-              : await new Response(ctx.body).text();
-          } else if (typeof ctx?.text === "function") {
-            raw = await ctx.text();
-          }
-          if (raw) {
-            try {
-              const parsed = JSON.parse(raw);
-              const err = parsed?.error;
-              if (err && typeof err === "object") {
-                code = err.code;
-                detail = err.message ?? detail;
-              } else if (typeof err === "string") {
-                detail = err;
-              } else if (parsed?.message) {
-                detail = parsed.message;
-              } else {
-                detail = raw;
-              }
-            } catch {
-              detail = raw;
-            }
-          }
-        } catch {
-          /* keep generic detail */
-        }
-        if (code === "expired_authentication" || status === 401) {
-          setInput(priorInput);
-          setMessages(messages);
-          redirectToAuth("Your session expired. Please sign in again to continue.");
-          return;
-        }
-        setMessages((prev) => {
-          const last = prev[prev.length - 1];
-          const msg = `⚠️ ${detail}`;
-          if (last?.role === "assistant" && last.content === msg) return prev;
-          return [...next, { role: "assistant", content: msg }];
-        });
-        return;
-      }
-      setMessages([...next, { role: "assistant", content: data?.content ?? "(no response)" }]);
-    } catch (e: any) {
-      setMessages((prev) => {
-        const last = prev[prev.length - 1];
-        const msg = `⚠️ ${e?.message ?? "Request failed"}`;
-        if (last?.role === "assistant" && last.content === msg) return prev;
-        return [...next, { role: "assistant", content: msg }];
-      });
+      const content = result.output?.content ??
+        (result.status === "approval_required"
+          ? "This action is waiting for human approval."
+          : "No response returned.");
+      setMessages([...next, { role: "assistant", content }]);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Request failed";
+      setMessages([...next, { role: "assistant", content: `⚠️ ${message}` }]);
     } finally {
       setLoading(false);
     }
@@ -189,46 +68,22 @@ export function AgentChat({ surface, className }: { surface: AgentSurface; class
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-primary" />
           <div>
-            <div className="text-sm font-black tracking-tight">{g.name}</div>
-            <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{g.tagline}</div>
+            <div className="text-sm font-black tracking-tight">{profile.name}</div>
+            <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{profile.tagline}</div>
           </div>
         </div>
       </div>
-
       <ScrollArea className="flex-1">
         <div ref={scrollRef} className="p-4 space-y-3 max-h-[60vh] overflow-y-auto">
-          {messages.map((m, i) => (
-            <div
-              key={i}
-              className={cn(
-                "max-w-[88%] rounded-lg px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap",
-                m.role === "user"
-                  ? "ml-auto bg-primary text-primary-foreground"
-                  : "mr-auto bg-muted text-foreground",
-              )}
-            >
-              {renderInline(m.content)}
-            </div>
+          {messages.map((message, index) => (
+            <div key={index} className={cn("max-w-[88%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap", message.role === "user" ? "ml-auto bg-primary text-primary-foreground" : "mr-auto bg-muted text-foreground")}>{message.content}</div>
           ))}
-          {loading && (
-            <div className="mr-auto bg-muted rounded-lg px-3 py-2 text-sm text-muted-foreground inline-flex items-center gap-2">
-              <Loader2 className="w-3 h-3 animate-spin" /> thinking…
-            </div>
-          )}
+          {loading && <div className="mr-auto bg-muted rounded-lg px-3 py-2 text-sm text-muted-foreground inline-flex items-center gap-2"><Loader2 className="w-3 h-3 animate-spin" /> working…</div>}
         </div>
       </ScrollArea>
-
       <div className="p-3 border-t border-border bg-background flex gap-2">
-        <Input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), send())}
-          placeholder={`Ask ${g.name}…`}
-          disabled={loading}
-        />
-        <Button onClick={send} disabled={loading || !input.trim()} size="icon">
-          <Send className="w-4 h-4" />
-        </Button>
+        <Input value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => event.key === "Enter" && !event.shiftKey && (event.preventDefault(), send())} placeholder={`Ask ${profile.name}…`} disabled={loading} />
+        <Button onClick={send} disabled={loading || !input.trim()} size="icon"><Send className="w-4 h-4" /></Button>
       </div>
     </div>
   );

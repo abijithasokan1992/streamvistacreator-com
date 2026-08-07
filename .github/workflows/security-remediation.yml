@@ -28,9 +28,6 @@ jobs:
           node-version: "22"
           cache: "npm"
 
-      - name: Verify current lockfile installs before remediation
-        run: npm ci --no-audit --no-fund
-
       - name: Repair known release gates
         run: node scripts/repair-release-gates.mjs
 

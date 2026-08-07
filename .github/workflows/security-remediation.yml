@@ -10,18 +10,25 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: security-remediation-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   remediate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: fix/security-ci-remediation
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@1e60f620b9541d8333b180e5d048b3ce34fd7331 # v4
         with:
           node-version: "22"
           cache: "npm"
+
+      - name: Harden GitHub Action supply chain
+        run: node scripts/harden-github-actions.mjs
 
       - name: Install current lockfile
         run: npm ci
@@ -51,11 +58,11 @@ jobs:
           const fs = require('fs');
           const report = JSON.parse(fs.readFileSync('remediated-audit.json', 'utf8'));
           const v = report.metadata?.vulnerabilities || {};
-          console.log(`remediated audit: total=${v.total ?? 'unknown'} high=${v.high ?? 0} critical=${v.critical ?? 0}`);
+          console.log(`remediated audit: total=${v.total ?? 'unknown'} low=${v.low ?? 0} moderate=${v.moderate ?? 0} high=${v.high ?? 0} critical=${v.critical ?? 0}`);
           EOF
 
       - name: Upload remediated dependency evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: remediated-dependencies
           path: |
@@ -64,17 +71,17 @@ jobs:
             remediated-audit.json
           if-no-files-found: error
 
-      - name: Commit remediated manifests
+      - name: Commit remediated manifests and CI hardening
         if: steps.audit.outputs.status == '0'
         run: |
-          if git diff --quiet -- package.json package-lock.json; then
-            echo "No dependency manifest changes to commit"
+          if git diff --quiet -- package.json package-lock.json .github scripts/harden-github-actions.mjs; then
+            echo "No remediation changes to commit"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package.json package-lock.json
-          git commit -m "fix(security): remediate dependency vulnerabilities"
+          git add package.json package-lock.json .github scripts/harden-github-actions.mjs
+          git commit -m "fix(security): pin CI actions and remediate dependencies"
           git push origin HEAD:fix/security-ci-remediation
 
       - name: Enforce high/critical audit gate

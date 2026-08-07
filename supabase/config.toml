@@ -42,10 +42,6 @@ project_id = "hllgmkfqgeuqlmpcirvn"
     verify_jwt = true
   [functions.track-usage]
     verify_jwt = false
-  [functions.charge-overages]
-    verify_jwt = false
-  [functions.reclaim-idle]
-    verify_jwt = false
 
   # MCP server does its own OAuth 2.1 bearer verification via @lovable.dev/mcp-js.
   # Platform JWT verification must be off here or every tool call returns 401

@@ -20,11 +20,11 @@ const url = process.env.VITE_SUPABASE_URL ?? import.meta.env?.VITE_SUPABASE_URL;
 const anon = process.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? import.meta.env?.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 const runIntegration = Boolean(url && anon && process.env.RUN_DB_INTEGRATION === "1");
+const getSupabase = () => createClient(url!, anon!, { auth: { persistSession: false } });
 
 describe.runIf(runIntegration)("ingest_jobs RLS policies", () => {
-  const supabase = createClient(url!, anon!, { auth: { persistSession: false } });
-
   it("blocks anonymous inserts entirely", async () => {
+    const supabase = getSupabase();
     const { error } = await supabase.from("ingest_jobs").insert({
       workspace_id: "00000000-0000-0000-0000-000000000000",
       created_by: "00000000-0000-0000-0000-000000000000",
@@ -42,6 +42,7 @@ describe.runIf(runIntegration)("ingest_jobs RLS policies", () => {
   });
 
   it("blocks anonymous select on the failure audit log", async () => {
+    const supabase = getSupabase();
     const { error } = await supabase
       .from("ingest_job_insert_failures")
       .select("id")

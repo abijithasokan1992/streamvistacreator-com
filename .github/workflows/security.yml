@@ -13,21 +13,19 @@ permissions:
   security-events: write
 
 jobs:
-  # ─── Secret Scanning ────────────────────────────────────────────────────────
   gitleaks:
     name: Gitleaks (Secret Scan)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # full history so gitleaks can scan all commits
+          fetch-depth: 0
 
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # ─── SAST ───────────────────────────────────────────────────────────────────
   semgrep:
     name: Semgrep (SAST)
     runs-on: ubuntu-latest
@@ -52,14 +50,22 @@ jobs:
             --exclude "dist" \
             .
 
-      - name: Upload Semgrep SARIF
+      - name: Upload Semgrep report artifact
         if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-sarif
+          path: semgrep.sarif
+          if-no-files-found: ignore
+
+      - name: Upload Semgrep SARIF to code scanning
+        if: always()
+        continue-on-error: true
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: semgrep.sarif
           category: semgrep
 
-  # ─── Dependency Vulnerabilities ─────────────────────────────────────────────
   npm-audit:
     name: npm audit (Dependencies)
     runs-on: ubuntu-latest
@@ -72,7 +78,7 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --no-audit --no-fund
 
       - name: Install npm-audit-sarif converter
         run: npm install -g npm-audit-sarif@1.0.4
@@ -81,7 +87,17 @@ jobs:
         run: |
           npm audit --json | npm-audit-sarif > npm-audit.sarif || true
 
-      - name: Upload npm audit SARIF
+      - name: Upload npm audit report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-sarif
+          path: npm-audit.sarif
+          if-no-files-found: ignore
+
+      - name: Upload npm audit SARIF to code scanning
+        if: always()
+        continue-on-error: true
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: npm-audit.sarif
@@ -101,14 +117,22 @@ jobs:
             --format=sarif
             --output=osv.sarif
 
-      - name: Upload OSV SARIF
+      - name: Upload OSV report artifact
         if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: osv-sarif
+          path: osv.sarif
+          if-no-files-found: ignore
+
+      - name: Upload OSV SARIF to code scanning
+        if: always()
+        continue-on-error: true
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: osv.sarif
           category: osv-scanner
 
-  # ─── Filesystem / Misconfiguration Scan ─────────────────────────────────────
   trivy:
     name: Trivy (Filesystem Scan)
     runs-on: ubuntu-latest
@@ -126,8 +150,17 @@ jobs:
           exit-code: "0"
           ignore-unfixed: true
 
-      - name: Upload Trivy SARIF
+      - name: Upload Trivy report artifact
         if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-sarif
+          path: trivy.sarif
+          if-no-files-found: ignore
+
+      - name: Upload Trivy SARIF to code scanning
+        if: always()
+        continue-on-error: true
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: trivy.sarif

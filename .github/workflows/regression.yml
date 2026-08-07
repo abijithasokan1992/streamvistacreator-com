@@ -12,8 +12,6 @@ on:
 permissions:
   contents: read
 
-
-
 concurrency:
   group: regression-${{ github.ref }}
   cancel-in-progress: true
@@ -23,9 +21,6 @@ jobs:
     name: Studio launch-hardening smoke suite
     runs-on: ubuntu-latest
     env:
-      # Staging configuration — the smoke tests are static / structural and
-      # do not require live secrets, but keeping the env slot documented
-      # makes it trivial to promote them to hitting a live preflight.
       STAGE: staging
     steps:
       - name: Checkout
@@ -38,7 +33,15 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --no-audit --no-fund 2>&1 | tee npm-install.log
+
+      - name: Upload install log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-npm-install-log
+          path: npm-install.log
+          if-no-files-found: ignore
 
       - name: Prepare report directory
         run: mkdir -p reports
@@ -92,8 +95,6 @@ jobs:
           path: reports/oci.*
 
       - name: Report
-        # Aggregate every job outcome into a single visible status line.
-        # A failed step here fails the workflow — nothing is silently skipped.
         run: |
           set -e
           report() { echo "- $1: $2"; }
@@ -115,7 +116,7 @@ jobs:
             esac
           done
           if [ "$fail" = "1" ]; then
-            echo "::error::One or more launch-hardening smoke tests failed. See job logs above for the exact assertion."
+            echo "::error::One or more launch-hardening smoke tests failed. See uploaded reports for the exact assertion."
             exit 1
           fi
           echo "All launch-hardening smoke tests PASS."

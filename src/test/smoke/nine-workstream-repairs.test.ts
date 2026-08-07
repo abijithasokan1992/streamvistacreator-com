@@ -104,7 +104,8 @@ describe("P0-C Revenue Import — RowMapping → revenue_lines payload", () => {
 
   it("throws StatementAlreadyImportedError on idempotency collision", () => {
     expect(importApi).toMatch(/StatementAlreadyImportedError/);
-    expect(importApi).toMatch(/existing.*statementKey|sk=/);
+    expect(importApi).toMatch(/23505/);
+    expect(importApi).toMatch(/duplicate_statement/);
   });
 });
 
@@ -307,4 +308,3 @@ describe("Onboarding field-lock migration (applied)", () => {
     ).toThrow();
   });
 });
-

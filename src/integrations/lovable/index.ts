@@ -24,6 +24,17 @@ export const lovable = {
         };
       }
 
+      // Production safety guard: the current Supabase Google provider is enabled
+      // without a valid OAuth client secret. Calling /authorize in this state
+      // navigates users to a raw 400 JSON response. Keep passwordless email auth
+      // available and fail Google locally until the provider credentials are restored.
+      if (provider === "google") {
+        return {
+          error: new Error("OAuth provider unavailable: missing OAuth secret for Google."),
+          redirected: false,
+        };
+      }
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {

@@ -9,7 +9,7 @@ const workflowsDir = path.join(root, '.github', 'workflows');
 // GitHub release commits for actions that only run on deploy/scheduled workflows.
 const pins = new Map([
   ['actions/checkout@v4', 'actions/checkout@11d5960a326750d5838078e36cf38b85af677262'],
-  ['actions/setup-node@v4', 'actions/setup-node@1e60f620b9541d8333b180e5d048b3ce34fd7331'],
+  ['actions/setup-node@v4', 'actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020'],
   ['actions/upload-artifact@v4', 'actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02'],
   ['actions/download-artifact@v4', 'actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093'],
   ['actions/github-script@v7', 'actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea'],
@@ -41,8 +41,6 @@ for (const entry of fs.readdirSync(workflowsDir, { withFileTypes: true })) {
   if (text !== before) fs.writeFileSync(file, text);
 }
 
-// Report any remaining third-party Action references that are not immutable 40-char SHAs.
-// The security scanner remains authoritative; this is a deterministic fail-fast aid.
 const unresolved = [];
 const usesPattern = /^\s*-?\s*uses:\s*([^\s#]+)\s*/gm;
 for (const entry of fs.readdirSync(workflowsDir, { withFileTypes: true })) {
@@ -60,8 +58,8 @@ for (const entry of fs.readdirSync(workflowsDir, { withFileTypes: true })) {
 
 console.log(`Pinned ${replacements} mutable GitHub Action reference(s).`);
 if (unresolved.length) {
-  console.warn('Unresolved non-immutable Action references remain:');
-  for (const item of unresolved) console.warn(`- ${item}`);
-} else {
-  console.log('All workflow Action references are immutable SHAs.');
+  console.error('Unresolved non-immutable Action references remain:');
+  for (const item of unresolved) console.error(`- ${item}`);
+  process.exit(1);
 }
+console.log('All workflow Action references are immutable SHAs.');

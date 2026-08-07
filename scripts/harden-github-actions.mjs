@@ -14,7 +14,7 @@ const pins = new Map([
   ['actions/download-artifact@v4', 'actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093'],
   ['actions/github-script@v7', 'actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea'],
   ['gitleaks/gitleaks-action@v2', 'gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7'],
-  ['aquasecurity/trivy-action@v0.36.0', 'aquasecurity/trivy-action@d0003473ddf7798dfef854a9b8f167f25de06e8a'],
+  ['aquasecurity/trivy-action@v0.36.0', 'aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25'],
   ['github/codeql-action/upload-sarif@v4', 'github/codeql-action/upload-sarif@5595ccaf912efad79be6eef63a5619ff05969be3'],
   ['github/codeql-action/init@v3', 'github/codeql-action/init@b374143c1149a9113cf2de4da0cabd9e92996c86'],
   ['github/codeql-action/autobuild@v3', 'github/codeql-action/autobuild@b374143c1149a9113cf2de4da0cabd9e92996c86'],

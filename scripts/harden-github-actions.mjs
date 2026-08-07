@@ -17,6 +17,7 @@ const pins = new Map([
   ['aquasecurity/trivy-action@v0.36.0', 'aquasecurity/trivy-action@d0003473ddf7798dfef854a9b8f167f25de06e8a'],
   ['github/codeql-action/upload-sarif@v4', 'github/codeql-action/upload-sarif@5595ccaf912efad79be6eef63a5619ff05969be3'],
   ['github/codeql-action/init@v3', 'github/codeql-action/init@b374143c1149a9113cf2de4da0cabd9e92996c86'],
+  ['github/codeql-action/autobuild@v3', 'github/codeql-action/autobuild@b374143c1149a9113cf2de4da0cabd9e92996c86'],
   ['github/codeql-action/analyze@v3', 'github/codeql-action/analyze@b374143c1149a9113cf2de4da0cabd9e92996c86'],
   ['actions/configure-pages@v5', 'actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b'],
   ['actions/upload-pages-artifact@v3', 'actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa'],

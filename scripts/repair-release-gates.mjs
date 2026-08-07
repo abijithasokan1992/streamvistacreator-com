@@ -56,31 +56,38 @@ changes += Number(replaceOnce(
   'footer location contrast',
 ));
 
-const osvConfig = `# Temporary release-gate exceptions, reviewed 2026-08-08.
-# Both advisories affect Windows serving paths; StreamVista production is Vercel/Linux.
-# Exceptions expire automatically so upstream fixes must be re-evaluated.
-
-[[IgnoredVulns]]
-id = "GHSA-frvp-7c67-39w9"
-ignoreUntil = 2026-08-15
-reason = "Transitive @hono/node-server via @lovable.dev/mcp-js/@modelcontextprotocol/sdk. Advisory is Windows-only serve-static path traversal; this frontend does not expose that server in Vercel/Linux production. Fixed MCP SDK 1.30.0 was published on 2026-08-08 and is held by the repository's 7-day dependency cooldown before adoption."
-
-[[IgnoredVulns]]
-id = "GHSA-g7r4-m6w7-qqqr"
-ignoreUntil = 2026-08-15
-reason = "Nested esbuild under @lovable.dev/mcp-js. Advisory affects esbuild's Windows development server; StreamVista production does not expose esbuild serve. Re-evaluate after the 7-day dependency cooldown for a compatible Lovable MCP/esbuild update."
-`;
-if (!fs.existsSync('osv-scanner.toml') || fs.readFileSync('osv-scanner.toml', 'utf8') !== osvConfig) {
-  fs.writeFileSync('osv-scanner.toml', osvConfig);
+// Remediate OSV findings instead of suppressing them. @lovable.dev/mcp-js 0.25.0
+// pins MCP SDK 1.28.0 and accepts esbuild ^0.27.0. The reviewed overrides move
+// those transitive packages to patched releases; CI must prove install, tests,
+// build, npm audit and OSV before the branch can merge.
+const packagePath = 'package.json';
+const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+const desiredOverrides = {
+  '@lovable.dev/mcp-js': {
+    '@modelcontextprotocol/sdk': '1.30.0',
+    esbuild: '0.28.1',
+  },
+  '@modelcontextprotocol/sdk': {
+    '@hono/node-server': '2.0.12',
+  },
+};
+if (JSON.stringify(pkg.overrides ?? {}) !== JSON.stringify(desiredOverrides)) {
+  pkg.overrides = desiredOverrides;
+  fs.writeFileSync(packagePath, `${JSON.stringify(pkg, null, 2)}\n`);
   changes += 1;
 }
 
+// Do not permit advisory suppression as release evidence.
+if (fs.existsSync('osv-scanner.toml')) {
+  fs.rmSync('osv-scanner.toml');
+  changes += 1;
+}
 const securityPath = '.github/workflows/security.yml';
 let security = fs.readFileSync(securityPath, 'utf8');
-const oldOsv = 'scan --lockfile=package-lock.json --format=sarif --output=osv.sarif';
-const newOsv = 'scan --config=osv-scanner.toml --lockfile=package-lock.json --format=sarif --output=osv.sarif';
-if (security.includes(oldOsv)) {
-  security = security.replace(oldOsv, newOsv);
+const ignoredOsv = 'scan --config=osv-scanner.toml --lockfile=package-lock.json --format=sarif --output=osv.sarif';
+const strictOsv = 'scan --lockfile=package-lock.json --format=sarif --output=osv.sarif';
+if (security.includes(ignoredOsv)) {
+  security = security.replace(ignoredOsv, strictOsv);
   fs.writeFileSync(securityPath, security);
   changes += 1;
 }

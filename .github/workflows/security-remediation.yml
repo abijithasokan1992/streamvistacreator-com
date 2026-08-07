@@ -22,7 +22,7 @@ jobs:
         with:
           ref: fix/security-ci-remediation
 
-      - uses: actions/setup-node@1e60f620b9541d8333b180e5d048b3ce34fd7331 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22"
           cache: "npm"

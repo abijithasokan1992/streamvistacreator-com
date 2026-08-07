@@ -57,9 +57,9 @@ changes += Number(replaceOnce(
 ));
 
 // Remediate OSV findings instead of suppressing them. @lovable.dev/mcp-js 0.25.0
-// pins MCP SDK 1.28.0 and accepts esbuild ^0.27.0. The reviewed overrides move
-// those transitive packages to patched releases; CI must prove install, tests,
-// build, npm audit and OSV before the branch can merge.
+// is held on the reviewed package version while its vulnerable transitive packages
+// are forced onto patched compatible releases. Hono must be a top-level override:
+// nesting it under the already-overridden MCP SDK leaves npm resolving 1.19.17.
 const packagePath = 'package.json';
 const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
 const desiredOverrides = {
@@ -67,9 +67,7 @@ const desiredOverrides = {
     '@modelcontextprotocol/sdk': '1.30.0',
     esbuild: '0.28.1',
   },
-  '@modelcontextprotocol/sdk': {
-    '@hono/node-server': '2.0.12',
-  },
+  '@hono/node-server': '2.0.12',
 };
 if (JSON.stringify(pkg.overrides ?? {}) !== JSON.stringify(desiredOverrides)) {
   pkg.overrides = desiredOverrides;

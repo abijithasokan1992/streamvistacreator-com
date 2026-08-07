@@ -28,7 +28,7 @@ jobs:
 
       - name: Apply targeted dependency remediation
         run: |
-          npm install --save-exact @lovable.dev/mcp-js@0.25.0 react-router-dom@7.9.3
+          npm install --save-exact @lovable.dev/mcp-js@0.25.0 react-router-dom@7.18.2
           npm install --save-dev --save-exact vite@6.4.3 postcss@8.5.23
           npm audit fix || true
 

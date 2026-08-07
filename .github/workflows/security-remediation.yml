@@ -31,9 +31,6 @@ jobs:
       - name: Repair known release gates
         run: node scripts/repair-release-gates.mjs
 
-      - name: Harden GitHub Action supply chain
-        run: node scripts/harden-github-actions.mjs
-
       - name: Install current lockfile
         run: npm ci
 
@@ -73,20 +70,19 @@ jobs:
             package.json
             package-lock.json
             remediated-audit.json
-            osv-scanner.toml
           if-no-files-found: error
 
-      - name: Commit verified release-gate repairs
+      - name: Commit verified non-workflow repairs
         if: steps.audit.outputs.status == '0'
         run: |
-          if git diff --quiet; then
-            echo "No verified remediation changes to commit"
+          if git diff --quiet -- package.json package-lock.json src/components/streamvista/Pricing.tsx src/pages/Contact.tsx src/components/streamvista/Footer.tsx; then
+            echo "No verified source or dependency changes to commit"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package.json package-lock.json .github scripts/harden-github-actions.mjs scripts/repair-release-gates.mjs osv-scanner.toml src/components/streamvista/Pricing.tsx src/pages/Contact.tsx src/components/streamvista/Footer.tsx
-          git commit -m "fix(release): clear security and accessibility gates"
+          git add package.json package-lock.json src/components/streamvista/Pricing.tsx src/pages/Contact.tsx src/components/streamvista/Footer.tsx
+          git commit -m "fix(release): clear dependency and accessibility gates"
           git push origin HEAD:fix/security-ci-remediation
 
       - name: Enforce high/critical audit gate

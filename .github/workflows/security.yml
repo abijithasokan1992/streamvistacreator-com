@@ -106,14 +106,33 @@ jobs:
 
   osv-scanner:
     name: OSV Scanner (Dependencies)
-    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.3.8
-    with:
-      scan-args: |-
-        --lockfile=package-lock.json
-    permissions:
-      contents: read
-      actions: read
-      security-events: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run OSV Scanner 2.4.0
+        shell: bash
+        run: |
+          docker run --rm \
+            -v "$PWD:/workspace" \
+            -w /workspace \
+            ghcr.io/google/osv-scanner:v2.4.0 \
+            scan --lockfile=package-lock.json --format=sarif --output=osv.sarif
+
+      - name: Upload OSV SARIF artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: osv-sarif
+          path: osv.sarif
+          if-no-files-found: error
+
+      - name: Upload OSV SARIF to code scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: osv.sarif
+          category: osv-scanner
 
   trivy:
     name: Trivy (Filesystem Scan)

@@ -3,6 +3,8 @@ name: Security Dependency Remediation
 on:
   push:
     branches: ["fix/security-ci-remediation"]
+  pull_request:
+    branches: ["main"]
   workflow_dispatch: {}
 
 permissions:
@@ -36,11 +38,34 @@ jobs:
       - name: Test
         run: npm test
 
-      - name: Audit high and critical vulnerabilities
-        run: npm audit --audit-level=high
+      - name: Capture remediated audit
+        id: audit
+        shell: bash
+        run: |
+          set +e
+          npm audit --json --audit-level=high > remediated-audit.json
+          status=$?
+          set -e
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          node - <<'EOF'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('remediated-audit.json', 'utf8'));
+          const v = report.metadata?.vulnerabilities || {};
+          console.log(`remediated audit: total=${v.total ?? 'unknown'} high=${v.high ?? 0} critical=${v.critical ?? 0}`);
+          EOF
+
+      - name: Upload remediated dependency evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: remediated-dependencies
+          path: |
+            package.json
+            package-lock.json
+            remediated-audit.json
+          if-no-files-found: error
 
       - name: Commit remediated manifests
-        if: success()
+        if: github.event_name == 'push' && steps.audit.outputs.status == '0'
         run: |
           if git diff --quiet -- package.json package-lock.json; then
             echo "No dependency manifest changes to commit"
@@ -51,3 +76,7 @@ jobs:
           git add package.json package-lock.json
           git commit -m "fix(security): remediate dependency vulnerabilities"
           git push origin HEAD:fix/security-ci-remediation
+
+      - name: Enforce high/critical audit gate
+        if: steps.audit.outputs.status != '0'
+        run: exit 1

@@ -28,17 +28,20 @@ jobs:
           node-version: "22"
           cache: "npm"
 
+      - name: Verify current lockfile installs before remediation
+        run: npm ci --no-audit --no-fund
+
       - name: Repair known release gates
         run: node scripts/repair-release-gates.mjs
 
-      - name: Install current lockfile
-        run: npm ci
+      - name: Regenerate lockfile for reviewed dependency overrides
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
 
-      - name: Apply targeted dependency remediation
-        run: |
-          npm install --save-exact @lovable.dev/mcp-js@0.25.0 react-router-dom@7.18.2
-          npm install --save-dev --save-exact vite@6.4.3 postcss@8.5.23
-          npm audit fix || true
+      - name: Verify remediated lockfile with clean install
+        run: npm ci --no-audit --no-fund
+
+      - name: Capture remediated dependency graph
+        run: npm ls @lovable.dev/mcp-js @modelcontextprotocol/sdk @hono/node-server esbuild --all
 
       - name: Build
         run: npm run build
@@ -72,7 +75,7 @@ jobs:
             remediated-audit.json
           if-no-files-found: error
 
-      - name: Commit verified non-workflow repairs
+      - name: Commit verified dependency and accessibility repairs
         if: steps.audit.outputs.status == '0'
         run: |
           if git diff --quiet -- package.json package-lock.json src/components/streamvista/Pricing.tsx src/pages/Contact.tsx src/components/streamvista/Footer.tsx; then

@@ -21,11 +21,15 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: fix/security-ci-remediation
+          fetch-depth: 0
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22"
           cache: "npm"
+
+      - name: Repair known release gates
+        run: node scripts/repair-release-gates.mjs
 
       - name: Harden GitHub Action supply chain
         run: node scripts/harden-github-actions.mjs
@@ -69,19 +73,20 @@ jobs:
             package.json
             package-lock.json
             remediated-audit.json
+            osv-scanner.toml
           if-no-files-found: error
 
-      - name: Commit remediated manifests and CI hardening
+      - name: Commit verified release-gate repairs
         if: steps.audit.outputs.status == '0'
         run: |
-          if git diff --quiet -- package.json package-lock.json .github scripts/harden-github-actions.mjs; then
-            echo "No remediation changes to commit"
+          if git diff --quiet; then
+            echo "No verified remediation changes to commit"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package.json package-lock.json .github scripts/harden-github-actions.mjs
-          git commit -m "fix(security): pin CI actions and remediate dependencies"
+          git add package.json package-lock.json .github scripts/harden-github-actions.mjs scripts/repair-release-gates.mjs osv-scanner.toml src/components/streamvista/Pricing.tsx src/pages/Contact.tsx src/components/streamvista/Footer.tsx
+          git commit -m "fix(release): clear security and accessibility gates"
           git push origin HEAD:fix/security-ci-remediation
 
       - name: Enforce high/critical audit gate

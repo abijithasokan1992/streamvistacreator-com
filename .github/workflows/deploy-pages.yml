@@ -1,8 +1,9 @@
 name: Deploy StreamVista Frontend
 
+# Vercel is the canonical automatic deployment path for this repository.
+# GitHub Pages is not enabled, so keep this legacy/recovery deployment manual
+# to avoid failing every main-branch push at actions/configure-pages.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:

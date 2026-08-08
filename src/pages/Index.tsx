@@ -1,17 +1,25 @@
 import { Navigate } from "react-router-dom";
 import { Navbar } from "@/components/streamvista/Navbar";
 import { Hero } from "@/components/streamvista/Hero";
-import { TrustedDistributionPartners } from "@/components/streamvista/TrustedDistributionPartners";
-import { Workflow } from "@/components/streamvista/Workflow";
-import { PlatformOverview } from "@/components/streamvista/PlatformOverview";
-import { SupportedContent } from "@/components/streamvista/SupportedContent";
-import { RightsDistribution } from "@/components/streamvista/RightsDistribution";
-import { AIContentLicensingSection } from "@/components/home/AIContentLicensingSection";
 import { FinalCta } from "@/components/streamvista/FinalCta";
 import { Footer } from "@/components/streamvista/Footer";
-
 import { Seo } from "@/components/Seo";
 import { dashboardForRole, useAuth } from "@/hooks/useAuth";
+
+const homePillars = [
+  {
+    title: "Upload & Organize",
+    description: "Bring title metadata, screeners, masters, artwork and supporting files into one creator workspace.",
+  },
+  {
+    title: "Rights & Readiness",
+    description: "Prepare ownership, territory, language, legal documents and QC status before commercial review.",
+  },
+  {
+    title: "Buyer & Delivery",
+    description: "Move approved titles into controlled buyer, licensing and secure delivery workflows.",
+  },
+];
 
 const Index = () => {
   const { user, role, loading } = useAuth();
@@ -22,8 +30,8 @@ const Index = () => {
   return (
     <main className="min-h-dvh home-serif">
       <Seo
-        title="StreamVista — Film Sales, Content Licensing & OTT Distribution Network"
-        description="Connect films, series and screen content with verified OTT platforms, broadcasters, satellite TV, FAST channels, distributors and streaming services worldwide. StreamVista supports rights-ready catalogues, buyer discovery and professional delivery workflows."
+        title="StreamVista Creator — Prepare Content for Licensing & Distribution"
+        description="A focused creator workspace for title onboarding, media assets, rights readiness, QC and professional distribution workflows."
         path="/"
         jsonLd={[
           {
@@ -31,72 +39,61 @@ const Index = () => {
             "@type": "Organization",
             name: "StreamVista",
             legalName: "STREAMVISTA (OPC) PRIVATE LIMITED",
-            alternateName: "StreamVista Global Film Content Network",
             url: "https://streamvista.in/",
             founder: {
               "@type": "Person",
               name: "Abijith Asokan",
             },
-            foundingLocation: {
-              "@type": "Country",
-              name: "India",
-            },
             areaServed: "Worldwide",
-            description:
-              "Business-to-business film sales, content licensing and media workflow platform for content owners and professional buyers.",
-            knowsAbout: [
-              "Film sales",
-              "Content licensing",
-              "OTT distribution",
-              "Film rights",
-              "FAST and AVOD distribution",
-              "Media asset workflows",
-            ],
-          },
-          {
-            "@context": "https://schema.org",
-            "@type": "WebSite",
-            name: "StreamVista",
-            alternateName: "StreamVista Global Film Content Network",
-            url: "https://streamvista.in/",
           },
           {
             "@context": "https://schema.org",
             "@type": "Service",
-            name: "Film Sales, Content Licensing & OTT Distribution Connectivity",
+            name: "StreamVista Creator Content Readiness Workspace",
             description:
-              "Connectivity and workflow platform linking creators, filmmakers, producers, studios and rights holders with OTT platforms, broadcasters, satellite TV, FAST channels, distributors and digital streaming services worldwide.",
+              "Creator and studio workflow for content onboarding, rights readiness, QC, secure screening and delivery preparation.",
             provider: {
               "@type": "Organization",
               name: "StreamVista",
               legalName: "STREAMVISTA (OPC) PRIVATE LIMITED",
-              url: "https://streamvista.in/",
             },
-            audience: [
-              {
-                "@type": "BusinessAudience",
-                audienceType: "Film producers, studios and content owners",
-              },
-              {
-                "@type": "BusinessAudience",
-                audienceType: "OTT platforms, broadcasters, distributors and content buyers",
-              },
-            ],
-            areaServed: "Worldwide",
           },
         ]}
       />
+
       <Navbar />
       <Hero />
-      <TrustedDistributionPartners />
-      {/* Trust chips render once in the Footer's home-only block —
-          the standalone TrustBadges band was removed to eliminate the
-          duplicate "Cloud X" / "IP & Copyright Compliance" chips. */}
-      <Workflow />
-      <PlatformOverview />
-      <SupportedContent />
-      <RightsDistribution />
-      <AIContentLicensingSection />
+
+      <section className="mx-auto w-full max-w-7xl px-5 py-12 sm:px-6 lg:px-8 lg:py-16">
+        <div className="mb-7 max-w-2xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Creator workflow</p>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">One clear path from title to readiness.</h2>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          {homePillars.map((item, index) => (
+            <article key={item.title} className="rounded-2xl border bg-card p-6 shadow-sm">
+              <span className="text-xs font-semibold text-muted-foreground">0{index + 1}</span>
+              <h3 className="mt-5 text-xl font-semibold">{item.title}</h3>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">{item.description}</p>
+            </article>
+          ))}
+        </div>
+
+        <div className="mt-8 flex flex-wrap items-center gap-3 rounded-2xl border bg-muted/30 p-5">
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold">Have content ready to submit?</p>
+            <p className="mt-1 text-sm text-muted-foreground">Start with title details and rights ownership. Licensing remains subject to review and written terms.</p>
+          </div>
+          <a
+            href="https://www.crayonsloop.com/login"
+            className="inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+          >
+            Submit content
+          </a>
+        </div>
+      </section>
+
       <FinalCta />
       <Footer />
     </main>

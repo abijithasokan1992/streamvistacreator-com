@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#070a10" />
+  <meta name="robots" content="noindex,nofollow" />
+  <meta name="description" content="StreamVista AI Command Center — read-only production truth surface." />
+  <title>Sync — StreamVista AI Command Center</title>
+  <link rel="stylesheet" href="/sync/styles.css" />
+</head>
+<body>
+  <div id="app">
+    <aside class="sidebar">
+      <a class="brand" href="/sync" aria-label="StreamVista AI Command Center">
+        <span class="brand-mark">SV</span>
+        <span><strong>AI Command Center</strong><small>StreamVista</small></span>
+      </a>
+      <nav id="nav" aria-label="Command Center"></nav>
+      <div class="source-card">
+        <span class="dot ok"></span>
+        <div><strong>Real backend</strong><small>Read-only control plane</small></div>
+      </div>
+    </aside>
+    <main>
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">StreamVista / AI Command Center</div>
+          <h1 id="page-title">Sync</h1>
+        </div>
+        <div class="top-actions">
+          <span id="health-pill" class="pill neutral">Loading</span>
+          <button id="refresh-button" type="button">Refresh data</button>
+        </div>
+      </header>
+
+      <div class="truth-banner">
+        Read-only control room. <b>Catalogued ≠ implemented; implemented ≠ tested; tested ≠ production; planned ≠ connected.</b>
+      </div>
+
+      <section id="content" class="content" aria-live="polite">
+        <div class="loading">Loading control-plane data…</div>
+      </section>
+    </main>
+  </div>
+  <script type="module" src="/sync/app.js"></script>
+</body>
+</html>

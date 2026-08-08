@@ -6,6 +6,7 @@ const ALLOWED_AGENT_IDS = new Set([
   "creator-success-agent",
   "studio-operations-agent",
   "buyer-success-agent",
+  "executive-briefing-agent",
 ]);
 
 Deno.serve(async (req) => {

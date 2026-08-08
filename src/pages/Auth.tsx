@@ -4,7 +4,6 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { Loader2, Mail, ArrowRight, CheckCircle2, ExternalLink, Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { useAuth, dashboardForRole } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { getAppOrigin } from "@/lib/site";
@@ -18,7 +17,10 @@ import { playMailVoice, prewarmMailVoice } from "@/lib/mailVoice";
  * Passwordless magic-link auth.
  *   • Create Account: Full Name + Email + Role (Creator / Studio / Buyer)
  *   • Log In: Email only
- *   • Google OAuth kept as one-click alternative
+ *
+ * Google OAuth is intentionally hidden until the production provider has a
+ * valid Google client configuration. This prevents users being redirected to
+ * a raw Supabase 400 response when the provider secret is missing.
  *
  * Public signup is available for **Creator, Studio, and Buyer** accounts only.
  * Reviewer and internal admin access (Admin, Super Admin, QC Reviewer,
@@ -36,7 +38,6 @@ const ROLE_OPTIONS: { value: PublicRole; label: string; hint: string }[] = [
   { value: "buyer", label: "Buyer", hint: "Acquisitions, platforms, licensing" },
 ];
 
-
 const EmailSchema = z.string().trim().email("Enter a valid email").max(255);
 const NameSchema = z.string().trim().min(1, "Enter your full name").max(120);
 
@@ -49,10 +50,6 @@ function isInAppBrowser(): boolean {
     "Messenger", "WhatsApp", "WeChat",
   ];
   return indicators.some((i) => ua.includes(i)) || /wv|WebView/i.test(ua);
-}
-
-function isMobile(): boolean {
-  return /Android|iPhone|iPad|iPod|Mobile|webOS|BlackBerry|IEMobile/i.test(navigator.userAgent);
 }
 
 export default function Auth() {
@@ -78,10 +75,8 @@ export default function Auth() {
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
 
-  // Pre-fetch the mail-voice TTS so playback is instant after send.
   useEffect(() => { prewarmMailVoice(); }, []);
 
-  // If we arrived with ?next=..., stash it so the callback can honor it after sign-in.
   useEffect(() => {
     const n = safeNextPath(new URLSearchParams(window.location.search).get("next"));
     if (n) {
@@ -89,7 +84,6 @@ export default function Auth() {
     }
   }, []);
 
-  // Already signed in → return to consent flow if pending, else role dashboard.
   useEffect(() => {
     if (loading || !user) return;
     const urlNext = safeNextPath(new URLSearchParams(window.location.search).get("next"));
@@ -140,8 +134,6 @@ export default function Auth() {
       return toast.error(mapAuthError(error).message);
     }
 
-    // Stash the requested role so the callback page can apply it
-    // even if the magic-link confirmation strips the metadata.
     if (view === "signup") {
       try {
         sessionStorage.setItem("sv_pending_role", signupRole);
@@ -151,20 +143,6 @@ export default function Auth() {
     setSent(true);
     void playMailVoice();
   };
-
-  const handleGoogle = async () => {
-    setSubmitting(true);
-    if (view === "signup") {
-      try { sessionStorage.setItem("sv_pending_role", signupRole); } catch { /* noop */ }
-    }
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: `${getAppOrigin()}/auth/callback`,
-      extraParams: { prompt: "select_account" },
-    });
-    setSubmitting(false);
-    if (result.error) toast.error(mapAuthError(result.error).message);
-  };
-
 
   if (loading) {
     return (
@@ -214,7 +192,6 @@ export default function Auth() {
                   Your session expired. Sign in again to pick up where you left off — we've saved your destination.
                 </div>
               )}
-
 
               <div className="mb-6 grid grid-cols-2 gap-1 p-1 rounded-xl bg-input/30 border border-border/50">
                 <TabButton active={view === "login"} onClick={() => setView("login")}>Log in</TabButton>
@@ -269,7 +246,6 @@ export default function Auth() {
                     <p className="mt-2 text-[11px] text-muted-foreground/70">
                       Public sign-up is available for Creator, Studio, and Buyer accounts only. Reviewer and internal admin access are invite-only.
                     </p>
-
                   </div>
                 )}
 
@@ -289,25 +265,11 @@ export default function Auth() {
                 </button>
               </form>
 
-              <div className="my-5 flex items-center gap-3 text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-                <div className="h-px flex-1 bg-border/60" />
-                or
-                <div className="h-px flex-1 bg-border/60" />
-              </div>
-
               {isInAppBrowser() && (
-                <OpenInBrowserNotice />
+                <div className="mt-5">
+                  <OpenInBrowserNotice />
+                </div>
               )}
-
-              <button
-                onClick={handleGoogle}
-                disabled={submitting}
-                className="w-full h-12 rounded-xl border border-border/60 bg-input/20 hover:bg-input/40 text-sm font-medium inline-flex items-center justify-center gap-2 disabled:opacity-60"
-              >
-                <GoogleMark />
-                Continue with Google
-              </button>
-
 
               <p className="mt-6 text-[11px] text-muted-foreground/70 text-center">
                 By continuing you agree to our{" "}
@@ -391,18 +353,8 @@ function Input({
   );
 }
 
-function GoogleMark() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden>
-      <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.4-1.6 4-5.5 4-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.1.8 3.9 1.5l2.6-2.5C16.9 3.5 14.7 2.5 12 2.5 6.8 2.5 2.6 6.7 2.6 12s4.2 9.5 9.4 9.5c5.4 0 9-3.8 9-9.2 0-.6-.1-1.1-.2-1.6H12z"/>
-    </svg>
-  );
-}
-
 function OpenInBrowserNotice({ prominent = false }: { prominent?: boolean }) {
   const [copied, setCopied] = useState(false);
-  // Prefer the preserved original auth callback URL (with hash tokens / query)
-  // stashed by AuthCallback before it bounced here. Fall back to current URL.
   const url = (() => {
     if (typeof window === "undefined") return "";
     try {
@@ -481,4 +433,3 @@ function OpenInBrowserNotice({ prominent = false }: { prominent?: boolean }) {
     </div>
   );
 }
-

@@ -1,4 +1,4 @@
-project_id = "hllgmkfqgeuqlmpcirvn"
+project_id = "streamvista"
 
 [functions]
   [functions.auth-email-hook]

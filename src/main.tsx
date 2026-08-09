@@ -14,13 +14,13 @@ function renderStartupError(opts: {
 }) {
   const { title, kicker = "Startup issue", message, hint, showReload = true } = opts;
   rootEl.innerHTML = `
-    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0b0b0f;color:#f5f5f7;font-family:Inter,system-ui,sans-serif;padding:24px;">
-      <div style="max-width:560px;border:1px solid #2a2a33;border-radius:12px;padding:28px;background:#12121a;">
-        <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#f5a524;margin-bottom:12px;">${kicker}</div>
-        <h1 style="font-size:22px;margin:0 0 12px;font-weight:600;">${title}</h1>
-        <p style="margin:0 0 16px;color:#c7c7d1;line-height:1.55;">${message}</p>
-        ${hint ? `<p style="margin:0 0 20px;color:#8a8a95;font-size:13px;line-height:1.55;">${hint}</p>` : ""}
-        ${showReload ? `<button id="__sv_reload" style="appearance:none;border:1px solid #2a2a33;background:#1c1c26;color:#f5f5f7;padding:9px 16px;border-radius:8px;font-size:13px;cursor:pointer;">Retry now</button>` : ""}
+    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#08090d;color:#fffdf7;font-family:Inter,system-ui,sans-serif;padding:24px;">
+      <div style="max-width:560px;border:1px solid rgba(255,255,255,.14);border-radius:18px;padding:28px;background:rgba(255,255,255,.035);backdrop-filter:blur(16px);">
+        <div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#aaa7b0;margin-bottom:12px;">${kicker}</div>
+        <h1 style="font-size:22px;margin:0 0 12px;font-weight:700;">${title}</h1>
+        <p style="margin:0 0 16px;color:#c7c3cc;line-height:1.55;">${message}</p>
+        ${hint ? `<p style="margin:0 0 20px;color:#aaa7b0;font-size:13px;line-height:1.55;">${hint}</p>` : ""}
+        ${showReload ? `<button id="__sv_reload" style="appearance:none;border:1px solid rgba(255,255,255,.14);background:#f7f3eb;color:#101015;padding:10px 17px;border-radius:999px;font-size:13px;font-weight:700;cursor:pointer;">Retry now</button>` : ""}
       </div>
     </div>`;
   if (showReload) {
@@ -68,6 +68,7 @@ void (async () => {
       300,
     );
     await withRetry(() => import("./index.css"), "styles", 2, 300);
+    await withRetry(() => import("./styles/stories-sphere-theme.css"), "stories-sphere-theme", 2, 300);
     await withRetry(() => import("./i18n"), "i18n", 2, 300);
 
     createRoot(rootEl).render(

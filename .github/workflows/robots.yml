@@ -10,6 +10,7 @@ on:
       - "src/test/robots.test.ts"
       - ".github/workflows/robots.yml"
       - "package.json"
+      - "package-lock.json"
 
 permissions:
   contents: read
@@ -20,12 +21,13 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          bun-version: latest
+          node-version: "22"
+          cache: npm
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: npm ci
 
       - name: Assert robots.txt allow/disallow policy
-        run: bunx vitest run src/test/robots.test.ts
+        run: npx vitest run src/test/robots.test.ts

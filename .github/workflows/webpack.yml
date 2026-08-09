@@ -5,8 +5,11 @@ on:
     branches: ["main"]
     paths:
       - "src/lib/mcp/**"
+      - "src/integrations/supabase/**"
       - "supabase/functions/mcp/**"
       - "supabase/config.toml"
+      - ".lovable/mcp/**"
+      - "public/.lovable/mcp/**"
       - "vite.config.ts"
       - "package.json"
       - "package-lock.json"
@@ -45,19 +48,49 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Generate application and MCP bundle
-        run: npm run build
+      - name: Require safe StreamVista backend target
         env:
-          VITE_SUPABASE_URL: https://hllgmkfqgeuqlmpcirvn.supabase.co
-          VITE_SUPABASE_PUBLISHABLE_KEY: github-build-placeholder-not-a-runtime-secret
-
-      - name: Verify generated MCP bundle
+          STREAMVISTA_SUPABASE_PROJECT_REF: ${{ vars.STREAMVISTA_SUPABASE_PROJECT_REF }}
         run: |
+          DECOMMISSIONED_REF="hllgmkfqgeuqlmpcirvn"
+          if [ -z "$STREAMVISTA_SUPABASE_PROJECT_REF" ]; then
+            echo "STREAMVISTA_SUPABASE_PROJECT_REF is required."
+            exit 1
+          fi
+          if [ "$STREAMVISTA_SUPABASE_PROJECT_REF" = "$DECOMMISSIONED_REF" ]; then
+            echo "Refusing to build/deploy against the decommissioned StreamVista backend."
+            exit 1
+          fi
+
+      - name: Generate application and MCP bundle from explicit target
+        env:
+          STREAMVISTA_SUPABASE_PROJECT_REF: ${{ vars.STREAMVISTA_SUPABASE_PROJECT_REF }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: github-build-placeholder-not-a-runtime-secret
+        run: |
+          export VITE_SUPABASE_URL="https://${STREAMVISTA_SUPABASE_PROJECT_REF}.supabase.co"
+          export VITE_STREAMVISTA_OAUTH_ISSUER="${VITE_SUPABASE_URL}/auth/v1"
+          npm run build
+
+      - name: Verify generated MCP bundle and binding
+        env:
+          STREAMVISTA_SUPABASE_PROJECT_REF: ${{ vars.STREAMVISTA_SUPABASE_PROJECT_REF }}
+        run: |
+          DECOMMISSIONED_REF="hllgmkfqgeuqlmpcirvn"
+          EXPECTED_ISSUER="https://${STREAMVISTA_SUPABASE_PROJECT_REF}.supabase.co/auth/v1"
           test -f supabase/functions/mcp/index.ts
           test -f .lovable/mcp/manifest.json
           test -f public/.lovable/mcp/manifest.json
           grep -q "ctrl_connection_health" supabase/functions/mcp/index.ts
-          grep -q 'version: "0.3.2"' supabase/functions/mcp/index.ts
+          grep -q 'version: "0.3.3"' supabase/functions/mcp/index.ts
+          grep -Fq "$EXPECTED_ISSUER" .lovable/mcp/manifest.json
+          grep -Fq "$EXPECTED_ISSUER" public/.lovable/mcp/manifest.json
+          if grep -R -n -F "$DECOMMISSIONED_REF" \
+            supabase/functions/mcp \
+            .lovable/mcp \
+            public/.lovable/mcp; then
+            echo "Decommissioned backend reference detected in deployable MCP artifacts."
+            exit 1
+          fi
 
       - name: Transfer generated bundle ownership to GitHub
         run: |
@@ -77,30 +110,35 @@ jobs:
       - name: Check Supabase deployment credential
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          STREAMVISTA_SUPABASE_PROJECT_REF: ${{ vars.STREAMVISTA_SUPABASE_PROJECT_REF }}
         run: |
           mkdir -p deployment-status
           if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
             printf '{"component":"mcp","status":"blocked","reason":"missing_SUPABASE_ACCESS_TOKEN","source_commit":"%s"}\n' "$GITHUB_SHA" > deployment-status/mcp.json
-            git add deployment-status/mcp.json
-            git commit -m "ops(mcp): record deployment credential blocker [skip ci]" || true
-            git push origin HEAD:main
+            exit 1
+          fi
+          if [ -z "$STREAMVISTA_SUPABASE_PROJECT_REF" ]; then
+            printf '{"component":"mcp","status":"blocked","reason":"missing_STREAMVISTA_SUPABASE_PROJECT_REF","source_commit":"%s"}\n' "$GITHUB_SHA" > deployment-status/mcp.json
             exit 1
           fi
 
       - name: Deploy MCP Edge Function
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          STREAMVISTA_SUPABASE_PROJECT_REF: ${{ vars.STREAMVISTA_SUPABASE_PROJECT_REF }}
         run: |
           npx --yes supabase@latest functions deploy mcp \
-            --project-ref hllgmkfqgeuqlmpcirvn \
+            --project-ref "$STREAMVISTA_SUPABASE_PROJECT_REF" \
             --no-verify-jwt
 
       - name: Record successful deployment
+        env:
+          STREAMVISTA_SUPABASE_PROJECT_REF: ${{ vars.STREAMVISTA_SUPABASE_PROJECT_REF }}
         run: |
           mkdir -p deployment-status
-          printf '{"component":"mcp","status":"deployed","project_ref":"hllgmkfqgeuqlmpcirvn","version":"0.3.2","source_commit":"%s"}\n' "$GITHUB_SHA" > deployment-status/mcp.json
+          printf '{"component":"mcp","status":"deployed","project_ref":"%s","version":"0.3.3","source_commit":"%s"}\n' "$STREAMVISTA_SUPABASE_PROJECT_REF" "$GITHUB_SHA" > deployment-status/mcp.json
           git add deployment-status/mcp.json
-          git commit -m "ops(mcp): record successful v0.3.2 deployment [skip ci]" || true
+          git commit -m "ops(mcp): record successful v0.3.3 deployment [skip ci]" || true
           git push origin HEAD:main
 
       - name: Upload deployable MCP bundle

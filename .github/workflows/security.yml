@@ -74,7 +74,7 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22"
-          cache: "npm"
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
@@ -188,39 +188,3 @@ jobs:
         with:
           sarif_file: trivy.sarif
           category: trivy
-
-  dependency-repair:
-    name: Branch-only dependency lock repair
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'fix/ci-security-scanner-tooling' && github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout repair branch
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          fetch-depth: 0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with:
-          node-version: "22"
-          cache: npm
-
-      - name: Regenerate lockfile with non-breaking audit fixes
-        run: |
-          npm audit fix --package-lock-only --ignore-scripts || true
-          git diff -- package.json package-lock.json
-
-      - name: Commit repaired dependency lock
-        run: |
-          if git diff --quiet -- package.json package-lock.json; then
-            echo "No safe lockfile repair available."
-            exit 0
-          fi
-          git config user.name "StreamVista Factory"
-          git config user.email "actions@users.noreply.github.com"
-          git add package.json package-lock.json
-          git commit -m "fix(deps): apply safe npm audit lockfile repairs"
-          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"

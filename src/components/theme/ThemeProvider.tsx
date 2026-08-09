@@ -4,7 +4,7 @@ export type ThemeMode = "dark" | "light" | "system";
 type ResolvedTheme = "dark" | "light";
 
 const STORAGE_KEY = "sv.theme";
-const DEFAULT_MODE: ThemeMode = "system"; // follow OS; falls back to brand dark when OS is dark
+const DEFAULT_MODE: ThemeMode = "dark";
 
 interface ThemeCtx {
   mode: ThemeMode;
@@ -36,7 +36,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [mode, setModeState] = useState<ThemeMode>(() => readStored());
   const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(() => getSystemTheme());
 
-  // Sync to system preference changes
   useEffect(() => {
     if (typeof window === "undefined") return;
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
@@ -64,7 +63,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 export function useTheme(): ThemeCtx {
   const ctx = useContext(ThemeContext);
   if (!ctx) {
-    // Allow consumers outside provider to degrade gracefully (e.g. error boundaries).
     return {
       mode: DEFAULT_MODE,
       resolved: "dark",

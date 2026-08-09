@@ -2,7 +2,7 @@ name: Security Dependency Remediation
 
 on:
   push:
-    branches: ["fix/security-ci-remediation"]
+    branches: ["fix/security-ci-remediation", "release/creator-security-a11y-current-main"]
   pull_request:
     branches: ["main"]
   workflow_dispatch: {}
@@ -20,7 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: fix/security-ci-remediation
+          ref: ${{ github.head_ref || github.ref_name }}
           fetch-depth: 0
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -83,7 +83,9 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add package.json package-lock.json src/components/streamvista/Pricing.tsx src/pages/Contact.tsx src/components/streamvista/Footer.tsx
           git commit -m "fix(release): clear dependency and accessibility gates"
-          git push origin HEAD:fix/security-ci-remediation
+          target_branch="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          test -n "$target_branch"
+          git push origin HEAD:"$target_branch"
 
       - name: Enforce high/critical audit gate
         if: steps.audit.outputs.status != '0'

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, ExternalLink, Loader2, Orbit, Sparkles } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ExternalLink, Loader2, Orbit, RefreshCw, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -15,13 +15,13 @@ const DEFAULT_TEMPLATE: PublicFrontTemplate = "stories_sphere";
 const CURRENT_TEMPLATE_URL =
   "https://fix-public-front-gate-domain-separation-long-paper-9da0.abijithasokan1992.workers.dev/";
 
-function parseTemplate(value: StoredValue | unknown): PublicFrontTemplate {
+function parseStoredTemplate(value: StoredValue | unknown): PublicFrontTemplate | null {
   if (value === "stories_sphere" || value === "business_avatar") return value;
   if (value && typeof value === "object" && "template" in value) {
     const template = (value as { template?: unknown }).template;
     if (template === "stories_sphere" || template === "business_avatar") return template;
   }
-  return DEFAULT_TEMPLATE;
+  return null;
 }
 
 const TEMPLATES: Array<{
@@ -45,12 +45,14 @@ const TEMPLATES: Array<{
 ];
 
 export function PublicFrontTemplateControl() {
-  const [active, setActive] = useState<PublicFrontTemplate>(DEFAULT_TEMPLATE);
+  const [active, setActive] = useState<PublicFrontTemplate | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState<PublicFrontTemplate | null>(null);
 
   const load = async () => {
     setLoading(true);
+    setLoadError(null);
     const { data, error } = await supabase
       .from("platform_settings")
       .select("value")
@@ -59,10 +61,14 @@ export function PublicFrontTemplateControl() {
     setLoading(false);
 
     if (error) {
-      toast.error(`Could not load public-front template: ${error.message}`);
+      setActive(null);
+      setLoadError(error.message);
+      toast.error(`Could not verify public-front template: ${error.message}`);
       return;
     }
-    setActive(parseTemplate(data?.value));
+
+    // Missing setting means the Worker uses its explicit safe default.
+    setActive(parseStoredTemplate(data?.value) ?? DEFAULT_TEMPLATE);
   };
 
   useEffect(() => {
@@ -70,7 +76,7 @@ export function PublicFrontTemplateControl() {
   }, []);
 
   const choose = async (next: PublicFrontTemplate) => {
-    if (saving || next === active) return;
+    if (saving || loadError || next === active) return;
     setSaving(next);
 
     const { data: auth } = await supabase.auth.getUser();
@@ -101,10 +107,12 @@ export function PublicFrontTemplateControl() {
       .eq("key", SETTING_KEY)
       .maybeSingle();
 
-    const verifiedTemplate = parseTemplate(verified?.value);
+    const verifiedTemplate = parseStoredTemplate(verified?.value);
     setSaving(null);
 
     if (verifyError || verifiedTemplate !== next) {
+      setActive(null);
+      setLoadError(verifyError?.message ?? "Read-back did not match the requested template.");
       toast.error(
         verifyError
           ? `Template saved but verification failed: ${verifyError.message}`
@@ -113,6 +121,7 @@ export function PublicFrontTemplateControl() {
       return;
     }
 
+    setLoadError(null);
     setActive(next);
     toast.success(
       next === "business_avatar"
@@ -133,15 +142,34 @@ export function PublicFrontTemplateControl() {
             One click changes the public-facing experience only. Auth, projects, rights, CRM, buyer workflows and backend data stay on the same StreamVista system.
           </p>
         </div>
-        <a
-          href={CURRENT_TEMPLATE_URL}
-          target="_blank"
-          rel="noreferrer"
-          className="h-8 px-3 rounded-md border border-border text-[11px] inline-flex items-center gap-1.5 hover:bg-secondary"
-        >
-          Current Worker <ExternalLink className="w-3 h-3" />
-        </a>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void load()}
+            disabled={loading || saving !== null}
+            title="Verify active template"
+            aria-label="Verify active public front template"
+            className="h-8 w-8 rounded-md border border-border inline-grid place-items-center hover:bg-secondary disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+          </button>
+          <a
+            href={CURRENT_TEMPLATE_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="h-8 px-3 rounded-md border border-border text-[11px] inline-flex items-center gap-1.5 hover:bg-secondary"
+          >
+            Current Worker <ExternalLink className="w-3 h-3" />
+          </a>
+        </div>
       </div>
+
+      {loadError && !loading && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/[0.06] px-3 py-2 text-[11px] text-amber-400 flex items-start gap-2">
+          <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+          <span>Active template could not be verified. Switching is disabled until verification succeeds.</span>
+        </div>
+      )}
 
       {loading ? (
         <div className="h-40 grid place-items-center">
@@ -150,18 +178,19 @@ export function PublicFrontTemplateControl() {
       ) : (
         <div className="grid lg:grid-cols-2 gap-3">
           {TEMPLATES.map((template) => {
-            const isActive = active === template.id;
+            const isActive = active === template.id && !loadError;
             const isSaving = saving === template.id;
             return (
               <button
                 type="button"
                 key={template.id}
                 onClick={() => void choose(template.id)}
-                disabled={saving !== null}
-                className={`text-left rounded-xl border p-4 transition-all disabled:cursor-wait ${
+                disabled={saving !== null || !!loadError}
+                aria-pressed={isActive}
+                className={`text-left rounded-xl border p-4 transition-all disabled:cursor-not-allowed ${
                   isActive
                     ? "border-emerald-500/60 bg-emerald-500/[0.06] ring-1 ring-emerald-500/30"
-                    : "border-border/60 bg-secondary/10 hover:bg-secondary/25 hover:border-accent/40"
+                    : "border-border/60 bg-secondary/10 hover:bg-secondary/25 hover:border-accent/40 disabled:hover:bg-secondary/10 disabled:hover:border-border/60"
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">

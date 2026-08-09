@@ -1,7 +1,7 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+# Dependabot version-update policy for StreamVista.
+# Cooldowns prevent newly released dependency versions from entering the release
+# branch immediately, giving upstream maintainers and security tooling time to
+# surface regressions while still keeping the repository current.
 
 version: 2
 updates:
@@ -11,6 +11,8 @@ updates:
       interval: "weekly"
       day: "monday"
       time: "06:00"
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 10
     groups:
       radix-ui:
@@ -19,10 +21,13 @@ updates:
       tanstack:
         patterns:
           - "@tanstack/*"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
       time: "06:00"
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 5

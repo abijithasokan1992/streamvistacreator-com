@@ -14,31 +14,28 @@
  *   - The endpoint must be called with a real signed-in user's OAuth bearer
  *     token (an MCP-issued token, obtained via the OAuth flow). Never use the
  *     Supabase anon key. Never print the token.
+ *   - Provide MCP_URL explicitly. There is intentionally no provider/project
+ *     fallback, so a stale production endpoint can never be tested by accident.
  *   - Provide the token via env: MCP_ACCESS_TOKEN=... node scripts/mcp-e2e-verify.mjs
- *   - Optional: MCP_URL to override the endpoint.
  *   - Optional: EXPECTED_EMAIL to assert whoami identity match.
- *
- * OUTPUT
- *   A single JSON report to stdout with:
- *     - initialize PASS/FAIL
- *     - tools/list count
- *     - whoami result (ids masked)
- *     - creator_my_workspace summary (ids masked, other-workspace check)
- *     - cross-role isolation result
- *     - a note that this script performs no writes
  *
  * SAFETY
  *   - Read-only: only tool calls issued are whoami, creator_my_workspace, and
- *     list_productions (a Studio-only *read*). The script does not call any
- *     tool whose annotations declare `readOnlyHint: false`.
+ *     list_productions (a Studio-only *read*).
  *   - The bearer token is read from the environment and forwarded to the
  *     endpoint only. It is never echoed, logged, or included in the report.
  */
 
-const ENDPOINT = process.env.MCP_URL
-  ?? "https://hllgmkfqgeuqlmpcirvn.supabase.co/functions/v1/mcp";
+const ENDPOINT = process.env.MCP_URL?.trim();
 const TOKEN = process.env.MCP_ACCESS_TOKEN;
 const EXPECTED_EMAIL = process.env.EXPECTED_EMAIL ?? null;
+
+if (!ENDPOINT) {
+  console.error(JSON.stringify({
+    error: "MCP_URL env var is required. Refusing to use an implicit or stale MCP endpoint.",
+  }, null, 2));
+  process.exit(2);
+}
 
 if (!TOKEN) {
   console.error(JSON.stringify({
@@ -47,7 +44,6 @@ if (!TOKEN) {
   process.exit(2);
 }
 
-/** Mask a UUID / long id / email while keeping enough shape to be useful. */
 function mask(value) {
   if (value == null) return value;
   if (typeof value !== "string") return value;
@@ -83,8 +79,6 @@ async function rpc(method, params, { notification = false } = {}) {
 
   const headers = {
     "content-type": "application/json",
-    // MCP Streamable HTTP: server rejects requests missing either accept type
-    // with HTTP 406.
     "accept": "application/json, text/event-stream",
     authorization: `Bearer ${TOKEN}`,
   };
@@ -102,7 +96,6 @@ async function rpc(method, params, { notification = false } = {}) {
   const text = await res.text();
   if (notification) return { status: res.status, raw: text };
 
-  // Response may be JSON or SSE.
   let json = null;
   const ct = res.headers.get("content-type") ?? "";
   if (ct.includes("text/event-stream")) {
@@ -119,7 +112,6 @@ async function rpc(method, params, { notification = false } = {}) {
 }
 
 function parseToolResult(rpcJson) {
-  // MCP tool call result shape: { result: { content: [{type:"text",text:"..."}], structuredContent?, isError? } }
   const r = rpcJson?.result;
   if (!r) return { error: rpcJson?.error ?? "no result" };
   const textPart = Array.isArray(r.content)
@@ -137,13 +129,12 @@ const report = {
   ranAt: new Date().toISOString(),
   steps: {},
   notes: [
-    "No write operations were issued. Only whoami, creator_my_workspace, and a Studio-only *read* (list_productions) were called.",
+    "No write operations were issued. Only whoami, creator_my_workspace, and a Studio-only read (list_productions) were called.",
     "Bearer token was forwarded to the endpoint only; it is not present in this report.",
   ],
 };
 
 try {
-  // 1. initialize
   const init = await rpc("initialize", {
     protocolVersion: "2025-06-18",
     capabilities: {},
@@ -159,14 +150,12 @@ try {
   };
   if (!initOk) throw new Error("initialize failed");
 
-  // 2. notifications/initialized
   const notif = await rpc("notifications/initialized", {}, { notification: true });
   report.steps.notificationsInitialized = {
     httpStatus: notif.status,
     ok: notif.status >= 200 && notif.status < 300,
   };
 
-  // 3. tools/list
   const list = await rpc("tools/list", {});
   const tools = list.json?.result?.tools ?? [];
   report.steps.toolsList = {
@@ -175,7 +164,6 @@ try {
     names: tools.map((t) => t.name),
   };
 
-  // 4. tools/call → whoami
   const who = await rpc("tools/call", { name: "whoami", arguments: {} });
   const whoParsed = parseToolResult(who.json);
   const whoData = whoParsed.data ?? {};
@@ -190,20 +178,21 @@ try {
           ? "MATCH" : "MISMATCH",
   };
 
-  // 5. tools/call → creator_my_workspace
   const ws = await rpc("tools/call", { name: "creator_my_workspace", arguments: {} });
   const wsParsed = parseToolResult(ws.json);
   const wsData = wsParsed.data ?? {};
-  // Heuristic: count distinct workspace identifiers in the response. A Creator
-  // should see exactly one (their own).
   const wsIds = new Set();
   const collectIds = (v) => {
+    if (Array.isArray(v)) {
+      v.forEach(collectIds);
+      return;
+    }
     if (v && typeof v === "object") {
       for (const [k, val] of Object.entries(v)) {
         if (/workspace_id|workspaceId/i.test(k) && typeof val === "string") wsIds.add(val);
         collectIds(val);
       }
-    } else if (Array.isArray(v)) v.forEach(collectIds);
+    }
   };
   collectIds(wsData);
   report.steps.creatorMyWorkspace = {
@@ -214,10 +203,6 @@ try {
     masked: maskDeep(wsData),
   };
 
-  // 6. Studio-only tool as a Creator — cross-role isolation probe.
-  //    list_productions is a Studio surface read. A Creator caller must either
-  //    receive an authorization error OR an empty result set — never rows from
-  //    other workspaces.
   const studio = await rpc("tools/call", { name: "list_productions", arguments: {} });
   const studioParsed = parseToolResult(studio.json);
   const studioData = studioParsed.data;

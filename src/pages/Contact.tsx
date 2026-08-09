@@ -121,13 +121,10 @@ export default function Contact() {
         message: parsed.data.message,
         user_id: user?.id ?? null,
         user_agent: navigator.userAgent.slice(0, 500),
-        // Encode topic + routing queue into `source` until a dedicated column
-        // is added; keeps schema untouched while enabling triage.
         source: `contact_form:${parsed.data.topic}:${topicMeta.queue}`,
       });
       if (error) throw error;
 
-      // Best-effort admin notification via existing transactional email pipeline.
       const contactId = `${Date.now()}-${parsed.data.email}`;
       supabase.functions
         .invoke("send-transactional-email", {
@@ -194,7 +191,7 @@ export default function Contact() {
       <Navbar />
 
       <section className="container pt-32 pb-16 md:pt-40 md:pb-24 max-w-2xl">
-        <p className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent mb-3">
+        <p className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-foreground mb-3">
           Get in touch
         </p>
         <h1 className="font-display font-black text-4xl md:text-5xl leading-[1.05] tracking-tight">
@@ -205,7 +202,7 @@ export default function Contact() {
           urgent issues, email{" "}
           <a
             href={`mailto:${SUPPORT_EMAIL}`}
-            className="text-accent hover:underline"
+            className="text-foreground underline underline-offset-4"
           >
             {SUPPORT_EMAIL}
           </a>
@@ -332,7 +329,7 @@ export default function Contact() {
                   line with the{" "}
                   <a
                     href="/privacy"
-                    className="text-accent hover:underline"
+                    className="text-foreground underline underline-offset-4"
                     target="_blank"
                     rel="noopener noreferrer"
                   >

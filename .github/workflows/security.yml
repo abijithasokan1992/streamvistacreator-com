@@ -13,28 +13,26 @@ permissions:
   security-events: write
 
 jobs:
-  # ─── Secret Scanning ────────────────────────────────────────────────────────
   gitleaks:
     name: Gitleaks (Secret Scan)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          fetch-depth: 0 # full history so gitleaks can scan all commits
+          fetch-depth: 0
 
       - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # ─── SAST ───────────────────────────────────────────────────────────────────
   semgrep:
     name: Semgrep (SAST)
     runs-on: ubuntu-latest
     container:
       image: semgrep/semgrep
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Run Semgrep
         run: |
@@ -52,71 +50,129 @@ jobs:
             --exclude "dist" \
             .
 
+      - name: Preserve Semgrep SARIF evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: semgrep-sarif
+          path: semgrep.sarif
+          if-no-files-found: warn
+
       - name: Upload Semgrep SARIF
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@c4dd10e44af883a891fe31ced449bcb4a6728b9b # v3
         with:
           sarif_file: semgrep.sarif
           category: semgrep
 
-  # ─── Dependency Vulnerabilities ─────────────────────────────────────────────
   npm-audit:
     name: npm audit (Dependencies)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22"
-          cache: "npm"
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Install npm-audit-sarif converter
-        run: npm install -g npm-audit-sarif@1.0.4
+      - name: Run npm audit
+        run: npm audit --json > npm-audit.json || true
 
-      - name: Run npm audit and emit SARIF
+      - name: Preserve npm audit evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: npm-audit-json
+          path: npm-audit.json
+          if-no-files-found: error
+
+      - name: Convert npm audit JSON to SARIF
         run: |
-          npm audit --json | npm-audit-sarif > npm-audit.sarif || true
+          node <<'EOF'
+          const fs = require('fs');
+          const audit = JSON.parse(fs.readFileSync('npm-audit.json', 'utf8'));
+          const vulns = audit.vulnerabilities || {};
+          const severityLevel = (severity) => {
+            if (severity === 'critical' || severity === 'high') return 'error';
+            if (severity === 'moderate') return 'warning';
+            return 'note';
+          };
+          const rules = [];
+          const results = [];
+          for (const [name, vuln] of Object.entries(vulns)) {
+            const ruleId = `npm-audit/${name}`;
+            const via = (vuln.via || []).map((item) =>
+              typeof item === 'string' ? item : `${item.title || item.name || 'advisory'}${item.url ? ` (${item.url})` : ''}`
+            ).join('; ');
+            rules.push({
+              id: ruleId,
+              name: ruleId,
+              shortDescription: { text: `${name} dependency vulnerability` },
+              help: { text: via || `npm audit reports ${vuln.severity || 'unknown'} severity for ${name}` }
+            });
+            results.push({
+              ruleId,
+              level: severityLevel(vuln.severity),
+              message: { text: `${name}: ${vuln.severity || 'unknown'} severity${via ? ` — ${via}` : ''}` },
+              locations: [{
+                physicalLocation: {
+                  artifactLocation: { uri: 'package-lock.json' },
+                  region: { startLine: 1 }
+                }
+              }]
+            });
+          }
+          const sarif = {
+            version: '2.1.0',
+            $schema: 'https://json.schemastore.org/sarif-2.1.0.json',
+            runs: [{
+              tool: { driver: { name: 'npm audit', informationUri: 'https://docs.npmjs.com/cli/commands/npm-audit', rules } },
+              results
+            }]
+          };
+          fs.writeFileSync('npm-audit.sarif', JSON.stringify(sarif, null, 2));
+          console.log(`Converted ${results.length} npm audit finding(s) to SARIF`);
+          EOF
 
       - name: Upload npm audit SARIF
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@c4dd10e44af883a891fe31ced449bcb4a6728b9b # v3
         with:
           sarif_file: npm-audit.sarif
           category: npm-audit
 
+      - name: Fail on high or critical dependency vulnerabilities
+        run: |
+          node <<'EOF'
+          const fs = require('fs');
+          const audit = JSON.parse(fs.readFileSync('npm-audit.json', 'utf8'));
+          const counts = audit.metadata?.vulnerabilities || {};
+          const high = Number(counts.high || 0);
+          const critical = Number(counts.critical || 0);
+          console.log(`npm audit: ${critical} critical, ${high} high`);
+          if (critical > 0 || high > 0) process.exit(1);
+          EOF
+
   osv-scanner:
-    name: OSV Scanner (Dependencies)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@3adb4b14a2b0623876d18d863a498b785fb3752d # v2.3.8
+    with:
+      scan-args: |-
+        --lockfile=package-lock.json
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
 
-      - name: Run OSV Scanner
-        uses: google/osv-scanner-action@v1
-        with:
-          scan-args: |-
-            --lockfile=package-lock.json
-            --format=sarif
-            --output=osv.sarif
-
-      - name: Upload OSV SARIF
-        if: always()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: osv.sarif
-          category: osv-scanner
-
-  # ─── Filesystem / Misconfiguration Scan ─────────────────────────────────────
   trivy:
     name: Trivy (Filesystem Scan)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Run Trivy filesystem scan
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: "fs"
           scan-ref: "."
@@ -128,7 +184,7 @@ jobs:
 
       - name: Upload Trivy SARIF
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@c4dd10e44af883a891fe31ced449bcb4a6728b9b # v3
         with:
           sarif_file: trivy.sarif
           category: trivy

@@ -1,0 +1,82 @@
+name: A11y Public Routes Verification
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: verify repaired public routes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Start preview
+        run: |
+          nohup npx vite preview --host 127.0.0.1 --port 4173 > preview.log 2>&1 &
+          echo $! > preview.pid
+          for i in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0
+            sleep 1
+          done
+          cat preview.log
+          exit 1
+
+      - name: Install matching ChromeDriver
+        run: |
+          set -e
+          CHROME_MAJOR=$(google-chrome --version | grep -oE '[0-9]+' | head -n1)
+          npx --yes browser-driver-manager@2.0.1 install "chrome@${CHROME_MAJOR}"
+          set -a
+          source "$HOME/.browser-driver-manager/.env"
+          set +a
+          echo "AXE_CHROMEDRIVER_PATH=$CHROMEDRIVER_TEST_PATH" >> "$GITHUB_ENV"
+
+      - name: Run axe on public routes
+        run: |
+          set -e
+          mkdir -p reports/axe
+          TAGS="wcag2a,wcag2aa,wcag21a,wcag21aa"
+          ROUTES=("/" "/pricing" "/about" "/contact" "/auth" "/onboarding" "/solutions/ai-content-licensing")
+          fail=0
+          for route in "${ROUTES[@]}"; do
+            slug=$(echo "$route" | sed 's|/|_|g; s|^_||; s|^$|root|')
+            [ -z "$slug" ] && slug=root
+            if ! npx --yes @axe-core/cli@4 \
+              "http://127.0.0.1:4173${route}" \
+              --chromedriver-path "$AXE_CHROMEDRIVER_PATH" \
+              --tags "$TAGS" \
+              --exit \
+              --save "reports/axe/${slug}.json"; then
+              fail=1
+            fi
+          done
+          exit $fail
+
+      - name: Upload axe evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a11y-public-routes-evidence
+          path: reports/axe/*.json
+          if-no-files-found: warn
+
+      - name: Stop preview
+        if: always()
+        run: |
+          if [ -f preview.pid ]; then kill "$(cat preview.pid)" || true; fi

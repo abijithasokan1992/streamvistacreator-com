@@ -74,6 +74,22 @@ jobs:
       - name: Prepare report dir
         run: mkdir -p reports/axe
 
+      - name: Install ChromeDriver matching runner Chrome
+        run: |
+          set -e
+          CHROME_MAJOR=$(google-chrome --version | grep -oE '[0-9]+' | head -n1)
+          echo "Runner Chrome major: ${CHROME_MAJOR}"
+          npx --yes browser-driver-manager@2.0.1 install "chrome@${CHROME_MAJOR}"
+          set -a
+          source "$HOME/.browser-driver-manager/.env"
+          set +a
+          case "$CHROMEDRIVER_TEST_PATH" in
+            /*) DRIVER_PATH="$CHROMEDRIVER_TEST_PATH" ;;
+            *) DRIVER_PATH="$HOME/$CHROMEDRIVER_TEST_PATH" ;;
+          esac
+          test -x "$DRIVER_PATH"
+          echo "AXE_CHROMEDRIVER_PATH=$DRIVER_PATH" >> "$GITHUB_ENV"
+
       - name: Mark stage – axe
         run: echo "axe" > .a11y-stage
 
@@ -98,6 +114,7 @@ jobs:
             echo "::group::axe $route"
             if ! npx --yes @axe-core/cli@4 \
                 "http://127.0.0.1:4173${route}" \
+                --chromedriver-path "$AXE_CHROMEDRIVER_PATH" \
                 --tags "$TAGS" \
                 --exit \
                 --save "reports/axe/${slug}.json"; then

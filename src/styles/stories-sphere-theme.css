@@ -1,0 +1,198 @@
+/* Canonical StreamVista Stories Sphere visual language.
+   Source of truth: streamvista-cloud-x public-home.ts / Stories Sphere.
+   This file changes presentation only; product routes and workflow logic stay intact. */
+
+:root {
+  --background: 36 39% 92%;
+  --foreground: 240 14% 8%;
+  --card: 36 45% 96%;
+  --card-foreground: 240 14% 8%;
+  --popover: 36 45% 97%;
+  --popover-foreground: 240 14% 8%;
+  --primary: 258 56% 52%;
+  --primary-foreground: 36 45% 98%;
+  --secondary: 35 24% 87%;
+  --secondary-foreground: 240 14% 10%;
+  --muted: 34 22% 88%;
+  --muted-foreground: 30 5% 36%;
+  --accent: 28 74% 62%;
+  --accent-foreground: 240 14% 8%;
+  --border: 240 8% 12% / .15;
+  --input: 240 8% 12% / .14;
+  --ring: 258 56% 52%;
+  --surface: 36 32% 90%;
+  --surface-elevated: 36 45% 96%;
+  --surface-sunken: 35 24% 87%;
+  --text-secondary: 30 5% 30%;
+  --text-tertiary: 30 5% 39%;
+  --sidebar-background: 36 39% 92%;
+  --sidebar-foreground: 240 14% 8%;
+  --sidebar-primary: 258 56% 52%;
+  --sidebar-primary-foreground: 36 45% 98%;
+  --sidebar-accent: 35 24% 87%;
+  --sidebar-accent-foreground: 240 14% 10%;
+  --sidebar-border: 240 8% 12% / .15;
+  --gradient-hero: radial-gradient(ellipse 46% 68% at 77% 45%, rgba(139,91,226,.075), transparent 67%), #f5eee2;
+  --gradient-card: linear-gradient(145deg, rgba(255,255,255,.72), rgba(255,255,255,.42));
+  --shadow-card: 0 18px 55px -36px rgba(30,22,42,.35);
+}
+
+.dark {
+  --background: 228 24% 4%;
+  --foreground: 42 100% 98%;
+  --card: 228 19% 7%;
+  --card-foreground: 42 100% 98%;
+  --popover: 228 19% 7%;
+  --popover-foreground: 42 100% 98%;
+  --primary: 260 58% 66%;
+  --primary-foreground: 228 24% 4%;
+  --secondary: 228 15% 12%;
+  --secondary-foreground: 42 100% 98%;
+  --muted: 228 15% 11%;
+  --muted-foreground: 260 5% 66%;
+  --accent: 29 88% 72%;
+  --accent-foreground: 228 24% 4%;
+  --border: 0 0% 100% / .14;
+  --input: 0 0% 100% / .12;
+  --ring: 260 58% 66%;
+  --surface: 228 20% 6%;
+  --surface-elevated: 228 17% 9%;
+  --surface-sunken: 228 25% 3%;
+  --text-secondary: 260 8% 76%;
+  --text-tertiary: 260 5% 64%;
+  --sidebar-background: 228 24% 4%;
+  --sidebar-foreground: 42 100% 98%;
+  --sidebar-primary: 260 58% 66%;
+  --sidebar-primary-foreground: 228 24% 4%;
+  --sidebar-accent: 228 15% 12%;
+  --sidebar-accent-foreground: 42 100% 98%;
+  --sidebar-border: 0 0% 100% / .14;
+  --gradient-hero: radial-gradient(ellipse 48% 72% at 78% 46%, rgba(82,56,155,.11), transparent 66%), radial-gradient(ellipse 38% 60% at 28% 50%, rgba(255,193,121,.025), transparent 72%), #08090d;
+  --gradient-card: linear-gradient(145deg, rgba(255,255,255,.045), rgba(255,255,255,.02));
+  --shadow-card: 0 22px 64px -30px rgba(0,0,0,.72);
+}
+
+body {
+  background: var(--gradient-hero) !important;
+  background-attachment: fixed !important;
+}
+
+h1,h2,h3,h4,.font-display {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+
+.glass,.glass-strong,.bg-card {
+  backdrop-filter: blur(16px);
+}
+
+.stories-home {
+  --sphere-ink: #fffdf7;
+  --sphere-muted: #aaa7b0;
+  --sphere-line: rgba(255,255,255,.14);
+  --sphere-panel: rgba(255,255,255,.035);
+  --sphere-button: #f7f3eb;
+  --sphere-button-ink: #101015;
+  position: relative;
+  isolation: isolate;
+  min-height: 100dvh;
+  overflow: hidden;
+  color: var(--sphere-ink);
+  background: radial-gradient(ellipse 48% 72% at 78% 46%,rgba(82,56,155,.11),transparent 66%),radial-gradient(ellipse 38% 60% at 28% 50%,rgba(255,193,121,.025),transparent 72%),#08090d;
+}
+
+html:not(.dark) .stories-home {
+  --sphere-ink: #121218;
+  --sphere-muted: #625e58;
+  --sphere-line: rgba(22,21,26,.15);
+  --sphere-panel: rgba(255,255,255,.57);
+  --sphere-button: #16151a;
+  --sphere-button-ink: #fff;
+  background: radial-gradient(ellipse 46% 68% at 77% 45%,rgba(139,91,226,.075),transparent 67%),#f5eee2;
+}
+
+.stories-home::before {
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  z-index:-1;
+  background:linear-gradient(115deg,transparent 0 48%,rgba(255,255,255,.018) 58%,transparent 68%);
+  background-size:220% 100%;
+  animation:sv-sweep 13s ease-in-out infinite;
+}
+
+.stories-page {
+  display:grid;
+  grid-template-rows:auto 1fr auto auto;
+  min-height:100dvh;
+  width:min(1280px,100%);
+  margin:auto;
+  padding:max(22px,env(safe-area-inset-top)) clamp(24px,4.2vw,62px) max(20px,env(safe-area-inset-bottom));
+}
+
+.stories-top {display:flex;align-items:center;justify-content:space-between;gap:18px;z-index:4;animation:sv-reveal .72s ease both}
+.stories-brand {display:flex;align-items:center;gap:11px;color:var(--sphere-ink);text-decoration:none}
+.stories-mark {width:40px;height:40px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--sphere-line);background:var(--sphere-panel);font-size:10px;font-weight:900;letter-spacing:.08em;backdrop-filter:blur(14px)}
+.stories-word {font-size:12px;font-weight:900;letter-spacing:.2em}
+.stories-tools {display:flex;align-items:center;gap:10px}
+.stories-theme,.stories-signin {min-height:40px;padding:0 15px;border:1px solid var(--sphere-line);border-radius:999px;background:var(--sphere-panel);color:var(--sphere-ink);font:800 11px/1 Inter,system-ui,sans-serif;text-decoration:none;cursor:pointer;backdrop-filter:blur(14px)}
+.stories-theme {display:flex;align-items:center;gap:8px}
+.stories-theme-dot {width:12px;height:12px;border:1px solid currentColor;border-radius:50%;background:linear-gradient(90deg,currentColor 50%,transparent 50%)}
+
+.stories-hero {position:relative;display:grid;align-items:center;min-height:clamp(555px,71vh,720px);padding:72px 0 44px;perspective:1200px}
+.stories-copy {position:relative;z-index:3;width:min(590px,53%);animation:sv-reveal .92s .12s cubic-bezier(.16,.78,.22,1) both}
+.stories-eyebrow {margin-bottom:23px;color:var(--sphere-muted);font-size:11px;font-weight:800;letter-spacing:.24em;text-transform:uppercase}
+.stories-title {margin:0;font-size:clamp(70px,9.35vw,140px);font-weight:850;line-height:.8;letter-spacing:-.085em;text-shadow:0 1px 0 rgba(255,255,255,.08)}
+.stories-title em {font-family:Georgia,serif;font-weight:400;letter-spacing:-.1em}
+.stories-summary {max-width:470px;margin:29px 0 0;color:var(--sphere-muted);font-size:clamp(16px,1.42vw,20px);line-height:1.55}
+.stories-primary {display:inline-flex;align-items:center;gap:13px;min-height:62px;margin-top:31px;padding:0 26px;border-radius:999px;background:var(--sphere-button);color:var(--sphere-button-ink);font-size:13px;font-weight:850;text-decoration:none;transition:transform .2s ease,box-shadow .2s ease}
+.stories-primary:hover,.stories-primary:focus-visible {transform:translateY(-2px);box-shadow:0 14px 32px rgba(0,0,0,.18)}
+.stories-hint {margin:13px 0 0;color:var(--sphere-muted);font-size:11px}.stories-hint a{color:inherit;text-underline-offset:4px}
+
+.stories-sphere-wrap {position:absolute;z-index:1;width:clamp(480px,49vw,710px);aspect-ratio:1;right:-.5%;top:50%;transform:translateY(-50%);pointer-events:none;animation:sv-float 14s ease-in-out infinite}
+.stories-sphere-stage {position:absolute;inset:0;transform-style:preserve-3d}
+.stories-sphere-aura {position:absolute;inset:-4%;border-radius:50%;background:radial-gradient(circle at 47% 48%,rgba(132,93,255,.16),rgba(71,45,156,.075) 42%,transparent 70%);filter:blur(22px);animation:sv-aura 8s ease-in-out infinite}
+.stories-sphere-shadow {position:absolute;left:19%;right:5%;bottom:5%;height:13%;border-radius:50%;background:radial-gradient(ellipse,rgba(0,0,0,.42),transparent 70%);filter:blur(14px);opacity:.62}
+.stories-sphere {position:absolute;inset:7%;border-radius:50%;background:radial-gradient(circle at 34% 29%,#fff9df 0 1.5%,#ffc07a 6%,#e064c7 14%,#8949e5 29%,#365196 49%,#161a30 68%,#07080d 79%);background-size:145% 145%;filter:saturate(1.04) contrast(1.06);box-shadow:inset -42px -47px 78px rgba(4,5,12,.74),0 26px 62px rgba(10,10,20,.28);animation:sv-atmosphere 17s ease-in-out infinite;overflow:hidden}
+.stories-sphere::before {content:"";position:absolute;inset:8%;border:1px solid rgba(255,255,255,.11);border-radius:50%;box-shadow:inset -26px -33px 55px rgba(2,3,9,.45)}
+.stories-sphere::after {content:"";position:absolute;inset:-12%;border-radius:50%;background:radial-gradient(circle,transparent 53%,rgba(8,9,13,.92) 76%)}
+html:not(.dark) .stories-sphere::after {background:radial-gradient(circle,transparent 53%,rgba(245,238,226,.87) 76%)}
+.stories-orbit {position:absolute;inset:8%;border-radius:50%;border:1px solid rgba(255,255,255,.115);opacity:.5}
+html:not(.dark) .stories-orbit {border-color:rgba(22,21,26,.12)}
+.stories-orbit.one {transform:rotateX(67deg) rotateZ(-16deg) scale(1.09);animation:sv-orbit-one 18s linear infinite}
+.stories-orbit.two {inset:14%;border-color:rgba(163,130,255,.16);transform:rotateY(68deg) rotateZ(24deg) scale(1.16);animation:sv-orbit-two 24s linear infinite reverse}
+.stories-orbit::after {content:"";position:absolute;width:7px;height:7px;border-radius:50%;top:7%;left:50%;background:#fff5d9;box-shadow:0 0 18px rgba(255,229,177,.9)}
+.stories-glint {position:absolute;width:18%;height:18%;left:19%;top:17%;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.24),rgba(255,209,157,.08) 36%,transparent 72%);filter:blur(3px);mix-blend-mode:screen;animation:sv-glint 6.5s ease-in-out infinite}
+
+.stories-routes {display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:17px 0 13px;border-top:1px solid var(--sphere-line);z-index:4;animation:sv-reveal .8s .18s both}
+.stories-route {display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:70px;padding:15px 17px;border:1px solid var(--sphere-line);border-radius:14px;background:var(--sphere-panel);color:var(--sphere-ink);text-decoration:none;transition:border-color .18s ease,background .18s ease,transform .18s ease;backdrop-filter:blur(16px)}
+.stories-route:hover,.stories-route:focus-visible {transform:translateY(-3px);background:rgba(255,255,255,.075)}
+.stories-route strong {display:block;font-size:13px}.stories-route span{display:block;margin-top:5px;color:var(--sphere-muted);font-size:10px}.stories-route b{font-size:17px;font-weight:400}
+.stories-foot {display:flex;justify-content:space-between;gap:14px;color:var(--sphere-muted);font-size:9px;z-index:4;padding-top:4px}.stories-foot a{color:inherit}
+
+@keyframes sv-reveal {from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes sv-sweep {0%,100%{background-position:0 0}50%{background-position:100% 0}}
+@keyframes sv-float {0%,100%{transform:translateY(-50%) translateX(0) rotate(-.6deg)}50%{transform:translateY(calc(-50% - 10px)) translateX(-5px) rotate(.7deg)}}
+@keyframes sv-atmosphere {0%,100%{background-position:30% 28%;filter:saturate(1.04) contrast(1.06)}50%{background-position:47% 40%;filter:saturate(1.13) contrast(1.08)}}
+@keyframes sv-aura {0%,100%{transform:scale(.96);opacity:.7}50%{transform:scale(1.05);opacity:1}}
+@keyframes sv-orbit-one {to{transform:rotateX(67deg) rotateZ(344deg) scale(1.09)}}
+@keyframes sv-orbit-two {to{transform:rotateY(68deg) rotateZ(384deg) scale(1.16)}}
+@keyframes sv-glint {0%,100%{transform:translate3d(0,0,0);opacity:.55}50%{transform:translate3d(18px,10px,0);opacity:.95}}
+
+@media(max-width:720px){
+  .stories-page{padding-left:27px;padding-right:27px}
+  .stories-hero{min-height:0;align-items:start;padding:112px 0 42px}
+  .stories-copy{width:100%}
+  .stories-title{font-size:clamp(61px,18vw,92px)}
+  .stories-summary{max-width:340px;margin-top:25px}
+  .stories-sphere-wrap{width:590px;right:-394px;top:43%;opacity:.92}
+  .stories-orbit.two{display:none}
+  .stories-routes{grid-template-columns:1fr;padding-top:14px}
+  .stories-route{min-height:62px;padding:12px 0;border-width:0 0 1px;border-radius:0;background:transparent}
+  .stories-foot{display:grid;gap:6px;padding-top:5px}
+  .stories-primary{width:100%;justify-content:center;max-width:340px;min-height:57px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .stories-home::before,.stories-top,.stories-copy,.stories-routes,.stories-sphere-wrap,.stories-sphere,.stories-sphere-aura,.stories-orbit,.stories-glint{animation:none!important}
+}

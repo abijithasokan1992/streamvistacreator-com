@@ -28,10 +28,10 @@ const Index = () => {
   if (user) return <Navigate to={dashboardForRole(role)} replace />;
 
   return (
-    <main className="min-h-dvh home-serif">
+    <main id="main-content" className="min-h-dvh home-serif">
       <Seo
-        title="StreamVista Creator — Prepare Content for Licensing & Distribution"
-        description="A focused creator workspace for title onboarding, media assets, rights readiness, QC and professional distribution workflows."
+        title="StreamVista — Film Licensing, Global Buyer Access & Distribution Workflow"
+        description="StreamVista helps film content owners prepare rights-ready titles, reach qualified global buyers, and manage professional licensing and delivery workflows."
         path="/"
         jsonLd={[
           {
@@ -49,9 +49,9 @@ const Index = () => {
           {
             "@context": "https://schema.org",
             "@type": "Service",
-            name: "StreamVista Creator Content Readiness Workspace",
+            name: "StreamVista Film Licensing and Distribution Workflow",
             description:
-              "Creator and studio workflow for content onboarding, rights readiness, QC, secure screening and delivery preparation.",
+              "Workflow for content onboarding, rights readiness, qualified buyer access, licensing review, secure screening and delivery preparation.",
             provider: {
               "@type": "Organization",
               name: "StreamVista",
@@ -64,10 +64,10 @@ const Index = () => {
       <Navbar />
       <Hero />
 
-      <section className="mx-auto w-full max-w-7xl px-5 py-12 sm:px-6 lg:px-8 lg:py-16">
+      <section id="platform" className="scroll-mt-24 mx-auto w-full max-w-7xl px-5 py-12 sm:px-6 lg:px-8 lg:py-16">
         <div className="mb-7 max-w-2xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Creator workflow</p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">One clear path from title to readiness.</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">How StreamVista helps</p>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">One clear path from content ownership to licensing readiness.</h2>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
@@ -88,6 +88,7 @@ const Index = () => {
           <a
             href="https://www.crayonsloop.com/login"
             className="inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+            aria-label="Submit content for licensing review"
           >
             Submit content
           </a>

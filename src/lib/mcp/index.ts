@@ -20,7 +20,7 @@ import creatorSubmissionStatus from "./tools/creator-submission-status";
 import creatorRightsStatus from "./tools/creator-rights-status";
 import creatorListAssets from "./tools/creator-list-assets";
 import creatorReviewNotes from "./tools/creator-review-notes";
-import creatorDistributionStatus from "./tools/control/distribution-status";
+import creatorDistributionStatus from "./tools/creator-distribution-status";
 import creatorStorageUsage from "./tools/creator-storage-usage";
 import creatorNotifications from "./tools/creator-notifications";
 import creatorSearchMyTitles from "./tools/creator-search-my-titles";

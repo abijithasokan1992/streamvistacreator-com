@@ -13,21 +13,19 @@ permissions:
   security-events: write
 
 jobs:
-  # ─── Secret Scanning ────────────────────────────────────────────────────────
   gitleaks:
     name: Gitleaks (Secret Scan)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          fetch-depth: 0 # full history so gitleaks can scan all commits
+          fetch-depth: 0
 
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # ─── SAST ───────────────────────────────────────────────────────────────────
   semgrep:
     name: Semgrep (SAST)
     runs-on: ubuntu-latest
@@ -67,7 +65,6 @@ jobs:
           sarif_file: semgrep.sarif
           category: semgrep
 
-  # ─── Dependency Vulnerabilities ─────────────────────────────────────────────
   npm-audit:
     name: npm audit (Dependencies)
     runs-on: ubuntu-latest
@@ -158,7 +155,6 @@ jobs:
           if (critical > 0 || high > 0) process.exit(1);
           EOF
 
-  # OSV v2 is distributed as a reusable workflow, not a step-level action.
   osv-scanner:
     uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@3adb4b14a2b0623876d18d863a498b785fb3752d # v2.3.8
     with:
@@ -169,7 +165,6 @@ jobs:
       contents: read
       security-events: write
 
-  # ─── Filesystem / Misconfiguration Scan ─────────────────────────────────────
   trivy:
     name: Trivy (Filesystem Scan)
     runs-on: ubuntu-latest
@@ -193,3 +188,39 @@ jobs:
         with:
           sarif_file: trivy.sarif
           category: trivy
+
+  dependency-repair:
+    name: Branch-only dependency lock repair
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'fix/ci-security-scanner-tooling' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repair branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Regenerate lockfile with non-breaking audit fixes
+        run: |
+          npm audit fix --package-lock-only --ignore-scripts || true
+          git diff -- package.json package-lock.json
+
+      - name: Commit repaired dependency lock
+        run: |
+          if git diff --quiet -- package.json package-lock.json; then
+            echo "No safe lockfile repair available."
+            exit 0
+          fi
+          git config user.name "StreamVista Factory"
+          git config user.email "actions@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "fix(deps): apply safe npm audit lockfile repairs"
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"

@@ -52,6 +52,14 @@ jobs:
             --exclude "dist" \
             .
 
+      - name: Preserve Semgrep SARIF evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-sarif
+          path: semgrep.sarif
+          if-no-files-found: warn
+
       - name: Upload Semgrep SARIF
         if: always()
         uses: github/codeql-action/upload-sarif@v3
@@ -76,6 +84,13 @@ jobs:
 
       - name: Run npm audit
         run: npm audit --json > npm-audit.json || true
+
+      - name: Preserve npm audit evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-json
+          path: npm-audit.json
+          if-no-files-found: error
 
       - name: Convert npm audit JSON to SARIF
         run: |
@@ -131,26 +146,28 @@ jobs:
           sarif_file: npm-audit.sarif
           category: npm-audit
 
+      - name: Fail on high or critical dependency vulnerabilities
+        run: |
+          node <<'EOF'
+          const fs = require('fs');
+          const audit = JSON.parse(fs.readFileSync('npm-audit.json', 'utf8'));
+          const counts = audit.metadata?.vulnerabilities || {};
+          const high = Number(counts.high || 0);
+          const critical = Number(counts.critical || 0);
+          console.log(`npm audit: ${critical} critical, ${high} high`);
+          if (critical > 0 || high > 0) process.exit(1);
+          EOF
+
+  # OSV v2 is distributed as a reusable workflow, not a step-level action.
   osv-scanner:
-    name: OSV Scanner (Dependencies)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Run OSV Scanner
-        uses: google/osv-scanner-action@v2.3.8
-        with:
-          scan-args: |-
-            --lockfile=package-lock.json
-            --format=sarif
-            --output=osv.sarif
-
-      - name: Upload OSV SARIF
-        if: always()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: osv.sarif
-          category: osv-scanner
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.3.8
+    with:
+      scan-args: |-
+        --lockfile=package-lock.json
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
 
   # ─── Filesystem / Misconfiguration Scan ─────────────────────────────────────
   trivy:

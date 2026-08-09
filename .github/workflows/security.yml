@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
   security-events: write
 
 jobs:
@@ -54,7 +55,7 @@ jobs:
 
       - name: Upload Semgrep SARIF
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: semgrep.sarif
           category: semgrep
@@ -75,38 +76,29 @@ jobs:
         run: npm ci
 
       - name: Install npm-audit-sarif converter
-        run: npm install -g npm-audit-sarif@1.0.4
+        run: npm install -g npm-audit-sarif@0.0.13
 
       - name: Run npm audit and emit SARIF
         run: |
-          npm audit --json | npm-audit-sarif > npm-audit.sarif || true
+          npm audit --json > npm-audit.json || true
+          npm-audit-sarif npm-audit.json -o npm-audit.sarif
 
       - name: Upload npm audit SARIF
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: npm-audit.sarif
           category: npm-audit
 
   osv-scanner:
     name: OSV Scanner (Dependencies)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Run OSV Scanner
-        uses: google/osv-scanner-action@v1
-        with:
-          scan-args: |-
-            --lockfile=package-lock.json
-            --format=sarif
-            --output=osv.sarif
-
-      - name: Upload OSV SARIF
-        if: always()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: osv.sarif
-          category: osv-scanner
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.5.0
+    with:
+      scan-args: |-
+        --lockfile=package-lock.json
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
 
   # ─── Filesystem / Misconfiguration Scan ─────────────────────────────────────
   trivy:
@@ -128,7 +120,7 @@ jobs:
 
       - name: Upload Trivy SARIF
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy.sarif
           category: trivy

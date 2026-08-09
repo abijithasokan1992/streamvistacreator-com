@@ -5,6 +5,8 @@ import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useAuth, dashboardForRole } from "@/hooks/useAuth";
 
+const SUBMIT_CONTENT_URL = "https://www.crayonsloop.com/login";
+
 /**
  * Brand hierarchy: STREAMVISTA is heavy/primary; "Cloud X" is muted secondary.
  */
@@ -41,12 +43,12 @@ export const Navbar = () => {
           <Wordmark />
         </Link>
 
-        <nav className="hidden md:flex items-center gap-6" aria-label="Primary">
+        <nav className="hidden xl:flex items-center gap-5" aria-label="Primary">
           {NAV_LINKS.map((l) => (
             <Link
               key={l.to}
               to={l.to}
-              className="text-xs md:text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
             >
               {l.label}
             </Link>
@@ -73,20 +75,20 @@ export const Navbar = () => {
               >
                 Login
               </Link>
-              <Link
-                to="/auth?intent=signup"
+              <a
+                href={SUBMIT_CONTENT_URL}
                 className="cta-guide relative text-xs md:text-sm font-semibold px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-full bg-gradient-primary text-primary-foreground hover:scale-105 transition-transform whitespace-nowrap"
-                aria-label="Get started with StreamVista"
+                aria-label="Submit content for licensing review"
               >
-                Get Started
-              </Link>
+                Submit Content
+              </a>
             </>
           )}
 
-          {/* Mobile menu trigger */}
+          {/* Compact menu stays active through tablet widths to avoid nav crowding. */}
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger
-              className="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-md border border-border/60 text-muted-foreground hover:text-foreground hover:border-accent/50 transition-colors"
+              className="xl:hidden inline-flex items-center justify-center w-9 h-9 rounded-md border border-border/60 text-muted-foreground hover:text-foreground hover:border-accent/50 transition-colors"
               aria-label="Open menu"
             >
               <Menu className="w-4 h-4" />
@@ -115,6 +117,15 @@ export const Navbar = () => {
                 >
                   {signedIn ? "Dashboard" : "Login"}
                 </Link>
+                {!signedIn && (
+                  <a
+                    href={SUBMIT_CONTENT_URL}
+                    onClick={() => setOpen(false)}
+                    className="mt-2 inline-flex min-h-11 items-center justify-center rounded-md bg-gradient-primary px-4 text-xs font-semibold uppercase tracking-[0.18em] text-primary-foreground"
+                  >
+                    Submit Content
+                  </a>
+                )}
               </nav>
             </SheetContent>
           </Sheet>

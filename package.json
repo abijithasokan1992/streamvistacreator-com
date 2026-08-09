@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "prebuild": "npm audit --audit-level=high && npm test",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
@@ -18,7 +19,7 @@
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
     "@lovable.dev/cloud-auth-js": "^1.1.2",
-    "@lovable.dev/mcp-js": "^0.20.0",
+    "@lovable.dev/mcp-js": "0.25.0",
     "@paddle/paddle-node-sdk": "^3.8.0",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
@@ -66,7 +67,7 @@
     "react-hook-form": "^7.61.1",
     "react-i18next": "^17.0.9",
     "react-resizable-panels": "^2.1.9",
-    "react-router-dom": "^7.9.3",
+    "react-router-dom": "7.18.2",
     "recharts": "^3.9.0",
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.6.0",
@@ -93,12 +94,19 @@
     "globals": "^15.15.0",
     "jsdom": "^20.0.3",
     "lovable-tagger": "^1.1.13",
-    "postcss": "^8.5.6",
+    "postcss": "8.5.23",
     "robots-parser": "^3.0.1",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
-    "vite": "^5.4.19",
+    "vite": "6.4.3",
     "vitest": "^3.2.4"
+  },
+  "overrides": {
+    "@lovable.dev/mcp-js": {
+      "@modelcontextprotocol/sdk": "1.30.0",
+      "esbuild": "0.28.1"
+    },
+    "@hono/node-server": "2.0.12"
   }
 }

@@ -1,26 +1,22 @@
 /**
- * Smoke test: the "One pipeline / Security & Trust" Workflow section
- * MUST be present in the rendered DOM for every public homepage route,
- * at every common viewport size we ship for.
+ * Smoke test: the current Creator workflow section MUST remain present in the
+ * rendered DOM at every common viewport size we ship for.
  *
- * If this test fails, the section was either unmounted, renamed, or
- * lost its `#workflow` anchor — all of which break anchor links,
- * SEO deep-links, and the cross-device QA harness.
+ * The `#workflow` anchor is a stable deep-link/QA contract; the copy below
+ * reflects the current three-part readiness path rather than the retired
+ * five-stage marketing pipeline.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, cleanup } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 
-// Keep the home page render hermetic — no Supabase, no network.
 vi.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({ user: null, role: null, loading: false }),
   dashboardForRole: () => "/",
 }));
 
-// Avoid hitting any client-side analytics/observers from child components.
 vi.mock("@/integrations/supabase/client", () => {
-  // Fully chainable query builder that resolves to an empty result for any call.
   const makeBuilder = () => {
     const result = Promise.resolve({ data: [], error: null, count: 0 });
     const builder: Record<string, unknown> = {
@@ -32,7 +28,6 @@ vi.mock("@/integrations/supabase/client", () => {
     const passthrough = new Proxy(builder, {
       get(target, prop) {
         if (prop in target) return (target as Record<string, unknown>)[prop as string];
-        // Any unknown method (.eq, .select, .order, .limit, .in, .gte, .lte, ...) returns the builder.
         return () => passthrough;
       },
     });
@@ -57,12 +52,10 @@ vi.mock("@/integrations/supabase/client", () => {
 
 import Index from "@/pages/Index";
 
-/** Public homepage routes that MUST render the Workflow section. */
 const HOMEPAGE_ROUTES: Array<{ path: string; element: React.ReactNode }> = [
   { path: "/", element: <Index /> },
 ];
 
-/** Common viewport widths we ship for (mobile → desktop). */
 const VIEWPORTS = [320, 375, 390, 412, 768, 820, 1024, 1280, 1440, 1920];
 
 function setViewport(width: number, height = 900) {
@@ -96,20 +89,14 @@ describe("Workflow section presence", () => {
         const section = container.querySelector("#workflow");
         expect(
           section,
-          `Expected the Workflow section (#workflow) to be in the DOM on ${path} at ${width}px viewport. ` +
-            `If the section was intentionally removed, update HOMEPAGE_ROUTES in this test.`,
+          `Expected the Creator workflow section (#workflow) to be in the DOM on ${path} at ${width}px viewport.`,
         ).not.toBeNull();
 
-        // The section must actually contain the pipeline copy,
-        // not just an empty anchor placeholder.
         const text = section?.textContent ?? "";
-        expect(text, "Workflow section should mention 'How it works'").toMatch(/how it works/i);
-        expect(text, "Workflow section should mention 'From upload to revenue'").toMatch(
-          /from upload\s*to revenue/i,
-        );
+        expect(text).toMatch(/creator workflow/i);
+        expect(text).toMatch(/one clear path from title to readiness/i);
 
-        // All 5 pipeline stages must be present.
-        for (const stage of ["Upload", "Review", "Marketplace", "Buyer", "Revenue"]) {
+        for (const stage of ["Upload & Organize", "Rights & Readiness", "Buyer & Delivery"]) {
           expect(text, `Workflow section should mention stage '${stage}'`).toContain(stage);
         }
       });

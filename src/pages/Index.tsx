@@ -64,7 +64,7 @@ const Index = () => {
       <Navbar />
       <Hero />
 
-      <section className="mx-auto w-full max-w-7xl px-5 py-12 sm:px-6 lg:px-8 lg:py-16">
+      <section id="workflow" className="mx-auto w-full max-w-7xl px-5 py-12 sm:px-6 lg:px-8 lg:py-16">
         <div className="mb-7 max-w-2xl">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Creator workflow</p>
           <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">One clear path from title to readiness.</h2>

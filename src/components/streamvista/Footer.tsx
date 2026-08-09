@@ -98,7 +98,7 @@ export const Footer = () => {
           <p className="text-[11px] leading-relaxed text-muted-foreground">
             © {new Date().getFullYear()}{" "}
             <strong className="text-foreground/80">STREAMVISTA (OPC) PRIVATE LIMITED</strong>
-            <span className="opacity-60"> · Ernakulam, Kerala, India.</span>
+            <span> · Ernakulam, Kerala, India.</span>
           </p>
         </div>
 

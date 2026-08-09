@@ -1,0 +1,92 @@
+name: Security Dependency Remediation
+
+on:
+  push:
+    branches: ["fix/security-ci-remediation", "release/creator-security-a11y-current-main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: security-remediation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  remediate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Repair known release gates
+        run: node scripts/repair-release-gates.mjs
+
+      - name: Regenerate lockfile for reviewed dependency overrides
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+
+      - name: Verify remediated lockfile with clean install
+        run: npm ci --no-audit --no-fund
+
+      - name: Capture remediated dependency graph
+        run: npm ls @lovable.dev/mcp-js @modelcontextprotocol/sdk @hono/node-server esbuild --all
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+      - name: Capture remediated audit
+        id: audit
+        shell: bash
+        run: |
+          set +e
+          npm audit --json --audit-level=high > remediated-audit.json
+          status=$?
+          set -e
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          node - <<'EOF'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('remediated-audit.json', 'utf8'));
+          const v = report.metadata?.vulnerabilities || {};
+          console.log(`remediated audit: total=${v.total ?? 'unknown'} low=${v.low ?? 0} moderate=${v.moderate ?? 0} high=${v.high ?? 0} critical=${v.critical ?? 0}`);
+          EOF
+
+      - name: Upload remediated dependency evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: remediated-dependencies
+          path: |
+            package.json
+            package-lock.json
+            remediated-audit.json
+          if-no-files-found: error
+
+      - name: Commit verified dependency and accessibility repairs
+        if: steps.audit.outputs.status == '0'
+        run: |
+          if git diff --quiet -- package.json package-lock.json src/components/streamvista/Pricing.tsx src/pages/Contact.tsx src/components/streamvista/Footer.tsx; then
+            echo "No verified source or dependency changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json src/components/streamvista/Pricing.tsx src/pages/Contact.tsx src/components/streamvista/Footer.tsx
+          git commit -m "fix(release): clear dependency and accessibility gates"
+          target_branch="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          test -n "$target_branch"
+          git push origin HEAD:"$target_branch"
+
+      - name: Enforce high/critical audit gate
+        if: steps.audit.outputs.status != '0'
+        run: exit 1

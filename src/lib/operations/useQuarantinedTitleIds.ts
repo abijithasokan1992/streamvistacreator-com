@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
  */
 let cachedPromise: Promise<readonly string[]> | null = null;
 let cachedValue: readonly string[] | null = null;
+const QUARANTINE_LOOKUP_TIMEOUT_MS = 2000;
 
 export function primeQuarantinedTitleIdsCache(ids: readonly string[]): void {
   cachedValue = ids;
@@ -28,21 +29,25 @@ export function resetQuarantinedTitleIdsCache(): void {
 async function loadOnce(): Promise<readonly string[]> {
   if (cachedPromise) return cachedPromise;
   cachedPromise = (async () => {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), QUARANTINE_LOOKUP_TIMEOUT_MS);
     try {
       const { data, error } = await (supabase as any)
         .from("content_titles")
         .select("id")
-        .eq("metadata->>is_test", "true");
+        .eq("metadata->>is_test", "true")
+        .abortSignal(controller.signal);
       if (error) throw error;
       const ids = Object.freeze((data ?? []).map((r: { id: string }) => r.id));
       cachedValue = ids;
       return ids;
     } catch {
-      // Fail-open: return an empty list so callers don't block indefinitely.
-      // Individual surfaces already apply owner-level filters via
-      // applyProductionFilterByOwnerColumn.
+      // Fail-open quickly: owner-level production filters remain active and
+      // operational surfaces must not hang indefinitely on a quarantine lookup.
       cachedValue = Object.freeze([]);
       return cachedValue;
+    } finally {
+      window.clearTimeout(timeout);
     }
   })();
   return cachedPromise;

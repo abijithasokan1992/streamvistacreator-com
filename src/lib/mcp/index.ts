@@ -49,16 +49,22 @@ import ctrlFindDuplicateTitles from "./tools/control/find-duplicate-titles";
 import ctrlDeleteDraftTitles from "./tools/control/delete-draft-titles";
 import ctrlImportLegacyTitles from "./tools/control/import-legacy-titles";
 
-// This MCP installation is bound to the production Supabase OAuth issuer.
-// Do not derive it from a generic Vite/Supabase environment variable: preview
-// and clean-room environments can inject a different project id and silently
-// break the ChatGPT account-connection handshake before any tool is invoked.
-const projectRef = "hllgmkfqgeuqlmpcirvn";
+// Never hard-code a provider/project hostname into the MCP account-connection
+// handshake. Production must explicitly provide the OAuth issuer. This keeps
+// the server fail-closed when a managed backend is missing and also allows a
+// future provider migration without rewriting the MCP tool bundle.
+const oauthIssuer = import.meta.env.VITE_STREAMVISTA_OAUTH_ISSUER?.trim();
+
+if (!oauthIssuer) {
+  throw new Error(
+    "StreamVista MCP OAuth issuer is unavailable. Refusing to connect against a stale or implicit backend.",
+  );
+}
 
 export default defineMcp({
   name: "streamvista-mcp",
   title: "StreamVista Cloud X",
-  version: "0.3.2",
+  version: "0.3.3",
   instructions:
     "Tools for a signed-in StreamVista Cloud X user. " +
     "When StreamVista Control appears unavailable, call `ctrl_connection_health` first. It retries transient connection, timeout, gateway, and rate-limit failures automatically and returns `reauth_required` only when OAuth user approval is genuinely necessary. " +
@@ -67,7 +73,7 @@ export default defineMcp({
     "Legacy read tools kept for compatibility: `list_titles`, `get_title`, `list_ingest_jobs`. " +
     "Tools that are not available to the caller's role return a friendly access message instead of data. Use `whoami` to verify identity. All data is scoped to the signed-in user via RLS.",
   auth: auth.oauth.issuer({
-    issuer: `https://${projectRef}.supabase.co/auth/v1`,
+    issuer: oauthIssuer,
     acceptedAudiences: "authenticated",
   }),
   tools: [

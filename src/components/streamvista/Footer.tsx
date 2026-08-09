@@ -60,7 +60,6 @@ export const Footer = () => {
       <div className="pointer-events-none absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
 
       <div className="container py-12">
-        {/* 4-column grid: Brand · Product · Company · Legal / Trust */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-10">
           <div className="col-span-2 md:col-span-1">
             <Link to="/" aria-label="StreamVista home">
@@ -98,11 +97,10 @@ export const Footer = () => {
           <p className="text-[11px] leading-relaxed text-muted-foreground">
             © {new Date().getFullYear()}{" "}
             <strong className="text-foreground/80">STREAMVISTA (OPC) PRIVATE LIMITED</strong>
-            <span className="opacity-60"> · Ernakulam, Kerala, India.</span>
+            <span className="text-foreground/80"> · Ernakulam, Kerala, India.</span>
           </p>
         </div>
 
-        {/* Crayons Network lineage promoted */}
         <div className="mt-10 pt-8 border-t border-border/40">
           <CrayonsNetwork eyebrow="Powered by The Crayons Network" />
           <p className="mt-4 text-center text-[11px] leading-relaxed text-muted-foreground/70 max-w-md mx-auto">

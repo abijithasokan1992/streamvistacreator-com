@@ -228,7 +228,7 @@ function PricingFaq() {
         <h2 className="font-display font-black uppercase text-3xl md:text-4xl tracking-tight text-center mb-10">
           Pricing <span className="gradient-text">questions</span>
         </h2>
-        <dl className="space-y-3">
+        <div className="space-y-3">
           {faqs.map((f) => (
             <details
               key={f.q}
@@ -241,7 +241,7 @@ function PricingFaq() {
               <p className="mt-3 text-sm text-muted-foreground leading-relaxed">{f.a}</p>
             </details>
           ))}
-        </dl>
+        </div>
       </div>
     </div>
   );
@@ -357,4 +357,3 @@ function PriceCard({
     </div>
   );
 }
-

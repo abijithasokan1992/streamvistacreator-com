@@ -290,7 +290,7 @@ jobs:
           echo "generated pr-comment.md ($(wc -c < pr-comment.md) bytes)"
 
       - name: Upsert PR comment
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');

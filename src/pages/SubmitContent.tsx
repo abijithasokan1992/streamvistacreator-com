@@ -6,6 +6,7 @@ import { Footer } from "@/components/streamvista/Footer";
 import { Seo } from "@/components/Seo";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { trackLifecycleEvent } from "@/lib/analytics/amplitude";
 
 const schema = z.object({
   title: z.string().trim().min(1, "Content title is required").max(180),
@@ -98,6 +99,18 @@ export default function SubmitContent() {
       });
 
       if (error) throw error;
+
+      // Track only after the commercial record has been persisted successfully.
+      // No email, phone, title, rights-owner name, links, or legal material is sent.
+      void trackLifecycleEvent("Content Submitted", {
+        persona: "creator",
+        content_type: parsed.data.type,
+        source: "public_content_submission",
+        rights_status: "claimed_owner_unverified",
+        authenticated: Boolean(authedUserId),
+        path: "/submit-content",
+        submission_mode: "public_form",
+      });
 
       supabase.functions
         .invoke("send-transactional-email", {

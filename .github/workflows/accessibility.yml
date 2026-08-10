@@ -1,10 +1,5 @@
 name: Accessibility – axe-core
 
-# Guards against low-contrast text and other WCAG regressions on the
-# public marketing surface. Builds the production bundle, serves it with
-# `vite preview`, and runs @axe-core/cli against a curated set of routes.
-# Fails the job if any violation of the enabled rules is reported.
-
 on:
   push:
     branches: [main, staging]
@@ -12,7 +7,6 @@ on:
     branches: [main, staging]
   workflow_dispatch: {}
 
-# Default to least-privilege. Individual jobs/steps opt in to more.
 permissions:
   contents: read
 
@@ -24,9 +18,6 @@ jobs:
   axe:
     name: axe-core contrast + WCAG smoke
     runs-on: ubuntu-latest
-    # No elevated permissions here — this job only reads code and
-    # uploads artifacts. The PR-comment job below opts into
-    # `pull-requests: write` for itself.
     permissions:
       contents: read
     outputs:
@@ -34,28 +25,27 @@ jobs:
       failure_stage: ${{ steps.finalize.outputs.failure_stage }}
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-
       - name: Mark stage – install
         run: echo "install" > .a11y-stage
-
       - name: Install dependencies
         run: npm ci
-
+      - name: Install matching Chrome and ChromeDriver
+        run: |
+          npx --yes browser-driver-manager install chrome
+          command -v chromedriver || true
+          google-chrome --version || true
+          chromedriver --version || true
       - name: Mark stage – build
         run: echo "build" > .a11y-stage
-
       - name: Build production bundle
         run: npm run build
-
       - name: Mark stage – preview
         run: echo "preview" > .a11y-stage
-
       - name: Start preview server
         run: |
           nohup npx vite preview --host 127.0.0.1 --port 4173 > preview.log 2>&1 &
@@ -70,55 +60,33 @@ jobs:
           echo "::error::preview server did not start"
           cat preview.log
           exit 1
-
       - name: Prepare report dir
         run: mkdir -p reports/axe
-
       - name: Mark stage – axe
         run: echo "axe" > .a11y-stage
-
       - name: Run axe-core against public routes
         id: axe
         run: |
           set -e
           TAGS="wcag2a,wcag2aa,wcag21a,wcag21aa"
-          ROUTES=(
-            "/"
-            "/pricing"
-            "/about"
-            "/contact"
-            "/auth"
-            "/onboarding"
-            "/solutions/ai-content-licensing"
-          )
+          ROUTES=("/" "/pricing" "/about" "/contact" "/auth" "/onboarding" "/solutions/ai-content-licensing")
           fail=0
           for route in "${ROUTES[@]}"; do
             slug=$(echo "$route" | sed 's|/|_|g; s|^_||; s|^$|root|')
             [ -z "$slug" ] && slug=root
             echo "::group::axe $route"
-            if ! npx --yes @axe-core/cli@4 \
-                "http://127.0.0.1:4173${route}" \
-                --tags "$TAGS" \
-                --exit \
-                --save "reports/axe/${slug}.json"; then
-              echo "::error::axe violations on ${route}"
+            if ! npx --yes @axe-core/cli@4 "http://127.0.0.1:4173${route}" --tags "$TAGS" --exit --save "reports/axe/${slug}.json"; then
+              echo "::error::axe failed or found violations on ${route}"
               fail=1
             fi
             echo "::endgroup::"
           done
-          # Signal that the axe step at least ran to completion so the
-          # PR-comment job can distinguish "violations found" from
-          # "scan never completed".
           echo "completed" > .a11y-stage
           exit $fail
-
       - name: Stop preview server
         if: always()
         run: |
-          if [ -f preview.pid ]; then
-            kill "$(cat preview.pid)" || true
-          fi
-
+          if [ -f preview.pid ]; then kill "$(cat preview.pid)" || true; fi
       - name: Finalize scan status
         id: finalize
         if: always()
@@ -128,16 +96,12 @@ jobs:
             echo "scan_status=success" >> "$GITHUB_OUTPUT"
             echo "failure_stage=" >> "$GITHUB_OUTPUT"
           elif [ "${{ steps.axe.outcome }}" = "failure" ] && [ "$stage" = "completed" ]; then
-            # axe ran end-to-end but found violations
             echo "scan_status=violations" >> "$GITHUB_OUTPUT"
             echo "failure_stage=" >> "$GITHUB_OUTPUT"
           else
-            # Something earlier (install/build/preview) or axe itself
-            # crashed before completing — reports may be missing/partial.
             echo "scan_status=incomplete" >> "$GITHUB_OUTPUT"
             echo "failure_stage=$stage" >> "$GITHUB_OUTPUT"
           fi
-
       - name: Upload axe reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -146,48 +110,9 @@ jobs:
           path: reports/axe/*.json
           if-no-files-found: ignore
 
-      - name: Emit annotations
-        if: always() && steps.finalize.outputs.scan_status == 'violations'
-        run: |
-          node <<'EOF'
-          const fs = require('fs');
-          const path = require('path');
-          const dir = 'reports/axe';
-          if (!fs.existsSync(dir)) process.exit(0);
-          // Sanitize for workflow commands: strip CR/LF and escape the
-          // '::' delimiter, plus '%' which is the escape char.
-          const sanitizeCmd = (s) => String(s ?? '')
-            .replace(/%/g, '%25')
-            .replace(/\r/g, '%0D')
-            .replace(/\n/g, '%0A')
-            .replace(/::/g, '%3A%3A');
-          for (const file of fs.readdirSync(dir)) {
-            if (!file.endsWith('.json')) continue;
-            const route = file.replace(/\.json$/, '');
-            let raw;
-            try { raw = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8')); }
-            catch { continue; }
-            const reports = Array.isArray(raw) ? raw : [raw];
-            for (const r of reports) {
-              for (const v of (r.violations || [])) {
-                const impact = (v.impact || 'unknown').toUpperCase();
-                const targets = (v.nodes || [])
-                  .flatMap(n => n.target || [])
-                  .slice(0, 3)
-                  .join(' | ') || '(no selector)';
-                const msg = sanitizeCmd(`[axe:${route}] ${impact} ${v.id} — ${v.help} — ${targets} — ${v.helpUrl}`);
-                const title = sanitizeCmd(`axe/${v.id} on ${route}`);
-                console.log(`::error title=${title}::${msg}`);
-              }
-            }
-          }
-          EOF
-
   comment:
     name: Publish PR comment
     needs: axe
-    # Skip on fork PRs: GITHUB_TOKEN there is read-only, so any write
-    # would 403. Only run when the PR head is from the same repo.
     if: >
       always() &&
       github.event_name == 'pull_request' &&
@@ -203,7 +128,6 @@ jobs:
           name: axe-reports
           path: reports/axe
         continue-on-error: true
-
       - name: Build PR comment body
         env:
           SCAN_STATUS: ${{ needs.axe.outputs.scan_status }}
@@ -218,68 +142,30 @@ jobs:
           const runUrl = process.env.RUN_URL || '';
           const dir = 'reports/axe';
           const lines = ['<!-- axe-a11y-report -->'];
-
-          // Escape user/report-derived strings for GitHub-flavored Markdown
-          // table cells: pipes break the row, backticks/backslashes need
-          // care, and angle brackets can render as raw HTML.
-          const esc = (s) => String(s ?? '')
-            .replace(/\\/g, '\\\\')
-            .replace(/\|/g, '\\|')
-            .replace(/`/g, '\\`')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/\r?\n/g, ' ');
-
+          const esc = (s) => String(s ?? '').replace(/\\/g, '\\\\').replace(/\|/g, '\\|').replace(/`/g, '\\`').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\r?\n/g, ' ');
           if (status === 'incomplete') {
-            lines.push('## ⚠️ Accessibility scan incomplete / failed');
-            lines.push('');
-            lines.push(`The axe-core workflow did not complete${stage ? ` (failed at stage: \`${esc(stage)}\`)` : ''}. **No pass/fail signal can be trusted from this run.**`);
-            lines.push('');
-            lines.push(`See the [workflow run](${runUrl}) for logs. Re-run once the underlying failure is fixed.`);
-            process.stdout.write(lines.join('\n'));
-            process.exit(0);
+            lines.push('## ⚠️ Accessibility scan incomplete / failed','',`The axe-core workflow did not complete${stage ? ` (failed at stage: \`${esc(stage)}\`)` : ''}. **No pass/fail signal can be trusted from this run.**`,'',`See the [workflow run](${runUrl}) for logs.`);
+            process.stdout.write(lines.join('\n')); process.exit(0);
           }
-
-          lines.push('## ♿ Accessibility (axe-core) report');
-          lines.push('');
-          let total = 0;
-          const perRoute = [];
-          if (fs.existsSync(dir)) {
-            for (const file of fs.readdirSync(dir).sort()) {
-              if (!file.endsWith('.json')) continue;
-              const route = file.replace(/\.json$/, '');
-              let raw;
-              try { raw = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8')); }
-              catch { continue; }
-              const reports = Array.isArray(raw) ? raw : [raw];
-              const violations = reports.flatMap(r => r.violations || []);
-              total += violations.length;
-              perRoute.push({ route, violations });
-            }
+          lines.push('## ♿ Accessibility (axe-core) report','');
+          let total = 0; const perRoute = [];
+          if (fs.existsSync(dir)) for (const file of fs.readdirSync(dir).sort()) {
+            if (!file.endsWith('.json')) continue;
+            let raw; try { raw = JSON.parse(fs.readFileSync(path.join(dir,file),'utf8')); } catch { continue; }
+            const reports = Array.isArray(raw) ? raw : [raw]; const violations = reports.flatMap(r => r.violations || []);
+            total += violations.length; perRoute.push({route:file.replace(/\.json$/,''),violations});
           }
-
           if (!perRoute.length) {
-            // axe reported success but produced no readable reports —
-            // don't claim "0 violations", say the evidence is missing.
-            lines.push('## ⚠️ Accessibility scan incomplete / failed');
-            lines.push('');
-            lines.push('axe reported success but no report files were found. Treat this run as **inconclusive** and check the [workflow logs](' + runUrl + ').');
-            process.stdout.write(lines.join('\n'));
-            process.exit(0);
+            lines.push('## ⚠️ Accessibility scan incomplete / failed','','No readable axe report files were found. Treat this run as **inconclusive**.');
+            process.stdout.write(lines.join('\n')); process.exit(0);
           }
-
-          lines.push(`**Status:** ${status === 'success' ? '✅ passed' : '❌ violations found'}`);
-          lines.push(`**Total violations: ${total}** across ${perRoute.length} route(s).`);
-          lines.push('');
-          for (const { route, violations } of perRoute) {
+          lines.push(`**Status:** ${status === 'success' ? '✅ passed' : '❌ violations found'}`,`**Total violations: ${total}** across ${perRoute.length} route(s).`, '');
+          for (const {route,violations} of perRoute) {
             lines.push(`### \`${esc(route)}\` — ${violations.length} violation(s)`);
-            if (!violations.length) { lines.push('_No violations._', ''); continue; }
-            lines.push('', '| Impact | Rule | Help | Nodes |', '|---|---|---|---|');
+            if (!violations.length) { lines.push('_No violations._',''); continue; }
+            lines.push('','| Impact | Rule | Help | Nodes |','|---|---|---|---|');
             for (const v of violations) {
-              const targets = (v.nodes || [])
-                .map(n => '`' + esc((n.target || []).join(' ')) + '`')
-                .slice(0, 3)
-                .join('<br>') || '_n/a_';
+              const targets=(v.nodes||[]).map(n=>'`'+esc((n.target||[]).join(' '))+'`').slice(0,3).join('<br>')||'_n/a_';
               lines.push(`| ${esc(v.impact || '—')} | [\`${esc(v.id)}\`](${esc(v.helpUrl)}) | ${esc(v.help)} | ${targets} |`);
             }
             lines.push('');
@@ -287,8 +173,6 @@ jobs:
           lines.push(`_Full JSON reports available as the \`axe-reports\` workflow artifact. [Run log](${runUrl})._`);
           process.stdout.write(lines.join('\n'));
           EOF
-          echo "generated pr-comment.md ($(wc -c < pr-comment.md) bytes)"
-
       - name: Upsert PR comment
         uses: actions/github-script@v7
         with:
@@ -300,11 +184,8 @@ jobs:
             const issue_number = context.payload.pull_request.number;
             const { data: comments } = await github.rest.issues.listComments({ owner, repo, issue_number, per_page: 100 });
             const existing = comments.find(c => c.body && c.body.includes(marker));
-            if (existing) {
-              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
-            } else {
-              await github.rest.issues.createComment({ owner, repo, issue_number, body });
-            }
+            if (existing) await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            else await github.rest.issues.createComment({ owner, repo, issue_number, body });
 
   summary:
     name: Job summary
@@ -320,17 +201,15 @@ jobs:
           name: axe-reports
           path: reports/axe
         continue-on-error: true
-
       - name: Write summary
         env:
           SCAN_STATUS: ${{ needs.axe.outputs.scan_status }}
           FAILURE_STAGE: ${{ needs.axe.outputs.failure_stage }}
         run: |
-          echo "## Accessibility (axe-core) report" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Accessibility (axe-core) report" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
           if [ "$SCAN_STATUS" != "success" ] && [ "$SCAN_STATUS" != "violations" ]; then
-            echo "⚠️ **Scan incomplete/failed** at stage: \`${FAILURE_STAGE:-unknown}\`. Results below (if any) are partial." >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ **Scan incomplete/failed** at stage: \`${FAILURE_STAGE:-unknown}\`." >> "$GITHUB_STEP_SUMMARY"
           fi
           shopt -s nullglob
           any=0
@@ -338,8 +217,6 @@ jobs:
             any=1
             route=$(basename "$f" .json)
             count=$(node -e "try{const r=require('./$f');console.log((Array.isArray(r)?r:[r]).reduce((n,x)=>n+(x.violations||[]).length,0))}catch(e){console.log('?')}")
-            echo "- ${route}: ${count} violation(s)" >> $GITHUB_STEP_SUMMARY
+            echo "- ${route}: ${count} violation(s)" >> "$GITHUB_STEP_SUMMARY"
           done
-          if [ $any -eq 0 ]; then
-            echo "_No report files found._" >> $GITHUB_STEP_SUMMARY
-          fi
+          if [ $any -eq 0 ]; then echo "_No report files found._" >> "$GITHUB_STEP_SUMMARY"; fi

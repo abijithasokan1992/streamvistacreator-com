@@ -13,21 +13,18 @@ permissions:
   security-events: write
 
 jobs:
-  # ─── Secret Scanning ────────────────────────────────────────────────────────
   gitleaks:
     name: Gitleaks (Secret Scan)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # full history so gitleaks can scan all commits
-
+          fetch-depth: 0
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # ─── SAST ───────────────────────────────────────────────────────────────────
   semgrep:
     name: Semgrep (SAST)
     runs-on: ubuntu-latest
@@ -35,7 +32,6 @@ jobs:
       image: semgrep/semgrep
     steps:
       - uses: actions/checkout@v4
-
       - name: Run Semgrep
         run: |
           semgrep scan \
@@ -51,7 +47,6 @@ jobs:
             --exclude "node_modules" \
             --exclude "dist" \
             .
-
       - name: Upload Semgrep SARIF
         if: always()
         uses: github/codeql-action/upload-sarif@v3
@@ -59,40 +54,42 @@ jobs:
           sarif_file: semgrep.sarif
           category: semgrep
 
-  # ─── Dependency Vulnerabilities ─────────────────────────────────────────────
   npm-audit:
     name: npm audit (Dependencies)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: "npm"
-
       - name: Install dependencies
         run: npm ci
-
-      - name: Install npm-audit-sarif converter
-        run: npm install -g npm-audit-sarif@1.0.4
-
-      - name: Run npm audit and emit SARIF
+      - name: Run npm audit and preserve evidence
+        id: npm-audit
+        shell: bash
         run: |
-          npm audit --json | npm-audit-sarif > npm-audit.sarif || true
-
-      - name: Upload npm audit SARIF
-        uses: github/codeql-action/upload-sarif@v3
+          set +e
+          npm audit --json > npm-audit.json
+          audit_rc=$?
+          set -e
+          echo "npm audit exit code: $audit_rc"
+          # Keep the machine-readable report even when vulnerabilities exist,
+          # then enforce the high-severity release gate explicitly.
+          npm audit --audit-level=high
+      - name: Upload npm audit report
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          sarif_file: npm-audit.sarif
-          category: npm-audit
+          name: npm-audit-report
+          path: npm-audit.json
+          if-no-files-found: error
 
   osv-scanner:
     name: OSV Scanner (Dependencies)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Run OSV Scanner
         uses: google/osv-scanner-action@v1
         with:
@@ -100,7 +97,6 @@ jobs:
             --lockfile=package-lock.json
             --format=sarif
             --output=osv.sarif
-
       - name: Upload OSV SARIF
         if: always()
         uses: github/codeql-action/upload-sarif@v3
@@ -108,13 +104,11 @@ jobs:
           sarif_file: osv.sarif
           category: osv-scanner
 
-  # ─── Filesystem / Misconfiguration Scan ─────────────────────────────────────
   trivy:
     name: Trivy (Filesystem Scan)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Run Trivy filesystem scan
         uses: aquasecurity/trivy-action@v0.36.0
         with:
@@ -125,7 +119,6 @@ jobs:
           severity: "CRITICAL,HIGH"
           exit-code: "0"
           ignore-unfixed: true
-
       - name: Upload Trivy SARIF
         if: always()
         uses: github/codeql-action/upload-sarif@v3

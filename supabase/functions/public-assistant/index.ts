@@ -1,6 +1,5 @@
 import { generateText } from "npm:ai@5";
 import { createOpenAICompatible } from "npm:@ai-sdk/openai-compatible@1";
-import { buildCorsHeaders } from "../_shared/cors.ts";
 
 const SYSTEM_PROMPT = `You are StreamVista AI, the public media-business consultant on StreamVista.in.
 
@@ -52,10 +51,48 @@ const rateWindows = new Map<string, { startedAt: number; count: number }>();
 const WINDOW_MS = 10 * 60 * 1000;
 const MAX_REQUESTS_PER_WINDOW = 20;
 
-function json(cors: HeadersInit, status: number, body: Record<string, unknown>) {
+const EXACT_ORIGINS = new Set([
+  "https://streamvista.in",
+  "https://www.streamvista.in",
+]);
+
+function allowedOrigin(req: Request) {
+  const origin = req.headers.get("origin");
+  if (!origin) return null;
+  const normalized = origin.replace(/\/$/, "");
+  if (EXACT_ORIGINS.has(normalized)) return normalized;
+
+  try {
+    const host = new URL(normalized).hostname;
+    if (
+      host.endsWith(".vercel.app") &&
+      (host.startsWith("streamvistacreator-") || host.startsWith("streamvistacreat-git-"))
+    ) {
+      return normalized;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+function corsHeaders(req: Request): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Max-Age": "600",
+    Vary: "Origin",
+  };
+  const origin = allowedOrigin(req);
+  if (origin) headers["Access-Control-Allow-Origin"] = origin;
+  return headers;
+}
+
+function json(req: Request, status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...cors, "Content-Type": "application/json; charset=utf-8" },
+    headers: { ...corsHeaders(req), "Content-Type": "application/json; charset=utf-8" },
   });
 }
 
@@ -128,12 +165,11 @@ function validateMessages(value: unknown): PublicMessage[] | null {
 }
 
 Deno.serve(async (req) => {
-  const cors = buildCorsHeaders(req);
-  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
-  if (req.method !== "POST") return json(cors, 405, { error: "method_not_allowed" });
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders(req) });
+  if (req.method !== "POST") return json(req, 405, { error: "method_not_allowed" });
 
   if (rateLimited(req)) {
-    return json(cors, 429, {
+    return json(req, 429, {
       error: "rate_limited",
       message: "Too many requests. Please try again shortly.",
     });
@@ -142,7 +178,7 @@ Deno.serve(async (req) => {
   const body = await req.json().catch(() => null);
   const messages = validateMessages(body?.messages);
   if (!messages) {
-    return json(cors, 400, {
+    return json(req, 400, {
       error: "invalid_request",
       message: "A valid conversation is required.",
     });
@@ -150,7 +186,7 @@ Deno.serve(async (req) => {
 
   const providerChoice = pickProvider();
   if (!providerChoice) {
-    return json(cors, 503, {
+    return json(req, 503, {
       error: "provider_not_configured",
       message: "StreamVista AI is temporarily unavailable.",
     });
@@ -182,16 +218,16 @@ Deno.serve(async (req) => {
 
     const content = result.text?.trim();
     if (!content) {
-      return json(cors, 502, {
+      return json(req, 502, {
         error: "empty_provider_response",
         message: "StreamVista AI did not return a response.",
       });
     }
 
-    return json(cors, 200, { content });
+    return json(req, 200, { content });
   } catch (error) {
     console.error("public-assistant provider failure", error instanceof Error ? error.message : "unknown");
-    return json(cors, 502, {
+    return json(req, 502, {
       error: "provider_failure",
       message: "StreamVista AI is temporarily unavailable.",
     });

@@ -1,4 +1,5 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { FormEvent } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowDown,
@@ -7,7 +8,6 @@ import {
   Home,
   Loader2,
   LogIn,
-  MessageSquarePlus,
   Plus,
   Send,
   ShieldCheck,
@@ -226,7 +226,7 @@ export function PublicAiHome() {
                           <div className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-black/10 bg-white">
                             <Sparkles className="h-3.5 w-3.5" />
                           </div>
-                          <div className="pt-1 text-[15px] leading-7 text-black/80 whitespace-pre-wrap" aria-live="polite">
+                          <div className="whitespace-pre-wrap pt-1 text-[15px] leading-7 text-black/80" aria-live="polite">
                             {turn.content}
                           </div>
                         </div>

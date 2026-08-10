@@ -59,6 +59,10 @@ project_id = "hllgmkfqgeuqlmpcirvn"
     verify_jwt = false
   [functions.assistant-chat]
     verify_jwt = true
+  # Public homepage consultant has no private-data tools and applies its own
+  # payload/output caps plus best-effort request throttling.
+  [functions.public-assistant]
+    verify_jwt = false
   [functions.send-sms-test]
     verify_jwt = false
   [functions.research-firecrawl]

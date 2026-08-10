@@ -123,6 +123,13 @@ export function mapAuthError(err: unknown): MappedAuthError {
   if (raw.includes("missing role") || raw.includes("missing_role") || raw.includes("no role assigned")) {
     return COPY.missing_role;
   }
+  if (raw.includes("oauth provider unavailable") || raw.includes("missing oauth secret")) {
+    return {
+      code: "generic",
+      message: "Google sign-in is temporarily unavailable. Use the email magic link above.",
+      action: "sign_in",
+    };
+  }
   if (raw.includes("failed to fetch") || raw.includes("networkerror") || raw.includes("network request failed")) {
     return COPY.network_error;
   }

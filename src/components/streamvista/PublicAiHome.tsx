@@ -119,33 +119,33 @@ export function PublicAiHome() {
         </Link>
 
         <nav className="flex flex-1 flex-col items-center gap-2" aria-label="StreamVista quick navigation">
-          <Link to="/" aria-label="Home" className="rounded-xl p-2.5 text-black/60 transition hover:bg-black/5 hover:text-black">
+          <Link to="/" aria-label="Home" className="rounded-xl p-2.5 text-black/70 transition hover:bg-black/5 hover:text-black">
             <Home className="h-5 w-5" />
           </Link>
           <a
             href="https://www.crayonsloop.com/login"
             aria-label="Submit content"
-            className="rounded-xl p-2.5 text-black/60 transition hover:bg-black/5 hover:text-black"
+            className="rounded-xl p-2.5 text-black/70 transition hover:bg-black/5 hover:text-black"
           >
             <Film className="h-5 w-5" />
           </a>
           <Link
             to="/contact?topic=buyer-access"
             aria-label="Buyer access"
-            className="rounded-xl p-2.5 text-black/60 transition hover:bg-black/5 hover:text-black"
+            className="rounded-xl p-2.5 text-black/70 transition hover:bg-black/5 hover:text-black"
           >
             <BriefcaseBusiness className="h-5 w-5" />
           </Link>
           <Link
             to="/auth"
             aria-label="Sign in"
-            className="rounded-xl p-2.5 text-black/60 transition hover:bg-black/5 hover:text-black"
+            className="rounded-xl p-2.5 text-black/70 transition hover:bg-black/5 hover:text-black"
           >
             <LogIn className="h-5 w-5" />
           </Link>
         </nav>
 
-        <div className="mb-2 rounded-full border border-black/10 p-2 text-black/50" title="Public AI · no account data access">
+        <div className="mb-2 rounded-full border border-black/10 p-2 text-black/70" title="Public AI · no account data access">
           <ShieldCheck className="h-4 w-4" />
         </div>
       </aside>
@@ -160,13 +160,13 @@ export function PublicAiHome() {
               className="inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-semibold transition hover:bg-black/5"
             >
               StreamVista AI
-              <span className="text-black/35">/</span>
-              <span className="font-normal text-black/55">New conversation</span>
+              <span className="text-black/60">/</span>
+              <span className="font-normal text-black/70">New conversation</span>
             </button>
           </div>
 
           <div className="flex items-center gap-2">
-            <Link to="/auth" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-black/65 hover:bg-black/5 sm:inline-flex">
+            <Link to="/auth" className="hidden rounded-lg px-3 py-2 text-sm font-medium text-black/75 hover:bg-black/5 sm:inline-flex">
               Sign in
             </Link>
             <a
@@ -185,11 +185,11 @@ export function PublicAiHome() {
                 <div className="mb-8 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-black/10 bg-white shadow-sm">
                   <Sparkles className="h-5 w-5" />
                 </div>
-                <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-black/45">Film rights · licensing · distribution</p>
+                <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-black/70">Film rights · licensing · distribution</p>
                 <h1 className="max-w-2xl text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">
                   Ask StreamVista what to do next.
                 </h1>
-                <p className="mt-5 max-w-2xl text-base leading-7 text-black/55 sm:text-lg">
+                <p className="mt-5 max-w-2xl text-base leading-7 text-black/70 sm:text-lg">
                   An AI media consultant for creators, rights holders and buyers. Ask about content submission, rights readiness, buyer access, licensing workflow or delivery preparation.
                 </p>
 
@@ -199,14 +199,14 @@ export function PublicAiHome() {
                       key={starter}
                       type="button"
                       onClick={() => void send(starter)}
-                      className="rounded-2xl border border-black/10 bg-white/70 px-4 py-3.5 text-left text-sm leading-6 text-black/70 shadow-sm transition hover:-translate-y-0.5 hover:border-black/20 hover:bg-white hover:text-black"
+                      className="rounded-2xl border border-black/10 bg-white/70 px-4 py-3.5 text-left text-sm leading-6 text-black/80 shadow-sm transition hover:-translate-y-0.5 hover:border-black/20 hover:bg-white hover:text-black"
                     >
                       {starter}
                     </button>
                   ))}
                 </div>
 
-                <div className="mt-8 flex flex-wrap gap-2 text-xs text-black/50">
+                <div className="mt-8 flex flex-wrap gap-2 text-xs text-black/70">
                   <span className="rounded-full border border-black/10 px-3 py-1.5">No account required</span>
                   <span className="rounded-full border border-black/10 px-3 py-1.5">English + Malayalam</span>
                   <span className="rounded-full border border-black/10 px-3 py-1.5">No private dashboard access</span>
@@ -218,7 +218,7 @@ export function PublicAiHome() {
                   {turns.map((turn, index) => (
                     <div key={`${turn.role}-${index}`} className={cn("flex", turn.role === "user" ? "justify-end" : "justify-start")}>
                       {turn.role === "user" ? (
-                        <div className="max-w-[86%] rounded-[18px] bg-[#e7e5df] px-4 py-3 text-sm leading-6 text-black/80 sm:max-w-[78%]">
+                        <div className="max-w-[86%] rounded-[18px] bg-[#e7e5df] px-4 py-3 text-sm leading-6 text-black/85 sm:max-w-[78%]">
                           {turn.content}
                         </div>
                       ) : (
@@ -226,7 +226,7 @@ export function PublicAiHome() {
                           <div className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-black/10 bg-white">
                             <Sparkles className="h-3.5 w-3.5" />
                           </div>
-                          <div className="whitespace-pre-wrap pt-1 text-[15px] leading-7 text-black/80" aria-live="polite">
+                          <div className="whitespace-pre-wrap pt-1 text-[15px] leading-7 text-black/85" aria-live="polite">
                             {turn.content}
                           </div>
                         </div>
@@ -235,7 +235,7 @@ export function PublicAiHome() {
                   ))}
 
                   {loading && (
-                    <div className="flex items-center gap-3 text-sm text-black/45" role="status" aria-live="polite">
+                    <div className="flex items-center gap-3 text-sm text-black/70" role="status" aria-live="polite">
                       <div className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-black/10 bg-white">
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       </div>
@@ -267,7 +267,7 @@ export function PublicAiHome() {
                 rows={2}
                 maxLength={4000}
                 placeholder="Ask about your film, rights, licensing, buyers or distribution…"
-                className="max-h-36 min-h-[58px] w-full resize-none bg-transparent px-3 py-2 text-[15px] leading-6 outline-none placeholder:text-black/35"
+                className="max-h-36 min-h-[58px] w-full resize-none bg-transparent px-3 py-2 text-[15px] leading-6 outline-none placeholder:text-black/55"
                 aria-label="Message StreamVista AI"
                 disabled={loading}
               />
@@ -278,34 +278,34 @@ export function PublicAiHome() {
                     disabled
                     aria-label="Attachments coming soon"
                     title="Attachments coming soon"
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-full text-black/35"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full text-black/60"
                   >
                     <Plus className="h-5 w-5" />
                   </button>
-                  <span className="hidden text-[11px] text-black/35 sm:inline">Public consultant · no private account data</span>
+                  <span className="hidden text-[11px] text-black/70 sm:inline">Public consultant · no private account data</span>
                 </div>
                 <button
                   type="submit"
                   disabled={loading || !input.trim()}
                   aria-label="Send message"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-black text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:opacity-25"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-black text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 </button>
               </div>
             </form>
 
-            <div className="mt-2 flex items-center justify-center gap-2 text-center text-[10px] text-black/35">
+            <div className="mt-2 flex items-center justify-center gap-2 text-center text-[10px] text-black/70">
               <span>AI can make mistakes. Licensing and commercial terms require review.</span>
               {hasConversation && <ArrowDown className="h-3 w-3" aria-hidden />}
             </div>
 
             <div className="mt-2 flex items-center justify-center gap-3 md:hidden">
-              <a href="https://www.crayonsloop.com/login" className="text-xs font-medium text-black/55">Submit</a>
-              <span className="text-black/20">·</span>
-              <Link to="/contact?topic=buyer-access" className="text-xs font-medium text-black/55">Buyer access</Link>
-              <span className="text-black/20">·</span>
-              <Link to="/auth" className="text-xs font-medium text-black/55">Sign in</Link>
+              <a href="https://www.crayonsloop.com/login" className="text-xs font-medium text-black/70">Submit</a>
+              <span className="text-black/45">·</span>
+              <Link to="/contact?topic=buyer-access" className="text-xs font-medium text-black/70">Buyer access</Link>
+              <span className="text-black/45">·</span>
+              <Link to="/auth" className="text-xs font-medium text-black/70">Sign in</Link>
             </div>
           </div>
         </div>

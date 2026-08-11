@@ -9,7 +9,6 @@ import { AuthProvider, dashboardForRole, useAuth } from "@/hooks/useAuth";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { GlobalPaymentProvider } from "@/components/payments/GlobalPaymentProvider";
-import Onboarding from "./pages/Onboarding.tsx";
 import RoleUnknown from "./pages/RoleUnknown.tsx";
 import Index from "./pages/Index.tsx";
 import Auth from "./pages/Auth.tsx";
@@ -201,7 +200,6 @@ const PublicRoutes = () => (
     <Route path="/connectors" element={<Navigate to="/connect" replace />} />
     <Route path="/settings/integrations/ai-assistants" element={<SettingsIntegrationsAI />} />
     <Route path="/solutions/ai-content-licensing" element={<SolutionsAIContentLicensing />} />
-    <Route path="/onboarding" element={<Onboarding />} />
     <Route path="/auth/role-unknown" element={<RoleUnknown />} />
     <Route path="/dashboard/content" element={<OnboardingGate><RoleGate allow={["content_owner"]}><ContentOwnerDashboard /></RoleGate></OnboardingGate>} />
     <Route path="/dashboard/studio" element={<OnboardingGate><RoleGate allow={["studio"]}><StudioProfileOnboardingGate><StudioDashboard /></StudioProfileOnboardingGate></RoleGate></OnboardingGate>} />

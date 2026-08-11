@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { AlertTriangle, LifeBuoy, RefreshCw, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 import { Seo } from "@/components/Seo";
 
 const REASON_COPY: Record<string, { title: string; body: string }> = {
@@ -32,8 +31,7 @@ export default function RoleUnknown() {
     [reason],
   );
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
+  const signOut = () => {
     window.location.href = "/auth";
   };
 

@@ -1,2 +1,0 @@
-ALTER TABLE public.recent_uploads ADD COLUMN IF NOT EXISTS client_pending_id TEXT;
-CREATE UNIQUE INDEX IF NOT EXISTS recent_uploads_user_pending_uniq ON public.recent_uploads(user_id, client_pending_id) WHERE client_pending_id IS NOT NULL;

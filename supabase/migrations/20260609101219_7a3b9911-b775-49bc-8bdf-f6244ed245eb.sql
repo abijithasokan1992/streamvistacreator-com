@@ -1,1 +1,0 @@
-CREATE POLICY "EPs read assigned creators vault" ON storage.objects FOR SELECT TO authenticated USING (bucket_id = 'vault' AND public.is_producer_of(auth.uid(), ((storage.foldername(name))[1])::uuid));

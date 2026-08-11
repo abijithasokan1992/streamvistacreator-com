@@ -1,1 +1,0 @@
-DELETE FROM public.user_roles WHERE user_id = '61527121-1bc5-4018-9171-c52cdea305e8';

@@ -1,1 +1,0 @@
-DROP POLICY IF EXISTS "Users see their own referrals" ON public.referrals;

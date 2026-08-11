@@ -1,2 +1,0 @@
-ALTER TABLE public.recent_uploads ADD COLUMN IF NOT EXISTS oci_upload_id text;
-CREATE INDEX IF NOT EXISTS recent_uploads_oci_upload_id_idx ON public.recent_uploads (oci_upload_id) WHERE oci_upload_id IS NOT NULL;

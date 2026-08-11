@@ -1,1 +1,0 @@
-ALTER TABLE public.site_config DROP COLUMN IF EXISTS oracle_private_key;

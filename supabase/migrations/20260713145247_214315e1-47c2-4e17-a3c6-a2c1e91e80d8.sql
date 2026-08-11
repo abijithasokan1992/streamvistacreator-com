@@ -1,1 +1,0 @@
-GRANT EXECUTE ON FUNCTION public.admin_failure_counts(integer) TO authenticated;

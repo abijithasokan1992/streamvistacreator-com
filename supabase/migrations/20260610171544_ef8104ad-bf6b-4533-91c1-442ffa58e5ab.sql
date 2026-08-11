@@ -1,1 +1,0 @@
-REVOKE EXECUTE ON FUNCTION public.request_creator_link(TEXT) FROM anon;

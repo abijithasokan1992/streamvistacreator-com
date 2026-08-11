@@ -12,7 +12,6 @@ import { GlobalPaymentProvider } from "@/components/payments/GlobalPaymentProvid
 import RoleUnknown from "./pages/RoleUnknown.tsx";
 import Index from "./pages/Index.tsx";
 import Auth from "./pages/Auth.tsx";
-import AuthCallback from "./pages/AuthCallback.tsx";
 import OAuthConsent from "./pages/OAuthConsent.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import Admin from "./pages/Admin.tsx";
@@ -180,7 +179,6 @@ const AdminRoutes = () => (
   <Routes>
     <Route path="/" element={<AdminRoot />} />
     <Route path="/auth" element={<Auth />} />
-    <Route path="/auth/callback" element={<AuthCallback />} />
     <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/connectors" element={<Navigate to="/connect" replace />} />
@@ -194,7 +192,6 @@ const PublicRoutes = () => (
   <Routes>
     <Route path="/" element={<Index />} />
     <Route path="/auth" element={<Auth />} />
-    <Route path="/auth/callback" element={<AuthCallback />} />
     <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/connectors" element={<Navigate to="/connect" replace />} />

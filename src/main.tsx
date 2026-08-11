@@ -1,8 +1,5 @@
 import { createRoot } from "react-dom/client";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
 const rootEl = document.getElementById("root")!;
 
 function renderStartupError(opts: {
@@ -44,21 +41,6 @@ async function withRetry<T>(fn: () => Promise<T>, label: string, retries = 3, ba
   throw lastErr;
 }
 
-async function probeBackend(url: string, key: string): Promise<void> {
-  if (!url || !key) return;
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 5000);
-  try {
-    await fetch(`${url}/auth/v1/health`, {
-      method: "GET",
-      headers: { apikey: key },
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
 void (async () => {
   try {
     const [{ default: App }, { HelmetProvider }] = await withRetry(
@@ -76,9 +58,6 @@ void (async () => {
       </HelmetProvider>,
     );
 
-    void withRetry(() => probeBackend(SUPABASE_URL, SUPABASE_KEY), "backend-probe", 2, 500).catch((err) => {
-      console.warn("[startup] backend probe unavailable; public shell remains active", err);
-    });
   } catch (err) {
     console.error("[startup] failed to load app bundle", err);
     renderStartupError({

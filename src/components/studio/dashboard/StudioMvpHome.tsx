@@ -5,10 +5,11 @@
  * where their work stands and one-tap routes into the next task.
  *
  * Layout (top → bottom, priority order):
- *   1. Critical alert  — storage near-full (only when relevant)
- *   2. Primary actions — New Production / Continue / Upload (compact row)
- *   3. Status grid     — Productions · Storage · Recent · Plan (KPIs only)
- *   4. Recent uploads  — last 5 ingest jobs (hidden when empty)
+ *   1. Live sync strip — workspace data freshness + manual refresh
+ *   2. Critical alert  — storage near-full (only when relevant)
+ *   3. Primary actions — New Production / Continue / Upload (compact row)
+ *   4. Status grid     — Productions · Storage · Recent · Plan (KPIs only)
+ *   5. Recent uploads  — last 5 ingest jobs (hidden when empty)
  *
  * All wiring (create, ingest, purchase) is delegated up via props. Reuses
  * existing supabase client + design tokens; no new backend behaviour.
@@ -16,7 +17,7 @@
 import { useEffect, useState } from "react";
 import {
   Clapperboard, UploadCloud, HardDrive, Plus, Play, ArrowRight,
-  ShoppingCart, Crown, CheckCircle2, AlertTriangle, Loader2, Film,
+  ShoppingCart, Crown, CheckCircle2, AlertTriangle, Loader2, Film, RefreshCw,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,8 @@ type JobRow = {
   project_id?: string | null;
 };
 
+const AUTO_REFRESH_MS = 15 * 60 * 1000;
+
 function fmtBytes(n: number): string {
   if (!Number.isFinite(n) || n <= 0) return "0 B";
   if (n < 1024) return `${n} B`;
@@ -48,6 +51,12 @@ function fmtBytes(n: number): string {
 function fmtCapacity(gb: number): string {
   if (!Number.isFinite(gb) || gb <= 0) return "0 GB";
   return gb >= 1024 ? `${(gb / 1024).toFixed(1)} TB` : `${gb.toFixed(0)} GB`;
+}
+
+function fmtUsedCapacity(gb: number): string {
+  if (!Number.isFinite(gb) || gb <= 0) return "0 MB";
+  if (gb < 1) return `${Math.round(gb * 1024)} MB`;
+  return fmtCapacity(gb);
 }
 
 export default function StudioMvpHome({
@@ -85,13 +94,34 @@ export default function StudioMvpHome({
   const [jobs, setJobs] = useState<JobRow[]>([]);
   const [jobsLoading, setJobsLoading] = useState(true);
   const [prodCount, setProdCount] = useState<number>(productionCount);
+  const [refreshTick, setRefreshTick] = useState(0);
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<number | null>(null);
+
+  // Refresh quietly every 15 minutes and whenever the operator returns to the
+  // browser tab. This prevents an old workspace snapshot from sitting on screen
+  // for days while keeping the underlying queries read-only and RLS-scoped.
+  useEffect(() => {
+    if (!workspaceId || typeof window === "undefined") return;
+    const intervalId = window.setInterval(() => setRefreshTick((n) => n + 1), AUTO_REFRESH_MS);
+    const refreshOnFocus = () => setRefreshTick((n) => n + 1);
+    window.addEventListener("focus", refreshOnFocus);
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", refreshOnFocus);
+    };
+  }, [workspaceId]);
 
   // Load real production count + recent ingest jobs in parallel. Read-only,
   // RLS-scoped queries against existing tables — no new backend surface.
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (!workspaceId) { setJobs([]); setJobsLoading(false); return; }
+      if (!workspaceId) {
+        setJobs([]);
+        setJobsLoading(false);
+        setLastRefreshedAt(null);
+        return;
+      }
       setJobsLoading(true);
       const [{ data: jobsData }, { count }] = await Promise.all([
         supabase
@@ -108,19 +138,46 @@ export default function StudioMvpHome({
       if (cancelled) return;
       setJobs((jobsData as JobRow[]) ?? []);
       setProdCount(count ?? productionCount);
+      setLastRefreshedAt(Date.now());
       setJobsLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [workspaceId, productionCount]);
+  }, [workspaceId, productionCount, refreshTick]);
 
   const pct = totalGb > 0 ? Math.min(100, Math.round((usedGb / totalGb) * 100)) : 0;
   const nearFull = pct >= 80;
   const availableGb = Math.max(0, totalGb - usedGb);
   const storageActive = hasPaidVault || totalGb > 0;
+  const refreshLabel = jobsLoading
+    ? "Refreshing…"
+    : lastRefreshedAt
+    ? `Updated ${new Date(lastRefreshedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+    : "Waiting for live data";
 
   return (
     <div className="space-y-5">
-      {/* 1. Critical alert — only when it changes what the user should do next. */}
+      {/* 1. Live data strip — explicit freshness, no stale "last updated days ago" state. */}
+      <section className="rounded-xl border border-border/50 bg-secondary/5 px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2">
+        <div className="inline-flex items-center gap-2 min-w-0">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" aria-hidden />
+          <span className="text-xs font-medium">Live workspace data</span>
+          <span className="text-[11px] text-muted-foreground hidden sm:inline">Auto-refreshes every 15 min and on focus</span>
+        </div>
+        <div className="inline-flex items-center gap-2">
+          <span className="text-[11px] text-muted-foreground tabular-nums">{refreshLabel}</span>
+          <button
+            type="button"
+            onClick={() => setRefreshTick((n) => n + 1)}
+            disabled={jobsLoading || !workspaceId}
+            className="inline-flex items-center gap-1 rounded-md border border-border/50 px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground hover:bg-secondary/20 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/50"
+            aria-label="Refresh studio dashboard data"
+          >
+            <RefreshCw className={cn("w-3 h-3", jobsLoading && "animate-spin")} /> Refresh
+          </button>
+        </div>
+      </section>
+
+      {/* 2. Critical alert — only when it changes what the user should do next. */}
       {nearFull && storageActive && (
         <section
           role="alert"
@@ -141,7 +198,7 @@ export default function StudioMvpHome({
         </section>
       )}
 
-      {/* 2. Primary actions — the top of the funnel. Compact, one row. */}
+      {/* 3. Primary actions — the top of the funnel. Compact, one row. */}
       <section className="grid gap-2.5 sm:grid-cols-3">
         <ActionCard
           icon={<Plus className="w-4 h-4" />}
@@ -173,7 +230,7 @@ export default function StudioMvpHome({
         />
       </section>
 
-      {/* 3. Status grid — dense KPIs, one metric per card, no descriptions. */}
+      {/* 4. Status grid — dense KPIs, one metric per card, no descriptions. */}
       <section className="grid gap-2.5 grid-cols-2 lg:grid-cols-4">
         <StatCard
           icon={<Clapperboard className="w-3.5 h-3.5" />}
@@ -185,7 +242,7 @@ export default function StudioMvpHome({
           icon={<HardDrive className="w-3.5 h-3.5" />}
           label="Storage"
           value={storageActive ? `${pct}%` : "—"}
-          sub={storageActive ? `${usedGb.toFixed(1)} / ${fmtCapacity(totalGb)}` : "Not activated"}
+          sub={storageActive ? `${fmtUsedCapacity(usedGb)} / ${fmtCapacity(totalGb)}` : "Not activated"}
           barPct={storageActive ? pct : undefined}
           tone={nearFull ? "warn" : "ok"}
           onClick={onOpenStorage}
@@ -205,7 +262,7 @@ export default function StudioMvpHome({
         />
       </section>
 
-      {/* 4. Recent uploads — hidden entirely when there is nothing to show. */}
+      {/* 5. Recent uploads — hidden entirely when there is nothing to show. */}
       {(jobsLoading || jobs.length > 0) && (
         <section className="rounded-xl border border-border/50 bg-secondary/5">
           <header className="flex items-center justify-between px-4 py-2.5 border-b border-border/40">

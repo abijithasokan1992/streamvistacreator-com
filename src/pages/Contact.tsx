@@ -194,7 +194,7 @@ export default function Contact() {
       <Navbar />
 
       <section className="container pt-32 pb-16 md:pt-40 md:pb-24 max-w-2xl">
-        <p className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-accent mb-3">
+        <p className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-foreground/70 mb-3">
           Get in touch
         </p>
         <h1 className="font-display font-black text-4xl md:text-5xl leading-[1.05] tracking-tight">
@@ -205,7 +205,7 @@ export default function Contact() {
           urgent issues, email{" "}
           <a
             href={`mailto:${SUPPORT_EMAIL}`}
-            className="text-accent hover:underline"
+            className="text-foreground/70 hover:underline"
           >
             {SUPPORT_EMAIL}
           </a>
@@ -332,7 +332,7 @@ export default function Contact() {
                   line with the{" "}
                   <a
                     href="/privacy"
-                    className="text-accent hover:underline"
+                    className="text-foreground/70 hover:underline"
                     target="_blank"
                     rel="noopener noreferrer"
                   >

@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 export type AgentRunRequest = {
   agentId: string;
   input: Record<string, unknown>;
@@ -11,38 +13,36 @@ export type AgentRunResult<T = unknown> = {
   error?: { code: string; message: string };
 };
 
-const baseUrl = (import.meta.env.VITE_AGENT_PLATFORM_URL as string | undefined)?.replace(/\/$/, "");
-
 export async function runAgent<T = unknown>(request: AgentRunRequest): Promise<AgentRunResult<T>> {
-  if (!baseUrl) {
-    return {
-      runId: "not-started",
-      status: "failed",
-      error: {
-        code: "agent_platform_not_configured",
-        message: "VITE_AGENT_PLATFORM_URL is not configured.",
-      },
-    };
-  }
-
-  const response = await fetch(`${baseUrl}/api/agents/${encodeURIComponent(request.agentId)}/runs`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ input: request.input, context: request.context ?? {} }),
+  const { data, error } = await supabase.functions.invoke("ente-agent-run", {
+    body: {
+      agentId: request.agentId,
+      input: request.input,
+      context: request.context ?? {},
+    },
   });
 
-  const body = await response.json().catch(() => null);
-  if (!response.ok) {
+  if (error) {
     return {
-      runId: body?.runId ?? "failed",
+      runId: "failed",
       status: "failed",
       error: {
-        code: body?.error?.code ?? "agent_platform_request_failed",
-        message: body?.error?.message ?? `Agent Platform returned HTTP ${response.status}.`,
+        code: "ente_agent_proxy_failed",
+        message: error.message || "ENTE Agent Runtime proxy request failed.",
       },
     };
   }
 
-  return body as AgentRunResult<T>;
+  if (!data || typeof data !== "object") {
+    return {
+      runId: "failed",
+      status: "failed",
+      error: {
+        code: "invalid_ente_response",
+        message: "ENTE Agent Runtime returned an invalid response.",
+      },
+    };
+  }
+
+  return data as AgentRunResult<T>;
 }

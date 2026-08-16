@@ -22,7 +22,6 @@ export const Pricing = () => {
   const basic = byCode("creator_basic");
   const payg = byCode("creator_payg_1tb");
 
-  // Storage block pricing — derived from DB, never hardcoded.
   const paygPrice = payg
     ? withGst(payg.price_amount, payg.gst_percent)
     : null;
@@ -77,7 +76,6 @@ export const Pricing = () => {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-px bg-border/60 border border-border/60 rounded-2xl overflow-hidden">
-          {/* Block 1 — Creator plans (founder-assisted) */}
           <PriceCard
             index={0}
             pill="Creator plans"
@@ -95,7 +93,6 @@ export const Pricing = () => {
             loading={loading && !basic}
           />
 
-          {/* Block 2 — Storage add-on (self-serve, canonical DB price) */}
           <PriceCard
             index={1}
             pill="Storage add-ons · Self-serve"
@@ -116,7 +113,6 @@ export const Pricing = () => {
             badgeOverride={payg ? "Live · Self-serve" : undefined}
           />
 
-          {/* Block 3 — Studio / Enterprise (founder-assisted) */}
           <PriceCard
             index={2}
             pill="Studio & Enterprise"
@@ -136,7 +132,6 @@ export const Pricing = () => {
           />
         </div>
 
-        {/* International billing — Paddle rail is dormant; route to founder-assisted contact */}
         <div className="mt-8 rounded-2xl border border-border/60 bg-card/40 p-6 md:p-8 flex flex-col md:flex-row md:items-center gap-6 animate-fade-in">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-2">
@@ -164,10 +159,6 @@ export const Pricing = () => {
         </div>
 
         <GlobalCheckout />
-
-
-
-
 
         <p className="text-center text-xs text-muted-foreground mt-8 max-w-2xl mx-auto">
           {payg && paygPrice ? (
@@ -228,7 +219,7 @@ function PricingFaq() {
         <h2 className="font-display font-black uppercase text-3xl md:text-4xl tracking-tight text-center mb-10">
           Pricing <span className="gradient-text">questions</span>
         </h2>
-        <dl className="space-y-3">
+        <div className="space-y-3" aria-label="Pricing frequently asked questions">
           {faqs.map((f) => (
             <details
               key={f.q}
@@ -241,12 +232,11 @@ function PricingFaq() {
               <p className="mt-3 text-sm text-muted-foreground leading-relaxed">{f.a}</p>
             </details>
           ))}
-        </dl>
+        </div>
       </div>
     </div>
   );
 }
-
 
 function shortCycle(cycle: string) {
   switch (cycle) {
@@ -357,4 +347,3 @@ function PriceCard({
     </div>
   );
 }
-

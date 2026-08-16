@@ -50,7 +50,7 @@ jobs:
 
       - name: Upload preflight reports
         if: steps.preflight.outcome == 'failure'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: preflight-reports
           path: reports/preflight.*
@@ -62,7 +62,7 @@ jobs:
 
       - name: Upload onboarding reports
         if: steps.onboarding.outcome == 'failure'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: onboarding-reports
           path: reports/onboarding.*
@@ -74,7 +74,7 @@ jobs:
 
       - name: Upload ingest reports
         if: steps.ingest.outcome == 'failure'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ingest-reports
           path: reports/ingest.*
@@ -86,7 +86,7 @@ jobs:
 
       - name: Upload OCI reports
         if: steps.oci.outcome == 'failure'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: oci-reports
           path: reports/oci.*

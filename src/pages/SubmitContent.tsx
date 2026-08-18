@@ -117,7 +117,10 @@ export default function SubmitContent() {
             },
           },
         })
-        .catch(() => undefined);
+        .catch((invokeError: unknown) => {
+          const msg = invokeError instanceof Error ? invokeError.message : "non-blocking notification failure";
+          console.warn("[submit-content] support notification failed", msg);
+        });
 
       setSubmitted(true);
       setForm(initialForm);

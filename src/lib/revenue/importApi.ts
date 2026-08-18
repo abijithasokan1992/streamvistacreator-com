@@ -12,7 +12,7 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
-import type { NormalizationResult, NormalizedRevenueRow } from "./normalize";
+import type { NormalizationResult } from "./normalize";
 import type { RowMapping } from "./mapping";
 
 export class DatabasePendingError extends Error {
@@ -23,7 +23,10 @@ export class DatabasePendingError extends Error {
 }
 
 export class StatementAlreadyImportedError extends Error {
-  constructor(public readonly existingImportId: string) {
+  constructor(
+    public readonly existingImportId: string,
+    public readonly existingStatementKey: string | null = null,
+  ) {
     super("Statement already imported");
     this.name = "StatementAlreadyImportedError";
   }
@@ -113,7 +116,10 @@ export async function persistStatement(input: PersistStatementInput): Promise<{ 
     // Duplicate statement_key → 23505 with message "duplicate_statement:<uuid>"
     if (error.code === "23505" || /duplicate_statement/i.test(error.message ?? "")) {
       const m = /duplicate_statement:([0-9a-f-]+)/i.exec(error.message ?? "");
-      throw new StatementAlreadyImportedError(m?.[1] ?? "");
+      const existingStatementKey =
+        /(?:^|\s|,|;)sk=([^\s,;]+)/i.exec(error.message ?? "")?.[1] ??
+        input.normalization.statementKey;
+      throw new StatementAlreadyImportedError(m?.[1] ?? "", existingStatementKey);
     }
     // Missing RPC or relation → surface as pending
     if (error.code === "42883" || error.code === "42P01" || /function .* does not exist/i.test(error.message ?? "")) {
@@ -129,4 +135,3 @@ export async function persistStatement(input: PersistStatementInput): Promise<{ 
     skipped: input.normalization.totals.errorRowCount,
   };
 }
-

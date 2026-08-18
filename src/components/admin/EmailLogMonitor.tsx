@@ -68,10 +68,14 @@ export default function EmailLogMonitor() {
       const pending = payload.pending_remaining ?? payload.audit?.pending_remaining ?? 0;
       if (sweep === "failed") {
         setBanner("Retry failed — sweeper did not complete. Check admin audit alerts.");
-      } else if (!auditPersistOk) {
-        setBanner("Retry sweep succeeded — audit persistence unavailable. Sweep results are safe.");
+      } else if (pending > 0 && !auditPersistOk) {
+        setBanner(
+          `Retry sweep OK — ${pending} message_id(s) still pending, will retry next run. Audit persistence unavailable.`,
+        );
       } else if (pending > 0) {
         setBanner(`Retry sweep OK — ${pending} message_id(s) still pending, will retry next run.`);
+      } else if (!auditPersistOk) {
+        setBanner("Retry sweep succeeded — audit persistence unavailable. Sweep results are safe.");
       } else {
         setBanner("Retry sweep OK — 0 stuck message_ids remaining.");
       }

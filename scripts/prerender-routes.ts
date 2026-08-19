@@ -65,6 +65,14 @@ export const ROUTES: RouteMeta[] = [
     ogType: "website",
   },
   {
+    path: "/submit-content",
+    title: "Submit Your Film or Series for Licensing | StreamVista",
+    description:
+      "Submit a film, series or documentary to StreamVista for rights review, buyer discovery and professional licensing workflows across OTT, broadcast, satellite, FAST and digital platforms.",
+    ogImage: `${SITE_ORIGIN}/og/home.jpg`,
+    ogType: "website",
+  },
+  {
     path: "/buyers",
     title: "For Buyers — OTT, Broadcast, Satellite, FAST & Digital | StreamVista",
     description:

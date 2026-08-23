@@ -36,7 +36,7 @@ export const lovable = {
       }
 
       const { data, error } = await supabase.auth.signInWithOAuth({
-        provider,
+        provider: provider as Parameters<typeof supabase.auth.signInWithOAuth>[0]["provider"],
         options: {
           redirectTo: opts?.redirect_uri,
           queryParams: opts?.extraParams,

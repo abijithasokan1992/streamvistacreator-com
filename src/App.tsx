@@ -5,6 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, dashboardForRole, useAuth } from "@/hooks/useAuth";
+import { Analytics } from "@vercel/analytics/react";
 
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
@@ -321,6 +322,7 @@ const App = () => (
                       <AssistantLauncher />
                       <CookieConsent />
                     </ErrorBoundary>
+                    <Analytics />
                   </GlobalPaymentProvider>
                 </StorageQuotaProvider>
               </SystemMessageProvider>

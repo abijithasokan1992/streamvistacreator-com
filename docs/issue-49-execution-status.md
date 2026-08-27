@@ -10,7 +10,7 @@ This document records the requested Creator → Revenue production blocker remed
 
 - No `AGENTS.md` is present at repository root.
 - The Razorpay webhook is implemented at `supabase/functions/razorpay-webhook/index.ts`.
-- The handler verifies `x-razorpay-signature`, maintains an idempotency ledger, and returns HTTP 200 with `queued_for_retry: true` when event side-effects fail.
+- The handler verifies `x-razorpay-signature`, maintains an idempotency ledger, returns HTTP 503 for retryable side-effect failures, and keeps HTTP 200 for non-retryable/manual-replay failures.
 - The handler returns HTTP 500 when `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, or `RAZORPAY_WEBHOOK_SECRET` is unavailable. These are environment/configuration failures and cannot be proven fixed from repository code alone.
 - The source identifies the expected production project URL as `hllgmkfqgeuqlmpcirvn.supabase.co`.
 

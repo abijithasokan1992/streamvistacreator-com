@@ -194,7 +194,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Download axe reports
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: axe-reports
           path: reports/axe
@@ -296,7 +296,7 @@ jobs:
       contents: read
     steps:
       - name: Download axe reports
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: axe-reports
           path: reports/axe

@@ -6,7 +6,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { buildCorsHeaders } from "../_shared/cors.ts";
 import { loadRazorpayCreds } from "../_shared/razorpay-config.ts";
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { verifyPaymentSignature } from "../_shared/razorpay-signature.ts";
 
 function json(req: Request, body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -49,20 +49,8 @@ Deno.serve(async (req) => {
     const creds = await loadRazorpayCreds(admin);
     if (!creds) return json(req, { error: "Razorpay not configured" }, 503);
 
-    const expected = createHmac("sha256", creds.keySecret)
-      .update(`${orderId}|${paymentId}`)
-      .digest("hex");
+    const valid = await verifyPaymentSignature(orderId, paymentId, signature, creds.keySecret);
 
-    let valid = false;
-    try {
-      const a = new TextEncoder().encode(signature);
-      const b = new TextEncoder().encode(expected);
-      valid = a.byteLength === b.byteLength && timingSafeEqual(a, b);
-    } catch { valid = false; }
-
-    // Idempotency: if this order already has a successful row (from either
-    // the admin verify path or the webhook), surface a structured
-    // already-processed success response instead of erroring.
     let alreadyProcessed = false;
     let webhookFinalized = false;
     try {

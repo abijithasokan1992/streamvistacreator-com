@@ -1,6 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
-import { createHmac } from "node:crypto";
+import { verifyPaymentSignature } from "../_shared/razorpay-signature.ts";
 import { computeFinalPricePaise, type Cycle } from "../_shared/pricing.ts";
 import { loadRazorpayCreds } from "../_shared/razorpay-config.ts";
 import { logPayment, timer } from "../_shared/payment-logger.ts";
@@ -29,7 +29,6 @@ Deno.serve(async (req) => {
       return jsonError(req, "Service temporarily unavailable", 503);
     }
 
-    // Require an authenticated caller. Derive userId from the JWT — never trust the body.
     const authHeader = req.headers.get("Authorization") ?? "";
     if (!authHeader.startsWith("Bearer ")) return jsonError(req, "Unauthorized", 401);
     const userClient = createClient(supabaseUrl, anonKey, {
@@ -47,16 +46,16 @@ Deno.serve(async (req) => {
     }
     const { keyId, keySecret: secret } = creds;
 
-    const expected = createHmac("sha256", secret)
-      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-      .digest("hex");
-
-    const signatureValid = expected === razorpay_signature;
+    const signatureValid = await verifyPaymentSignature(
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      secret,
+    );
     if (!signatureValid) {
       return jsonError(req, "Payment verification failed", 400);
     }
 
-    // Look up the onboarding row and verify the order belongs to it.
     const { data: row, error: rowErr } = await supabase
       .from("onboarding_requests")
       .select("id, selected_cycle, promo_code, razorpay_order_id, submitter_user_id, payment_status")
@@ -66,12 +65,10 @@ Deno.serve(async (req) => {
       return jsonError(req, "Payment verification failed", 400);
     }
 
-    // Ownership bind: the caller must own the onboarding row (when bound to a user).
     if (row.submitter_user_id && row.submitter_user_id !== userId) {
       return jsonError(req, "Forbidden", 403);
     }
 
-    // Idempotency: don't re-grant a plan upgrade for an already-paid row.
     if (row.payment_status === "paid") {
       return new Response(JSON.stringify({ verified: true, already: true, planTier: row.selected_cycle }), {
         status: 200,
@@ -79,7 +76,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Recompute expected amount server-side.
     let priced;
     try {
       priced = computeFinalPricePaise(row.selected_cycle as Cycle, row.promo_code);
@@ -87,7 +83,6 @@ Deno.serve(async (req) => {
       return jsonError(req, "Payment verification failed", 400);
     }
 
-    // Cross-check actual amount with Razorpay's order record.
     const auth = btoa(`${keyId}:${secret}`);
     const orderRes = await fetch(`https://api.razorpay.com/v1/orders/${razorpay_order_id}`, {
       headers: { Authorization: `Basic ${auth}` },
@@ -114,7 +109,6 @@ Deno.serve(async (req) => {
       .eq("id", onboardingId)
       .eq("razorpay_order_id", razorpay_order_id);
 
-    // Audit
     try {
       await supabase.from("razorpay_audit_log").insert({
         event_type: "verify.payment",
@@ -130,8 +124,6 @@ Deno.serve(async (req) => {
       });
     } catch (e) { console.error("audit insert failed", e); }
 
-
-    // Upgrade plan tier for the authenticated user only (userId derived from JWT above).
     await supabase
       .from("user_profiles")
       .update({ plan_tier: row.selected_cycle })

@@ -126,7 +126,9 @@ export default function TitleReviewPanel({ titleId, currentStatus, onChanged }: 
           url: s?.par_url ?? null,
           file_name: s?.file_name ?? s?.object_key ?? null,
         });
-      } catch { /* noop */ }
+      } catch (e) {
+        console.warn("[TitleReviewPanel] failed loading master asset", e);
+      }
     })();
     return () => { cancelled = true; };
   }, [titleId]);
@@ -157,7 +159,14 @@ export default function TitleReviewPanel({ titleId, currentStatus, onChanged }: 
       });
       if (error) {
         setBusy(null);
-        toast.error(`Transition to ${to} failed: ${error.message}`);
+        const raw = String(error.message ?? "");
+        if (/illegal transition|blocking|checklist|prereq|required/i.test(raw)) {
+          toast.error(
+            `Transition to ${to} blocked. Resolve QC blocking checklist items and required reviewer assignments, then retry.`,
+          );
+        } else {
+          toast.error(`Transition to ${to} failed: ${raw}`);
+        }
         return;
       }
     }
